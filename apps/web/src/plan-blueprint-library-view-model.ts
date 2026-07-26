@@ -13,6 +13,7 @@ import type {
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -232,6 +233,28 @@ export interface PlanBlueprintLibraryRecommendationPolicyOverrideReceipt {
   familyRecordCount: number;
   familyOutcomeQualifiedCount: number;
   familyCompletionRateBps: number;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt {
+  action: "policyOverrideDriftReviewed";
+  contentSha256: string;
+  portfolioSetSha256: string;
+  overrideSetSha256: string;
+  reviewSetSha256: string;
+  overrideCount: number;
+  alignedCount: number;
+  retireRecommendedCount: number;
+  missingFamilyCount: number;
+  reviewedFamilySha256?: string;
+  reviewedStatus?: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview["reviews"][number]["status"];
+  reviewedRecommendation?: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview["reviews"][number]["recommendation"];
+  reviewedDiagnostics: string[];
+  overridePolicyTemplate?: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview["reviews"][number]["overridePolicyTemplate"];
+  bestPolicyTemplate?: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview["reviews"][number]["bestPolicyTemplate"];
+  overrideSelectedRecordId?: string;
+  bestSelectedRecordId?: string;
+  overrideSelectedRecommendationScoreBps?: number;
+  bestSelectedRecommendationScoreBps?: number;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -632,8 +655,7 @@ export function planBlueprintRecommendationPolicyBacktestReceipt(
       : {}),
     ...(top?.selectedRecommendationScoreBps !== undefined
       ? {
-          topSelectedRecommendationScoreBps:
-            top.selectedRecommendationScoreBps,
+          topSelectedRecommendationScoreBps: top.selectedRecommendationScoreBps,
         }
       : {}),
     averageRecommendationScoreBps: top?.averageRecommendationScoreBps ?? 0,
@@ -653,6 +675,55 @@ export function planBlueprintRecommendationPolicyOverrideReceipt(
     familyRecordCount: override.familyRecordCount,
     familyOutcomeQualifiedCount: override.familyOutcomeQualifiedCount,
     familyCompletionRateBps: override.familyCompletionRateBps,
+  };
+}
+
+export function planBlueprintRecommendationPolicyOverrideDriftReviewReceipt(
+  review: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
+): PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt {
+  const selectedReview =
+    review.reviews.find((item) => item.recommendation === "retire") ??
+    review.reviews[0];
+  return {
+    action: "policyOverrideDriftReviewed",
+    contentSha256: review.contentSha256,
+    portfolioSetSha256: review.portfolioSetSha256,
+    overrideSetSha256: review.overrideSetSha256,
+    reviewSetSha256: review.reviewSetSha256,
+    overrideCount: review.overrideCount,
+    alignedCount: review.alignedCount,
+    retireRecommendedCount: review.retireRecommendedCount,
+    missingFamilyCount: review.missingFamilyCount,
+    ...(selectedReview
+      ? {
+          reviewedFamilySha256: selectedReview.familySha256,
+          reviewedStatus: selectedReview.status,
+          reviewedRecommendation: selectedReview.recommendation,
+          overridePolicyTemplate: selectedReview.overridePolicyTemplate,
+        }
+      : {}),
+    reviewedDiagnostics: selectedReview?.diagnostics ?? [],
+    ...(selectedReview?.bestPolicyTemplate
+      ? { bestPolicyTemplate: selectedReview.bestPolicyTemplate }
+      : {}),
+    ...(selectedReview?.overrideSelectedRecordId
+      ? { overrideSelectedRecordId: selectedReview.overrideSelectedRecordId }
+      : {}),
+    ...(selectedReview?.bestSelectedRecordId
+      ? { bestSelectedRecordId: selectedReview.bestSelectedRecordId }
+      : {}),
+    ...(selectedReview?.overrideSelectedRecommendationScoreBps !== undefined
+      ? {
+          overrideSelectedRecommendationScoreBps:
+            selectedReview.overrideSelectedRecommendationScoreBps,
+        }
+      : {}),
+    ...(selectedReview?.bestSelectedRecommendationScoreBps !== undefined
+      ? {
+          bestSelectedRecommendationScoreBps:
+            selectedReview.bestSelectedRecommendationScoreBps,
+        }
+      : {}),
   };
 }
 

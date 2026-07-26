@@ -54,6 +54,7 @@ import type {
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
@@ -532,6 +533,12 @@ export function getExecutionPlanBlueprintRecommendationPolicyBacktest(): Promise
 export function getExecutionPlanBlueprintRecommendationPolicyOverrides(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideList> {
   return requestJson(
     "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+  );
+}
+
+export function getExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview> {
+  return requestJson(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
   );
 }
 

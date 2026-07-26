@@ -2127,6 +2127,16 @@ set blueprint family recommendation policy override
   -> persist a hash-only
      napier.execution-plan-blueprint-recommendation-policy-override record and
      expose the override-set SHA-256 for future default selection receipts
+review blueprint family recommendation policy override drift
+  -> recompute current portfolio evidence and family-scoped recommendation
+     policy backtests for each persisted override without mutating Ledger
+  -> compare the override policy's selected record and recommendation score
+     against the current best policy template for that workflow family
+  -> return
+     napier.execution-plan-blueprint-recommendation-policy-override-drift-review
+     with keep/retire recommendations, aligned/retire/missing-family counts,
+     override-set SHA-256, drift review-set SHA-256, policy hashes, selected
+     record IDs, and low-cardinality diagnostics only
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2279,8 +2289,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- policy override drift review that recommends retiring family overrides when
-  backtest evidence no longer agrees with the selected default.
+- policy override retirement workflow that removes stale family overrides only
+  when a fresh drift review-set SHA-256 is supplied as CAS evidence.
 
 ### Layer 3: Extension fabric
 

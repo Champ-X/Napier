@@ -1092,6 +1092,50 @@ export interface ExecutionPlanBlueprintRecommendationPolicyOverrideList {
   contentSha256: string;
 }
 
+export type ExecutionPlanBlueprintRecommendationPolicyOverrideDriftStatus =
+  | "aligned"
+  | "retire_recommended"
+  | "family_missing";
+
+export type ExecutionPlanBlueprintRecommendationPolicyOverrideDriftRecommendation =
+  "keep" | "retire";
+
+export interface ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem {
+  familySha256: string;
+  overrideSha256: string;
+  status: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftStatus;
+  recommendation: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftRecommendation;
+  diagnostics: string[];
+  overridePolicyTemplate: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
+  overridePolicySha256: string;
+  overrideSelectedRecordId?: string;
+  overrideSelectedRecommendationScoreBps?: number;
+  bestPolicyTemplate?: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
+  bestPolicySha256?: string;
+  bestSelectedRecordId?: string;
+  bestSelectedRecommendationScoreBps?: number;
+  familyRecordCount?: number;
+  familyOutcomeQualifiedCount?: number;
+  familyCompletionRateBps?: number;
+  reviewSha256: string;
+}
+
+export interface ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-override-drift-review";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  overrideCount: number;
+  alignedCount: number;
+  retireRecommendedCount: number;
+  missingFamilyCount: number;
+  portfolioSetSha256: string;
+  overrideSetSha256: string;
+  reviewSetSha256: string;
+  reviews: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem[];
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

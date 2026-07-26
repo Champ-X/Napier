@@ -156,6 +156,15 @@ All notable changes to Napier are recorded here.
   receipts/headers now expose override-set SHA-256, selected policy source, and
   family override hash. The Template shelf can apply the top backtested policy
   as a family override through a pure ViewModel receipt.
+- Blueprint recommendation policy override drift review. `GET
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review`
+  now emits a no-store hash-only receipt that compares each persisted family
+  override against current portfolio/backtest evidence. It returns keep/retire
+  recommendations, aligned/retire/missing-family counts, review-set SHA-256,
+  override/best policy hashes, selected record IDs, and low-cardinality
+  diagnostics. Server headers mirror the drift counters and hashes, and the
+  Template shelf adds a Review override drift action backed by pure ViewModel
+  receipt tests.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

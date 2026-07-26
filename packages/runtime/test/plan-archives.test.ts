@@ -906,6 +906,43 @@ describe("execution plan archives", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    await expect(
+      store.reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift(),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-drift-review",
+        schemaVersion: 1,
+        overrideCount: 1,
+        alignedCount: 0,
+        retireRecommendedCount: 1,
+        missingFamilyCount: 0,
+        portfolioSetSha256: selection.portfolioSetSha256,
+        overrideSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        reviewSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        reviews: [
+          expect.objectContaining({
+            familySha256: selection.selectedFamilySha256,
+            overrideSha256: policyOverride.contentSha256,
+            status: "retire_recommended",
+            recommendation: "retire",
+            diagnostics: ["override_policy_not_best"],
+            overridePolicyTemplate: "portfolio_first",
+            overridePolicySha256: policyOverride.recommendationPolicySha256,
+            overrideSelectedRecordId: first.record.id,
+            overrideSelectedRecommendationScoreBps: 7_100,
+            bestPolicyTemplate: "delivery_first",
+            bestPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+            bestSelectedRecordId: first.record.id,
+            bestSelectedRecommendationScoreBps: 8_100,
+            familyRecordCount: 1,
+            familyOutcomeQualifiedCount: 1,
+            familyCompletionRateBps: 10_000,
+            reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          }),
+        ],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
     const overrideSelection = await store.selectExecutionPlanBlueprintRecord(
       selectionThread.id,
     );

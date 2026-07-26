@@ -909,6 +909,12 @@ an explicit `policyTemplate`; explicit request policy still wins, followed by
 family override, then the `balanced` default. Stale `expectedPortfolioSetSha256`
 values fail closed with `409 Conflict`, and selection receipts mirror the
 override-set SHA-256 plus the selected policy source. `GET
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review`
+reviews the current override set against current portfolio/backtest evidence
+without mutating the Ledger. The no-store receipt returns aligned, retire
+recommended, and missing-family counts, plus an override drift review-set
+SHA-256 and per-family diagnostics that compare the override policy template
+and selected record with the current best policy. `GET
 /api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
 policy templates against the current library's historical replay outcomes
 without target-Thread preview or Ledger mutation. The no-store receipt returns

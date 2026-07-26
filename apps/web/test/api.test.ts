@@ -19,6 +19,7 @@ import type {
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
@@ -41,6 +42,7 @@ import {
   getExecutionPlanBlueprint,
   getExecutionPlanBlueprintPortfolioCalibration,
   getExecutionPlanBlueprintRecommendationPolicyBacktest,
+  getExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   getExecutionPlanBlueprintRecommendationPolicyOverrides,
   getExecutionPlanBlueprintRecordQualification,
   getExecutionPlanBlueprintRecordOutcomeBaselines,
@@ -905,6 +907,43 @@ describe("Web JSON API wrappers", () => {
         overrides: [recommendationPolicyOverride],
         contentSha256: "c".repeat(64),
       };
+    const recommendationPolicyOverrideDriftReview: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-drift-review",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-26T00:00:09.000Z",
+        overrideCount: 1,
+        alignedCount: 0,
+        retireRecommendedCount: 1,
+        missingFamilyCount: 0,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        overrideSetSha256: recommendationPolicyOverrideList.overrideSetSha256,
+        reviewSetSha256: "d".repeat(64),
+        reviews: [
+          {
+            familySha256: recommendationPolicyOverride.familySha256,
+            overrideSha256: recommendationPolicyOverride.contentSha256,
+            status: "retire_recommended",
+            recommendation: "retire",
+            diagnostics: ["override_policy_not_best"],
+            overridePolicyTemplate: "balanced",
+            overridePolicySha256:
+              recommendationPolicyOverride.recommendationPolicySha256,
+            overrideSelectedRecordId: record.id,
+            overrideSelectedRecommendationScoreBps: 1_600,
+            bestPolicyTemplate: "portfolio_first",
+            bestPolicySha256: "e".repeat(64),
+            bestSelectedRecordId: "blueprint_87654321",
+            bestSelectedRecommendationScoreBps: 2_100,
+            familyRecordCount: 1,
+            familyOutcomeQualifiedCount: 1,
+            familyCompletionRateBps: 0,
+            reviewSha256: "f".repeat(64),
+          },
+        ],
+        contentSha256: "1".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -997,6 +1036,10 @@ describe("Web JSON API wrappers", () => {
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
         response: recommendationPolicyOverrideList,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
+        response: recommendationPolicyOverrideDriftReview,
       },
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
@@ -1146,6 +1189,9 @@ describe("Web JSON API wrappers", () => {
       getExecutionPlanBlueprintRecommendationPolicyOverrides(),
     ).resolves.toEqual(recommendationPolicyOverrideList);
     await expect(
+      getExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview(),
+    ).resolves.toEqual(recommendationPolicyOverrideDriftReview);
+    await expect(
       setExecutionPlanBlueprintRecommendationPolicyOverride({
         familySha256: "3".repeat(64),
         policyTemplate: "balanced",
@@ -1204,7 +1250,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(23);
+    expect(fetchMock).toHaveBeenCalledTimes(24);
   });
 });
 

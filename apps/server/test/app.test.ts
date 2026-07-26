@@ -35,6 +35,7 @@ import type {
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
@@ -5093,9 +5094,8 @@ describe("Napier HTTP goal flow", () => {
         selectedFamilyCompletionRateBps: 0,
         selectedRecommendationScoreBps: 100,
         selectedRecommendationPolicyTemplate: "portfolio_first",
-        selectedRecommendationPolicySha256: expect.stringMatching(
-          /^[a-f0-9]{64}$/,
-        ),
+        selectedRecommendationPolicySha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/),
         selectedRecommendationPolicySource: "request",
         recommendationPolicy: {
           templateId: "portfolio_first",
@@ -5189,16 +5189,13 @@ describe("Napier HTTP goal flow", () => {
           reason:
             "The current replay outcomes are stable, qualified, and audit-ready.",
           concerns: [],
-          scores: [
-            "completion",
-            "stability",
-            "auditability",
-            "reuse_risk",
-          ].map((criterionId) => ({
-            criterionId,
-            score: 94,
-            reason: "The criterion is satisfied by hash-bound outcomes.",
-          })),
+          scores: ["completion", "stability", "auditability", "reuse_risk"].map(
+            (criterionId) => ({
+              criterionId,
+              score: 94,
+              reason: "The criterion is satisfied by hash-bound outcomes.",
+            }),
+          ),
         }),
       ),
     ]);
@@ -5406,11 +5403,11 @@ describe("Napier HTTP goal flow", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    expect(policyBacktest.results.map((result) => result.recommendationPolicy.templateId)).toEqual([
-      "balanced",
-      "delivery_first",
-      "portfolio_first",
-    ]);
+    expect(
+      policyBacktest.results.map(
+        (result) => result.recommendationPolicy.templateId,
+      ),
+    ).toEqual(["balanced", "delivery_first", "portfolio_first"]);
     expect(
       policyBacktest.results.map(
         (result) => result.selectedRecommendationScoreBps,
@@ -5510,6 +5507,52 @@ describe("Napier HTTP goal flow", () => {
     expectExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
       policyOverrideListResponse,
       policyOverrideList,
+    );
+
+    const policyOverrideDriftReviewResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
+    );
+    expect(policyOverrideDriftReviewResponse.status).toBe(200);
+    const policyOverrideDriftReview =
+      (await policyOverrideDriftReviewResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview;
+    expect(policyOverrideDriftReview).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-drift-review",
+        schemaVersion: 1,
+        overrideCount: 1,
+        alignedCount: 1,
+        retireRecommendedCount: 0,
+        missingFamilyCount: 0,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        overrideSetSha256: policyOverrideList.overrideSetSha256,
+        reviewSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        reviews: [
+          expect.objectContaining({
+            familySha256: portfolioCalibration.families[0]?.familySha256,
+            overrideSha256: policyOverride.contentSha256,
+            status: "aligned",
+            recommendation: "keep",
+            diagnostics: [],
+            overridePolicyTemplate: "portfolio_first",
+            overridePolicySha256: policyOverride.recommendationPolicySha256,
+            overrideSelectedRecordId: savedBlueprint.record.id,
+            overrideSelectedRecommendationScoreBps: 2_100,
+            bestPolicyTemplate: "portfolio_first",
+            bestPolicySha256: policyOverride.recommendationPolicySha256,
+            bestSelectedRecordId: savedBlueprint.record.id,
+            bestSelectedRecommendationScoreBps: 2_100,
+            familyRecordCount: 1,
+            familyOutcomeQualifiedCount: 1,
+            familyCompletionRateBps: 0,
+            reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          }),
+        ],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expectExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(
+      policyOverrideDriftReviewResponse,
+      policyOverrideDriftReview,
     );
 
     const overrideSelectionThread = (await (
@@ -9398,13 +9441,11 @@ function expectExecutionPlanBlueprintRecordSelectionHeaders(
   expect(
     response.headers.get("x-napier-plan-blueprint-selection-set-sha256"),
   ).toBe(selection.selectionSetSha256);
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    selection.portfolioSetSha256,
+  );
   expect(
-    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
-  ).toBe(selection.portfolioSetSha256);
-  expect(
-    response.headers.get(
-      "x-napier-blueprint-recommendation-policy-template",
-    ),
+    response.headers.get("x-napier-blueprint-recommendation-policy-template"),
   ).toBe(selection.recommendationPolicy.templateId);
   expect(
     response.headers.get("x-napier-blueprint-recommendation-policy-sha256"),
@@ -9492,9 +9533,7 @@ function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(
     response.headers.get("x-napier-blueprint-portfolio-family-count"),
   ).toBe(String(calibration.familyCount));
   expect(
-    response.headers.get(
-      "x-napier-blueprint-portfolio-source-qualified-count",
-    ),
+    response.headers.get("x-napier-blueprint-portfolio-source-qualified-count"),
   ).toBe(String(calibration.sourceQualifiedCount));
   expect(
     response.headers.get(
@@ -9512,9 +9551,9 @@ function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(
   expect(
     response.headers.get("x-napier-blueprint-portfolio-policy-failed-count"),
   ).toBe(String(calibration.policyFailedCount));
-  expect(
-    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
-  ).toBe(calibration.portfolioSetSha256);
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    calibration.portfolioSetSha256,
+  );
 }
 
 function expectExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
@@ -9540,9 +9579,9 @@ function expectExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
       "x-napier-blueprint-recommendation-policy-divergent-selection-count",
     ),
   ).toBe(String(backtest.divergentSelectionCount));
-  expect(
-    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
-  ).toBe(backtest.portfolioSetSha256);
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    backtest.portfolioSetSha256,
+  );
   expect(
     response.headers.get("x-napier-blueprint-recommendation-policy-set-sha256"),
   ).toBe(backtest.policySetSha256);
@@ -9566,16 +9605,14 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(
   expect(
     response.headers.get("x-napier-blueprint-recommendation-policy-sha256"),
   ).toBe(override.recommendationPolicySha256);
-  expect(
-    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
-  ).toBe(override.portfolioSetSha256);
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    override.portfolioSetSha256,
+  );
   expect(response.headers.get("x-napier-blueprint-family-record-count")).toBe(
     String(override.familyRecordCount),
   );
   expect(
-    response.headers.get(
-      "x-napier-blueprint-family-outcome-qualified-count",
-    ),
+    response.headers.get("x-napier-blueprint-family-outcome-qualified-count"),
   ).toBe(String(override.familyOutcomeQualifiedCount));
   expect(
     response.headers.get("x-napier-blueprint-family-completion-rate-bps"),
@@ -9599,9 +9636,51 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
       "x-napier-blueprint-family-policy-override-set-sha256",
     ),
   ).toBe(overrides.overrideSetSha256);
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    overrides.portfolioSetSha256,
+  );
+}
+
+function expectExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(
+  response: Response,
+  review: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    review.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
   expect(
-    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
-  ).toBe(overrides.portfolioSetSha256);
+    response.headers.get("x-napier-blueprint-family-policy-override-count"),
+  ).toBe(String(review.overrideCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-aligned-count",
+    ),
+  ).toBe(String(review.alignedCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-retire-recommended-count",
+    ),
+  ).toBe(String(review.retireRecommendedCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-missing-family-count",
+    ),
+  ).toBe(String(review.missingFamilyCount));
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    review.portfolioSetSha256,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-set-sha256",
+    ),
+  ).toBe(review.overrideSetSha256);
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-drift-review-set-sha256",
+    ),
+  ).toBe(review.reviewSetSha256);
 }
 
 function expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(

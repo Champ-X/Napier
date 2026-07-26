@@ -29,6 +29,7 @@ import {
   getExecutionPlanBlueprint,
   getExecutionPlanBlueprintPortfolioCalibration,
   getExecutionPlanBlueprintRecommendationPolicyBacktest,
+  getExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   getExecutionPlanBlueprintRecordQualification,
   getExecutionPlanBlueprintRecordOutcomeQualification,
   getExecutionPlanBlueprintRecordReplayOutcomes,
@@ -68,6 +69,8 @@ import {
   planBlueprintRecommendationPolicyBacktestReceipt,
   type PlanBlueprintLibraryRecommendationPolicyBacktestReceipt,
   planBlueprintRecommendationPolicyOverrideReceipt,
+  planBlueprintRecommendationPolicyOverrideDriftReviewReceipt,
+  type PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideReceipt,
   planBlueprintReplayHistoryReceipt,
   type PlanBlueprintLibraryReplayHistoryReceipt,
@@ -153,6 +156,7 @@ type PlanBlueprintLibraryBusyAction =
   | "calibratePortfolio"
   | "backtestPolicy"
   | "applyPolicyOverride"
+  | "reviewPolicyOverrideDrift"
   | "select";
 
 type PlanBlueprintLibraryReceipt =
@@ -177,6 +181,7 @@ type PlanBlueprintLibraryReceipt =
   | PlanBlueprintLibraryPortfolioCalibrationReceipt
   | PlanBlueprintLibraryRecommendationPolicyBacktestReceipt
   | PlanBlueprintLibraryRecommendationPolicyOverrideReceipt
+  | PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt
   | PlanBlueprintLibrarySelectionReceipt;
 
 export default function PlanPanel({
@@ -741,7 +746,11 @@ export default function PlanPanel({
     record: ExecutionPlanBlueprintRecord,
   ): Promise<void> => {
     const review = blueprintLibraryOutcomeReview;
-    if (blueprintLibraryBusyAction || !review || review.recordId !== record.id) {
+    if (
+      blueprintLibraryBusyAction ||
+      !review ||
+      review.recordId !== record.id
+    ) {
       return;
     }
     setBlueprintLibraryBusyAction("promoteReviewedOutcomeBaseline");
@@ -830,8 +839,7 @@ export default function PlanPanel({
     setBlueprintLibraryReceipt(undefined);
     setBlueprintLibraryError(undefined);
     try {
-      const calibration =
-        await getExecutionPlanBlueprintPortfolioCalibration();
+      const calibration = await getExecutionPlanBlueprintPortfolioCalibration();
       setBlueprintLibraryReceipt(
         planBlueprintPortfolioCalibrationReceipt(calibration),
       );
@@ -860,33 +868,53 @@ export default function PlanPanel({
     }
   };
 
-  const applyBlueprintRecommendationPolicyOverride = async (): Promise<void> => {
-    if (blueprintLibraryBusyAction) return;
-    const receipt = blueprintLibraryReceipt;
-    if (
-      receipt?.action !== "policyBacktested" ||
-      !receipt.topSelectedFamilySha256
-    ) {
-      return;
-    }
-    setBlueprintLibraryBusyAction("applyPolicyOverride");
-    setBlueprintLibraryError(undefined);
-    try {
-      const override =
-        await setExecutionPlanBlueprintRecommendationPolicyOverride({
-          familySha256: receipt.topSelectedFamilySha256,
-          policyTemplate: receipt.topPolicyTemplate,
-          expectedPortfolioSetSha256: receipt.portfolioSetSha256,
-        });
-      setBlueprintLibraryReceipt(
-        planBlueprintRecommendationPolicyOverrideReceipt(override),
-      );
-    } catch (error) {
-      setBlueprintLibraryError(formatApiErrorMessage(error));
-    } finally {
-      setBlueprintLibraryBusyAction(undefined);
-    }
-  };
+  const applyBlueprintRecommendationPolicyOverride =
+    async (): Promise<void> => {
+      if (blueprintLibraryBusyAction) return;
+      const receipt = blueprintLibraryReceipt;
+      if (
+        receipt?.action !== "policyBacktested" ||
+        !receipt.topSelectedFamilySha256
+      ) {
+        return;
+      }
+      setBlueprintLibraryBusyAction("applyPolicyOverride");
+      setBlueprintLibraryError(undefined);
+      try {
+        const override =
+          await setExecutionPlanBlueprintRecommendationPolicyOverride({
+            familySha256: receipt.topSelectedFamilySha256,
+            policyTemplate: receipt.topPolicyTemplate,
+            expectedPortfolioSetSha256: receipt.portfolioSetSha256,
+          });
+        setBlueprintLibraryReceipt(
+          planBlueprintRecommendationPolicyOverrideReceipt(override),
+        );
+      } catch (error) {
+        setBlueprintLibraryError(formatApiErrorMessage(error));
+      } finally {
+        setBlueprintLibraryBusyAction(undefined);
+      }
+    };
+
+  const reviewBlueprintRecommendationPolicyOverrideDrift =
+    async (): Promise<void> => {
+      if (blueprintLibraryBusyAction) return;
+      setBlueprintLibraryBusyAction("reviewPolicyOverrideDrift");
+      setBlueprintLibraryReceipt(undefined);
+      setBlueprintLibraryError(undefined);
+      try {
+        const review =
+          await getExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview();
+        setBlueprintLibraryReceipt(
+          planBlueprintRecommendationPolicyOverrideDriftReviewReceipt(review),
+        );
+      } catch (error) {
+        setBlueprintLibraryError(formatApiErrorMessage(error));
+      } finally {
+        setBlueprintLibraryBusyAction(undefined);
+      }
+    };
 
   const createFromBlueprintRecord = async (
     record: ExecutionPlanBlueprintRecord,
@@ -1186,6 +1214,9 @@ export default function PlanPanel({
         onBacktestPolicy={() => void backtestBlueprintRecommendationPolicies()}
         onApplyPolicyOverride={() =>
           void applyBlueprintRecommendationPolicyOverride()
+        }
+        onReviewPolicyOverrideDrift={() =>
+          void reviewBlueprintRecommendationPolicyOverrideDrift()
         }
         onArchive={(record) =>
           void updateBlueprintRecordStatus(record, "archived")
@@ -1553,6 +1584,7 @@ function PlanBlueprintLibraryCard({
   onCalibrate,
   onBacktestPolicy,
   onApplyPolicyOverride,
+  onReviewPolicyOverrideDrift,
   onArchive,
   onRestore,
   onQualify,
@@ -1583,6 +1615,7 @@ function PlanBlueprintLibraryCard({
   onCalibrate: () => void;
   onBacktestPolicy: () => void;
   onApplyPolicyOverride: () => void;
+  onReviewPolicyOverrideDrift: () => void;
   onArchive: (record: ExecutionPlanBlueprintRecord) => void;
   onRestore: (record: ExecutionPlanBlueprintRecord) => void;
   onQualify: (record: ExecutionPlanBlueprintRecord) => void;
@@ -1663,6 +1696,16 @@ function PlanBlueprintLibraryCard({
           {busyAction === "applyPolicyOverride"
             ? copy.plan.blueprint.library.applyingPolicyOverride
             : copy.plan.blueprint.library.applyPolicyOverride}
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onReviewPolicyOverrideDrift}
+        >
+          <ShieldCheck size={12} aria-hidden="true" />
+          {busyAction === "reviewPolicyOverrideDrift"
+            ? copy.plan.blueprint.library.reviewingPolicyOverrideDrift
+            : copy.plan.blueprint.library.reviewPolicyOverrideDrift}
         </button>
         <button
           className="fixture-verify"
@@ -1854,7 +1897,8 @@ function PlanBlueprintLibraryCard({
                     {busyAction === "promoteReviewedOutcomeBaseline"
                       ? copy.plan.blueprint.library
                           .promotingReviewedOutcomeBaseline
-                      : copy.plan.blueprint.library.promoteReviewedOutcomeBaseline}
+                      : copy.plan.blueprint.library
+                          .promoteReviewedOutcomeBaseline}
                   </button>
                 ) : null}
                 <button
@@ -1940,13 +1984,16 @@ function PlanBlueprintLibraryReceiptView({
                       ? true
                       : receipt.action === "policyOverrideApplied"
                         ? true
-                  : receipt.action === "created" &&
-                      receipt.replayEventVerificationStatus
-                    ? receipt.replayEventVerificationStatus === "valid"
-                    : receipt.action === "created" &&
-                        receipt.replayEventDiagnostics
-                      ? false
-                      : true;
+                        : receipt.action === "policyOverrideDriftReviewed"
+                          ? receipt.retireRecommendedCount === 0 &&
+                            receipt.missingFamilyCount === 0
+                          : receipt.action === "created" &&
+                              receipt.replayEventVerificationStatus
+                            ? receipt.replayEventVerificationStatus === "valid"
+                            : receipt.action === "created" &&
+                                receipt.replayEventDiagnostics
+                              ? false
+                              : true;
   const title =
     receipt.action === "qualified"
       ? copy.plan.blueprint.library.qualificationStatuses[
@@ -1979,7 +2026,12 @@ function PlanBlueprintLibraryReceiptView({
                       : receipt.action === "policyOverrideApplied"
                         ? copy.plan.blueprint.library.receipts
                             .policyOverrideApplied
-                  : copy.plan.blueprint.library.receipts[receipt.action];
+                        : receipt.action === "policyOverrideDriftReviewed"
+                          ? copy.plan.blueprint.library.receipts
+                              .policyOverrideDriftReviewed
+                          : copy.plan.blueprint.library.receipts[
+                              receipt.action
+                            ];
   const receiptHash =
     "blueprintSha256" in receipt
       ? receipt.blueprintSha256
@@ -1991,6 +2043,7 @@ function PlanBlueprintLibraryReceiptView({
           receipt.action === "portfolioCalibrated" ||
           receipt.action === "policyBacktested" ||
           receipt.action === "policyOverrideApplied" ||
+          receipt.action === "policyOverrideDriftReviewed" ||
           receipt.action === "outcomeQualified"
         ? receipt.contentSha256
         : receipt.action === "outcomeBaseline"
@@ -2015,7 +2068,9 @@ function PlanBlueprintLibraryReceiptView({
               ? `${receipt.policyCount.toLocaleString()} ${copy.plan.blueprint.library.policies} / ${receipt.recordCount.toLocaleString()} ${copy.plan.blueprint.library.records} / ${receipt.divergentSelectionCount.toLocaleString()} ${copy.plan.blueprint.library.divergent}`
               : receipt.action === "policyOverrideApplied"
                 ? `${receipt.familyRecordCount.toLocaleString()} ${copy.plan.blueprint.library.records} / ${receipt.familyOutcomeQualifiedCount.toLocaleString()} ${copy.plan.blueprint.library.qualified} / ${copy.plan.blueprint.library.recommendationPolicy}: ${receipt.recommendationPolicyTemplate}`
-          : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
+                : receipt.action === "policyOverrideDriftReviewed"
+                  ? `${receipt.overrideCount.toLocaleString()} ${copy.plan.blueprint.library.override} / ${receipt.alignedCount.toLocaleString()} ${copy.plan.blueprint.library.aligned} / ${receipt.retireRecommendedCount.toLocaleString()} ${copy.plan.blueprint.library.recommendedRetire}`
+                  : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
   const identity =
     receipt.action === "qualified"
       ? shortId(receipt.recordId)
@@ -2037,21 +2092,26 @@ function PlanBlueprintLibraryReceiptView({
                     ? receipt.topRecordId
                       ? shortId(receipt.topRecordId)
                       : receipt.topFamilySha256?.slice(0, 12)
-                  : receipt.action === "policyBacktested"
-                    ? receipt.topSelectedRecordId
-                      ? shortId(receipt.topSelectedRecordId)
-                      : receipt.topSelectedFamilySha256?.slice(0, 12)
-                  : receipt.action === "policyOverrideApplied"
-                    ? receipt.familySha256.slice(0, 12)
-                  : receipt.action === "historyVerified" ||
-                      receipt.action === "outcomesVerified" ||
-                      receipt.action === "outcomeQualified"
-                    ? receipt.recordId
-                      ? shortId(receipt.recordId)
-                      : undefined
-                    : "status" in receipt
-                      ? copy.plan.blueprint.library.statuses[receipt.status]
-                      : shortId(receipt.planId);
+                    : receipt.action === "policyBacktested"
+                      ? receipt.topSelectedRecordId
+                        ? shortId(receipt.topSelectedRecordId)
+                        : receipt.topSelectedFamilySha256?.slice(0, 12)
+                      : receipt.action === "policyOverrideApplied"
+                        ? receipt.familySha256.slice(0, 12)
+                        : receipt.action === "policyOverrideDriftReviewed"
+                          ? (receipt.reviewedFamilySha256?.slice(0, 12) ??
+                            receipt.reviewSetSha256.slice(0, 12))
+                          : receipt.action === "historyVerified" ||
+                              receipt.action === "outcomesVerified" ||
+                              receipt.action === "outcomeQualified"
+                            ? receipt.recordId
+                              ? shortId(receipt.recordId)
+                              : undefined
+                            : "status" in receipt
+                              ? copy.plan.blueprint.library.statuses[
+                                  receipt.status
+                                ]
+                              : shortId(receipt.planId);
   return (
     <div
       className={`fixture-receipt status-${successful ? "valid" : "invalid"}`}
@@ -2400,6 +2460,75 @@ function PlanBlueprintLibraryReceiptView({
             {" / "}
             {copy.plan.blueprint.library.completion}:{" "}
             {(receipt.familyCompletionRateBps / 100).toFixed(2)}%
+          </small>
+        </>
+      ) : null}
+      {receipt.action === "policyOverrideDriftReviewed" ? (
+        <>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {receipt.portfolioSetSha256.slice(0, 16)}
+            {" / "}
+            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {receipt.overrideSetSha256.slice(0, 16)}
+            {" / "}
+            {copy.plan.blueprint.library.driftReviewSet}:{" "}
+            {receipt.reviewSetSha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.aligned}:{" "}
+            {receipt.alignedCount.toLocaleString()}
+            {" / "}
+            {copy.plan.blueprint.library.recommendedRetire}:{" "}
+            {receipt.retireRecommendedCount.toLocaleString()}
+            {" / "}
+            {copy.plan.blueprint.library.missing}:{" "}
+            {receipt.missingFamilyCount.toLocaleString()}
+          </small>
+          {receipt.reviewedFamilySha256 ? (
+            <small className="fixture-diagnostics">
+              {copy.plan.blueprint.library.topFamily}:{" "}
+              {receipt.reviewedFamilySha256.slice(0, 16)}
+              {receipt.reviewedStatus ? ` / ${receipt.reviewedStatus}` : ""}
+              {receipt.reviewedRecommendation
+                ? ` / ${copy.plan.blueprint.library.recommendation}: ${receipt.reviewedRecommendation}`
+                : ""}
+            </small>
+          ) : null}
+          {receipt.overridePolicyTemplate || receipt.bestPolicyTemplate ? (
+            <small className="fixture-diagnostics">
+              {copy.plan.blueprint.library.overridePolicy}:{" "}
+              {receipt.overridePolicyTemplate ??
+                copy.plan.blueprint.library.current}
+              {" / "}
+              {copy.plan.blueprint.library.bestPolicy}:{" "}
+              {receipt.bestPolicyTemplate ??
+                copy.plan.blueprint.library.current}
+            </small>
+          ) : null}
+          {receipt.overrideSelectedRecordId || receipt.bestSelectedRecordId ? (
+            <small className="fixture-diagnostics">
+              {copy.plan.blueprint.library.override}:{" "}
+              {receipt.overrideSelectedRecordId
+                ? shortId(receipt.overrideSelectedRecordId)
+                : copy.plan.blueprint.library.missing}
+              {receipt.overrideSelectedRecommendationScoreBps !== undefined
+                ? ` / ${(receipt.overrideSelectedRecommendationScoreBps / 100).toFixed(2)}%`
+                : ""}
+              {" / "}
+              {copy.plan.blueprint.library.selected}:{" "}
+              {receipt.bestSelectedRecordId
+                ? shortId(receipt.bestSelectedRecordId)
+                : copy.plan.blueprint.library.missing}
+              {receipt.bestSelectedRecommendationScoreBps !== undefined
+                ? ` / ${(receipt.bestSelectedRecommendationScoreBps / 100).toFixed(2)}%`
+                : ""}
+            </small>
+          ) : null}
+          <small className="fixture-diagnostics">
+            {receipt.reviewedDiagnostics.length > 0
+              ? receipt.reviewedDiagnostics.join(", ")
+              : copy.plan.blueprint.library.noDiagnostics}
           </small>
         </>
       ) : null}

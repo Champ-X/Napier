@@ -60,6 +60,8 @@ import {
   type ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate,
   type ExecutionPlanBlueprintRecommendationPolicyBacktestResult,
   type ExecutionPlanBlueprintRecommendationPolicyOverride,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem,
   type ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   type ExecutionPlanBlueprintRecommendationPolicySource,
   type ExecutionPlanBlueprintRecommendationPolicyTemplateId,
@@ -2500,20 +2502,17 @@ export class LocalStore {
         ...(latestBaseline ? { latestBaseline } : {}),
       });
       entries.push(entry);
-      candidateInputs.push(
-        {
-          record,
-          sourceQualification,
-          outcomeQualification,
-          entry,
-          ...(latestBaseline ? { latestBaseline } : {}),
-          ...(preview ? { preview } : {}),
-        },
-      );
+      candidateInputs.push({
+        record,
+        sourceQualification,
+        outcomeQualification,
+        entry,
+        ...(latestBaseline ? { latestBaseline } : {}),
+        ...(preview ? { preview } : {}),
+      });
     }
-    const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
-      entries,
-    );
+    const families =
+      createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
     const familyBySha256 = new Map(
       families.map((family) => [family.familySha256, family]),
     );
@@ -2577,9 +2576,8 @@ export class LocalStore {
     this.assertInitialized();
     const entries =
       await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
-    const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
-      entries,
-    );
+    const families =
+      createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
     return createExecutionPlanBlueprintRecommendationPolicyBacktest({
       entries,
       families,
@@ -2594,6 +2592,25 @@ export class LocalStore {
       await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
     return createExecutionPlanBlueprintRecommendationPolicyOverrideList({
       overrides: this.state.executionPlanBlueprintRecommendationPolicyOverrides,
+      portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
+    });
+  }
+
+  async reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview> {
+    this.assertInitialized();
+    const entries =
+      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    const families =
+      createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
+    const overrides =
+      this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
+        validateExecutionPlanBlueprintRecommendationPolicyOverride,
+      );
+    return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview({
+      entries,
+      families,
+      overrides,
+      policies: listExecutionPlanBlueprintRecommendationPolicies(),
       portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
     });
   }
@@ -2632,12 +2649,14 @@ export class LocalStore {
           "Execution plan blueprint recommendation policy override family is missing",
         );
       }
-      const override = createExecutionPlanBlueprintRecommendationPolicyOverride({
-        family,
-        recommendationPolicy,
-        portfolioSetSha256,
-        updatedAt: nowIso(),
-      });
+      const override = createExecutionPlanBlueprintRecommendationPolicyOverride(
+        {
+          family,
+          recommendationPolicy,
+          portfolioSetSha256,
+          updatedAt: nowIso(),
+        },
+      );
       const index =
         this.state.executionPlanBlueprintRecommendationPolicyOverrides.findIndex(
           (candidate) => candidate.familySha256 === request.familySha256,
@@ -6225,9 +6244,7 @@ export class LocalStore {
       state.executionPlanBlueprintOutcomeBaselines = [];
     }
     if (
-      !Array.isArray(
-        state.executionPlanBlueprintRecommendationPolicyOverrides,
-      )
+      !Array.isArray(state.executionPlanBlueprintRecommendationPolicyOverrides)
     ) {
       state.executionPlanBlueprintRecommendationPolicyOverrides = [];
     }
@@ -8919,9 +8936,7 @@ function validateExecutionPlanBlueprintRecommendationPolicyOverride(
     override.apiVersion !== NAPIER_API_VERSION ||
     !isSha256(override.familySha256) ||
     override.recommendationPolicySha256 !==
-      executionPlanBlueprintRecommendationPolicySha256(
-        recommendationPolicy,
-      ) ||
+      executionPlanBlueprintRecommendationPolicySha256(recommendationPolicy) ||
     !isSha256(override.portfolioSetSha256) ||
     !isNonNegativeInteger(override.familyRecordCount) ||
     !isNonNegativeInteger(override.familyOutcomeQualifiedCount) ||
@@ -9032,7 +9047,9 @@ function normalizeExecutionPlanBlueprintRecommendationPolicy(
   const selected = templateId ?? "balanced";
   const policy = EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICIES[selected];
   if (!policy) {
-    throw new Error("Execution plan blueprint recommendation policy is invalid");
+    throw new Error(
+      "Execution plan blueprint recommendation policy is invalid",
+    );
   }
   return structuredClone(policy);
 }
@@ -9097,8 +9114,7 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
     familyCompletionRateBps: input.family.completionRateBps,
     recommendationScoreBps: ready
       ? executionPlanBlueprintRecommendationScoreBps({
-          outcomeCompletionBps:
-            input.outcomeQualification.completionRateBps,
+          outcomeCompletionBps: input.outcomeQualification.completionRateBps,
           familyCompletionBps: input.family.completionRateBps,
           reviewedBaselineCoverageBps:
             executionPlanBlueprintFamilyReviewedBaselineCoverageBps(
@@ -9240,9 +9256,8 @@ function executionPlanBlueprintFamilySha256(
 function createExecutionPlanBlueprintPortfolioCalibration(
   entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
 ): ExecutionPlanBlueprintPortfolioCalibration {
-  const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
-    entries,
-  );
+  const families =
+    createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
   const content = {
     kind: "napier.execution-plan-blueprint-portfolio-calibration" as const,
     schemaVersion: 1 as const,
@@ -9274,6 +9289,157 @@ function createExecutionPlanBlueprintPortfolioCalibration(
     ...content,
     generatedAt: nowIso(),
     contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview(input: {
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[];
+  families: ExecutionPlanBlueprintPortfolioCalibrationFamily[];
+  overrides: ExecutionPlanBlueprintRecommendationPolicyOverride[];
+  policies: ExecutionPlanBlueprintRecommendationPolicy[];
+  portfolioSetSha256: string;
+}): ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview {
+  const overrides = input.overrides
+    .map(validateExecutionPlanBlueprintRecommendationPolicyOverride)
+    .sort((left, right) => left.familySha256.localeCompare(right.familySha256));
+  const reviews = overrides.map((override) =>
+    createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem({
+      entries: input.entries,
+      families: input.families,
+      override,
+      policies: input.policies,
+    }),
+  );
+  const content = {
+    kind: "napier.execution-plan-blueprint-recommendation-policy-override-drift-review" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    overrideCount: reviews.length,
+    alignedCount: reviews.filter((review) => review.status === "aligned")
+      .length,
+    retireRecommendedCount: reviews.filter(
+      (review) => review.recommendation === "retire",
+    ).length,
+    missingFamilyCount: reviews.filter(
+      (review) => review.status === "family_missing",
+    ).length,
+    portfolioSetSha256: input.portfolioSetSha256,
+    overrideSetSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides),
+    reviewSetSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideDriftReviewSetSha256(
+        reviews,
+      ),
+    reviews,
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem(input: {
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[];
+  families: ExecutionPlanBlueprintPortfolioCalibrationFamily[];
+  override: ExecutionPlanBlueprintRecommendationPolicyOverride;
+  policies: ExecutionPlanBlueprintRecommendationPolicy[];
+}): ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem {
+  const family = input.families.find(
+    (candidate) => candidate.familySha256 === input.override.familySha256,
+  );
+  if (!family) {
+    return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent(
+      {
+        familySha256: input.override.familySha256,
+        overrideSha256: input.override.contentSha256,
+        status: "family_missing",
+        recommendation: "retire",
+        diagnostics: ["family_missing"],
+        overridePolicyTemplate: input.override.recommendationPolicy.templateId,
+        overridePolicySha256: input.override.recommendationPolicySha256,
+      },
+    );
+  }
+  const familyEntries = input.entries.filter(
+    (entry) => entry.familySha256 === family.familySha256,
+  );
+  const familyResults = input.policies.map((policy) =>
+    createExecutionPlanBlueprintRecommendationPolicyBacktestResult({
+      entries: familyEntries,
+      families: [family],
+      policy,
+    }),
+  );
+  const best = [...familyResults].sort(
+    compareExecutionPlanBlueprintRecommendationPolicyBacktestResults,
+  )[0];
+  const overrideResult = familyResults.find(
+    (result) =>
+      result.recommendationPolicy.templateId ===
+      input.override.recommendationPolicy.templateId,
+  );
+  const diagnostics = uniqueStrings([
+    ...(best?.selectedRecordId ? [] : ["no_qualified_candidate"]),
+    ...(best &&
+    best.recommendationPolicy.templateId !==
+      input.override.recommendationPolicy.templateId
+      ? ["override_policy_not_best"]
+      : []),
+    ...(overrideResult?.selectedRecordId &&
+    best?.selectedRecordId &&
+    overrideResult.selectedRecordId !== best.selectedRecordId
+      ? ["override_selected_record_differs"]
+      : []),
+  ]);
+  const aligned = diagnostics.length === 0;
+  return createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent(
+    {
+      familySha256: input.override.familySha256,
+      overrideSha256: input.override.contentSha256,
+      status: aligned ? "aligned" : "retire_recommended",
+      recommendation: aligned ? "keep" : "retire",
+      diagnostics,
+      overridePolicyTemplate: input.override.recommendationPolicy.templateId,
+      overridePolicySha256: input.override.recommendationPolicySha256,
+      ...(overrideResult?.selectedRecordId
+        ? { overrideSelectedRecordId: overrideResult.selectedRecordId }
+        : {}),
+      ...(overrideResult?.selectedRecommendationScoreBps !== undefined
+        ? {
+            overrideSelectedRecommendationScoreBps:
+              overrideResult.selectedRecommendationScoreBps,
+          }
+        : {}),
+      ...(best
+        ? { bestPolicyTemplate: best.recommendationPolicy.templateId }
+        : {}),
+      ...(best ? { bestPolicySha256: best.recommendationPolicySha256 } : {}),
+      ...(best?.selectedRecordId
+        ? { bestSelectedRecordId: best.selectedRecordId }
+        : {}),
+      ...(best?.selectedRecommendationScoreBps !== undefined
+        ? {
+            bestSelectedRecommendationScoreBps:
+              best.selectedRecommendationScoreBps,
+          }
+        : {}),
+      familyRecordCount: family.recordCount,
+      familyOutcomeQualifiedCount: family.outcomeQualifiedCount,
+      familyCompletionRateBps: family.completionRateBps,
+    },
+  );
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewContent(
+  content: Omit<
+    ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem,
+    "reviewSha256"
+  >,
+): ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem {
+  return {
+    ...content,
+    reviewSha256: sha256(canonicalJson(content)),
   };
 }
 
@@ -9324,8 +9490,9 @@ function createExecutionPlanBlueprintRecommendationPolicyBacktest(input: {
     schemaVersion: 1 as const,
     apiVersion: NAPIER_API_VERSION,
     recordCount: input.entries.length,
-    activeCount: input.entries.filter((entry) => entry.recordStatus === "active")
-      .length,
+    activeCount: input.entries.filter(
+      (entry) => entry.recordStatus === "active",
+    ).length,
     policyCount: results.length,
     divergentSelectionCount: results.filter(
       (result) => result.selectedRecordId !== referenceRecordId,
@@ -9500,6 +9667,27 @@ function executionPlanBlueprintRecommendationPolicyBacktestStatusRank(
   if (candidate.selectionStatus === "selected") return 2;
   if (candidate.selectionStatus === "qualified") return 1;
   return 0;
+}
+
+function compareExecutionPlanBlueprintRecommendationPolicyBacktestResults(
+  left: ExecutionPlanBlueprintRecommendationPolicyBacktestResult,
+  right: ExecutionPlanBlueprintRecommendationPolicyBacktestResult,
+): number {
+  const selectedScoreOrder =
+    (right.selectedRecommendationScoreBps ?? -1) -
+    (left.selectedRecommendationScoreBps ?? -1);
+  if (selectedScoreOrder !== 0) return selectedScoreOrder;
+  const averageScoreOrder =
+    right.averageRecommendationScoreBps - left.averageRecommendationScoreBps;
+  if (averageScoreOrder !== 0) return averageScoreOrder;
+  const qualifiedOrder =
+    right.qualifiedCandidateCount - left.qualifiedCandidateCount;
+  if (qualifiedOrder !== 0) return qualifiedOrder;
+  const candidateOrder = right.candidateCount - left.candidateCount;
+  if (candidateOrder !== 0) return candidateOrder;
+  return left.recommendationPolicy.templateId.localeCompare(
+    right.recommendationPolicy.templateId,
+  );
 }
 
 function createExecutionPlanBlueprintPortfolioCalibrationFamilies(
@@ -9680,6 +9868,24 @@ function executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
   );
 }
 
+function executionPlanBlueprintRecommendationPolicyOverrideDriftReviewSetSha256(
+  reviews: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem[],
+): string {
+  return sha256(
+    canonicalJson(
+      reviews
+        .map((review) => ({
+          familySha256: review.familySha256,
+          overrideSha256: review.overrideSha256,
+          reviewSha256: review.reviewSha256,
+        }))
+        .sort((left, right) =>
+          left.familySha256.localeCompare(right.familySha256),
+        ),
+    ),
+  );
+}
+
 function listExecutionPlanBlueprintRecommendationPolicies(): ExecutionPlanBlueprintRecommendationPolicy[] {
   return EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS.map(
     (templateId) =>
@@ -9783,13 +9989,22 @@ function createExecutionPlanBlueprintRecordSelection(input: {
         }
       : {}),
     ...(selected
-      ? { selectedRecommendationPolicySha256: selected.recommendationPolicySha256 }
+      ? {
+          selectedRecommendationPolicySha256:
+            selected.recommendationPolicySha256,
+        }
       : {}),
     ...(selected
-      ? { selectedRecommendationPolicySource: selected.recommendationPolicySource }
+      ? {
+          selectedRecommendationPolicySource:
+            selected.recommendationPolicySource,
+        }
       : {}),
     ...(selected?.familyPolicyOverrideSha256
-      ? { selectedFamilyPolicyOverrideSha256: selected.familyPolicyOverrideSha256 }
+      ? {
+          selectedFamilyPolicyOverrideSha256:
+            selected.familyPolicyOverrideSha256,
+        }
       : {}),
     recommendationPolicy: input.recommendationPolicy,
     recommendationPolicySha256:

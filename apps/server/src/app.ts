@@ -53,6 +53,7 @@ import type {
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
@@ -2464,6 +2465,19 @@ export function createApp(services: NapierServices): Hono {
         overrides,
       );
       return context.json(overrides);
+    },
+  );
+
+  app.get(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
+    async (context) => {
+      const review =
+        await services.store.reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift();
+      setExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(
+        context,
+        review,
+      );
+      return context.json(review);
     },
   );
 
@@ -8391,9 +8405,7 @@ function parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
   return {
     familySha256,
     policyTemplate,
-    ...(expectedPortfolioSetSha256
-      ? { expectedPortfolioSetSha256 }
-      : {}),
+    ...(expectedPortfolioSetSha256 ? { expectedPortfolioSetSha256 } : {}),
   };
 }
 
@@ -12246,10 +12258,7 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, override.contentSha256);
-  context.header(
-    "X-Napier-Blueprint-Family-SHA256",
-    override.familySha256,
-  );
+  context.header("X-Napier-Blueprint-Family-SHA256", override.familySha256);
   context.header(
     "X-Napier-Blueprint-Recommendation-Policy-Template",
     override.recommendationPolicy.templateId,
@@ -12293,6 +12302,42 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
   context.header(
     "X-Napier-Blueprint-Portfolio-Set-SHA256",
     overrides.portfolioSetSha256,
+  );
+}
+
+function setExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders(
+  context: Context,
+  review: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, review.contentSha256);
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Count",
+    String(review.overrideCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Aligned-Count",
+    String(review.alignedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retire-Recommended-Count",
+    String(review.retireRecommendedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Missing-Family-Count",
+    String(review.missingFamilyCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    review.portfolioSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
+    review.overrideSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Drift-Review-Set-SHA256",
+    review.reviewSetSha256,
   );
 }
 
