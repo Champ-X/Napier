@@ -11,6 +11,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
+  ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -195,6 +196,23 @@ export interface PlanBlueprintLibraryPortfolioCalibrationReceipt {
   topFamilySha256?: string;
   topRecordId?: string;
   topRecordScoreBps?: number;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyBacktestReceipt {
+  action: "policyBacktested";
+  contentSha256: string;
+  portfolioSetSha256: string;
+  policySetSha256: string;
+  recordCount: number;
+  activeCount: number;
+  policyCount: number;
+  divergentSelectionCount: number;
+  topPolicyTemplate: ExecutionPlanBlueprintRecommendationPolicyBacktest["results"][number]["recommendationPolicy"]["templateId"];
+  topPolicySha256: string;
+  topSelectedRecordId?: string;
+  topSelectedFamilySha256?: string;
+  topSelectedRecommendationScoreBps?: number;
+  averageRecommendationScoreBps: number;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -538,6 +556,42 @@ export function planBlueprintPortfolioCalibrationReceipt(
     ...(topFamily?.topRecordScoreBps !== undefined
       ? { topRecordScoreBps: topFamily.topRecordScoreBps }
       : {}),
+  };
+}
+
+export function planBlueprintRecommendationPolicyBacktestReceipt(
+  backtest: ExecutionPlanBlueprintRecommendationPolicyBacktest,
+): PlanBlueprintLibraryRecommendationPolicyBacktestReceipt {
+  const top = [...backtest.results].sort(
+    (left, right) =>
+      (right.selectedRecommendationScoreBps ?? 0) -
+        (left.selectedRecommendationScoreBps ?? 0) ||
+      right.averageRecommendationScoreBps - left.averageRecommendationScoreBps,
+  )[0];
+  return {
+    action: "policyBacktested",
+    contentSha256: backtest.contentSha256,
+    portfolioSetSha256: backtest.portfolioSetSha256,
+    policySetSha256: backtest.policySetSha256,
+    recordCount: backtest.recordCount,
+    activeCount: backtest.activeCount,
+    policyCount: backtest.policyCount,
+    divergentSelectionCount: backtest.divergentSelectionCount,
+    topPolicyTemplate: top?.recommendationPolicy.templateId ?? "balanced",
+    topPolicySha256: top?.recommendationPolicySha256 ?? "",
+    ...(top?.selectedRecordId
+      ? { topSelectedRecordId: top.selectedRecordId }
+      : {}),
+    ...(top?.selectedFamilySha256
+      ? { topSelectedFamilySha256: top.selectedFamilySha256 }
+      : {}),
+    ...(top?.selectedRecommendationScoreBps !== undefined
+      ? {
+          topSelectedRecommendationScoreBps:
+            top.selectedRecommendationScoreBps,
+        }
+      : {}),
+    averageRecommendationScoreBps: top?.averageRecommendationScoreBps ?? 0,
   };
 }
 

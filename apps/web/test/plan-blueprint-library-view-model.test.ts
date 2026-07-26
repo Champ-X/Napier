@@ -10,6 +10,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
+  ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -24,6 +25,7 @@ import {
   planBlueprintPortfolioCalibrationReceipt,
   planBlueprintPreviewReceipt,
   planBlueprintQualificationReceipt,
+  planBlueprintRecommendationPolicyBacktestReceipt,
   planBlueprintReplayHistoryReceipt,
   planBlueprintReplayHistoryVerificationReceipt,
   planBlueprintReplayOutcomesReceipt,
@@ -662,6 +664,81 @@ describe("Plan blueprint library view model", () => {
       topFamilySha256: "b".repeat(64),
       topRecordId: record.id,
       topRecordScoreBps: 8_000,
+    });
+  });
+
+  it("projects blueprint recommendation policy backtest receipts", () => {
+    const backtest: ExecutionPlanBlueprintRecommendationPolicyBacktest = {
+      kind: "napier.execution-plan-blueprint-recommendation-policy-backtest",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-26T00:00:07.000Z",
+      recordCount: 2,
+      activeCount: 2,
+      policyCount: 2,
+      divergentSelectionCount: 1,
+      portfolioSetSha256: "4".repeat(64),
+      policySetSha256: "5".repeat(64),
+      results: [
+        {
+          recommendationPolicy: {
+            templateId: "balanced",
+            weights: {
+              outcomeCompletionBps: 5_000,
+              familyCompletionBps: 2_500,
+              reviewedBaselineBps: 1_500,
+              replayEvidenceBps: 1_000,
+            },
+          },
+          recommendationPolicySha256: "6".repeat(64),
+          candidateCount: 2,
+          qualifiedCandidateCount: 2,
+          rejectedCandidateCount: 0,
+          selectedRecordId: record.id,
+          selectedFamilySha256: "7".repeat(64),
+          selectedRecommendationScoreBps: 5_450,
+          averageRecommendationScoreBps: 4_200,
+          candidates: [],
+        },
+        {
+          recommendationPolicy: {
+            templateId: "portfolio_first",
+            weights: {
+              outcomeCompletionBps: 3_500,
+              familyCompletionBps: 3_500,
+              reviewedBaselineBps: 2_000,
+              replayEvidenceBps: 1_000,
+            },
+          },
+          recommendationPolicySha256: "8".repeat(64),
+          candidateCount: 2,
+          qualifiedCandidateCount: 2,
+          rejectedCandidateCount: 0,
+          selectedRecordId: "blueprint_portfolio",
+          selectedFamilySha256: "9".repeat(64),
+          selectedRecommendationScoreBps: 6_250,
+          averageRecommendationScoreBps: 4_800,
+          candidates: [],
+        },
+      ],
+      contentSha256: "a".repeat(64),
+    };
+
+    expect(planBlueprintRecommendationPolicyBacktestReceipt(backtest)).toEqual({
+      action: "policyBacktested",
+      contentSha256: backtest.contentSha256,
+      portfolioSetSha256: backtest.portfolioSetSha256,
+      policySetSha256: backtest.policySetSha256,
+      recordCount: 2,
+      activeCount: 2,
+      policyCount: 2,
+      divergentSelectionCount: 1,
+      topPolicyTemplate: "portfolio_first",
+      topPolicySha256: "8".repeat(64),
+      topSelectedRecordId: "blueprint_portfolio",
+      topSelectedFamilySha256: "9".repeat(64),
+      topSelectedRecommendationScoreBps: 6_250,
+      averageRecommendationScoreBps: 4_800,
     });
   });
 

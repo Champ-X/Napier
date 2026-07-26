@@ -56,6 +56,9 @@ import {
   type ExecutionPlanBlueprintRecordOutcomeQualification,
   type ExecutionPlanBlueprintRecordOutcomeReview,
   type ExecutionPlanBlueprintRecommendationPolicy,
+  type ExecutionPlanBlueprintRecommendationPolicyBacktest,
+  type ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate,
+  type ExecutionPlanBlueprintRecommendationPolicyBacktestResult,
   type ExecutionPlanBlueprintRecommendationPolicyTemplateId,
   type ExecutionPlanBlueprintPortfolioCalibration,
   type ExecutionPlanBlueprintPortfolioCalibrationFamily,
@@ -620,6 +623,8 @@ const EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICIES: Record<
     },
   },
 };
+const EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS: ExecutionPlanBlueprintRecommendationPolicyTemplateId[] =
+  ["balanced", "delivery_first", "portfolio_first"];
 
 export interface CreateSubagentTaskInput {
   threadId: string;
@@ -2533,6 +2538,29 @@ export class LocalStore {
 
   async calibrateExecutionPlanBlueprintPortfolio(): Promise<ExecutionPlanBlueprintPortfolioCalibration> {
     this.assertInitialized();
+    const entries =
+      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    return createExecutionPlanBlueprintPortfolioCalibration(entries);
+  }
+
+  async backtestExecutionPlanBlueprintRecommendationPolicies(): Promise<ExecutionPlanBlueprintRecommendationPolicyBacktest> {
+    this.assertInitialized();
+    const entries =
+      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
+      entries,
+    );
+    return createExecutionPlanBlueprintRecommendationPolicyBacktest({
+      entries,
+      families,
+      policies: listExecutionPlanBlueprintRecommendationPolicies(),
+      portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
+    });
+  }
+
+  private async listExecutionPlanBlueprintPortfolioCalibrationEntries(): Promise<
+    ExecutionPlanBlueprintPortfolioCalibrationEntry[]
+  > {
     const records = [...this.state.executionPlanBlueprints].sort(
       compareExecutionPlanBlueprintRecords,
     );
@@ -2555,7 +2583,7 @@ export class LocalStore {
         }),
       );
     }
-    return createExecutionPlanBlueprintPortfolioCalibration(entries);
+    return entries;
   }
 
   async verifyExecutionPlanBlueprintRecordReplayEvent(
@@ -8900,6 +8928,8 @@ interface ExecutionPlanBlueprintPortfolioCalibrationEntry {
   blueprintSha256: string;
   sourceQualificationStatus: ExecutionPlanBlueprintRecordQualification["status"];
   outcomeQualificationStatus: ExecutionPlanBlueprintRecordOutcomeQualification["status"];
+  sourceDiagnostics: string[];
+  outcomeDiagnostics: string[];
   baselineSha256?: string;
   baselinePromotedAt?: string;
   reviewedBaseline: boolean;
@@ -8928,6 +8958,8 @@ function createExecutionPlanBlueprintPortfolioCalibrationEntry(input: {
     blueprintSha256: input.record.blueprintSha256,
     sourceQualificationStatus: input.sourceQualification.status,
     outcomeQualificationStatus: input.outcomeQualification.status,
+    sourceDiagnostics: input.sourceQualification.diagnostics,
+    outcomeDiagnostics: input.outcomeQualification.diagnostics,
     ...(input.outcomeQualification.baselineSha256
       ? { baselineSha256: input.outcomeQualification.baselineSha256 }
       : {}),
@@ -9038,6 +9070,203 @@ function executionPlanBlueprintPortfolioSetSha256(
       })),
     ),
   );
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyBacktest(input: {
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[];
+  families: ExecutionPlanBlueprintPortfolioCalibrationFamily[];
+  policies: ExecutionPlanBlueprintRecommendationPolicy[];
+  portfolioSetSha256: string;
+}): ExecutionPlanBlueprintRecommendationPolicyBacktest {
+  const results = input.policies.map((policy) =>
+    createExecutionPlanBlueprintRecommendationPolicyBacktestResult({
+      entries: input.entries,
+      families: input.families,
+      policy,
+    }),
+  );
+  const referenceRecordId = results[0]?.selectedRecordId;
+  const content = {
+    kind: "napier.execution-plan-blueprint-recommendation-policy-backtest" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    recordCount: input.entries.length,
+    activeCount: input.entries.filter((entry) => entry.recordStatus === "active")
+      .length,
+    policyCount: results.length,
+    divergentSelectionCount: results.filter(
+      (result) => result.selectedRecordId !== referenceRecordId,
+    ).length,
+    portfolioSetSha256: input.portfolioSetSha256,
+    policySetSha256: executionPlanBlueprintRecommendationPolicySetSha256(
+      input.policies,
+    ),
+    results,
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyBacktestResult(input: {
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[];
+  families: ExecutionPlanBlueprintPortfolioCalibrationFamily[];
+  policy: ExecutionPlanBlueprintRecommendationPolicy;
+}): ExecutionPlanBlueprintRecommendationPolicyBacktestResult {
+  const familyBySha256 = new Map(
+    input.families.map((family) => [family.familySha256, family]),
+  );
+  const candidates = input.entries.map((entry) => {
+    const family = familyBySha256.get(entry.familySha256);
+    if (!family) {
+      throw new Error("Execution plan blueprint portfolio family missing");
+    }
+    return createExecutionPlanBlueprintRecommendationPolicyBacktestCandidate({
+      entry,
+      family,
+      policy: input.policy,
+    });
+  });
+  const selected = candidates
+    .filter((candidate) => candidate.selectionStatus === "qualified")
+    .sort(compareExecutionPlanBlueprintRecommendationPolicyBacktestCandidates)
+    .at(0);
+  const selectedCandidates = candidates
+    .map((candidate) =>
+      selected && candidate.recordId === selected.recordId
+        ? { ...candidate, selectionStatus: "selected" as const }
+        : candidate,
+    )
+    .sort(compareExecutionPlanBlueprintRecommendationPolicyBacktestCandidates);
+  const qualifiedCandidates = selectedCandidates.filter(
+    (candidate) =>
+      candidate.selectionStatus === "qualified" ||
+      candidate.selectionStatus === "selected",
+  );
+  const recommendationScoreTotal = qualifiedCandidates.reduce(
+    (total, candidate) => total + candidate.recommendationScoreBps,
+    0,
+  );
+  return {
+    recommendationPolicy: input.policy,
+    recommendationPolicySha256:
+      executionPlanBlueprintRecommendationPolicySha256(input.policy),
+    candidateCount: selectedCandidates.length,
+    qualifiedCandidateCount: qualifiedCandidates.length,
+    rejectedCandidateCount: selectedCandidates.filter(
+      (candidate) => candidate.selectionStatus === "rejected",
+    ).length,
+    ...(selected ? { selectedRecordId: selected.recordId } : {}),
+    ...(selected ? { selectedFamilySha256: selected.familySha256 } : {}),
+    ...(selected
+      ? { selectedRecommendationScoreBps: selected.recommendationScoreBps }
+      : {}),
+    averageRecommendationScoreBps:
+      qualifiedCandidates.length > 0
+        ? Math.round(recommendationScoreTotal / qualifiedCandidates.length)
+        : 0,
+    candidates: selectedCandidates,
+  };
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyBacktestCandidate(input: {
+  entry: ExecutionPlanBlueprintPortfolioCalibrationEntry;
+  family: ExecutionPlanBlueprintPortfolioCalibrationFamily;
+  policy: ExecutionPlanBlueprintRecommendationPolicy;
+}): ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate {
+  const ready =
+    input.entry.recordStatus === "active" &&
+    input.entry.sourceQualificationStatus === "qualified" &&
+    input.entry.outcomeQualificationStatus === "qualified";
+  const diagnostics = uniqueStrings([
+    ...(input.entry.recordStatus === "active" ? [] : ["record_archived"]),
+    ...(input.entry.sourceQualificationStatus === "qualified"
+      ? []
+      : [`source_${input.entry.sourceQualificationStatus}`]),
+    ...input.entry.sourceDiagnostics.map(
+      (diagnostic) => `source_${diagnostic}`,
+    ),
+    ...(input.entry.outcomeQualificationStatus === "qualified"
+      ? []
+      : [`outcome_${input.entry.outcomeQualificationStatus}`]),
+    ...input.entry.outcomeDiagnostics.map(
+      (diagnostic) => `outcome_${diagnostic}`,
+    ),
+  ]);
+  const reviewedBaselineCoverageBps =
+    executionPlanBlueprintFamilyReviewedBaselineCoverageBps(input.family);
+  const replayEvidenceBps = executionPlanBlueprintReplayEvidenceBps(
+    input.entry.replayCount,
+  );
+  return {
+    recordId: input.entry.recordId,
+    recordStatus: input.entry.recordStatus,
+    recordUpdatedAt: input.entry.recordUpdatedAt,
+    selectionStatus: ready ? "qualified" : "rejected",
+    diagnostics,
+    familySha256: input.entry.familySha256,
+    sourceQualificationStatus: input.entry.sourceQualificationStatus,
+    outcomeQualificationStatus: input.entry.outcomeQualificationStatus,
+    familyRecordCount: input.family.recordCount,
+    familyCompletionRateBps: input.family.completionRateBps,
+    familyReviewedBaselineCount: input.family.reviewedBaselineCount,
+    reviewedBaselineCoverageBps,
+    replayEvidenceBps,
+    recommendationScoreBps: ready
+      ? executionPlanBlueprintRecommendationScoreBps({
+          outcomeCompletionBps: input.entry.completionRateBps,
+          familyCompletionBps: input.family.completionRateBps,
+          reviewedBaselineCoverageBps,
+          replayEvidenceBps,
+          policy: input.policy,
+        })
+      : 0,
+    replayCount: input.entry.replayCount,
+    completedCount: input.entry.completedCount,
+    blockedCount: input.entry.blockedCount,
+    invalidCount: input.entry.invalidCount,
+    completionRateBps: input.entry.completionRateBps,
+    currentOutcomesSha256: input.entry.currentOutcomesSha256,
+    currentOutcomeSetSha256: input.entry.currentOutcomeSetSha256,
+  };
+}
+
+function compareExecutionPlanBlueprintRecommendationPolicyBacktestCandidates(
+  left: ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate,
+  right: ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate,
+): number {
+  const statusOrder =
+    executionPlanBlueprintRecommendationPolicyBacktestStatusRank(right) -
+    executionPlanBlueprintRecommendationPolicyBacktestStatusRank(left);
+  if (statusOrder !== 0) return statusOrder;
+  const recommendationOrder =
+    right.recommendationScoreBps - left.recommendationScoreBps;
+  if (recommendationOrder !== 0) return recommendationOrder;
+  const completionOrder = right.completionRateBps - left.completionRateBps;
+  if (completionOrder !== 0) return completionOrder;
+  const familyCompletionOrder =
+    right.familyCompletionRateBps - left.familyCompletionRateBps;
+  if (familyCompletionOrder !== 0) return familyCompletionOrder;
+  const reviewedOrder =
+    right.familyReviewedBaselineCount - left.familyReviewedBaselineCount;
+  if (reviewedOrder !== 0) return reviewedOrder;
+  const replayOrder = right.replayCount - left.replayCount;
+  if (replayOrder !== 0) return replayOrder;
+  const completedOrder = right.completedCount - left.completedCount;
+  if (completedOrder !== 0) return completedOrder;
+  const recordOrder = right.recordUpdatedAt.localeCompare(left.recordUpdatedAt);
+  if (recordOrder !== 0) return recordOrder;
+  return left.recordId.localeCompare(right.recordId);
+}
+
+function executionPlanBlueprintRecommendationPolicyBacktestStatusRank(
+  candidate: ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate,
+): number {
+  if (candidate.selectionStatus === "selected") return 2;
+  if (candidate.selectionStatus === "qualified") return 1;
+  return 0;
 }
 
 function createExecutionPlanBlueprintPortfolioCalibrationFamilies(
@@ -9185,6 +9414,27 @@ function executionPlanBlueprintRecommendationPolicySha256(
   policy: ExecutionPlanBlueprintRecommendationPolicy,
 ): string {
   return sha256(canonicalJson(policy));
+}
+
+function executionPlanBlueprintRecommendationPolicySetSha256(
+  policies: ExecutionPlanBlueprintRecommendationPolicy[],
+): string {
+  return sha256(
+    canonicalJson(
+      policies.map((policy) => ({
+        templateId: policy.templateId,
+        recommendationPolicySha256:
+          executionPlanBlueprintRecommendationPolicySha256(policy),
+      })),
+    ),
+  );
+}
+
+function listExecutionPlanBlueprintRecommendationPolicies(): ExecutionPlanBlueprintRecommendationPolicy[] {
+  return EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS.map(
+    (templateId) =>
+      normalizeExecutionPlanBlueprintRecommendationPolicy(templateId),
+  );
 }
 
 function uniqueStrings(values: string[]): string[] {

@@ -987,6 +987,63 @@ export interface ExecutionPlanBlueprintPortfolioCalibration {
   contentSha256: string;
 }
 
+export type ExecutionPlanBlueprintRecommendationPolicyBacktestCandidateStatus =
+  | "selected"
+  | "qualified"
+  | "rejected";
+
+export interface ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate {
+  recordId: string;
+  recordStatus: ExecutionPlanBlueprintRecordStatus;
+  recordUpdatedAt: string;
+  selectionStatus: ExecutionPlanBlueprintRecommendationPolicyBacktestCandidateStatus;
+  diagnostics: string[];
+  familySha256: string;
+  sourceQualificationStatus: ExecutionPlanBlueprintRecordQualificationStatus;
+  outcomeQualificationStatus: ExecutionPlanBlueprintRecordOutcomeQualificationStatus;
+  familyRecordCount: number;
+  familyCompletionRateBps: number;
+  familyReviewedBaselineCount: number;
+  reviewedBaselineCoverageBps: number;
+  replayEvidenceBps: number;
+  recommendationScoreBps: number;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  currentOutcomesSha256: string;
+  currentOutcomeSetSha256: string;
+}
+
+export interface ExecutionPlanBlueprintRecommendationPolicyBacktestResult {
+  recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
+  recommendationPolicySha256: string;
+  candidateCount: number;
+  qualifiedCandidateCount: number;
+  rejectedCandidateCount: number;
+  selectedRecordId?: string;
+  selectedFamilySha256?: string;
+  selectedRecommendationScoreBps?: number;
+  averageRecommendationScoreBps: number;
+  candidates: ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate[];
+}
+
+export interface ExecutionPlanBlueprintRecommendationPolicyBacktest {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-backtest";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  recordCount: number;
+  activeCount: number;
+  policyCount: number;
+  divergentSelectionCount: number;
+  portfolioSetSha256: string;
+  policySetSha256: string;
+  results: ExecutionPlanBlueprintRecommendationPolicyBacktestResult[];
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

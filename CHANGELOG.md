@@ -138,6 +138,15 @@ All notable changes to Napier are recorded here.
   Server headers and Template shelf receipts now expose the policy template,
   policy SHA-256, candidate recommendation score, and selected recommendation
   score without copying objective prose into the artifact.
+- Blueprint recommendation policy backtesting. `GET
+/api/plan-blueprints/portfolio/recommendation-policy-backtest` now compares
+  `balanced`, `delivery_first`, and `portfolio_first` against the current
+  Template shelf's historical replay outcomes without target-Thread preview or
+  Ledger mutation. The no-store receipt binds the policy-set SHA-256,
+  portfolio-set SHA-256, divergent selection count, per-policy selected
+  record/family IDs, average recommendation score, and hash-only candidate
+  evidence. Server headers mirror the receipt hashes and counts, and the
+  Template shelf adds a Backtest policies action with a pure ViewModel receipt.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

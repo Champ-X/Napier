@@ -51,6 +51,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
+  ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
@@ -2436,6 +2437,19 @@ export function createApp(services: NapierServices): Hono {
     setExecutionPlanBlueprintPortfolioCalibrationHeaders(context, calibration);
     return context.json(calibration);
   });
+
+  app.get(
+    "/api/plan-blueprints/portfolio/recommendation-policy-backtest",
+    async (context) => {
+      const backtest =
+        await services.store.backtestExecutionPlanBlueprintRecommendationPolicies();
+      setExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
+        context,
+        backtest,
+      );
+      return context.json(backtest);
+    },
+  );
 
   app.get("/api/plan-blueprints/:recordId/qualification", async (context) => {
     const qualification =
@@ -12061,6 +12075,38 @@ function setExecutionPlanBlueprintPortfolioCalibrationHeaders(
   context.header(
     "X-Napier-Blueprint-Portfolio-Set-SHA256",
     calibration.portfolioSetSha256,
+  );
+}
+
+function setExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
+  context: Context,
+  backtest: ExecutionPlanBlueprintRecommendationPolicyBacktest,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, backtest.contentSha256);
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Record-Count",
+    String(backtest.recordCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Active-Count",
+    String(backtest.activeCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-Count",
+    String(backtest.policyCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-Divergent-Selection-Count",
+    String(backtest.divergentSelectionCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    backtest.portfolioSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-Set-SHA256",
+    backtest.policySetSha256,
   );
 }
 

@@ -812,6 +812,59 @@ describe("execution plan archives", () => {
     expect(JSON.stringify(selection)).not.toContain(
       "Reuse the release workflow with fresh delivery evidence.",
     );
+    const policyBacktest =
+      await store.backtestExecutionPlanBlueprintRecommendationPolicies();
+    expect(policyBacktest).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-backtest",
+        schemaVersion: 1,
+        recordCount: 1,
+        activeCount: 1,
+        policyCount: 3,
+        divergentSelectionCount: 0,
+        portfolioSetSha256: selection.portfolioSetSha256,
+        policySetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      policyBacktest.results.map(
+        (result) => result.recommendationPolicy.templateId,
+      ),
+    ).toEqual(["balanced", "delivery_first", "portfolio_first"]);
+    expect(
+      policyBacktest.results.map(
+        (result) => result.selectedRecommendationScoreBps,
+      ),
+    ).toEqual([7_600, 8_100, 7_100]);
+    expect(policyBacktest.results[1]).toEqual(
+      expect.objectContaining({
+        selectedRecordId: first.record.id,
+        selectedFamilySha256: selection.selectedFamilySha256,
+        averageRecommendationScoreBps: 8_100,
+        candidates: [
+          expect.objectContaining({
+            recordId: first.record.id,
+            selectionStatus: "selected",
+            diagnostics: [],
+            sourceQualificationStatus: "qualified",
+            outcomeQualificationStatus: "qualified",
+            familyRecordCount: 1,
+            familyCompletionRateBps: 10_000,
+            familyReviewedBaselineCount: 0,
+            reviewedBaselineCoverageBps: 0,
+            replayEvidenceBps: 1_000,
+            recommendationScoreBps: 8_100,
+            replayCount: 1,
+            completionRateBps: 10_000,
+            currentOutcomesSha256: completedOutcomes.contentSha256,
+          }),
+        ],
+      }),
+    );
+    expect(JSON.stringify(policyBacktest)).not.toContain(
+      "Reuse the release workflow with fresh delivery evidence.",
+    );
     const secondPreview = await store.previewPlanFromBlueprintRecord(
       targetThread.id,
       {

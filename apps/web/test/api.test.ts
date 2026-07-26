@@ -17,6 +17,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
+  ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
@@ -37,6 +38,7 @@ import {
   getExecutionPlanArchive,
   getExecutionPlanBlueprint,
   getExecutionPlanBlueprintPortfolioCalibration,
+  getExecutionPlanBlueprintRecommendationPolicyBacktest,
   getExecutionPlanBlueprintRecordQualification,
   getExecutionPlanBlueprintRecordOutcomeBaselines,
   getExecutionPlanBlueprintRecordOutcomeQualification,
@@ -812,6 +814,58 @@ describe("Web JSON API wrappers", () => {
       ],
       contentSha256: "4".repeat(64),
     };
+    const recommendationPolicyBacktest: ExecutionPlanBlueprintRecommendationPolicyBacktest =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-backtest",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-26T00:00:06.000Z",
+        recordCount: 1,
+        activeCount: 1,
+        policyCount: 1,
+        divergentSelectionCount: 0,
+        portfolioSetSha256: "2".repeat(64),
+        policySetSha256: "8".repeat(64),
+        results: [
+          {
+            recommendationPolicy: selection.recommendationPolicy,
+            recommendationPolicySha256: selection.recommendationPolicySha256,
+            candidateCount: 1,
+            qualifiedCandidateCount: 1,
+            rejectedCandidateCount: 0,
+            selectedRecordId: record.id,
+            selectedFamilySha256: "3".repeat(64),
+            selectedRecommendationScoreBps: 1_600,
+            averageRecommendationScoreBps: 1_600,
+            candidates: [
+              {
+                recordId: record.id,
+                recordStatus: "active",
+                recordUpdatedAt: record.updatedAt,
+                selectionStatus: "selected",
+                diagnostics: [],
+                familySha256: "3".repeat(64),
+                sourceQualificationStatus: "qualified",
+                outcomeQualificationStatus: "qualified",
+                familyRecordCount: 1,
+                familyCompletionRateBps: 0,
+                familyReviewedBaselineCount: 1,
+                reviewedBaselineCoverageBps: 10_000,
+                replayEvidenceBps: 1_000,
+                recommendationScoreBps: 1_600,
+                replayCount: replayOutcomes.replayCount,
+                completedCount: replayOutcomes.completedCount,
+                blockedCount: replayOutcomes.blockedCount,
+                invalidCount: replayOutcomes.invalidCount,
+                completionRateBps: replayOutcomes.completionRateBps,
+                currentOutcomesSha256: replayOutcomes.contentSha256,
+                currentOutcomeSetSha256: replayOutcomes.outcomeSetSha256,
+              },
+            ],
+          },
+        ],
+        contentSha256: "9".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -896,6 +950,10 @@ describe("Web JSON API wrappers", () => {
       {
         path: "/api/plan-blueprints/portfolio/calibration",
         response: portfolioCalibration,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-backtest",
+        response: recommendationPolicyBacktest,
       },
       {
         path: "/api/plan-blueprints/blueprint_12345678/replays/events/verify",
@@ -1029,6 +1087,9 @@ describe("Web JSON API wrappers", () => {
       getExecutionPlanBlueprintPortfolioCalibration(),
     ).resolves.toEqual(portfolioCalibration);
     await expect(
+      getExecutionPlanBlueprintRecommendationPolicyBacktest(),
+    ).resolves.toEqual(recommendationPolicyBacktest);
+    await expect(
       verifyExecutionPlanBlueprintRecordReplayEvent(record.id, {
         threadId: "thread_2",
         eventId: "event_12345678",
@@ -1080,7 +1141,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(20);
+    expect(fetchMock).toHaveBeenCalledTimes(21);
   });
 });
 

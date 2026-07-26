@@ -900,6 +900,13 @@ recommendation score. It returns only record IDs, preview hashes, family
 hashes, portfolio-set hash, baseline/outcome hashes, policy hashes, counts,
 diagnostics, and a selection-set SHA-256, so objective overrides are
 represented by hash rather than copied back into the artifact. `GET
+/api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
+policy templates against the current library's historical replay outcomes
+without target-Thread preview or Ledger mutation. The no-store receipt returns
+policy-set hash, portfolio-set hash, divergent selection count, per-policy
+selected record/family IDs, recommendation scores, and hash-only candidate
+evidence so operators can compare operating modes before changing defaults.
+`GET
 /api/plan-blueprints/portfolio/calibration`
 returns a no-store `napier.execution-plan-blueprint-portfolio-calibration`
 receipt for the whole library. It groups templates by hashed workflow shape and
@@ -921,8 +928,10 @@ separate, can promote or qualify the current outcome baseline for each
 template, can run model review over current outcomes, and can run adaptive
 selection across the shelf before replaying a candidate. It can also calibrate
 the whole portfolio to compare reusable workflow families without exposing
-objective, step, or artifact prose, and renders the selected policy template,
-policy hash, and recommendation score as part of the selection receipt.
+objective, step, or artifact prose, backtest recommendation policies over
+current outcome evidence, and renders the selected policy template, policy
+hash, recommendation score, policy-set hash, and divergence count as part of
+the selection/backtest receipts.
 
 ## Portable Replay Fixtures
 

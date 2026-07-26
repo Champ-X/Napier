@@ -28,6 +28,7 @@ import {
   getExecutionPlanArchive,
   getExecutionPlanBlueprint,
   getExecutionPlanBlueprintPortfolioCalibration,
+  getExecutionPlanBlueprintRecommendationPolicyBacktest,
   getExecutionPlanBlueprintRecordQualification,
   getExecutionPlanBlueprintRecordOutcomeQualification,
   getExecutionPlanBlueprintRecordReplayOutcomes,
@@ -63,6 +64,8 @@ import {
   type PlanBlueprintLibraryPreviewReceipt,
   planBlueprintQualificationReceipt,
   type PlanBlueprintLibraryQualificationReceipt,
+  planBlueprintRecommendationPolicyBacktestReceipt,
+  type PlanBlueprintLibraryRecommendationPolicyBacktestReceipt,
   planBlueprintReplayHistoryReceipt,
   type PlanBlueprintLibraryReplayHistoryReceipt,
   planBlueprintReplayHistoryVerificationReceipt,
@@ -145,6 +148,7 @@ type PlanBlueprintLibraryBusyAction =
   | "qualifyOutcomes"
   | "reviewOutcomes"
   | "calibratePortfolio"
+  | "backtestPolicy"
   | "select";
 
 type PlanBlueprintLibraryReceipt =
@@ -167,6 +171,7 @@ type PlanBlueprintLibraryReceipt =
   | PlanBlueprintLibraryOutcomeQualificationReceipt
   | PlanBlueprintLibraryOutcomeReviewReceipt
   | PlanBlueprintLibraryPortfolioCalibrationReceipt
+  | PlanBlueprintLibraryRecommendationPolicyBacktestReceipt
   | PlanBlueprintLibrarySelectionReceipt;
 
 export default function PlanPanel({
@@ -832,6 +837,24 @@ export default function PlanPanel({
     }
   };
 
+  const backtestBlueprintRecommendationPolicies = async (): Promise<void> => {
+    if (blueprintLibraryBusyAction) return;
+    setBlueprintLibraryBusyAction("backtestPolicy");
+    setBlueprintLibraryReceipt(undefined);
+    setBlueprintLibraryError(undefined);
+    try {
+      const backtest =
+        await getExecutionPlanBlueprintRecommendationPolicyBacktest();
+      setBlueprintLibraryReceipt(
+        planBlueprintRecommendationPolicyBacktestReceipt(backtest),
+      );
+    } catch (error) {
+      setBlueprintLibraryError(formatApiErrorMessage(error));
+    } finally {
+      setBlueprintLibraryBusyAction(undefined);
+    }
+  };
+
   const createFromBlueprintRecord = async (
     record: ExecutionPlanBlueprintRecord,
   ): Promise<void> => {
@@ -1127,6 +1150,7 @@ export default function PlanPanel({
         onSave={() => void saveBlueprintRecord()}
         onSelect={() => void selectBestBlueprintRecord()}
         onCalibrate={() => void calibrateBlueprintPortfolio()}
+        onBacktestPolicy={() => void backtestBlueprintRecommendationPolicies()}
         onArchive={(record) =>
           void updateBlueprintRecordStatus(record, "archived")
         }
@@ -1491,6 +1515,7 @@ function PlanBlueprintLibraryCard({
   onSave,
   onSelect,
   onCalibrate,
+  onBacktestPolicy,
   onArchive,
   onRestore,
   onQualify,
@@ -1519,6 +1544,7 @@ function PlanBlueprintLibraryCard({
   onSave: () => void;
   onSelect: () => void;
   onCalibrate: () => void;
+  onBacktestPolicy: () => void;
   onArchive: (record: ExecutionPlanBlueprintRecord) => void;
   onRestore: (record: ExecutionPlanBlueprintRecord) => void;
   onQualify: (record: ExecutionPlanBlueprintRecord) => void;
@@ -1580,6 +1606,12 @@ function PlanBlueprintLibraryCard({
           {busyAction === "calibratePortfolio"
             ? copy.plan.blueprint.library.calibrating
             : copy.plan.blueprint.library.calibrate}
+        </button>
+        <button type="button" disabled={busy} onClick={onBacktestPolicy}>
+          <ShieldCheck size={12} aria-hidden="true" />
+          {busyAction === "backtestPolicy"
+            ? copy.plan.blueprint.library.backtestingPolicy
+            : copy.plan.blueprint.library.backtestPolicy}
         </button>
         <button
           className="fixture-verify"
@@ -1853,6 +1885,8 @@ function PlanBlueprintLibraryReceiptView({
                   ? Boolean(receipt.selectedRecordId)
                   : receipt.action === "portfolioCalibrated"
                     ? true
+                    : receipt.action === "policyBacktested"
+                      ? true
                   : receipt.action === "created" &&
                       receipt.replayEventVerificationStatus
                     ? receipt.replayEventVerificationStatus === "valid"
@@ -1887,6 +1921,8 @@ function PlanBlueprintLibraryReceiptView({
                   ? copy.plan.blueprint.library.receipts.selection
                   : receipt.action === "portfolioCalibrated"
                     ? copy.plan.blueprint.library.receipts.portfolioCalibrated
+                    : receipt.action === "policyBacktested"
+                      ? copy.plan.blueprint.library.receipts.policyBacktested
                   : copy.plan.blueprint.library.receipts[receipt.action];
   const receiptHash =
     "blueprintSha256" in receipt
@@ -1897,6 +1933,7 @@ function PlanBlueprintLibraryReceiptView({
           receipt.action === "outcomesVerified" ||
           receipt.action === "selection" ||
           receipt.action === "portfolioCalibrated" ||
+          receipt.action === "policyBacktested" ||
           receipt.action === "outcomeQualified"
         ? receipt.contentSha256
         : receipt.action === "outcomeBaseline"
@@ -1917,6 +1954,8 @@ function PlanBlueprintLibraryReceiptView({
           ? `${receipt.candidateCount.toLocaleString()} ${copy.plan.blueprint.library.candidates} / ${receipt.qualifiedCandidateCount.toLocaleString()} ${copy.plan.blueprint.library.qualified} / ${receipt.rejectedCandidateCount.toLocaleString()} ${copy.plan.blueprint.library.rejected}`
           : receipt.action === "portfolioCalibrated"
             ? `${receipt.recordCount.toLocaleString()} ${copy.plan.blueprint.library.records} / ${receipt.familyCount.toLocaleString()} ${copy.plan.blueprint.library.families} / ${receipt.outcomeQualifiedCount.toLocaleString()} ${copy.plan.blueprint.library.qualified}`
+            : receipt.action === "policyBacktested"
+              ? `${receipt.policyCount.toLocaleString()} ${copy.plan.blueprint.library.policies} / ${receipt.recordCount.toLocaleString()} ${copy.plan.blueprint.library.records} / ${receipt.divergentSelectionCount.toLocaleString()} ${copy.plan.blueprint.library.divergent}`
           : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
   const identity =
     receipt.action === "qualified"
@@ -1939,6 +1978,10 @@ function PlanBlueprintLibraryReceiptView({
                     ? receipt.topRecordId
                       ? shortId(receipt.topRecordId)
                       : receipt.topFamilySha256?.slice(0, 12)
+                  : receipt.action === "policyBacktested"
+                    ? receipt.topSelectedRecordId
+                      ? shortId(receipt.topSelectedRecordId)
+                      : receipt.topSelectedFamilySha256?.slice(0, 12)
                   : receipt.action === "historyVerified" ||
                       receipt.action === "outcomesVerified" ||
                       receipt.action === "outcomeQualified"
@@ -2225,6 +2268,40 @@ function PlanBlueprintLibraryReceiptView({
             {receipt.topRecordScoreBps !== undefined
               ? ` / ${copy.plan.blueprint.library.score}: ${(receipt.topRecordScoreBps / 100).toFixed(2)}%`
               : ""}
+          </small>
+        </>
+      ) : null}
+      {receipt.action === "policyBacktested" ? (
+        <>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {receipt.portfolioSetSha256.slice(0, 16)}
+            {" / "}
+            {copy.plan.blueprint.library.policySet}:{" "}
+            {receipt.policySetSha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.recommendationPolicy}:{" "}
+            {receipt.topPolicyTemplate}
+            {receipt.topPolicySha256
+              ? ` / ${receipt.topPolicySha256.slice(0, 16)}`
+              : ""}
+            {receipt.topSelectedFamilySha256
+              ? ` / ${copy.plan.blueprint.library.topFamily}: ${receipt.topSelectedFamilySha256.slice(0, 16)}`
+              : ""}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.active}:{" "}
+            {receipt.activeCount.toLocaleString()}
+            {" / "}
+            {copy.plan.blueprint.library.divergent}:{" "}
+            {receipt.divergentSelectionCount.toLocaleString()}
+            {receipt.topSelectedRecommendationScoreBps !== undefined
+              ? ` / ${copy.plan.blueprint.library.recommendation}: ${(receipt.topSelectedRecommendationScoreBps / 100).toFixed(2)}%`
+              : ""}
+            {" / "}
+            {copy.plan.blueprint.library.average}:{" "}
+            {(receipt.averageRecommendationScoreBps / 100).toFixed(2)}%
           </small>
         </>
       ) : null}

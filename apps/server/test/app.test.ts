@@ -33,6 +33,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
+  ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
@@ -5373,6 +5374,67 @@ describe("Napier HTTP goal flow", () => {
       portfolioCalibration,
     );
 
+    const policyBacktestResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-backtest",
+    );
+    expect(policyBacktestResponse.status).toBe(200);
+    const policyBacktest =
+      (await policyBacktestResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyBacktest;
+    expect(policyBacktest).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-backtest",
+        schemaVersion: 1,
+        recordCount: 1,
+        activeCount: 1,
+        policyCount: 3,
+        divergentSelectionCount: 0,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        policySetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(policyBacktest.results.map((result) => result.recommendationPolicy.templateId)).toEqual([
+      "balanced",
+      "delivery_first",
+      "portfolio_first",
+    ]);
+    expect(
+      policyBacktest.results.map(
+        (result) => result.selectedRecommendationScoreBps,
+      ),
+    ).toEqual([1_600, 1_100, 2_100]);
+    for (const result of policyBacktest.results) {
+      expect(result).toEqual(
+        expect.objectContaining({
+          candidateCount: 1,
+          qualifiedCandidateCount: 1,
+          rejectedCandidateCount: 0,
+          selectedRecordId: savedBlueprint.record.id,
+          selectedFamilySha256: portfolioCalibration.families[0]?.familySha256,
+          recommendationPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      );
+      expect(result.candidates).toEqual([
+        expect.objectContaining({
+          recordId: savedBlueprint.record.id,
+          selectionStatus: "selected",
+          diagnostics: [],
+          familySha256: portfolioCalibration.families[0]?.familySha256,
+          sourceQualificationStatus: "qualified",
+          outcomeQualificationStatus: "qualified",
+          reviewedBaselineCoverageBps: 10_000,
+          replayEvidenceBps: 1_000,
+          replayCount: 1,
+          completionRateBps: 0,
+        }),
+      ]);
+    }
+    expect(JSON.stringify(policyBacktest)).not.toContain(recordPlan.objective);
+    expectExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
+      policyBacktestResponse,
+      policyBacktest,
+    );
+
     const invalidOutcomeBaselineResponse = await app.request(
       `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
       {
@@ -9292,6 +9354,37 @@ function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(
   expect(
     response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
   ).toBe(calibration.portfolioSetSha256);
+}
+
+function expectExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
+  response: Response,
+  backtest: ExecutionPlanBlueprintRecommendationPolicyBacktest,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    backtest.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-record-count"),
+  ).toBe(String(backtest.recordCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-active-count"),
+  ).toBe(String(backtest.activeCount));
+  expect(
+    response.headers.get("x-napier-blueprint-recommendation-policy-count"),
+  ).toBe(String(backtest.policyCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-recommendation-policy-divergent-selection-count",
+    ),
+  ).toBe(String(backtest.divergentSelectionCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
+  ).toBe(backtest.portfolioSetSha256);
+  expect(
+    response.headers.get("x-napier-blueprint-recommendation-policy-set-sha256"),
+  ).toBe(backtest.policySetSha256);
 }
 
 function expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(

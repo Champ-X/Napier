@@ -2107,6 +2107,15 @@ select blueprint record for target Thread
      hashes, recommendation policy hash, selected recommendation score,
      low-cardinality diagnostics, selection-set SHA-256, and optional
      objective SHA-256 rather than prose
+backtest blueprint recommendation policies
+  -> reuse the current portfolio evidence and historical replay outcomes
+     without target-Thread preview or Ledger mutation
+  -> compare balanced, delivery_first, and portfolio_first policy templates by
+     selected record/family, recommendation score, average qualified score, and
+     divergent-selection count
+  -> return napier.execution-plan-blueprint-recommendation-policy-backtest with
+     policy-set SHA-256, portfolio-set SHA-256, hash-only candidate evidence,
+     and no objective, step title, artifact path, blocker, or evidence prose
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2259,9 +2268,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- recommendation policy backtesting over historical blueprint replay outcomes
-  so teams can compare `balanced`, `delivery_first`, and `portfolio_first`
-  before changing their default operating mode.
+- per-family recommendation policy overrides with hash-bound default selection
+  evidence, so stable workflow families can prefer different operating modes
+  without weakening the global fail-closed gates.
 
 ### Layer 3: Extension fabric
 
