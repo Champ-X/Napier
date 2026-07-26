@@ -84,6 +84,16 @@ All notable changes to Napier are recorded here.
   `qualified`, `missing_baseline`, or `policy_failed` with current/baseline
   hashes and low-cardinality diagnostics. The Template shelf can promote and
   qualify outcome baselines, and Web ViewModel tests cover both receipt types.
+- Adaptive blueprint template selection. `POST
+/api/threads/:threadId/plan-blueprints/selection` now recomputes source
+  qualification, outcome-baseline qualification, and target-Thread preview
+  readiness for every saved template, then returns a no-store
+  `napier.execution-plan-blueprint-selection` receipt. The deterministic rank
+  favors completion basis points, replay evidence volume, baseline recency, and
+  record freshness, while exposing only record IDs, preview hashes,
+  baseline/outcome hashes, low-cardinality diagnostics, and a selection-set
+  SHA-256. The Template shelf adds a Select best action with a pure ViewModel
+  receipt so blocked or unqualified libraries fail visibly.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

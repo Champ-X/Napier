@@ -2078,6 +2078,15 @@ qualify blueprint record outcomes
      baseline policy without mutating Ledger
   -> return qualified, missing_baseline, or policy_failed plus current/baseline
      hashes and low-cardinality policy diagnostics for Template shelf receipts
+select blueprint record for target Thread
+  -> recompute source qualification, outcome-baseline qualification, and
+     target-Thread preview readiness for every saved template without mutating
+     Ledger
+  -> rank only fully qualified candidates by completion basis points, replay
+     evidence volume, baseline recency, and record freshness
+  -> return napier.execution-plan-blueprint-selection with record IDs,
+     preview hashes, baseline/outcome hashes, low-cardinality diagnostics,
+     selection-set SHA-256, and optional objective SHA-256 rather than prose
 ```
 
 Planning tools add a model-aware policy template beside the durable plan
@@ -2222,7 +2231,6 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- policy-bound adaptive template selection from qualified outcome baselines;
 - model-scored evaluation of completed workflow outcomes against reusable
   delivery criteria.
 

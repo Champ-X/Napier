@@ -8,6 +8,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
@@ -23,6 +24,7 @@ import {
   planBlueprintReplayHistoryVerificationReceipt,
   planBlueprintReplayOutcomesReceipt,
   planBlueprintReplayOutcomesVerificationReceipt,
+  planBlueprintSelectionReceipt,
 } from "../src/plan-blueprint-library-view-model";
 
 const record = {
@@ -360,6 +362,94 @@ describe("Plan blueprint library view model", () => {
       invalidCount: 0,
       completionRateBps: 5_000,
       minCompletionRateBps: 10_000,
+    });
+  });
+
+  it("projects adaptive template selection receipts", () => {
+    const outcomes = replayOutcomesFixture();
+    const selection: ExecutionPlanBlueprintRecordSelection = {
+      kind: "napier.execution-plan-blueprint-selection",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-26T00:00:05.000Z",
+      threadId: "thread_12345678",
+      candidateCount: 2,
+      qualifiedCandidateCount: 1,
+      rejectedCandidateCount: 1,
+      selectedRecordId: record.id,
+      selectedPreviewSha256: "a".repeat(64),
+      selectedBaselineId: "outcome_base_1234567890abcdef1234",
+      selectedBaselineSha256: "b".repeat(64),
+      selectedScoreBps: 5_000,
+      selectionSetSha256: "c".repeat(64),
+      candidates: [
+        {
+          recordId: record.id,
+          recordStatus: "active",
+          recordUpdatedAt: "2026-07-26T00:00:04.000Z",
+          selectionStatus: "selected",
+          diagnostics: [],
+          blueprintSha256: record.blueprintSha256,
+          sourceQualificationStatus: "qualified",
+          outcomeQualificationStatus: "qualified",
+          previewStatus: "ready",
+          previewSha256: "a".repeat(64),
+          baselineId: "outcome_base_1234567890abcdef1234",
+          baselineSha256: "b".repeat(64),
+          baselineOutcomesSha256: outcomes.contentSha256,
+          baselinePromotedAt: "2026-07-26T00:00:03.000Z",
+          currentOutcomesSha256: outcomes.contentSha256,
+          currentReplayHistorySha256: outcomes.replayHistorySha256,
+          currentOutcomeSetSha256: outcomes.outcomeSetSha256,
+          scoreBps: 5_000,
+          replayCount: outcomes.replayCount,
+          completedCount: outcomes.completedCount,
+          blockedCount: outcomes.blockedCount,
+          invalidCount: outcomes.invalidCount,
+          completionRateBps: outcomes.completionRateBps,
+          stepCount: 2,
+          artifactCount: 1,
+        },
+        {
+          recordId: "blueprint_rejected",
+          recordStatus: "active",
+          recordUpdatedAt: "2026-07-26T00:00:02.000Z",
+          selectionStatus: "rejected",
+          diagnostics: ["outcome_policy_failed"],
+          blueprintSha256: "d".repeat(64),
+          sourceQualificationStatus: "qualified",
+          outcomeQualificationStatus: "policy_failed",
+          currentOutcomesSha256: "e".repeat(64),
+          currentReplayHistorySha256: "f".repeat(64),
+          currentOutcomeSetSha256: "1".repeat(64),
+          scoreBps: 0,
+          replayCount: 1,
+          completedCount: 0,
+          blockedCount: 1,
+          invalidCount: 0,
+          completionRateBps: 0,
+          stepCount: 1,
+          artifactCount: 0,
+        },
+      ],
+      contentSha256: "2".repeat(64),
+    };
+
+    expect(planBlueprintSelectionReceipt(selection)).toEqual({
+      action: "selection",
+      threadId: "thread_12345678",
+      contentSha256: selection.contentSha256,
+      selectionSetSha256: selection.selectionSetSha256,
+      candidateCount: 2,
+      qualifiedCandidateCount: 1,
+      rejectedCandidateCount: 1,
+      selectedRecordId: record.id,
+      selectedPreviewSha256: "a".repeat(64),
+      selectedBaselineSha256: "b".repeat(64),
+      selectedScoreBps: 5_000,
+      selectedCompletionRateBps: 5_000,
+      selectedReplayCount: 2,
+      diagnostics: [],
     });
   });
 

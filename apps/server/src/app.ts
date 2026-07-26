@@ -48,6 +48,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
   ExtensionCapability,
@@ -160,6 +161,7 @@ import type {
   SetExtensionEnabledRequest,
   SetCredentialReferenceStatusRequest,
   SetExecutionPlanBlueprintRecordStatusRequest,
+  SelectExecutionPlanBlueprintRecordRequest,
   SetGoalRequest,
   SetInboundChannelStatusRequest,
   SignedExtensionPackageChannelIndexEnvelope,
@@ -2720,6 +2722,56 @@ export function createApp(services: NapierServices): Hono {
       return jsonError(context, errorMessage(error), 400);
     }
   });
+
+  app.post(
+    "/api/threads/:threadId/plan-blueprints/selection",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      services.store.getThread(threadId);
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
+          "Execution plan blueprint selection request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Execution plan blueprint selection request is invalid",
+          400,
+        );
+      }
+      const request = parseSelectExecutionPlanBlueprintRecordRequest(input);
+      if (!request) {
+        return jsonError(
+          context,
+          "Execution plan blueprint selection request is invalid",
+          400,
+        );
+      }
+      try {
+        const selection =
+          await services.store.selectExecutionPlanBlueprintRecord(
+            threadId,
+            request,
+          );
+        setExecutionPlanBlueprintRecordSelectionHeaders(context, selection);
+        return context.json(selection);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Execution plan blueprint selection")
+        ) {
+          return jsonError(context, error.message, 400);
+        }
+        throw error;
+      }
+    },
+  );
 
   app.post("/api/plan-blueprints/:recordId/status", async (context) => {
     let input: unknown;
@@ -8043,6 +8095,28 @@ function parseSaveExecutionPlanBlueprintRequest(
   };
 }
 
+function parseSelectExecutionPlanBlueprintRecordRequest(
+  input: unknown,
+): SelectExecutionPlanBlueprintRecordRequest | undefined {
+  const record = requestRecord(input, ["objective"]);
+  if (!record) return undefined;
+  const objective =
+    record["objective"] === undefined
+      ? undefined
+      : typeof record["objective"] === "string"
+        ? record["objective"].trim()
+        : undefined;
+  if (
+    record["objective"] !== undefined &&
+    (!objective || !boundedString(objective, 1, 4_000))
+  ) {
+    return undefined;
+  }
+  return {
+    ...(objective ? { objective } : {}),
+  };
+}
+
 function parseSetExecutionPlanBlueprintRecordStatusRequest(
   input: unknown,
 ): SetExecutionPlanBlueprintRecordStatusRequest | undefined {
@@ -11558,6 +11632,61 @@ function setExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
       String(qualification.policy.maxInvalidCount),
     );
   }
+}
+
+function setExecutionPlanBlueprintRecordSelectionHeaders(
+  context: Context,
+  selection: ExecutionPlanBlueprintRecordSelection,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, selection.contentSha256);
+  context.header("X-Napier-Thread-Id", selection.threadId);
+  context.header(
+    "X-Napier-Plan-Blueprint-Candidate-Count",
+    String(selection.candidateCount),
+  );
+  context.header(
+    "X-Napier-Plan-Blueprint-Qualified-Candidate-Count",
+    String(selection.qualifiedCandidateCount),
+  );
+  context.header(
+    "X-Napier-Plan-Blueprint-Rejected-Candidate-Count",
+    String(selection.rejectedCandidateCount),
+  );
+  context.header(
+    "X-Napier-Plan-Blueprint-Selection-Set-SHA256",
+    selection.selectionSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Objective-SHA256",
+    selection.objectiveSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Plan-Blueprint-Record-Id",
+    selection.selectedRecordId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Preview-SHA256",
+    selection.selectedPreviewSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Outcome-Baseline-Id",
+    selection.selectedBaselineId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Outcome-Baseline-SHA256",
+    selection.selectedBaselineSha256,
+  );
+  setOptionalNumberHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Score-BPS",
+    selection.selectedScoreBps,
+  );
 }
 
 function setExecutionPlanBlueprintRecordReplayEventVerificationHeaders(

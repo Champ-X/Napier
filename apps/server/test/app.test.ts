@@ -31,6 +31,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
@@ -4977,6 +4978,84 @@ describe("Napier HTTP goal flow", () => {
       outcomeQualification,
     );
 
+    const selectionThread = (await (
+      await app.request("/api/threads", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Blueprint selection target" }),
+      })
+    ).json()) as ThreadDetail;
+    const selectionResponse = await app.request(
+      `/api/threads/${selectionThread.thread.id}/plan-blueprints/selection`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          objective: "Select a reusable report workflow.",
+        }),
+      },
+    );
+    const selectionResponseText = await selectionResponse.text();
+    expect(selectionResponse.status, selectionResponseText).toBe(200);
+    const selection = JSON.parse(
+      selectionResponseText,
+    ) as ExecutionPlanBlueprintRecordSelection;
+    expect(selection).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-selection",
+        schemaVersion: 1,
+        threadId: selectionThread.thread.id,
+        objectiveSha256: createHash("sha256")
+          .update("Select a reusable report workflow.")
+          .digest("hex"),
+        candidateCount: 1,
+        qualifiedCandidateCount: 1,
+        rejectedCandidateCount: 0,
+        selectedRecordId: savedBlueprint.record.id,
+        selectedBaselineId: outcomeBaselineResult.baseline.id,
+        selectedBaselineSha256: outcomeBaselineResult.baseline.contentSha256,
+        selectedScoreBps: 0,
+        selectionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(selection.candidates).toEqual([
+      expect.objectContaining({
+        recordId: savedBlueprint.record.id,
+        selectionStatus: "selected",
+        sourceQualificationStatus: "qualified",
+        outcomeQualificationStatus: "qualified",
+        previewStatus: "ready",
+        baselineId: outcomeBaselineResult.baseline.id,
+        scoreBps: 0,
+        replayCount: 1,
+        completionRateBps: 0,
+      }),
+    ]);
+    expect(JSON.stringify(selection)).not.toContain(
+      "Select a reusable report workflow.",
+    );
+    expectExecutionPlanBlueprintRecordSelectionHeaders(
+      selectionResponse,
+      selection,
+    );
+
+    const invalidSelectionRequest = await app.request(
+      `/api/threads/${selectionThread.thread.id}/plan-blueprints/selection`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          objective: "Select a reusable report workflow.",
+          unexpected: true,
+        }),
+      },
+    );
+    expect(invalidSelectionRequest.status).toBe(400);
+    expect(await invalidSelectionRequest.json()).toEqual({
+      error: "Execution plan blueprint selection request is invalid",
+    });
+
     const invalidOutcomeBaselineResponse = await app.request(
       `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
       {
@@ -8669,6 +8748,48 @@ function expectExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
     response.headers.get("x-napier-blueprint-outcome-policy-max-invalid-count"),
   ).toBe(
     qualification.policy ? String(qualification.policy.maxInvalidCount) : null,
+  );
+}
+
+function expectExecutionPlanBlueprintRecordSelectionHeaders(
+  response: Response,
+  selection: ExecutionPlanBlueprintRecordSelection,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    selection.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-thread-id")).toBe(selection.threadId);
+  expect(response.headers.get("x-napier-plan-blueprint-candidate-count")).toBe(
+    String(selection.candidateCount),
+  );
+  expect(
+    response.headers.get("x-napier-plan-blueprint-qualified-candidate-count"),
+  ).toBe(String(selection.qualifiedCandidateCount));
+  expect(
+    response.headers.get("x-napier-plan-blueprint-rejected-candidate-count"),
+  ).toBe(String(selection.rejectedCandidateCount));
+  expect(
+    response.headers.get("x-napier-plan-blueprint-selection-set-sha256"),
+  ).toBe(selection.selectionSetSha256);
+  expect(response.headers.get("x-napier-objective-sha256")).toBe(
+    selection.objectiveSha256 ?? null,
+  );
+  expect(
+    response.headers.get("x-napier-selected-plan-blueprint-record-id"),
+  ).toBe(selection.selectedRecordId ?? null);
+  expect(
+    response.headers.get("x-napier-selected-blueprint-preview-sha256"),
+  ).toBe(selection.selectedPreviewSha256 ?? null);
+  expect(
+    response.headers.get("x-napier-selected-blueprint-outcome-baseline-id"),
+  ).toBe(selection.selectedBaselineId ?? null);
+  expect(
+    response.headers.get("x-napier-selected-blueprint-outcome-baseline-sha256"),
+  ).toBe(selection.selectedBaselineSha256 ?? null);
+  expect(response.headers.get("x-napier-selected-blueprint-score-bps")).toBe(
+    optionalNumberHeader(selection.selectedScoreBps),
   );
 }
 

@@ -50,6 +50,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   HealthResponse,
   ImportThreadReplayBundleRequest,
@@ -82,6 +83,7 @@ import type {
   SignExtensionPackageRequest,
   SetExtensionEnabledRequest,
   SetExecutionPlanBlueprintRecordStatusRequest,
+  SelectExecutionPlanBlueprintRecordRequest,
   SetGoalRequest,
   SaveExecutionPlanBlueprintRequest,
   SaveExecutionPlanBlueprintResult,
@@ -528,6 +530,19 @@ export function getExecutionPlanBlueprintRecordOutcomeQualification(
 ): Promise<ExecutionPlanBlueprintRecordOutcomeQualification> {
   return requestJson(
     `/api/plan-blueprints/${encodeURIComponent(recordId)}/replays/outcomes/qualification`,
+  );
+}
+
+export function selectExecutionPlanBlueprintRecord(
+  threadId: string,
+  body: SelectExecutionPlanBlueprintRecordRequest = {},
+): Promise<ExecutionPlanBlueprintRecordSelection> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plan-blueprints/selection`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
   );
 }
 

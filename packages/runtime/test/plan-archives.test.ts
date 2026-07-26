@@ -742,6 +742,55 @@ describe("execution plan archives", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    const selectionThread = await store.createThread({
+      title: "Blueprint selection target",
+      agentId: agent.id,
+    });
+    const selection = await store.selectExecutionPlanBlueprintRecord(
+      selectionThread.id,
+      {
+        objective: "Reuse the release workflow with fresh delivery evidence.",
+      },
+    );
+    expect(selection).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-selection",
+        schemaVersion: 1,
+        threadId: selectionThread.id,
+        objectiveSha256: createHash("sha256")
+          .update("Reuse the release workflow with fresh delivery evidence.")
+          .digest("hex"),
+        candidateCount: 1,
+        qualifiedCandidateCount: 1,
+        rejectedCandidateCount: 0,
+        selectedRecordId: first.record.id,
+        selectedPreviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        selectedBaselineId: promotedBaseline.baseline.id,
+        selectedBaselineSha256: promotedBaseline.baseline.contentSha256,
+        selectedScoreBps: 10_000,
+        selectionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(selection.candidates).toEqual([
+      expect.objectContaining({
+        recordId: first.record.id,
+        selectionStatus: "selected",
+        diagnostics: [],
+        sourceQualificationStatus: "qualified",
+        outcomeQualificationStatus: "qualified",
+        previewStatus: "ready",
+        baselineId: promotedBaseline.baseline.id,
+        baselineSha256: promotedBaseline.baseline.contentSha256,
+        currentOutcomesSha256: completedOutcomes.contentSha256,
+        scoreBps: 10_000,
+        replayCount: 1,
+        completionRateBps: 10_000,
+      }),
+    ]);
+    expect(JSON.stringify(selection)).not.toContain(
+      "Reuse the release workflow with fresh delivery evidence.",
+    );
     const secondPreview = await store.previewPlanFromBlueprintRecord(
       targetThread.id,
       {
@@ -766,6 +815,29 @@ describe("execution plan archives", () => {
         blockedCount: 0,
         invalidCount: 0,
         completionRateBps: 5_000,
+      }),
+    );
+    const failedSelection = await store.selectExecutionPlanBlueprintRecord(
+      selectionThread.id,
+    );
+    expect(failedSelection.selectedRecordId).toBeUndefined();
+    expect(failedSelection).toEqual(
+      expect.objectContaining({
+        candidateCount: 1,
+        qualifiedCandidateCount: 0,
+        rejectedCandidateCount: 1,
+        candidates: [
+          expect.objectContaining({
+            recordId: first.record.id,
+            selectionStatus: "rejected",
+            sourceQualificationStatus: "qualified",
+            outcomeQualificationStatus: "policy_failed",
+            diagnostics: [
+              "outcome_policy_failed",
+              "outcome_completion_rate_below_min",
+            ],
+          }),
+        ],
       }),
     );
     await expect(

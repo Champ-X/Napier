@@ -783,6 +783,63 @@ export interface ExecutionPlanBlueprintRecordOutcomeQualification {
   contentSha256: string;
 }
 
+export interface SelectExecutionPlanBlueprintRecordRequest {
+  objective?: string;
+}
+
+export type ExecutionPlanBlueprintRecordSelectionCandidateStatus =
+  | "selected"
+  | "qualified"
+  | "rejected";
+
+export interface ExecutionPlanBlueprintRecordSelectionCandidate {
+  recordId: string;
+  recordStatus: ExecutionPlanBlueprintRecordStatus;
+  recordUpdatedAt: string;
+  selectionStatus: ExecutionPlanBlueprintRecordSelectionCandidateStatus;
+  diagnostics: string[];
+  blueprintSha256: string;
+  sourceQualificationStatus: ExecutionPlanBlueprintRecordQualificationStatus;
+  outcomeQualificationStatus: ExecutionPlanBlueprintRecordOutcomeQualificationStatus;
+  previewStatus?: ExecutionPlanBlueprintRecordPreviewStatus;
+  previewSha256?: string;
+  baselineId?: string;
+  baselineSha256?: string;
+  baselineOutcomesSha256?: string;
+  baselinePromotedAt?: string;
+  currentOutcomesSha256: string;
+  currentReplayHistorySha256: string;
+  currentOutcomeSetSha256: string;
+  scoreBps: number;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  stepCount: number;
+  artifactCount: number;
+}
+
+export interface ExecutionPlanBlueprintRecordSelection {
+  kind: "napier.execution-plan-blueprint-selection";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  threadId: string;
+  objectiveSha256?: string;
+  candidateCount: number;
+  qualifiedCandidateCount: number;
+  rejectedCandidateCount: number;
+  selectedRecordId?: string;
+  selectedPreviewSha256?: string;
+  selectedBaselineId?: string;
+  selectedBaselineSha256?: string;
+  selectedScoreBps?: number;
+  selectionSetSha256: string;
+  candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

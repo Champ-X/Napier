@@ -35,6 +35,7 @@ import {
   promoteExecutionPlanBlueprintRecordOutcomeBaseline,
   reviewReplanDraft,
   saveExecutionPlanBlueprint,
+  selectExecutionPlanBlueprintRecord,
   setExecutionPlanBlueprintRecordStatus,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
@@ -63,6 +64,8 @@ import {
   type PlanBlueprintLibraryReplayOutcomesReceipt,
   planBlueprintReplayOutcomesVerificationReceipt,
   type PlanBlueprintLibraryReplayOutcomesVerificationReceipt,
+  planBlueprintSelectionReceipt,
+  type PlanBlueprintLibrarySelectionReceipt,
 } from "./plan-blueprint-library-view-model";
 
 const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
@@ -131,7 +134,8 @@ type PlanBlueprintLibraryBusyAction =
   | "outcomes"
   | "verifyOutcomes"
   | "promoteOutcomeBaseline"
-  | "qualifyOutcomes";
+  | "qualifyOutcomes"
+  | "select";
 
 type PlanBlueprintLibraryReceipt =
   | {
@@ -150,7 +154,8 @@ type PlanBlueprintLibraryReceipt =
   | PlanBlueprintLibraryReplayOutcomesReceipt
   | PlanBlueprintLibraryReplayOutcomesVerificationReceipt
   | PlanBlueprintLibraryOutcomeBaselineReceipt
-  | PlanBlueprintLibraryOutcomeQualificationReceipt;
+  | PlanBlueprintLibraryOutcomeQualificationReceipt
+  | PlanBlueprintLibrarySelectionReceipt;
 
 export default function PlanPanel({
   threadId,
@@ -727,6 +732,21 @@ export default function PlanPanel({
     }
   };
 
+  const selectBestBlueprintRecord = async (): Promise<void> => {
+    if (!threadId || blueprintLibraryBusyAction) return;
+    setBlueprintLibraryBusyAction("select");
+    setBlueprintLibraryReceipt(undefined);
+    setBlueprintLibraryError(undefined);
+    try {
+      const selection = await selectExecutionPlanBlueprintRecord(threadId);
+      setBlueprintLibraryReceipt(planBlueprintSelectionReceipt(selection));
+    } catch (error) {
+      setBlueprintLibraryError(formatApiErrorMessage(error));
+    } finally {
+      setBlueprintLibraryBusyAction(undefined);
+    }
+  };
+
   const createFromBlueprintRecord = async (
     record: ExecutionPlanBlueprintRecord,
   ): Promise<void> => {
@@ -1012,12 +1032,14 @@ export default function PlanPanel({
         loaded={blueprintLibraryLoaded}
         hasVerifiedBlueprint={Boolean(verifiedBlueprint)}
         canSave={Boolean(threadId && verifiedBlueprint)}
+        canSelect={Boolean(threadId)}
         canCreateRecord={Boolean(threadId && !hasOpenPlan)}
         busyAction={blueprintLibraryBusyAction}
         receipt={blueprintLibraryReceipt}
         error={blueprintLibraryError}
         onRefresh={() => void refreshBlueprintLibrary()}
         onSave={() => void saveBlueprintRecord()}
+        onSelect={() => void selectBestBlueprintRecord()}
         onArchive={(record) =>
           void updateBlueprintRecordStatus(record, "archived")
         }
@@ -1366,12 +1388,14 @@ function PlanBlueprintLibraryCard({
   loaded,
   hasVerifiedBlueprint,
   canSave,
+  canSelect,
   canCreateRecord,
   busyAction,
   receipt,
   error,
   onRefresh,
   onSave,
+  onSelect,
   onArchive,
   onRestore,
   onQualify,
@@ -1388,12 +1412,14 @@ function PlanBlueprintLibraryCard({
   loaded: boolean;
   hasVerifiedBlueprint: boolean;
   canSave: boolean;
+  canSelect: boolean;
   canCreateRecord: boolean;
   busyAction: PlanBlueprintLibraryBusyAction | undefined;
   receipt: PlanBlueprintLibraryReceipt | undefined;
   error: string | undefined;
   onRefresh: () => void;
   onSave: () => void;
+  onSelect: () => void;
   onArchive: (record: ExecutionPlanBlueprintRecord) => void;
   onRestore: (record: ExecutionPlanBlueprintRecord) => void;
   onQualify: (record: ExecutionPlanBlueprintRecord) => void;
@@ -1434,6 +1460,17 @@ function PlanBlueprintLibraryCard({
           {busyAction === "load"
             ? copy.plan.blueprint.library.refreshing
             : copy.plan.blueprint.library.refresh}
+        </button>
+        <button
+          className="fixture-verify"
+          type="button"
+          disabled={busy || !canSelect || records.length === 0}
+          onClick={onSelect}
+        >
+          <ShieldCheck size={12} aria-hidden="true" />
+          {busyAction === "select"
+            ? copy.plan.blueprint.library.selecting
+            : copy.plan.blueprint.library.select}
         </button>
         <button
           className="fixture-verify"
@@ -1680,12 +1717,15 @@ function PlanBlueprintLibraryReceiptView({
             ? receipt.verificationStatus === "valid"
             : receipt.action === "outcomeQualified"
               ? receipt.qualificationStatus === "qualified"
-              : receipt.action === "created" &&
-                  receipt.replayEventVerificationStatus
-                ? receipt.replayEventVerificationStatus === "valid"
-                : receipt.action === "created" && receipt.replayEventDiagnostics
-                  ? false
-                  : true;
+              : receipt.action === "selection"
+                ? Boolean(receipt.selectedRecordId)
+                : receipt.action === "created" &&
+                    receipt.replayEventVerificationStatus
+                  ? receipt.replayEventVerificationStatus === "valid"
+                  : receipt.action === "created" &&
+                      receipt.replayEventDiagnostics
+                    ? false
+                    : true;
   const title =
     receipt.action === "qualified"
       ? copy.plan.blueprint.library.qualificationStatuses[
@@ -1705,7 +1745,9 @@ function PlanBlueprintLibraryReceiptView({
               ? copy.plan.blueprint.library.outcomeQualificationStatuses[
                   receipt.qualificationStatus
                 ]
-              : copy.plan.blueprint.library.receipts[receipt.action];
+              : receipt.action === "selection"
+                ? copy.plan.blueprint.library.receipts.selection
+                : copy.plan.blueprint.library.receipts[receipt.action];
   const receiptHash =
     "blueprintSha256" in receipt
       ? receipt.blueprintSha256
@@ -1713,6 +1755,7 @@ function PlanBlueprintLibraryReceiptView({
           receipt.action === "historyVerified" ||
           receipt.action === "outcomes" ||
           receipt.action === "outcomesVerified" ||
+          receipt.action === "selection" ||
           receipt.action === "outcomeQualified"
         ? receipt.contentSha256
         : receipt.action === "outcomeBaseline"
@@ -1726,7 +1769,9 @@ function PlanBlueprintLibraryReceiptView({
           receipt.action === "outcomeBaseline" ||
           receipt.action === "outcomeQualified"
         ? `${receipt.replayCount.toLocaleString()} ${copy.plan.blueprint.library.replays} / ${receipt.completedCount.toLocaleString()} ${copy.plan.blueprint.library.completed} / ${receipt.blockedCount.toLocaleString()} ${copy.plan.blueprint.library.blocked} / ${receipt.invalidCount.toLocaleString()} ${copy.plan.blueprint.library.invalid}`
-        : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
+        : receipt.action === "selection"
+          ? `${receipt.candidateCount.toLocaleString()} ${copy.plan.blueprint.library.candidates} / ${receipt.qualifiedCandidateCount.toLocaleString()} ${copy.plan.blueprint.library.qualified} / ${receipt.rejectedCandidateCount.toLocaleString()} ${copy.plan.blueprint.library.rejected}`
+          : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
   const identity =
     receipt.action === "qualified"
       ? shortId(receipt.recordId)
@@ -1738,15 +1783,19 @@ function PlanBlueprintLibraryReceiptView({
             ? shortId(receipt.latestPlanId ?? receipt.recordId)
             : receipt.action === "outcomeBaseline"
               ? shortId(receipt.baselineId)
-              : receipt.action === "historyVerified" ||
-                  receipt.action === "outcomesVerified" ||
-                  receipt.action === "outcomeQualified"
-                ? receipt.recordId
-                  ? shortId(receipt.recordId)
-                  : undefined
-                : "status" in receipt
-                  ? copy.plan.blueprint.library.statuses[receipt.status]
-                  : shortId(receipt.planId);
+              : receipt.action === "selection"
+                ? receipt.selectedRecordId
+                  ? shortId(receipt.selectedRecordId)
+                  : shortId(receipt.threadId)
+                : receipt.action === "historyVerified" ||
+                    receipt.action === "outcomesVerified" ||
+                    receipt.action === "outcomeQualified"
+                  ? receipt.recordId
+                    ? shortId(receipt.recordId)
+                    : undefined
+                  : "status" in receipt
+                    ? copy.plan.blueprint.library.statuses[receipt.status]
+                    : shortId(receipt.planId);
   return (
     <div
       className={`fixture-receipt status-${successful ? "valid" : "invalid"}`}
@@ -1898,6 +1947,35 @@ function PlanBlueprintLibraryReceiptView({
               ? ` / ${copy.plan.blueprint.library.min}: ${(receipt.minCompletionRateBps / 100).toFixed(2)}%`
               : ""}
           </small>
+        </>
+      ) : null}
+      {receipt.action === "selection" ? (
+        <>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.selectionSet}:{" "}
+            {receipt.selectionSetSha256.slice(0, 16)}
+            {receipt.selectedPreviewSha256
+              ? ` / ${copy.plan.blueprint.library.latestPreview}: ${receipt.selectedPreviewSha256.slice(0, 16)}`
+              : ""}
+          </small>
+          <small className="fixture-diagnostics">
+            {receipt.selectedRecordId
+              ? `${copy.plan.blueprint.library.selected}: ${shortId(receipt.selectedRecordId)}`
+              : receipt.diagnostics.length > 0
+                ? receipt.diagnostics.join(", ")
+                : copy.plan.blueprint.library.noDiagnostics}
+            {receipt.selectedBaselineSha256
+              ? ` / ${copy.plan.blueprint.library.outcomeBaseline}: ${receipt.selectedBaselineSha256.slice(0, 16)}`
+              : ""}
+          </small>
+          {receipt.selectedScoreBps !== undefined ? (
+            <small className="fixture-diagnostics">
+              {copy.plan.blueprint.library.score}:{" "}
+              {(receipt.selectedScoreBps / 100).toFixed(2)}%{" / "}
+              {copy.plan.blueprint.library.replays}:{" "}
+              {(receipt.selectedReplayCount ?? 0).toLocaleString()}
+            </small>
+          ) : null}
         </>
       ) : null}
       {receipt.action === "created" &&

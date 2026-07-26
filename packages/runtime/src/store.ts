@@ -53,6 +53,8 @@ import {
   type ExecutionPlanBlueprintRecordOutcomeBaseline,
   type ExecutionPlanBlueprintRecordOutcomeBaselinePolicy,
   type ExecutionPlanBlueprintRecordOutcomeQualification,
+  type ExecutionPlanBlueprintRecordSelection,
+  type ExecutionPlanBlueprintRecordSelectionCandidate,
   type CredentialAvailability,
   type CredentialReference,
   type CreateEvaluationSuiteRequest,
@@ -126,6 +128,7 @@ import {
   type SkillPackageVerification,
   type SaveExecutionPlanBlueprintRequest,
   type SaveExecutionPlanBlueprintResult,
+  type SelectExecutionPlanBlueprintRecordRequest,
   type SetExecutionPlanBlueprintRecordStatusRequest,
   type SubagentRole,
   type SubagentStopReason,
@@ -2353,6 +2356,59 @@ export class LocalStore {
       outcomes,
       latest,
     );
+  }
+
+  async selectExecutionPlanBlueprintRecord(
+    threadId: string,
+    request: SelectExecutionPlanBlueprintRecordRequest = {},
+  ): Promise<ExecutionPlanBlueprintRecordSelection> {
+    this.assertInitialized();
+    this.getThread(threadId);
+    const objective = normalizeExecutionPlanBlueprintSelectionObjective(
+      request.objective,
+    );
+    const candidates: ExecutionPlanBlueprintRecordSelectionCandidate[] = [];
+    const records = [...this.state.executionPlanBlueprints].sort(
+      compareExecutionPlanBlueprintRecords,
+    );
+    for (const record of records) {
+      const sourceQualification =
+        await this.qualifyExecutionPlanBlueprintRecord(record.id);
+      const outcomeQualification =
+        await this.qualifyExecutionPlanBlueprintRecordOutcomes(record.id);
+      const latestBaseline = this.state.executionPlanBlueprintOutcomeBaselines
+        .filter((baseline) => baseline.recordId === record.id)
+        .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt))
+        .at(-1);
+      const preview =
+        sourceQualification.status === "qualified" &&
+        outcomeQualification.status === "qualified"
+          ? await this.previewPlanFromBlueprintRecord(threadId, {
+              recordId: record.id,
+              ...(objective ? { objective } : {}),
+            })
+          : undefined;
+      candidates.push(
+        createExecutionPlanBlueprintSelectionCandidate({
+          record,
+          sourceQualification,
+          outcomeQualification,
+          ...(latestBaseline ? { latestBaseline } : {}),
+          ...(preview ? { preview } : {}),
+        }),
+      );
+    }
+    const selected = selectExecutionPlanBlueprintCandidate(candidates);
+    const selectedCandidates = candidates.map((candidate) =>
+      selected && candidate.recordId === selected.recordId
+        ? { ...candidate, selectionStatus: "selected" as const }
+        : candidate,
+    );
+    return createExecutionPlanBlueprintRecordSelection({
+      threadId,
+      candidates: selectedCandidates,
+      ...(objective ? { objective } : {}),
+    });
   }
 
   async verifyExecutionPlanBlueprintRecordReplayEvent(
@@ -8330,6 +8386,199 @@ function createExecutionPlanBlueprintOutcomeQualification(
   };
   return {
     ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function normalizeExecutionPlanBlueprintSelectionObjective(
+  value: string | undefined,
+): string | undefined {
+  if (value === undefined) return undefined;
+  const normalized = value.trim();
+  if (normalized.length < 1 || normalized.length > 4_000) {
+    throw new Error("Execution plan blueprint selection objective is invalid");
+  }
+  return normalized;
+}
+
+function compareExecutionPlanBlueprintRecords(
+  left: ExecutionPlanBlueprintRecord,
+  right: ExecutionPlanBlueprintRecord,
+): number {
+  const updatedOrder = right.updatedAt.localeCompare(left.updatedAt);
+  if (updatedOrder !== 0) return updatedOrder;
+  return left.id.localeCompare(right.id);
+}
+
+function createExecutionPlanBlueprintSelectionCandidate(input: {
+  record: ExecutionPlanBlueprintRecord;
+  sourceQualification: ExecutionPlanBlueprintRecordQualification;
+  outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
+  latestBaseline?: ExecutionPlanBlueprintRecordOutcomeBaseline;
+  preview?: ExecutionPlanBlueprintRecordPreview;
+}): ExecutionPlanBlueprintRecordSelectionCandidate {
+  const ready =
+    input.sourceQualification.status === "qualified" &&
+    input.outcomeQualification.status === "qualified" &&
+    input.preview?.status === "ready";
+  const diagnostics = uniqueStrings([
+    ...(input.sourceQualification.status === "qualified"
+      ? []
+      : [`source_${input.sourceQualification.status}`]),
+    ...input.sourceQualification.diagnostics.map(
+      (diagnostic) => `source_${diagnostic}`,
+    ),
+    ...(input.outcomeQualification.status === "qualified"
+      ? []
+      : [`outcome_${input.outcomeQualification.status}`]),
+    ...input.outcomeQualification.diagnostics.map(
+      (diagnostic) => `outcome_${diagnostic}`,
+    ),
+    ...(input.preview && input.preview.status !== "ready"
+      ? [`preview_${input.preview.status}`]
+      : []),
+    ...(input.preview?.diagnostics.map(
+      (diagnostic) => `preview_${diagnostic}`,
+    ) ?? []),
+  ]);
+  return {
+    recordId: input.record.id,
+    recordStatus: input.record.status,
+    recordUpdatedAt: input.record.updatedAt,
+    selectionStatus: ready ? "qualified" : "rejected",
+    diagnostics,
+    blueprintSha256: input.record.blueprintSha256,
+    sourceQualificationStatus: input.sourceQualification.status,
+    outcomeQualificationStatus: input.outcomeQualification.status,
+    ...(input.preview ? { previewStatus: input.preview.status } : {}),
+    ...(input.preview?.previewSha256
+      ? { previewSha256: input.preview.previewSha256 }
+      : {}),
+    ...(input.outcomeQualification.baselineId
+      ? { baselineId: input.outcomeQualification.baselineId }
+      : {}),
+    ...(input.outcomeQualification.baselineSha256
+      ? { baselineSha256: input.outcomeQualification.baselineSha256 }
+      : {}),
+    ...(input.outcomeQualification.baselineOutcomesSha256
+      ? {
+          baselineOutcomesSha256:
+            input.outcomeQualification.baselineOutcomesSha256,
+        }
+      : {}),
+    ...(input.latestBaseline?.promotedAt
+      ? { baselinePromotedAt: input.latestBaseline.promotedAt }
+      : {}),
+    currentOutcomesSha256: input.outcomeQualification.currentOutcomesSha256,
+    currentReplayHistorySha256:
+      input.outcomeQualification.currentReplayHistorySha256,
+    currentOutcomeSetSha256: input.outcomeQualification.currentOutcomeSetSha256,
+    scoreBps: ready ? input.outcomeQualification.completionRateBps : 0,
+    replayCount: input.outcomeQualification.replayCount,
+    completedCount: input.outcomeQualification.completedCount,
+    blockedCount: input.outcomeQualification.blockedCount,
+    invalidCount: input.outcomeQualification.invalidCount,
+    completionRateBps: input.outcomeQualification.completionRateBps,
+    stepCount: input.record.blueprint.stepCount,
+    artifactCount: input.record.blueprint.artifactCount,
+  };
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function selectExecutionPlanBlueprintCandidate(
+  candidates: ExecutionPlanBlueprintRecordSelectionCandidate[],
+): ExecutionPlanBlueprintRecordSelectionCandidate | undefined {
+  return candidates
+    .filter((candidate) => candidate.selectionStatus === "qualified")
+    .sort(compareExecutionPlanBlueprintSelectionCandidates)
+    .at(0);
+}
+
+function compareExecutionPlanBlueprintSelectionCandidates(
+  left: ExecutionPlanBlueprintRecordSelectionCandidate,
+  right: ExecutionPlanBlueprintRecordSelectionCandidate,
+): number {
+  const scoreOrder = right.scoreBps - left.scoreBps;
+  if (scoreOrder !== 0) return scoreOrder;
+  const replayOrder = right.replayCount - left.replayCount;
+  if (replayOrder !== 0) return replayOrder;
+  const completedOrder = right.completedCount - left.completedCount;
+  if (completedOrder !== 0) return completedOrder;
+  const baselineOrder = (right.baselinePromotedAt ?? "").localeCompare(
+    left.baselinePromotedAt ?? "",
+  );
+  if (baselineOrder !== 0) return baselineOrder;
+  const recordOrder = right.recordUpdatedAt.localeCompare(left.recordUpdatedAt);
+  if (recordOrder !== 0) return recordOrder;
+  return left.recordId.localeCompare(right.recordId);
+}
+
+function createExecutionPlanBlueprintRecordSelection(input: {
+  threadId: string;
+  objective?: string;
+  candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];
+}): ExecutionPlanBlueprintRecordSelection {
+  const selected = input.candidates.find(
+    (candidate) => candidate.selectionStatus === "selected",
+  );
+  const qualifiedCandidateCount = input.candidates.filter(
+    (candidate) =>
+      candidate.selectionStatus === "qualified" ||
+      candidate.selectionStatus === "selected",
+  ).length;
+  const content = {
+    kind: "napier.execution-plan-blueprint-selection" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    threadId: input.threadId,
+    ...(input.objective ? { objectiveSha256: sha256(input.objective) } : {}),
+    candidateCount: input.candidates.length,
+    qualifiedCandidateCount,
+    rejectedCandidateCount: input.candidates.filter(
+      (candidate) => candidate.selectionStatus === "rejected",
+    ).length,
+    ...(selected ? { selectedRecordId: selected.recordId } : {}),
+    ...(selected?.previewSha256
+      ? { selectedPreviewSha256: selected.previewSha256 }
+      : {}),
+    ...(selected?.baselineId
+      ? { selectedBaselineId: selected.baselineId }
+      : {}),
+    ...(selected?.baselineSha256
+      ? { selectedBaselineSha256: selected.baselineSha256 }
+      : {}),
+    ...(selected ? { selectedScoreBps: selected.scoreBps } : {}),
+    selectionSetSha256: sha256(
+      canonicalJson(
+        input.candidates.map((candidate) => ({
+          recordId: candidate.recordId,
+          selectionStatus: candidate.selectionStatus,
+          diagnostics: candidate.diagnostics,
+          scoreBps: candidate.scoreBps,
+          sourceQualificationStatus: candidate.sourceQualificationStatus,
+          outcomeQualificationStatus: candidate.outcomeQualificationStatus,
+          ...(candidate.previewStatus
+            ? { previewStatus: candidate.previewStatus }
+            : {}),
+          ...(candidate.previewSha256
+            ? { previewSha256: candidate.previewSha256 }
+            : {}),
+          ...(candidate.baselineSha256
+            ? { baselineSha256: candidate.baselineSha256 }
+            : {}),
+          currentOutcomesSha256: candidate.currentOutcomesSha256,
+          currentOutcomeSetSha256: candidate.currentOutcomeSetSha256,
+        })),
+      ),
+    ),
+    candidates: input.candidates,
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
     contentSha256: sha256(canonicalJson(content)),
   };
 }

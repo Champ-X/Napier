@@ -8,6 +8,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
@@ -118,6 +119,23 @@ export interface PlanBlueprintLibraryOutcomeQualificationReceipt {
   invalidCount: number;
   completionRateBps: number;
   minCompletionRateBps?: number;
+}
+
+export interface PlanBlueprintLibrarySelectionReceipt {
+  action: "selection";
+  threadId: string;
+  contentSha256: string;
+  selectionSetSha256: string;
+  candidateCount: number;
+  qualifiedCandidateCount: number;
+  rejectedCandidateCount: number;
+  selectedRecordId?: string;
+  selectedPreviewSha256?: string;
+  selectedBaselineSha256?: string;
+  selectedScoreBps?: number;
+  selectedCompletionRateBps?: number;
+  selectedReplayCount?: number;
+  diagnostics: string[];
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -331,6 +349,47 @@ export function planBlueprintOutcomeQualificationReceipt(
     ...(qualification.policy
       ? { minCompletionRateBps: qualification.policy.minCompletionRateBps }
       : {}),
+  };
+}
+
+export function planBlueprintSelectionReceipt(
+  selection: ExecutionPlanBlueprintRecordSelection,
+): PlanBlueprintLibrarySelectionReceipt {
+  const selected = selection.candidates.find(
+    (candidate) => candidate.selectionStatus === "selected",
+  );
+  const diagnostics =
+    selected?.diagnostics ??
+    selection.candidates
+      .flatMap((candidate) => candidate.diagnostics)
+      .slice(0, 4);
+  return {
+    action: "selection",
+    threadId: selection.threadId,
+    contentSha256: selection.contentSha256,
+    selectionSetSha256: selection.selectionSetSha256,
+    candidateCount: selection.candidateCount,
+    qualifiedCandidateCount: selection.qualifiedCandidateCount,
+    rejectedCandidateCount: selection.rejectedCandidateCount,
+    ...(selection.selectedRecordId
+      ? { selectedRecordId: selection.selectedRecordId }
+      : {}),
+    ...(selection.selectedPreviewSha256
+      ? { selectedPreviewSha256: selection.selectedPreviewSha256 }
+      : {}),
+    ...(selection.selectedBaselineSha256
+      ? { selectedBaselineSha256: selection.selectedBaselineSha256 }
+      : {}),
+    ...(selection.selectedScoreBps !== undefined
+      ? { selectedScoreBps: selection.selectedScoreBps }
+      : {}),
+    ...(selected
+      ? {
+          selectedCompletionRateBps: selected.completionRateBps,
+          selectedReplayCount: selected.replayCount,
+        }
+      : {}),
+    diagnostics,
   };
 }
 
