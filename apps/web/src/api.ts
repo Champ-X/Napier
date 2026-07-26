@@ -53,6 +53,8 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
+  ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   HealthResponse,
@@ -66,6 +68,7 @@ import type {
   PreviewExtensionPackageUpdateRequest,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+  SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   PromptRequest,
   ReplanExecutionPlanRequest,
   ResumeRunRequest,
@@ -523,6 +526,24 @@ export function getExecutionPlanBlueprintPortfolioCalibration(): Promise<Executi
 export function getExecutionPlanBlueprintRecommendationPolicyBacktest(): Promise<ExecutionPlanBlueprintRecommendationPolicyBacktest> {
   return requestJson(
     "/api/plan-blueprints/portfolio/recommendation-policy-backtest",
+  );
+}
+
+export function getExecutionPlanBlueprintRecommendationPolicyOverrides(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideList> {
+  return requestJson(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+  );
+}
+
+export function setExecutionPlanBlueprintRecommendationPolicyOverride(
+  body: SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
+): Promise<ExecutionPlanBlueprintRecommendationPolicyOverride> {
+  return requestJson(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
   );
 }
 

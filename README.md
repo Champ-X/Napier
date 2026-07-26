@@ -899,7 +899,16 @@ SHA-256 are mirrored into the receipt and response headers beside the selected
 recommendation score. It returns only record IDs, preview hashes, family
 hashes, portfolio-set hash, baseline/outcome hashes, policy hashes, counts,
 diagnostics, and a selection-set SHA-256, so objective overrides are
-represented by hash rather than copied back into the artifact. `GET
+represented by hash rather than copied back into the artifact. Family-level
+policy overrides can be set through `POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides`, binding
+`familySha256`, the selected policy template, and the current portfolio-set
+SHA-256 into a persistent hash-only override record. Default selection applies
+overrides as `family_override` evidence only when the request does not provide
+an explicit `policyTemplate`; explicit request policy still wins, followed by
+family override, then the `balanced` default. Stale `expectedPortfolioSetSha256`
+values fail closed with `409 Conflict`, and selection receipts mirror the
+override-set SHA-256 plus the selected policy source. `GET
 /api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
 policy templates against the current library's historical replay outcomes
 without target-Thread preview or Ledger mutation. The no-store receipt returns
@@ -930,8 +939,8 @@ selection across the shelf before replaying a candidate. It can also calibrate
 the whole portfolio to compare reusable workflow families without exposing
 objective, step, or artifact prose, backtest recommendation policies over
 current outcome evidence, and renders the selected policy template, policy
-hash, recommendation score, policy-set hash, and divergence count as part of
-the selection/backtest receipts.
+hash, recommendation score, policy-set hash, override-set hash, policy source,
+and divergence count as part of the selection/backtest/override receipts.
 
 ## Portable Replay Fixtures
 

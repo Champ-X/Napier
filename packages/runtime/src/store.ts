@@ -59,11 +59,15 @@ import {
   type ExecutionPlanBlueprintRecommendationPolicyBacktest,
   type ExecutionPlanBlueprintRecommendationPolicyBacktestCandidate,
   type ExecutionPlanBlueprintRecommendationPolicyBacktestResult,
+  type ExecutionPlanBlueprintRecommendationPolicyOverride,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideList,
+  type ExecutionPlanBlueprintRecommendationPolicySource,
   type ExecutionPlanBlueprintRecommendationPolicyTemplateId,
   type ExecutionPlanBlueprintPortfolioCalibration,
   type ExecutionPlanBlueprintPortfolioCalibrationFamily,
   type ExecutionPlanBlueprintRecordSelection,
   type ExecutionPlanBlueprintRecordSelectionCandidate,
+  type SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   type CredentialAvailability,
   type CredentialReference,
   type CreateEvaluationSuiteRequest,
@@ -483,6 +487,7 @@ interface PersistedState {
   plans: ExecutionPlan[];
   executionPlanBlueprints: ExecutionPlanBlueprintRecord[];
   executionPlanBlueprintOutcomeBaselines: ExecutionPlanBlueprintRecordOutcomeBaseline[];
+  executionPlanBlueprintRecommendationPolicyOverrides: ExecutionPlanBlueprintRecommendationPolicyOverride[];
   credentials: CredentialReference[];
   schedules: PersistedAutomationSchedule[];
   channels: PersistedInboundChannel[];
@@ -571,6 +576,7 @@ const EMPTY_STATE: PersistedState = {
   plans: [],
   executionPlanBlueprints: [],
   executionPlanBlueprintOutcomeBaselines: [],
+  executionPlanBlueprintRecommendationPolicyOverrides: [],
   credentials: [],
   schedules: [],
   channels: [],
@@ -2451,6 +2457,13 @@ export class LocalStore {
       normalizeExecutionPlanBlueprintRecommendationPolicy(
         request.policyTemplate,
       );
+    const policyOverrides =
+      this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
+        validateExecutionPlanBlueprintRecommendationPolicyOverride,
+      );
+    const policyOverrideByFamilySha256 = new Map(
+      policyOverrides.map((override) => [override.familySha256, override]),
+    );
     const candidateInputs: Array<{
       record: ExecutionPlanBlueprintRecord;
       sourceQualification: ExecutionPlanBlueprintRecordQualification;
@@ -2509,12 +2522,28 @@ export class LocalStore {
       if (!family) {
         throw new Error("Execution plan blueprint portfolio family missing");
       }
+      const familyPolicyOverride =
+        request.policyTemplate === undefined
+          ? policyOverrideByFamilySha256.get(family.familySha256)
+          : undefined;
+      const candidateRecommendationPolicy =
+        familyPolicyOverride?.recommendationPolicy ?? recommendationPolicy;
+      const recommendationPolicySource: ExecutionPlanBlueprintRecommendationPolicySource =
+        request.policyTemplate !== undefined
+          ? "request"
+          : familyPolicyOverride
+            ? "family_override"
+            : "default";
       return createExecutionPlanBlueprintSelectionCandidate({
         record: input.record,
         sourceQualification: input.sourceQualification,
         outcomeQualification: input.outcomeQualification,
         family,
-        recommendationPolicy,
+        recommendationPolicy: candidateRecommendationPolicy,
+        recommendationPolicySource,
+        ...(familyPolicyOverride
+          ? { familyPolicyOverrideSha256: familyPolicyOverride.contentSha256 }
+          : {}),
         ...(input.latestBaseline
           ? { latestBaseline: input.latestBaseline }
           : {}),
@@ -2531,6 +2560,7 @@ export class LocalStore {
       threadId,
       candidates: selectedCandidates,
       recommendationPolicy,
+      familyPolicyOverrides: policyOverrides,
       portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
       ...(objective ? { objective } : {}),
     });
@@ -2555,6 +2585,76 @@ export class LocalStore {
       families,
       policies: listExecutionPlanBlueprintRecommendationPolicies(),
       portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
+    });
+  }
+
+  async listExecutionPlanBlueprintRecommendationPolicyOverrides(): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideList> {
+    this.assertInitialized();
+    const entries =
+      await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+    return createExecutionPlanBlueprintRecommendationPolicyOverrideList({
+      overrides: this.state.executionPlanBlueprintRecommendationPolicyOverrides,
+      portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
+    });
+  }
+
+  async setExecutionPlanBlueprintRecommendationPolicyOverride(
+    request: SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
+  ): Promise<ExecutionPlanBlueprintRecommendationPolicyOverride> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      if (!isSha256(request.familySha256)) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override family is invalid",
+        );
+      }
+      const recommendationPolicy =
+        normalizeExecutionPlanBlueprintRecommendationPolicy(
+          request.policyTemplate,
+        );
+      const entries =
+        await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+      const portfolioSetSha256 =
+        executionPlanBlueprintPortfolioSetSha256(entries);
+      if (
+        request.expectedPortfolioSetSha256 !== undefined &&
+        request.expectedPortfolioSetSha256 !== portfolioSetSha256
+      ) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override portfolio set changed",
+        );
+      }
+      const family = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
+        entries,
+      ).find((candidate) => candidate.familySha256 === request.familySha256);
+      if (!family) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override family is missing",
+        );
+      }
+      const override = createExecutionPlanBlueprintRecommendationPolicyOverride({
+        family,
+        recommendationPolicy,
+        portfolioSetSha256,
+        updatedAt: nowIso(),
+      });
+      const index =
+        this.state.executionPlanBlueprintRecommendationPolicyOverrides.findIndex(
+          (candidate) => candidate.familySha256 === request.familySha256,
+        );
+      if (index >= 0) {
+        this.state.executionPlanBlueprintRecommendationPolicyOverrides[index] =
+          override;
+      } else {
+        this.state.executionPlanBlueprintRecommendationPolicyOverrides.push(
+          override,
+        );
+      }
+      this.state.executionPlanBlueprintRecommendationPolicyOverrides.sort(
+        (left, right) => left.familySha256.localeCompare(right.familySha256),
+      );
+      await this.persistState();
+      return structuredClone(override);
     });
   }
 
@@ -6124,6 +6224,13 @@ export class LocalStore {
     if (!Array.isArray(state.executionPlanBlueprintOutcomeBaselines)) {
       state.executionPlanBlueprintOutcomeBaselines = [];
     }
+    if (
+      !Array.isArray(
+        state.executionPlanBlueprintRecommendationPolicyOverrides,
+      )
+    ) {
+      state.executionPlanBlueprintRecommendationPolicyOverrides = [];
+    }
     if (!Array.isArray(state.credentials)) state.credentials = [];
     if (!Array.isArray(state.schedules)) state.schedules = [];
     if (!Array.isArray(state.channels)) state.channels = [];
@@ -6203,6 +6310,18 @@ export class LocalStore {
       outcomeBaselineKeys.add(baselineKey);
       latestOutcomeBaselineByRecord.set(baseline.recordId, baseline);
       Object.assign(input, baseline);
+    }
+    const recommendationPolicyOverrideFamilies = new Set<string>();
+    for (const input of state.executionPlanBlueprintRecommendationPolicyOverrides) {
+      const override =
+        validateExecutionPlanBlueprintRecommendationPolicyOverride(input);
+      if (recommendationPolicyOverrideFamilies.has(override.familySha256)) {
+        throw new Error(
+          `Duplicate persisted Execution Plan blueprint recommendation policy override: ${override.familySha256}`,
+        );
+      }
+      recommendationPolicyOverrideFamilies.add(override.familySha256);
+      Object.assign(input, override);
     }
     const skillPackageInstallationIds = new Set<string>();
     let activeSkillPackageInstallationCount = 0;
@@ -8751,6 +8870,109 @@ function validateExecutionPlanBlueprintOutcomeBaseline(
   });
 }
 
+function createExecutionPlanBlueprintRecommendationPolicyOverride(input: {
+  family: ExecutionPlanBlueprintPortfolioCalibrationFamily;
+  recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
+  portfolioSetSha256: string;
+  updatedAt: string;
+}): ExecutionPlanBlueprintRecommendationPolicyOverride {
+  const content = {
+    kind: "napier.execution-plan-blueprint-recommendation-policy-override" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    familySha256: input.family.familySha256,
+    recommendationPolicy: input.recommendationPolicy,
+    recommendationPolicySha256:
+      executionPlanBlueprintRecommendationPolicySha256(
+        input.recommendationPolicy,
+      ),
+    portfolioSetSha256: input.portfolioSetSha256,
+    familyRecordCount: input.family.recordCount,
+    familyOutcomeQualifiedCount: input.family.outcomeQualifiedCount,
+    familyCompletionRateBps: input.family.completionRateBps,
+    updatedAt: input.updatedAt,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function validateExecutionPlanBlueprintRecommendationPolicyOverride(
+  value: unknown,
+): ExecutionPlanBlueprintRecommendationPolicyOverride {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Execution Plan blueprint recommendation policy override is invalid",
+    );
+  }
+  const override =
+    value as unknown as ExecutionPlanBlueprintRecommendationPolicyOverride;
+  const recommendationPolicy =
+    normalizeExecutionPlanBlueprintRecommendationPolicy(
+      override.recommendationPolicy?.templateId,
+    );
+  if (
+    override.kind !==
+      "napier.execution-plan-blueprint-recommendation-policy-override" ||
+    override.schemaVersion !== 1 ||
+    override.apiVersion !== NAPIER_API_VERSION ||
+    !isSha256(override.familySha256) ||
+    override.recommendationPolicySha256 !==
+      executionPlanBlueprintRecommendationPolicySha256(
+        recommendationPolicy,
+      ) ||
+    !isSha256(override.portfolioSetSha256) ||
+    !isNonNegativeInteger(override.familyRecordCount) ||
+    !isNonNegativeInteger(override.familyOutcomeQualifiedCount) ||
+    !isNonNegativeInteger(override.familyCompletionRateBps) ||
+    override.familyCompletionRateBps > 10_000 ||
+    !Number.isFinite(Date.parse(override.updatedAt)) ||
+    !isSha256(override.contentSha256)
+  ) {
+    throw new Error(
+      "Execution Plan blueprint recommendation policy override is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...override,
+    recommendationPolicy,
+  };
+  if (sha256(canonicalJson(content)) !== override.contentSha256) {
+    throw new Error(
+      "Execution Plan blueprint recommendation policy override hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...override,
+    recommendationPolicy,
+  });
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyOverrideList(input: {
+  overrides: ExecutionPlanBlueprintRecommendationPolicyOverride[];
+  portfolioSetSha256: string;
+}): ExecutionPlanBlueprintRecommendationPolicyOverrideList {
+  const overrides = input.overrides
+    .map(validateExecutionPlanBlueprintRecommendationPolicyOverride)
+    .sort((left, right) => left.familySha256.localeCompare(right.familySha256));
+  const content = {
+    kind: "napier.execution-plan-blueprint-recommendation-policy-overrides" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    overrideCount: overrides.length,
+    portfolioSetSha256: input.portfolioSetSha256,
+    overrideSetSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides),
+    overrides,
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
 function createExecutionPlanBlueprintOutcomeQualification(
   recordId: string,
   outcomes: ExecutionPlanBlueprintRecordReplayOutcomes,
@@ -8830,6 +9052,8 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
   outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
   family: ExecutionPlanBlueprintPortfolioCalibrationFamily;
   recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
+  recommendationPolicySource: ExecutionPlanBlueprintRecommendationPolicySource;
+  familyPolicyOverrideSha256?: string;
   latestBaseline?: ExecutionPlanBlueprintRecordOutcomeBaseline;
   preview?: ExecutionPlanBlueprintRecordPreview;
 }): ExecutionPlanBlueprintRecordSelectionCandidate {
@@ -8886,6 +9110,15 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
           policy: input.recommendationPolicy,
         })
       : 0,
+    recommendationPolicyTemplate: input.recommendationPolicy.templateId,
+    recommendationPolicySha256:
+      executionPlanBlueprintRecommendationPolicySha256(
+        input.recommendationPolicy,
+      ),
+    recommendationPolicySource: input.recommendationPolicySource,
+    ...(input.familyPolicyOverrideSha256
+      ? { familyPolicyOverrideSha256: input.familyPolicyOverrideSha256 }
+      : {}),
     ...(input.preview ? { previewStatus: input.preview.status } : {}),
     ...(input.preview?.previewSha256
       ? { previewSha256: input.preview.previewSha256 }
@@ -9430,6 +9663,23 @@ function executionPlanBlueprintRecommendationPolicySetSha256(
   );
 }
 
+function executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
+  overrides: ExecutionPlanBlueprintRecommendationPolicyOverride[],
+): string {
+  return sha256(
+    canonicalJson(
+      overrides
+        .map((override) => ({
+          familySha256: override.familySha256,
+          contentSha256: override.contentSha256,
+        }))
+        .sort((left, right) =>
+          left.familySha256.localeCompare(right.familySha256),
+        ),
+    ),
+  );
+}
+
 function listExecutionPlanBlueprintRecommendationPolicies(): ExecutionPlanBlueprintRecommendationPolicy[] {
   return EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICY_TEMPLATE_IDS.map(
     (templateId) =>
@@ -9487,6 +9737,7 @@ function createExecutionPlanBlueprintRecordSelection(input: {
   candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];
   portfolioSetSha256: string;
   recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
+  familyPolicyOverrides: ExecutionPlanBlueprintRecommendationPolicyOverride[];
 }): ExecutionPlanBlueprintRecordSelection {
   const selected = input.candidates.find(
     (candidate) => candidate.selectionStatus === "selected",
@@ -9525,10 +9776,30 @@ function createExecutionPlanBlueprintRecordSelection(input: {
     ...(selected
       ? { selectedRecommendationScoreBps: selected.recommendationScoreBps }
       : {}),
+    ...(selected
+      ? {
+          selectedRecommendationPolicyTemplate:
+            selected.recommendationPolicyTemplate,
+        }
+      : {}),
+    ...(selected
+      ? { selectedRecommendationPolicySha256: selected.recommendationPolicySha256 }
+      : {}),
+    ...(selected
+      ? { selectedRecommendationPolicySource: selected.recommendationPolicySource }
+      : {}),
+    ...(selected?.familyPolicyOverrideSha256
+      ? { selectedFamilyPolicyOverrideSha256: selected.familyPolicyOverrideSha256 }
+      : {}),
     recommendationPolicy: input.recommendationPolicy,
     recommendationPolicySha256:
       executionPlanBlueprintRecommendationPolicySha256(
         input.recommendationPolicy,
+      ),
+    familyPolicyOverrideCount: input.familyPolicyOverrides.length,
+    familyPolicyOverrideSetSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
+        input.familyPolicyOverrides,
       ),
     portfolioSetSha256: input.portfolioSetSha256,
     selectionSetSha256: sha256(
@@ -9539,6 +9810,15 @@ function createExecutionPlanBlueprintRecordSelection(input: {
           diagnostics: candidate.diagnostics,
           scoreBps: candidate.scoreBps,
           recommendationScoreBps: candidate.recommendationScoreBps,
+          recommendationPolicyTemplate: candidate.recommendationPolicyTemplate,
+          recommendationPolicySha256: candidate.recommendationPolicySha256,
+          recommendationPolicySource: candidate.recommendationPolicySource,
+          ...(candidate.familyPolicyOverrideSha256
+            ? {
+                familyPolicyOverrideSha256:
+                  candidate.familyPolicyOverrideSha256,
+              }
+            : {}),
           familySha256: candidate.familySha256,
           familyRecordCount: candidate.familyRecordCount,
           familyOutcomeQualifiedCount: candidate.familyOutcomeQualifiedCount,

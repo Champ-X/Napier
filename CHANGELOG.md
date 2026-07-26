@@ -147,6 +147,15 @@ All notable changes to Napier are recorded here.
   record/family IDs, average recommendation score, and hash-only candidate
   evidence. Server headers mirror the receipt hashes and counts, and the
   Template shelf adds a Backtest policies action with a pure ViewModel receipt.
+- Per-family blueprint recommendation policy overrides. `POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides` now persists a
+  hash-only override for a workflow-family SHA-256 and policy template, guarded
+  by optional `expectedPortfolioSetSha256` CAS so stale backtest/calibration
+  evidence fails closed with 409. Default selection applies policy precedence
+  as explicit request, family override, then `balanced`, and selection
+  receipts/headers now expose override-set SHA-256, selected policy source, and
+  family override hash. The Template shelf can apply the top backtested policy
+  as a family override through a pure ViewModel receipt.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

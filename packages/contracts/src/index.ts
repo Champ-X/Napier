@@ -880,6 +880,11 @@ export interface ExecutionPlanBlueprintRecommendationPolicy {
   weights: ExecutionPlanBlueprintRecommendationPolicyWeights;
 }
 
+export type ExecutionPlanBlueprintRecommendationPolicySource =
+  | "default"
+  | "request"
+  | "family_override";
+
 export interface SelectExecutionPlanBlueprintRecordRequest {
   objective?: string;
   policyTemplate?: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
@@ -905,6 +910,10 @@ export interface ExecutionPlanBlueprintRecordSelectionCandidate {
   familyReviewedBaselineCount: number;
   familyCompletionRateBps: number;
   recommendationScoreBps: number;
+  recommendationPolicyTemplate: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
+  recommendationPolicySha256: string;
+  recommendationPolicySource: ExecutionPlanBlueprintRecommendationPolicySource;
+  familyPolicyOverrideSha256?: string;
   previewStatus?: ExecutionPlanBlueprintRecordPreviewStatus;
   previewSha256?: string;
   baselineId?: string;
@@ -942,8 +951,14 @@ export interface ExecutionPlanBlueprintRecordSelection {
   selectedFamilySha256?: string;
   selectedFamilyCompletionRateBps?: number;
   selectedRecommendationScoreBps?: number;
+  selectedRecommendationPolicyTemplate?: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
+  selectedRecommendationPolicySha256?: string;
+  selectedRecommendationPolicySource?: ExecutionPlanBlueprintRecommendationPolicySource;
+  selectedFamilyPolicyOverrideSha256?: string;
   recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
   recommendationPolicySha256: string;
+  familyPolicyOverrideCount: number;
+  familyPolicyOverrideSetSha256: string;
   portfolioSetSha256: string;
   selectionSetSha256: string;
   candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];
@@ -1041,6 +1056,39 @@ export interface ExecutionPlanBlueprintRecommendationPolicyBacktest {
   portfolioSetSha256: string;
   policySetSha256: string;
   results: ExecutionPlanBlueprintRecommendationPolicyBacktestResult[];
+  contentSha256: string;
+}
+
+export interface SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest {
+  familySha256: string;
+  policyTemplate: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
+  expectedPortfolioSetSha256?: string;
+}
+
+export interface ExecutionPlanBlueprintRecommendationPolicyOverride {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-override";
+  schemaVersion: 1;
+  apiVersion: string;
+  familySha256: string;
+  recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
+  recommendationPolicySha256: string;
+  portfolioSetSha256: string;
+  familyRecordCount: number;
+  familyOutcomeQualifiedCount: number;
+  familyCompletionRateBps: number;
+  updatedAt: string;
+  contentSha256: string;
+}
+
+export interface ExecutionPlanBlueprintRecommendationPolicyOverrideList {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-overrides";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  overrideCount: number;
+  portfolioSetSha256: string;
+  overrideSetSha256: string;
+  overrides: ExecutionPlanBlueprintRecommendationPolicyOverride[];
   contentSha256: string;
 }
 

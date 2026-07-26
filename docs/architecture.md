@@ -2102,11 +2102,14 @@ select blueprint record for target Thread
      delivery_first, and portfolio_first tune outcome completion, portfolio
      family completion, reviewed-baseline coverage, and replay evidence
      weights before stable recency/freshness tie-breakers
+  -> apply policy precedence request > family_override > balanced default; each
+     candidate records the actual policy template, policy SHA-256, policy
+     source, and optional family override SHA-256
   -> return napier.execution-plan-blueprint-selection with record IDs,
      preview hashes, family hashes, portfolio-set SHA-256, baseline/outcome
-     hashes, recommendation policy hash, selected recommendation score,
-     low-cardinality diagnostics, selection-set SHA-256, and optional
-     objective SHA-256 rather than prose
+     hashes, recommendation policy hash, override-set SHA-256, selected
+     recommendation score/source, low-cardinality diagnostics, selection-set
+     SHA-256, and optional objective SHA-256 rather than prose
 backtest blueprint recommendation policies
   -> reuse the current portfolio evidence and historical replay outcomes
      without target-Thread preview or Ledger mutation
@@ -2116,6 +2119,14 @@ backtest blueprint recommendation policies
   -> return napier.execution-plan-blueprint-recommendation-policy-backtest with
      policy-set SHA-256, portfolio-set SHA-256, hash-only candidate evidence,
      and no objective, step title, artifact path, blocker, or evidence prose
+set blueprint family recommendation policy override
+  -> require family SHA-256 and one of balanced, delivery_first, or
+     portfolio_first, with optional expected portfolio-set SHA-256 CAS
+  -> fail closed with 409 when the caller's portfolio evidence is stale or the
+     family no longer exists
+  -> persist a hash-only
+     napier.execution-plan-blueprint-recommendation-policy-override record and
+     expose the override-set SHA-256 for future default selection receipts
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2268,9 +2279,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- per-family recommendation policy overrides with hash-bound default selection
-  evidence, so stable workflow families can prefer different operating modes
-  without weakening the global fail-closed gates.
+- policy override drift review that recommends retiring family overrides when
+  backtest evidence no longer agrees with the selected default.
 
 ### Layer 3: Extension fabric
 

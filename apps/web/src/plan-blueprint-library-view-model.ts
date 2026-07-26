@@ -12,6 +12,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
+  ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -175,6 +176,12 @@ export interface PlanBlueprintLibrarySelectionReceipt {
   selectedRecommendationScoreBps?: number;
   recommendationPolicyTemplate: ExecutionPlanBlueprintRecordSelection["recommendationPolicy"]["templateId"];
   recommendationPolicySha256: string;
+  selectedRecommendationPolicyTemplate?: ExecutionPlanBlueprintRecordSelection["selectedRecommendationPolicyTemplate"];
+  selectedRecommendationPolicySha256?: string;
+  selectedRecommendationPolicySource?: ExecutionPlanBlueprintRecordSelection["selectedRecommendationPolicySource"];
+  selectedFamilyPolicyOverrideSha256?: string;
+  familyPolicyOverrideCount: number;
+  familyPolicyOverrideSetSha256: string;
   selectedCompletionRateBps?: number;
   selectedReplayCount?: number;
   diagnostics: string[];
@@ -213,6 +220,18 @@ export interface PlanBlueprintLibraryRecommendationPolicyBacktestReceipt {
   topSelectedFamilySha256?: string;
   topSelectedRecommendationScoreBps?: number;
   averageRecommendationScoreBps: number;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyOverrideReceipt {
+  action: "policyOverrideApplied";
+  contentSha256: string;
+  portfolioSetSha256: string;
+  familySha256: string;
+  recommendationPolicyTemplate: ExecutionPlanBlueprintRecommendationPolicyOverride["recommendationPolicy"]["templateId"];
+  recommendationPolicySha256: string;
+  familyRecordCount: number;
+  familyOutcomeQualifiedCount: number;
+  familyCompletionRateBps: number;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -524,6 +543,32 @@ export function planBlueprintSelectionReceipt(
       : {}),
     recommendationPolicyTemplate: selection.recommendationPolicy.templateId,
     recommendationPolicySha256: selection.recommendationPolicySha256,
+    ...(selection.selectedRecommendationPolicyTemplate
+      ? {
+          selectedRecommendationPolicyTemplate:
+            selection.selectedRecommendationPolicyTemplate,
+        }
+      : {}),
+    ...(selection.selectedRecommendationPolicySha256
+      ? {
+          selectedRecommendationPolicySha256:
+            selection.selectedRecommendationPolicySha256,
+        }
+      : {}),
+    ...(selection.selectedRecommendationPolicySource
+      ? {
+          selectedRecommendationPolicySource:
+            selection.selectedRecommendationPolicySource,
+        }
+      : {}),
+    ...(selection.selectedFamilyPolicyOverrideSha256
+      ? {
+          selectedFamilyPolicyOverrideSha256:
+            selection.selectedFamilyPolicyOverrideSha256,
+        }
+      : {}),
+    familyPolicyOverrideCount: selection.familyPolicyOverrideCount,
+    familyPolicyOverrideSetSha256: selection.familyPolicyOverrideSetSha256,
     ...(selected
       ? {
           selectedCompletionRateBps: selected.completionRateBps,
@@ -592,6 +637,22 @@ export function planBlueprintRecommendationPolicyBacktestReceipt(
         }
       : {}),
     averageRecommendationScoreBps: top?.averageRecommendationScoreBps ?? 0,
+  };
+}
+
+export function planBlueprintRecommendationPolicyOverrideReceipt(
+  override: ExecutionPlanBlueprintRecommendationPolicyOverride,
+): PlanBlueprintLibraryRecommendationPolicyOverrideReceipt {
+  return {
+    action: "policyOverrideApplied",
+    contentSha256: override.contentSha256,
+    portfolioSetSha256: override.portfolioSetSha256,
+    familySha256: override.familySha256,
+    recommendationPolicyTemplate: override.recommendationPolicy.templateId,
+    recommendationPolicySha256: override.recommendationPolicySha256,
+    familyRecordCount: override.familyRecordCount,
+    familyOutcomeQualifiedCount: override.familyOutcomeQualifiedCount,
+    familyCompletionRateBps: override.familyCompletionRateBps,
   };
 }
 

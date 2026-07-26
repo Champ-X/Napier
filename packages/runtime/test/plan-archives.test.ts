@@ -805,6 +805,8 @@ describe("execution plan archives", () => {
         currentOutcomesSha256: completedOutcomes.contentSha256,
         scoreBps: 10_000,
         recommendationScoreBps: 8_100,
+        recommendationPolicyTemplate: "delivery_first",
+        recommendationPolicySource: "request",
         replayCount: 1,
         completionRateBps: 10_000,
       }),
@@ -864,6 +866,81 @@ describe("execution plan archives", () => {
     );
     expect(JSON.stringify(policyBacktest)).not.toContain(
       "Reuse the release workflow with fresh delivery evidence.",
+    );
+    const policyOverride =
+      await store.setExecutionPlanBlueprintRecommendationPolicyOverride({
+        familySha256: selection.selectedFamilySha256!,
+        policyTemplate: "portfolio_first",
+        expectedPortfolioSetSha256: selection.portfolioSetSha256,
+      });
+    expect(policyOverride).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override",
+        schemaVersion: 1,
+        familySha256: selection.selectedFamilySha256,
+        recommendationPolicy: {
+          templateId: "portfolio_first",
+          weights: {
+            outcomeCompletionBps: 3_500,
+            familyCompletionBps: 3_500,
+            reviewedBaselineBps: 2_000,
+            replayEvidenceBps: 1_000,
+          },
+        },
+        portfolioSetSha256: selection.portfolioSetSha256,
+        familyRecordCount: 1,
+        familyOutcomeQualifiedCount: 1,
+        familyCompletionRateBps: 10_000,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    await expect(
+      store.listExecutionPlanBlueprintRecommendationPolicyOverrides(),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-overrides",
+        overrideCount: 1,
+        portfolioSetSha256: selection.portfolioSetSha256,
+        overrideSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        overrides: [policyOverride],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    const overrideSelection = await store.selectExecutionPlanBlueprintRecord(
+      selectionThread.id,
+    );
+    expect(overrideSelection).toEqual(
+      expect.objectContaining({
+        selectedRecordId: first.record.id,
+        selectedRecommendationScoreBps: 7_100,
+        selectedRecommendationPolicyTemplate: "portfolio_first",
+        selectedRecommendationPolicySha256:
+          policyOverride.recommendationPolicySha256,
+        selectedRecommendationPolicySource: "family_override",
+        selectedFamilyPolicyOverrideSha256: policyOverride.contentSha256,
+        familyPolicyOverrideCount: 1,
+        familyPolicyOverrideSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(overrideSelection.candidates).toEqual([
+      expect.objectContaining({
+        recordId: first.record.id,
+        selectionStatus: "selected",
+        recommendationScoreBps: 7_100,
+        recommendationPolicyTemplate: "portfolio_first",
+        recommendationPolicySha256: policyOverride.recommendationPolicySha256,
+        recommendationPolicySource: "family_override",
+        familyPolicyOverrideSha256: policyOverride.contentSha256,
+      }),
+    ]);
+    await expect(
+      store.setExecutionPlanBlueprintRecommendationPolicyOverride({
+        familySha256: selection.selectedFamilySha256!,
+        policyTemplate: "balanced",
+        expectedPortfolioSetSha256: "0".repeat(64),
+      }),
+    ).rejects.toThrow(
+      "Execution plan blueprint recommendation policy override portfolio set changed",
     );
     const secondPreview = await store.previewPlanFromBlueprintRecord(
       targetThread.id,

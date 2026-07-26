@@ -11,6 +11,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
+  ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -26,6 +27,7 @@ import {
   planBlueprintPreviewReceipt,
   planBlueprintQualificationReceipt,
   planBlueprintRecommendationPolicyBacktestReceipt,
+  planBlueprintRecommendationPolicyOverrideReceipt,
   planBlueprintReplayHistoryReceipt,
   planBlueprintReplayHistoryVerificationReceipt,
   planBlueprintReplayOutcomesReceipt,
@@ -509,6 +511,9 @@ describe("Plan blueprint library view model", () => {
       selectedFamilySha256: "3".repeat(64),
       selectedFamilyCompletionRateBps: 5_000,
       selectedRecommendationScoreBps: 5_450,
+      selectedRecommendationPolicyTemplate: "balanced",
+      selectedRecommendationPolicySha256: "6".repeat(64),
+      selectedRecommendationPolicySource: "default",
       recommendationPolicy: {
         templateId: "balanced",
         weights: {
@@ -519,6 +524,8 @@ describe("Plan blueprint library view model", () => {
         },
       },
       recommendationPolicySha256: "6".repeat(64),
+      familyPolicyOverrideCount: 0,
+      familyPolicyOverrideSetSha256: "7".repeat(64),
       portfolioSetSha256: "4".repeat(64),
       selectionSetSha256: "c".repeat(64),
       candidates: [
@@ -537,6 +544,9 @@ describe("Plan blueprint library view model", () => {
           familyReviewedBaselineCount: 1,
           familyCompletionRateBps: 5_000,
           recommendationScoreBps: 5_450,
+          recommendationPolicyTemplate: "balanced",
+          recommendationPolicySha256: "6".repeat(64),
+          recommendationPolicySource: "default",
           previewStatus: "ready",
           previewSha256: "a".repeat(64),
           baselineId: "outcome_base_1234567890abcdef1234",
@@ -570,6 +580,9 @@ describe("Plan blueprint library view model", () => {
           familyReviewedBaselineCount: 0,
           familyCompletionRateBps: 0,
           recommendationScoreBps: 0,
+          recommendationPolicyTemplate: "balanced",
+          recommendationPolicySha256: "6".repeat(64),
+          recommendationPolicySource: "default",
           currentOutcomesSha256: "e".repeat(64),
           currentReplayHistorySha256: "f".repeat(64),
           currentOutcomeSetSha256: "1".repeat(64),
@@ -604,6 +617,11 @@ describe("Plan blueprint library view model", () => {
       selectedRecommendationScoreBps: 5_450,
       recommendationPolicyTemplate: "balanced",
       recommendationPolicySha256: "6".repeat(64),
+      selectedRecommendationPolicyTemplate: "balanced",
+      selectedRecommendationPolicySha256: "6".repeat(64),
+      selectedRecommendationPolicySource: "default",
+      familyPolicyOverrideCount: 0,
+      familyPolicyOverrideSetSha256: "7".repeat(64),
       selectedCompletionRateBps: 5_000,
       selectedReplayCount: 2,
       diagnostics: [],
@@ -739,6 +757,43 @@ describe("Plan blueprint library view model", () => {
       topSelectedFamilySha256: "9".repeat(64),
       topSelectedRecommendationScoreBps: 6_250,
       averageRecommendationScoreBps: 4_800,
+    });
+  });
+
+  it("projects blueprint recommendation policy override receipts", () => {
+    const override: ExecutionPlanBlueprintRecommendationPolicyOverride = {
+      kind: "napier.execution-plan-blueprint-recommendation-policy-override",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      familySha256: "4".repeat(64),
+      recommendationPolicy: {
+        templateId: "portfolio_first",
+        weights: {
+          outcomeCompletionBps: 3_500,
+          familyCompletionBps: 3_500,
+          reviewedBaselineBps: 2_000,
+          replayEvidenceBps: 1_000,
+        },
+      },
+      recommendationPolicySha256: "5".repeat(64),
+      portfolioSetSha256: "6".repeat(64),
+      familyRecordCount: 3,
+      familyOutcomeQualifiedCount: 2,
+      familyCompletionRateBps: 7_500,
+      updatedAt: "2026-07-26T00:00:08.000Z",
+      contentSha256: "7".repeat(64),
+    };
+
+    expect(planBlueprintRecommendationPolicyOverrideReceipt(override)).toEqual({
+      action: "policyOverrideApplied",
+      contentSha256: override.contentSha256,
+      portfolioSetSha256: override.portfolioSetSha256,
+      familySha256: override.familySha256,
+      recommendationPolicyTemplate: "portfolio_first",
+      recommendationPolicySha256: override.recommendationPolicySha256,
+      familyRecordCount: 3,
+      familyOutcomeQualifiedCount: 2,
+      familyCompletionRateBps: 7_500,
     });
   });
 

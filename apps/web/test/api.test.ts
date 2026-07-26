@@ -18,6 +18,8 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
+  ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
@@ -39,6 +41,7 @@ import {
   getExecutionPlanBlueprint,
   getExecutionPlanBlueprintPortfolioCalibration,
   getExecutionPlanBlueprintRecommendationPolicyBacktest,
+  getExecutionPlanBlueprintRecommendationPolicyOverrides,
   getExecutionPlanBlueprintRecordQualification,
   getExecutionPlanBlueprintRecordOutcomeBaselines,
   getExecutionPlanBlueprintRecordOutcomeQualification,
@@ -51,6 +54,7 @@ import {
   reviewExecutionPlanBlueprintRecordOutcomes,
   saveExecutionPlanBlueprint,
   selectExecutionPlanBlueprintRecord,
+  setExecutionPlanBlueprintRecommendationPolicyOverride,
   setExecutionPlanBlueprintRecordStatus,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
@@ -729,6 +733,9 @@ describe("Web JSON API wrappers", () => {
       selectedFamilySha256: "3".repeat(64),
       selectedFamilyCompletionRateBps: 0,
       selectedRecommendationScoreBps: 1_600,
+      selectedRecommendationPolicyTemplate: "balanced",
+      selectedRecommendationPolicySha256: "7".repeat(64),
+      selectedRecommendationPolicySource: "default",
       recommendationPolicy: {
         templateId: "balanced",
         weights: {
@@ -739,6 +746,8 @@ describe("Web JSON API wrappers", () => {
         },
       },
       recommendationPolicySha256: "7".repeat(64),
+      familyPolicyOverrideCount: 0,
+      familyPolicyOverrideSetSha256: "8".repeat(64),
       portfolioSetSha256: "2".repeat(64),
       selectionSetSha256: "f".repeat(64),
       candidates: [
@@ -757,6 +766,9 @@ describe("Web JSON API wrappers", () => {
           familyReviewedBaselineCount: 1,
           familyCompletionRateBps: 0,
           recommendationScoreBps: 1_600,
+          recommendationPolicyTemplate: "balanced",
+          recommendationPolicySha256: "7".repeat(64),
+          recommendationPolicySource: "default",
           previewStatus: "ready",
           previewSha256: "e".repeat(64),
           baselineId: outcomeBaseline.id,
@@ -866,6 +878,33 @@ describe("Web JSON API wrappers", () => {
         ],
         contentSha256: "9".repeat(64),
       };
+    const recommendationPolicyOverride: ExecutionPlanBlueprintRecommendationPolicyOverride =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        familySha256: "3".repeat(64),
+        recommendationPolicy: selection.recommendationPolicy,
+        recommendationPolicySha256: selection.recommendationPolicySha256,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        familyRecordCount: 1,
+        familyOutcomeQualifiedCount: 1,
+        familyCompletionRateBps: 0,
+        updatedAt: "2026-07-26T00:00:07.000Z",
+        contentSha256: "a".repeat(64),
+      };
+    const recommendationPolicyOverrideList: ExecutionPlanBlueprintRecommendationPolicyOverrideList =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-overrides",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-26T00:00:08.000Z",
+        overrideCount: 1,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        overrideSetSha256: "b".repeat(64),
+        overrides: [recommendationPolicyOverride],
+        contentSha256: "c".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -954,6 +993,20 @@ describe("Web JSON API wrappers", () => {
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-backtest",
         response: recommendationPolicyBacktest,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+        response: recommendationPolicyOverrideList,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+        method: "POST",
+        body: {
+          familySha256: "3".repeat(64),
+          policyTemplate: "balanced",
+          expectedPortfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        },
+        response: recommendationPolicyOverride,
       },
       {
         path: "/api/plan-blueprints/blueprint_12345678/replays/events/verify",
@@ -1090,6 +1143,16 @@ describe("Web JSON API wrappers", () => {
       getExecutionPlanBlueprintRecommendationPolicyBacktest(),
     ).resolves.toEqual(recommendationPolicyBacktest);
     await expect(
+      getExecutionPlanBlueprintRecommendationPolicyOverrides(),
+    ).resolves.toEqual(recommendationPolicyOverrideList);
+    await expect(
+      setExecutionPlanBlueprintRecommendationPolicyOverride({
+        familySha256: "3".repeat(64),
+        policyTemplate: "balanced",
+        expectedPortfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+      }),
+    ).resolves.toEqual(recommendationPolicyOverride);
+    await expect(
       verifyExecutionPlanBlueprintRecordReplayEvent(record.id, {
         threadId: "thread_2",
         eventId: "event_12345678",
@@ -1141,7 +1204,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(21);
+    expect(fetchMock).toHaveBeenCalledTimes(23);
   });
 });
 

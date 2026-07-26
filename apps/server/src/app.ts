@@ -52,6 +52,8 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
+  ExecutionPlanBlueprintRecommendationPolicyOverride,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
@@ -165,6 +167,7 @@ import type {
   RemoveEvaluationCaseRequest,
   SetExtensionEnabledRequest,
   SetCredentialReferenceStatusRequest,
+  SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   SetExecutionPlanBlueprintRecordStatusRequest,
   SelectExecutionPlanBlueprintRecordRequest,
   SetGoalRequest,
@@ -2448,6 +2451,74 @@ export function createApp(services: NapierServices): Hono {
         backtest,
       );
       return context.json(backtest);
+    },
+  );
+
+  app.get(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+    async (context) => {
+      const overrides =
+        await services.store.listExecutionPlanBlueprintRecommendationPolicyOverrides();
+      setExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
+        context,
+        overrides,
+      );
+      return context.json(overrides);
+    },
+  );
+
+  app.post(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
+          "Execution plan blueprint recommendation policy override request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override request is invalid",
+          400,
+        );
+      }
+      const request =
+        parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
+          input,
+        );
+      if (!request) {
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override request is invalid",
+          400,
+        );
+      }
+      try {
+        const override =
+          await services.store.setExecutionPlanBlueprintRecommendationPolicyOverride(
+            request,
+          );
+        setExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(
+          context,
+          override,
+        );
+        return context.json(override);
+      } catch (error) {
+        const message = errorMessage(error);
+        return jsonError(
+          context,
+          message,
+          message.includes("portfolio set changed") ||
+            message.includes("family is missing")
+            ? 409
+            : 400,
+        );
+      }
     },
   );
 
@@ -8295,6 +8366,37 @@ function parseSelectExecutionPlanBlueprintRecordRequest(
   };
 }
 
+function parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
+  input: unknown,
+): SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest | undefined {
+  const record = requestRecord(input, [
+    "familySha256",
+    "policyTemplate",
+    "expectedPortfolioSetSha256",
+  ]);
+  if (!record) return undefined;
+  const familySha256 = record["familySha256"];
+  const policyTemplate = record["policyTemplate"];
+  const expectedPortfolioSetSha256 = record["expectedPortfolioSetSha256"];
+  if (
+    !isSha256Hex(familySha256) ||
+    (policyTemplate !== "balanced" &&
+      policyTemplate !== "delivery_first" &&
+      policyTemplate !== "portfolio_first") ||
+    (expectedPortfolioSetSha256 !== undefined &&
+      !isSha256Hex(expectedPortfolioSetSha256))
+  ) {
+    return undefined;
+  }
+  return {
+    familySha256,
+    policyTemplate,
+    ...(expectedPortfolioSetSha256
+      ? { expectedPortfolioSetSha256 }
+      : {}),
+  };
+}
+
 function parseSetExecutionPlanBlueprintRecordStatusRequest(
   input: unknown,
 ): SetExecutionPlanBlueprintRecordStatusRequest | undefined {
@@ -11983,6 +12085,14 @@ function setExecutionPlanBlueprintRecordSelectionHeaders(
     "X-Napier-Blueprint-Recommendation-Policy-SHA256",
     selection.recommendationPolicySha256,
   );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Count",
+    String(selection.familyPolicyOverrideCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
+    selection.familyPolicyOverrideSetSha256,
+  );
   setOptionalHeader(
     context,
     "X-Napier-Objective-SHA256",
@@ -12027,6 +12137,26 @@ function setExecutionPlanBlueprintRecordSelectionHeaders(
     context,
     "X-Napier-Selected-Blueprint-Recommendation-Score-BPS",
     selection.selectedRecommendationScoreBps,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Recommendation-Policy-Template",
+    selection.selectedRecommendationPolicyTemplate,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Recommendation-Policy-SHA256",
+    selection.selectedRecommendationPolicySha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Recommendation-Policy-Source",
+    selection.selectedRecommendationPolicySource,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Family-Policy-Override-SHA256",
+    selection.selectedFamilyPolicyOverrideSha256,
   );
 }
 
@@ -12107,6 +12237,62 @@ function setExecutionPlanBlueprintRecommendationPolicyBacktestHeaders(
   context.header(
     "X-Napier-Blueprint-Recommendation-Policy-Set-SHA256",
     backtest.policySetSha256,
+  );
+}
+
+function setExecutionPlanBlueprintRecommendationPolicyOverrideHeaders(
+  context: Context,
+  override: ExecutionPlanBlueprintRecommendationPolicyOverride,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, override.contentSha256);
+  context.header(
+    "X-Napier-Blueprint-Family-SHA256",
+    override.familySha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-Template",
+    override.recommendationPolicy.templateId,
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-SHA256",
+    override.recommendationPolicySha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    override.portfolioSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Record-Count",
+    String(override.familyRecordCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Outcome-Qualified-Count",
+    String(override.familyOutcomeQualifiedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Completion-Rate-BPS",
+    String(override.familyCompletionRateBps),
+  );
+}
+
+function setExecutionPlanBlueprintRecommendationPolicyOverrideListHeaders(
+  context: Context,
+  overrides: ExecutionPlanBlueprintRecommendationPolicyOverrideList,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, overrides.contentSha256);
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Count",
+    String(overrides.overrideCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
+    overrides.overrideSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    overrides.portfolioSetSha256,
   );
 }
 
