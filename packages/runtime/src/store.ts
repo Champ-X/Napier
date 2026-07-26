@@ -52,7 +52,9 @@ import {
   type ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   type ExecutionPlanBlueprintRecordOutcomeBaseline,
   type ExecutionPlanBlueprintRecordOutcomeBaselinePolicy,
+  type ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate,
   type ExecutionPlanBlueprintRecordOutcomeQualification,
+  type ExecutionPlanBlueprintRecordOutcomeReview,
   type ExecutionPlanBlueprintRecordSelection,
   type ExecutionPlanBlueprintRecordSelectionCandidate,
   type CredentialAvailability,
@@ -574,6 +576,12 @@ const DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY: ExecutionPlanBlu
     minCompletionRateBps: 10_000,
     maxBlockedCount: 0,
     maxInvalidCount: 0,
+  };
+
+const DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate =
+  {
+    minScore: 80,
+    maxRisk: "medium",
   };
 
 export interface CreateSubagentTaskInput {
@@ -2308,6 +2316,32 @@ export class LocalStore {
         `Execution plan blueprint outcome baseline policy failed: ${policyDiagnostics.join(",")}`,
       );
     }
+    const hasReview = request.review !== undefined;
+    const reviewGate =
+      hasReview || request.reviewGate !== undefined
+        ? normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate(
+            request.reviewGate,
+          )
+        : undefined;
+    if (reviewGate && !hasReview) {
+      throw new Error(
+        "Execution plan blueprint outcome baseline requires reviewed outcomes",
+      );
+    }
+    const reviewEvidence = hasReview
+      ? createExecutionPlanBlueprintOutcomeBaselineReviewEvidence({
+          recordId,
+          review: request.review,
+          outcomes: observed,
+          sourceQualification:
+            await this.qualifyExecutionPlanBlueprintRecord(recordId),
+          outcomeQualification:
+            await this.qualifyExecutionPlanBlueprintRecordOutcomes(recordId),
+          reviewGate:
+            reviewGate ??
+            DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE,
+        })
+      : undefined;
     return this.stateQueue.run(async () => {
       const latest = this.state.executionPlanBlueprintOutcomeBaselines
         .filter((baseline) => baseline.recordId === recordId)
@@ -2316,7 +2350,10 @@ export class LocalStore {
       if (
         latest &&
         latest.replayOutcomesSha256 === observed.contentSha256 &&
-        JSON.stringify(latest.policy) === JSON.stringify(policy)
+        JSON.stringify(latest.policy) === JSON.stringify(policy) &&
+        (latest.reviewSha256 ?? "") === (reviewEvidence?.reviewSha256 ?? "") &&
+        JSON.stringify(latest.reviewGate ?? null) ===
+          JSON.stringify(reviewEvidence?.reviewGate ?? null)
       ) {
         return {
           baseline: structuredClone(latest),
@@ -2328,6 +2365,7 @@ export class LocalStore {
         recordId,
         outcomes: observed,
         policy,
+        ...(reviewEvidence ? { reviewEvidence } : {}),
         promotedAt: nowIso(),
         ...(latest ? { supersedesBaselineId: latest.id } : {}),
       });
@@ -8251,6 +8289,192 @@ function normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
   };
 }
 
+function normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate(
+  gate:
+    | Partial<ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate>
+    | undefined,
+): ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate {
+  const minScore =
+    gate?.minScore ??
+    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE.minScore;
+  const maxRisk =
+    gate?.maxRisk ??
+    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE.maxRisk;
+  if (
+    !isNonNegativeInteger(minScore) ||
+    minScore > 100 ||
+    (maxRisk !== "low" && maxRisk !== "medium" && maxRisk !== "high")
+  ) {
+    throw new Error(
+      "Execution plan blueprint outcome baseline review gate is invalid",
+    );
+  }
+  return {
+    minScore,
+    maxRisk,
+  };
+}
+
+interface ExecutionPlanBlueprintOutcomeBaselineReviewEvidence {
+  reviewGate: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate;
+  reviewSha256: string;
+  reviewInputSha256: string;
+  reviewResponseSha256: string;
+  reviewVerdict: NonNullable<
+    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewVerdict"]
+  >;
+  reviewScore: number;
+  reviewRisk: NonNullable<
+    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewRisk"]
+  >;
+  reviewModel: NonNullable<
+    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewModel"]
+  >;
+}
+
+function createExecutionPlanBlueprintOutcomeBaselineReviewEvidence(input: {
+  recordId: string;
+  review: unknown;
+  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes;
+  sourceQualification: ExecutionPlanBlueprintRecordQualification;
+  outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
+  reviewGate: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate;
+}): ExecutionPlanBlueprintOutcomeBaselineReviewEvidence {
+  const review = validateExecutionPlanBlueprintOutcomeReview(input.review);
+  const diagnostics: string[] = [];
+  if (review.recordId !== input.recordId) diagnostics.push("record_mismatch");
+  if (review.blueprintSha256 !== input.sourceQualification.blueprintSha256) {
+    diagnostics.push("blueprint_mismatch");
+  }
+  if (review.replayOutcomesSha256 !== input.outcomes.contentSha256) {
+    diagnostics.push("outcomes_mismatch");
+  }
+  if (review.replayHistorySha256 !== input.outcomes.replayHistorySha256) {
+    diagnostics.push("replay_history_mismatch");
+  }
+  if (review.outcomeSetSha256 !== input.outcomes.outcomeSetSha256) {
+    diagnostics.push("outcome_set_mismatch");
+  }
+  if (review.replayCount !== input.outcomes.replayCount) {
+    diagnostics.push("replay_count_mismatch");
+  }
+  if (review.completedCount !== input.outcomes.completedCount) {
+    diagnostics.push("completed_count_mismatch");
+  }
+  if (review.blockedCount !== input.outcomes.blockedCount) {
+    diagnostics.push("blocked_count_mismatch");
+  }
+  if (review.invalidCount !== input.outcomes.invalidCount) {
+    diagnostics.push("invalid_count_mismatch");
+  }
+  if (review.completionRateBps !== input.outcomes.completionRateBps) {
+    diagnostics.push("completion_rate_mismatch");
+  }
+  if (
+    review.sourceQualificationStatus !== input.sourceQualification.status ||
+    input.sourceQualification.status !== "qualified"
+  ) {
+    diagnostics.push("source_qualification_mismatch");
+  }
+  if (review.outcomeQualificationStatus !== input.outcomeQualification.status) {
+    diagnostics.push("outcome_qualification_mismatch");
+  }
+  if (review.verdict !== "promote") diagnostics.push("review_not_promote");
+  if (review.score < input.reviewGate.minScore) {
+    diagnostics.push("review_score_below_min");
+  }
+  if (
+    outcomeReviewRiskRank(review.risk) >
+    outcomeReviewRiskRank(input.reviewGate.maxRisk)
+  ) {
+    diagnostics.push("review_risk_above_max");
+  }
+  if (diagnostics.length > 0) {
+    throw new Error(
+      `Execution plan blueprint outcome baseline review failed: ${diagnostics.join(",")}`,
+    );
+  }
+  return {
+    reviewGate: input.reviewGate,
+    reviewSha256: review.reviewSha256,
+    reviewInputSha256: review.inputSha256,
+    reviewResponseSha256: review.responseSha256,
+    reviewVerdict: review.verdict,
+    reviewScore: review.score,
+    reviewRisk: review.risk,
+    reviewModel: review.model,
+  };
+}
+
+function validateExecutionPlanBlueprintOutcomeReview(
+  value: unknown,
+): ExecutionPlanBlueprintRecordOutcomeReview {
+  if (!isRecord(value)) {
+    throw new Error("Execution plan blueprint outcome review is invalid");
+  }
+  const review = value as unknown as ExecutionPlanBlueprintRecordOutcomeReview;
+  if (
+    review.kind !== "napier.execution-plan-blueprint-outcome-review" ||
+    review.schemaVersion !== 1 ||
+    typeof review.policyId !== "string" ||
+    typeof review.recordId !== "string" ||
+    !isSha256(review.blueprintSha256) ||
+    !isModelRef(review.model) ||
+    !isRecord(review.criteria) ||
+    (review.verdict !== "promote" &&
+      review.verdict !== "revise" &&
+      review.verdict !== "reject" &&
+      review.verdict !== "inconclusive") ||
+    !isNonNegativeInteger(review.score) ||
+    review.score > 100 ||
+    (review.risk !== "low" &&
+      review.risk !== "medium" &&
+      review.risk !== "high") ||
+    typeof review.reason !== "string" ||
+    !Array.isArray(review.concerns) ||
+    !Array.isArray(review.scores) ||
+    !isExecutionPlanBlueprintRecordQualificationStatus(
+      review.sourceQualificationStatus,
+    ) ||
+    (review.outcomeQualificationStatus !== "qualified" &&
+      review.outcomeQualificationStatus !== "missing_baseline" &&
+      review.outcomeQualificationStatus !== "policy_failed") ||
+    !isSha256(review.replayOutcomesSha256) ||
+    !isSha256(review.replayHistorySha256) ||
+    !isSha256(review.outcomeSetSha256) ||
+    !isNonNegativeInteger(review.replayCount) ||
+    !isNonNegativeInteger(review.completedCount) ||
+    !isNonNegativeInteger(review.blockedCount) ||
+    !isNonNegativeInteger(review.invalidCount) ||
+    !isNonNegativeInteger(review.completionRateBps) ||
+    review.completionRateBps > 10_000 ||
+    (review.baselineId !== undefined &&
+      typeof review.baselineId !== "string") ||
+    (review.baselineSha256 !== undefined && !isSha256(review.baselineSha256)) ||
+    (review.baselineOutcomesSha256 !== undefined &&
+      !isSha256(review.baselineOutcomesSha256)) ||
+    !isSha256(review.inputSha256) ||
+    !isSha256(review.promptSha256) ||
+    !isSha256(review.responseSha256) ||
+    !isSha256(review.reviewSchemaSha256) ||
+    !isSha256(review.reviewSha256) ||
+    !Number.isFinite(Date.parse(review.createdAt))
+  ) {
+    throw new Error("Execution plan blueprint outcome review is invalid");
+  }
+  const { reviewSha256: _reviewSha256, ...content } = review;
+  if (sha256(canonicalJson(content)) !== review.reviewSha256) {
+    throw new Error("Execution plan blueprint outcome review hash mismatch");
+  }
+  return structuredClone(review);
+}
+
+function outcomeReviewRiskRank(
+  risk: NonNullable<ExecutionPlanBlueprintRecordOutcomeBaseline["reviewRisk"]>,
+): number {
+  return risk === "low" ? 0 : risk === "medium" ? 1 : 2;
+}
+
 function executionPlanBlueprintOutcomePolicyDiagnostics(
   outcomes: Pick<
     ExecutionPlanBlueprintRecordReplayOutcomes,
@@ -8279,6 +8503,7 @@ function createExecutionPlanBlueprintOutcomeBaseline(input: {
   recordId: string;
   outcomes: ExecutionPlanBlueprintRecordReplayOutcomes;
   policy: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy;
+  reviewEvidence?: ExecutionPlanBlueprintOutcomeBaselineReviewEvidence;
   promotedAt: string;
   supersedesBaselineId?: string;
 }): ExecutionPlanBlueprintRecordOutcomeBaseline {
@@ -8294,6 +8519,18 @@ function createExecutionPlanBlueprintOutcomeBaseline(input: {
     invalidCount: input.outcomes.invalidCount,
     completionRateBps: input.outcomes.completionRateBps,
     policy: input.policy,
+    ...(input.reviewEvidence
+      ? {
+          reviewGate: input.reviewEvidence.reviewGate,
+          reviewSha256: input.reviewEvidence.reviewSha256,
+          reviewInputSha256: input.reviewEvidence.reviewInputSha256,
+          reviewResponseSha256: input.reviewEvidence.reviewResponseSha256,
+          reviewVerdict: input.reviewEvidence.reviewVerdict,
+          reviewScore: input.reviewEvidence.reviewScore,
+          reviewRisk: input.reviewEvidence.reviewRisk,
+          reviewModel: input.reviewEvidence.reviewModel,
+        }
+      : {}),
     promotedAt: input.promotedAt,
     ...(input.supersedesBaselineId
       ? { supersedesBaselineId: input.supersedesBaselineId }
@@ -8316,6 +8553,21 @@ function validateExecutionPlanBlueprintOutcomeBaseline(
   const policy = normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
     baseline.policy,
   );
+  const reviewGate =
+    baseline.reviewGate === undefined
+      ? undefined
+      : normalizeExecutionPlanBlueprintOutcomeBaselineReviewGate(
+          baseline.reviewGate,
+        );
+  const hasReviewEvidence =
+    baseline.reviewSha256 !== undefined ||
+    baseline.reviewInputSha256 !== undefined ||
+    baseline.reviewResponseSha256 !== undefined ||
+    baseline.reviewVerdict !== undefined ||
+    baseline.reviewScore !== undefined ||
+    baseline.reviewRisk !== undefined ||
+    baseline.reviewModel !== undefined ||
+    baseline.reviewGate !== undefined;
   if (
     typeof baseline.id !== "string" ||
     typeof baseline.recordId !== "string" ||
@@ -8328,6 +8580,18 @@ function validateExecutionPlanBlueprintOutcomeBaseline(
     !isNonNegativeInteger(baseline.invalidCount) ||
     !isNonNegativeInteger(baseline.completionRateBps) ||
     baseline.completionRateBps > 10_000 ||
+    (hasReviewEvidence &&
+      (!reviewGate ||
+        !isSha256(baseline.reviewSha256) ||
+        !isSha256(baseline.reviewInputSha256) ||
+        !isSha256(baseline.reviewResponseSha256) ||
+        baseline.reviewVerdict !== "promote" ||
+        !isNonNegativeInteger(baseline.reviewScore) ||
+        baseline.reviewScore > 100 ||
+        (baseline.reviewRisk !== "low" &&
+          baseline.reviewRisk !== "medium" &&
+          baseline.reviewRisk !== "high") ||
+        !isModelRef(baseline.reviewModel))) ||
     !Number.isFinite(Date.parse(baseline.promotedAt)) ||
     (baseline.supersedesBaselineId !== undefined &&
       typeof baseline.supersedesBaselineId !== "string") ||
@@ -8338,6 +8602,7 @@ function validateExecutionPlanBlueprintOutcomeBaseline(
   const { contentSha256: _contentSha256, ...content } = {
     ...baseline,
     policy,
+    ...(reviewGate ? { reviewGate } : {}),
   };
   if (sha256(canonicalJson(content)) !== baseline.contentSha256) {
     throw new Error("Execution Plan blueprint outcome baseline hash mismatch");
@@ -8345,6 +8610,7 @@ function validateExecutionPlanBlueprintOutcomeBaseline(
   return structuredClone({
     ...baseline,
     policy,
+    ...(reviewGate ? { reviewGate } : {}),
   });
 }
 
@@ -8871,6 +9137,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isSha256(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
+
+function isModelRef(value: unknown): value is { provider: string; id: string } {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value["provider"] === "string" &&
+    /^[a-z0-9][a-z0-9._-]{1,80}$/.test(value["provider"]) &&
+    typeof value["id"] === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/.test(value["id"])
+  );
 }
 
 function isNonNegativeInteger(value: unknown): value is number {

@@ -320,6 +320,50 @@ describe("Plan blueprint library view model", () => {
       completionRateBps: 5_000,
       minCompletionRateBps: 5_000,
     });
+
+    const reviewedResult: PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult =
+      {
+        created: true,
+        baseline: {
+          ...result.baseline,
+          id: "outcome_base_reviewed123456789",
+          reviewGate: {
+            minScore: 80,
+            maxRisk: "medium",
+          },
+          reviewSha256: "a".repeat(64),
+          reviewInputSha256: "b".repeat(64),
+          reviewResponseSha256: "c".repeat(64),
+          reviewVerdict: "promote",
+          reviewScore: 91,
+          reviewRisk: "low",
+          reviewModel: { provider: "faux-review", id: "faux-1" },
+          supersedesBaselineId: result.baseline.id,
+          contentSha256: "9".repeat(64),
+        },
+      };
+
+    expect(planBlueprintOutcomeBaselineReceipt(reviewedResult)).toEqual({
+      action: "outcomeBaseline",
+      recordId: record.id,
+      baselineId: reviewedResult.baseline.id,
+      baselineSha256: reviewedResult.baseline.contentSha256,
+      replayOutcomesSha256: outcomes.contentSha256,
+      created: true,
+      replayCount: 2,
+      completedCount: 1,
+      blockedCount: 1,
+      invalidCount: 0,
+      completionRateBps: 5_000,
+      minCompletionRateBps: 5_000,
+      reviewGateMinScore: 80,
+      reviewGateMaxRisk: "medium",
+      reviewSha256: "a".repeat(64),
+      reviewVerdict: "promote",
+      reviewScore: 91,
+      reviewRisk: "low",
+      reviewModel: "faux-review/faux-1",
+    });
   });
 
   it("projects replay outcome qualification diagnostics", () => {

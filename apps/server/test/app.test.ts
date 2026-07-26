@@ -5125,6 +5125,165 @@ describe("Napier HTTP goal flow", () => {
       error: "Execution plan blueprint selection request is invalid",
     });
 
+    const reviewedProvider = fauxProvider({
+      provider: "faux-blueprint-review-api",
+    });
+    reviewedProvider.setResponses([
+      fauxAssistantMessage(
+        JSON.stringify({
+          verdict: "promote",
+          score: 94,
+          risk: "low",
+          reason:
+            "The current replay outcomes are stable, qualified, and audit-ready.",
+          concerns: [],
+          scores: [
+            "completion",
+            "stability",
+            "auditability",
+            "reuse_risk",
+          ].map((criterionId) => ({
+            criterionId,
+            score: 94,
+            reason: "The criterion is satisfied by hash-bound outcomes.",
+          })),
+        }),
+      ),
+    ]);
+    services.models.registerProvider(reviewedProvider.provider);
+    const promotedOutcomeReviewResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/review`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: "faux-blueprint-review-api", id: "faux-1" },
+        }),
+      },
+    );
+    expect(promotedOutcomeReviewResponse.status).toBe(200);
+    const promotedOutcomeReview =
+      (await promotedOutcomeReviewResponse.json()) as ExecutionPlanBlueprintRecordOutcomeReview;
+    expect(promotedOutcomeReview).toEqual(
+      expect.objectContaining({
+        verdict: "promote",
+        score: 94,
+        risk: "low",
+        recordId: savedBlueprint.record.id,
+        outcomeQualificationStatus: "qualified",
+        baselineId: outcomeBaselineResult.baseline.id,
+        baselineSha256: outcomeBaselineResult.baseline.contentSha256,
+      }),
+    );
+    expect(JSON.stringify(promotedOutcomeReview)).not.toContain(
+      recordPlan.objective,
+    );
+    expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(
+      promotedOutcomeReviewResponse,
+      promotedOutcomeReview,
+    );
+
+    const reviewedOutcomeBaselineResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          outcomes: replayOutcomes,
+          policy: {
+            minCompletionRateBps: 0,
+          },
+          review: promotedOutcomeReview,
+        }),
+      },
+    );
+    expect(reviewedOutcomeBaselineResponse.status).toBe(201);
+    const reviewedOutcomeBaselineResult =
+      (await reviewedOutcomeBaselineResponse.json()) as PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult;
+    expect(reviewedOutcomeBaselineResult).toEqual({
+      created: true,
+      baseline: expect.objectContaining({
+        id: expect.stringMatching(/^outcome_base_[a-f0-9]{20}$/),
+        recordId: savedBlueprint.record.id,
+        replayOutcomesSha256: replayOutcomes.contentSha256,
+        policy: {
+          minReplayCount: 1,
+          minCompletionRateBps: 0,
+          maxBlockedCount: 0,
+          maxInvalidCount: 0,
+        },
+        reviewGate: {
+          minScore: 80,
+          maxRisk: "medium",
+        },
+        reviewSha256: promotedOutcomeReview.reviewSha256,
+        reviewInputSha256: promotedOutcomeReview.inputSha256,
+        reviewResponseSha256: promotedOutcomeReview.responseSha256,
+        reviewVerdict: "promote",
+        reviewScore: 94,
+        reviewRisk: "low",
+        reviewModel: { provider: "faux-blueprint-review-api", id: "faux-1" },
+        supersedesBaselineId: outcomeBaselineResult.baseline.id,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    });
+    expectExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(
+      reviewedOutcomeBaselineResponse,
+      reviewedOutcomeBaselineResult,
+    );
+
+    const reviewedOutcomeBaselinesResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+    );
+    expect(reviewedOutcomeBaselinesResponse.status).toBe(200);
+    const reviewedOutcomeBaselines =
+      (await reviewedOutcomeBaselinesResponse.json()) as ExecutionPlanBlueprintRecordOutcomeBaseline[];
+    expect(reviewedOutcomeBaselines).toEqual([
+      outcomeBaselineResult.baseline,
+      reviewedOutcomeBaselineResult.baseline,
+    ]);
+    expectExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(
+      reviewedOutcomeBaselinesResponse,
+      reviewedOutcomeBaselines,
+    );
+
+    const missingReviewForGateResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          outcomes: replayOutcomes,
+          reviewGate: { minScore: 80 },
+        }),
+      },
+    );
+    expect(missingReviewForGateResponse.status).toBe(400);
+    expect(await missingReviewForGateResponse.json()).toEqual({
+      error: "Execution plan blueprint outcome baseline request is invalid",
+    });
+
+    const inconclusiveReviewPromotionResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          outcomes: replayOutcomes,
+          policy: {
+            minCompletionRateBps: 0,
+          },
+          review: outcomeReview,
+          reviewGate: { minScore: 0 },
+        }),
+      },
+    );
+    expect(inconclusiveReviewPromotionResponse.status).toBe(409);
+    expect(await inconclusiveReviewPromotionResponse.json()).toEqual({
+      error:
+        "Execution plan blueprint outcome baseline review failed: review_not_promote,review_risk_above_max",
+    });
+
     const invalidOutcomeBaselineResponse = await app.request(
       `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
       {
@@ -8735,6 +8894,35 @@ function expectExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
   expect(
     response.headers.get("x-napier-blueprint-outcome-policy-max-invalid-count"),
   ).toBe(String(baseline.policy.maxInvalidCount));
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-gate-min-score"),
+  ).toBe(baseline.reviewGate ? String(baseline.reviewGate.minScore) : null);
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-gate-max-risk"),
+  ).toBe(baseline.reviewGate?.maxRisk ?? null);
+  expect(response.headers.get("x-napier-blueprint-outcome-review-sha256")).toBe(
+    baseline.reviewSha256 ?? null,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-input-sha256"),
+  ).toBe(baseline.reviewInputSha256 ?? null);
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-response-sha256"),
+  ).toBe(baseline.reviewResponseSha256 ?? null);
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-verdict"),
+  ).toBe(baseline.reviewVerdict ?? null);
+  expect(response.headers.get("x-napier-blueprint-outcome-review-score")).toBe(
+    baseline.reviewScore !== undefined ? String(baseline.reviewScore) : null,
+  );
+  expect(response.headers.get("x-napier-blueprint-outcome-review-risk")).toBe(
+    baseline.reviewRisk ?? null,
+  );
+  expect(response.headers.get("x-napier-blueprint-outcome-review-model")).toBe(
+    baseline.reviewModel
+      ? `${baseline.reviewModel.provider}/${baseline.reviewModel.id}`
+      : null,
+  );
   expect(
     response.headers.get("x-napier-blueprint-outcome-supersedes-baseline-id"),
   ).toBe(baseline.supersedesBaselineId ?? null);

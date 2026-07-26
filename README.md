@@ -879,7 +879,13 @@ and the current outcome/baseline hashes; `napier/demo` fails closed as
 `inconclusive`. The review input uses only aggregate counts, replay statuses,
 Plan projection hashes, outcome hashes, and policy evidence, so objective text,
 artifact paths, blockers, and evidence prose are not copied into the review
-artifact. The Plan
+artifact. The same review artifact can be passed back into outcome baseline
+promotion. Reviewed promotion re-verifies the review hash, current outcomes,
+source qualification, outcome qualification status, and a gate that defaults
+to score >= 80 with risk <= medium before appending review input/response/model
+hash evidence into the superseding baseline and response headers. The Plan
+Workbench exposes this as a separate reviewed promotion action so a plain
+policy baseline and a model-reviewed baseline remain visibly distinct. The Plan
 Workbench can also ask the server to select a policy-qualified template for the
 current Thread through `POST /api/threads/:threadId/plan-blueprints/selection`.
 The selection receipt is no-store and hash-bound: candidates must pass source

@@ -103,6 +103,15 @@ All notable changes to Napier are recorded here.
   hashes while keeping objective text, artifact paths, blockers, and evidence
   prose out of the artifact. `napier/demo` fails closed as inconclusive, and
   the Template shelf exposes Review outcomes through a ViewModel receipt.
+- Reviewed blueprint outcome baseline promotion. Outcome baseline promotion can
+  now carry a current outcome review artifact plus an optional score/risk gate.
+  The Store rehashes the review, verifies it against current replay outcomes,
+  source qualification, and outcome qualification status, and only appends the
+  superseding baseline when verdict, score, and risk pass. Server responses
+  mirror review gate, review hashes, verdict, score, risk, and model headers,
+  while the Template shelf exposes a separate Promote reviewed action and
+  receipt so model-reviewed baselines remain distinguishable from plain policy
+  baselines.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

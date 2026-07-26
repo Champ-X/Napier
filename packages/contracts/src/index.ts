@@ -731,6 +731,11 @@ export interface ExecutionPlanBlueprintRecordOutcomeBaselinePolicy {
   maxInvalidCount: number;
 }
 
+export interface ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate {
+  minScore: number;
+  maxRisk: ExecutionPlanBlueprintOutcomeReviewRisk;
+}
+
 export interface ExecutionPlanBlueprintRecordOutcomeBaseline {
   id: string;
   recordId: string;
@@ -743,6 +748,14 @@ export interface ExecutionPlanBlueprintRecordOutcomeBaseline {
   invalidCount: number;
   completionRateBps: number;
   policy: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy;
+  reviewGate?: ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate;
+  reviewSha256?: string;
+  reviewInputSha256?: string;
+  reviewResponseSha256?: string;
+  reviewVerdict?: ExecutionPlanBlueprintOutcomeReviewVerdict;
+  reviewScore?: number;
+  reviewRisk?: ExecutionPlanBlueprintOutcomeReviewRisk;
+  reviewModel?: ModelRef;
   promotedAt: string;
   supersedesBaselineId?: string;
   contentSha256: string;
@@ -751,6 +764,8 @@ export interface ExecutionPlanBlueprintRecordOutcomeBaseline {
 export interface PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest {
   outcomes: unknown;
   policy?: Partial<ExecutionPlanBlueprintRecordOutcomeBaselinePolicy>;
+  review?: unknown;
+  reviewGate?: Partial<ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate>;
 }
 
 export interface PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult {

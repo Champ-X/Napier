@@ -139,10 +139,11 @@ describe("blueprint outcome model review", () => {
     const outcomes = await store.getExecutionPlanBlueprintRecordReplayOutcomes(
       saved.record.id,
     );
-    await store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
-      saved.record.id,
-      { outcomes },
-    );
+    const unreviewedBaseline =
+      await store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        saved.record.id,
+        { outcomes },
+      );
 
     const provider = fauxProvider({ provider: "faux-outcome-review" });
     provider.setResponses([
@@ -232,6 +233,42 @@ describe("blueprint outcome model review", () => {
     expect(serialized).not.toContain("private/release-note.md");
     expect(serialized).not.toContain("Sensitive preparation evidence");
     expect(review.reviewSha256).not.toBe(review.responseSha256);
+    const reviewedBaseline =
+      await store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        saved.record.id,
+        {
+          outcomes,
+          review,
+        },
+      );
+    expect(reviewedBaseline).toEqual({
+      created: true,
+      baseline: expect.objectContaining({
+        recordId: saved.record.id,
+        replayOutcomesSha256: outcomes.contentSha256,
+        reviewGate: {
+          minScore: 80,
+          maxRisk: "medium",
+        },
+        reviewSha256: review.reviewSha256,
+        reviewInputSha256: review.inputSha256,
+        reviewResponseSha256: review.responseSha256,
+        reviewVerdict: "promote",
+        reviewScore: 94,
+        reviewRisk: "low",
+        reviewModel: { provider: "faux-outcome-review", id: "faux-1" },
+        supersedesBaselineId: unreviewedBaseline.baseline.id,
+      }),
+    });
+    await expect(
+      store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        saved.record.id,
+        {
+          outcomes,
+          review: { ...review, score: 20 },
+        },
+      ),
+    ).rejects.toThrow("Execution plan blueprint outcome review hash mismatch");
   });
 
   it("fails closed for demo or malformed reviewer output", async () => {
@@ -273,6 +310,20 @@ describe("blueprint outcome model review", () => {
       blueprint,
       description: "Demo outcome review fixture.",
     });
+    const targetThread = await store.createThread({
+      title: "Outcome review demo target",
+      agentId: agent.id,
+    });
+    const preview = await store.previewPlanFromBlueprintRecord(
+      targetThread.id,
+      {
+        recordId: saved.record.id,
+      },
+    );
+    await store.createPlanFromBlueprintRecord(targetThread.id, {
+      recordId: saved.record.id,
+      expectedPreviewSha256: preview.previewSha256,
+    });
 
     const demoReview = await reviewExecutionPlanBlueprintRecordOutcomes(
       store,
@@ -292,6 +343,22 @@ describe("blueprint outcome model review", () => {
       }),
     );
     expect(demoReview.reviewSha256).toMatch(/^[a-f0-9]{64}$/);
+    const outcomes = await store.getExecutionPlanBlueprintRecordReplayOutcomes(
+      saved.record.id,
+    );
+    await expect(
+      store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        saved.record.id,
+        {
+          outcomes,
+          policy: { minCompletionRateBps: 0 },
+          review: demoReview,
+          reviewGate: { minScore: 0 },
+        },
+      ),
+    ).rejects.toThrow(
+      "Execution plan blueprint outcome baseline review failed: review_not_promote",
+    );
     expect(() => parseBlueprintOutcomeReviewResponse("not json")).toThrow(
       "did not contain JSON",
     );

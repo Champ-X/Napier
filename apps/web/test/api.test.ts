@@ -685,6 +685,29 @@ describe("Web JSON API wrappers", () => {
       reviewSha256: "6".repeat(64),
       createdAt: "2026-07-26T00:00:04.000Z",
     };
+    const reviewedOutcomeBaseline: ExecutionPlanBlueprintRecordOutcomeBaseline =
+      {
+        ...outcomeBaseline,
+        id: "outcome_base_reviewed123456789",
+        reviewGate: {
+          minScore: 80,
+          maxRisk: "medium",
+        },
+        reviewSha256: outcomeReview.reviewSha256,
+        reviewInputSha256: outcomeReview.inputSha256,
+        reviewResponseSha256: outcomeReview.responseSha256,
+        reviewVerdict: outcomeReview.verdict,
+        reviewScore: outcomeReview.score,
+        reviewRisk: outcomeReview.risk,
+        reviewModel: outcomeReview.model,
+        supersedesBaselineId: outcomeBaseline.id,
+        contentSha256: "e".repeat(64),
+      };
+    const reviewedOutcomeBaselineResult: PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult =
+      {
+        baseline: reviewedOutcomeBaseline,
+        created: true,
+      };
     const selection: ExecutionPlanBlueprintRecordSelection = {
       kind: "napier.execution-plan-blueprint-selection",
       schemaVersion: 1,
@@ -796,6 +819,15 @@ describe("Web JSON API wrappers", () => {
         method: "POST",
         body: { model: { provider: "napier", id: "demo" } },
         response: outcomeReview,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes/baselines",
+        method: "POST",
+        body: {
+          outcomes: replayOutcomes,
+          review: outcomeReview,
+        },
+        response: reviewedOutcomeBaselineResult,
       },
       {
         path: "/api/threads/thread_2/plan-blueprints/selection",
@@ -923,6 +955,12 @@ describe("Web JSON API wrappers", () => {
       }),
     ).resolves.toEqual(outcomeReview);
     await expect(
+      promoteExecutionPlanBlueprintRecordOutcomeBaseline(record.id, {
+        outcomes: replayOutcomes,
+        review: outcomeReview,
+      }),
+    ).resolves.toEqual(reviewedOutcomeBaselineResult);
+    await expect(
       selectExecutionPlanBlueprintRecord("thread_2"),
     ).resolves.toEqual(selection);
     await expect(
@@ -977,7 +1015,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(18);
+    expect(fetchMock).toHaveBeenCalledTimes(19);
   });
 });
 

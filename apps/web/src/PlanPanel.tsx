@@ -16,6 +16,7 @@ import type {
   ExecutionPlanBlueprintRecordPreview,
   ExecutionPlanBlueprintRecordQualification,
   ExecutionPlanBlueprintRecordReplayEventVerification,
+  ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
 } from "@napier/contracts";
@@ -137,6 +138,7 @@ type PlanBlueprintLibraryBusyAction =
   | "outcomes"
   | "verifyOutcomes"
   | "promoteOutcomeBaseline"
+  | "promoteReviewedOutcomeBaseline"
   | "qualifyOutcomes"
   | "reviewOutcomes"
   | "select";
@@ -223,6 +225,8 @@ export default function PlanPanel({
     useState<PlanBlueprintLibraryBusyAction>();
   const [blueprintLibraryReceipt, setBlueprintLibraryReceipt] =
     useState<PlanBlueprintLibraryReceipt>();
+  const [blueprintLibraryOutcomeReview, setBlueprintLibraryOutcomeReview] =
+    useState<ExecutionPlanBlueprintRecordOutcomeReview>();
   const [blueprintLibraryError, setBlueprintLibraryError] = useState<string>();
 
   useEffect(() => {
@@ -233,6 +237,7 @@ export default function PlanPanel({
     setBlueprintReceipt(undefined);
     setBlueprintError(undefined);
     setVerifiedBlueprint(undefined);
+    setBlueprintLibraryOutcomeReview(undefined);
   }, [recommendationHash]);
 
   useEffect(() => {
@@ -717,6 +722,35 @@ export default function PlanPanel({
     }
   };
 
+  const promoteBlueprintRecordReviewedOutcomeBaseline = async (
+    record: ExecutionPlanBlueprintRecord,
+  ): Promise<void> => {
+    const review = blueprintLibraryOutcomeReview;
+    if (blueprintLibraryBusyAction || !review || review.recordId !== record.id) {
+      return;
+    }
+    setBlueprintLibraryBusyAction("promoteReviewedOutcomeBaseline");
+    setBlueprintLibraryReceipt(undefined);
+    setBlueprintLibraryError(undefined);
+    try {
+      const outcomes = await getExecutionPlanBlueprintRecordReplayOutcomes(
+        record.id,
+      );
+      const result = await promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        record.id,
+        {
+          outcomes,
+          review,
+        },
+      );
+      setBlueprintLibraryReceipt(planBlueprintOutcomeBaselineReceipt(result));
+    } catch (error) {
+      setBlueprintLibraryError(formatApiErrorMessage(error));
+    } finally {
+      setBlueprintLibraryBusyAction(undefined);
+    }
+  };
+
   const qualifyBlueprintRecordOutcomes = async (
     record: ExecutionPlanBlueprintRecord,
   ): Promise<void> => {
@@ -751,6 +785,7 @@ export default function PlanPanel({
           model: parseModelKey(selectedModelKey),
         },
       );
+      setBlueprintLibraryOutcomeReview(review);
       setBlueprintLibraryReceipt(planBlueprintOutcomeReviewReceipt(review));
     } catch (error) {
       setBlueprintLibraryError(formatApiErrorMessage(error));
@@ -1063,6 +1098,7 @@ export default function PlanPanel({
         canCreateRecord={Boolean(threadId && !hasOpenPlan)}
         busyAction={blueprintLibraryBusyAction}
         receipt={blueprintLibraryReceipt}
+        latestOutcomeReview={blueprintLibraryOutcomeReview}
         error={blueprintLibraryError}
         onRefresh={() => void refreshBlueprintLibrary()}
         onSave={() => void saveBlueprintRecord()}
@@ -1085,6 +1121,9 @@ export default function PlanPanel({
         }
         onPromoteOutcomeBaseline={(record) =>
           void promoteBlueprintRecordOutcomeBaseline(record)
+        }
+        onPromoteReviewedOutcomeBaseline={(record) =>
+          void promoteBlueprintRecordReviewedOutcomeBaseline(record)
         }
         onQualifyOutcomes={(record) =>
           void qualifyBlueprintRecordOutcomes(record)
@@ -1422,6 +1461,7 @@ function PlanBlueprintLibraryCard({
   canCreateRecord,
   busyAction,
   receipt,
+  latestOutcomeReview,
   error,
   onRefresh,
   onSave,
@@ -1435,6 +1475,7 @@ function PlanBlueprintLibraryCard({
   onOutcomes,
   onVerifyOutcomes,
   onPromoteOutcomeBaseline,
+  onPromoteReviewedOutcomeBaseline,
   onQualifyOutcomes,
   onReviewOutcomes,
   onCreate,
@@ -1447,6 +1488,7 @@ function PlanBlueprintLibraryCard({
   canCreateRecord: boolean;
   busyAction: PlanBlueprintLibraryBusyAction | undefined;
   receipt: PlanBlueprintLibraryReceipt | undefined;
+  latestOutcomeReview: ExecutionPlanBlueprintRecordOutcomeReview | undefined;
   error: string | undefined;
   onRefresh: () => void;
   onSave: () => void;
@@ -1460,6 +1502,9 @@ function PlanBlueprintLibraryCard({
   onOutcomes: (record: ExecutionPlanBlueprintRecord) => void;
   onVerifyOutcomes: (file: File) => void;
   onPromoteOutcomeBaseline: (record: ExecutionPlanBlueprintRecord) => void;
+  onPromoteReviewedOutcomeBaseline: (
+    record: ExecutionPlanBlueprintRecord,
+  ) => void;
   onQualifyOutcomes: (record: ExecutionPlanBlueprintRecord) => void;
   onReviewOutcomes: (record: ExecutionPlanBlueprintRecord) => void;
   onCreate: (record: ExecutionPlanBlueprintRecord) => void;
@@ -1685,6 +1730,18 @@ function PlanBlueprintLibraryCard({
                     ? copy.plan.blueprint.library.promotingOutcomeBaseline
                     : copy.plan.blueprint.library.promoteOutcomeBaseline}
                 </button>
+                {latestOutcomeReview?.recordId === record.id ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => onPromoteReviewedOutcomeBaseline(record)}
+                  >
+                    {busyAction === "promoteReviewedOutcomeBaseline"
+                      ? copy.plan.blueprint.library
+                          .promotingReviewedOutcomeBaseline
+                      : copy.plan.blueprint.library.promoteReviewedOutcomeBaseline}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   disabled={busy}
@@ -1976,6 +2033,25 @@ function PlanBlueprintLibraryReceiptView({
             {copy.plan.blueprint.library.min}:{" "}
             {(receipt.minCompletionRateBps / 100).toFixed(2)}%
           </small>
+          {receipt.reviewSha256 ? (
+            <small className="fixture-diagnostics">
+              {copy.plan.blueprint.library.review}:{" "}
+              {receipt.reviewSha256.slice(0, 16)}
+              {receipt.reviewScore !== undefined
+                ? ` / ${copy.plan.blueprint.library.score}: ${receipt.reviewScore.toLocaleString()}`
+                : ""}
+              {receipt.reviewRisk
+                ? ` / ${copy.plan.blueprint.library.risk}: ${copy.plan.blueprint.library.outcomeReviewRisks[receipt.reviewRisk]}`
+                : ""}
+              {receipt.reviewVerdict
+                ? ` / ${copy.plan.blueprint.library.outcomeReviewVerdicts[receipt.reviewVerdict]}`
+                : ""}
+              {receipt.reviewGateMinScore !== undefined
+                ? ` / ${copy.plan.blueprint.library.min}: ${receipt.reviewGateMinScore.toLocaleString()}`
+                : ""}
+              {receipt.reviewModel ? ` / ${receipt.reviewModel}` : ""}
+            </small>
+          ) : null}
         </>
       ) : null}
       {receipt.action === "outcomeQualified" ? (

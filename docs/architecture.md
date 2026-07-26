@@ -2073,6 +2073,11 @@ promote blueprint record outcome baseline
      one replay minimum, 100% completion, zero blocked, and zero invalid
   -> append a hash-only baseline containing outcome receipt hash,
      replay-history hash, outcome-set hash, counts, policy, and supersession ID
+  -> optionally accept a napier.execution-plan-blueprint-outcome-review
+     artifact; rehash the review, require it to match current outcomes, current
+     source qualification, and current outcome qualification status, then gate
+     verdict=promote, score, and risk before persisting review hash/model
+     evidence into the append-only baseline
 qualify blueprint record outcomes
   -> recompute current outcomes and compare counts/rates against the latest
      baseline policy without mutating Ledger
@@ -2241,7 +2246,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- trusted promotion of model-reviewed blueprint outcome baselines.
+- cross-record blueprint portfolio calibration receipts for comparing reusable
+  workflow families without leaking task prose.
 
 ### Layer 3: Extension fabric
 

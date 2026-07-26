@@ -7,6 +7,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordSelection,
@@ -103,6 +104,19 @@ export interface PlanBlueprintLibraryOutcomeBaselineReceipt {
   invalidCount: number;
   completionRateBps: number;
   minCompletionRateBps: number;
+  reviewGateMinScore?: number;
+  reviewGateMaxRisk?: NonNullable<
+    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewGate"]
+  >["maxRisk"];
+  reviewSha256?: string;
+  reviewVerdict?: NonNullable<
+    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewVerdict"]
+  >;
+  reviewScore?: number;
+  reviewRisk?: NonNullable<
+    ExecutionPlanBlueprintRecordOutcomeBaseline["reviewRisk"]
+  >;
+  reviewModel?: string;
 }
 
 export interface PlanBlueprintLibraryOutcomeQualificationReceipt {
@@ -342,6 +356,29 @@ export function planBlueprintOutcomeBaselineReceipt(
     invalidCount: result.baseline.invalidCount,
     completionRateBps: result.baseline.completionRateBps,
     minCompletionRateBps: result.baseline.policy.minCompletionRateBps,
+    ...(result.baseline.reviewGate
+      ? {
+          reviewGateMinScore: result.baseline.reviewGate.minScore,
+          reviewGateMaxRisk: result.baseline.reviewGate.maxRisk,
+        }
+      : {}),
+    ...(result.baseline.reviewSha256
+      ? { reviewSha256: result.baseline.reviewSha256 }
+      : {}),
+    ...(result.baseline.reviewVerdict
+      ? { reviewVerdict: result.baseline.reviewVerdict }
+      : {}),
+    ...(result.baseline.reviewScore !== undefined
+      ? { reviewScore: result.baseline.reviewScore }
+      : {}),
+    ...(result.baseline.reviewRisk
+      ? { reviewRisk: result.baseline.reviewRisk }
+      : {}),
+    ...(result.baseline.reviewModel
+      ? {
+          reviewModel: `${result.baseline.reviewModel.provider}/${result.baseline.reviewModel.id}`,
+        }
+      : {}),
   };
 }
 

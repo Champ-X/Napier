@@ -7991,15 +7991,32 @@ function parseVerifyExecutionPlanBlueprintRecordReplayOutcomesRequest(
 function parsePromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest(
   input: unknown,
 ): PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest | undefined {
-  const record = requestRecord(input, ["outcomes", "policy"]);
+  const record = requestRecord(input, [
+    "outcomes",
+    "policy",
+    "review",
+    "reviewGate",
+  ]);
   if (!record || record["outcomes"] === undefined) return undefined;
   const policy = parseExecutionPlanBlueprintOutcomeBaselinePolicy(
     record["policy"],
   );
   if (record["policy"] !== undefined && !policy) return undefined;
+  const reviewGate =
+    record["reviewGate"] === undefined
+      ? undefined
+      : parseExecutionPlanBlueprintOutcomeBaselineReviewGate(
+          record["reviewGate"],
+        );
+  if (record["reviewGate"] !== undefined && !reviewGate) return undefined;
+  if (record["reviewGate"] !== undefined && record["review"] === undefined) {
+    return undefined;
+  }
   return {
     outcomes: record["outcomes"],
     ...(policy ? { policy } : {}),
+    ...(record["review"] !== undefined ? { review: record["review"] } : {}),
+    ...(reviewGate ? { reviewGate } : {}),
   };
 }
 
@@ -8113,6 +8130,31 @@ function parseExecutionPlanBlueprintOutcomeBaselinePolicy(
     policy.maxInvalidCount = maxInvalidCount;
   }
   return policy;
+}
+
+function parseExecutionPlanBlueprintOutcomeBaselineReviewGate(
+  input: unknown,
+):
+  | PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest["reviewGate"]
+  | undefined {
+  if (input === undefined) return {};
+  const record = requestRecord(input, ["minScore", "maxRisk"]);
+  if (!record) return undefined;
+  const minScore = optionalBoundedInteger(record["minScore"], 0, 100);
+  const maxRisk = record["maxRisk"];
+  if (
+    minScore === false ||
+    (maxRisk !== undefined &&
+      maxRisk !== "low" &&
+      maxRisk !== "medium" &&
+      maxRisk !== "high")
+  ) {
+    return undefined;
+  }
+  return {
+    ...(typeof minScore === "number" ? { minScore } : {}),
+    ...(maxRisk ? { maxRisk } : {}),
+  };
 }
 
 function optionalBoundedInteger(
@@ -11738,6 +11780,52 @@ function setExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
     "X-Napier-Blueprint-Outcome-Policy-Max-Invalid-Count",
     String(baseline.policy.maxInvalidCount),
   );
+  if (baseline.reviewGate) {
+    context.header(
+      "X-Napier-Blueprint-Outcome-Review-Gate-Min-Score",
+      String(baseline.reviewGate.minScore),
+    );
+    context.header(
+      "X-Napier-Blueprint-Outcome-Review-Gate-Max-Risk",
+      baseline.reviewGate.maxRisk,
+    );
+  }
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Review-SHA256",
+    baseline.reviewSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Review-Input-SHA256",
+    baseline.reviewInputSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Review-Response-SHA256",
+    baseline.reviewResponseSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Review-Verdict",
+    baseline.reviewVerdict,
+  );
+  setOptionalNumberHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Review-Score",
+    baseline.reviewScore,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Review-Risk",
+    baseline.reviewRisk,
+  );
+  if (baseline.reviewModel) {
+    context.header(
+      "X-Napier-Blueprint-Outcome-Review-Model",
+      `${baseline.reviewModel.provider}/${baseline.reviewModel.id}`,
+    );
+  }
   setOptionalHeader(
     context,
     "X-Napier-Blueprint-Outcome-Supersedes-Baseline-Id",
