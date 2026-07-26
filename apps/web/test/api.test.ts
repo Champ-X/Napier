@@ -35,6 +35,7 @@ import type {
   RunReplaySnapshotVerification,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
+  TrustedReceiptEnvelope,
 } from "@napier/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -64,6 +65,7 @@ import {
   selectExecutionPlanBlueprintRecord,
   setExecutionPlanBlueprintRecommendationPolicyOverride,
   setExecutionPlanBlueprintRecordStatus,
+  signExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
   verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
@@ -1095,6 +1097,23 @@ describe("Web JSON API wrappers", () => {
         ],
         contentSha256: "d".repeat(64),
       };
+    const signedRecommendationPolicyOverrideRetirementHistoryProofBundle: TrustedReceiptEnvelope<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle> =
+      {
+        kind: "napier.trusted-receipt-envelope",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        receiptKind: "policy_retirement_proof_bundle",
+        receipt: recommendationPolicyOverrideRetirementHistoryProofBundle,
+        signature: {
+          algorithm: "Ed25519",
+          keyId: "e".repeat(64),
+          signedAt: "2026-07-26T00:00:14.000Z",
+          receiptArtifactSha256: "f".repeat(64),
+          statementSha256: "1".repeat(64),
+          value: "signed-policy-retirement-proof-bundle",
+        },
+        contentSha256: "2".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -1226,6 +1245,20 @@ describe("Web JSON API wrappers", () => {
           ],
         },
         response: recommendationPolicyOverrideRetirementHistoryProofBundle,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
+        method: "POST",
+        body: {
+          histories: [
+            recommendationPolicyOverrideRetirementHistory,
+            recommendationPolicyOverrideRetirementHistory,
+          ],
+          threadId: "thread_2",
+          trustAnchorId: "trustkey_12345678",
+        },
+        response:
+          signedRecommendationPolicyOverrideRetirementHistoryProofBundle,
       },
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
@@ -1411,6 +1444,20 @@ describe("Web JSON API wrappers", () => {
       recommendationPolicyOverrideRetirementHistoryProofBundle,
     );
     await expect(
+      signExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+        {
+          histories: [
+            recommendationPolicyOverrideRetirementHistory,
+            recommendationPolicyOverrideRetirementHistory,
+          ],
+          threadId: "thread_2",
+          trustAnchorId: "trustkey_12345678",
+        },
+      ),
+    ).resolves.toEqual(
+      signedRecommendationPolicyOverrideRetirementHistoryProofBundle,
+    );
+    await expect(
       setExecutionPlanBlueprintRecommendationPolicyOverride({
         familySha256: "3".repeat(64),
         policyTemplate: "balanced",
@@ -1469,7 +1516,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(28);
+    expect(fetchMock).toHaveBeenCalledTimes(29);
   });
 });
 

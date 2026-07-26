@@ -20,6 +20,7 @@ import type {
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
+  TrustedReceiptEnvelope,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 
@@ -331,6 +332,21 @@ export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProof
   highlightedHistoryDiagnostics: string[];
   highlightedHistoryContentSha256?: string;
   highlightedRetirementSetSha256?: string;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleSignedReceipt {
+  action: "policyOverrideRetirementProofBundleSigned";
+  verificationStatus: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle["status"];
+  contentSha256: string;
+  receiptContentSha256: string;
+  receiptArtifactSha256: string;
+  keyId: string;
+  signedAt: string;
+  historyCount: number;
+  validHistoryCount: number;
+  invalidHistoryCount: number;
+  distinctHistoryCount: number;
+  distinctRetirementSetCount: number;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -942,6 +958,25 @@ export function planBlueprintRecommendationPolicyOverrideRetirementProofBundleRe
             : {}),
         }
       : { highlightedHistoryDiagnostics: [] }),
+  };
+}
+
+export function planBlueprintRecommendationPolicyOverrideRetirementProofBundleSignedReceipt(
+  envelope: TrustedReceiptEnvelope<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle>,
+): PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleSignedReceipt {
+  return {
+    action: "policyOverrideRetirementProofBundleSigned",
+    verificationStatus: envelope.receipt.status,
+    contentSha256: envelope.contentSha256,
+    receiptContentSha256: envelope.receipt.contentSha256,
+    receiptArtifactSha256: envelope.signature.receiptArtifactSha256,
+    keyId: envelope.signature.keyId,
+    signedAt: envelope.signature.signedAt,
+    historyCount: envelope.receipt.historyCount,
+    validHistoryCount: envelope.receipt.validHistoryCount,
+    invalidHistoryCount: envelope.receipt.invalidHistoryCount,
+    distinctHistoryCount: envelope.receipt.distinctHistoryCount,
+    distinctRetirementSetCount: envelope.receipt.distinctRetirementSetCount,
   };
 }
 

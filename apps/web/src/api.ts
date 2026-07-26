@@ -100,6 +100,7 @@ import type {
   SetGoalRequest,
   SaveExecutionPlanBlueprintRequest,
   SaveExecutionPlanBlueprintResult,
+  SignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
   StreamFrame,
   SubmitEvaluationReviewerBallotRequest,
   ThreadDetail,
@@ -124,6 +125,7 @@ import type {
   VerifyRunReplaySnapshotRequest,
   VerifyThreadReplayBundleRequest,
   ThreadReplayBundleVerification,
+  TrustedReceiptEnvelope,
 } from "@napier/contracts";
 
 import { requestJson, requestJsonWithResponse } from "./api-client";
@@ -572,6 +574,20 @@ export function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetireme
 ): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle> {
   return requestJson(
     "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function signExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+  body: SignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
+): Promise<
+  TrustedReceiptEnvelope<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle>
+> {
+  return requestJson(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
     {
       method: "POST",
       body: JSON.stringify(body),

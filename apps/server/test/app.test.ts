@@ -1,4 +1,4 @@
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, generateKeyPairSync } from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -73,6 +73,7 @@ import type {
   InboundDeliveryQualification,
   InboundReceipt,
   MemoryFact,
+  ReceiptTrustAnchor,
   RunComparison,
   RunEvaluationRecord,
   RunMetrics,
@@ -83,6 +84,8 @@ import type {
   ThreadDetail,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
+  TrustedReceiptEnvelope,
+  TrustedReceiptVerification,
   UsagePriceTableCatalog,
   UsagePriceTableVerification,
 } from "@napier/contracts";
@@ -104,6 +107,8 @@ import {
   inferWorkspaceRoot,
 } from "../src/app.js";
 
+const POLICY_RETIREMENT_SIGNING_ENV =
+  "NAPIER_TEST_POLICY_RETIREMENT_SIGNING_KEY";
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createNapierServices>>[] = [];
 
@@ -116,6 +121,7 @@ async function createServices(
 }
 
 afterEach(async () => {
+  delete process.env[POLICY_RETIREMENT_SIGNING_ENV];
   for (const services of openServices.splice(0)) {
     await services.recovery.stop();
     await services.automation.stop();
@@ -5897,6 +5903,229 @@ describe("Napier HTTP goal flow", () => {
       policyOverrideRetirementHistoryProofBundleResponse,
       policyOverrideRetirementHistoryProofBundle,
     );
+
+    const { privateKey: policyRetirementPrivateKey } =
+      generateKeyPairSync("ed25519");
+    process.env[POLICY_RETIREMENT_SIGNING_ENV] =
+      policyRetirementPrivateKey
+        .export({ format: "pem", type: "pkcs8" })
+        .toString();
+    const policyRetirementAnchorResponse = await app.request(
+      "/api/receipt-trust/anchors",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: selectionThread.thread.id,
+          label: "Policy retirement bundle signer",
+          source: {
+            type: "environment",
+            variable: POLICY_RETIREMENT_SIGNING_ENV,
+          },
+        }),
+      },
+    );
+    expect(policyRetirementAnchorResponse.status).toBe(201);
+    const policyRetirementAnchor =
+      (await policyRetirementAnchorResponse.json()) as ReceiptTrustAnchor;
+    expect(policyRetirementAnchor).toEqual(
+      expect.objectContaining({
+        algorithm: "Ed25519",
+        status: "trusted",
+        signingSource: {
+          type: "environment",
+          variable: POLICY_RETIREMENT_SIGNING_ENV,
+        },
+      }),
+    );
+    expect(JSON.stringify(policyRetirementAnchor)).not.toContain(
+      "BEGIN PRIVATE KEY",
+    );
+
+    const invalidPolicyOverrideRetirementHistoryProofBundleSignResponse =
+      await app.request(
+        "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            histories: [policyOverrideRetirementHistory],
+            threadId: selectionThread.thread.id,
+            trustAnchorId: policyRetirementAnchor.id,
+          }),
+        },
+      );
+    expect(
+      invalidPolicyOverrideRetirementHistoryProofBundleSignResponse.status,
+    ).toBe(409);
+    expect(
+      await invalidPolicyOverrideRetirementHistoryProofBundleSignResponse.json(),
+    ).toEqual({
+      error:
+        "Execution plan blueprint recommendation policy override retirement history proof bundle is invalid",
+    });
+
+    const signedPolicyOverrideRetirementHistoryProofBundleResponse =
+      await app.request(
+        "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            histories: [
+              policyOverrideRetirementHistory,
+              policyOverrideRetirementHistory,
+            ],
+            threadId: selectionThread.thread.id,
+            trustAnchorId: policyRetirementAnchor.id,
+          }),
+        },
+      );
+    expect(signedPolicyOverrideRetirementHistoryProofBundleResponse.status).toBe(
+      201,
+    );
+    const signedPolicyOverrideRetirementHistoryProofBundle =
+      (await signedPolicyOverrideRetirementHistoryProofBundleResponse.json()) as TrustedReceiptEnvelope<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle>;
+    expect(signedPolicyOverrideRetirementHistoryProofBundle).toEqual(
+      expect.objectContaining({
+        kind: "napier.trusted-receipt-envelope",
+        receiptKind: "policy_retirement_proof_bundle",
+        receipt: expect.objectContaining({
+          kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle",
+          status: "aligned",
+          contentSha256:
+            policyOverrideRetirementHistoryProofBundle.contentSha256,
+        }),
+        signature: expect.objectContaining({
+          keyId: policyRetirementAnchor.keyId,
+          receiptArtifactSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get(
+        "cache-control",
+      ),
+    ).toBe("no-store");
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get(
+        "content-disposition",
+      ),
+    ).toBe(
+      `attachment; filename="napier-signed-policy-retirement-proof-bundle-${signedPolicyOverrideRetirementHistoryProofBundle.contentSha256.slice(0, 12)}.json"`,
+    );
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get(
+        "x-napier-content-sha256",
+      ),
+    ).toBe(signedPolicyOverrideRetirementHistoryProofBundle.contentSha256);
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get(
+        "x-napier-content-sha256-mode",
+      ),
+    ).toBe("stable");
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get(
+        "x-napier-receipt-sha256",
+      ),
+    ).toBe(policyOverrideRetirementHistoryProofBundle.contentSha256);
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get(
+        "x-napier-receipt-artifact-sha256",
+      ),
+    ).toBe(
+      signedPolicyOverrideRetirementHistoryProofBundle.signature
+        .receiptArtifactSha256,
+    );
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.headers.get(
+        "x-napier-signature-key-id",
+      ),
+    ).toBe(policyRetirementAnchor.keyId);
+
+    const signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse =
+      await app.request("/api/receipt-trust/verify", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          envelope: signedPolicyOverrideRetirementHistoryProofBundle,
+        }),
+      });
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.status,
+    ).toBe(200);
+    const signedPolicyOverrideRetirementHistoryProofBundleVerification =
+      (await signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.json()) as TrustedReceiptVerification;
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        receiptKind: "policy_retirement_proof_bundle",
+        receiptContentSha256:
+          policyOverrideRetirementHistoryProofBundle.contentSha256,
+        receiptArtifactSha256:
+          signedPolicyOverrideRetirementHistoryProofBundle.signature
+            .receiptArtifactSha256,
+        keyId: policyRetirementAnchor.keyId,
+        envelopeSha256:
+          signedPolicyOverrideRetirementHistoryProofBundle.contentSha256,
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get(
+        "cache-control",
+      ),
+    ).toBe("no-store");
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get(
+        "x-napier-content-sha256",
+      ),
+    ).toBe(
+      responseSha256(
+        signedPolicyOverrideRetirementHistoryProofBundleVerification,
+      ),
+    );
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get(
+        "x-napier-receipt-verification-status",
+      ),
+    ).toBe("trusted");
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get(
+        "x-napier-receipt-kind",
+      ),
+    ).toBe("policy_retirement_proof_bundle");
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get(
+        "x-napier-receipt-sha256",
+      ),
+    ).toBe(policyOverrideRetirementHistoryProofBundle.contentSha256);
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleVerificationResponse.headers.get(
+        "x-napier-envelope-sha256",
+      ),
+    ).toBe(signedPolicyOverrideRetirementHistoryProofBundle.contentSha256);
+    expect(
+      (
+        await services.store.listEvents(selectionThread.thread.id)
+      ).filter((event) => event.type === "receipt.signed"),
+    ).toEqual([
+      expect.objectContaining({
+        type: "receipt.signed",
+        payload: expect.objectContaining({
+          receiptKind: "policy_retirement_proof_bundle",
+          receiptSha256:
+            policyOverrideRetirementHistoryProofBundle.contentSha256,
+          keyId: policyRetirementAnchor.keyId,
+          envelopeSha256:
+            signedPolicyOverrideRetirementHistoryProofBundle.contentSha256,
+        }),
+      }),
+    ]);
 
     const stalePolicyOverrideResponse = await app.request(
       "/api/plan-blueprints/portfolio/recommendation-policy-overrides",

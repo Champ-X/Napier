@@ -202,6 +202,71 @@ describe("trusted receipt provenance", () => {
     );
   });
 
+  it("signs policy retirement proof bundles with the shared receipt trust root", async () => {
+    installSigningKey();
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Signed policy retirement proof bundle",
+      agentId: agent.id,
+    });
+    const history =
+      await store.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
+    const proofBundle =
+      store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+        [history, history],
+      );
+    expect(proofBundle).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle",
+        status: "aligned",
+        historyCount: 2,
+        validHistoryCount: 2,
+        invalidHistoryCount: 0,
+        distinctHistoryCount: 1,
+      }),
+    );
+
+    const anchor = await store.createReceiptTrustAnchor({
+      threadId: thread.id,
+      label: "Policy retirement signer",
+      source: { type: "environment", variable: SIGNING_ENV },
+    });
+    const envelope = signTrustedReceipt(proofBundle, anchor);
+    expect(envelope).toEqual(
+      expect.objectContaining({
+        receiptKind: "policy_retirement_proof_bundle",
+        receipt: expect.objectContaining({
+          contentSha256: proofBundle.contentSha256,
+        }),
+        signature: expect.objectContaining({ keyId: anchor.keyId }),
+      }),
+    );
+    expect(validateTrustedReceiptEnvelope(envelope)).toEqual(envelope);
+    expect(verifyTrustedReceiptEnvelope(envelope, [anchor])).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        receiptKind: "policy_retirement_proof_bundle",
+        receiptContentSha256: proofBundle.contentSha256,
+        receiptArtifactSha256: envelope.signature.receiptArtifactSha256,
+        keyId: anchor.keyId,
+        envelopeSha256: envelope.contentSha256,
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
+
+    const payloadTampered = structuredClone(envelope);
+    payloadTampered.receipt.histories[0]!.diagnostics = ["tampered"];
+    expect(verifyTrustedReceiptEnvelope(payloadTampered, [anchor])).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        signatureValid: false,
+        integrityValid: false,
+      }),
+    );
+  });
+
   it("pins only current passing qualification evidence and survives restart", async () => {
     installSigningKey();
     const { store, options } = await createStore();

@@ -201,6 +201,17 @@ All notable changes to Napier are recorded here.
   Response headers mirror the proof counters and hashes, while the Template
   shelf can upload multiple retirement history JSON files at once through a
   pure ViewModel receipt.
+- Signed policy override retirement proof bundles. `POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign`
+  now recomputes uploaded retirement histories, refuses invalid bundles, and
+  signs aligned or divergent proof-bundle receipts with existing Ed25519
+  receipt trust anchors. The trusted envelope binds the proof-bundle content
+  hash, receipt artifact hash, signer key id, and signature statement hash,
+  appends a hash-only `receipt.signed` Ledger event, and can be verified through
+  the generic receipt trust endpoint. The Template shelf adds **Sign bundle**,
+  refreshes signing-capable anchors before signing, downloads the signed JSON
+  envelope, and renders envelope/source proof hashes through a pure ViewModel
+  receipt.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

@@ -13,6 +13,8 @@ import {
   type EvaluationCasebook,
   type EvaluationCasebookQualificationReceipt,
   type EvaluationQualificationBaseline,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem,
   type ReceiptTrustAnchor,
   type TrustedReceipt,
   type TrustedReceiptEnvelope,
@@ -266,7 +268,8 @@ export function validateTrustedReceiptEnvelope(
     envelope.schemaVersion !== 1 ||
     envelope.apiVersion !== NAPIER_API_VERSION ||
     (envelope.receiptKind !== "evaluation_gate" &&
-      envelope.receiptKind !== "casebook_qualification") ||
+      envelope.receiptKind !== "casebook_qualification" &&
+      envelope.receiptKind !== "policy_retirement_proof_bundle") ||
     !SHA256_PATTERN.test(envelope.contentSha256)
   ) {
     throw new Error("Trusted receipt envelope header is invalid");
@@ -540,13 +543,155 @@ function validateTrustedReceipt(value: unknown): TrustedReceipt {
   if (value["kind"] === "napier.evaluation-casebook-qualification-receipt") {
     return validateEvaluationCasebookQualificationReceipt(value);
   }
+  if (
+    value["kind"] ===
+    "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle"
+  ) {
+    return validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(
+      value,
+    );
+  }
   throw new Error("Trusted receipt kind is unsupported");
 }
 
+function validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(
+  value: unknown,
+): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle {
+  if (!isRecord(value)) {
+    throw new Error("Policy retirement proof bundle is invalid");
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "status",
+    "diagnostics",
+    "historyCount",
+    "validHistoryCount",
+    "invalidHistoryCount",
+    "distinctHistoryCount",
+    "distinctPortfolioSetCount",
+    "distinctCurrentOverrideSetCount",
+    "distinctRetirementSetCount",
+    "historySetSha256",
+    "portfolioSetBundleSha256",
+    "currentOverrideSetBundleSha256",
+    "retirementSetBundleSha256",
+    "histories",
+    "contentSha256",
+  ]);
+  const proofBundle =
+    value as unknown as ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle;
+  if (
+    proofBundle.kind !==
+      "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle" ||
+    proofBundle.schemaVersion !== 1 ||
+    proofBundle.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(proofBundle.generatedAt) ||
+    (proofBundle.status !== "aligned" &&
+      proofBundle.status !== "divergent" &&
+      proofBundle.status !== "invalid") ||
+    !validDiagnostics(proofBundle.diagnostics) ||
+    !nonNegativeInteger(proofBundle.historyCount) ||
+    !nonNegativeInteger(proofBundle.validHistoryCount) ||
+    !nonNegativeInteger(proofBundle.invalidHistoryCount) ||
+    !nonNegativeInteger(proofBundle.distinctHistoryCount) ||
+    !nonNegativeInteger(proofBundle.distinctPortfolioSetCount) ||
+    !nonNegativeInteger(proofBundle.distinctCurrentOverrideSetCount) ||
+    !nonNegativeInteger(proofBundle.distinctRetirementSetCount) ||
+    !SHA256_PATTERN.test(proofBundle.historySetSha256) ||
+    !SHA256_PATTERN.test(proofBundle.portfolioSetBundleSha256) ||
+    !SHA256_PATTERN.test(proofBundle.currentOverrideSetBundleSha256) ||
+    !SHA256_PATTERN.test(proofBundle.retirementSetBundleSha256) ||
+    !Array.isArray(proofBundle.histories) ||
+    proofBundle.histories.length !== proofBundle.historyCount ||
+    !SHA256_PATTERN.test(proofBundle.contentSha256)
+  ) {
+    throw new Error("Policy retirement proof bundle is invalid");
+  }
+  const histories = proofBundle.histories.map(
+    validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem,
+  );
+  if (
+    histories.filter((history) => history.status === "valid").length !==
+      proofBundle.validHistoryCount ||
+    histories.filter((history) => history.status === "invalid").length !==
+      proofBundle.invalidHistoryCount
+  ) {
+    throw new Error("Policy retirement proof bundle counts are invalid");
+  }
+  const { contentSha256: _contentSha256, generatedAt: _generatedAt, ...content } =
+    {
+      ...proofBundle,
+      histories,
+    };
+  if (sha256(canonicalJson(content)) !== proofBundle.contentSha256) {
+    throw new Error("Policy retirement proof bundle hash mismatch");
+  }
+  return structuredClone({
+    ...proofBundle,
+    histories,
+  });
+}
+
+function validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem(
+  value: unknown,
+): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem {
+  if (!isRecord(value)) {
+    throw new Error("Policy retirement proof bundle history is invalid");
+  }
+  assertAllowedKeys(value, [
+    "index",
+    "status",
+    "diagnostics",
+    "declaredContentSha256",
+    "recomputedContentSha256",
+    "declaredPortfolioSetSha256",
+    "declaredCurrentOverrideSetSha256",
+    "declaredRetirementSetSha256",
+    "recomputedRetirementSetSha256",
+    "retirementCount",
+    "recomputedRetirementCount",
+    "latestRetiredAt",
+    "recomputedLatestRetiredAt",
+    "itemSha256",
+  ]);
+  const item =
+    value as unknown as ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem;
+  if (
+    !nonNegativeInteger(item.index) ||
+    (item.status !== "valid" && item.status !== "invalid") ||
+    !validDiagnostics(item.diagnostics) ||
+    !optionalSha256(item.declaredContentSha256) ||
+    !optionalSha256(item.recomputedContentSha256) ||
+    !optionalSha256(item.declaredPortfolioSetSha256) ||
+    !optionalSha256(item.declaredCurrentOverrideSetSha256) ||
+    !optionalSha256(item.declaredRetirementSetSha256) ||
+    !optionalSha256(item.recomputedRetirementSetSha256) ||
+    !optionalNonNegativeInteger(item.retirementCount) ||
+    !optionalNonNegativeInteger(item.recomputedRetirementCount) ||
+    !optionalTimestamp(item.latestRetiredAt) ||
+    !optionalTimestamp(item.recomputedLatestRetiredAt) ||
+    !SHA256_PATTERN.test(item.itemSha256)
+  ) {
+    throw new Error("Policy retirement proof bundle history is invalid");
+  }
+  const { itemSha256: _itemSha256, ...content } = item;
+  if (sha256(canonicalJson(content)) !== item.itemSha256) {
+    throw new Error("Policy retirement proof bundle history hash mismatch");
+  }
+  return structuredClone(item);
+}
+
 function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
-  return receipt.kind === "napier.evaluation-gate-receipt"
-    ? "evaluation_gate"
-    : "casebook_qualification";
+  if (receipt.kind === "napier.evaluation-gate-receipt") {
+    return "evaluation_gate";
+  }
+  if (receipt.kind === "napier.evaluation-casebook-qualification-receipt") {
+    return "casebook_qualification";
+  }
+  return "policy_retirement_proof_bundle";
 }
 
 function createSignatureStatement(
@@ -662,6 +807,34 @@ function normalizeEnvironmentName(value: string): string {
 
 function validTimestamp(value: unknown): value is string {
   return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function optionalTimestamp(value: unknown): boolean {
+  return value === undefined || validTimestamp(value);
+}
+
+function nonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+}
+
+function optionalNonNegativeInteger(value: unknown): boolean {
+  return value === undefined || nonNegativeInteger(value);
+}
+
+function optionalSha256(value: unknown): boolean {
+  return value === undefined || (typeof value === "string" && SHA256_PATTERN.test(value));
+}
+
+function validDiagnostics(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= 64 &&
+    value.every(
+      (diagnostic) =>
+        typeof diagnostic === "string" &&
+        /^[a-z0-9_]{1,80}$/.test(diagnostic),
+    )
+  );
 }
 
 function safeError(error: unknown): string {

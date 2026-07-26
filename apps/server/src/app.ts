@@ -91,6 +91,7 @@ import type {
   SignedPromptPackageEnvelope,
   SignedSkillPackageEnvelope,
   SignExtensionPackageRequest,
+  SignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
   SignPromptPackageRequest,
   SignSkillPackageRequest,
   SignTrustedReceiptRequest,
@@ -2584,6 +2585,83 @@ export function createApp(services: NapierServices): Hono {
         proofBundle,
       );
       return context.json(proofBundle);
+    },
+  );
+
+  app.post(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_THREAD_REPLAY_BUNDLE_BYTES,
+          "Execution plan blueprint recommendation policy override retirement history proof bundle signing request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override retirement history proof bundle signing request is invalid",
+          400,
+        );
+      }
+      const request =
+        parseSignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
+          input,
+        );
+      if (!request) {
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override retirement history proof bundle signing request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(request.threadId);
+        const proofBundle =
+          services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+            request.histories,
+          );
+        if (proofBundle.status === "invalid") {
+          return jsonError(
+            context,
+            "Execution plan blueprint recommendation policy override retirement history proof bundle is invalid",
+            409,
+          );
+        }
+        const envelope = signTrustedReceipt(
+          proofBundle,
+          services.store.getReceiptTrustAnchor(request.trustAnchorId),
+        );
+        await appendReceiptTrustEvent(
+          services,
+          request.threadId,
+          "receipt.signed",
+          trustedReceiptEventPayload(envelope),
+        );
+        setTrustedReceiptHeaders(
+          context,
+          envelope,
+          `napier-signed-policy-retirement-proof-bundle-${envelope.contentSha256.slice(0, 12)}.json`,
+        );
+        return context.json(envelope, 201);
+      } catch (error) {
+        const message = errorMessage(error);
+        const caught = error instanceof Error ? error : new Error(message);
+        return jsonError(
+          context,
+          message,
+          message.includes("proof bundle is invalid") ||
+            isReceiptTrustConflict(caught)
+            ? 409
+            : isReceiptTrustClientError(caught)
+              ? 400
+              : 500,
+        );
+      }
     },
   );
 
@@ -8269,6 +8347,31 @@ function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirement
   return {
     histories: record["histories"],
   };
+}
+
+function parseSignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
+  input: unknown,
+):
+  | SignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "histories",
+    "threadId",
+    "trustAnchorId",
+  ]);
+  const threadId = record?.["threadId"];
+  const trustAnchorId = record?.["trustAnchorId"];
+  return record &&
+    Array.isArray(record["histories"]) &&
+    validThreadId(threadId) &&
+    typeof trustAnchorId === "string" &&
+    /^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId)
+    ? {
+        histories: record["histories"],
+        threadId,
+        trustAnchorId,
+      }
+    : undefined;
 }
 
 function parseVerifyExecutionPlanBlueprintRecordReplayOutcomesRequest(

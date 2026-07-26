@@ -2179,6 +2179,14 @@ verify blueprint family recommendation policy override retirement proof bundle
      distinct set counts, history/portfolio/current-override/retirement bundle
      hashes, highlighted diagnostics, and no objective, step title, artifact
      path, blocker, or evidence prose
+sign blueprint family recommendation policy override retirement proof bundle
+  -> accept multiple exported retirement histories plus thread/trust-anchor IDs
+     and recompute the proof bundle before signing
+  -> refuse invalid proof bundles, but allow aligned and divergent bundles to
+     become explicit trusted receipts because divergence is valid audit evidence
+  -> wrap the proof bundle in the shared Ed25519 TrustedReceiptEnvelope format,
+     append a hash-only receipt.signed Ledger event, and return no-store
+     download headers binding envelope, receipt, artifact, and signer key hashes
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2331,9 +2339,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- signed and externally anchored policy override retirement proof bundles for
-  comparing independent Napier Ledgers across machines without relying on a
-  shared local trust root.
+- externally publishable receipt-trust anchor directories for signed policy
+  override retirement proof bundles, so independent Napier Ledgers can discover
+  public verifier keys without copying local workspace trust state.
 
 ### Layer 3: Extension fabric
 

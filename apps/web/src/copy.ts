@@ -570,6 +570,8 @@ export const copy = {
         verifyingPolicyOverrideRetirements: "Verifying retirements...",
         verifyPolicyOverrideRetirementProofBundle: "Verify bundle",
         verifyingPolicyOverrideRetirementProofBundle: "Verifying bundle...",
+        signPolicyOverrideRetirementProofBundle: "Sign bundle",
+        signingPolicyOverrideRetirementProofBundle: "Signing bundle...",
         create: "Create from template",
         creating: "Creating plan...",
         preview: "Preview",
@@ -663,6 +665,10 @@ export const copy = {
         remaining: "Remaining",
         min: "Min",
         latest: "Latest",
+        signer: "Signer",
+        receipt: "Receipt",
+        artifact: "Artifact",
+        signed: "Signed",
         eventAnchor: "Replay event",
         eventVerified: "Replay event verified",
         eventInvalid: "Replay event invalid",
@@ -737,6 +743,8 @@ export const copy = {
             "Policy override retirements verified",
           policyOverrideRetirementProofBundle:
             "Policy override retirement proof bundle",
+          policyOverrideRetirementProofBundleSigned:
+            "Signed policy retirement proof bundle",
         },
         outcomeBaselineCreated: "Baseline promoted",
         outcomeBaselineReused: "Baseline already current",
@@ -752,6 +760,8 @@ export const copy = {
             "Policy override retirement history receipts must be 2 MiB or smaller.",
           policyOverrideRetirementsInvalid:
             "Choose a valid Napier policy override retirement history JSON file.",
+          policyOverrideProofBundleNoSigner:
+            "Add a trusted signing-capable receipt anchor before signing this proof bundle.",
         },
       },
       errors: {

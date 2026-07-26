@@ -949,6 +949,17 @@ counts, distinct-set counts, diagnostics, and bundle-set SHA-256 values. The
 Template shelf can upload multiple retirement history JSON files at once to
 compare environments without exposing objectives, step titles, artifact paths,
 blockers, or evidence prose.
+`POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign`
+recomputes the same bundle, refuses invalid inputs, and wraps aligned or
+divergent proof bundles in the existing Ed25519 `TrustedReceiptEnvelope`
+format. The signed envelope binds the proof-bundle content hash, artifact hash,
+signer key id, and signature statement hash; `receipt.signed` Ledger events
+record only those public hashes. The Template shelf adds **Sign bundle** beside
+**Verify bundle**, refreshes signing-capable receipt trust anchors before
+signing, downloads the signed JSON envelope, and renders the envelope hash plus
+source proof-bundle hash so independent Ledgers can compare retirement
+evidence without sharing a local trust root.
 `GET
 /api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
 policy templates against the current library's historical replay outcomes

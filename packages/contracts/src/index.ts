@@ -1210,6 +1210,12 @@ export interface VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirem
   histories: unknown[];
 }
 
+export interface SignExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest {
+  histories: unknown[];
+  trustAnchorId: string;
+  threadId: string;
+}
+
 export type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleStatus =
   | "aligned"
   | "divergent"
@@ -3534,9 +3540,13 @@ export interface EvaluationSuiteGateReceipt {
 
 export type TrustedReceipt =
   | EvaluationSuiteGateReceipt
-  | EvaluationCasebookQualificationReceipt;
+  | EvaluationCasebookQualificationReceipt
+  | ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle;
 
-export type TrustedReceiptKind = "evaluation_gate" | "casebook_qualification";
+export type TrustedReceiptKind =
+  | "evaluation_gate"
+  | "casebook_qualification"
+  | "policy_retirement_proof_bundle";
 
 export type ReceiptTrustAnchorStatus = "trusted" | "revoked";
 

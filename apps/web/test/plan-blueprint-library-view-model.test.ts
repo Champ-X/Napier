@@ -19,6 +19,7 @@ import type {
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
+  TrustedReceiptEnvelope,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
@@ -36,6 +37,7 @@ import {
   planBlueprintRecommendationPolicyOverrideDriftReviewReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementProofBundleReceipt,
+  planBlueprintRecommendationPolicyOverrideRetirementProofBundleSignedReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementReceipt,
   planBlueprintReplayHistoryReceipt,
@@ -1105,6 +1107,43 @@ describe("Plan blueprint library view model", () => {
       highlightedHistoryDiagnostics: [],
       highlightedHistoryContentSha256: "9".repeat(64),
       highlightedRetirementSetSha256: "a".repeat(64),
+    });
+
+    const envelope: TrustedReceiptEnvelope<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle> =
+      {
+        kind: "napier.trusted-receipt-envelope",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        receiptKind: "policy_retirement_proof_bundle",
+        receipt: proofBundle,
+        signature: {
+          algorithm: "Ed25519",
+          keyId: "d".repeat(64),
+          signedAt: "2026-07-26T00:00:15.000Z",
+          receiptArtifactSha256: "e".repeat(64),
+          statementSha256: "f".repeat(64),
+          value: "signed-proof-bundle",
+        },
+        contentSha256: "1".repeat(64),
+      };
+
+    expect(
+      planBlueprintRecommendationPolicyOverrideRetirementProofBundleSignedReceipt(
+        envelope,
+      ),
+    ).toEqual({
+      action: "policyOverrideRetirementProofBundleSigned",
+      verificationStatus: "divergent",
+      contentSha256: envelope.contentSha256,
+      receiptContentSha256: proofBundle.contentSha256,
+      receiptArtifactSha256: envelope.signature.receiptArtifactSha256,
+      keyId: envelope.signature.keyId,
+      signedAt: envelope.signature.signedAt,
+      historyCount: 2,
+      validHistoryCount: 2,
+      invalidHistoryCount: 0,
+      distinctHistoryCount: 2,
+      distinctRetirementSetCount: 2,
     });
   });
 
