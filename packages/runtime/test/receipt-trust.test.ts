@@ -21,11 +21,15 @@ import {
 } from "../src/evaluation-suites.js";
 import { createId } from "../src/ids.js";
 import {
+  createReceiptTrustAnchorDirectory,
   createReceiptTrustAnchor,
   hashTrustedReceiptEnvelope,
+  receiptTrustAnchorsFromDirectory,
   revokeReceiptTrustAnchor,
   signTrustedReceipt,
+  validateReceiptTrustAnchorDirectory,
   validateTrustedReceiptEnvelope,
+  verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceiptEnvelope,
 } from "../src/receipt-trust.js";
 import { createRunReplaySnapshot } from "../src/replay.js";
@@ -154,6 +158,58 @@ describe("trusted receipt provenance", () => {
     );
     expect(() => signTrustedReceipt(receipt, importedAnchor)).toThrow(
       "verify-only",
+    );
+
+    const directory = createReceiptTrustAnchorDirectory([anchor]);
+    expect(validateReceiptTrustAnchorDirectory(directory)).toEqual(directory);
+    expect(verifyReceiptTrustAnchorDirectory(directory)).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256: directory.contentSha256,
+        recomputedContentSha256: directory.contentSha256,
+        declaredAnchorSetSha256: directory.anchorSetSha256,
+        recomputedAnchorSetSha256: directory.anchorSetSha256,
+        anchorCount: 1,
+        trustedCount: 1,
+        revokedCount: 0,
+      }),
+    );
+    expect(JSON.stringify(directory)).not.toContain(SIGNING_ENV);
+    expect(JSON.stringify(directory)).not.toContain("BEGIN PRIVATE KEY");
+    const directoryAnchors = receiptTrustAnchorsFromDirectory(directory);
+    expect(directoryAnchors).toEqual([
+      expect.objectContaining({
+        id: anchor.id,
+        keyId: anchor.keyId,
+        publicKeySpki: anchor.publicKeySpki,
+      }),
+    ]);
+    expect(directoryAnchors[0]).not.toHaveProperty("signingSource");
+    expect(() => signTrustedReceipt(receipt, directoryAnchors[0]!)).toThrow(
+      "verify-only",
+    );
+    expect(verifyTrustedReceiptEnvelope(envelope, directoryAnchors)).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        signatureValid: true,
+        integrityValid: true,
+        keyId: anchor.keyId,
+      }),
+    );
+    expect(
+      verifyReceiptTrustAnchorDirectory({
+        ...directory,
+        anchors: [{ ...directory.anchors[0]!, label: "Forged directory" }],
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining([
+          "content_hash_mismatch",
+          "anchors_invalid",
+        ]),
+      }),
     );
 
     const payloadTampered = structuredClone(envelope);

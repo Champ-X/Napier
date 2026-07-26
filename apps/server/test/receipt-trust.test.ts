@@ -10,6 +10,8 @@ import type {
   EvaluationQualificationBaseline,
   PromoteEvaluationQualificationBaselineResult,
   ReceiptTrustAnchor,
+  ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryVerification,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
 } from "@napier/contracts";
@@ -122,6 +124,103 @@ describe("trusted receipt HTTP surface", () => {
     expectReceiptTrustAnchorListHeaders(anchorListResponse, anchors);
     expect(anchors).toEqual([anchor]);
 
+    const directoryResponse = await app.request(
+      "/api/receipt-trust/anchors/directory",
+    );
+    expect(directoryResponse.status).toBe(200);
+    const directory =
+      (await directoryResponse.json()) as ReceiptTrustAnchorDirectory;
+    expectReceiptTrustAnchorDirectoryHeaders(directoryResponse, directory);
+    expect(directory).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory",
+        schemaVersion: 1,
+        anchorCount: 1,
+        trustedCount: 1,
+        revokedCount: 0,
+        receiptKinds: [
+          "evaluation_gate",
+          "casebook_qualification",
+          "policy_retirement_proof_bundle",
+        ],
+        anchorSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        anchors: [
+          expect.objectContaining({
+            id: anchor.id,
+            keyId: anchor.keyId,
+            publicKeySpki: anchor.publicKeySpki,
+            status: "trusted",
+            anchorSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          }),
+        ],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(JSON.stringify(directory)).not.toContain(SIGNING_ENV);
+    expect(JSON.stringify(directory)).not.toContain("BEGIN PRIVATE KEY");
+    const directoryVerificationResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ directory }),
+      },
+    );
+    expect(directoryVerificationResponse.status).toBe(200);
+    const directoryVerification =
+      (await directoryVerificationResponse.json()) as ReceiptTrustAnchorDirectoryVerification;
+    expectReceiptTrustAnchorDirectoryVerificationHeaders(
+      directoryVerificationResponse,
+      directoryVerification,
+    );
+    expect(directoryVerification).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256: directory.contentSha256,
+        recomputedContentSha256: directory.contentSha256,
+        declaredAnchorSetSha256: directory.anchorSetSha256,
+        recomputedAnchorSetSha256: directory.anchorSetSha256,
+        anchorCount: 1,
+        trustedCount: 1,
+        revokedCount: 0,
+      }),
+    );
+    const tamperedDirectoryVerificationResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          directory: {
+            ...directory,
+            anchors: [
+              {
+                ...directory.anchors[0]!,
+                label: "Forged release signer",
+              },
+            ],
+          },
+        }),
+      },
+    );
+    expect(tamperedDirectoryVerificationResponse.status).toBe(200);
+    const tamperedDirectoryVerification =
+      (await tamperedDirectoryVerificationResponse.json()) as ReceiptTrustAnchorDirectoryVerification;
+    expectReceiptTrustAnchorDirectoryVerificationHeaders(
+      tamperedDirectoryVerificationResponse,
+      tamperedDirectoryVerification,
+    );
+    expect(tamperedDirectoryVerification).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining([
+          "content_hash_mismatch",
+          "anchors_invalid",
+        ]),
+      }),
+    );
+
     const invalidSignedResponse = await app.request(
       `/api/threads/${thread.id}/evaluation-suites/${suite.id}/signed-receipt`,
       {
@@ -188,6 +287,31 @@ describe("trusted receipt HTTP surface", () => {
         signatureValid: true,
         integrityValid: true,
         keyId: anchor.keyId,
+      }),
+    );
+    const directoryVerifyResponse = await app.request(
+      "/api/receipt-trust/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ envelope, directory }),
+      },
+    );
+    expect(directoryVerifyResponse.status).toBe(200);
+    const directoryVerificationBody =
+      (await directoryVerifyResponse.json()) as TrustedReceiptVerification;
+    expectTrustedReceiptVerificationHeaders(
+      directoryVerifyResponse,
+      directoryVerificationBody,
+    );
+    expect(directoryVerificationBody).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        keyId: anchor.keyId,
+        anchorDirectorySha256: directory.contentSha256,
+        anchorDirectoryAnchorCount: 1,
+        signatureValid: true,
+        integrityValid: true,
       }),
     );
 
@@ -473,6 +597,29 @@ describe("trusted receipt HTTP surface", () => {
       revokedAnchors,
     );
     expect(revokedAnchors).toEqual([revokedAnchor]);
+    const revokedDirectoryResponse = await app.request(
+      "/api/receipt-trust/anchors/directory",
+    );
+    expect(revokedDirectoryResponse.status).toBe(200);
+    const revokedDirectory =
+      (await revokedDirectoryResponse.json()) as ReceiptTrustAnchorDirectory;
+    expectReceiptTrustAnchorDirectoryHeaders(
+      revokedDirectoryResponse,
+      revokedDirectory,
+    );
+    expect(revokedDirectory).toEqual(
+      expect.objectContaining({
+        anchorCount: 1,
+        trustedCount: 0,
+        revokedCount: 1,
+        anchors: [
+          expect.objectContaining({
+            keyId: anchor.keyId,
+            status: "revoked",
+          }),
+        ],
+      }),
+    );
 
     const revokedVerification = await app.request("/api/receipt-trust/verify", {
       method: "POST",
@@ -488,6 +635,29 @@ describe("trusted receipt HTTP surface", () => {
     expect(revokedVerificationBody).toEqual(
       expect.objectContaining({
         status: "revoked",
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
+    const revokedDirectoryVerification = await app.request(
+      "/api/receipt-trust/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ envelope, directory: revokedDirectory }),
+      },
+    );
+    const revokedDirectoryVerificationBody =
+      (await revokedDirectoryVerification.json()) as TrustedReceiptVerification;
+    expectTrustedReceiptVerificationHeaders(
+      revokedDirectoryVerification,
+      revokedDirectoryVerificationBody,
+    );
+    expect(revokedDirectoryVerificationBody).toEqual(
+      expect.objectContaining({
+        status: "revoked",
+        anchorDirectorySha256: revokedDirectory.contentSha256,
+        anchorDirectoryAnchorCount: 1,
         signatureValid: true,
         integrityValid: true,
       }),
@@ -574,6 +744,84 @@ function expectReceiptTrustAnchorHeaders(
   );
 }
 
+function expectReceiptTrustAnchorDirectoryHeaders(
+  response: Response,
+  directory: ReceiptTrustAnchorDirectory,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    directory.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(
+    response.headers.get("x-napier-receipt-trust-anchor-directory-sha256"),
+  ).toBe(directory.contentSha256);
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-anchor-directory-anchor-set-sha256",
+    ),
+  ).toBe(directory.anchorSetSha256);
+  expect(response.headers.get("x-napier-receipt-trust-anchor-count")).toBe(
+    String(directory.anchorCount),
+  );
+  expect(response.headers.get("x-napier-receipt-trust-trusted-count")).toBe(
+    String(directory.trustedCount),
+  );
+  expect(response.headers.get("x-napier-receipt-trust-revoked-count")).toBe(
+    String(directory.revokedCount),
+  );
+}
+
+function expectReceiptTrustAnchorDirectoryVerificationHeaders(
+  response: Response,
+  verification: ReceiptTrustAnchorDirectoryVerification,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    verification.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-verification-status")).toBe(
+    verification.status,
+  );
+  expect(response.headers.get("x-napier-diagnostic-count")).toBe(
+    String(verification.diagnostics.length),
+  );
+  expect(response.headers.get("x-napier-diagnostics-sha256")).toBe(
+    createHash("sha256")
+      .update(JSON.stringify(verification.diagnostics))
+      .digest("hex"),
+  );
+  expect(
+    response.headers.get("x-napier-receipt-trust-anchor-directory-sha256"),
+  ).toBe(verification.declaredContentSha256 ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-anchor-directory-anchor-set-sha256",
+    ),
+  ).toBe(verification.declaredAnchorSetSha256 ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-recomputed-receipt-trust-anchor-directory-anchor-set-sha256",
+    ),
+  ).toBe(verification.recomputedAnchorSetSha256 ?? null);
+  expect(response.headers.get("x-napier-receipt-trust-anchor-count")).toBe(
+    verification.anchorCount === undefined
+      ? null
+      : String(verification.anchorCount),
+  );
+  expect(response.headers.get("x-napier-receipt-trust-trusted-count")).toBe(
+    verification.trustedCount === undefined
+      ? null
+      : String(verification.trustedCount),
+  );
+  expect(response.headers.get("x-napier-receipt-trust-revoked-count")).toBe(
+    verification.revokedCount === undefined
+      ? null
+      : String(verification.revokedCount),
+  );
+}
+
 function expectTrustedReceiptVerificationHeaders(
   response: Response,
   verification: TrustedReceiptVerification,
@@ -606,6 +854,18 @@ function expectTrustedReceiptVerificationHeaders(
   );
   expect(response.headers.get("x-napier-envelope-sha256")).toBe(
     verification.envelopeSha256 ?? null,
+  );
+  expect(
+    response.headers.get("x-napier-receipt-trust-anchor-directory-sha256"),
+  ).toBe(verification.anchorDirectorySha256 ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-anchor-directory-anchor-count",
+    ),
+  ).toBe(
+    verification.anchorDirectoryAnchorCount === undefined
+      ? null
+      : String(verification.anchorDirectoryAnchorCount),
   );
 }
 

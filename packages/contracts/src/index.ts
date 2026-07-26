@@ -3577,6 +3577,33 @@ export interface ReceiptTrustAnchor {
   contentSha256: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryEntry {
+  id: string;
+  label: string;
+  algorithm: "Ed25519";
+  keyId: string;
+  publicKeySpki: string;
+  status: ReceiptTrustAnchorStatus;
+  createdAt: string;
+  updatedAt: string;
+  revokedAt?: string;
+  anchorSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectory {
+  kind: "napier.receipt-trust-anchor-directory";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  receiptKinds: TrustedReceiptKind[];
+  anchorCount: number;
+  trustedCount: number;
+  revokedCount: number;
+  anchorSetSha256: string;
+  anchors: ReceiptTrustAnchorDirectoryEntry[];
+  contentSha256: string;
+}
+
 export interface CreateReceiptTrustAnchorRequest {
   threadId: string;
   label: string;
@@ -3622,6 +3649,8 @@ export interface TrustedReceiptVerification {
   receiptArtifactSha256?: string;
   keyId?: string;
   envelopeSha256?: string;
+  anchorDirectorySha256?: string;
+  anchorDirectoryAnchorCount?: number;
   signatureValid: boolean;
   integrityValid: boolean;
   reason: string;
@@ -3634,6 +3663,32 @@ export interface SignTrustedReceiptRequest {
 
 export interface VerifyTrustedReceiptRequest {
   envelope: unknown;
+  directory?: unknown;
+}
+
+export interface VerifyReceiptTrustAnchorDirectoryRequest {
+  directory: unknown;
+}
+
+export type ReceiptTrustAnchorDirectoryVerificationStatus =
+  | "valid"
+  | "invalid";
+
+export interface ReceiptTrustAnchorDirectoryVerification {
+  kind: "napier.receipt-trust-anchor-directory-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ReceiptTrustAnchorDirectoryVerificationStatus;
+  diagnostics: string[];
+  declaredContentSha256?: string;
+  recomputedContentSha256?: string;
+  declaredAnchorSetSha256?: string;
+  recomputedAnchorSetSha256?: string;
+  anchorCount?: number;
+  trustedCount?: number;
+  revokedCount?: number;
+  contentSha256: string;
 }
 
 export interface EvaluationQualificationBaseline {

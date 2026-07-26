@@ -1283,6 +1283,16 @@ Anchor list/create/revoke and verification responses are no-store and expose
 content hashes, anchor counts, trusted/revoked/signing-capable totals,
 signature key IDs, verification status, and integrity/signature booleans as
 headers for machine audit.
+`GET /api/receipt-trust/anchors/directory` exports the current public verifier
+set as `napier.receipt-trust-anchor-directory`: labels, key IDs, SPKI public
+keys, trust/revocation state, public entry hashes, and an anchor-set SHA-256,
+without `signingSource` or environment-variable locators. `POST
+/api/receipt-trust/anchors/directory/verify` validates an uploaded directory
+without mutating Ledger state, and `POST /api/receipt-trust/verify` can accept
+that directory alongside a signed envelope to verify external receipts without
+copying the local workspace trust table. The Receipt trust desk can export and
+verify these directory JSON files for cross-Ledger policy-retirement proof
+bundle audits.
 
 A Casebook qualification baseline can be promoted only from a current
 revision's `passed` receipt signed by a currently trusted local signer. It

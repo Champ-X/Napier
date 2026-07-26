@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Ban,
   Check,
+  Download,
   KeyRound,
   Plus,
   ShieldCheck,
@@ -12,18 +13,22 @@ import {
 import type {
   CreateReceiptTrustAnchorSource,
   ReceiptTrustAnchor,
+  ReceiptTrustAnchorDirectoryVerification,
   TrustedReceiptVerification,
 } from "@napier/contracts";
 
 import { copy } from "./copy";
 import {
   createReceiptTrustAnchor,
+  getReceiptTrustAnchorDirectory,
   revokeReceiptTrustAnchor,
+  verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceipt,
 } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
 
 const MAX_TRUSTED_RECEIPT_FILE_BYTES = 10 * 1024 * 1024 + 64 * 1024;
+const MAX_RECEIPT_TRUST_DIRECTORY_FILE_BYTES = 2 * 1024 * 1024;
 
 export default function ReceiptTrustPanel({
   threadId,
@@ -47,6 +52,8 @@ export default function ReceiptTrustPanel({
   const [pendingRevokeId, setPendingRevokeId] = useState<string>();
   const [verification, setVerification] =
     useState<TrustedReceiptVerification>();
+  const [directoryVerification, setDirectoryVerification] =
+    useState<ReceiptTrustAnchorDirectoryVerification>();
   const [error, setError] = useState<string>();
   const canCreate =
     Boolean(label.trim()) &&
@@ -122,6 +129,42 @@ export default function ReceiptTrustPanel({
       }
       const envelope = JSON.parse(await file.text()) as unknown;
       setVerification(await verifyTrustedReceipt(envelope));
+    } catch (verifyError) {
+      setError(toErrorMessage(verifyError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function exportDirectory(): Promise<void> {
+    setBusyId("directory");
+    setError(undefined);
+    try {
+      const directory = await getReceiptTrustAnchorDirectory();
+      downloadJson(
+        directory,
+        `napier-receipt-trust-anchor-directory-${directory.anchorSetSha256.slice(0, 12)}.json`,
+      );
+    } catch (directoryError) {
+      setError(toErrorMessage(directoryError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function verifyDirectoryFile(file: File | undefined): Promise<void> {
+    if (!file) return;
+    setBusyId("verify-directory");
+    setError(undefined);
+    setDirectoryVerification(undefined);
+    try {
+      if (file.size > MAX_RECEIPT_TRUST_DIRECTORY_FILE_BYTES) {
+        throw new Error(copy.lab.trust.errors.directoryTooLarge);
+      }
+      const directory = JSON.parse(await file.text()) as unknown;
+      setDirectoryVerification(
+        await verifyReceiptTrustAnchorDirectory({ directory }),
+      );
     } catch (verifyError) {
       setError(toErrorMessage(verifyError));
     } finally {
@@ -311,6 +354,34 @@ export default function ReceiptTrustPanel({
             }}
           />
         </label>
+        <button
+          type="button"
+          disabled={Boolean(busyId)}
+          onClick={() => void exportDirectory()}
+        >
+          <Download size={11} aria-hidden="true" />
+          {busyId === "directory"
+            ? copy.lab.trust.exportingDirectory
+            : copy.lab.trust.exportDirectory}
+        </button>
+        <label>
+          <Upload size={11} aria-hidden="true" />
+          <span>
+            {busyId === "verify-directory"
+              ? copy.lab.trust.verifyingDirectory
+              : copy.lab.trust.chooseDirectory}
+          </span>
+          <input
+            type="file"
+            accept="application/json,.json"
+            disabled={Boolean(busyId)}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              void verifyDirectoryFile(file);
+            }}
+          />
+        </label>
         {verification ? (
           <output
             className={`receipt-verification verification-${verification.status}`}
@@ -334,6 +405,35 @@ export default function ReceiptTrustPanel({
             ) : null}
           </output>
         ) : null}
+        {directoryVerification ? (
+          <output
+            className={`receipt-verification verification-${directoryVerification.status}`}
+            aria-live="polite"
+          >
+            {directoryVerification.status === "valid" ? (
+              <Check size={11} aria-hidden="true" />
+            ) : (
+              <ShieldCheck size={11} aria-hidden="true" />
+            )}
+            <span>
+              <strong>
+                {
+                  copy.lab.trust.directoryVerificationStatuses[
+                    directoryVerification.status
+                  ]
+                }
+              </strong>
+              <small>
+                {directoryVerification.diagnostics.length > 0
+                  ? directoryVerification.diagnostics.join(", ")
+                  : copy.lab.trust.noDiagnostics}
+              </small>
+            </span>
+            <code title={directoryVerification.contentSha256}>
+              {directoryVerification.contentSha256.slice(0, 16)}
+            </code>
+          </output>
+        ) : null}
       </section>
 
       {error ? (
@@ -351,4 +451,17 @@ export default function ReceiptTrustPanel({
 
 function toErrorMessage(error: unknown): string {
   return formatApiErrorMessage(error);
+}
+
+function downloadJson(value: unknown, filename: string): void {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(value, null, 2)], {
+      type: "application/json",
+    }),
+  );
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }

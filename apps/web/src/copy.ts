@@ -174,6 +174,11 @@ export const copy = {
         "Deep-check payload hashes, signature statement, Ed25519 signature, and current anchor state.",
       chooseReceipt: "Verify signed JSON",
       verifying: "Verifying envelope...",
+      exportDirectory: "Export anchor directory",
+      exportingDirectory: "Exporting directory...",
+      chooseDirectory: "Verify anchor directory",
+      verifyingDirectory: "Verifying directory...",
+      noDiagnostics: "No diagnostics",
       statuses: {
         trusted: "Trusted",
         revoked: "Revoked",
@@ -184,10 +189,16 @@ export const copy = {
         unknown_key: "Unknown signer",
         invalid: "Invalid envelope",
       },
+      directoryVerificationStatuses: {
+        valid: "Directory valid",
+        invalid: "Directory invalid",
+      },
       safety:
         "Private keys are read only at signing time from the named environment variable. SQLite and Ledger events retain public keys, fingerprints, and evidence hashes only.",
       errors: {
         tooLarge: "Trusted receipt files must be 10 MiB or smaller.",
+        directoryTooLarge:
+          "Receipt trust anchor directory files must be 2 MiB or smaller.",
       },
     },
     calibration: {

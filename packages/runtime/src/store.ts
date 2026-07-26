@@ -121,6 +121,8 @@ import {
   type ReviewMemoryRequest,
   type ReviewRunEvaluationRequest,
   type ReceiptTrustAnchor,
+  type ReceiptTrustAnchorDirectory,
+  type ReceiptTrustAnchorDirectoryVerification,
   type ReplanExecutionPlanRequest,
   type ResolveEvaluationConsensusRequest,
   type ResolveEvaluationConsensusResult,
@@ -297,10 +299,12 @@ import {
   MAX_QUALIFICATION_BASELINES_PER_CASEBOOK,
   MAX_RECEIPT_TRUST_ANCHORS,
   createEvaluationQualificationBaseline,
+  createReceiptTrustAnchorDirectory,
   createReceiptTrustAnchor as createReceiptTrustAnchorRecord,
   revokeReceiptTrustAnchor as revokeReceiptTrustAnchorRecord,
   validateEvaluationQualificationBaseline,
   validateReceiptTrustAnchor,
+  verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceiptEnvelope,
 } from "./receipt-trust.js";
 import {
@@ -1007,6 +1011,18 @@ export class LocalStore {
         .slice()
         .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
     );
+  }
+
+  getReceiptTrustAnchorDirectory(): ReceiptTrustAnchorDirectory {
+    this.assertInitialized();
+    return createReceiptTrustAnchorDirectory(this.listReceiptTrustAnchors());
+  }
+
+  verifyReceiptTrustAnchorDirectory(
+    input: unknown,
+  ): ReceiptTrustAnchorDirectoryVerification {
+    this.assertInitialized();
+    return verifyReceiptTrustAnchorDirectory(input);
   }
 
   getReceiptTrustAnchor(anchorId: string): ReceiptTrustAnchor {

@@ -3,14 +3,30 @@ import type {
   EvaluationQualificationBaseline,
   PromoteEvaluationQualificationBaselineResult,
   ReceiptTrustAnchor,
+  ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryVerification,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
+  VerifyReceiptTrustAnchorDirectoryRequest,
 } from "@napier/contracts";
 
 import { requestJson as requestTrustJson } from "./api-client";
 
 export function listReceiptTrustAnchors(): Promise<ReceiptTrustAnchor[]> {
   return requestTrustJson("/api/receipt-trust/anchors");
+}
+
+export function getReceiptTrustAnchorDirectory(): Promise<ReceiptTrustAnchorDirectory> {
+  return requestTrustJson("/api/receipt-trust/anchors/directory");
+}
+
+export function verifyReceiptTrustAnchorDirectory(
+  body: VerifyReceiptTrustAnchorDirectoryRequest,
+): Promise<ReceiptTrustAnchorDirectoryVerification> {
+  return requestTrustJson("/api/receipt-trust/anchors/directory/verify", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function createReceiptTrustAnchor(
@@ -37,10 +53,14 @@ export function revokeReceiptTrustAnchor(
 
 export function verifyTrustedReceipt(
   envelope: unknown,
+  directory?: unknown,
 ): Promise<TrustedReceiptVerification> {
   return requestTrustJson("/api/receipt-trust/verify", {
     method: "POST",
-    body: JSON.stringify({ envelope }),
+    body: JSON.stringify({
+      envelope,
+      ...(directory !== undefined ? { directory } : {}),
+    }),
   });
 }
 

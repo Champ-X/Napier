@@ -16,6 +16,9 @@ import {
   type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
   type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem,
   type ReceiptTrustAnchor,
+  type ReceiptTrustAnchorDirectory,
+  type ReceiptTrustAnchorDirectoryEntry,
+  type ReceiptTrustAnchorDirectoryVerification,
   type TrustedReceipt,
   type TrustedReceiptEnvelope,
   type TrustedReceiptKind,
@@ -33,6 +36,36 @@ export const MAX_TRUSTED_RECEIPT_BYTES = 10 * 1024 * 1024 + 64 * 1024;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const ENVIRONMENT_NAME_PATTERN = /^[A-Z_][A-Z0-9_]{1,127}$/;
 const RESOURCE_ID_PATTERN = /^[a-z][a-z0-9_]{2,80}$/;
+const TRUSTED_RECEIPT_KINDS: TrustedReceiptKind[] = [
+  "evaluation_gate",
+  "casebook_qualification",
+  "policy_retirement_proof_bundle",
+];
+const RECEIPT_TRUST_ANCHOR_DIRECTORY_KEYS = [
+  "kind",
+  "schemaVersion",
+  "apiVersion",
+  "generatedAt",
+  "receiptKinds",
+  "anchorCount",
+  "trustedCount",
+  "revokedCount",
+  "anchorSetSha256",
+  "anchors",
+  "contentSha256",
+];
+const RECEIPT_TRUST_ANCHOR_DIRECTORY_ENTRY_KEYS = [
+  "id",
+  "label",
+  "algorithm",
+  "keyId",
+  "publicKeySpki",
+  "status",
+  "createdAt",
+  "updatedAt",
+  "revokedAt",
+  "anchorSha256",
+];
 
 interface ReceiptSignatureStatement {
   kind: "napier.receipt-signature-statement";
@@ -176,6 +209,225 @@ export function validateReceiptTrustAnchor(value: unknown): ReceiptTrustAnchor {
     throw new Error("Receipt trust anchor content hash mismatch");
   }
   return structuredClone(anchor);
+}
+
+export function createReceiptTrustAnchorDirectory(
+  anchors: ReceiptTrustAnchor[],
+): ReceiptTrustAnchorDirectory {
+  const entries = anchors
+    .map(createReceiptTrustAnchorDirectoryEntry)
+    .sort(compareReceiptTrustAnchorDirectoryEntries);
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    receiptKinds: TRUSTED_RECEIPT_KINDS,
+    anchorCount: entries.length,
+    trustedCount: entries.filter((entry) => entry.status === "trusted").length,
+    revokedCount: entries.filter((entry) => entry.status === "revoked").length,
+    anchorSetSha256: receiptTrustAnchorDirectoryAnchorSetSha256(entries),
+    anchors: entries,
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectory(
+  value: unknown,
+): ReceiptTrustAnchorDirectory {
+  if (!isRecord(value)) {
+    throw new Error("Receipt trust anchor directory must be an object");
+  }
+  assertAllowedKeys(value, RECEIPT_TRUST_ANCHOR_DIRECTORY_KEYS);
+  const directory = value as unknown as ReceiptTrustAnchorDirectory;
+  if (
+    directory.kind !== "napier.receipt-trust-anchor-directory" ||
+    directory.schemaVersion !== 1 ||
+    directory.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(directory.generatedAt) ||
+    !validTrustedReceiptKinds(directory.receiptKinds) ||
+    !nonNegativeInteger(directory.anchorCount) ||
+    !nonNegativeInteger(directory.trustedCount) ||
+    !nonNegativeInteger(directory.revokedCount) ||
+    !SHA256_PATTERN.test(directory.anchorSetSha256) ||
+    !Array.isArray(directory.anchors) ||
+    directory.anchors.length !== directory.anchorCount ||
+    !SHA256_PATTERN.test(directory.contentSha256)
+  ) {
+    throw new Error("Receipt trust anchor directory is invalid");
+  }
+  const anchors = directory.anchors
+    .map(validateReceiptTrustAnchorDirectoryEntry)
+    .sort(compareReceiptTrustAnchorDirectoryEntries);
+  if (
+    anchors.filter((anchor) => anchor.status === "trusted").length !==
+      directory.trustedCount ||
+    anchors.filter((anchor) => anchor.status === "revoked").length !==
+      directory.revokedCount ||
+    receiptTrustAnchorDirectoryAnchorSetSha256(anchors) !==
+      directory.anchorSetSha256
+  ) {
+    throw new Error("Receipt trust anchor directory counts are invalid");
+  }
+  const { contentSha256: _contentSha256, generatedAt: _generatedAt, ...content } =
+    {
+      ...directory,
+      anchors,
+    };
+  if (sha256(canonicalJson(content)) !== directory.contentSha256) {
+    throw new Error("Receipt trust anchor directory content hash mismatch");
+  }
+  return structuredClone({
+    ...directory,
+    anchors,
+  });
+}
+
+export function verifyReceiptTrustAnchorDirectory(
+  input: unknown,
+): ReceiptTrustAnchorDirectoryVerification {
+  const diagnostics: string[] = [];
+  const record = isRecord(input) ? input : undefined;
+  if (!record) diagnostics.push("directory_not_object");
+  const contentSha256Value = record?.["contentSha256"];
+  const anchorSetSha256Value = record?.["anchorSetSha256"];
+  const declaredContentSha256 = isSha256(contentSha256Value)
+    ? contentSha256Value
+    : undefined;
+  const declaredAnchorSetSha256 = isSha256(anchorSetSha256Value)
+    ? anchorSetSha256Value
+    : undefined;
+  const recomputedContentSha256 = record
+    ? sha256(canonicalJson(receiptTrustAnchorDirectoryHashContent(record)))
+    : undefined;
+  let anchors: ReceiptTrustAnchorDirectoryEntry[] | undefined;
+  let recomputedAnchorSetSha256: string | undefined;
+  let anchorCount: number | undefined;
+  let trustedCount: number | undefined;
+  let revokedCount: number | undefined;
+
+  if (record?.["kind"] !== "napier.receipt-trust-anchor-directory") {
+    diagnostics.push("kind_mismatch");
+  }
+  if (record?.["schemaVersion"] !== 1) diagnostics.push("schema_mismatch");
+  if (record?.["apiVersion"] !== NAPIER_API_VERSION) {
+    diagnostics.push("api_version_mismatch");
+  }
+  if (!validTimestamp(record?.["generatedAt"])) {
+    diagnostics.push("generated_at_invalid");
+  }
+  if (!validTrustedReceiptKinds(record?.["receiptKinds"])) {
+    diagnostics.push("receipt_kinds_invalid");
+  }
+  if (!declaredContentSha256) diagnostics.push("content_hash_missing");
+  if (
+    declaredContentSha256 &&
+    recomputedContentSha256 &&
+    declaredContentSha256 !== recomputedContentSha256
+  ) {
+    diagnostics.push("content_hash_mismatch");
+  }
+  if (!declaredAnchorSetSha256) diagnostics.push("anchor_set_missing");
+  if (!Array.isArray(record?.["anchors"])) {
+    diagnostics.push("anchors_not_array");
+  } else {
+    try {
+      anchors = record["anchors"]
+        .map(validateReceiptTrustAnchorDirectoryEntry)
+        .sort(compareReceiptTrustAnchorDirectoryEntries);
+      recomputedAnchorSetSha256 =
+        receiptTrustAnchorDirectoryAnchorSetSha256(anchors);
+      anchorCount = anchors.length;
+      trustedCount = anchors.filter((anchor) => anchor.status === "trusted")
+        .length;
+      revokedCount = anchors.filter((anchor) => anchor.status === "revoked")
+        .length;
+    } catch {
+      diagnostics.push("anchors_invalid");
+    }
+  }
+  if (
+    declaredAnchorSetSha256 &&
+    recomputedAnchorSetSha256 &&
+    declaredAnchorSetSha256 !== recomputedAnchorSetSha256
+  ) {
+    diagnostics.push("anchor_set_hash_mismatch");
+  }
+  if (
+    record &&
+    Object.keys(record).some(
+      (key) => !RECEIPT_TRUST_ANCHOR_DIRECTORY_KEYS.includes(key),
+    )
+  ) {
+    diagnostics.push("unsupported_fields");
+  }
+  if (!nonNegativeInteger(record?.["anchorCount"])) {
+    diagnostics.push("anchor_count_invalid");
+  } else if (
+    anchorCount !== undefined &&
+    record["anchorCount"] !== anchorCount
+  ) {
+    diagnostics.push("anchor_count_mismatch");
+  }
+  if (!nonNegativeInteger(record?.["trustedCount"])) {
+    diagnostics.push("trusted_count_invalid");
+  } else if (
+    trustedCount !== undefined &&
+    record["trustedCount"] !== trustedCount
+  ) {
+    diagnostics.push("trusted_count_mismatch");
+  }
+  if (!nonNegativeInteger(record?.["revokedCount"])) {
+    diagnostics.push("revoked_count_invalid");
+  } else if (
+    revokedCount !== undefined &&
+    record["revokedCount"] !== revokedCount
+  ) {
+    diagnostics.push("revoked_count_mismatch");
+  }
+  const status: ReceiptTrustAnchorDirectoryVerification["status"] =
+    diagnostics.length === 0 ? "valid" : "invalid";
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-verification" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    status,
+    diagnostics,
+    ...(declaredContentSha256 ? { declaredContentSha256 } : {}),
+    ...(recomputedContentSha256 ? { recomputedContentSha256 } : {}),
+    ...(declaredAnchorSetSha256 ? { declaredAnchorSetSha256 } : {}),
+    ...(recomputedAnchorSetSha256 ? { recomputedAnchorSetSha256 } : {}),
+    ...(anchorCount !== undefined ? { anchorCount } : {}),
+    ...(trustedCount !== undefined ? { trustedCount } : {}),
+    ...(revokedCount !== undefined ? { revokedCount } : {}),
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function receiptTrustAnchorsFromDirectory(
+  input: unknown,
+): ReceiptTrustAnchor[] {
+  return validateReceiptTrustAnchorDirectory(input).anchors.map((entry) =>
+    validateReceiptTrustAnchor({
+      id: entry.id,
+      label: entry.label,
+      algorithm: entry.algorithm,
+      keyId: entry.keyId,
+      publicKeySpki: entry.publicKeySpki,
+      status: entry.status,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+      ...(entry.revokedAt ? { revokedAt: entry.revokedAt } : {}),
+      contentSha256: entry.anchorSha256,
+    }),
+  );
 }
 
 export function signTrustedReceipt<Receipt extends TrustedReceipt>(
@@ -823,6 +1075,114 @@ function optionalNonNegativeInteger(value: unknown): boolean {
 
 function optionalSha256(value: unknown): boolean {
   return value === undefined || (typeof value === "string" && SHA256_PATTERN.test(value));
+}
+
+function isSha256(value: unknown): value is string {
+  return typeof value === "string" && SHA256_PATTERN.test(value);
+}
+
+function createReceiptTrustAnchorDirectoryEntry(
+  anchor: ReceiptTrustAnchor,
+): ReceiptTrustAnchorDirectoryEntry {
+  const current = validateReceiptTrustAnchor(anchor);
+  const content = receiptTrustAnchorDirectoryEntryHashContent(current);
+  return {
+    ...content,
+    anchorSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function validateReceiptTrustAnchorDirectoryEntry(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryEntry {
+  if (!isRecord(value)) {
+    throw new Error("Receipt trust anchor directory entry is invalid");
+  }
+  assertAllowedKeys(value, RECEIPT_TRUST_ANCHOR_DIRECTORY_ENTRY_KEYS);
+  const entry = value as unknown as ReceiptTrustAnchorDirectoryEntry;
+  if (
+    !RESOURCE_ID_PATTERN.test(entry.id) ||
+    normalizeLabel(entry.label) !== entry.label ||
+    entry.algorithm !== "Ed25519" ||
+    !SHA256_PATTERN.test(entry.keyId) ||
+    (entry.status !== "trusted" && entry.status !== "revoked") ||
+    !validTimestamp(entry.createdAt) ||
+    !validTimestamp(entry.updatedAt) ||
+    entry.updatedAt < entry.createdAt ||
+    (entry.status === "trusted" && entry.revokedAt !== undefined) ||
+    (entry.status === "revoked" && !validTimestamp(entry.revokedAt)) ||
+    (entry.revokedAt !== undefined &&
+      (entry.revokedAt < entry.createdAt ||
+        entry.revokedAt !== entry.updatedAt)) ||
+    !SHA256_PATTERN.test(entry.anchorSha256)
+  ) {
+    throw new Error("Receipt trust anchor directory entry is invalid");
+  }
+  const publicKey = parsePublicKeySpki(entry.publicKeySpki);
+  assertEd25519Key(publicKey, "Receipt trust anchor directory entry");
+  const normalizedSpki = exportPublicKeySpki(publicKey);
+  if (
+    normalizedSpki !== entry.publicKeySpki ||
+    hashPublicKeySpki(normalizedSpki) !== entry.keyId
+  ) {
+    throw new Error("Receipt trust anchor directory key mismatch");
+  }
+  const { anchorSha256: _anchorSha256, ...content } = entry;
+  if (sha256(canonicalJson(content)) !== entry.anchorSha256) {
+    throw new Error("Receipt trust anchor directory entry hash mismatch");
+  }
+  return structuredClone(entry);
+}
+
+function receiptTrustAnchorDirectoryEntryHashContent(
+  anchor: ReceiptTrustAnchor,
+): Omit<ReceiptTrustAnchorDirectoryEntry, "anchorSha256"> {
+  return {
+    id: anchor.id,
+    label: anchor.label,
+    algorithm: anchor.algorithm,
+    keyId: anchor.keyId,
+    publicKeySpki: anchor.publicKeySpki,
+    status: anchor.status,
+    createdAt: anchor.createdAt,
+    updatedAt: anchor.updatedAt,
+    ...(anchor.revokedAt ? { revokedAt: anchor.revokedAt } : {}),
+  };
+}
+
+function receiptTrustAnchorDirectoryAnchorSetSha256(
+  anchors: ReceiptTrustAnchorDirectoryEntry[],
+): string {
+  return sha256(
+    canonicalJson(
+      anchors
+        .map(validateReceiptTrustAnchorDirectoryEntry)
+        .sort(compareReceiptTrustAnchorDirectoryEntries),
+    ),
+  );
+}
+
+function receiptTrustAnchorDirectoryHashContent(
+  record: Record<string, unknown>,
+): Record<string, unknown> {
+  const { contentSha256: _contentSha256, generatedAt: _generatedAt, ...content } =
+    record;
+  return content;
+}
+
+function compareReceiptTrustAnchorDirectoryEntries(
+  left: ReceiptTrustAnchorDirectoryEntry,
+  right: ReceiptTrustAnchorDirectoryEntry,
+): number {
+  return left.keyId.localeCompare(right.keyId) || left.id.localeCompare(right.id);
+}
+
+function validTrustedReceiptKinds(value: unknown): value is TrustedReceiptKind[] {
+  return (
+    Array.isArray(value) &&
+    value.length === TRUSTED_RECEIPT_KINDS.length &&
+    TRUSTED_RECEIPT_KINDS.every((kind, index) => value[index] === kind)
+  );
 }
 
 function validDiagnostics(value: unknown): value is string[] {

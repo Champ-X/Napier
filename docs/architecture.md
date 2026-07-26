@@ -149,7 +149,7 @@ The UI has ten primary projections:
   independent reviewer panels, evaluator/rubric calibration matrices,
   workspace-wide gold-set Casebooks, source-verified evaluator qualification,
   execution history, portable gate receipts, trust anchors, signed envelopes,
-  and qualification baselines;
+  public verifier anchor directories, and qualification baselines;
 - **Plan**: dependency DAG, step evidence, blockers, artifact manifests,
   portable Plan archive verification, reusable blueprint export/upload
   verification, and a local template shelf for saving, archiving, restoring,
@@ -396,6 +396,11 @@ irreversible. Baselines are append-only per Casebook, retain the complete
 signed qualification envelope, name the exact passing execution, and link to
 the prior baseline. Executions referenced by a baseline are exempt from
 ordinary qualification-history pruning.
+Receipt trust anchor directories are derived public projections over the same
+anchor table. They strip signing-source locators, retain public SPKI bytes,
+key IDs, trust/revocation state, per-entry hashes, and an anchor-set SHA-256,
+and can be uploaded with a signed receipt so verification uses the external
+directory rather than the local workspace trust state.
 
 Extension publisher anchors are a separate workspace-owned trust domain with
 the same private-key boundary: durable state contains only normalized Ed25519
@@ -2339,9 +2344,10 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- externally publishable receipt-trust anchor directories for signed policy
-  override retirement proof bundles, so independent Napier Ledgers can discover
-  public verifier keys without copying local workspace trust state.
+- externally hosted receipt-trust directory discovery, rotation, and freshness
+  policy for signed policy override retirement proof bundles, so independent
+  Napier Ledgers can subscribe to verifier-key updates without manual file
+  exchange.
 
 ### Layer 3: Extension fabric
 

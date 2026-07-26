@@ -212,6 +212,16 @@ All notable changes to Napier are recorded here.
   refreshes signing-capable anchors before signing, downloads the signed JSON
   envelope, and renders envelope/source proof hashes through a pure ViewModel
   receipt.
+- Public receipt trust anchor directories. `GET
+/api/receipt-trust/anchors/directory` now exports a stable
+  `napier.receipt-trust-anchor-directory` containing public verifier labels,
+  key IDs, SPKI public keys, trust/revocation state, per-anchor hashes, and an
+  anchor-set SHA-256 without signing-source locators. `POST
+  /api/receipt-trust/anchors/directory/verify` validates uploaded directories
+  without Ledger mutation, and `POST /api/receipt-trust/verify` can verify a
+  signed envelope against an uploaded directory instead of local workspace
+  anchors. The Receipt trust desk can download and verify directory JSON files
+  for cross-Ledger signed policy-retirement proof audits.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact
