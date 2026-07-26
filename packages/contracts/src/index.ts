@@ -1160,6 +1160,20 @@ export interface RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult 
   contentSha256: string;
 }
 
+export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  retirementCount: number;
+  portfolioSetSha256: string;
+  currentOverrideSetSha256: string;
+  retirementSetSha256: string;
+  latestRetiredAt?: string;
+  retirements: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult[];
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

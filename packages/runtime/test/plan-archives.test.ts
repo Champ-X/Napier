@@ -996,6 +996,22 @@ describe("execution plan archives", () => {
       }),
     );
     await expect(
+      store.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history",
+        schemaVersion: 1,
+        retirementCount: 1,
+        portfolioSetSha256: selection.portfolioSetSha256,
+        currentOverrideSetSha256:
+          policyOverrideRetirement.remainingOverrideSetSha256,
+        retirementSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        latestRetiredAt: policyOverrideRetirement.retiredAt,
+        retirements: [policyOverrideRetirement],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    await expect(
       store.listExecutionPlanBlueprintRecommendationPolicyOverrides(),
     ).resolves.toEqual(
       expect.objectContaining({

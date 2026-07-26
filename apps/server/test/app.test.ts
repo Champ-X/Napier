@@ -37,6 +37,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
@@ -5713,6 +5714,30 @@ describe("Napier HTTP goal flow", () => {
         overrideSetSha256: policyOverrideRetirement.remainingOverrideSetSha256,
       }),
     );
+    const policyOverrideRetirementHistoryResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
+    );
+    expect(policyOverrideRetirementHistoryResponse.status).toBe(200);
+    const policyOverrideRetirementHistory =
+      (await policyOverrideRetirementHistoryResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory;
+    expect(policyOverrideRetirementHistory).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history",
+        schemaVersion: 1,
+        retirementCount: 1,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        currentOverrideSetSha256:
+          policyOverrideRetirement.remainingOverrideSetSha256,
+        retirementSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        latestRetiredAt: policyOverrideRetirement.retiredAt,
+        retirements: [policyOverrideRetirement],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryHeaders(
+      policyOverrideRetirementHistoryResponse,
+      policyOverrideRetirementHistory,
+    );
 
     const stalePolicyOverrideResponse = await app.request(
       "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
@@ -9845,6 +9870,40 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeade
       "x-napier-blueprint-family-policy-override-remaining-set-sha256",
     ),
   ).toBe(result.remainingOverrideSetSha256);
+}
+
+function expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryHeaders(
+  response: Response,
+  history: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    history.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-retirement-count",
+    ),
+  ).toBe(String(history.retirementCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-retirement-set-sha256",
+    ),
+  ).toBe(history.retirementSetSha256);
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-current-set-sha256",
+    ),
+  ).toBe(history.currentOverrideSetSha256);
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    history.portfolioSetSha256,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-latest-retired-at",
+    ),
+  ).toBe(history.latestRetiredAt ?? null);
 }
 
 function expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(

@@ -2143,11 +2143,19 @@ retire blueprint family recommendation policy override
   -> recompute the current drift review and fail closed with 409 if any CAS
      evidence changed or the family override is not currently retire
      recommended
-  -> remove the persisted override and return
+  -> remove the persisted override, append the retirement receipt into durable
+     local history, and return
      napier.execution-plan-blueprint-recommendation-policy-override-retirement
      with retired override/policy hashes, drift review-set SHA-256, remaining
      override-set SHA-256, and no objective, step title, artifact path, blocker,
      or evidence prose
+list blueprint family recommendation policy override retirements
+  -> validate the append-only retirement receipts and recompute the current
+     portfolio-set SHA-256 plus current override-set SHA-256
+  -> return
+     napier.execution-plan-blueprint-recommendation-policy-override-retirement-history
+     with retirement count, retirement-set SHA-256, latest retired timestamp,
+     current override-set SHA-256, and the hash-only retirement receipts
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2300,8 +2308,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- append-only policy override retirement history so removed family overrides can
-  be audited after the current override set has changed.
+- policy override retirement replay verification that checks exported
+  retirement history against the current durable store.
 
 ### Layer 3: Extension fabric
 

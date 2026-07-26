@@ -21,6 +21,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
@@ -44,6 +45,7 @@ import {
   getExecutionPlanBlueprintPortfolioCalibration,
   getExecutionPlanBlueprintRecommendationPolicyBacktest,
   getExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
+  getExecutionPlanBlueprintRecommendationPolicyOverrideRetirements,
   getExecutionPlanBlueprintRecommendationPolicyOverrides,
   getExecutionPlanBlueprintRecordQualification,
   getExecutionPlanBlueprintRecordOutcomeBaselines,
@@ -964,6 +966,21 @@ describe("Web JSON API wrappers", () => {
         retiredAt: "2026-07-26T00:00:10.000Z",
         contentSha256: "3".repeat(64),
       };
+    const recommendationPolicyOverrideRetirementHistory: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-26T00:00:11.000Z",
+        retirementCount: 1,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        currentOverrideSetSha256:
+          recommendationPolicyOverrideRetirement.remainingOverrideSetSha256,
+        retirementSetSha256: "4".repeat(64),
+        latestRetiredAt: recommendationPolicyOverrideRetirement.retiredAt,
+        retirements: [recommendationPolicyOverrideRetirement],
+        contentSha256: "5".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -1074,6 +1091,10 @@ describe("Web JSON API wrappers", () => {
           expectedPortfolioSetSha256: portfolioCalibration.portfolioSetSha256,
         },
         response: recommendationPolicyOverrideRetirement,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
+        response: recommendationPolicyOverrideRetirementHistory,
       },
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
@@ -1237,6 +1258,9 @@ describe("Web JSON API wrappers", () => {
       }),
     ).resolves.toEqual(recommendationPolicyOverrideRetirement);
     await expect(
+      getExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(),
+    ).resolves.toEqual(recommendationPolicyOverrideRetirementHistory);
+    await expect(
       setExecutionPlanBlueprintRecommendationPolicyOverride({
         familySha256: "3".repeat(64),
         policyTemplate: "balanced",
@@ -1295,7 +1319,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(25);
+    expect(fetchMock).toHaveBeenCalledTimes(26);
   });
 });
 

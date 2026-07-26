@@ -922,6 +922,11 @@ portfolio-set SHA-256. If the review evidence changes, the override changes, or
 the override is not retire recommended, the request fails closed with
 `409 Conflict`. The retirement receipt mirrors the retired override hash,
 retired policy hash, drift review-set hash, and remaining override-set hash.
+The same retirement is appended into durable local history; `GET
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements`
+returns a no-store history receipt with retirement count, current override-set
+SHA-256, retirement-set SHA-256, latest retirement timestamp, and every
+retirement receipt so deleted overrides remain auditable after defaults change.
 `GET
 /api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
 policy templates against the current library's historical replay outcomes

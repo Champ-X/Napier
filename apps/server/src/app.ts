@@ -55,6 +55,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
@@ -2480,6 +2481,19 @@ export function createApp(services: NapierServices): Hono {
         review,
       );
       return context.json(review);
+    },
+  );
+
+  app.get(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
+    async (context) => {
+      const history =
+        await services.store.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
+      setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryHeaders(
+        context,
+        history,
+      );
+      return context.json(history);
     },
   );
 
@@ -12467,6 +12481,35 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
   context.header(
     "X-Napier-Blueprint-Family-Policy-Override-Remaining-Set-SHA256",
     result.remainingOverrideSetSha256,
+  );
+}
+
+function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryHeaders(
+  context: Context,
+  history: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, history.contentSha256);
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Count",
+    String(history.retirementCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-SHA256",
+    history.retirementSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Current-Set-SHA256",
+    history.currentOverrideSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    history.portfolioSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Family-Policy-Override-Latest-Retired-At",
+    history.latestRetiredAt,
   );
 }
 

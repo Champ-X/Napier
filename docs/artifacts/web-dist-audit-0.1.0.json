@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 40,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Cd0kDEBx.js",
-    "sizeBytes": 138042,
+    "path": "apps/web/dist/assets/index-BxnDuoRv.js",
+    "sizeBytes": 138349,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "2fd67070629953d7c163d4e75032a78fd5ab197ce6d23f14a268fda5b86abc99"
+    "sha256": "3cd9c69580e8ac24a05a68e0f2c68260bc0c784a5e8f3c22a52f6b0430c65832"
   },
-  "distContentSha256": "2fd67070629953d7c163d4e75032a78fd5ab197ce6d23f14a268fda5b86abc99",
+  "distContentSha256": "3cd9c69580e8ac24a05a68e0f2c68260bc0c784a5e8f3c22a52f6b0430c65832",
   "errors": []
 }

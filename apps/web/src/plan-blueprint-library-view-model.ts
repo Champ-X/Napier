@@ -14,6 +14,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyBacktest,
   ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
@@ -270,6 +271,20 @@ export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementRecei
   overrideSetSha256: string;
   driftReviewSetSha256: string;
   remainingOverrideSetSha256: string;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt {
+  action: "policyOverrideRetirements";
+  contentSha256: string;
+  portfolioSetSha256: string;
+  currentOverrideSetSha256: string;
+  retirementSetSha256: string;
+  retirementCount: number;
+  latestRetiredAt?: string;
+  latestFamilySha256?: string;
+  latestRetiredOverrideSha256?: string;
+  latestRetiredRecommendationPolicyTemplate?: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult["retiredRecommendationPolicyTemplate"];
+  latestRemainingOverrideSetSha256?: string;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -758,6 +773,32 @@ export function planBlueprintRecommendationPolicyOverrideRetirementReceipt(
     overrideSetSha256: result.overrideSetSha256,
     driftReviewSetSha256: result.driftReviewSetSha256,
     remainingOverrideSetSha256: result.remainingOverrideSetSha256,
+  };
+}
+
+export function planBlueprintRecommendationPolicyOverrideRetirementHistoryReceipt(
+  history: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+): PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt {
+  const latest = history.retirements.at(-1);
+  return {
+    action: "policyOverrideRetirements",
+    contentSha256: history.contentSha256,
+    portfolioSetSha256: history.portfolioSetSha256,
+    currentOverrideSetSha256: history.currentOverrideSetSha256,
+    retirementSetSha256: history.retirementSetSha256,
+    retirementCount: history.retirementCount,
+    ...(history.latestRetiredAt
+      ? { latestRetiredAt: history.latestRetiredAt }
+      : {}),
+    ...(latest
+      ? {
+          latestFamilySha256: latest.familySha256,
+          latestRetiredOverrideSha256: latest.retiredOverrideSha256,
+          latestRetiredRecommendationPolicyTemplate:
+            latest.retiredRecommendationPolicyTemplate,
+          latestRemainingOverrideSetSha256: latest.remainingOverrideSetSha256,
+        }
+      : {}),
   };
 }
 
