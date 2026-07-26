@@ -1,0 +1,613 @@
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { access, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import type { Readable, Writable } from "node:stream";
+
+import type { ExtensionCapability } from "@napier/contracts";
+
+const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
+const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
+const CONTAINER_EXEC = "/usr/bin/docker";
+const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
+const PROCESS_STOP_GRACE_MS = 2_000;
+const LINUX_RUNTIME_READ_PATHS = [
+  "/lib",
+  "/lib64",
+  "/usr/lib",
+  "/usr/lib64",
+  "/usr/local/lib",
+  "/usr/local/share",
+  "/usr/share",
+  "/etc",
+] as const;
+
+export interface SandboxLaunchRequest {
+  command: string;
+  args: string[];
+  cwd: string;
+  env: Record<string, string>;
+  workspaceRoot: string;
+  approvedCapabilities: ExtensionCapability[];
+}
+
+export interface SandboxedProcess {
+  stdin: Writable;
+  stdout: Readable;
+  stderr: Readable;
+  exit: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
+  terminate(): Promise<void>;
+}
+
+export interface OsSandboxAdapter {
+  readonly id: string;
+  launch(request: SandboxLaunchRequest): Promise<SandboxedProcess>;
+}
+
+export interface PlatformSandboxOptions {
+  containerImage?: string;
+  containerExecutable?: string;
+  preferContainer?: boolean;
+}
+
+export function createPlatformSandboxAdapter(
+  platform = process.platform,
+  options: PlatformSandboxOptions = {},
+): OsSandboxAdapter {
+  const containerImage =
+    options.containerImage ?? process.env[CONTAINER_IMAGE_ENV];
+  if ((options.preferContainer || platform === "win32") && containerImage) {
+    return new OciContainerSandboxAdapter(containerImage, {
+      ...(options.containerExecutable
+        ? { executable: options.containerExecutable }
+        : {}),
+    });
+  }
+  if (platform === "darwin") return new MacOsSandboxAdapter();
+  if (platform === "linux") return new LinuxBubblewrapSandboxAdapter();
+  return new UnsupportedSandboxAdapter(platform);
+}
+
+export class UnsupportedSandboxAdapter implements OsSandboxAdapter {
+  readonly id = "unsupported";
+
+  constructor(private readonly platform: string) {}
+
+  async launch(): Promise<SandboxedProcess> {
+    throw new Error(
+      `No OS sandbox adapter is available for platform: ${this.platform}`,
+    );
+  }
+}
+
+export class MacOsSandboxAdapter implements OsSandboxAdapter {
+  readonly id = "macos-sandbox-exec";
+
+  constructor(
+    private readonly executable = SANDBOX_EXEC,
+    private readonly spawnProcess = spawn,
+  ) {}
+
+  async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+    validateLaunchRequest(request);
+    try {
+      await access(this.executable);
+    } catch {
+      throw new Error(
+        `macOS process sandbox requires sandbox-exec at ${this.executable}`,
+      );
+    }
+    const sandboxHome = await mkdtemp(
+      path.join(tmpdir(), "napier-process-sandbox-"),
+    );
+    const profile = buildMacOsSandboxProfile(request, sandboxHome);
+    let child: ChildProcessWithoutNullStreams;
+    try {
+      child = this.spawnProcess(
+        this.executable,
+        ["-p", profile, "--", request.command, ...request.args],
+        {
+          cwd: request.cwd,
+          env: {
+            ...request.env,
+            HOME: sandboxHome,
+            TMPDIR: sandboxHome,
+          },
+          detached: true,
+          shell: false,
+          stdio: ["pipe", "pipe", "pipe"],
+          windowsHide: true,
+        },
+      );
+      await waitForSpawn(child);
+    } catch (error) {
+      await rm(sandboxHome, { recursive: true, force: true });
+      throw error;
+    }
+
+    const exit = new Promise<{
+      code: number | null;
+      signal: NodeJS.Signals | null;
+    }>((resolve) => {
+      child.once("exit", (code, signal) => resolve({ code, signal }));
+    }).finally(async () => {
+      signalProcessGroup(child, "SIGTERM");
+      await rm(sandboxHome, { recursive: true, force: true });
+    });
+
+    return {
+      stdin: child.stdin,
+      stdout: child.stdout,
+      stderr: child.stderr,
+      exit,
+      terminate: async () => {
+        if (child.exitCode !== null || child.signalCode !== null) {
+          await exit;
+          return;
+        }
+        signalProcessGroup(child, "SIGTERM");
+        const stopped = await Promise.race([
+          exit.then(() => true),
+          new Promise<false>((resolve) =>
+            setTimeout(() => resolve(false), PROCESS_STOP_GRACE_MS),
+          ),
+        ]);
+        if (!stopped) signalProcessGroup(child, "SIGKILL");
+        await exit;
+      },
+    };
+  }
+}
+
+export class LinuxBubblewrapSandboxAdapter implements OsSandboxAdapter {
+  readonly id = "linux-bubblewrap";
+
+  constructor(
+    private readonly executable = BUBBLEWRAP_EXEC,
+    private readonly spawnProcess = spawn,
+  ) {}
+
+  async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+    validateLaunchRequest(request);
+    try {
+      await access(this.executable);
+    } catch {
+      throw new Error(
+        `Linux process sandbox requires Bubblewrap at ${this.executable}`,
+      );
+    }
+    const sandboxHome = await mkdtemp(
+      path.join(tmpdir(), "napier-process-sandbox-"),
+    );
+    const args = buildLinuxBubblewrapArgs(request, sandboxHome);
+    let child: ChildProcessWithoutNullStreams;
+    try {
+      child = this.spawnProcess(this.executable, args, {
+        cwd: "/",
+        env: {
+          ...request.env,
+          HOME: "/tmp",
+          TMPDIR: "/tmp",
+        },
+        detached: true,
+        shell: false,
+        stdio: ["pipe", "pipe", "pipe"],
+        windowsHide: true,
+      });
+      await waitForSpawn(child);
+    } catch (error) {
+      await rm(sandboxHome, { recursive: true, force: true });
+      throw error;
+    }
+
+    const exit = new Promise<{
+      code: number | null;
+      signal: NodeJS.Signals | null;
+    }>((resolve) => {
+      child.once("exit", (code, signal) => resolve({ code, signal }));
+    }).finally(async () => {
+      signalProcessGroup(child, "SIGTERM");
+      await rm(sandboxHome, { recursive: true, force: true });
+    });
+
+    return {
+      stdin: child.stdin,
+      stdout: child.stdout,
+      stderr: child.stderr,
+      exit,
+      terminate: async () => {
+        if (child.exitCode !== null || child.signalCode !== null) {
+          await exit;
+          return;
+        }
+        signalProcessGroup(child, "SIGTERM");
+        const stopped = await Promise.race([
+          exit.then(() => true),
+          new Promise<false>((resolve) =>
+            setTimeout(() => resolve(false), PROCESS_STOP_GRACE_MS),
+          ),
+        ]);
+        if (!stopped) signalProcessGroup(child, "SIGKILL");
+        await exit;
+      },
+    };
+  }
+}
+
+export class OciContainerSandboxAdapter implements OsSandboxAdapter {
+  readonly id = "oci-container";
+  private readonly executable: string;
+
+  constructor(
+    private readonly image: string,
+    options: { executable?: string; spawnProcess?: typeof spawn } = {},
+  ) {
+    this.executable = options.executable ?? CONTAINER_EXEC;
+    this.spawnProcess = options.spawnProcess ?? spawn;
+  }
+
+  private readonly spawnProcess: typeof spawn;
+
+  async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
+    validateLaunchRequest(request);
+    validateContainerImage(this.image);
+    try {
+      await access(this.executable);
+    } catch {
+      throw new Error(
+        `OCI container sandbox requires an executable at ${this.executable}`,
+      );
+    }
+    const sandboxHome = await mkdtemp(
+      path.join(tmpdir(), "napier-process-sandbox-"),
+    );
+    const args = buildOciContainerArgs(request, sandboxHome, this.image);
+    let child: ChildProcessWithoutNullStreams;
+    try {
+      child = this.spawnProcess(this.executable, args, {
+        cwd: "/",
+        env: containerProcessEnv(request.env),
+        detached: true,
+        shell: false,
+        stdio: ["pipe", "pipe", "pipe"],
+        windowsHide: true,
+      });
+      await waitForSpawn(child);
+    } catch (error) {
+      await rm(sandboxHome, { recursive: true, force: true });
+      throw error;
+    }
+
+    const exit = new Promise<{
+      code: number | null;
+      signal: NodeJS.Signals | null;
+    }>((resolve) => {
+      child.once("exit", (code, signal) => resolve({ code, signal }));
+    }).finally(async () => {
+      signalProcessGroup(child, "SIGTERM");
+      await rm(sandboxHome, { recursive: true, force: true });
+    });
+
+    return {
+      stdin: child.stdin,
+      stdout: child.stdout,
+      stderr: child.stderr,
+      exit,
+      terminate: async () => {
+        if (child.exitCode !== null || child.signalCode !== null) {
+          await exit;
+          return;
+        }
+        signalProcessGroup(child, "SIGTERM");
+        const stopped = await Promise.race([
+          exit.then(() => true),
+          new Promise<false>((resolve) =>
+            setTimeout(() => resolve(false), PROCESS_STOP_GRACE_MS),
+          ),
+        ]);
+        if (!stopped) signalProcessGroup(child, "SIGKILL");
+        await exit;
+      },
+    };
+  }
+}
+
+export function buildMacOsSandboxProfile(
+  request: SandboxLaunchRequest,
+  sandboxHome: string,
+): string {
+  validateLaunchRequest(request);
+  const capabilities = new Set(request.approvedCapabilities);
+  const metadataPaths = destinationDirectories([
+    path.dirname(request.command),
+    request.workspaceRoot,
+    request.cwd,
+    sandboxHome,
+  ]);
+  const rules = [
+    "(version 1)",
+    "(deny default)",
+    "(allow process-fork)",
+    `(allow process-exec (literal ${sandboxLiteral(request.command)}))`,
+    "(allow signal (target self))",
+    "(allow sysctl-read)",
+    '(allow mach-lookup (global-name "com.apple.system.logger"))',
+    '(allow file-read-data (literal "/"))',
+    "(allow file-read-metadata",
+    ...metadataPaths.map(
+      (directory) => `  (literal ${sandboxLiteral(directory)})`,
+    ),
+    ")",
+    "(allow file-read*",
+    '  (subpath "/System")',
+    '  (subpath "/usr/lib")',
+    '  (subpath "/private/etc")',
+    `  (literal ${sandboxLiteral(request.command)})`,
+    ")",
+    `(allow file-read* file-write* (subpath ${sandboxLiteral(sandboxHome)}))`,
+  ];
+  if (
+    capabilities.has("workspace.read") ||
+    capabilities.has("workspace.write")
+  ) {
+    rules.push(
+      `(allow file-read* (subpath ${sandboxLiteral(request.workspaceRoot)}))`,
+    );
+  }
+  if (capabilities.has("workspace.write")) {
+    rules.push(
+      `(allow file-write* (subpath ${sandboxLiteral(request.workspaceRoot)}))`,
+    );
+  }
+  if (capabilities.has("network.connect")) {
+    rules.push("(allow network-outbound)");
+  }
+  return rules.join("\n");
+}
+
+export function buildLinuxBubblewrapArgs(
+  request: SandboxLaunchRequest,
+  sandboxHome: string,
+): string[] {
+  validateLaunchRequest(request);
+  if (!path.isAbsolute(sandboxHome)) {
+    throw new Error("Linux sandbox home must be absolute");
+  }
+  const capabilities = new Set(request.approvedCapabilities);
+  const workspaceMounted =
+    capabilities.has("workspace.read") || capabilities.has("workspace.write");
+  const directories = destinationDirectories([
+    path.dirname(request.command),
+    ...(workspaceMounted ? [request.workspaceRoot] : []),
+    ...LINUX_RUNTIME_READ_PATHS,
+  ]);
+  const args = [
+    "--die-with-parent",
+    "--new-session",
+    "--unshare-all",
+    ...(capabilities.has("network.connect") ? ["--share-net"] : []),
+    "--proc",
+    "/proc",
+    "--dev",
+    "/dev",
+    "--bind",
+    sandboxHome,
+    "/tmp",
+    ...directories.flatMap((directory) => ["--dir", directory]),
+  ];
+  for (const runtimePath of LINUX_RUNTIME_READ_PATHS) {
+    args.push("--ro-bind-try", runtimePath, runtimePath);
+  }
+  if (workspaceMounted) {
+    args.push(
+      capabilities.has("workspace.write") ? "--bind" : "--ro-bind",
+      request.workspaceRoot,
+      request.workspaceRoot,
+    );
+  }
+  args.push(
+    "--ro-bind",
+    request.command,
+    request.command,
+    "--chdir",
+    workspaceMounted ? request.cwd : "/tmp",
+    "--",
+    request.command,
+    ...request.args,
+  );
+  return args;
+}
+
+export function buildOciContainerArgs(
+  request: SandboxLaunchRequest,
+  sandboxHome: string,
+  image: string,
+): string[] {
+  validateLaunchRequest(request);
+  if (!path.isAbsolute(sandboxHome)) {
+    throw new Error("Container sandbox home must be absolute");
+  }
+  validateContainerImage(image);
+  const capabilities = new Set(request.approvedCapabilities);
+  const workspaceMounted =
+    capabilities.has("workspace.read") || capabilities.has("workspace.write");
+  const args = [
+    "run",
+    "--rm",
+    "--init",
+    "--cap-drop",
+    "ALL",
+    "--security-opt",
+    "no-new-privileges",
+    "--pids-limit",
+    "256",
+    "--memory",
+    "1g",
+    "--cpus",
+    "2",
+    "--network",
+    capabilities.has("network.connect") ? "bridge" : "none",
+    "--read-only",
+    "--tmpfs",
+    "/tmp:rw,nosuid,nodev,size=64m",
+    "--mount",
+    bindMount(sandboxHome, "/tmp", false),
+    "--workdir",
+    workspaceMounted ? request.cwd : "/tmp",
+    "--env",
+    "HOME=/tmp",
+    "--env",
+    "TMPDIR=/tmp",
+  ];
+  for (const key of Object.keys(request.env).sort()) {
+    validateContainerEnvName(key);
+    args.push("--env", key);
+  }
+  if (workspaceMounted) {
+    args.push(
+      "--mount",
+      bindMount(
+        request.workspaceRoot,
+        request.workspaceRoot,
+        !capabilities.has("workspace.write"),
+      ),
+    );
+  }
+  args.push(image, request.command, ...request.args);
+  return args;
+}
+
+function validateLaunchRequest(request: SandboxLaunchRequest): void {
+  if (!path.isAbsolute(request.command)) {
+    throw new Error("Sandboxed commands must use an absolute executable path");
+  }
+  if (!path.isAbsolute(request.cwd)) {
+    throw new Error("Sandboxed process cwd must be absolute");
+  }
+  if (!path.isAbsolute(request.workspaceRoot)) {
+    throw new Error("Sandbox workspace root must be absolute");
+  }
+  if (!isPathInside(request.cwd, request.workspaceRoot)) {
+    throw new Error("Sandboxed process cwd must stay inside the workspace");
+  }
+  if (!request.approvedCapabilities.includes("process.spawn")) {
+    throw new Error("Sandbox launch requires approved process.spawn");
+  }
+  if (
+    request.approvedCapabilities.includes("workspace.write") &&
+    !request.approvedCapabilities.includes("workspace.read")
+  ) {
+    throw new Error("workspace.write requires workspace.read");
+  }
+}
+
+function validateContainerImage(image: string): void {
+  if (
+    !image ||
+    image.length > 200 ||
+    /[\s\u0000-\u001f\u007f]/.test(image) ||
+    !/^[a-zA-Z0-9][a-zA-Z0-9._/:@-]*$/.test(image)
+  ) {
+    throw new Error("OCI container sandbox image is invalid");
+  }
+}
+
+function validateContainerEnvName(name: string): void {
+  if (!/^[A-Z_][A-Z0-9_]{0,127}$/.test(name)) {
+    throw new Error(`Container sandbox environment name is invalid: ${name}`);
+  }
+}
+
+function bindMount(source: string, target: string, readonly: boolean): string {
+  return [
+    "type=bind",
+    `source=${path.resolve(source)}`,
+    `target=${path.resolve(target)}`,
+    readonly ? "readonly" : "",
+  ]
+    .filter(Boolean)
+    .join(",");
+}
+
+function containerProcessEnv(
+  env: Record<string, string>,
+): Record<string, string> {
+  return {
+    ...Object.fromEntries(
+      Object.entries(process.env).filter(
+        (entry): entry is [string, string] =>
+          entry[0].startsWith("DOCKER_") && typeof entry[1] === "string",
+      ),
+    ),
+    ...env,
+  };
+}
+
+function destinationDirectories(targets: readonly string[]): string[] {
+  const directories = new Set<string>();
+  for (const target of targets) {
+    let current = path.resolve(target);
+    while (current !== path.parse(current).root) {
+      directories.add(current);
+      current = path.dirname(current);
+    }
+  }
+  return [...directories].sort((left, right) => {
+    const depthDelta = pathDepth(left) - pathDepth(right);
+    return depthDelta || left.localeCompare(right);
+  });
+}
+
+function pathDepth(value: string): number {
+  return value.split(path.sep).filter(Boolean).length;
+}
+
+function isPathInside(candidate: string, root: string): boolean {
+  const relative = path.relative(path.resolve(root), path.resolve(candidate));
+  return (
+    relative === "" ||
+    (!relative.startsWith(`..${path.sep}`) &&
+      relative !== ".." &&
+      !path.isAbsolute(relative))
+  );
+}
+
+function sandboxLiteral(value: string): string {
+  return JSON.stringify(path.resolve(value));
+}
+
+function waitForSpawn(child: ChildProcessWithoutNullStreams): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onSpawn = () => {
+      child.off("error", onError);
+      resolve();
+    };
+    const onError = (error: Error) => {
+      child.off("spawn", onSpawn);
+      reject(error);
+    };
+    child.once("spawn", onSpawn);
+    child.once("error", onError);
+  });
+}
+
+function signalProcessGroup(
+  child: ChildProcessWithoutNullStreams,
+  signal: NodeJS.Signals,
+): void {
+  if (child.pid !== undefined) {
+    try {
+      process.kill(-child.pid, signal);
+      return;
+    } catch (error) {
+      if (errorCode(error) === "ESRCH") return;
+    }
+  }
+  child.kill(signal);
+}
+
+function errorCode(error: unknown): string | undefined {
+  return error instanceof Error && "code" in error
+    ? String(error.code)
+    : undefined;
+}

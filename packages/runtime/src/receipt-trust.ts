@@ -1,0 +1,702 @@
+import {
+  createHash,
+  createPrivateKey,
+  createPublicKey,
+  sign,
+  verify,
+  type KeyObject,
+} from "node:crypto";
+
+import {
+  NAPIER_API_VERSION,
+  type CreateReceiptTrustAnchorRequest,
+  type EvaluationCasebook,
+  type EvaluationCasebookQualificationReceipt,
+  type EvaluationQualificationBaseline,
+  type ReceiptTrustAnchor,
+  type TrustedReceipt,
+  type TrustedReceiptEnvelope,
+  type TrustedReceiptKind,
+  type TrustedReceiptVerification,
+} from "@napier/contracts";
+
+import { validateEvaluationCasebookQualificationReceipt } from "./evaluation-casebook-qualification.js";
+import { validateEvaluationSuiteGateReceipt } from "./evaluation-suites.js";
+import { createId, nowIso } from "./ids.js";
+
+export const MAX_RECEIPT_TRUST_ANCHORS = 32;
+export const MAX_QUALIFICATION_BASELINES_PER_CASEBOOK = 20;
+export const MAX_TRUSTED_RECEIPT_BYTES = 10 * 1024 * 1024 + 64 * 1024;
+
+const SHA256_PATTERN = /^[a-f0-9]{64}$/;
+const ENVIRONMENT_NAME_PATTERN = /^[A-Z_][A-Z0-9_]{1,127}$/;
+const RESOURCE_ID_PATTERN = /^[a-z][a-z0-9_]{2,80}$/;
+
+interface ReceiptSignatureStatement {
+  kind: "napier.receipt-signature-statement";
+  schemaVersion: 1;
+  apiVersion: string;
+  receiptKind: TrustedReceiptKind;
+  receiptContentSha256: string;
+  receiptArtifactSha256: string;
+  keyId: string;
+  signedAt: string;
+}
+
+export function createReceiptTrustAnchor(
+  request: CreateReceiptTrustAnchorRequest,
+  environment: NodeJS.ProcessEnv = process.env,
+): ReceiptTrustAnchor {
+  const label = normalizeLabel(request.label);
+  const timestamp = nowIso();
+  let publicKey: KeyObject;
+  let signingSource: ReceiptTrustAnchor["signingSource"];
+  if (request.source.type === "environment") {
+    const variable = normalizeEnvironmentName(request.source.variable);
+    const value = environment[variable];
+    if (!value) {
+      throw new Error(`Receipt signing key is unavailable: ${variable}`);
+    }
+    const privateKey = parsePrivateKey(value);
+    publicKey = createPublicKey(privateKey);
+    signingSource = { type: "environment", variable };
+  } else {
+    publicKey = parsePublicKeySpki(request.source.publicKeySpki);
+  }
+  assertEd25519Key(publicKey, "Receipt trust anchor");
+  const publicKeySpki = exportPublicKeySpki(publicKey);
+  const content = {
+    id: createId("trustkey"),
+    label,
+    algorithm: "Ed25519" as const,
+    keyId: hashPublicKeySpki(publicKeySpki),
+    publicKeySpki,
+    ...(signingSource ? { signingSource } : {}),
+    status: "trusted" as const,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  };
+  return {
+    ...content,
+    contentSha256: hashReceiptTrustAnchor(content),
+  };
+}
+
+export function revokeReceiptTrustAnchor(
+  anchor: ReceiptTrustAnchor,
+): ReceiptTrustAnchor {
+  const current = validateReceiptTrustAnchor(anchor);
+  if (current.status === "revoked") return current;
+  const timestamp = nowIso();
+  const content = {
+    ...current,
+    status: "revoked" as const,
+    updatedAt: timestamp,
+    revokedAt: timestamp,
+  };
+  const { contentSha256: _contentSha256, ...hashInput } = content;
+  return {
+    ...content,
+    contentSha256: hashReceiptTrustAnchor(hashInput),
+  };
+}
+
+export function hashReceiptTrustAnchor(
+  anchor: Omit<ReceiptTrustAnchor, "contentSha256">,
+): string {
+  return sha256(canonicalJson(anchor));
+}
+
+export function validateReceiptTrustAnchor(value: unknown): ReceiptTrustAnchor {
+  if (!isRecord(value)) {
+    throw new Error("Receipt trust anchor must be an object");
+  }
+  const anchor = value as unknown as ReceiptTrustAnchor;
+  assertAllowedKeys(value, [
+    "id",
+    "label",
+    "algorithm",
+    "keyId",
+    "publicKeySpki",
+    "signingSource",
+    "status",
+    "createdAt",
+    "updatedAt",
+    "revokedAt",
+    "contentSha256",
+  ]);
+  if (
+    !RESOURCE_ID_PATTERN.test(anchor.id) ||
+    normalizeLabel(anchor.label) !== anchor.label ||
+    anchor.algorithm !== "Ed25519" ||
+    !SHA256_PATTERN.test(anchor.keyId) ||
+    (anchor.status !== "trusted" && anchor.status !== "revoked") ||
+    !validTimestamp(anchor.createdAt) ||
+    !validTimestamp(anchor.updatedAt) ||
+    anchor.updatedAt < anchor.createdAt ||
+    !SHA256_PATTERN.test(anchor.contentSha256)
+  ) {
+    throw new Error("Receipt trust anchor is invalid");
+  }
+  if (anchor.signingSource) {
+    if (
+      !isRecord(anchor.signingSource) ||
+      Object.keys(anchor.signingSource).some(
+        (key) => key !== "type" && key !== "variable",
+      ) ||
+      anchor.signingSource.type !== "environment" ||
+      normalizeEnvironmentName(anchor.signingSource.variable) !==
+        anchor.signingSource.variable
+    ) {
+      throw new Error("Receipt trust anchor signing source is invalid");
+    }
+  }
+  if (
+    (anchor.status === "revoked" && !validTimestamp(anchor.revokedAt)) ||
+    (anchor.status === "trusted" && anchor.revokedAt !== undefined) ||
+    (anchor.revokedAt !== undefined &&
+      (anchor.revokedAt < anchor.createdAt ||
+        anchor.revokedAt !== anchor.updatedAt))
+  ) {
+    throw new Error("Receipt trust anchor revocation evidence is invalid");
+  }
+  const publicKey = parsePublicKeySpki(anchor.publicKeySpki);
+  assertEd25519Key(publicKey, "Receipt trust anchor");
+  const normalizedSpki = exportPublicKeySpki(publicKey);
+  if (
+    normalizedSpki !== anchor.publicKeySpki ||
+    hashPublicKeySpki(normalizedSpki) !== anchor.keyId
+  ) {
+    throw new Error("Receipt trust anchor key fingerprint mismatch");
+  }
+  const { contentSha256: _contentSha256, ...content } = anchor;
+  if (hashReceiptTrustAnchor(content) !== anchor.contentSha256) {
+    throw new Error("Receipt trust anchor content hash mismatch");
+  }
+  return structuredClone(anchor);
+}
+
+export function signTrustedReceipt<Receipt extends TrustedReceipt>(
+  receipt: Receipt,
+  anchor: ReceiptTrustAnchor,
+  environment: NodeJS.ProcessEnv = process.env,
+): TrustedReceiptEnvelope<Receipt> {
+  const trustedAnchor = validateReceiptTrustAnchor(anchor);
+  if (trustedAnchor.status !== "trusted") {
+    throw new Error(`Receipt trust anchor is revoked: ${trustedAnchor.id}`);
+  }
+  if (!trustedAnchor.signingSource) {
+    throw new Error(`Receipt trust anchor is verify-only: ${trustedAnchor.id}`);
+  }
+  const validatedReceipt = validateTrustedReceipt(receipt) as Receipt;
+  const privateValue = environment[trustedAnchor.signingSource.variable];
+  if (!privateValue) {
+    throw new Error(
+      `Receipt signing key is unavailable: ${trustedAnchor.signingSource.variable}`,
+    );
+  }
+  const privateKey = parsePrivateKey(privateValue);
+  const derivedPublicKey = createPublicKey(privateKey);
+  assertEd25519Key(derivedPublicKey, "Receipt signing key");
+  if (exportPublicKeySpki(derivedPublicKey) !== trustedAnchor.publicKeySpki) {
+    throw new Error("Receipt signing key does not match the trust anchor");
+  }
+  const receiptKind = receiptKindFor(validatedReceipt);
+  const receiptArtifactSha256 = sha256(canonicalJson(validatedReceipt));
+  const signedAt = nowIso();
+  const statement = createSignatureStatement(
+    receiptKind,
+    validatedReceipt.contentSha256,
+    receiptArtifactSha256,
+    trustedAnchor.keyId,
+    signedAt,
+  );
+  const statementJson = canonicalJson(statement);
+  const signature = {
+    algorithm: "Ed25519" as const,
+    keyId: trustedAnchor.keyId,
+    signedAt,
+    receiptArtifactSha256,
+    statementSha256: sha256(statementJson),
+    value: sign(null, Buffer.from(statementJson), privateKey).toString(
+      "base64url",
+    ),
+  };
+  const content = {
+    kind: "napier.trusted-receipt-envelope" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    receiptKind,
+    receipt: validatedReceipt,
+    signature,
+  };
+  return {
+    ...content,
+    contentSha256: hashTrustedReceiptEnvelope(content),
+  };
+}
+
+export function hashTrustedReceiptEnvelope(
+  envelope: Omit<TrustedReceiptEnvelope, "contentSha256">,
+): string {
+  return sha256(canonicalJson(envelope));
+}
+
+export function validateTrustedReceiptEnvelope(
+  value: unknown,
+): TrustedReceiptEnvelope {
+  if (
+    !isRecord(value) ||
+    Buffer.byteLength(JSON.stringify(value)) > MAX_TRUSTED_RECEIPT_BYTES
+  ) {
+    throw new Error("Trusted receipt envelope is invalid");
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "receiptKind",
+    "receipt",
+    "signature",
+    "contentSha256",
+  ]);
+  const envelope = value as unknown as TrustedReceiptEnvelope;
+  if (
+    envelope.kind !== "napier.trusted-receipt-envelope" ||
+    envelope.schemaVersion !== 1 ||
+    envelope.apiVersion !== NAPIER_API_VERSION ||
+    (envelope.receiptKind !== "evaluation_gate" &&
+      envelope.receiptKind !== "casebook_qualification") ||
+    !SHA256_PATTERN.test(envelope.contentSha256)
+  ) {
+    throw new Error("Trusted receipt envelope header is invalid");
+  }
+  const receipt = validateTrustedReceipt(envelope.receipt);
+  if (receiptKindFor(receipt) !== envelope.receiptKind) {
+    throw new Error("Trusted receipt kind does not match its payload");
+  }
+  if (!isRecord(envelope.signature)) {
+    throw new Error("Trusted receipt signature is invalid");
+  }
+  assertAllowedKeys(envelope.signature, [
+    "algorithm",
+    "keyId",
+    "signedAt",
+    "receiptArtifactSha256",
+    "statementSha256",
+    "value",
+  ]);
+  const signature = envelope.signature;
+  const signatureBytes = decodeSignature(signature.value);
+  if (
+    signature.algorithm !== "Ed25519" ||
+    !SHA256_PATTERN.test(signature.keyId) ||
+    !validTimestamp(signature.signedAt) ||
+    !SHA256_PATTERN.test(signature.receiptArtifactSha256) ||
+    !SHA256_PATTERN.test(signature.statementSha256) ||
+    signatureBytes.byteLength !== 64
+  ) {
+    throw new Error("Trusted receipt signature evidence is invalid");
+  }
+  const statement = createSignatureStatement(
+    envelope.receiptKind,
+    receipt.contentSha256,
+    signature.receiptArtifactSha256,
+    signature.keyId,
+    signature.signedAt,
+  );
+  if (sha256(canonicalJson(statement)) !== signature.statementSha256) {
+    throw new Error("Trusted receipt signature statement hash mismatch");
+  }
+  if (sha256(canonicalJson(receipt)) !== signature.receiptArtifactSha256) {
+    throw new Error("Trusted receipt artifact hash mismatch");
+  }
+  const { contentSha256: _contentSha256, ...content } = envelope;
+  if (hashTrustedReceiptEnvelope(content) !== envelope.contentSha256) {
+    throw new Error("Trusted receipt envelope content hash mismatch");
+  }
+  return structuredClone({
+    ...envelope,
+    receipt,
+  });
+}
+
+export function verifyTrustedReceiptEnvelope(
+  value: unknown,
+  anchors: ReceiptTrustAnchor[],
+): TrustedReceiptVerification {
+  const verifiedAt = nowIso();
+  let envelope: TrustedReceiptEnvelope;
+  try {
+    envelope = validateTrustedReceiptEnvelope(value);
+  } catch (error) {
+    return {
+      status: "invalid",
+      verifiedAt,
+      signatureValid: false,
+      integrityValid: false,
+      reason: safeError(error),
+    };
+  }
+  const anchor = anchors
+    .map((candidate) => validateReceiptTrustAnchor(candidate))
+    .find((candidate) => candidate.keyId === envelope.signature.keyId);
+  if (!anchor) {
+    return {
+      status: "unknown_key",
+      verifiedAt,
+      receiptKind: envelope.receiptKind,
+      receiptContentSha256: envelope.receipt.contentSha256,
+      receiptArtifactSha256: envelope.signature.receiptArtifactSha256,
+      keyId: envelope.signature.keyId,
+      envelopeSha256: envelope.contentSha256,
+      signatureValid: false,
+      integrityValid: true,
+      reason: "No trusted public key matches the receipt signature",
+    };
+  }
+  const statement = createSignatureStatement(
+    envelope.receiptKind,
+    envelope.receipt.contentSha256,
+    envelope.signature.receiptArtifactSha256,
+    envelope.signature.keyId,
+    envelope.signature.signedAt,
+  );
+  const signatureValid = verify(
+    null,
+    Buffer.from(canonicalJson(statement)),
+    parsePublicKeySpki(anchor.publicKeySpki),
+    decodeSignature(envelope.signature.value),
+  );
+  if (!signatureValid) {
+    return {
+      status: "invalid",
+      verifiedAt,
+      receiptKind: envelope.receiptKind,
+      receiptContentSha256: envelope.receipt.contentSha256,
+      receiptArtifactSha256: envelope.signature.receiptArtifactSha256,
+      keyId: envelope.signature.keyId,
+      envelopeSha256: envelope.contentSha256,
+      signatureValid: false,
+      integrityValid: true,
+      reason: "Receipt signature verification failed",
+    };
+  }
+  return {
+    status: anchor.status,
+    verifiedAt,
+    receiptKind: envelope.receiptKind,
+    receiptContentSha256: envelope.receipt.contentSha256,
+    receiptArtifactSha256: envelope.signature.receiptArtifactSha256,
+    keyId: envelope.signature.keyId,
+    envelopeSha256: envelope.contentSha256,
+    signatureValid: true,
+    integrityValid: true,
+    reason:
+      anchor.status === "trusted"
+        ? "Receipt signature and evidence are trusted"
+        : "Receipt signature is valid, but its trust anchor is revoked",
+  };
+}
+
+export function createEvaluationQualificationBaseline(
+  envelope: TrustedReceiptEnvelope<EvaluationCasebookQualificationReceipt>,
+  casebook: EvaluationCasebook,
+  promotedByThreadId: string,
+  supersedesBaselineId?: string,
+): EvaluationQualificationBaseline {
+  const trustedEnvelope = validateTrustedReceiptEnvelope(envelope);
+  if (
+    trustedEnvelope.receiptKind !== "casebook_qualification" ||
+    trustedEnvelope.receipt.kind !==
+      "napier.evaluation-casebook-qualification-receipt"
+  ) {
+    throw new Error("Qualification baseline requires a Casebook receipt");
+  }
+  const receipt = trustedEnvelope.receipt;
+  const execution = receipt.execution;
+  const revision = casebook.revisions.at(-1);
+  if (
+    receipt.state !== "passed" ||
+    !execution ||
+    receipt.casebook.id !== casebook.id ||
+    receipt.casebook.currentRevision !== casebook.currentRevision ||
+    receipt.casebook.revisions.at(-1)?.contentSha256 !==
+      revision?.contentSha256 ||
+    execution.casebookRevision !== casebook.currentRevision ||
+    execution.casebookRevisionSha256 !== revision?.contentSha256 ||
+    !RESOURCE_ID_PATTERN.test(promotedByThreadId) ||
+    (supersedesBaselineId !== undefined &&
+      !RESOURCE_ID_PATTERN.test(supersedesBaselineId))
+  ) {
+    throw new Error(
+      "Qualification baseline requires a current passing receipt",
+    );
+  }
+  const content = {
+    id: createId("qualbase"),
+    casebookId: casebook.id,
+    casebookRevision: casebook.currentRevision,
+    casebookRevisionSha256: revision.contentSha256,
+    qualificationExecutionId: execution.id,
+    qualificationExecutionSha256: execution.contentSha256,
+    envelope:
+      trustedEnvelope as TrustedReceiptEnvelope<EvaluationCasebookQualificationReceipt>,
+    promotedByThreadId,
+    ...(supersedesBaselineId ? { supersedesBaselineId } : {}),
+    createdAt: nowIso(),
+  };
+  return {
+    ...content,
+    contentSha256: hashEvaluationQualificationBaseline(content),
+  };
+}
+
+export function hashEvaluationQualificationBaseline(
+  baseline: Omit<EvaluationQualificationBaseline, "contentSha256">,
+): string {
+  return sha256(canonicalJson(baseline));
+}
+
+export function validateEvaluationQualificationBaseline(
+  value: unknown,
+  anchors?: ReceiptTrustAnchor[],
+): EvaluationQualificationBaseline {
+  if (!isRecord(value)) {
+    throw new Error("Evaluation qualification baseline must be an object");
+  }
+  assertAllowedKeys(value, [
+    "id",
+    "casebookId",
+    "casebookRevision",
+    "casebookRevisionSha256",
+    "qualificationExecutionId",
+    "qualificationExecutionSha256",
+    "envelope",
+    "promotedByThreadId",
+    "supersedesBaselineId",
+    "createdAt",
+    "contentSha256",
+  ]);
+  const baseline = value as unknown as EvaluationQualificationBaseline;
+  const envelope = validateTrustedReceiptEnvelope(baseline.envelope);
+  if (
+    !RESOURCE_ID_PATTERN.test(baseline.id) ||
+    !RESOURCE_ID_PATTERN.test(baseline.casebookId) ||
+    !Number.isInteger(baseline.casebookRevision) ||
+    baseline.casebookRevision < 1 ||
+    !SHA256_PATTERN.test(baseline.casebookRevisionSha256) ||
+    !RESOURCE_ID_PATTERN.test(baseline.qualificationExecutionId) ||
+    !SHA256_PATTERN.test(baseline.qualificationExecutionSha256) ||
+    !RESOURCE_ID_PATTERN.test(baseline.promotedByThreadId) ||
+    (baseline.supersedesBaselineId !== undefined &&
+      !RESOURCE_ID_PATTERN.test(baseline.supersedesBaselineId)) ||
+    !validTimestamp(baseline.createdAt) ||
+    !SHA256_PATTERN.test(baseline.contentSha256) ||
+    envelope.receiptKind !== "casebook_qualification" ||
+    envelope.receipt.kind !== "napier.evaluation-casebook-qualification-receipt"
+  ) {
+    throw new Error("Evaluation qualification baseline is invalid");
+  }
+  const receipt = envelope.receipt;
+  if (
+    receipt.state !== "passed" ||
+    !receipt.execution ||
+    receipt.casebook.id !== baseline.casebookId ||
+    receipt.casebook.currentRevision !== baseline.casebookRevision ||
+    receipt.casebook.revisions.at(-1)?.contentSha256 !==
+      baseline.casebookRevisionSha256 ||
+    receipt.execution.id !== baseline.qualificationExecutionId ||
+    receipt.execution.contentSha256 !== baseline.qualificationExecutionSha256
+  ) {
+    throw new Error("Evaluation qualification baseline evidence is invalid");
+  }
+  if (anchors) {
+    const verification = verifyTrustedReceiptEnvelope(envelope, anchors);
+    if (!verification.integrityValid || !verification.signatureValid) {
+      throw new Error(
+        `Evaluation qualification baseline signature is invalid: ${verification.reason}`,
+      );
+    }
+  }
+  const { contentSha256: _contentSha256, ...content } = baseline;
+  if (hashEvaluationQualificationBaseline(content) !== baseline.contentSha256) {
+    throw new Error("Evaluation qualification baseline hash mismatch");
+  }
+  return structuredClone({
+    ...baseline,
+    envelope:
+      envelope as TrustedReceiptEnvelope<EvaluationCasebookQualificationReceipt>,
+  });
+}
+
+function validateTrustedReceipt(value: unknown): TrustedReceipt {
+  if (!isRecord(value) || typeof value["kind"] !== "string") {
+    throw new Error("Trusted receipt payload is invalid");
+  }
+  if (value["kind"] === "napier.evaluation-gate-receipt") {
+    return validateEvaluationSuiteGateReceipt(value);
+  }
+  if (value["kind"] === "napier.evaluation-casebook-qualification-receipt") {
+    return validateEvaluationCasebookQualificationReceipt(value);
+  }
+  throw new Error("Trusted receipt kind is unsupported");
+}
+
+function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
+  return receipt.kind === "napier.evaluation-gate-receipt"
+    ? "evaluation_gate"
+    : "casebook_qualification";
+}
+
+function createSignatureStatement(
+  receiptKind: TrustedReceiptKind,
+  receiptContentSha256: string,
+  receiptArtifactSha256: string,
+  keyId: string,
+  signedAt: string,
+): ReceiptSignatureStatement {
+  return {
+    kind: "napier.receipt-signature-statement",
+    schemaVersion: 1,
+    apiVersion: NAPIER_API_VERSION,
+    receiptKind,
+    receiptContentSha256,
+    receiptArtifactSha256,
+    keyId,
+    signedAt,
+  };
+}
+
+function hashPublicKeySpki(publicKeySpki: string): string {
+  return sha256(Buffer.from(publicKeySpki, "base64"));
+}
+
+function exportPublicKeySpki(key: KeyObject): string {
+  return Buffer.from(key.export({ format: "der", type: "spki" })).toString(
+    "base64",
+  );
+}
+
+function parsePublicKeySpki(value: string): KeyObject {
+  if (typeof value !== "string" || value.length > 4_096) {
+    throw new Error("Receipt trust anchor public key is invalid");
+  }
+  const bytes = decodeCanonicalBase64(value);
+  try {
+    return createPublicKey({ key: bytes, format: "der", type: "spki" });
+  } catch {
+    throw new Error("Receipt trust anchor public key is invalid");
+  }
+}
+
+function parsePrivateKey(value: string): KeyObject {
+  try {
+    const key = value.startsWith("base64:")
+      ? createPrivateKey({
+          key: decodeCanonicalBase64(value.slice("base64:".length)),
+          format: "der",
+          type: "pkcs8",
+        })
+      : createPrivateKey(value);
+    assertEd25519Key(key, "Receipt signing key");
+    return key;
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Receipt signing key must be Ed25519"
+    ) {
+      throw error;
+    }
+    throw new Error("Receipt signing key is not a valid PKCS#8 private key");
+  }
+}
+
+function assertEd25519Key(key: KeyObject, label: string): void {
+  if (key.asymmetricKeyType !== "ed25519") {
+    throw new Error(`${label} must be Ed25519`);
+  }
+}
+
+function decodeCanonicalBase64(value: string): Buffer {
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value) || value.length % 4 !== 0) {
+    throw new Error("Base64 evidence is invalid");
+  }
+  const bytes = Buffer.from(value, "base64");
+  if (bytes.length === 0 || bytes.toString("base64") !== value) {
+    throw new Error("Base64 evidence is invalid");
+  }
+  return bytes;
+}
+
+function decodeSignature(value: string): Buffer {
+  if (
+    typeof value !== "string" ||
+    !/^[A-Za-z0-9_-]+$/.test(value) ||
+    value.length > 128
+  ) {
+    throw new Error("Trusted receipt signature value is invalid");
+  }
+  const bytes = Buffer.from(value, "base64url");
+  if (bytes.toString("base64url") !== value) {
+    throw new Error("Trusted receipt signature value is invalid");
+  }
+  return bytes;
+}
+
+function normalizeLabel(value: string): string {
+  const label = value?.replace(/\s+/g, " ").trim();
+  if (!label || label.length > 100) {
+    throw new Error("Receipt trust anchor label is invalid");
+  }
+  return label;
+}
+
+function normalizeEnvironmentName(value: string): string {
+  const variable = value?.trim().toUpperCase();
+  if (!ENVIRONMENT_NAME_PATTERN.test(variable)) {
+    throw new Error("Receipt signing environment variable is invalid");
+  }
+  return variable;
+}
+
+function validTimestamp(value: unknown): value is string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value));
+}
+
+function safeError(error: unknown): string {
+  return error instanceof Error
+    ? error.message.slice(0, 500)
+    : "Trusted receipt verification failed";
+}
+
+function assertAllowedKeys(
+  value: Record<string, unknown>,
+  allowed: string[],
+): void {
+  if (Object.keys(value).some((key) => !allowed.includes(key))) {
+    throw new Error("Trusted receipt contains unsupported fields");
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function sha256(value: string | Uint8Array): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+  }
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+    .join(",")}}`;
+}

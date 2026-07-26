@@ -1,0 +1,861 @@
+import { createHash } from "node:crypto";
+
+import type {
+  ExecutionPlan,
+  ExecutionPlanArchive,
+  ExecutionPlanArchiveVerification,
+  ExecutionPlanBlueprint,
+  ExecutionPlanBlueprintRecord,
+  ExecutionPlanBlueprintRecordPreview,
+  ExecutionPlanBlueprintRecordQualification,
+  ExecutionPlanBlueprintRecordReplayEventVerification,
+  ExecutionPlanBlueprintRecordReplayHistory,
+  ExecutionPlanBlueprintRecordReplayHistoryVerification,
+  ExecutionPlanBlueprintRecordReplayOutcomes,
+  ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintVerification,
+  HealthResponse,
+  OpenTelemetryTraceArtifact,
+  OpenTelemetryTraceArtifactVerification,
+  RunReplaySnapshot,
+  RunReplaySnapshotVerification,
+  ThreadReplayBundle,
+  ThreadReplayBundleVerification,
+} from "@napier/contracts";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import {
+  createExecutionPlanFromBlueprint,
+  createExecutionPlanFromBlueprintRecord,
+  createExecutionPlanFromBlueprintRecordWithReplayEvent,
+  getExecutionPlanArchive,
+  getExecutionPlanBlueprint,
+  getExecutionPlanBlueprintRecordQualification,
+  getExecutionPlanBlueprintRecordReplayOutcomes,
+  getExecutionPlanBlueprintRecordReplays,
+  getExecutionPlanBlueprintRecords,
+  getHealth,
+  previewExecutionPlanFromBlueprintRecord,
+  saveExecutionPlanBlueprint,
+  setExecutionPlanBlueprintRecordStatus,
+  verifyExecutionPlanArchive,
+  verifyExecutionPlanBlueprint,
+  verifyExecutionPlanBlueprintRecordReplayEvent,
+  verifyExecutionPlanBlueprintRecordReplayOutcomes,
+  verifyExecutionPlanBlueprintRecordReplays,
+  verifyOpenTelemetryTraceArtifact,
+  verifyRunReplaySnapshot,
+  verifyThreadReplayBundle,
+} from "../src/api";
+
+describe("Web JSON API wrappers", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("fetches the typed health readiness projection", async () => {
+    const health: HealthResponse = {
+      status: "ok",
+      service: "napier",
+      time: "2026-07-26T00:00:00.000Z",
+      runtime: {
+        node: {
+          version: "24.16.0",
+          platform: "darwin",
+          arch: "arm64",
+        },
+        components: {
+          sqlite: "3.53.0",
+          openssl: "3.5.6",
+          uv: "1.52.1",
+          v8: "13.6.233.17-node.49",
+        },
+      },
+      ledger: {
+        schemaVersion: 2,
+        quickCheck: "ok",
+        migrations: [
+          {
+            version: 2,
+            name: "schema_migration_history",
+            appliedAt: "2026-07-26T00:00:00.000Z",
+          },
+        ],
+      },
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/health");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      const text = JSON.stringify(health);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getHealth()).resolves.toEqual(health);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies thread replay bundles through the no-store import preflight", async () => {
+    const bundle = {
+      kind: "napier.thread-replay",
+      contentSha256: "a".repeat(64),
+    } as ThreadReplayBundle;
+    const verification: ThreadReplayBundleVerification = {
+      status: "valid",
+      diagnostics: [],
+      threadId: "thread_1",
+      agentId: "agent_napier",
+      contentSha256: "a".repeat(64),
+      eventStreamSha256: "b".repeat(64),
+      eventCount: 2,
+      runCount: 1,
+      planCount: 0,
+      evaluationCount: 0,
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/import/verify");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ bundle }));
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(verifyThreadReplayBundle({ bundle })).resolves.toEqual(
+      verification,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies Run replay snapshots through the path-bound preflight", async () => {
+    const snapshot = {
+      schemaVersion: 1,
+      threadId: "thread_1",
+      run: { id: "run_1" },
+      events: [],
+      subagents: [],
+      contentSha256: "a".repeat(64),
+      eventStreamSha256: "b".repeat(64),
+    } as unknown as RunReplaySnapshot;
+    const verification: RunReplaySnapshotVerification = {
+      status: "valid",
+      diagnostics: [],
+      threadId: "thread_1",
+      runId: "run_1",
+      contentSha256: "a".repeat(64),
+      eventStreamSha256: "b".repeat(64),
+      assistantTextSha256: "c".repeat(64),
+      eventCount: 0,
+      subagentCount: 0,
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_1/runs/run_1/replay/verify");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ snapshot }));
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyRunReplaySnapshot("thread_1", "run_1", { snapshot }),
+    ).resolves.toEqual(verification);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies OpenTelemetry trace artifacts through the thread-bound preflight", async () => {
+    const artifact = {
+      kind: "napier.opentelemetry-trace",
+      threadId: "thread_1",
+      traceId: "c".repeat(32),
+      contentSha256: "a".repeat(64),
+      eventRange: { eventStreamSha256: "b".repeat(64), eventCount: 2 },
+      spanCount: 4,
+    } as unknown as OpenTelemetryTraceArtifact;
+    const verification: OpenTelemetryTraceArtifactVerification = {
+      status: "valid",
+      diagnostics: [],
+      threadId: "thread_1",
+      traceId: "c".repeat(32),
+      contentSha256: "a".repeat(64),
+      eventStreamSha256: "b".repeat(64),
+      spanCount: 4,
+      eventCount: 2,
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_1/trace/otlp/verify");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ artifact }));
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyOpenTelemetryTraceArtifact("thread_1", { artifact }),
+    ).resolves.toEqual(verification);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies execution plan archives through the plan-bound preflight", async () => {
+    const archive = {
+      kind: "napier.execution-plan-archive",
+      threadId: "thread_1",
+      plan: { id: "plan_1", revision: 3 },
+      events: [],
+      contentSha256: "a".repeat(64),
+      eventStreamSha256: "b".repeat(64),
+    } as unknown as ExecutionPlanArchive;
+    const verification: ExecutionPlanArchiveVerification = {
+      status: "valid",
+      diagnostics: [],
+      threadId: "thread_1",
+      planId: "plan_1",
+      revision: 3,
+      contentSha256: "a".repeat(64),
+      eventStreamSha256: "b".repeat(64),
+      eventCount: 0,
+      stepCount: 1,
+      artifactCount: 0,
+      replanCount: 0,
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_1/plans/plan_1/archive/verify");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ archive }));
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyExecutionPlanArchive("thread_1", "plan_1", { archive }),
+    ).resolves.toEqual(verification);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("exports execution plan archives through the typed wrapper", async () => {
+    const archiveContent = {
+      kind: "napier.execution-plan-archive",
+      schemaVersion: 1,
+      apiVersion: "2026-07-25",
+      threadId: "thread_1",
+      plan: { id: "plan_1", revision: 3 },
+      events: [],
+      eventStreamSha256: "b".repeat(64),
+    };
+    const archive = {
+      ...archiveContent,
+      generatedAt: "2026-07-26T00:00:00.000Z",
+      contentSha256: sha256Canonical(archiveContent),
+    } as unknown as ExecutionPlanArchive;
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_1/plans/plan_1/archive");
+      expect(init?.method).toBeUndefined();
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      const text = JSON.stringify(archive);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": archive.contentSha256,
+          "X-Napier-Content-SHA256-Mode": "stable",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getExecutionPlanArchive("thread_1", "plan_1"),
+    ).resolves.toEqual(archive);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("exports execution plan blueprints through the typed wrapper", async () => {
+    const blueprint = planBlueprintFixture();
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_1/plans/plan_1/blueprint");
+      expect(init?.method).toBeUndefined();
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      const text = JSON.stringify(blueprint);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": blueprint.contentSha256,
+          "X-Napier-Content-SHA256-Mode": "stable",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getExecutionPlanBlueprint("thread_1", "plan_1"),
+    ).resolves.toEqual(blueprint);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies execution plan blueprints through the thread preflight", async () => {
+    const blueprint = planBlueprintFixture();
+    const verification: ExecutionPlanBlueprintVerification = {
+      status: "valid",
+      diagnostics: [],
+      contentSha256: blueprint.contentSha256,
+      sourceThreadId: "thread_1",
+      sourcePlanId: "plan_1",
+      sourcePlanRevision: 3,
+      sourcePlanArchiveSha256: "a".repeat(64),
+      sourceEventStreamSha256: "b".repeat(64),
+      stepCount: 1,
+      artifactCount: 0,
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_1/plans/blueprints/verify");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ blueprint }));
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyExecutionPlanBlueprint("thread_1", { blueprint }),
+    ).resolves.toEqual(verification);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("creates execution plans from verified blueprints", async () => {
+    const blueprint = planBlueprintFixture();
+    const createdPlan = {
+      id: "plan_created",
+      threadId: "thread_2",
+      objective: blueprint.objective,
+      status: "active",
+      steps: [],
+      artifacts: [],
+      replans: [],
+      replanRecommendation: null,
+      criticalPathStepIds: [],
+      readyStepIds: [],
+      blockedStepIds: [],
+      revision: 1,
+      createdAt: "2026-07-26T00:00:00.000Z",
+      updatedAt: "2026-07-26T00:00:00.000Z",
+    } as ExecutionPlan;
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_2/plans/from-blueprint");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ blueprint }));
+      const text = JSON.stringify(createdPlan);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      createExecutionPlanFromBlueprint("thread_2", { blueprint }),
+    ).resolves.toEqual(createdPlan);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses typed wrappers for the execution plan blueprint library", async () => {
+    const blueprint = planBlueprintFixture();
+    const record = planBlueprintRecordFixture(blueprint);
+    const createdPlan = {
+      id: "plan_from_record",
+      threadId: "thread_2",
+      objective: blueprint.objective,
+      status: "active",
+      steps: [],
+      artifacts: [],
+      replans: [],
+      replanRecommendation: null,
+      criticalPathStepIds: [],
+      readyStepIds: [],
+      blockedStepIds: [],
+      revision: 1,
+      createdAt: "2026-07-26T00:00:00.000Z",
+      updatedAt: "2026-07-26T00:00:00.000Z",
+    } as ExecutionPlan;
+    const saveResult = { record, created: true };
+    const qualification: ExecutionPlanBlueprintRecordQualification = {
+      status: "qualified",
+      diagnostics: [],
+      recordId: record.id,
+      recordStatus: record.status,
+      blueprintSha256: record.blueprintSha256,
+      sourceThreadId: record.sourceThreadId,
+      sourcePlanId: record.sourcePlanId,
+      sourcePlanRevision: record.sourcePlanRevision,
+      expectedPlanArchiveSha256: record.sourcePlanArchiveSha256,
+      expectedEventStreamSha256: record.sourceEventStreamSha256,
+      actualSourcePlanRevision: record.sourcePlanRevision,
+      actualPlanArchiveSha256: record.sourcePlanArchiveSha256,
+      actualEventStreamSha256: record.sourceEventStreamSha256,
+      stepCount: record.blueprint.stepCount,
+      artifactCount: record.blueprint.artifactCount,
+      qualifiedAt: "2026-07-26T00:00:00.000Z",
+    };
+    const preview: ExecutionPlanBlueprintRecordPreview = {
+      status: "ready",
+      diagnostics: [],
+      threadId: "thread_2",
+      recordId: record.id,
+      qualification,
+      hasOpenPlan: false,
+      plan: createdPlan,
+      previewSha256: "d".repeat(64),
+    };
+    const replayHistory: ExecutionPlanBlueprintRecordReplayHistory = {
+      kind: "napier.execution-plan-blueprint-replay-history",
+      schemaVersion: 1,
+      apiVersion: "2026-07-25",
+      generatedAt: "2026-07-26T00:00:00.000Z",
+      recordId: record.id,
+      replayCount: 1,
+      threadCount: 1,
+      planCount: 1,
+      eventSetSha256: "e".repeat(64),
+      firstSeq: 1,
+      lastSeq: 1,
+      replays: [
+        {
+          eventId: "event_12345678",
+          threadId: "thread_2",
+          runId: "runctl_12345678",
+          seq: 1,
+          createdAt: "2026-07-26T00:00:01.000Z",
+          recordId: record.id,
+          planId: createdPlan.id,
+          objectiveSha256: "f".repeat(64),
+          status: "active",
+          stepCount: createdPlan.steps.length,
+          artifactCount: createdPlan.artifacts.length,
+          blueprintSha256: record.blueprintSha256,
+          sourcePlanId: record.sourcePlanId,
+          sourcePlanRevision: record.sourcePlanRevision,
+          sourcePlanArchiveSha256: record.sourcePlanArchiveSha256,
+          qualificationStatus: "qualified",
+          qualificationSha256: "1".repeat(64),
+          qualificationDiagnosticsSha256: "2".repeat(64),
+          previewSha256: preview.previewSha256,
+        },
+      ],
+      contentSha256: "3".repeat(64),
+    };
+    const replayHistoryVerification: ExecutionPlanBlueprintRecordReplayHistoryVerification =
+      {
+        schemaVersion: 1,
+        status: "valid",
+        diagnostics: [],
+        recordId: record.id,
+        expectedRecordId: record.id,
+        declaredContentSha256: replayHistory.contentSha256,
+        recomputedContentSha256: replayHistory.contentSha256,
+        observedContentSha256: replayHistory.contentSha256,
+        declaredEventSetSha256: replayHistory.eventSetSha256,
+        observedEventSetSha256: replayHistory.eventSetSha256,
+        replayCount: replayHistory.replayCount,
+        observedReplayCount: replayHistory.replayCount,
+        threadCount: replayHistory.threadCount,
+        observedThreadCount: replayHistory.threadCount,
+        planCount: replayHistory.planCount,
+        observedPlanCount: replayHistory.planCount,
+        ...(replayHistory.firstSeq !== undefined
+          ? { firstSeq: replayHistory.firstSeq }
+          : {}),
+        ...(replayHistory.firstSeq !== undefined
+          ? { observedFirstSeq: replayHistory.firstSeq }
+          : {}),
+        ...(replayHistory.lastSeq !== undefined
+          ? { lastSeq: replayHistory.lastSeq }
+          : {}),
+        ...(replayHistory.lastSeq !== undefined
+          ? { observedLastSeq: replayHistory.lastSeq }
+          : {}),
+        contentSha256: "4".repeat(64),
+      };
+    const replayOutcomes: ExecutionPlanBlueprintRecordReplayOutcomes = {
+      kind: "napier.execution-plan-blueprint-replay-outcomes",
+      schemaVersion: 1,
+      apiVersion: "2026-07-25",
+      generatedAt: "2026-07-26T00:00:02.000Z",
+      recordId: record.id,
+      replayHistorySha256: replayHistory.contentSha256,
+      replayCount: 1,
+      activeCount: 1,
+      completedCount: 0,
+      blockedCount: 0,
+      cancelledCount: 0,
+      invalidCount: 0,
+      completionRateBps: 0,
+      outcomeSetSha256: "7".repeat(64),
+      outcomes: [
+        {
+          replayEventId: replayHistory.replays[0]!.eventId,
+          replayEventSeq: replayHistory.replays[0]!.seq,
+          threadId: replayHistory.replays[0]!.threadId,
+          planId: createdPlan.id,
+          createdAt: replayHistory.replays[0]!.createdAt,
+          status: "active",
+          planRevision: createdPlan.revision,
+          stepCount: 0,
+          completedStepCount: 0,
+          skippedStepCount: 0,
+          blockedStepCount: 0,
+          artifactCount: 0,
+          verifiedArtifactCount: 0,
+          missingArtifactCount: 0,
+          replanCount: 0,
+          planProjectionSha256: "8".repeat(64),
+          outcomeSha256: "9".repeat(64),
+        },
+      ],
+      contentSha256: "a".repeat(64),
+    };
+    const replayOutcomesVerification: ExecutionPlanBlueprintRecordReplayOutcomesVerification =
+      {
+        schemaVersion: 1,
+        status: "valid",
+        diagnostics: [],
+        recordId: record.id,
+        expectedRecordId: record.id,
+        declaredContentSha256: replayOutcomes.contentSha256,
+        recomputedContentSha256: replayOutcomes.contentSha256,
+        observedContentSha256: replayOutcomes.contentSha256,
+        declaredReplayHistorySha256: replayOutcomes.replayHistorySha256,
+        observedReplayHistorySha256: replayOutcomes.replayHistorySha256,
+        declaredOutcomeSetSha256: replayOutcomes.outcomeSetSha256,
+        observedOutcomeSetSha256: replayOutcomes.outcomeSetSha256,
+        replayCount: 1,
+        observedReplayCount: 1,
+        completedCount: 0,
+        observedCompletedCount: 0,
+        blockedCount: 0,
+        observedBlockedCount: 0,
+        invalidCount: 0,
+        observedInvalidCount: 0,
+        contentSha256: "b".repeat(64),
+      };
+    const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
+      {
+        schemaVersion: 1,
+        status: "valid",
+        diagnostics: [],
+        expectedRecordId: record.id,
+        threadId: "thread_2",
+        eventId: "event_12345678",
+        seq: 1,
+        declaredEventSha256: "5".repeat(64),
+        observedEventSha256: "5".repeat(64),
+        observedReplay: replayHistory.replays[0]!,
+        contentSha256: "6".repeat(64),
+      };
+    const calls = [
+      {
+        path: "/api/plan-blueprints?status=active",
+        response: [record],
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/qualification",
+        response: qualification,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays",
+        response: replayHistory,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/verify",
+        method: "POST",
+        body: { history: replayHistory },
+        response: replayHistoryVerification,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes",
+        response: replayOutcomes,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes/verify",
+        method: "POST",
+        body: { outcomes: replayOutcomes },
+        response: replayOutcomesVerification,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/events/verify",
+        method: "POST",
+        body: {
+          threadId: "thread_2",
+          eventId: "event_12345678",
+          seq: 1,
+          eventSha256: "5".repeat(64),
+        },
+        response: replayEventVerification,
+      },
+      {
+        path: "/api/threads/thread_2/plans/from-blueprint-record/preview",
+        method: "POST",
+        body: { recordId: record.id },
+        response: preview,
+      },
+      {
+        path: "/api/threads/thread_1/plan-blueprints",
+        method: "POST",
+        body: { blueprint, name: "Reusable plan" },
+        response: saveResult,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/status",
+        method: "POST",
+        body: { status: "archived" },
+        response: { ...record, status: "archived" },
+      },
+      {
+        path: "/api/threads/thread_2/plans/from-blueprint-record",
+        method: "POST",
+        body: {
+          recordId: record.id,
+          expectedPreviewSha256: preview.previewSha256,
+        },
+        response: createdPlan,
+      },
+      {
+        path: "/api/threads/thread_2/plans/from-blueprint-record",
+        method: "POST",
+        body: {
+          recordId: record.id,
+          expectedPreviewSha256: preview.previewSha256,
+        },
+        response: createdPlan,
+      },
+      {
+        path: "/api/threads/thread_2/plans/from-blueprint-record",
+        method: "POST",
+        body: {
+          recordId: record.id,
+          expectedPreviewSha256: preview.previewSha256,
+        },
+        response: createdPlan,
+        headers: {
+          "X-Napier-Blueprint-Replay-Event-Id": "event_12345678",
+          "X-Napier-Blueprint-Replay-Event-Seq": "1",
+          "X-Napier-Blueprint-Replay-Event-SHA256": "5".repeat(64),
+        },
+      },
+    ];
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      const call = calls[fetchMock.mock.calls.length - 1]!;
+      expect(path).toBe(call.path);
+      expect(init?.method).toBe(call.method);
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      if (call.body) expect(init?.body).toBe(JSON.stringify(call.body));
+      const text = JSON.stringify(call.response);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+          ...call.headers,
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getExecutionPlanBlueprintRecords("active")).resolves.toEqual([
+      record,
+    ]);
+    await expect(
+      getExecutionPlanBlueprintRecordQualification(record.id),
+    ).resolves.toEqual(qualification);
+    await expect(
+      getExecutionPlanBlueprintRecordReplays(record.id),
+    ).resolves.toEqual(replayHistory);
+    await expect(
+      verifyExecutionPlanBlueprintRecordReplays(record.id, {
+        history: replayHistory,
+      }),
+    ).resolves.toEqual(replayHistoryVerification);
+    await expect(
+      getExecutionPlanBlueprintRecordReplayOutcomes(record.id),
+    ).resolves.toEqual(replayOutcomes);
+    await expect(
+      verifyExecutionPlanBlueprintRecordReplayOutcomes(record.id, {
+        outcomes: replayOutcomes,
+      }),
+    ).resolves.toEqual(replayOutcomesVerification);
+    await expect(
+      verifyExecutionPlanBlueprintRecordReplayEvent(record.id, {
+        threadId: "thread_2",
+        eventId: "event_12345678",
+        seq: 1,
+        eventSha256: "5".repeat(64),
+      }),
+    ).resolves.toEqual(replayEventVerification);
+    await expect(
+      previewExecutionPlanFromBlueprintRecord("thread_2", {
+        recordId: record.id,
+      }),
+    ).resolves.toEqual(preview);
+    await expect(
+      saveExecutionPlanBlueprint("thread_1", {
+        blueprint,
+        name: "Reusable plan",
+      }),
+    ).resolves.toEqual(saveResult);
+    await expect(
+      setExecutionPlanBlueprintRecordStatus(record.id, {
+        status: "archived",
+      }),
+    ).resolves.toEqual({ ...record, status: "archived" });
+    await expect(
+      createExecutionPlanFromBlueprintRecord("thread_2", {
+        recordId: record.id,
+        expectedPreviewSha256: preview.previewSha256,
+      }),
+    ).resolves.toEqual(createdPlan);
+    await expect(
+      createExecutionPlanFromBlueprintRecordWithReplayEvent("thread_2", {
+        recordId: record.id,
+        expectedPreviewSha256: preview.previewSha256,
+      }),
+    ).resolves.toEqual({
+      plan: createdPlan,
+    });
+    await expect(
+      createExecutionPlanFromBlueprintRecordWithReplayEvent("thread_2", {
+        recordId: record.id,
+        expectedPreviewSha256: preview.previewSha256,
+      }),
+    ).resolves.toEqual({
+      plan: createdPlan,
+      replayEvent: {
+        threadId: "thread_2",
+        eventId: "event_12345678",
+        seq: 1,
+        eventSha256: "5".repeat(64),
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(13);
+  });
+});
+
+function sha256Text(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function planBlueprintFixture(): ExecutionPlanBlueprint {
+  const content: Omit<ExecutionPlanBlueprint, "generatedAt" | "contentSha256"> =
+    {
+      kind: "napier.execution-plan-blueprint",
+      schemaVersion: 1,
+      apiVersion: "2026-07-25",
+      title: "Reusable plan",
+      objective: "Reuse a verified workflow.",
+      source: {
+        type: "plan",
+        threadId: "thread_1",
+        planId: "plan_1",
+        planRevision: 3,
+        planArchiveSha256: "a".repeat(64),
+        eventStreamSha256: "b".repeat(64),
+      },
+      steps: [
+        {
+          id: "inspect",
+          title: "Inspect",
+          description: "Inspect the workspace.",
+          verification: "Inspection evidence is recorded.",
+        },
+      ],
+      stepCount: 1,
+      artifactCount: 0,
+    };
+  return {
+    ...content,
+    generatedAt: "2026-07-26T00:00:00.000Z",
+    contentSha256: sha256Canonical(content),
+  };
+}
+
+function planBlueprintRecordFixture(
+  blueprint: ExecutionPlanBlueprint,
+): ExecutionPlanBlueprintRecord {
+  return {
+    id: "blueprint_12345678",
+    name: "Reusable plan",
+    description: "",
+    status: "active",
+    blueprint,
+    blueprintSha256: blueprint.contentSha256,
+    sourceThreadId: blueprint.source.threadId,
+    sourcePlanId: blueprint.source.planId,
+    sourcePlanRevision: blueprint.source.planRevision,
+    sourcePlanArchiveSha256: blueprint.source.planArchiveSha256,
+    sourceEventStreamSha256: blueprint.source.eventStreamSha256,
+    createdByThreadId: "thread_1",
+    createdAt: "2026-07-26T00:00:00.000Z",
+    updatedAt: "2026-07-26T00:00:00.000Z",
+  };
+}
+
+function sha256Canonical(value: unknown): string {
+  return sha256Text(canonicalJson(value));
+}
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+  }
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`)
+    .join(",")}}`;
+}

@@ -1,0 +1,3 @@
+apps/web/dist/
+docs/artifacts/*.sha256
+node_modules/

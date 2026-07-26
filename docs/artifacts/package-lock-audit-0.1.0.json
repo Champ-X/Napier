@@ -1,0 +1,20 @@
+{
+  "type": "napier.package-lock-audit",
+  "schemaVersion": 1,
+  "ok": true,
+  "packageLockVersion": 3,
+  "rootPackage": {
+    "name": "napier",
+    "version": "0.1.0",
+    "packageJsonSha256": "a54579ad835ddb039e1c6b9f6e5171cc4a955c06d17a090bf7c4170978a46d21",
+    "packageLockSha256": "a71c58cfc753cd56b683ef7f641bcec4e2bc68b13ce46ee3b08c7f3e41ed86c0"
+  },
+  "counts": {
+    "workspaces": 4,
+    "packages": 245,
+    "externalPackages": 236,
+    "integrityEntries": 236,
+    "links": 4
+  },
+  "errors": []
+}

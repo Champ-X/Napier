@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.vite/
+.DS_Store
+*.log
+
+# Local-first runtime data and secrets
+.napier/
+.env
+.env.local
+!.env.example
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/

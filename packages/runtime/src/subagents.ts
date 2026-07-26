@@ -1,0 +1,459 @@
+import {
+  Agent,
+  type AgentEvent,
+  type AgentTool,
+} from "@earendil-works/pi-agent-core";
+import {
+  type Api,
+  contentText,
+  type Model,
+  type MutableModels,
+  type Usage as PiUsage,
+} from "@earendil-works/pi-ai";
+import {
+  emptyUsage,
+  type AgentProfile,
+  type RunEvent,
+  type RunRecord,
+  type SubagentLimits,
+  type SubagentRole,
+  type SubagentTask,
+  type Usage,
+} from "@napier/contracts";
+import { Type } from "typebox";
+
+import { DEFAULT_SUBAGENT_LIMITS, normalizeSubagentLimits } from "./agents.js";
+import type { LocalStore } from "./store.js";
+import { createWorkspaceTools } from "./tools.js";
+
+const delegateTaskSchema = Type.Object({
+  role: Type.Union([
+    Type.Literal("researcher"),
+    Type.Literal("reviewer"),
+    Type.Literal("general"),
+  ]),
+  description: Type.String({
+    minLength: 1,
+    maxLength: 180,
+    description: "Short task label shown in the delegation ledger.",
+  }),
+  task: Type.String({
+    minLength: 1,
+    maxLength: 8_000,
+    description:
+      "Self-contained task with relevant paths, constraints, and expected evidence.",
+  }),
+});
+
+const DEFAULT_ROLES: SubagentRole[] = ["researcher", "reviewer", "general"];
+const MAX_STEP_CHARS = 8_192;
+const MAX_RESULT_CHARS = 12_000;
+
+const ROLE_PROMPTS: Record<SubagentRole, string> = {
+  researcher: [
+    "You are an isolated research subagent.",
+    "Investigate only the delegated task using read-only workspace tools.",
+    "Return concise findings with file paths and line-level evidence when available.",
+    "Distinguish evidence, inference, and unknowns. Do not modify files.",
+  ].join("\n"),
+  reviewer: [
+    "You are an isolated review subagent.",
+    "Review the delegated scope for correctness, regressions, security, and missing tests.",
+    "Lead with concrete findings ordered by severity and cite file paths.",
+    "Do not modify files and do not claim evidence you did not inspect.",
+  ].join("\n"),
+  general: [
+    "You are an isolated general-purpose subagent.",
+    "Complete the bounded delegated task using read-only workspace tools.",
+    "Your context contains only this task, not the parent conversation.",
+    "Return a self-contained result with evidence and remaining uncertainty.",
+  ].join("\n"),
+};
+
+type EventSink = (event: RunEvent) => Promise<void> | void;
+
+export interface SubagentCoordinatorOptions {
+  store: LocalStore;
+  models: MutableModels;
+  model: Model<Api>;
+  run: RunRecord;
+  profile: AgentProfile;
+  parentSignal: AbortSignal;
+  onEvent?: EventSink;
+}
+
+interface DelegationDetails {
+  taskId: string;
+  role: SubagentRole;
+  status: SubagentTask["status"];
+  turnCount: number;
+  stepCount: number;
+  stopReason?: SubagentTask["stopReason"];
+}
+
+class Semaphore {
+  private active = 0;
+  private readonly queue: Array<() => void> = [];
+
+  constructor(private readonly limit: number) {}
+
+  async run<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.active >= this.limit) {
+      await new Promise<void>((resolve) => this.queue.push(resolve));
+    }
+    this.active += 1;
+    try {
+      return await operation();
+    } finally {
+      this.active -= 1;
+      this.queue.shift()?.();
+    }
+  }
+}
+
+export class SubagentCoordinator {
+  private readonly limits: SubagentLimits;
+  private readonly enabledRoles: Set<SubagentRole>;
+  private readonly semaphore: Semaphore;
+  private totalDelegations = 0;
+
+  constructor(private readonly options: SubagentCoordinatorOptions) {
+    this.limits = normalizeSubagentLimits(
+      options.profile.subagentLimits ??
+        structuredClone(DEFAULT_SUBAGENT_LIMITS),
+    );
+    this.enabledRoles = new Set(
+      options.profile.enabledSubagents ?? DEFAULT_ROLES,
+    );
+    this.semaphore = new Semaphore(this.limits.maxConcurrent);
+  }
+
+  hasEnabledRoles(): boolean {
+    return this.enabledRoles.size > 0;
+  }
+
+  createTool(): AgentTool<typeof delegateTaskSchema, DelegationDetails> {
+    return {
+      name: "delegate_task",
+      label: "Delegate task",
+      description: [
+        "Delegate a substantial independent investigation or review to an isolated subagent.",
+        `Available roles: ${[...this.enabledRoles].join(", ")}.`,
+        `Run budget: at most ${this.limits.maxTotal} total and ${this.limits.maxConcurrent} concurrent delegations.`,
+        "Do not delegate trivial work or tasks that require the parent conversation.",
+      ].join(" "),
+      parameters: delegateTaskSchema,
+      execute: async (_toolCallId, input, signal) => {
+        if (!this.enabledRoles.has(input.role)) {
+          throw new Error(`Subagent role is disabled: ${input.role}`);
+        }
+        if (this.totalDelegations >= this.limits.maxTotal) {
+          throw new Error(
+            `Subagent total budget exhausted (${this.limits.maxTotal})`,
+          );
+        }
+        this.totalDelegations += 1;
+        const task = await this.options.store.createSubagentTask({
+          threadId: this.options.run.threadId,
+          runId: this.options.run.id,
+          role: input.role,
+          description: input.description.trim(),
+          prompt: input.task.trim(),
+          model: {
+            provider: this.options.model.provider,
+            id: this.options.model.id,
+          },
+        });
+        await this.emit("subagent.queued", task, {
+          taskId: task.id,
+          role: task.role,
+          description: task.description,
+          status: task.status,
+        });
+        return this.semaphore.run(() =>
+          this.executeTask(task, input.task, signal),
+        );
+      },
+    };
+  }
+
+  private async executeTask(
+    initialTask: SubagentTask,
+    prompt: string,
+    toolSignal?: AbortSignal,
+  ): Promise<{
+    content: Array<{ type: "text"; text: string }>;
+    details: DelegationDetails;
+  }> {
+    if (this.options.parentSignal.aborted || toolSignal?.aborted) {
+      await this.finishAborted(
+        initialTask,
+        "cancelled",
+        "Cancelled before start",
+      );
+      throw new Error("Subagent task cancelled before start");
+    }
+
+    let task = await this.options.store.startSubagentTask(initialTask.id);
+    await this.emit("subagent.started", task, {
+      taskId: task.id,
+      role: task.role,
+      description: task.description,
+      status: task.status,
+      limits: this.limits,
+    });
+
+    let turnCapped = false;
+    const agent = new Agent({
+      initialState: {
+        systemPrompt: ROLE_PROMPTS[task.role],
+        model: this.options.model,
+        thinkingLevel: this.options.model.reasoning ? "medium" : "off",
+        tools: createWorkspaceTools(this.options.store.workspaceRoot),
+        messages: [],
+      },
+      streamFn: this.options.models.streamSimple.bind(this.options.models),
+      sessionId: `${this.options.run.id}:${task.id}`,
+      toolExecution: "parallel",
+      afterToolCall: async () => (turnCapped ? { terminate: true } : undefined),
+    });
+
+    let finalText = "";
+    let lastError = "";
+    let timedOut = false;
+    let usage = emptyUsage();
+    let stepIndex = 0;
+
+    agent.subscribe(async (event) => {
+      if (event.type === "message_end" && event.message.role === "assistant") {
+        task = await this.options.store.recordSubagentProgress(task.id, {
+          turnDelta: 1,
+        });
+        if (
+          task.turnCount >= this.limits.maxTurns &&
+          event.message.role === "assistant" &&
+          event.message.stopReason === "toolUse"
+        ) {
+          turnCapped = true;
+        }
+        const text = contentText(event.message.content);
+        if (text) finalText = text;
+        if (event.message.errorMessage) lastError = event.message.errorMessage;
+        usage = addUsage(usage, event.message.usage);
+        stepIndex += 1;
+        task = await this.options.store.recordSubagentProgress(task.id, {
+          stepDelta: 1,
+          usage,
+        });
+        await this.emit("subagent.step", task, {
+          taskId: task.id,
+          messageIndex: stepIndex,
+          kind: "assistant",
+          text: truncate(text, MAX_STEP_CHARS),
+          toolCalls: event.message.content
+            .filter((block) => block.type === "toolCall")
+            .map((block) => ({ name: block.name, arguments: block.arguments })),
+        });
+      }
+      if (event.type === "tool_execution_end") {
+        stepIndex += 1;
+        task = await this.options.store.recordSubagentProgress(task.id, {
+          stepDelta: 1,
+        });
+        await this.emit("subagent.step", task, {
+          taskId: task.id,
+          messageIndex: stepIndex,
+          kind: "tool",
+          toolName: event.toolName,
+          isError: event.isError,
+          text: truncate(toolResultText(event), MAX_STEP_CHARS),
+        });
+      }
+    });
+
+    const abort = (): void => agent.abort();
+    const signals = [this.options.parentSignal, toolSignal].filter(
+      (signal): signal is AbortSignal => Boolean(signal),
+    );
+    signals.forEach((signal) =>
+      signal.addEventListener("abort", abort, { once: true }),
+    );
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      agent.abort();
+    }, this.limits.timeoutMs);
+
+    try {
+      await agent.prompt(prompt);
+      if (timedOut) throw new Error("Subagent task timed out");
+      if (signals.some((signal) => signal.aborted)) {
+        throw new Error("Subagent task cancelled");
+      }
+      if (turnCapped) {
+        throw new Error(
+          `Subagent turn budget exhausted (${this.limits.maxTurns})`,
+        );
+      }
+      if (lastError) throw new Error(lastError);
+      const result = truncate(
+        finalText || "No response generated",
+        MAX_RESULT_CHARS,
+      );
+      task = await this.options.store.finishSubagentTask(task.id, {
+        status: "completed",
+        stopReason: turnCapped ? "turn_capped" : "completed",
+        result,
+        usage,
+      });
+      await this.emit("subagent.completed", task, taskPayload(task));
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Delegation ${task.id} (${task.role}) completed.\n\n${result}`,
+          },
+        ],
+        details: taskDetails(task),
+      };
+    } catch (error) {
+      const message = turnCapped
+        ? `Subagent turn budget exhausted (${this.limits.maxTurns})`
+        : error instanceof Error
+          ? error.message
+          : String(error);
+      const status = timedOut
+        ? "timed_out"
+        : signals.some((signal) => signal.aborted)
+          ? "cancelled"
+          : "failed";
+      const stopReason = timedOut
+        ? "timeout"
+        : status === "cancelled"
+          ? "cancelled"
+          : turnCapped
+            ? "turn_capped"
+            : "error";
+      task = await this.options.store.finishSubagentTask(task.id, {
+        status,
+        stopReason,
+        ...(finalText ? { result: truncate(finalText, MAX_RESULT_CHARS) } : {}),
+        error: message,
+        usage,
+      });
+      await this.emit(`subagent.${status}`, task, taskPayload(task));
+      throw new Error(`Delegation ${task.id} ${status}: ${message}`);
+    } finally {
+      clearTimeout(timeout);
+      signals.forEach((signal) => signal.removeEventListener("abort", abort));
+    }
+  }
+
+  private async finishAborted(
+    task: SubagentTask,
+    status: "cancelled" | "timed_out",
+    error: string,
+  ): Promise<void> {
+    const finished = await this.options.store.finishSubagentTask(task.id, {
+      status,
+      stopReason: status === "timed_out" ? "timeout" : "cancelled",
+      error,
+    });
+    await this.emit(`subagent.${status}`, finished, taskPayload(finished));
+  }
+
+  private async emit(
+    type: string,
+    task: SubagentTask,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
+    const event = await this.options.store.appendEvent({
+      threadId: task.threadId,
+      runId: task.runId,
+      type,
+      category: "subagent",
+      visibility: "user",
+      payload: toJsonValue(payload),
+    });
+    if (this.options.onEvent) {
+      try {
+        await this.options.onEvent(event);
+      } catch {
+        // Delegation persists even when the live stream disconnects.
+      }
+    }
+  }
+}
+
+function taskPayload(task: SubagentTask): Record<string, unknown> {
+  return {
+    taskId: task.id,
+    role: task.role,
+    description: task.description,
+    status: task.status,
+    result: task.result ?? "",
+    error: task.error ?? "",
+    stopReason: task.stopReason ?? "",
+    stepCount: task.stepCount,
+    turnCount: task.turnCount,
+    usage: task.usage,
+  };
+}
+
+function taskDetails(task: SubagentTask): DelegationDetails {
+  return {
+    taskId: task.id,
+    role: task.role,
+    status: task.status,
+    turnCount: task.turnCount,
+    stepCount: task.stepCount,
+    ...(task.stopReason ? { stopReason: task.stopReason } : {}),
+  };
+}
+
+function addUsage(current: Usage, update: PiUsage): Usage {
+  return {
+    inputTokens: current.inputTokens + update.input,
+    outputTokens: current.outputTokens + update.output,
+    cacheReadTokens: current.cacheReadTokens + update.cacheRead,
+    cacheWriteTokens: current.cacheWriteTokens + update.cacheWrite,
+    costUsd: current.costUsd + update.cost.total,
+  };
+}
+
+function truncate(value: string, maxCharacters: number): string {
+  return value.length <= maxCharacters
+    ? value
+    : `${value.slice(0, Math.max(0, maxCharacters - 14))}\n[truncated]`;
+}
+
+function toolResultText(
+  event: Extract<AgentEvent, { type: "tool_execution_end" }>,
+): string {
+  const result = event.result as { content?: unknown };
+  if (!Array.isArray(result?.content)) return String(event.result ?? "");
+  return result.content
+    .flatMap((item): string[] => {
+      if (
+        item &&
+        typeof item === "object" &&
+        "type" in item &&
+        item.type === "text" &&
+        "text" in item &&
+        typeof item.text === "string"
+      ) {
+        return [item.text];
+      }
+      return [];
+    })
+    .join("\n");
+}
+
+function toJsonValue(value: unknown): import("@napier/contracts").JsonValue {
+  try {
+    return JSON.parse(
+      JSON.stringify(value),
+    ) as import("@napier/contracts").JsonValue;
+  } catch {
+    return String(value);
+  }
+}

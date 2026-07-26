@@ -1,0 +1,37 @@
+{
+  "type": "napier.release-artifacts-audit",
+  "schemaVersion": 1,
+  "ok": true,
+  "package": {
+    "name": "napier",
+    "version": "0.1.0"
+  },
+  "artifactSetSha256": "38a0755ef731b76821b8ebe2943ce8c2742d43d1c0b769290cad109894cb2860",
+  "artifacts": [
+    {
+      "kind": "package-lock-audit",
+      "path": "docs/artifacts/package-lock-audit-0.1.0.json",
+      "sha256": "ad6b9bbd47277261996385c96d982dbafe6de124361a885b2d97d7d523a805b2",
+      "valid": true
+    },
+    {
+      "kind": "runtime-environment-audit",
+      "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
+      "sha256": "4e0ceb2fb297e6f9e750dfa70aaad47a3bf70bee8b7cbbd8a8e37bd9b4e0d59d",
+      "valid": true
+    },
+    {
+      "kind": "web-dist-audit",
+      "path": "docs/artifacts/web-dist-audit-0.1.0.json",
+      "sha256": "157ea2398cfda6702e6fdac9d5184a98e83c4ed48d07da87590d86d8a57e49b5",
+      "valid": true
+    },
+    {
+      "kind": "web-dist-manifest",
+      "path": "docs/artifacts/web-dist-0.1.0.sha256",
+      "sha256": "250150d6e0944bd2ffb16f8dca28cc026f0c1b1b03e6463c58d9ea4cd103a75e",
+      "valid": true
+    }
+  ],
+  "errors": []
+}

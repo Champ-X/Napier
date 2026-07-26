@@ -1,0 +1,18 @@
+{
+  "type": "napier.web-dist-audit",
+  "schemaVersion": 1,
+  "ok": true,
+  "fileCount": 40,
+  "mainEntry": {
+    "path": "apps/web/dist/assets/index-zPLptg50.js",
+    "sizeBytes": 134567,
+    "budgetBytes": 153600,
+    "withinBudget": true
+  },
+  "manifest": {
+    "path": "docs/artifacts/web-dist-0.1.0.sha256",
+    "sha256": "250150d6e0944bd2ffb16f8dca28cc026f0c1b1b03e6463c58d9ea4cd103a75e"
+  },
+  "distContentSha256": "250150d6e0944bd2ffb16f8dca28cc026f0c1b1b03e6463c58d9ea4cd103a75e",
+  "errors": []
+}
