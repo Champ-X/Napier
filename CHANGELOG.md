@@ -129,6 +129,15 @@ All notable changes to Napier are recorded here.
   deterministic tie-breakers before replay volume and record freshness. Server
   headers and Template shelf receipts expose the selected family hash without
   leaking objective, step, artifact, blocker, or evidence prose.
+- Blueprint recommendation policy templates. `POST
+/api/threads/:threadId/plan-blueprints/selection` now accepts `policyTemplate`
+  as `balanced`, `delivery_first`, or `portfolio_first`. Selection keeps source
+  qualification as a fail-closed gate, then hashes the chosen policy and uses
+  its weights for outcome completion, portfolio-family completion,
+  reviewed-baseline coverage, and replay-evidence recommendation scores.
+  Server headers and Template shelf receipts now expose the policy template,
+  policy SHA-256, candidate recommendation score, and selected recommendation
+  score without copying objective prose into the artifact.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

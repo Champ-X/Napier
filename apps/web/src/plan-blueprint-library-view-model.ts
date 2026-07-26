@@ -171,6 +171,9 @@ export interface PlanBlueprintLibrarySelectionReceipt {
   selectedScoreBps?: number;
   selectedFamilySha256?: string;
   selectedFamilyCompletionRateBps?: number;
+  selectedRecommendationScoreBps?: number;
+  recommendationPolicyTemplate: ExecutionPlanBlueprintRecordSelection["recommendationPolicy"]["templateId"];
+  recommendationPolicySha256: string;
   selectedCompletionRateBps?: number;
   selectedReplayCount?: number;
   diagnostics: string[];
@@ -495,6 +498,14 @@ export function planBlueprintSelectionReceipt(
             selection.selectedFamilyCompletionRateBps,
         }
       : {}),
+    ...(selection.selectedRecommendationScoreBps !== undefined
+      ? {
+          selectedRecommendationScoreBps:
+            selection.selectedRecommendationScoreBps,
+        }
+      : {}),
+    recommendationPolicyTemplate: selection.recommendationPolicy.templateId,
+    recommendationPolicySha256: selection.recommendationPolicySha256,
     ...(selected
       ? {
           selectedCompletionRateBps: selected.completionRateBps,

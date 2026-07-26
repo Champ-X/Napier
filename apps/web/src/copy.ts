@@ -623,6 +623,8 @@ export const copy = {
         outcomeBaseline: "Outcome baseline",
         selectionSet: "Selection set",
         portfolioSet: "Portfolio set",
+        recommendationPolicy: "Policy",
+        recommendation: "Recommendation",
         topFamily: "Top family",
         completion: "Completion",
         current: "Current",

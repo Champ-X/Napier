@@ -863,8 +863,26 @@ export interface ExecutionPlanBlueprintRecordOutcomeReview {
   createdAt: string;
 }
 
+export type ExecutionPlanBlueprintRecommendationPolicyTemplateId =
+  | "balanced"
+  | "delivery_first"
+  | "portfolio_first";
+
+export interface ExecutionPlanBlueprintRecommendationPolicyWeights {
+  outcomeCompletionBps: number;
+  familyCompletionBps: number;
+  reviewedBaselineBps: number;
+  replayEvidenceBps: number;
+}
+
+export interface ExecutionPlanBlueprintRecommendationPolicy {
+  templateId: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
+  weights: ExecutionPlanBlueprintRecommendationPolicyWeights;
+}
+
 export interface SelectExecutionPlanBlueprintRecordRequest {
   objective?: string;
+  policyTemplate?: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
 }
 
 export type ExecutionPlanBlueprintRecordSelectionCandidateStatus =
@@ -886,6 +904,7 @@ export interface ExecutionPlanBlueprintRecordSelectionCandidate {
   familyOutcomeQualifiedCount: number;
   familyReviewedBaselineCount: number;
   familyCompletionRateBps: number;
+  recommendationScoreBps: number;
   previewStatus?: ExecutionPlanBlueprintRecordPreviewStatus;
   previewSha256?: string;
   baselineId?: string;
@@ -922,6 +941,9 @@ export interface ExecutionPlanBlueprintRecordSelection {
   selectedScoreBps?: number;
   selectedFamilySha256?: string;
   selectedFamilyCompletionRateBps?: number;
+  selectedRecommendationScoreBps?: number;
+  recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
+  recommendationPolicySha256: string;
   portfolioSetSha256: string;
   selectionSetSha256: string;
   candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];

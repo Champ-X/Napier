@@ -890,10 +890,14 @@ Workbench can also ask the server to select a policy-qualified template for the
 current Thread through `POST /api/threads/:threadId/plan-blueprints/selection`.
 The selection receipt is no-store and hash-bound: candidates must pass source
 qualification, outcome-baseline qualification, and target-Thread preview gates;
-the deterministic rank favors completion basis points, portfolio family
-completion, reviewed-baseline coverage, replay evidence volume, baseline
-recency, and record freshness. It returns only record IDs, preview hashes,
-family hashes, portfolio-set hash, baseline/outcome hashes, counts,
+the deterministic rank now carries an explicit recommendation policy template
+(`balanced`, `delivery_first`, or `portfolio_first`). Source qualification
+remains a hard gate, while the selected template weights outcome completion,
+portfolio-family completion, reviewed-baseline coverage, and replay evidence
+volume before the stable recency/freshness tie-breakers. The policy and policy
+SHA-256 are mirrored into the receipt and response headers beside the selected
+recommendation score. It returns only record IDs, preview hashes, family
+hashes, portfolio-set hash, baseline/outcome hashes, policy hashes, counts,
 diagnostics, and a selection-set SHA-256, so objective overrides are
 represented by hash rather than copied back into the artifact. `GET
 /api/plan-blueprints/portfolio/calibration`
@@ -917,7 +921,8 @@ separate, can promote or qualify the current outcome baseline for each
 template, can run model review over current outcomes, and can run adaptive
 selection across the shelf before replaying a candidate. It can also calibrate
 the whole portfolio to compare reusable workflow families without exposing
-objective, step, or artifact prose.
+objective, step, or artifact prose, and renders the selected policy template,
+policy hash, and recommendation score as part of the selection receipt.
 
 ## Portable Replay Fixtures
 

@@ -55,6 +55,8 @@ import {
   type ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate,
   type ExecutionPlanBlueprintRecordOutcomeQualification,
   type ExecutionPlanBlueprintRecordOutcomeReview,
+  type ExecutionPlanBlueprintRecommendationPolicy,
+  type ExecutionPlanBlueprintRecommendationPolicyTemplateId,
   type ExecutionPlanBlueprintPortfolioCalibration,
   type ExecutionPlanBlueprintPortfolioCalibrationFamily,
   type ExecutionPlanBlueprintRecordSelection,
@@ -585,6 +587,39 @@ const DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_REVIEW_GATE: ExecutionPl
     minScore: 80,
     maxRisk: "medium",
   };
+
+const EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICIES: Record<
+  ExecutionPlanBlueprintRecommendationPolicyTemplateId,
+  ExecutionPlanBlueprintRecommendationPolicy
+> = {
+  balanced: {
+    templateId: "balanced",
+    weights: {
+      outcomeCompletionBps: 5_000,
+      familyCompletionBps: 2_500,
+      reviewedBaselineBps: 1_500,
+      replayEvidenceBps: 1_000,
+    },
+  },
+  delivery_first: {
+    templateId: "delivery_first",
+    weights: {
+      outcomeCompletionBps: 7_000,
+      familyCompletionBps: 1_000,
+      reviewedBaselineBps: 1_000,
+      replayEvidenceBps: 1_000,
+    },
+  },
+  portfolio_first: {
+    templateId: "portfolio_first",
+    weights: {
+      outcomeCompletionBps: 3_500,
+      familyCompletionBps: 3_500,
+      reviewedBaselineBps: 2_000,
+      replayEvidenceBps: 1_000,
+    },
+  },
+};
 
 export interface CreateSubagentTaskInput {
   threadId: string;
@@ -2407,6 +2442,10 @@ export class LocalStore {
     const objective = normalizeExecutionPlanBlueprintSelectionObjective(
       request.objective,
     );
+    const recommendationPolicy =
+      normalizeExecutionPlanBlueprintRecommendationPolicy(
+        request.policyTemplate,
+      );
     const candidateInputs: Array<{
       record: ExecutionPlanBlueprintRecord;
       sourceQualification: ExecutionPlanBlueprintRecordQualification;
@@ -2470,7 +2509,10 @@ export class LocalStore {
         sourceQualification: input.sourceQualification,
         outcomeQualification: input.outcomeQualification,
         family,
-        ...(input.latestBaseline ? { latestBaseline: input.latestBaseline } : {}),
+        recommendationPolicy,
+        ...(input.latestBaseline
+          ? { latestBaseline: input.latestBaseline }
+          : {}),
         ...(input.preview ? { preview: input.preview } : {}),
       });
     });
@@ -2483,6 +2525,7 @@ export class LocalStore {
     return createExecutionPlanBlueprintRecordSelection({
       threadId,
       candidates: selectedCandidates,
+      recommendationPolicy,
       portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
       ...(objective ? { objective } : {}),
     });
@@ -8733,6 +8776,17 @@ function normalizeExecutionPlanBlueprintSelectionObjective(
   return normalized;
 }
 
+function normalizeExecutionPlanBlueprintRecommendationPolicy(
+  templateId: ExecutionPlanBlueprintRecommendationPolicyTemplateId | undefined,
+): ExecutionPlanBlueprintRecommendationPolicy {
+  const selected = templateId ?? "balanced";
+  const policy = EXECUTION_PLAN_BLUEPRINT_RECOMMENDATION_POLICIES[selected];
+  if (!policy) {
+    throw new Error("Execution plan blueprint recommendation policy is invalid");
+  }
+  return structuredClone(policy);
+}
+
 function compareExecutionPlanBlueprintRecords(
   left: ExecutionPlanBlueprintRecord,
   right: ExecutionPlanBlueprintRecord,
@@ -8747,6 +8801,7 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
   sourceQualification: ExecutionPlanBlueprintRecordQualification;
   outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
   family: ExecutionPlanBlueprintPortfolioCalibrationFamily;
+  recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
   latestBaseline?: ExecutionPlanBlueprintRecordOutcomeBaseline;
   preview?: ExecutionPlanBlueprintRecordPreview;
 }): ExecutionPlanBlueprintRecordSelectionCandidate {
@@ -8788,6 +8843,21 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
     familyOutcomeQualifiedCount: input.family.outcomeQualifiedCount,
     familyReviewedBaselineCount: input.family.reviewedBaselineCount,
     familyCompletionRateBps: input.family.completionRateBps,
+    recommendationScoreBps: ready
+      ? executionPlanBlueprintRecommendationScoreBps({
+          outcomeCompletionBps:
+            input.outcomeQualification.completionRateBps,
+          familyCompletionBps: input.family.completionRateBps,
+          reviewedBaselineCoverageBps:
+            executionPlanBlueprintFamilyReviewedBaselineCoverageBps(
+              input.family,
+            ),
+          replayEvidenceBps: executionPlanBlueprintReplayEvidenceBps(
+            input.outcomeQualification.replayCount,
+          ),
+          policy: input.recommendationPolicy,
+        })
+      : 0,
     ...(input.preview ? { previewStatus: input.preview.status } : {}),
     ...(input.preview?.previewSha256
       ? { previewSha256: input.preview.previewSha256 }
@@ -9082,6 +9152,41 @@ function compareExecutionPlanBlueprintPortfolioEntries(
   return left.recordId.localeCompare(right.recordId);
 }
 
+function executionPlanBlueprintRecommendationScoreBps(input: {
+  outcomeCompletionBps: number;
+  familyCompletionBps: number;
+  reviewedBaselineCoverageBps: number;
+  replayEvidenceBps: number;
+  policy: ExecutionPlanBlueprintRecommendationPolicy;
+}): number {
+  const weights = input.policy.weights;
+  return Math.round(
+    (input.outcomeCompletionBps * weights.outcomeCompletionBps +
+      input.familyCompletionBps * weights.familyCompletionBps +
+      input.reviewedBaselineCoverageBps * weights.reviewedBaselineBps +
+      input.replayEvidenceBps * weights.replayEvidenceBps) /
+      10_000,
+  );
+}
+
+function executionPlanBlueprintFamilyReviewedBaselineCoverageBps(
+  family: ExecutionPlanBlueprintPortfolioCalibrationFamily,
+): number {
+  return family.recordCount > 0
+    ? Math.round((family.reviewedBaselineCount / family.recordCount) * 10_000)
+    : 0;
+}
+
+function executionPlanBlueprintReplayEvidenceBps(replayCount: number): number {
+  return Math.min(10_000, replayCount * 1_000);
+}
+
+function executionPlanBlueprintRecommendationPolicySha256(
+  policy: ExecutionPlanBlueprintRecommendationPolicy,
+): string {
+  return sha256(canonicalJson(policy));
+}
+
 function uniqueStrings(values: string[]): string[] {
   return [...new Set(values)];
 }
@@ -9099,6 +9204,9 @@ function compareExecutionPlanBlueprintSelectionCandidates(
   left: ExecutionPlanBlueprintRecordSelectionCandidate,
   right: ExecutionPlanBlueprintRecordSelectionCandidate,
 ): number {
+  const recommendationOrder =
+    right.recommendationScoreBps - left.recommendationScoreBps;
+  if (recommendationOrder !== 0) return recommendationOrder;
   const scoreOrder = right.scoreBps - left.scoreBps;
   if (scoreOrder !== 0) return scoreOrder;
   const familyCompletionOrder =
@@ -9128,6 +9236,7 @@ function createExecutionPlanBlueprintRecordSelection(input: {
   objective?: string;
   candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];
   portfolioSetSha256: string;
+  recommendationPolicy: ExecutionPlanBlueprintRecommendationPolicy;
 }): ExecutionPlanBlueprintRecordSelection {
   const selected = input.candidates.find(
     (candidate) => candidate.selectionStatus === "selected",
@@ -9163,6 +9272,14 @@ function createExecutionPlanBlueprintRecordSelection(input: {
     ...(selected
       ? { selectedFamilyCompletionRateBps: selected.familyCompletionRateBps }
       : {}),
+    ...(selected
+      ? { selectedRecommendationScoreBps: selected.recommendationScoreBps }
+      : {}),
+    recommendationPolicy: input.recommendationPolicy,
+    recommendationPolicySha256:
+      executionPlanBlueprintRecommendationPolicySha256(
+        input.recommendationPolicy,
+      ),
     portfolioSetSha256: input.portfolioSetSha256,
     selectionSetSha256: sha256(
       canonicalJson(
@@ -9171,6 +9288,7 @@ function createExecutionPlanBlueprintRecordSelection(input: {
           selectionStatus: candidate.selectionStatus,
           diagnostics: candidate.diagnostics,
           scoreBps: candidate.scoreBps,
+          recommendationScoreBps: candidate.recommendationScoreBps,
           familySha256: candidate.familySha256,
           familyRecordCount: candidate.familyRecordCount,
           familyOutcomeQualifiedCount: candidate.familyOutcomeQualifiedCount,

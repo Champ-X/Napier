@@ -750,6 +750,7 @@ describe("execution plan archives", () => {
       selectionThread.id,
       {
         objective: "Reuse the release workflow with fresh delivery evidence.",
+        policyTemplate: "delivery_first",
       },
     );
     expect(selection).toEqual(
@@ -770,6 +771,17 @@ describe("execution plan archives", () => {
         selectedScoreBps: 10_000,
         selectedFamilySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         selectedFamilyCompletionRateBps: 10_000,
+        selectedRecommendationScoreBps: 8_100,
+        recommendationPolicy: {
+          templateId: "delivery_first",
+          weights: {
+            outcomeCompletionBps: 7_000,
+            familyCompletionBps: 1_000,
+            reviewedBaselineBps: 1_000,
+            replayEvidenceBps: 1_000,
+          },
+        },
+        recommendationPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         portfolioSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         selectionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -792,6 +804,7 @@ describe("execution plan archives", () => {
         baselineSha256: promotedBaseline.baseline.contentSha256,
         currentOutcomesSha256: completedOutcomes.contentSha256,
         scoreBps: 10_000,
+        recommendationScoreBps: 8_100,
         replayCount: 1,
         completionRateBps: 10_000,
       }),

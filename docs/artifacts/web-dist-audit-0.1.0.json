@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 40,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Do1GIr4G.js",
-    "sizeBytes": 136619,
+    "path": "apps/web/dist/assets/index-Bm1B_Vk-.js",
+    "sizeBytes": 136681,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "1725efed97c041c3fd5a3790286216671f39ab2ada4a6f815785578baa247bc3"
+    "sha256": "108016e1d74827f007277fedcc948a083c09f85eb6bee743ef5baf0ea06ec73b"
   },
-  "distContentSha256": "1725efed97c041c3fd5a3790286216671f39ab2ada4a6f815785578baa247bc3",
+  "distContentSha256": "108016e1d74827f007277fedcc948a083c09f85eb6bee743ef5baf0ea06ec73b",
   "errors": []
 }

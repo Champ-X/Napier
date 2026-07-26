@@ -5062,6 +5062,7 @@ describe("Napier HTTP goal flow", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           objective: "Select a reusable report workflow.",
+          policyTemplate: "portfolio_first",
         }),
       },
     );
@@ -5087,6 +5088,17 @@ describe("Napier HTTP goal flow", () => {
         selectedScoreBps: 0,
         selectedFamilySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         selectedFamilyCompletionRateBps: 0,
+        selectedRecommendationScoreBps: 100,
+        recommendationPolicy: {
+          templateId: "portfolio_first",
+          weights: {
+            outcomeCompletionBps: 3_500,
+            familyCompletionBps: 3_500,
+            reviewedBaselineBps: 2_000,
+            replayEvidenceBps: 1_000,
+          },
+        },
+        recommendationPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         portfolioSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         selectionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -5106,6 +5118,7 @@ describe("Napier HTTP goal flow", () => {
         previewStatus: "ready",
         baselineId: outcomeBaselineResult.baseline.id,
         scoreBps: 0,
+        recommendationScoreBps: 100,
         replayCount: 1,
         completionRateBps: 0,
       }),
@@ -5131,6 +5144,22 @@ describe("Napier HTTP goal flow", () => {
     );
     expect(invalidSelectionRequest.status).toBe(400);
     expect(await invalidSelectionRequest.json()).toEqual({
+      error: "Execution plan blueprint selection request is invalid",
+    });
+
+    const invalidSelectionPolicyRequest = await app.request(
+      `/api/threads/${selectionThread.thread.id}/plan-blueprints/selection`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          objective: "Select a reusable report workflow.",
+          policyTemplate: "fastest",
+        }),
+      },
+    );
+    expect(invalidSelectionPolicyRequest.status).toBe(400);
+    expect(await invalidSelectionPolicyRequest.json()).toEqual({
       error: "Execution plan blueprint selection request is invalid",
     });
 
@@ -9177,6 +9206,14 @@ function expectExecutionPlanBlueprintRecordSelectionHeaders(
   expect(
     response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
   ).toBe(selection.portfolioSetSha256);
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-recommendation-policy-template",
+    ),
+  ).toBe(selection.recommendationPolicy.templateId);
+  expect(
+    response.headers.get("x-napier-blueprint-recommendation-policy-sha256"),
+  ).toBe(selection.recommendationPolicySha256);
   expect(response.headers.get("x-napier-objective-sha256")).toBe(
     selection.objectiveSha256 ?? null,
   );
@@ -9203,6 +9240,11 @@ function expectExecutionPlanBlueprintRecordSelectionHeaders(
       "x-napier-selected-blueprint-family-completion-rate-bps",
     ),
   ).toBe(optionalNumberHeader(selection.selectedFamilyCompletionRateBps));
+  expect(
+    response.headers.get(
+      "x-napier-selected-blueprint-recommendation-score-bps",
+    ),
+  ).toBe(optionalNumberHeader(selection.selectedRecommendationScoreBps));
 }
 
 function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(

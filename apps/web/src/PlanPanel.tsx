@@ -2163,6 +2163,12 @@ function PlanBlueprintLibraryReceiptView({
               : ""}
           </small>
           <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.recommendationPolicy}:{" "}
+            {receipt.recommendationPolicyTemplate}
+            {" / "}
+            {receipt.recommendationPolicySha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
             {receipt.selectedRecordId
               ? `${copy.plan.blueprint.library.selected}: ${shortId(receipt.selectedRecordId)}`
               : receipt.diagnostics.length > 0
@@ -2181,6 +2187,9 @@ function PlanBlueprintLibraryReceiptView({
               {(receipt.selectedScoreBps / 100).toFixed(2)}%{" / "}
               {copy.plan.blueprint.library.replays}:{" "}
               {(receipt.selectedReplayCount ?? 0).toLocaleString()}
+              {receipt.selectedRecommendationScoreBps !== undefined
+                ? ` / ${copy.plan.blueprint.library.recommendation}: ${(receipt.selectedRecommendationScoreBps / 100).toFixed(2)}%`
+                : ""}
               {receipt.selectedFamilyCompletionRateBps !== undefined
                 ? ` / ${copy.plan.blueprint.library.families}: ${(receipt.selectedFamilyCompletionRateBps / 100).toFixed(2)}%`
                 : ""}

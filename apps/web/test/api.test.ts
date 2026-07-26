@@ -726,6 +726,17 @@ describe("Web JSON API wrappers", () => {
       selectedScoreBps: 0,
       selectedFamilySha256: "3".repeat(64),
       selectedFamilyCompletionRateBps: 0,
+      selectedRecommendationScoreBps: 1_600,
+      recommendationPolicy: {
+        templateId: "balanced",
+        weights: {
+          outcomeCompletionBps: 5_000,
+          familyCompletionBps: 2_500,
+          reviewedBaselineBps: 1_500,
+          replayEvidenceBps: 1_000,
+        },
+      },
+      recommendationPolicySha256: "7".repeat(64),
       portfolioSetSha256: "2".repeat(64),
       selectionSetSha256: "f".repeat(64),
       candidates: [
@@ -743,6 +754,7 @@ describe("Web JSON API wrappers", () => {
           familyOutcomeQualifiedCount: 1,
           familyReviewedBaselineCount: 1,
           familyCompletionRateBps: 0,
+          recommendationScoreBps: 1_600,
           previewStatus: "ready",
           previewSha256: "e".repeat(64),
           baselineId: outcomeBaseline.id,

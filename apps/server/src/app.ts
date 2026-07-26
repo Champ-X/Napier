@@ -8252,7 +8252,7 @@ function parseSaveExecutionPlanBlueprintRequest(
 function parseSelectExecutionPlanBlueprintRecordRequest(
   input: unknown,
 ): SelectExecutionPlanBlueprintRecordRequest | undefined {
-  const record = requestRecord(input, ["objective"]);
+  const record = requestRecord(input, ["objective", "policyTemplate"]);
   if (!record) return undefined;
   const objective =
     record["objective"] === undefined
@@ -8260,14 +8260,24 @@ function parseSelectExecutionPlanBlueprintRecordRequest(
       : typeof record["objective"] === "string"
         ? record["objective"].trim()
         : undefined;
+  const policyTemplate = record["policyTemplate"];
   if (
     record["objective"] !== undefined &&
     (!objective || !boundedString(objective, 1, 4_000))
   ) {
     return undefined;
   }
+  if (
+    policyTemplate !== undefined &&
+    policyTemplate !== "balanced" &&
+    policyTemplate !== "delivery_first" &&
+    policyTemplate !== "portfolio_first"
+  ) {
+    return undefined;
+  }
   return {
     ...(objective ? { objective } : {}),
+    ...(policyTemplate ? { policyTemplate } : {}),
   };
 }
 
@@ -11951,6 +11961,14 @@ function setExecutionPlanBlueprintRecordSelectionHeaders(
     "X-Napier-Blueprint-Portfolio-Set-SHA256",
     selection.portfolioSetSha256,
   );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-Template",
+    selection.recommendationPolicy.templateId,
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-SHA256",
+    selection.recommendationPolicySha256,
+  );
   setOptionalHeader(
     context,
     "X-Napier-Objective-SHA256",
@@ -11990,6 +12008,11 @@ function setExecutionPlanBlueprintRecordSelectionHeaders(
     context,
     "X-Napier-Selected-Blueprint-Family-Completion-Rate-BPS",
     selection.selectedFamilyCompletionRateBps,
+  );
+  setOptionalNumberHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Recommendation-Score-BPS",
+    selection.selectedRecommendationScoreBps,
   );
 }
 
