@@ -57,6 +57,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
@@ -113,6 +114,7 @@ import type {
   VerifyExtensionPackageChannelIndexRequest,
   VerifyExecutionPlanBlueprintRequest,
   VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest,
+  VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
   VerifyExecutionPlanBlueprintRecordReplayHistoryRequest,
   VerifyExecutionPlanBlueprintRecordReplayOutcomesRequest,
@@ -558,6 +560,18 @@ export function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetireme
 ): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification> {
   return requestJson(
     "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+  body: VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
+): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle> {
+  return requestJson(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify",
     {
       method: "POST",
       body: JSON.stringify(body),

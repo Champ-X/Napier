@@ -15,6 +15,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
@@ -307,6 +308,29 @@ export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHisto
   observedRetirementCount: number;
   latestRetiredAt?: string;
   observedLatestRetiredAt?: string;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleReceipt {
+  action: "policyOverrideRetirementProofBundle";
+  verificationStatus: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle["status"];
+  diagnostics: string[];
+  contentSha256: string;
+  historyCount: number;
+  validHistoryCount: number;
+  invalidHistoryCount: number;
+  distinctHistoryCount: number;
+  distinctPortfolioSetCount: number;
+  distinctCurrentOverrideSetCount: number;
+  distinctRetirementSetCount: number;
+  historySetSha256: string;
+  portfolioSetBundleSha256: string;
+  currentOverrideSetBundleSha256: string;
+  retirementSetBundleSha256: string;
+  highlightedHistoryIndex?: number;
+  highlightedHistoryStatus?: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle["histories"][number]["status"];
+  highlightedHistoryDiagnostics: string[];
+  highlightedHistoryContentSha256?: string;
+  highlightedRetirementSetSha256?: string;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -870,6 +894,54 @@ export function planBlueprintRecommendationPolicyOverrideRetirementHistoryVerifi
     ...(verification.observedLatestRetiredAt
       ? { observedLatestRetiredAt: verification.observedLatestRetiredAt }
       : {}),
+  };
+}
+
+export function planBlueprintRecommendationPolicyOverrideRetirementProofBundleReceipt(
+  proofBundle: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
+): PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleReceipt {
+  const highlighted =
+    proofBundle.histories.find((history) => history.status === "invalid") ??
+    proofBundle.histories.find(
+      (history, _index, histories) =>
+        history.declaredRetirementSetSha256 &&
+        histories[0]?.declaredRetirementSetSha256 !==
+          history.declaredRetirementSetSha256,
+    ) ??
+    proofBundle.histories[0];
+  return {
+    action: "policyOverrideRetirementProofBundle",
+    verificationStatus: proofBundle.status,
+    diagnostics: proofBundle.diagnostics,
+    contentSha256: proofBundle.contentSha256,
+    historyCount: proofBundle.historyCount,
+    validHistoryCount: proofBundle.validHistoryCount,
+    invalidHistoryCount: proofBundle.invalidHistoryCount,
+    distinctHistoryCount: proofBundle.distinctHistoryCount,
+    distinctPortfolioSetCount: proofBundle.distinctPortfolioSetCount,
+    distinctCurrentOverrideSetCount: proofBundle.distinctCurrentOverrideSetCount,
+    distinctRetirementSetCount: proofBundle.distinctRetirementSetCount,
+    historySetSha256: proofBundle.historySetSha256,
+    portfolioSetBundleSha256: proofBundle.portfolioSetBundleSha256,
+    currentOverrideSetBundleSha256:
+      proofBundle.currentOverrideSetBundleSha256,
+    retirementSetBundleSha256: proofBundle.retirementSetBundleSha256,
+    ...(highlighted
+      ? {
+          highlightedHistoryIndex: highlighted.index,
+          highlightedHistoryStatus: highlighted.status,
+          highlightedHistoryDiagnostics: highlighted.diagnostics,
+          ...(highlighted.declaredContentSha256
+            ? { highlightedHistoryContentSha256: highlighted.declaredContentSha256 }
+            : {}),
+          ...(highlighted.declaredRetirementSetSha256
+            ? {
+                highlightedRetirementSetSha256:
+                  highlighted.declaredRetirementSetSha256,
+              }
+            : {}),
+        }
+      : { highlightedHistoryDiagnostics: [] }),
   };
 }
 

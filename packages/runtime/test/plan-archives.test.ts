@@ -1067,6 +1067,64 @@ describe("execution plan archives", () => {
         observedRetirementCount: 1,
       }),
     );
+    expect(
+      store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+        [policyOverrideRetirementHistory, policyOverrideRetirementHistory],
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle",
+        schemaVersion: 1,
+        status: "aligned",
+        diagnostics: [],
+        historyCount: 2,
+        validHistoryCount: 2,
+        invalidHistoryCount: 0,
+        distinctHistoryCount: 1,
+        distinctPortfolioSetCount: 1,
+        distinctCurrentOverrideSetCount: 1,
+        distinctRetirementSetCount: 1,
+        histories: [
+          expect.objectContaining({
+            index: 0,
+            status: "valid",
+            diagnostics: [],
+            declaredContentSha256: policyOverrideRetirementHistory.contentSha256,
+            recomputedContentSha256:
+              policyOverrideRetirementHistory.contentSha256,
+            declaredRetirementSetSha256:
+              policyOverrideRetirementHistory.retirementSetSha256,
+            recomputedRetirementSetSha256:
+              policyOverrideRetirementHistory.retirementSetSha256,
+            retirementCount: 1,
+            recomputedRetirementCount: 1,
+            latestRetiredAt: policyOverrideRetirement.retiredAt,
+            recomputedLatestRetiredAt: policyOverrideRetirement.retiredAt,
+            itemSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          }),
+          expect.objectContaining({
+            index: 1,
+            status: "valid",
+            diagnostics: [],
+            declaredContentSha256: policyOverrideRetirementHistory.contentSha256,
+          }),
+        ],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+        [policyOverrideRetirementHistory],
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["history_count_below_min"],
+        historyCount: 1,
+        validHistoryCount: 1,
+        invalidHistoryCount: 0,
+      }),
+    );
     await expect(
       store.listExecutionPlanBlueprintRecommendationPolicyOverrides(),
     ).resolves.toEqual(

@@ -2167,6 +2167,18 @@ verify blueprint family recommendation policy override retirements
      with valid/invalid status, low-cardinality diagnostics, and
      declared/recomputed/observed hashes for content, portfolio set, current
      override set, and retirement set
+verify blueprint family recommendation policy override retirement proof bundle
+  -> accept multiple exported retirement histories without mutating the Ledger
+     or requiring those histories to belong to the current local store
+  -> validate each history self-contained, recompute embedded retirement
+     receipt hashes, and compare portfolio-set/current-override-set/
+     retirement-set hash families across histories
+  -> return
+     napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle
+     with aligned/divergent/invalid status, valid/invalid history counts,
+     distinct set counts, history/portfolio/current-override/retirement bundle
+     hashes, highlighted diagnostics, and no objective, step title, artifact
+     path, blocker, or evidence prose
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2319,9 +2331,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- cross-environment policy override retirement proof bundles that compare
-  exported retirement histories across multiple Napier Ledgers without exposing
-  objectives, step titles, artifact paths, blockers, or evidence prose.
+- signed and externally anchored policy override retirement proof bundles for
+  comparing independent Napier Ledgers across machines without relying on a
+  shared local trust root.
 
 ### Layer 3: Extension fabric
 

@@ -938,6 +938,17 @@ exports that no longer match current Ledger state, while response headers mirror
 the verification status, diagnostic hash, and declared/recomputed/observed
 hashes. The Template shelf downloads the audit history JSON and can upload it
 back through the same verification flow.
+`POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify`
+accepts multiple exported retirement histories and returns a cross-Ledger
+proof-bundle receipt. Each history is validated self-contained, embedded
+retirement receipts are rehashed, and the server reports aligned, divergent, or
+invalid status based on file validity, minimum history count, and distinct
+portfolio/current override/retirement-set hashes. Bundle headers mirror history
+counts, distinct-set counts, diagnostics, and bundle-set SHA-256 values. The
+Template shelf can upload multiple retirement history JSON files at once to
+compare environments without exposing objectives, step titles, artifact paths,
+blockers, or evidence prose.
 `GET
 /api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
 policy templates against the current library's historical replay outcomes

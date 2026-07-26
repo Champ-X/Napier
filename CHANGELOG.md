@@ -192,6 +192,15 @@ All notable changes to Napier are recorded here.
   state, mirrors verification evidence in response headers, and the Template
   shelf now downloads retirement history JSON and uploads it back through a pure
   ViewModel receipt.
+- Cross-Ledger policy override retirement proof bundles. `POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify`
+  now accepts multiple exported retirement histories, validates each
+  self-contained, and returns a no-store proof-bundle receipt with
+  aligned/divergent/invalid status, valid/invalid counts, distinct
+  portfolio/current-override/retirement-set counts, and bundle-set hashes.
+  Response headers mirror the proof counters and hashes, while the Template
+  shelf can upload multiple retirement history JSON files at once through a
+  pure ViewModel receipt.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

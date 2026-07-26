@@ -1206,6 +1206,58 @@ export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHis
   contentSha256: string;
 }
 
+export interface VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest {
+  histories: unknown[];
+}
+
+export type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleStatus =
+  | "aligned"
+  | "divergent"
+  | "invalid";
+
+export type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItemStatus =
+  | "valid"
+  | "invalid";
+
+export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem {
+  index: number;
+  status: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItemStatus;
+  diagnostics: string[];
+  declaredContentSha256?: string;
+  recomputedContentSha256?: string;
+  declaredPortfolioSetSha256?: string;
+  declaredCurrentOverrideSetSha256?: string;
+  declaredRetirementSetSha256?: string;
+  recomputedRetirementSetSha256?: string;
+  retirementCount?: number;
+  recomputedRetirementCount?: number;
+  latestRetiredAt?: string;
+  recomputedLatestRetiredAt?: string;
+  itemSha256: string;
+}
+
+export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleStatus;
+  diagnostics: string[];
+  historyCount: number;
+  validHistoryCount: number;
+  invalidHistoryCount: number;
+  distinctHistoryCount: number;
+  distinctPortfolioSetCount: number;
+  distinctCurrentOverrideSetCount: number;
+  distinctRetirementSetCount: number;
+  historySetSha256: string;
+  portfolioSetBundleSha256: string;
+  currentOverrideSetBundleSha256: string;
+  retirementSetBundleSha256: string;
+  histories: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem[];
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

@@ -56,6 +56,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
@@ -207,6 +208,7 @@ import type {
   VerifyExtensionPackageChannelIndexRequest,
   VerifyExecutionPlanBlueprintRequest,
   VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest,
+  VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
   VerifyExecutionPlanBlueprintRecordReplayHistoryRequest,
   VerifyExecutionPlanBlueprintRecordReplayOutcomesRequest,
@@ -2539,6 +2541,49 @@ export function createApp(services: NapierServices): Hono {
         verification,
       );
       return context.json(verification);
+    },
+  );
+
+  app.post(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_THREAD_REPLAY_BUNDLE_BYTES,
+          "Execution plan blueprint recommendation policy override retirement history proof bundle verification request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override retirement history proof bundle verification request is invalid",
+          400,
+        );
+      }
+      const request =
+        parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
+          input,
+        );
+      if (!request) {
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override retirement history proof bundle verification request is invalid",
+          400,
+        );
+      }
+      const proofBundle =
+        services.store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+          request.histories,
+        );
+      setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleHeaders(
+        context,
+        proofBundle,
+      );
+      return context.json(proofBundle);
     },
   );
 
@@ -8214,6 +8259,18 @@ function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirement
   };
 }
 
+function parseVerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest(
+  input: unknown,
+):
+  | VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleRequest
+  | undefined {
+  const record = requestRecord(input, ["histories"]);
+  if (!record || !Array.isArray(record["histories"])) return undefined;
+  return {
+    histories: record["histories"],
+  };
+}
+
 function parseVerifyExecutionPlanBlueprintRecordReplayOutcomesRequest(
   input: unknown,
 ): VerifyExecutionPlanBlueprintRecordReplayOutcomesRequest | undefined {
@@ -12649,6 +12706,67 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryV
     context,
     "X-Napier-Observed-Blueprint-Family-Policy-Override-Latest-Retired-At",
     verification.observedLatestRetiredAt,
+  );
+}
+
+function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleHeaders(
+  context: Context,
+  proofBundle: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, proofBundle.contentSha256);
+  context.header("X-Napier-Verification-Status", proofBundle.status);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(proofBundle.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(proofBundle.diagnostics),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Count",
+    String(proofBundle.historyCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Valid-Count",
+    String(proofBundle.validHistoryCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Invalid-Count",
+    String(proofBundle.invalidHistoryCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Distinct-Count",
+    String(proofBundle.distinctHistoryCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-Distinct-Count",
+    String(proofBundle.distinctPortfolioSetCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Current-Set-Distinct-Count",
+    String(proofBundle.distinctCurrentOverrideSetCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-Distinct-Count",
+    String(proofBundle.distinctRetirementSetCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-History-Set-SHA256",
+    proofBundle.historySetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-Bundle-SHA256",
+    proofBundle.portfolioSetBundleSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Current-Set-Bundle-SHA256",
+    proofBundle.currentOverrideSetBundleSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retirement-Set-Bundle-SHA256",
+    proofBundle.retirementSetBundleSha256,
   );
 }
 

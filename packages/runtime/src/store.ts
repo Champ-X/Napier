@@ -64,6 +64,8 @@ import {
   type ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem,
   type ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem,
   type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   type ExecutionPlanBlueprintRecommendationPolicySource,
   type ExecutionPlanBlueprintRecommendationPolicyTemplateId,
@@ -2652,6 +2654,15 @@ export class LocalStore {
     return verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProjection(
       input,
       observed,
+    );
+  }
+
+  verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+    histories: unknown[],
+  ): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle {
+    this.assertInitialized();
+    return createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(
+      histories,
     );
   }
 
@@ -9855,6 +9866,217 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   };
 }
 
+function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle(
+  histories: unknown[],
+): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle {
+  const proofItems = histories.map((history, index) =>
+    createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem(
+      history,
+      index,
+    ),
+  );
+  const validItems = proofItems.filter((item) => item.status === "valid");
+  const validContentHashes = validItems
+    .map((item) => item.declaredContentSha256)
+    .filter(isSha256);
+  const validPortfolioSetHashes = validItems
+    .map((item) => item.declaredPortfolioSetSha256)
+    .filter(isSha256);
+  const validCurrentOverrideSetHashes = validItems
+    .map((item) => item.declaredCurrentOverrideSetSha256)
+    .filter(isSha256);
+  const validRetirementSetHashes = validItems
+    .map((item) => item.declaredRetirementSetSha256)
+    .filter(isSha256);
+  const distinctHistoryCount = new Set(validContentHashes).size;
+  const distinctPortfolioSetCount = new Set(validPortfolioSetHashes).size;
+  const distinctCurrentOverrideSetCount = new Set(
+    validCurrentOverrideSetHashes,
+  ).size;
+  const distinctRetirementSetCount = new Set(validRetirementSetHashes).size;
+  const diagnostics: string[] = [];
+  if (histories.length < 2) diagnostics.push("history_count_below_min");
+  if (proofItems.length !== validItems.length) {
+    diagnostics.push("histories_invalid");
+  }
+  if (distinctPortfolioSetCount > 1) diagnostics.push("portfolio_set_divergent");
+  if (distinctCurrentOverrideSetCount > 1) {
+    diagnostics.push("current_override_set_divergent");
+  }
+  if (distinctRetirementSetCount > 1) {
+    diagnostics.push("retirement_set_divergent");
+  }
+  const status: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle["status"] =
+    histories.length < 2 || proofItems.length !== validItems.length
+      ? "invalid"
+      : diagnostics.length > 0
+        ? "divergent"
+        : "aligned";
+  const content = {
+    kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    status,
+    diagnostics,
+    historyCount: proofItems.length,
+    validHistoryCount: validItems.length,
+    invalidHistoryCount: proofItems.length - validItems.length,
+    distinctHistoryCount,
+    distinctPortfolioSetCount,
+    distinctCurrentOverrideSetCount,
+    distinctRetirementSetCount,
+    historySetSha256: executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
+      validContentHashes,
+    ),
+    portfolioSetBundleSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
+        validPortfolioSetHashes,
+      ),
+    currentOverrideSetBundleSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
+        validCurrentOverrideSetHashes,
+      ),
+    retirementSetBundleSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
+        validRetirementSetHashes,
+      ),
+    histories: proofItems,
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem(
+  input: unknown,
+  index: number,
+): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem {
+  const diagnostics: string[] = [];
+  const record = isRecord(input) ? input : undefined;
+  if (!record) diagnostics.push("history_not_object");
+  const declaredContentSha256 = isSha256(record?.["contentSha256"])
+    ? record["contentSha256"]
+    : undefined;
+  const recomputedContentSha256 = record
+    ? sha256(canonicalJson(retirementHistoryHashContent(record)))
+    : undefined;
+  const declaredPortfolioSetSha256 = isSha256(record?.["portfolioSetSha256"])
+    ? record["portfolioSetSha256"]
+    : undefined;
+  const declaredCurrentOverrideSetSha256 = isSha256(
+    record?.["currentOverrideSetSha256"],
+  )
+    ? record["currentOverrideSetSha256"]
+    : undefined;
+  const declaredRetirementSetSha256 = isSha256(
+    record?.["retirementSetSha256"],
+  )
+    ? record["retirementSetSha256"]
+    : undefined;
+  const retirementCount = isNonNegativeInteger(record?.["retirementCount"])
+    ? record["retirementCount"]
+    : undefined;
+  const latestRetiredAt =
+    typeof record?.["latestRetiredAt"] === "string" &&
+    Number.isFinite(Date.parse(record["latestRetiredAt"]))
+      ? record["latestRetiredAt"]
+      : undefined;
+  let recomputedRetirementSetSha256: string | undefined;
+  let recomputedRetirementCount: number | undefined;
+  let recomputedLatestRetiredAt: string | undefined;
+  if (record && !Array.isArray(record["retirements"])) {
+    diagnostics.push("retirements_not_array");
+  } else if (Array.isArray(record?.["retirements"])) {
+    try {
+      const retirements = record["retirements"]
+        .map(
+          validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult,
+        )
+        .sort(compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements);
+      recomputedRetirementSetSha256 =
+        executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
+          retirements,
+        );
+      recomputedRetirementCount = retirements.length;
+      recomputedLatestRetiredAt = retirements.at(-1)?.retiredAt;
+    } catch {
+      diagnostics.push("retirements_invalid");
+    }
+  }
+  if (
+    record?.["kind"] !==
+    "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history"
+  ) {
+    diagnostics.push("kind_mismatch");
+  }
+  if (record?.["schemaVersion"] !== 1) diagnostics.push("schema_mismatch");
+  if (record?.["apiVersion"] !== NAPIER_API_VERSION) {
+    diagnostics.push("api_version_mismatch");
+  }
+  if (!declaredContentSha256) diagnostics.push("content_hash_missing");
+  if (
+    declaredContentSha256 &&
+    recomputedContentSha256 &&
+    declaredContentSha256 !== recomputedContentSha256
+  ) {
+    diagnostics.push("content_hash_mismatch");
+  }
+  if (!declaredPortfolioSetSha256) diagnostics.push("portfolio_set_missing");
+  if (!declaredCurrentOverrideSetSha256) {
+    diagnostics.push("current_override_set_missing");
+  }
+  if (!declaredRetirementSetSha256) diagnostics.push("retirement_set_missing");
+  if (
+    declaredRetirementSetSha256 &&
+    recomputedRetirementSetSha256 &&
+    declaredRetirementSetSha256 !== recomputedRetirementSetSha256
+  ) {
+    diagnostics.push("retirement_set_hash_mismatch");
+  }
+  if (
+    retirementCount !== undefined &&
+    recomputedRetirementCount !== undefined &&
+    retirementCount !== recomputedRetirementCount
+  ) {
+    diagnostics.push("retirement_count_mismatch");
+  }
+  if (record?.["latestRetiredAt"] !== undefined && !latestRetiredAt) {
+    diagnostics.push("latest_retired_at_invalid");
+  }
+  if (latestRetiredAt !== recomputedLatestRetiredAt) {
+    diagnostics.push("latest_retired_at_mismatch");
+  }
+  const status: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem["status"] =
+    diagnostics.length === 0 ? "valid" : "invalid";
+  const content = {
+    index,
+    status,
+    diagnostics,
+    ...(declaredContentSha256 ? { declaredContentSha256 } : {}),
+    ...(recomputedContentSha256 ? { recomputedContentSha256 } : {}),
+    ...(declaredPortfolioSetSha256 ? { declaredPortfolioSetSha256 } : {}),
+    ...(declaredCurrentOverrideSetSha256
+      ? { declaredCurrentOverrideSetSha256 }
+      : {}),
+    ...(declaredRetirementSetSha256 ? { declaredRetirementSetSha256 } : {}),
+    ...(recomputedRetirementSetSha256
+      ? { recomputedRetirementSetSha256 }
+      : {}),
+    ...(retirementCount !== undefined ? { retirementCount } : {}),
+    ...(recomputedRetirementCount !== undefined
+      ? { recomputedRetirementCount }
+      : {}),
+    ...(latestRetiredAt ? { latestRetiredAt } : {}),
+    ...(recomputedLatestRetiredAt ? { recomputedLatestRetiredAt } : {}),
+  };
+  return {
+    ...content,
+    itemSha256: sha256(canonicalJson(content)),
+  };
+}
+
 function executionPlanBlueprintPortfolioSetSha256(
   entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
 ): string {
@@ -10327,6 +10549,12 @@ function executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
         }),
     ),
   );
+}
+
+function executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
+  hashes: string[],
+): string {
+  return sha256(canonicalJson([...new Set(hashes)].sort()));
 }
 
 function listExecutionPlanBlueprintRecommendationPolicies(): ExecutionPlanBlueprintRecommendationPolicy[] {

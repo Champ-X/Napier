@@ -47,6 +47,7 @@ import {
   setExecutionPlanBlueprintRecordStatus,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
+  verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
   verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements,
   verifyExecutionPlanBlueprintRecordReplayEvent,
   verifyExecutionPlanBlueprintRecordReplayOutcomes,
@@ -76,8 +77,10 @@ import {
   type PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryReceipt,
+  planBlueprintRecommendationPolicyOverrideRetirementProofBundleReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt,
+  type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt,
@@ -171,6 +174,7 @@ type PlanBlueprintLibraryBusyAction =
   | "retirePolicyOverride"
   | "auditPolicyOverrideRetirements"
   | "verifyPolicyOverrideRetirements"
+  | "verifyPolicyOverrideRetirementProofBundle"
   | "select";
 
 type PlanBlueprintLibraryReceipt =
@@ -199,6 +203,7 @@ type PlanBlueprintLibraryReceipt =
   | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt
   | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt
   | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt
+  | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleReceipt
   | PlanBlueprintLibrarySelectionReceipt;
 
 export default function PlanPanel({
@@ -1029,6 +1034,51 @@ export default function PlanPanel({
     }
   };
 
+  const verifyBlueprintRecommendationPolicyOverrideRetirementProofBundleFiles =
+    async (files: File[]): Promise<void> => {
+      if (blueprintLibraryBusyAction) return;
+      if (
+        files.some(
+          (file) =>
+            file.size >
+            MAX_PLAN_BLUEPRINT_POLICY_OVERRIDE_RETIREMENT_HISTORY_FILE_BYTES,
+        )
+      ) {
+        setBlueprintLibraryError(
+          copy.plan.blueprint.library.errors.policyOverrideRetirementsTooLarge,
+        );
+        return;
+      }
+      setBlueprintLibraryBusyAction(
+        "verifyPolicyOverrideRetirementProofBundle",
+      );
+      setBlueprintLibraryReceipt(undefined);
+      setBlueprintLibraryError(undefined);
+      try {
+        const histories = await Promise.all(
+          files.map(async (file) => JSON.parse(await file.text()) as unknown),
+        );
+        const proofBundle =
+          await verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+            { histories },
+          );
+        setBlueprintLibraryReceipt(
+          planBlueprintRecommendationPolicyOverrideRetirementProofBundleReceipt(
+            proofBundle,
+          ),
+        );
+      } catch (error) {
+        setBlueprintLibraryError(
+          error instanceof SyntaxError
+            ? copy.plan.blueprint.library.errors
+                .policyOverrideRetirementsInvalid
+            : formatApiErrorMessage(error),
+        );
+      } finally {
+        setBlueprintLibraryBusyAction(undefined);
+      }
+    };
+
   const createFromBlueprintRecord = async (
     record: ExecutionPlanBlueprintRecord,
   ): Promise<void> => {
@@ -1339,6 +1389,11 @@ export default function PlanPanel({
         }
         onVerifyPolicyOverrideRetirements={(file) =>
           void verifyBlueprintRecommendationPolicyOverrideRetirementsFile(file)
+        }
+        onVerifyPolicyOverrideRetirementProofBundle={(files) =>
+          void verifyBlueprintRecommendationPolicyOverrideRetirementProofBundleFiles(
+            files,
+          )
         }
         onArchive={(record) =>
           void updateBlueprintRecordStatus(record, "archived")
@@ -1710,6 +1765,7 @@ function PlanBlueprintLibraryCard({
   onRetirePolicyOverride,
   onAuditPolicyOverrideRetirements,
   onVerifyPolicyOverrideRetirements,
+  onVerifyPolicyOverrideRetirementProofBundle,
   onArchive,
   onRestore,
   onQualify,
@@ -1744,6 +1800,7 @@ function PlanBlueprintLibraryCard({
   onRetirePolicyOverride: () => void;
   onAuditPolicyOverrideRetirements: () => void;
   onVerifyPolicyOverrideRetirements: (file: File) => void;
+  onVerifyPolicyOverrideRetirementProofBundle: (files: File[]) => void;
   onArchive: (record: ExecutionPlanBlueprintRecord) => void;
   onRestore: (record: ExecutionPlanBlueprintRecord) => void;
   onQualify: (record: ExecutionPlanBlueprintRecord) => void;
@@ -1763,6 +1820,8 @@ function PlanBlueprintLibraryCard({
   const historyInput = useRef<HTMLInputElement>(null);
   const outcomesInput = useRef<HTMLInputElement>(null);
   const policyOverrideRetirementsInput = useRef<HTMLInputElement>(null);
+  const policyOverrideRetirementProofBundleInput =
+    useRef<HTMLInputElement>(null);
   const busy = Boolean(busyAction);
   const activeCount = records.filter(
     (record) => record.status === "active",
@@ -1875,6 +1934,21 @@ function PlanBlueprintLibraryCard({
           className="fixture-verify"
           type="button"
           disabled={busy}
+          onClick={() =>
+            policyOverrideRetirementProofBundleInput.current?.click()
+          }
+        >
+          <Upload size={12} aria-hidden="true" />
+          {busyAction === "verifyPolicyOverrideRetirementProofBundle"
+            ? copy.plan.blueprint.library
+                .verifyingPolicyOverrideRetirementProofBundle
+            : copy.plan.blueprint.library
+                .verifyPolicyOverrideRetirementProofBundle}
+        </button>
+        <button
+          className="fixture-verify"
+          type="button"
+          disabled={busy}
           onClick={() => historyInput.current?.click()}
         >
           <Upload size={12} aria-hidden="true" />
@@ -1926,6 +2000,24 @@ function PlanBlueprintLibraryCard({
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
             if (file) onVerifyPolicyOverrideRetirements(file);
+          }}
+        />
+        <input
+          ref={policyOverrideRetirementProofBundleInput}
+          className="fixture-file-input"
+          type="file"
+          accept="application/json,.json"
+          multiple
+          aria-label={
+            copy.plan.blueprint.library
+              .verifyPolicyOverrideRetirementProofBundle
+          }
+          onChange={(event) => {
+            const files = Array.from(event.currentTarget.files ?? []);
+            event.currentTarget.value = "";
+            if (files.length > 0) {
+              onVerifyPolicyOverrideRetirementProofBundle(files);
+            }
           }}
         />
         <input
@@ -2170,6 +2262,9 @@ function PlanBlueprintLibraryReceiptView({
                               : receipt.action ===
                                   "policyOverrideRetirementsVerified"
                                 ? receipt.verificationStatus === "valid"
+                              : receipt.action ===
+                                  "policyOverrideRetirementProofBundle"
+                                ? receipt.verificationStatus === "aligned"
                               : receipt.action === "created" &&
                                   receipt.replayEventVerificationStatus
                                 ? receipt.replayEventVerificationStatus ===
@@ -2223,6 +2318,10 @@ function PlanBlueprintLibraryReceiptView({
                                   "policyOverrideRetirementsVerified"
                                 ? copy.plan.blueprint.library.receipts
                                     .policyOverrideRetirementsVerified
+                              : receipt.action ===
+                                  "policyOverrideRetirementProofBundle"
+                                ? copy.plan.blueprint.library.receipts
+                                    .policyOverrideRetirementProofBundle
                               : copy.plan.blueprint.library.receipts[
                                   receipt.action
                                 ];
@@ -2241,6 +2340,7 @@ function PlanBlueprintLibraryReceiptView({
           receipt.action === "policyOverrideRetired" ||
           receipt.action === "policyOverrideRetirements" ||
           receipt.action === "policyOverrideRetirementsVerified" ||
+          receipt.action === "policyOverrideRetirementProofBundle" ||
           receipt.action === "outcomeQualified"
         ? receipt.contentSha256
         : receipt.action === "outcomeBaseline"
@@ -2274,6 +2374,9 @@ function PlanBlueprintLibraryReceiptView({
                       : receipt.action ===
                           "policyOverrideRetirementsVerified"
                         ? `${receipt.observedRetirementCount.toLocaleString()} ${copy.plan.blueprint.library.retired} / ${copy.plan.blueprint.library.retirementSet}: ${receipt.observedRetirementSetSha256.slice(0, 12)}`
+                      : receipt.action ===
+                          "policyOverrideRetirementProofBundle"
+                        ? `${receipt.validHistoryCount.toLocaleString()} ${copy.plan.blueprint.library.valid} / ${receipt.invalidHistoryCount.toLocaleString()} ${copy.plan.blueprint.library.invalid} / ${copy.plan.blueprint.library.retirementSet}: ${receipt.distinctRetirementSetCount.toLocaleString()}`
                       : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
   const identity =
     receipt.action === "qualified"
@@ -2313,6 +2416,12 @@ function PlanBlueprintLibraryReceiptView({
                               : receipt.action ===
                                   "policyOverrideRetirementsVerified"
                                 ? receipt.observedRetirementSetSha256.slice(
+                                    0,
+                                    12,
+                                  )
+                              : receipt.action ===
+                                  "policyOverrideRetirementProofBundle"
+                                ? receipt.retirementSetBundleSha256.slice(
                                     0,
                                     12,
                                   )
@@ -2859,6 +2968,70 @@ function PlanBlueprintLibraryReceiptView({
               ? ` / ${copy.plan.blueprint.library.latest}: ${receipt.latestRetiredAt ?? copy.plan.blueprint.library.missing} / ${copy.plan.blueprint.library.observed}: ${receipt.observedLatestRetiredAt ?? copy.plan.blueprint.library.missing}`
               : ""}
           </small>
+        </>
+      ) : null}
+      {receipt.action === "policyOverrideRetirementProofBundle" ? (
+        <>
+          <small className="fixture-diagnostics">
+            {receipt.diagnostics.length > 0
+              ? receipt.diagnostics.join(", ")
+              : copy.plan.blueprint.library.noDiagnostics}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.histories}:{" "}
+            {receipt.historyCount.toLocaleString()}
+            {" / "}
+            {copy.plan.blueprint.library.valid}:{" "}
+            {receipt.validHistoryCount.toLocaleString()}
+            {" / "}
+            {copy.plan.blueprint.library.invalid}:{" "}
+            {receipt.invalidHistoryCount.toLocaleString()}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.retirementSet}:{" "}
+            {receipt.retirementSetBundleSha256.slice(0, 16)}
+            {" / "}
+            {copy.plan.blueprint.library.historySet}:{" "}
+            {receipt.historySetSha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {receipt.portfolioSetBundleSha256.slice(0, 16)}
+            {" / "}
+            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {receipt.currentOverrideSetBundleSha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.divergent}:{" "}
+            {receipt.distinctRetirementSetCount.toLocaleString()}{" "}
+            {copy.plan.blueprint.library.retirementSet}
+            {" / "}
+            {receipt.distinctPortfolioSetCount.toLocaleString()}{" "}
+            {copy.plan.blueprint.library.portfolioSet}
+            {" / "}
+            {receipt.distinctCurrentOverrideSetCount.toLocaleString()}{" "}
+            {copy.plan.blueprint.library.overrideSet}
+          </small>
+          {receipt.highlightedHistoryIndex !== undefined ? (
+            <small className="fixture-diagnostics">
+              {copy.plan.blueprint.library.highlighted}:{" "}
+              {receipt.highlightedHistoryIndex.toLocaleString()}
+              {receipt.highlightedHistoryStatus
+                ? ` / ${receipt.highlightedHistoryStatus}`
+                : ""}
+              {receipt.highlightedHistoryContentSha256
+                ? ` / ${receipt.highlightedHistoryContentSha256.slice(0, 16)}`
+                : ""}
+              {receipt.highlightedRetirementSetSha256
+                ? ` / ${copy.plan.blueprint.library.retirementSet}: ${receipt.highlightedRetirementSetSha256.slice(0, 16)}`
+                : ""}
+            </small>
+          ) : null}
+          {receipt.highlightedHistoryDiagnostics.length > 0 ? (
+            <small className="fixture-diagnostics">
+              {receipt.highlightedHistoryDiagnostics.join(", ")}
+            </small>
+          ) : null}
         </>
       ) : null}
       {receipt.action === "created" &&

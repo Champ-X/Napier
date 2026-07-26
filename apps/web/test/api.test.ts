@@ -22,6 +22,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
@@ -65,6 +66,7 @@ import {
   setExecutionPlanBlueprintRecordStatus,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
+  verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
   verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements,
   verifyExecutionPlanBlueprintRecordReplayEvent,
   verifyExecutionPlanBlueprintRecordReplayOutcomes,
@@ -1020,6 +1022,79 @@ describe("Web JSON API wrappers", () => {
           recommendationPolicyOverrideRetirement.retiredAt,
         contentSha256: "6".repeat(64),
       };
+    const recommendationPolicyOverrideRetirementHistoryProofBundle: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-proof-bundle",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-26T00:00:13.000Z",
+        status: "aligned",
+        diagnostics: [],
+        historyCount: 2,
+        validHistoryCount: 2,
+        invalidHistoryCount: 0,
+        distinctHistoryCount: 1,
+        distinctPortfolioSetCount: 1,
+        distinctCurrentOverrideSetCount: 1,
+        distinctRetirementSetCount: 1,
+        historySetSha256: "7".repeat(64),
+        portfolioSetBundleSha256: "8".repeat(64),
+        currentOverrideSetBundleSha256: "9".repeat(64),
+        retirementSetBundleSha256: "a".repeat(64),
+        histories: [
+          {
+            index: 0,
+            status: "valid",
+            diagnostics: [],
+            declaredContentSha256:
+              recommendationPolicyOverrideRetirementHistory.contentSha256,
+            recomputedContentSha256:
+              recommendationPolicyOverrideRetirementHistory.contentSha256,
+            declaredPortfolioSetSha256:
+              recommendationPolicyOverrideRetirementHistory.portfolioSetSha256,
+            declaredCurrentOverrideSetSha256:
+              recommendationPolicyOverrideRetirementHistory.currentOverrideSetSha256,
+            declaredRetirementSetSha256:
+              recommendationPolicyOverrideRetirementHistory.retirementSetSha256,
+            recomputedRetirementSetSha256:
+              recommendationPolicyOverrideRetirementHistory.retirementSetSha256,
+            retirementCount:
+              recommendationPolicyOverrideRetirementHistory.retirementCount,
+            recomputedRetirementCount:
+              recommendationPolicyOverrideRetirementHistory.retirementCount,
+            latestRetiredAt: recommendationPolicyOverrideRetirement.retiredAt,
+            recomputedLatestRetiredAt:
+              recommendationPolicyOverrideRetirement.retiredAt,
+            itemSha256: "b".repeat(64),
+          },
+          {
+            index: 1,
+            status: "valid",
+            diagnostics: [],
+            declaredContentSha256:
+              recommendationPolicyOverrideRetirementHistory.contentSha256,
+            recomputedContentSha256:
+              recommendationPolicyOverrideRetirementHistory.contentSha256,
+            declaredPortfolioSetSha256:
+              recommendationPolicyOverrideRetirementHistory.portfolioSetSha256,
+            declaredCurrentOverrideSetSha256:
+              recommendationPolicyOverrideRetirementHistory.currentOverrideSetSha256,
+            declaredRetirementSetSha256:
+              recommendationPolicyOverrideRetirementHistory.retirementSetSha256,
+            recomputedRetirementSetSha256:
+              recommendationPolicyOverrideRetirementHistory.retirementSetSha256,
+            retirementCount:
+              recommendationPolicyOverrideRetirementHistory.retirementCount,
+            recomputedRetirementCount:
+              recommendationPolicyOverrideRetirementHistory.retirementCount,
+            latestRetiredAt: recommendationPolicyOverrideRetirement.retiredAt,
+            recomputedLatestRetiredAt:
+              recommendationPolicyOverrideRetirement.retiredAt,
+            itemSha256: "c".repeat(64),
+          },
+        ],
+        contentSha256: "d".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -1140,6 +1215,17 @@ describe("Web JSON API wrappers", () => {
         method: "POST",
         body: { history: recommendationPolicyOverrideRetirementHistory },
         response: recommendationPolicyOverrideRetirementHistoryVerification,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify",
+        method: "POST",
+        body: {
+          histories: [
+            recommendationPolicyOverrideRetirementHistory,
+            recommendationPolicyOverrideRetirementHistory,
+          ],
+        },
+        response: recommendationPolicyOverrideRetirementHistoryProofBundle,
       },
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
@@ -1313,6 +1399,18 @@ describe("Web JSON API wrappers", () => {
       recommendationPolicyOverrideRetirementHistoryVerification,
     );
     await expect(
+      verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle(
+        {
+          histories: [
+            recommendationPolicyOverrideRetirementHistory,
+            recommendationPolicyOverrideRetirementHistory,
+          ],
+        },
+      ),
+    ).resolves.toEqual(
+      recommendationPolicyOverrideRetirementHistoryProofBundle,
+    );
+    await expect(
       setExecutionPlanBlueprintRecommendationPolicyOverride({
         familySha256: "3".repeat(64),
         policyTemplate: "balanced",
@@ -1371,7 +1469,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(27);
+    expect(fetchMock).toHaveBeenCalledTimes(28);
   });
 });
 
