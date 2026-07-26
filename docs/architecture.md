@@ -2097,11 +2097,13 @@ select blueprint record for target Thread
   -> recompute source qualification, outcome-baseline qualification, and
      target-Thread preview readiness for every saved template without mutating
      Ledger
-  -> rank only fully qualified candidates by completion basis points, replay
-     evidence volume, baseline recency, and record freshness
+  -> rank only fully qualified candidates by completion basis points, portfolio
+     family completion, reviewed-baseline coverage, replay evidence volume,
+     baseline recency, and record freshness
   -> return napier.execution-plan-blueprint-selection with record IDs,
-     preview hashes, baseline/outcome hashes, low-cardinality diagnostics,
-     selection-set SHA-256, and optional objective SHA-256 rather than prose
+     preview hashes, family hashes, portfolio-set SHA-256, baseline/outcome
+     hashes, low-cardinality diagnostics, selection-set SHA-256, and optional
+     objective SHA-256 rather than prose
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2254,8 +2256,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- portfolio-aware blueprint recommendation policies that combine calibration
-  evidence with target-Thread preview readiness.
+- portfolio-aware blueprint recommendation policy templates with tunable
+  source/outcome/family gate weights.
 
 ### Layer 3: Extension fabric
 

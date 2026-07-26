@@ -5085,6 +5085,9 @@ describe("Napier HTTP goal flow", () => {
         selectedBaselineId: outcomeBaselineResult.baseline.id,
         selectedBaselineSha256: outcomeBaselineResult.baseline.contentSha256,
         selectedScoreBps: 0,
+        selectedFamilySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        selectedFamilyCompletionRateBps: 0,
+        portfolioSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         selectionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
@@ -5095,6 +5098,11 @@ describe("Napier HTTP goal flow", () => {
         selectionStatus: "selected",
         sourceQualificationStatus: "qualified",
         outcomeQualificationStatus: "qualified",
+        familySha256: selection.selectedFamilySha256,
+        familyRecordCount: 1,
+        familyOutcomeQualifiedCount: 1,
+        familyReviewedBaselineCount: 0,
+        familyCompletionRateBps: 0,
         previewStatus: "ready",
         baselineId: outcomeBaselineResult.baseline.id,
         scoreBps: 0,
@@ -9166,6 +9174,9 @@ function expectExecutionPlanBlueprintRecordSelectionHeaders(
   expect(
     response.headers.get("x-napier-plan-blueprint-selection-set-sha256"),
   ).toBe(selection.selectionSetSha256);
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
+  ).toBe(selection.portfolioSetSha256);
   expect(response.headers.get("x-napier-objective-sha256")).toBe(
     selection.objectiveSha256 ?? null,
   );
@@ -9184,6 +9195,14 @@ function expectExecutionPlanBlueprintRecordSelectionHeaders(
   expect(response.headers.get("x-napier-selected-blueprint-score-bps")).toBe(
     optionalNumberHeader(selection.selectedScoreBps),
   );
+  expect(
+    response.headers.get("x-napier-selected-blueprint-family-sha256"),
+  ).toBe(selection.selectedFamilySha256 ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-selected-blueprint-family-completion-rate-bps",
+    ),
+  ).toBe(optionalNumberHeader(selection.selectedFamilyCompletionRateBps));
 }
 
 function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(

@@ -879,8 +879,13 @@ export interface ExecutionPlanBlueprintRecordSelectionCandidate {
   selectionStatus: ExecutionPlanBlueprintRecordSelectionCandidateStatus;
   diagnostics: string[];
   blueprintSha256: string;
+  familySha256: string;
   sourceQualificationStatus: ExecutionPlanBlueprintRecordQualificationStatus;
   outcomeQualificationStatus: ExecutionPlanBlueprintRecordOutcomeQualificationStatus;
+  familyRecordCount: number;
+  familyOutcomeQualifiedCount: number;
+  familyReviewedBaselineCount: number;
+  familyCompletionRateBps: number;
   previewStatus?: ExecutionPlanBlueprintRecordPreviewStatus;
   previewSha256?: string;
   baselineId?: string;
@@ -915,6 +920,9 @@ export interface ExecutionPlanBlueprintRecordSelection {
   selectedBaselineId?: string;
   selectedBaselineSha256?: string;
   selectedScoreBps?: number;
+  selectedFamilySha256?: string;
+  selectedFamilyCompletionRateBps?: number;
+  portfolioSetSha256: string;
   selectionSetSha256: string;
   candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];
   contentSha256: string;

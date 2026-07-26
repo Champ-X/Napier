@@ -121,6 +121,14 @@ All notable changes to Napier are recorded here.
   portfolio-set SHA-256. Server headers mirror the calibration counters, and
   the Template shelf adds a Calibrate action backed by pure ViewModel receipt
   tests.
+- Portfolio-aware blueprint selection. Adaptive template selection now binds
+  the current portfolio-set SHA-256 into
+  `napier.execution-plan-blueprint-selection`, projects each candidate's
+  workflow-family hash and family aggregate evidence, and uses family
+  completion, reviewed-baseline coverage, and outcome-qualified family count as
+  deterministic tie-breakers before replay volume and record freshness. Server
+  headers and Template shelf receipts expose the selected family hash without
+  leaking objective, step, artifact, blocker, or evidence prose.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

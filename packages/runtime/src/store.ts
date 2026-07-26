@@ -2407,7 +2407,15 @@ export class LocalStore {
     const objective = normalizeExecutionPlanBlueprintSelectionObjective(
       request.objective,
     );
-    const candidates: ExecutionPlanBlueprintRecordSelectionCandidate[] = [];
+    const candidateInputs: Array<{
+      record: ExecutionPlanBlueprintRecord;
+      sourceQualification: ExecutionPlanBlueprintRecordQualification;
+      outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
+      latestBaseline?: ExecutionPlanBlueprintRecordOutcomeBaseline;
+      preview?: ExecutionPlanBlueprintRecordPreview;
+      entry: ExecutionPlanBlueprintPortfolioCalibrationEntry;
+    }> = [];
+    const entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[] = [];
     const records = [...this.state.executionPlanBlueprints].sort(
       compareExecutionPlanBlueprintRecords,
     );
@@ -2428,16 +2436,44 @@ export class LocalStore {
               ...(objective ? { objective } : {}),
             })
           : undefined;
-      candidates.push(
-        createExecutionPlanBlueprintSelectionCandidate({
+      const entry = createExecutionPlanBlueprintPortfolioCalibrationEntry({
+        record,
+        sourceQualification,
+        outcomeQualification,
+        ...(latestBaseline ? { latestBaseline } : {}),
+      });
+      entries.push(entry);
+      candidateInputs.push(
+        {
           record,
           sourceQualification,
           outcomeQualification,
+          entry,
           ...(latestBaseline ? { latestBaseline } : {}),
           ...(preview ? { preview } : {}),
-        }),
+        },
       );
     }
+    const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
+      entries,
+    );
+    const familyBySha256 = new Map(
+      families.map((family) => [family.familySha256, family]),
+    );
+    const candidates = candidateInputs.map((input) => {
+      const family = familyBySha256.get(input.entry.familySha256);
+      if (!family) {
+        throw new Error("Execution plan blueprint portfolio family missing");
+      }
+      return createExecutionPlanBlueprintSelectionCandidate({
+        record: input.record,
+        sourceQualification: input.sourceQualification,
+        outcomeQualification: input.outcomeQualification,
+        family,
+        ...(input.latestBaseline ? { latestBaseline: input.latestBaseline } : {}),
+        ...(input.preview ? { preview: input.preview } : {}),
+      });
+    });
     const selected = selectExecutionPlanBlueprintCandidate(candidates);
     const selectedCandidates = candidates.map((candidate) =>
       selected && candidate.recordId === selected.recordId
@@ -2447,6 +2483,7 @@ export class LocalStore {
     return createExecutionPlanBlueprintRecordSelection({
       threadId,
       candidates: selectedCandidates,
+      portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
       ...(objective ? { objective } : {}),
     });
   }
@@ -8709,6 +8746,7 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
   record: ExecutionPlanBlueprintRecord;
   sourceQualification: ExecutionPlanBlueprintRecordQualification;
   outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
+  family: ExecutionPlanBlueprintPortfolioCalibrationFamily;
   latestBaseline?: ExecutionPlanBlueprintRecordOutcomeBaseline;
   preview?: ExecutionPlanBlueprintRecordPreview;
 }): ExecutionPlanBlueprintRecordSelectionCandidate {
@@ -8743,8 +8781,13 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
     selectionStatus: ready ? "qualified" : "rejected",
     diagnostics,
     blueprintSha256: input.record.blueprintSha256,
+    familySha256: input.family.familySha256,
     sourceQualificationStatus: input.sourceQualification.status,
     outcomeQualificationStatus: input.outcomeQualification.status,
+    familyRecordCount: input.family.recordCount,
+    familyOutcomeQualifiedCount: input.family.outcomeQualifiedCount,
+    familyReviewedBaselineCount: input.family.reviewedBaselineCount,
+    familyCompletionRateBps: input.family.completionRateBps,
     ...(input.preview ? { previewStatus: input.preview.status } : {}),
     ...(input.preview?.previewSha256
       ? { previewSha256: input.preview.previewSha256 }
@@ -8889,29 +8932,7 @@ function createExecutionPlanBlueprintPortfolioCalibration(
     policyFailedCount: entries.filter(
       (entry) => entry.outcomeQualificationStatus === "policy_failed",
     ).length,
-    portfolioSetSha256: sha256(
-      canonicalJson(
-        entries.map((entry) => ({
-          recordId: entry.recordId,
-          recordStatus: entry.recordStatus,
-          familySha256: entry.familySha256,
-          blueprintSha256: entry.blueprintSha256,
-          sourceQualificationStatus: entry.sourceQualificationStatus,
-          outcomeQualificationStatus: entry.outcomeQualificationStatus,
-          ...(entry.baselineSha256
-            ? { baselineSha256: entry.baselineSha256 }
-            : {}),
-          reviewedBaseline: entry.reviewedBaseline,
-          currentOutcomesSha256: entry.currentOutcomesSha256,
-          currentOutcomeSetSha256: entry.currentOutcomeSetSha256,
-          replayCount: entry.replayCount,
-          completedCount: entry.completedCount,
-          blockedCount: entry.blockedCount,
-          invalidCount: entry.invalidCount,
-          completionRateBps: entry.completionRateBps,
-        })),
-      ),
-    ),
+    portfolioSetSha256: executionPlanBlueprintPortfolioSetSha256(entries),
     families,
   };
   return {
@@ -8919,6 +8940,34 @@ function createExecutionPlanBlueprintPortfolioCalibration(
     generatedAt: nowIso(),
     contentSha256: sha256(canonicalJson(content)),
   };
+}
+
+function executionPlanBlueprintPortfolioSetSha256(
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
+): string {
+  return sha256(
+    canonicalJson(
+      entries.map((entry) => ({
+        recordId: entry.recordId,
+        recordStatus: entry.recordStatus,
+        familySha256: entry.familySha256,
+        blueprintSha256: entry.blueprintSha256,
+        sourceQualificationStatus: entry.sourceQualificationStatus,
+        outcomeQualificationStatus: entry.outcomeQualificationStatus,
+        ...(entry.baselineSha256
+          ? { baselineSha256: entry.baselineSha256 }
+          : {}),
+        reviewedBaseline: entry.reviewedBaseline,
+        currentOutcomesSha256: entry.currentOutcomesSha256,
+        currentOutcomeSetSha256: entry.currentOutcomeSetSha256,
+        replayCount: entry.replayCount,
+        completedCount: entry.completedCount,
+        blockedCount: entry.blockedCount,
+        invalidCount: entry.invalidCount,
+        completionRateBps: entry.completionRateBps,
+      })),
+    ),
+  );
 }
 
 function createExecutionPlanBlueprintPortfolioCalibrationFamilies(
@@ -9052,6 +9101,15 @@ function compareExecutionPlanBlueprintSelectionCandidates(
 ): number {
   const scoreOrder = right.scoreBps - left.scoreBps;
   if (scoreOrder !== 0) return scoreOrder;
+  const familyCompletionOrder =
+    right.familyCompletionRateBps - left.familyCompletionRateBps;
+  if (familyCompletionOrder !== 0) return familyCompletionOrder;
+  const familyReviewedOrder =
+    right.familyReviewedBaselineCount - left.familyReviewedBaselineCount;
+  if (familyReviewedOrder !== 0) return familyReviewedOrder;
+  const familyQualifiedOrder =
+    right.familyOutcomeQualifiedCount - left.familyOutcomeQualifiedCount;
+  if (familyQualifiedOrder !== 0) return familyQualifiedOrder;
   const replayOrder = right.replayCount - left.replayCount;
   if (replayOrder !== 0) return replayOrder;
   const completedOrder = right.completedCount - left.completedCount;
@@ -9069,6 +9127,7 @@ function createExecutionPlanBlueprintRecordSelection(input: {
   threadId: string;
   objective?: string;
   candidates: ExecutionPlanBlueprintRecordSelectionCandidate[];
+  portfolioSetSha256: string;
 }): ExecutionPlanBlueprintRecordSelection {
   const selected = input.candidates.find(
     (candidate) => candidate.selectionStatus === "selected",
@@ -9100,6 +9159,11 @@ function createExecutionPlanBlueprintRecordSelection(input: {
       ? { selectedBaselineSha256: selected.baselineSha256 }
       : {}),
     ...(selected ? { selectedScoreBps: selected.scoreBps } : {}),
+    ...(selected ? { selectedFamilySha256: selected.familySha256 } : {}),
+    ...(selected
+      ? { selectedFamilyCompletionRateBps: selected.familyCompletionRateBps }
+      : {}),
+    portfolioSetSha256: input.portfolioSetSha256,
     selectionSetSha256: sha256(
       canonicalJson(
         input.candidates.map((candidate) => ({
@@ -9107,6 +9171,11 @@ function createExecutionPlanBlueprintRecordSelection(input: {
           selectionStatus: candidate.selectionStatus,
           diagnostics: candidate.diagnostics,
           scoreBps: candidate.scoreBps,
+          familySha256: candidate.familySha256,
+          familyRecordCount: candidate.familyRecordCount,
+          familyOutcomeQualifiedCount: candidate.familyOutcomeQualifiedCount,
+          familyReviewedBaselineCount: candidate.familyReviewedBaselineCount,
+          familyCompletionRateBps: candidate.familyCompletionRateBps,
           sourceQualificationStatus: candidate.sourceQualificationStatus,
           outcomeQualificationStatus: candidate.outcomeQualificationStatus,
           ...(candidate.previewStatus

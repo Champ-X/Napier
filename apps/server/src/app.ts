@@ -11947,6 +11947,10 @@ function setExecutionPlanBlueprintRecordSelectionHeaders(
     "X-Napier-Plan-Blueprint-Selection-Set-SHA256",
     selection.selectionSetSha256,
   );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    selection.portfolioSetSha256,
+  );
   setOptionalHeader(
     context,
     "X-Napier-Objective-SHA256",
@@ -11976,6 +11980,16 @@ function setExecutionPlanBlueprintRecordSelectionHeaders(
     context,
     "X-Napier-Selected-Blueprint-Score-BPS",
     selection.selectedScoreBps,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Family-SHA256",
+    selection.selectedFamilySha256,
+  );
+  setOptionalNumberHeader(
+    context,
+    "X-Napier-Selected-Blueprint-Family-Completion-Rate-BPS",
+    selection.selectedFamilyCompletionRateBps,
   );
 }
 

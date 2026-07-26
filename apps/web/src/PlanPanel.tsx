@@ -2155,6 +2155,9 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {copy.plan.blueprint.library.selectionSet}:{" "}
             {receipt.selectionSetSha256.slice(0, 16)}
+            {" / "}
+            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {receipt.portfolioSetSha256.slice(0, 16)}
             {receipt.selectedPreviewSha256
               ? ` / ${copy.plan.blueprint.library.latestPreview}: ${receipt.selectedPreviewSha256.slice(0, 16)}`
               : ""}
@@ -2168,6 +2171,9 @@ function PlanBlueprintLibraryReceiptView({
             {receipt.selectedBaselineSha256
               ? ` / ${copy.plan.blueprint.library.outcomeBaseline}: ${receipt.selectedBaselineSha256.slice(0, 16)}`
               : ""}
+            {receipt.selectedFamilySha256
+              ? ` / ${copy.plan.blueprint.library.topFamily}: ${receipt.selectedFamilySha256.slice(0, 16)}`
+              : ""}
           </small>
           {receipt.selectedScoreBps !== undefined ? (
             <small className="fixture-diagnostics">
@@ -2175,6 +2181,9 @@ function PlanBlueprintLibraryReceiptView({
               {(receipt.selectedScoreBps / 100).toFixed(2)}%{" / "}
               {copy.plan.blueprint.library.replays}:{" "}
               {(receipt.selectedReplayCount ?? 0).toLocaleString()}
+              {receipt.selectedFamilyCompletionRateBps !== undefined
+                ? ` / ${copy.plan.blueprint.library.families}: ${(receipt.selectedFamilyCompletionRateBps / 100).toFixed(2)}%`
+                : ""}
             </small>
           ) : null}
         </>

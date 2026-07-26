@@ -724,6 +724,9 @@ describe("Web JSON API wrappers", () => {
       selectedBaselineId: outcomeBaseline.id,
       selectedBaselineSha256: outcomeBaseline.contentSha256,
       selectedScoreBps: 0,
+      selectedFamilySha256: "3".repeat(64),
+      selectedFamilyCompletionRateBps: 0,
+      portfolioSetSha256: "2".repeat(64),
       selectionSetSha256: "f".repeat(64),
       candidates: [
         {
@@ -733,8 +736,13 @@ describe("Web JSON API wrappers", () => {
           selectionStatus: "selected",
           diagnostics: [],
           blueprintSha256: record.blueprintSha256,
+          familySha256: "3".repeat(64),
           sourceQualificationStatus: "qualified",
           outcomeQualificationStatus: "qualified",
+          familyRecordCount: 1,
+          familyOutcomeQualifiedCount: 1,
+          familyReviewedBaselineCount: 1,
+          familyCompletionRateBps: 0,
           previewStatus: "ready",
           previewSha256: "e".repeat(64),
           baselineId: outcomeBaseline.id,

@@ -160,6 +160,7 @@ export interface PlanBlueprintLibrarySelectionReceipt {
   action: "selection";
   threadId: string;
   contentSha256: string;
+  portfolioSetSha256: string;
   selectionSetSha256: string;
   candidateCount: number;
   qualifiedCandidateCount: number;
@@ -168,6 +169,8 @@ export interface PlanBlueprintLibrarySelectionReceipt {
   selectedPreviewSha256?: string;
   selectedBaselineSha256?: string;
   selectedScoreBps?: number;
+  selectedFamilySha256?: string;
+  selectedFamilyCompletionRateBps?: number;
   selectedCompletionRateBps?: number;
   selectedReplayCount?: number;
   diagnostics: string[];
@@ -466,6 +469,7 @@ export function planBlueprintSelectionReceipt(
     action: "selection",
     threadId: selection.threadId,
     contentSha256: selection.contentSha256,
+    portfolioSetSha256: selection.portfolioSetSha256,
     selectionSetSha256: selection.selectionSetSha256,
     candidateCount: selection.candidateCount,
     qualifiedCandidateCount: selection.qualifiedCandidateCount,
@@ -481,6 +485,15 @@ export function planBlueprintSelectionReceipt(
       : {}),
     ...(selection.selectedScoreBps !== undefined
       ? { selectedScoreBps: selection.selectedScoreBps }
+      : {}),
+    ...(selection.selectedFamilySha256
+      ? { selectedFamilySha256: selection.selectedFamilySha256 }
+      : {}),
+    ...(selection.selectedFamilyCompletionRateBps !== undefined
+      ? {
+          selectedFamilyCompletionRateBps:
+            selection.selectedFamilyCompletionRateBps,
+        }
       : {}),
     ...(selected
       ? {

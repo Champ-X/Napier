@@ -890,11 +890,13 @@ Workbench can also ask the server to select a policy-qualified template for the
 current Thread through `POST /api/threads/:threadId/plan-blueprints/selection`.
 The selection receipt is no-store and hash-bound: candidates must pass source
 qualification, outcome-baseline qualification, and target-Thread preview gates;
-the deterministic rank favors completion basis points, replay evidence volume,
-baseline recency, and record freshness. It returns only record IDs, preview
-hashes, baseline/outcome hashes, counts, diagnostics, and a selection-set
-SHA-256, so objective overrides are represented by hash rather than copied
-back into the artifact. `GET /api/plan-blueprints/portfolio/calibration`
+the deterministic rank favors completion basis points, portfolio family
+completion, reviewed-baseline coverage, replay evidence volume, baseline
+recency, and record freshness. It returns only record IDs, preview hashes,
+family hashes, portfolio-set hash, baseline/outcome hashes, counts,
+diagnostics, and a selection-set SHA-256, so objective overrides are
+represented by hash rather than copied back into the artifact. `GET
+/api/plan-blueprints/portfolio/calibration`
 returns a no-store `napier.execution-plan-blueprint-portfolio-calibration`
 receipt for the whole library. It groups templates by hashed workflow shape and
 returns only family hashes, record counts, qualification totals, reviewed
