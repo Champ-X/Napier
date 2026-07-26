@@ -861,7 +861,16 @@ copying objective, artifact path, blocker, or evidence prose. `POST
 /api/plan-blueprints/:recordId/replays/outcomes/verify` recomputes the artifact
 hash and compares it with both the current replay history and current Plan
 projections, so a previously valid outcome receipt becomes stale and fails
-closed when delivery state changes. The Plan Workbench exposes this as a
+closed when delivery state changes. Outcome receipts can be promoted into a
+policy-bound baseline through `POST
+/api/plan-blueprints/:recordId/replays/outcomes/baselines`. Promotion accepts
+only the current no-store outcomes artifact, stores only hashes, counts,
+thresholds, and the supersession link, and defaults to a strict 100% completed,
+0 blocked, 0 invalid policy. `GET
+/api/plan-blueprints/:recordId/replays/outcomes/qualification` recomputes the
+current outcomes and reports `qualified`, `missing_baseline`, or
+`policy_failed` against the latest baseline without mutating state. The Plan
+Workbench exposes this as a
 **Template shelf**: save the current verified blueprint, refresh the local
 library, browse active and archived templates with hash evidence, archive or
 restore records, qualify whether the saved source archive/event stream still
@@ -872,7 +881,8 @@ history as a compact hash-only receipt for later audit, download that JSON
 artifact, and upload it back through the same hash-verifying client for
 no-store validation. It provides the same export/upload loop for replay
 outcomes, keeping creation provenance and mutable delivery status visibly
-separate.
+separate, and can promote or qualify the current outcome baseline for each
+template.
 
 ## Portable Replay Fixtures
 

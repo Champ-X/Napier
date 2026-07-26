@@ -48,6 +48,8 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintRecordOutcomeBaseline,
+  ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintVerification,
   HealthResponse,
   ImportThreadReplayBundleRequest,
@@ -58,6 +60,8 @@ import type {
   PreviewExtensionPackageDeploymentRequest,
   PublishExtensionPackageRolloutChannelRequest,
   PreviewExtensionPackageUpdateRequest,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   PromptRequest,
   ReplanExecutionPlanRequest,
   ResumeRunRequest,
@@ -495,6 +499,35 @@ export function verifyExecutionPlanBlueprintRecordReplayOutcomes(
       method: "POST",
       body: JSON.stringify(body),
     },
+  );
+}
+
+export function getExecutionPlanBlueprintRecordOutcomeBaselines(
+  recordId: string,
+): Promise<ExecutionPlanBlueprintRecordOutcomeBaseline[]> {
+  return requestJson(
+    `/api/plan-blueprints/${encodeURIComponent(recordId)}/replays/outcomes/baselines`,
+  );
+}
+
+export function promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+  recordId: string,
+  body: PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
+): Promise<PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult> {
+  return requestJson(
+    `/api/plan-blueprints/${encodeURIComponent(recordId)}/replays/outcomes/baselines`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function getExecutionPlanBlueprintRecordOutcomeQualification(
+  recordId: string,
+): Promise<ExecutionPlanBlueprintRecordOutcomeQualification> {
+  return requestJson(
+    `/api/plan-blueprints/${encodeURIComponent(recordId)}/replays/outcomes/qualification`,
   );
 }
 

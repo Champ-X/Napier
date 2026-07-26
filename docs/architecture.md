@@ -2066,6 +2066,18 @@ verify blueprint record replay outcomes
      the current Ledger plus Plan projections
   -> return declared/recomputed/observed hashes and low-cardinality diagnostics;
      Workbench exports and uploads outcome JSON separately from replay history
+promote blueprint record outcome baseline
+  -> verify the uploaded outcomes receipt against the current Store projection
+     before writing any baseline state
+  -> require the current outcomes to satisfy the selected policy; defaults are
+     one replay minimum, 100% completion, zero blocked, and zero invalid
+  -> append a hash-only baseline containing outcome receipt hash,
+     replay-history hash, outcome-set hash, counts, policy, and supersession ID
+qualify blueprint record outcomes
+  -> recompute current outcomes and compare counts/rates against the latest
+     baseline policy without mutating Ledger
+  -> return qualified, missing_baseline, or policy_failed plus current/baseline
+     hashes and low-cardinality policy diagnostics for Template shelf receipts
 ```
 
 Planning tools add a model-aware policy template beside the durable plan
@@ -2210,7 +2222,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- cross-replay outcome baselines and policy-bound adaptive template selection;
+- policy-bound adaptive template selection from qualified outcome baselines;
 - model-scored evaluation of completed workflow outcomes against reusable
   delivery criteria.
 

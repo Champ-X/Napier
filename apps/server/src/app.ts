@@ -46,6 +46,8 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintRecordOutcomeBaseline,
+  ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
   ExtensionCapability,
@@ -67,6 +69,8 @@ import type {
   HealthResponse,
   PromoteEvaluationQualificationBaselineRequest,
   PromoteEvaluationQualificationBaselineResult,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ReceiptTrustAnchor,
   RevokeExtensionPublisherTrustAnchorRequest,
   RevokeReceiptTrustAnchorRequest,
@@ -2531,6 +2535,90 @@ export function createApp(services: NapierServices): Hono {
         verification,
       );
       return context.json(verification);
+    },
+  );
+
+  app.get(
+    "/api/plan-blueprints/:recordId/replays/outcomes/baselines",
+    (context) => {
+      const baselines =
+        services.store.listExecutionPlanBlueprintRecordOutcomeBaselines(
+          context.req.param("recordId"),
+        );
+      setExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(
+        context,
+        baselines,
+      );
+      return context.json(baselines);
+    },
+  );
+
+  app.post(
+    "/api/plan-blueprints/:recordId/replays/outcomes/baselines",
+    async (context) => {
+      const recordId = context.req.param("recordId");
+      services.store.getExecutionPlanBlueprintRecord(recordId);
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
+          "Execution plan blueprint outcome baseline request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Execution plan blueprint outcome baseline request is invalid",
+          400,
+        );
+      }
+      const request =
+        parsePromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest(input);
+      if (!request) {
+        return jsonError(
+          context,
+          "Execution plan blueprint outcome baseline request is invalid",
+          400,
+        );
+      }
+      try {
+        const result =
+          await services.store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+            recordId,
+            request,
+          );
+        setExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(
+          context,
+          result,
+        );
+        return context.json(result, result.created ? 201 : 200);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message.startsWith("Execution plan blueprint outcome baseline")
+        ) {
+          return jsonError(context, error.message, 409);
+        }
+        throw error;
+      }
+    },
+  );
+
+  app.get(
+    "/api/plan-blueprints/:recordId/replays/outcomes/qualification",
+    async (context) => {
+      const qualification =
+        await services.store.qualifyExecutionPlanBlueprintRecordOutcomes(
+          context.req.param("recordId"),
+        );
+      setExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
+        context,
+        qualification,
+      );
+      return context.json(qualification);
     },
   );
 
@@ -7797,6 +7885,94 @@ function parseVerifyExecutionPlanBlueprintRecordReplayOutcomesRequest(
   };
 }
 
+function parsePromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest(
+  input: unknown,
+): PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest | undefined {
+  const record = requestRecord(input, ["outcomes", "policy"]);
+  if (!record || record["outcomes"] === undefined) return undefined;
+  const policy = parseExecutionPlanBlueprintOutcomeBaselinePolicy(
+    record["policy"],
+  );
+  if (record["policy"] !== undefined && !policy) return undefined;
+  return {
+    outcomes: record["outcomes"],
+    ...(policy ? { policy } : {}),
+  };
+}
+
+function parseExecutionPlanBlueprintOutcomeBaselinePolicy(
+  input: unknown,
+):
+  | PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest["policy"]
+  | undefined {
+  if (input === undefined) return {};
+  const record = requestRecord(input, [
+    "minReplayCount",
+    "minCompletionRateBps",
+    "maxBlockedCount",
+    "maxInvalidCount",
+  ]);
+  if (!record) return undefined;
+  const policy: NonNullable<
+    PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest["policy"]
+  > = {};
+  const minReplayCount = optionalBoundedInteger(
+    record["minReplayCount"],
+    1,
+    10_000,
+  );
+  const minCompletionRateBps = optionalBoundedInteger(
+    record["minCompletionRateBps"],
+    0,
+    10_000,
+  );
+  const maxBlockedCount = optionalBoundedInteger(
+    record["maxBlockedCount"],
+    0,
+    10_000,
+  );
+  const maxInvalidCount = optionalBoundedInteger(
+    record["maxInvalidCount"],
+    0,
+    10_000,
+  );
+  if (
+    minReplayCount === false ||
+    minCompletionRateBps === false ||
+    maxBlockedCount === false ||
+    maxInvalidCount === false
+  ) {
+    return undefined;
+  }
+  if (typeof minReplayCount === "number") {
+    policy.minReplayCount = minReplayCount;
+  }
+  if (typeof minCompletionRateBps === "number") {
+    policy.minCompletionRateBps = minCompletionRateBps;
+  }
+  if (typeof maxBlockedCount === "number") {
+    policy.maxBlockedCount = maxBlockedCount;
+  }
+  if (typeof maxInvalidCount === "number") {
+    policy.maxInvalidCount = maxInvalidCount;
+  }
+  return policy;
+}
+
+function optionalBoundedInteger(
+  value: unknown,
+  min: number,
+  max: number,
+): number | undefined | false {
+  if (value === undefined) return undefined;
+  return typeof value === "number" &&
+    Number.isSafeInteger(value) &&
+    value >= min &&
+    value <= max
+    ? value
+    : false;
+}
+
 function parseVerifyExecutionPlanBlueprintRecordReplayEventRequest(
   input: unknown,
 ): VerifyExecutionPlanBlueprintRecordReplayEventRequest | undefined {
@@ -11199,6 +11375,189 @@ function setExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(
     "X-Napier-Observed-Invalid-Count",
     verification.observedInvalidCount,
   );
+}
+
+function setExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(
+  context: Context,
+  baselines: readonly ExecutionPlanBlueprintRecordOutcomeBaseline[],
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, baselines);
+  context.header(
+    "X-Napier-Blueprint-Outcome-Baseline-Count",
+    String(baselines.length),
+  );
+  const latest = baselines.at(-1);
+  if (latest) {
+    setExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
+      context,
+      latest,
+    );
+  }
+}
+
+function setExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(
+  context: Context,
+  result: PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, result);
+  context.header(
+    "X-Napier-Blueprint-Outcome-Baseline-Created",
+    String(result.created),
+  );
+  setExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
+    context,
+    result.baseline,
+  );
+}
+
+function setExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
+  context: Context,
+  baseline: ExecutionPlanBlueprintRecordOutcomeBaseline,
+): void {
+  context.header("X-Napier-Plan-Blueprint-Record-Id", baseline.recordId);
+  context.header("X-Napier-Blueprint-Outcome-Baseline-Id", baseline.id);
+  context.header(
+    "X-Napier-Blueprint-Outcome-Baseline-SHA256",
+    baseline.contentSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Outcomes-SHA256",
+    baseline.replayOutcomesSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-History-SHA256",
+    baseline.replayHistorySha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Outcome-Set-SHA256",
+    baseline.outcomeSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Count",
+    String(baseline.replayCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Completed-Count",
+    String(baseline.completedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Blocked-Count",
+    String(baseline.blockedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Invalid-Count",
+    String(baseline.invalidCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Completion-Rate-BPS",
+    String(baseline.completionRateBps),
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Policy-Min-Replay-Count",
+    String(baseline.policy.minReplayCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Policy-Min-Completion-Rate-BPS",
+    String(baseline.policy.minCompletionRateBps),
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Policy-Max-Blocked-Count",
+    String(baseline.policy.maxBlockedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Policy-Max-Invalid-Count",
+    String(baseline.policy.maxInvalidCount),
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Supersedes-Baseline-Id",
+    baseline.supersedesBaselineId,
+  );
+}
+
+function setExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
+  context: Context,
+  qualification: ExecutionPlanBlueprintRecordOutcomeQualification,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, qualification.contentSha256);
+  context.header("X-Napier-Qualification-Status", qualification.status);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(qualification.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(qualification.diagnostics),
+  );
+  context.header("X-Napier-Plan-Blueprint-Record-Id", qualification.recordId);
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Baseline-Id",
+    qualification.baselineId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Baseline-SHA256",
+    qualification.baselineSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Baseline-Outcomes-SHA256",
+    qualification.baselineOutcomesSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Current-Outcomes-SHA256",
+    qualification.currentOutcomesSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-History-SHA256",
+    qualification.currentReplayHistorySha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Outcome-Set-SHA256",
+    qualification.currentOutcomeSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Count",
+    String(qualification.replayCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Completed-Count",
+    String(qualification.completedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Blocked-Count",
+    String(qualification.blockedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Invalid-Count",
+    String(qualification.invalidCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Completion-Rate-BPS",
+    String(qualification.completionRateBps),
+  );
+  if (qualification.policy) {
+    context.header(
+      "X-Napier-Blueprint-Outcome-Policy-Min-Replay-Count",
+      String(qualification.policy.minReplayCount),
+    );
+    context.header(
+      "X-Napier-Blueprint-Outcome-Policy-Min-Completion-Rate-BPS",
+      String(qualification.policy.minCompletionRateBps),
+    );
+    context.header(
+      "X-Napier-Blueprint-Outcome-Policy-Max-Blocked-Count",
+      String(qualification.policy.maxBlockedCount),
+    );
+    context.header(
+      "X-Napier-Blueprint-Outcome-Policy-Max-Invalid-Count",
+      String(qualification.policy.maxInvalidCount),
+    );
+  }
 }
 
 function setExecutionPlanBlueprintRecordReplayEventVerificationHeaders(

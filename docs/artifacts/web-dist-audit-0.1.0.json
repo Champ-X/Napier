@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 40,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-zPLptg50.js",
-    "sizeBytes": 134567,
+    "path": "apps/web/dist/assets/index-C5EELwyE.js",
+    "sizeBytes": 135334,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "250150d6e0944bd2ffb16f8dca28cc026f0c1b1b03e6463c58d9ea4cd103a75e"
+    "sha256": "eebf8cea42bf8d57e9a077ff734afafdaf86963eb7df3f761a215eef6048e754"
   },
-  "distContentSha256": "250150d6e0944bd2ffb16f8dca28cc026f0c1b1b03e6463c58d9ea4cd103a75e",
+  "distContentSha256": "eebf8cea42bf8d57e9a077ff734afafdaf86963eb7df3f761a215eef6048e754",
   "errors": []
 }

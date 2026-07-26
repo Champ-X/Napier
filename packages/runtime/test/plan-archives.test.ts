@@ -539,6 +539,16 @@ describe("execution plan archives", () => {
         observedCompletedCount: 0,
       }),
     );
+    await expect(
+      store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        first.record.id,
+        {
+          outcomes: replayOutcomes,
+        },
+      ),
+    ).rejects.toThrow(
+      "Execution plan blueprint outcome baseline policy failed: completion_rate_below_min",
+    );
     const replayEventSha256 = createHash("sha256")
       .update(JSON.stringify(replayEvent))
       .digest("hex");
@@ -656,6 +666,107 @@ describe("execution plan archives", () => {
     ]);
     expect(JSON.stringify(completedOutcomes)).not.toContain(
       "Delivery evidence was independently verified.",
+    );
+    await expect(
+      store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        first.record.id,
+        {
+          outcomes: replayOutcomes,
+          policy: { minCompletionRateBps: 0 },
+        },
+      ),
+    ).rejects.toThrow(
+      "Execution plan blueprint outcome baseline requires current outcomes",
+    );
+    const promotedBaseline =
+      await store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        first.record.id,
+        {
+          outcomes: completedOutcomes,
+        },
+      );
+    expect(promotedBaseline).toEqual({
+      created: true,
+      baseline: expect.objectContaining({
+        id: expect.stringMatching(/^outcome_base_[a-f0-9]{20}$/),
+        recordId: first.record.id,
+        replayOutcomesSha256: completedOutcomes.contentSha256,
+        replayHistorySha256: completedOutcomes.replayHistorySha256,
+        outcomeSetSha256: completedOutcomes.outcomeSetSha256,
+        replayCount: 1,
+        completedCount: 1,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 10_000,
+        policy: {
+          minReplayCount: 1,
+          minCompletionRateBps: 10_000,
+          maxBlockedCount: 0,
+          maxInvalidCount: 0,
+        },
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    });
+    expect(
+      store.listExecutionPlanBlueprintRecordOutcomeBaselines(first.record.id),
+    ).toEqual([promotedBaseline.baseline]);
+    await expect(
+      store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        first.record.id,
+        {
+          outcomes: completedOutcomes,
+        },
+      ),
+    ).resolves.toEqual({
+      created: false,
+      baseline: promotedBaseline.baseline,
+    });
+    await expect(
+      store.qualifyExecutionPlanBlueprintRecordOutcomes(first.record.id),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "qualified",
+        diagnostics: [],
+        recordId: first.record.id,
+        baselineId: promotedBaseline.baseline.id,
+        baselineSha256: promotedBaseline.baseline.contentSha256,
+        baselineOutcomesSha256: completedOutcomes.contentSha256,
+        currentOutcomesSha256: completedOutcomes.contentSha256,
+        currentReplayHistorySha256: completedOutcomes.replayHistorySha256,
+        currentOutcomeSetSha256: completedOutcomes.outcomeSetSha256,
+        replayCount: 1,
+        completedCount: 1,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 10_000,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    const secondPreview = await store.previewPlanFromBlueprintRecord(
+      targetThread.id,
+      {
+        recordId: first.record.id,
+      },
+    );
+    expect(secondPreview.status).toBe("ready");
+    await store.createPlanFromBlueprintRecord(targetThread.id, {
+      recordId: first.record.id,
+      expectedPreviewSha256: secondPreview.previewSha256,
+    });
+    await expect(
+      store.qualifyExecutionPlanBlueprintRecordOutcomes(first.record.id),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "policy_failed",
+        diagnostics: ["completion_rate_below_min"],
+        recordId: first.record.id,
+        baselineId: promotedBaseline.baseline.id,
+        replayCount: 2,
+        completedCount: 1,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 5_000,
+      }),
     );
     await expect(
       store.verifyExecutionPlanBlueprintRecordReplayOutcomes(

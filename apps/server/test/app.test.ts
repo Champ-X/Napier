@@ -29,6 +29,9 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintRecordOutcomeBaseline,
+  ExecutionPlanBlueprintRecordOutcomeQualification,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
   EvaluationAdjudication,
@@ -4829,6 +4832,169 @@ describe("Napier HTTP goal flow", () => {
         "Execution plan blueprint replay outcomes verification request is invalid",
     });
 
+    const emptyOutcomeBaselinesResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+    );
+    expect(emptyOutcomeBaselinesResponse.status).toBe(200);
+    const emptyOutcomeBaselines =
+      (await emptyOutcomeBaselinesResponse.json()) as ExecutionPlanBlueprintRecordOutcomeBaseline[];
+    expect(emptyOutcomeBaselines).toEqual([]);
+    expectExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(
+      emptyOutcomeBaselinesResponse,
+      emptyOutcomeBaselines,
+    );
+
+    const missingOutcomeQualificationResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/qualification`,
+    );
+    expect(missingOutcomeQualificationResponse.status).toBe(200);
+    const missingOutcomeQualification =
+      (await missingOutcomeQualificationResponse.json()) as ExecutionPlanBlueprintRecordOutcomeQualification;
+    expect(missingOutcomeQualification).toEqual(
+      expect.objectContaining({
+        status: "missing_baseline",
+        diagnostics: ["baseline_missing"],
+        recordId: savedBlueprint.record.id,
+        currentOutcomesSha256: replayOutcomes.contentSha256,
+        currentReplayHistorySha256: replayOutcomes.replayHistorySha256,
+        currentOutcomeSetSha256: replayOutcomes.outcomeSetSha256,
+        replayCount: 1,
+        completedCount: 0,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 0,
+      }),
+    );
+    expectExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
+      missingOutcomeQualificationResponse,
+      missingOutcomeQualification,
+    );
+
+    const outcomeBaselineResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          outcomes: replayOutcomes,
+          policy: {
+            minCompletionRateBps: 0,
+          },
+        }),
+      },
+    );
+    expect(outcomeBaselineResponse.status).toBe(201);
+    const outcomeBaselineResult =
+      (await outcomeBaselineResponse.json()) as PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult;
+    expect(outcomeBaselineResult).toEqual({
+      created: true,
+      baseline: expect.objectContaining({
+        id: expect.stringMatching(/^outcome_base_[a-f0-9]{20}$/),
+        recordId: savedBlueprint.record.id,
+        replayOutcomesSha256: replayOutcomes.contentSha256,
+        replayHistorySha256: replayOutcomes.replayHistorySha256,
+        outcomeSetSha256: replayOutcomes.outcomeSetSha256,
+        replayCount: 1,
+        completedCount: 0,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 0,
+        policy: {
+          minReplayCount: 1,
+          minCompletionRateBps: 0,
+          maxBlockedCount: 0,
+          maxInvalidCount: 0,
+        },
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    });
+    expectExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(
+      outcomeBaselineResponse,
+      outcomeBaselineResult,
+    );
+
+    const duplicateOutcomeBaselineResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          outcomes: replayOutcomes,
+          policy: {
+            minCompletionRateBps: 0,
+          },
+        }),
+      },
+    );
+    expect(duplicateOutcomeBaselineResponse.status).toBe(200);
+    const duplicateOutcomeBaselineResult =
+      (await duplicateOutcomeBaselineResponse.json()) as PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult;
+    expect(duplicateOutcomeBaselineResult).toEqual({
+      created: false,
+      baseline: outcomeBaselineResult.baseline,
+    });
+    expectExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(
+      duplicateOutcomeBaselineResponse,
+      duplicateOutcomeBaselineResult,
+    );
+
+    const outcomeBaselinesResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+    );
+    expect(outcomeBaselinesResponse.status).toBe(200);
+    const outcomeBaselines =
+      (await outcomeBaselinesResponse.json()) as ExecutionPlanBlueprintRecordOutcomeBaseline[];
+    expect(outcomeBaselines).toEqual([outcomeBaselineResult.baseline]);
+    expectExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(
+      outcomeBaselinesResponse,
+      outcomeBaselines,
+    );
+
+    const outcomeQualificationResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/qualification`,
+    );
+    expect(outcomeQualificationResponse.status).toBe(200);
+    const outcomeQualification =
+      (await outcomeQualificationResponse.json()) as ExecutionPlanBlueprintRecordOutcomeQualification;
+    expect(outcomeQualification).toEqual(
+      expect.objectContaining({
+        status: "qualified",
+        diagnostics: [],
+        recordId: savedBlueprint.record.id,
+        baselineId: outcomeBaselineResult.baseline.id,
+        baselineSha256: outcomeBaselineResult.baseline.contentSha256,
+        baselineOutcomesSha256: replayOutcomes.contentSha256,
+        currentOutcomesSha256: replayOutcomes.contentSha256,
+        replayCount: 1,
+        completedCount: 0,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 0,
+      }),
+    );
+    expectExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
+      outcomeQualificationResponse,
+      outcomeQualification,
+    );
+
+    const invalidOutcomeBaselineResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          outcomes: replayOutcomes,
+          policy: {
+            unknown: true,
+          },
+        }),
+      },
+    );
+    expect(invalidOutcomeBaselineResponse.status).toBe(400);
+    expect(await invalidOutcomeBaselineResponse.json()).toEqual({
+      error: "Execution plan blueprint outcome baseline request is invalid",
+    });
+
     await services.store.appendEvent({
       threadId: created.thread.id,
       runId: "runctl_blueprint_drift",
@@ -8326,6 +8492,183 @@ function expectExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(
   );
   expect(response.headers.get("x-napier-observed-invalid-count")).toBe(
     optionalNumberHeader(verification.observedInvalidCount),
+  );
+}
+
+function expectExecutionPlanBlueprintRecordOutcomeBaselineListHeaders(
+  response: Response,
+  baselines: readonly ExecutionPlanBlueprintRecordOutcomeBaseline[],
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    responseSha256(baselines),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-baseline-count"),
+  ).toBe(String(baselines.length));
+  const latest = baselines.at(-1);
+  if (latest) {
+    expectExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
+      response,
+      latest,
+    );
+  } else {
+    expect(response.headers.get("x-napier-blueprint-outcome-baseline-id")).toBe(
+      null,
+    );
+  }
+}
+
+function expectExecutionPlanBlueprintRecordOutcomeBaselinePromotionHeaders(
+  response: Response,
+  result: PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    responseSha256(result),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-baseline-created"),
+  ).toBe(String(result.created));
+  expectExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
+    response,
+    result.baseline,
+  );
+}
+
+function expectExecutionPlanBlueprintRecordOutcomeBaselineMetadataHeaders(
+  response: Response,
+  baseline: ExecutionPlanBlueprintRecordOutcomeBaseline,
+): void {
+  expect(response.headers.get("x-napier-plan-blueprint-record-id")).toBe(
+    baseline.recordId,
+  );
+  expect(response.headers.get("x-napier-blueprint-outcome-baseline-id")).toBe(
+    baseline.id,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-baseline-sha256"),
+  ).toBe(baseline.contentSha256);
+  expect(
+    response.headers.get("x-napier-blueprint-replay-outcomes-sha256"),
+  ).toBe(baseline.replayOutcomesSha256);
+  expect(response.headers.get("x-napier-blueprint-replay-history-sha256")).toBe(
+    baseline.replayHistorySha256,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-outcome-set-sha256"),
+  ).toBe(baseline.outcomeSetSha256);
+  expect(response.headers.get("x-napier-blueprint-replay-count")).toBe(
+    String(baseline.replayCount),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-completed-count"),
+  ).toBe(String(baseline.completedCount));
+  expect(response.headers.get("x-napier-blueprint-replay-blocked-count")).toBe(
+    String(baseline.blockedCount),
+  );
+  expect(response.headers.get("x-napier-blueprint-replay-invalid-count")).toBe(
+    String(baseline.invalidCount),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-completion-rate-bps"),
+  ).toBe(String(baseline.completionRateBps));
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-policy-min-replay-count"),
+  ).toBe(String(baseline.policy.minReplayCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-outcome-policy-min-completion-rate-bps",
+    ),
+  ).toBe(String(baseline.policy.minCompletionRateBps));
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-policy-max-blocked-count"),
+  ).toBe(String(baseline.policy.maxBlockedCount));
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-policy-max-invalid-count"),
+  ).toBe(String(baseline.policy.maxInvalidCount));
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-supersedes-baseline-id"),
+  ).toBe(baseline.supersedesBaselineId ?? null);
+}
+
+function expectExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
+  response: Response,
+  qualification: ExecutionPlanBlueprintRecordOutcomeQualification,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    qualification.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-qualification-status")).toBe(
+    qualification.status,
+  );
+  expect(response.headers.get("x-napier-diagnostic-count")).toBe(
+    String(qualification.diagnostics.length),
+  );
+  expect(response.headers.get("x-napier-diagnostics-sha256")).toBe(
+    responseSha256(qualification.diagnostics),
+  );
+  expect(response.headers.get("x-napier-plan-blueprint-record-id")).toBe(
+    qualification.recordId,
+  );
+  expect(response.headers.get("x-napier-blueprint-outcome-baseline-id")).toBe(
+    qualification.baselineId ?? null,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-baseline-sha256"),
+  ).toBe(qualification.baselineSha256 ?? null);
+  expect(
+    response.headers.get("x-napier-blueprint-baseline-outcomes-sha256"),
+  ).toBe(qualification.baselineOutcomesSha256 ?? null);
+  expect(
+    response.headers.get("x-napier-blueprint-current-outcomes-sha256"),
+  ).toBe(qualification.currentOutcomesSha256);
+  expect(response.headers.get("x-napier-blueprint-replay-history-sha256")).toBe(
+    qualification.currentReplayHistorySha256,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-outcome-set-sha256"),
+  ).toBe(qualification.currentOutcomeSetSha256);
+  expect(response.headers.get("x-napier-blueprint-replay-count")).toBe(
+    String(qualification.replayCount),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-completed-count"),
+  ).toBe(String(qualification.completedCount));
+  expect(response.headers.get("x-napier-blueprint-replay-blocked-count")).toBe(
+    String(qualification.blockedCount),
+  );
+  expect(response.headers.get("x-napier-blueprint-replay-invalid-count")).toBe(
+    String(qualification.invalidCount),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-completion-rate-bps"),
+  ).toBe(String(qualification.completionRateBps));
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-policy-min-replay-count"),
+  ).toBe(
+    qualification.policy ? String(qualification.policy.minReplayCount) : null,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-outcome-policy-min-completion-rate-bps",
+    ),
+  ).toBe(
+    qualification.policy
+      ? String(qualification.policy.minCompletionRateBps)
+      : null,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-policy-max-blocked-count"),
+  ).toBe(
+    qualification.policy ? String(qualification.policy.maxBlockedCount) : null,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-policy-max-invalid-count"),
+  ).toBe(
+    qualification.policy ? String(qualification.policy.maxInvalidCount) : null,
   );
 }
 

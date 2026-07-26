@@ -13,6 +13,9 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintRecordOutcomeBaseline,
+  ExecutionPlanBlueprintRecordOutcomeQualification,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
   HealthResponse,
   OpenTelemetryTraceArtifact,
@@ -31,11 +34,14 @@ import {
   getExecutionPlanArchive,
   getExecutionPlanBlueprint,
   getExecutionPlanBlueprintRecordQualification,
+  getExecutionPlanBlueprintRecordOutcomeBaselines,
+  getExecutionPlanBlueprintRecordOutcomeQualification,
   getExecutionPlanBlueprintRecordReplayOutcomes,
   getExecutionPlanBlueprintRecordReplays,
   getExecutionPlanBlueprintRecords,
   getHealth,
   previewExecutionPlanFromBlueprintRecord,
+  promoteExecutionPlanBlueprintRecordOutcomeBaseline,
   saveExecutionPlanBlueprint,
   setExecutionPlanBlueprintRecordStatus,
   verifyExecutionPlanArchive,
@@ -582,6 +588,51 @@ describe("Web JSON API wrappers", () => {
         observedInvalidCount: 0,
         contentSha256: "b".repeat(64),
       };
+    const outcomeBaseline: ExecutionPlanBlueprintRecordOutcomeBaseline = {
+      id: "outcome_base_1234567890abcdef1234",
+      recordId: record.id,
+      replayOutcomesSha256: replayOutcomes.contentSha256,
+      replayHistorySha256: replayOutcomes.replayHistorySha256,
+      outcomeSetSha256: replayOutcomes.outcomeSetSha256,
+      replayCount: replayOutcomes.replayCount,
+      completedCount: replayOutcomes.completedCount,
+      blockedCount: replayOutcomes.blockedCount,
+      invalidCount: replayOutcomes.invalidCount,
+      completionRateBps: replayOutcomes.completionRateBps,
+      policy: {
+        minReplayCount: 1,
+        minCompletionRateBps: 0,
+        maxBlockedCount: 0,
+        maxInvalidCount: 0,
+      },
+      promotedAt: "2026-07-26T00:00:03.000Z",
+      contentSha256: "c".repeat(64),
+    };
+    const outcomeBaselineResult: PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult =
+      {
+        baseline: outcomeBaseline,
+        created: true,
+      };
+    const outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification =
+      {
+        schemaVersion: 1,
+        status: "qualified",
+        diagnostics: [],
+        recordId: record.id,
+        baselineId: outcomeBaseline.id,
+        baselineSha256: outcomeBaseline.contentSha256,
+        baselineOutcomesSha256: outcomeBaseline.replayOutcomesSha256,
+        currentOutcomesSha256: replayOutcomes.contentSha256,
+        currentReplayHistorySha256: replayOutcomes.replayHistorySha256,
+        currentOutcomeSetSha256: replayOutcomes.outcomeSetSha256,
+        replayCount: replayOutcomes.replayCount,
+        completedCount: replayOutcomes.completedCount,
+        blockedCount: replayOutcomes.blockedCount,
+        invalidCount: replayOutcomes.invalidCount,
+        completionRateBps: replayOutcomes.completionRateBps,
+        policy: outcomeBaseline.policy,
+        contentSha256: "d".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -624,6 +675,23 @@ describe("Web JSON API wrappers", () => {
         method: "POST",
         body: { outcomes: replayOutcomes },
         response: replayOutcomesVerification,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes/baselines",
+        response: [outcomeBaseline],
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes/baselines",
+        method: "POST",
+        body: {
+          outcomes: replayOutcomes,
+          policy: { minCompletionRateBps: 0 },
+        },
+        response: outcomeBaselineResult,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes/qualification",
+        response: outcomeQualification,
       },
       {
         path: "/api/plan-blueprints/blueprint_12345678/replays/events/verify",
@@ -728,6 +796,18 @@ describe("Web JSON API wrappers", () => {
       }),
     ).resolves.toEqual(replayOutcomesVerification);
     await expect(
+      getExecutionPlanBlueprintRecordOutcomeBaselines(record.id),
+    ).resolves.toEqual([outcomeBaseline]);
+    await expect(
+      promoteExecutionPlanBlueprintRecordOutcomeBaseline(record.id, {
+        outcomes: replayOutcomes,
+        policy: { minCompletionRateBps: 0 },
+      }),
+    ).resolves.toEqual(outcomeBaselineResult);
+    await expect(
+      getExecutionPlanBlueprintRecordOutcomeQualification(record.id),
+    ).resolves.toEqual(outcomeQualification);
+    await expect(
       verifyExecutionPlanBlueprintRecordReplayEvent(record.id, {
         threadId: "thread_2",
         eventId: "event_12345678",
@@ -779,7 +859,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(13);
+    expect(fetchMock).toHaveBeenCalledTimes(16);
   });
 });
 

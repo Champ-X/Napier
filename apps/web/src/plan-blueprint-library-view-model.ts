@@ -7,6 +7,8 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintRecordOutcomeQualification,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 
@@ -84,6 +86,38 @@ export interface PlanBlueprintLibraryReplayOutcomesVerificationReceipt {
   completedCount: number;
   blockedCount: number;
   invalidCount: number;
+}
+
+export interface PlanBlueprintLibraryOutcomeBaselineReceipt {
+  action: "outcomeBaseline";
+  recordId: string;
+  baselineId: string;
+  baselineSha256: string;
+  replayOutcomesSha256: string;
+  created: boolean;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  minCompletionRateBps: number;
+}
+
+export interface PlanBlueprintLibraryOutcomeQualificationReceipt {
+  action: "outcomeQualified";
+  recordId: string;
+  qualificationStatus: ExecutionPlanBlueprintRecordOutcomeQualification["status"];
+  diagnostics: string[];
+  contentSha256: string;
+  baselineId?: string;
+  baselineSha256?: string;
+  currentOutcomesSha256: string;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  minCompletionRateBps?: number;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -251,6 +285,52 @@ export function planBlueprintReplayOutcomesVerificationReceipt(
       verification.observedBlockedCount ?? verification.blockedCount ?? 0,
     invalidCount:
       verification.observedInvalidCount ?? verification.invalidCount ?? 0,
+  };
+}
+
+export function planBlueprintOutcomeBaselineReceipt(
+  result: PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+): PlanBlueprintLibraryOutcomeBaselineReceipt {
+  return {
+    action: "outcomeBaseline",
+    recordId: result.baseline.recordId,
+    baselineId: result.baseline.id,
+    baselineSha256: result.baseline.contentSha256,
+    replayOutcomesSha256: result.baseline.replayOutcomesSha256,
+    created: result.created,
+    replayCount: result.baseline.replayCount,
+    completedCount: result.baseline.completedCount,
+    blockedCount: result.baseline.blockedCount,
+    invalidCount: result.baseline.invalidCount,
+    completionRateBps: result.baseline.completionRateBps,
+    minCompletionRateBps: result.baseline.policy.minCompletionRateBps,
+  };
+}
+
+export function planBlueprintOutcomeQualificationReceipt(
+  qualification: ExecutionPlanBlueprintRecordOutcomeQualification,
+): PlanBlueprintLibraryOutcomeQualificationReceipt {
+  return {
+    action: "outcomeQualified",
+    recordId: qualification.recordId,
+    qualificationStatus: qualification.status,
+    diagnostics: qualification.diagnostics,
+    contentSha256: qualification.contentSha256,
+    ...(qualification.baselineId
+      ? { baselineId: qualification.baselineId }
+      : {}),
+    ...(qualification.baselineSha256
+      ? { baselineSha256: qualification.baselineSha256 }
+      : {}),
+    currentOutcomesSha256: qualification.currentOutcomesSha256,
+    replayCount: qualification.replayCount,
+    completedCount: qualification.completedCount,
+    blockedCount: qualification.blockedCount,
+    invalidCount: qualification.invalidCount,
+    completionRateBps: qualification.completionRateBps,
+    ...(qualification.policy
+      ? { minCompletionRateBps: qualification.policy.minCompletionRateBps }
+      : {}),
   };
 }
 

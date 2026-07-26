@@ -72,6 +72,18 @@ All notable changes to Napier are recorded here.
   shelf now exports and uploads outcome JSON separately from replay history,
   with pure ViewModel receipts and contract tests for latest-outcome and
   observed-count behavior.
+- Blueprint outcome baselines. `POST
+/api/plan-blueprints/:recordId/replays/outcomes/baselines` now promotes the
+  current verified outcomes receipt into an append-only hash-only baseline with
+  replay/outcome hashes, aggregate counts, a policy threshold set, and an
+  explicit supersession chain. Promotion fails closed unless the uploaded
+  artifact matches the current Store projection and satisfies the policy,
+  which defaults to 100% completed, zero blocked, and zero invalid replays.
+  `GET /api/plan-blueprints/:recordId/replays/outcomes/qualification` now
+  recomputes current outcomes against the latest baseline and returns
+  `qualified`, `missing_baseline`, or `policy_failed` with current/baseline
+  hashes and low-cardinality diagnostics. The Template shelf can promote and
+  qualify outcome baselines, and Web ViewModel tests cover both receipt types.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

@@ -724,6 +724,65 @@ export interface ExecutionPlanBlueprintRecordReplayOutcomesVerification {
   contentSha256: string;
 }
 
+export interface ExecutionPlanBlueprintRecordOutcomeBaselinePolicy {
+  minReplayCount: number;
+  minCompletionRateBps: number;
+  maxBlockedCount: number;
+  maxInvalidCount: number;
+}
+
+export interface ExecutionPlanBlueprintRecordOutcomeBaseline {
+  id: string;
+  recordId: string;
+  replayOutcomesSha256: string;
+  replayHistorySha256: string;
+  outcomeSetSha256: string;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  policy: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy;
+  promotedAt: string;
+  supersedesBaselineId?: string;
+  contentSha256: string;
+}
+
+export interface PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest {
+  outcomes: unknown;
+  policy?: Partial<ExecutionPlanBlueprintRecordOutcomeBaselinePolicy>;
+}
+
+export interface PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult {
+  baseline: ExecutionPlanBlueprintRecordOutcomeBaseline;
+  created: boolean;
+}
+
+export type ExecutionPlanBlueprintRecordOutcomeQualificationStatus =
+  | "qualified"
+  | "missing_baseline"
+  | "policy_failed";
+
+export interface ExecutionPlanBlueprintRecordOutcomeQualification {
+  schemaVersion: 1;
+  status: ExecutionPlanBlueprintRecordOutcomeQualificationStatus;
+  diagnostics: string[];
+  recordId: string;
+  baselineId?: string;
+  baselineSha256?: string;
+  baselineOutcomesSha256?: string;
+  currentOutcomesSha256: string;
+  currentReplayHistorySha256: string;
+  currentOutcomeSetSha256: string;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  policy?: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy;
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

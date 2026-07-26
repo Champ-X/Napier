@@ -7,12 +7,16 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintRecordOutcomeQualification,
+  PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
   planBlueprintCreatedReceipt,
+  planBlueprintOutcomeBaselineReceipt,
+  planBlueprintOutcomeQualificationReceipt,
   planBlueprintPreviewReceipt,
   planBlueprintQualificationReceipt,
   planBlueprintReplayHistoryReceipt,
@@ -269,6 +273,93 @@ describe("Plan blueprint library view model", () => {
       completedCount: 1,
       blockedCount: 1,
       invalidCount: 0,
+    });
+  });
+
+  it("projects replay outcome baseline promotion receipts", () => {
+    const outcomes = replayOutcomesFixture();
+    const result: PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult = {
+      created: true,
+      baseline: {
+        id: "outcome_base_1234567890abcdef1234",
+        recordId: record.id,
+        replayOutcomesSha256: outcomes.contentSha256,
+        replayHistorySha256: outcomes.replayHistorySha256,
+        outcomeSetSha256: outcomes.outcomeSetSha256,
+        replayCount: outcomes.replayCount,
+        completedCount: outcomes.completedCount,
+        blockedCount: outcomes.blockedCount,
+        invalidCount: outcomes.invalidCount,
+        completionRateBps: outcomes.completionRateBps,
+        policy: {
+          minReplayCount: 1,
+          minCompletionRateBps: 5_000,
+          maxBlockedCount: 1,
+          maxInvalidCount: 0,
+        },
+        promotedAt: "2026-07-26T00:00:04.000Z",
+        contentSha256: "8".repeat(64),
+      },
+    };
+
+    expect(planBlueprintOutcomeBaselineReceipt(result)).toEqual({
+      action: "outcomeBaseline",
+      recordId: record.id,
+      baselineId: result.baseline.id,
+      baselineSha256: result.baseline.contentSha256,
+      replayOutcomesSha256: outcomes.contentSha256,
+      created: true,
+      replayCount: 2,
+      completedCount: 1,
+      blockedCount: 1,
+      invalidCount: 0,
+      completionRateBps: 5_000,
+      minCompletionRateBps: 5_000,
+    });
+  });
+
+  it("projects replay outcome qualification diagnostics", () => {
+    const outcomes = replayOutcomesFixture();
+    const qualification: ExecutionPlanBlueprintRecordOutcomeQualification = {
+      schemaVersion: 1,
+      status: "policy_failed",
+      diagnostics: ["completion_rate_below_min"],
+      recordId: record.id,
+      baselineId: "outcome_base_1234567890abcdef1234",
+      baselineSha256: "8".repeat(64),
+      baselineOutcomesSha256: outcomes.contentSha256,
+      currentOutcomesSha256: outcomes.contentSha256,
+      currentReplayHistorySha256: outcomes.replayHistorySha256,
+      currentOutcomeSetSha256: outcomes.outcomeSetSha256,
+      replayCount: outcomes.replayCount,
+      completedCount: outcomes.completedCount,
+      blockedCount: outcomes.blockedCount,
+      invalidCount: outcomes.invalidCount,
+      completionRateBps: outcomes.completionRateBps,
+      policy: {
+        minReplayCount: 1,
+        minCompletionRateBps: 10_000,
+        maxBlockedCount: 1,
+        maxInvalidCount: 0,
+      },
+      contentSha256: "9".repeat(64),
+    };
+
+    expect(planBlueprintOutcomeQualificationReceipt(qualification)).toEqual({
+      action: "outcomeQualified",
+      recordId: record.id,
+      qualificationStatus: "policy_failed",
+      diagnostics: ["completion_rate_below_min"],
+      contentSha256: qualification.contentSha256,
+      baselineId: qualification.baselineId,
+      baselineSha256: qualification.baselineSha256,
+      currentOutcomesSha256: outcomes.contentSha256,
+      replayCount: 2,
+      completedCount: 1,
+      blockedCount: 1,
+      invalidCount: 0,
+      completionRateBps: 5_000,
+      minCompletionRateBps: 10_000,
     });
   });
 

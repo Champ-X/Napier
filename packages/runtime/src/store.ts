@@ -50,6 +50,9 @@ import {
   type ExecutionPlanBlueprintRecordReplayOutcome,
   type ExecutionPlanBlueprintRecordReplayOutcomes,
   type ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  type ExecutionPlanBlueprintRecordOutcomeBaseline,
+  type ExecutionPlanBlueprintRecordOutcomeBaselinePolicy,
+  type ExecutionPlanBlueprintRecordOutcomeQualification,
   type CredentialAvailability,
   type CredentialReference,
   type CreateEvaluationSuiteRequest,
@@ -155,6 +158,8 @@ import {
   type InspectorPackageVerification,
   type PromptPackageQualification,
   type PromptPackageVerification,
+  type PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
+  type PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   type SignedInspectorPackageEnvelope,
   type SignedPromptPackageEnvelope,
   type SignInspectorPackageRequest,
@@ -465,6 +470,7 @@ interface PersistedState {
   automaticRecoveryAttempts: PersistedAutomaticRecoveryAttempt[];
   plans: ExecutionPlan[];
   executionPlanBlueprints: ExecutionPlanBlueprintRecord[];
+  executionPlanBlueprintOutcomeBaselines: ExecutionPlanBlueprintRecordOutcomeBaseline[];
   credentials: CredentialReference[];
   schedules: PersistedAutomationSchedule[];
   channels: PersistedInboundChannel[];
@@ -552,11 +558,20 @@ const EMPTY_STATE: PersistedState = {
   automaticRecoveryAttempts: [],
   plans: [],
   executionPlanBlueprints: [],
+  executionPlanBlueprintOutcomeBaselines: [],
   credentials: [],
   schedules: [],
   channels: [],
   inboundDeliveries: [],
 };
+
+const DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy =
+  {
+    minReplayCount: 1,
+    minCompletionRateBps: 10_000,
+    maxBlockedCount: 0,
+    maxInvalidCount: 0,
+  };
 
 export interface CreateSubagentTaskInput {
   threadId: string;
@@ -2244,6 +2259,99 @@ export class LocalStore {
       input,
       recordId,
       observed,
+    );
+  }
+
+  listExecutionPlanBlueprintRecordOutcomeBaselines(
+    recordId: string,
+  ): ExecutionPlanBlueprintRecordOutcomeBaseline[] {
+    this.assertInitialized();
+    this.getExecutionPlanBlueprintRecord(recordId);
+    return structuredClone(
+      this.state.executionPlanBlueprintOutcomeBaselines
+        .filter((baseline) => baseline.recordId === recordId)
+        .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt)),
+    );
+  }
+
+  async promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+    recordId: string,
+    request: PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
+  ): Promise<PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult> {
+    this.assertInitialized();
+    this.getExecutionPlanBlueprintRecord(recordId);
+    const policy = normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
+      request.policy,
+    );
+    const observed =
+      await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
+    const verification =
+      verifyExecutionPlanBlueprintRecordReplayOutcomesProjection(
+        request.outcomes,
+        recordId,
+        observed,
+      );
+    if (verification.status !== "valid") {
+      throw new Error(
+        "Execution plan blueprint outcome baseline requires current outcomes",
+      );
+    }
+    const policyDiagnostics = executionPlanBlueprintOutcomePolicyDiagnostics(
+      observed,
+      policy,
+    );
+    if (policyDiagnostics.length > 0) {
+      throw new Error(
+        `Execution plan blueprint outcome baseline policy failed: ${policyDiagnostics.join(",")}`,
+      );
+    }
+    return this.stateQueue.run(async () => {
+      const latest = this.state.executionPlanBlueprintOutcomeBaselines
+        .filter((baseline) => baseline.recordId === recordId)
+        .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt))
+        .at(-1);
+      if (
+        latest &&
+        latest.replayOutcomesSha256 === observed.contentSha256 &&
+        JSON.stringify(latest.policy) === JSON.stringify(policy)
+      ) {
+        return {
+          baseline: structuredClone(latest),
+          created: false,
+        };
+      }
+      const baseline = createExecutionPlanBlueprintOutcomeBaseline({
+        id: createId("outcome_base"),
+        recordId,
+        outcomes: observed,
+        policy,
+        promotedAt: nowIso(),
+        ...(latest ? { supersedesBaselineId: latest.id } : {}),
+      });
+      this.state.executionPlanBlueprintOutcomeBaselines.push(baseline);
+      await this.persistState();
+      return {
+        baseline: structuredClone(baseline),
+        created: true,
+      };
+    });
+  }
+
+  async qualifyExecutionPlanBlueprintRecordOutcomes(
+    recordId: string,
+  ): Promise<ExecutionPlanBlueprintRecordOutcomeQualification> {
+    this.assertInitialized();
+    this.getExecutionPlanBlueprintRecord(recordId);
+    const outcomes =
+      await this.getExecutionPlanBlueprintRecordReplayOutcomes(recordId);
+    const latest = this.state.executionPlanBlueprintOutcomeBaselines
+      .filter((baseline) => baseline.recordId === recordId)
+      .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt))
+      .at(-1);
+    return createExecutionPlanBlueprintOutcomeQualification(
+      recordId,
+      outcomes,
+      latest,
     );
   }
 
@@ -5782,6 +5890,9 @@ export class LocalStore {
     if (!Array.isArray(state.executionPlanBlueprints)) {
       state.executionPlanBlueprints = [];
     }
+    if (!Array.isArray(state.executionPlanBlueprintOutcomeBaselines)) {
+      state.executionPlanBlueprintOutcomeBaselines = [];
+    }
     if (!Array.isArray(state.credentials)) state.credentials = [];
     if (!Array.isArray(state.schedules)) state.schedules = [];
     if (!Array.isArray(state.channels)) state.channels = [];
@@ -5836,6 +5947,31 @@ export class LocalStore {
         activeExecutionPlanBlueprintHashes.add(record.blueprintSha256);
       }
       Object.assign(input, record);
+    }
+    const outcomeBaselineIds = new Set<string>();
+    const outcomeBaselineKeys = new Set<string>();
+    const latestOutcomeBaselineByRecord = new Map<
+      string,
+      ExecutionPlanBlueprintRecordOutcomeBaseline
+    >();
+    for (const input of state.executionPlanBlueprintOutcomeBaselines) {
+      const baseline = validateExecutionPlanBlueprintOutcomeBaseline(input);
+      const previous = latestOutcomeBaselineByRecord.get(baseline.recordId);
+      const baselineKey = `${baseline.recordId}:${baseline.replayOutcomesSha256}:${baseline.contentSha256}`;
+      if (
+        outcomeBaselineIds.has(baseline.id) ||
+        outcomeBaselineKeys.has(baselineKey) ||
+        !executionPlanBlueprintIds.has(baseline.recordId) ||
+        baseline.supersedesBaselineId !== previous?.id
+      ) {
+        throw new Error(
+          `Persisted Execution Plan blueprint outcome baseline is invalid: ${baseline.id}`,
+        );
+      }
+      outcomeBaselineIds.add(baseline.id);
+      outcomeBaselineKeys.add(baselineKey);
+      latestOutcomeBaselineByRecord.set(baseline.recordId, baseline);
+      Object.assign(input, baseline);
     }
     const skillPackageInstallationIds = new Set<string>();
     let activeSkillPackageInstallationCount = 0;
@@ -6718,6 +6854,7 @@ export class LocalStore {
       !Array.isArray(parsed.receiptTrustAnchors) ||
       !Array.isArray(parsed.extensionPublisherTrustAnchors) ||
       !Array.isArray(parsed.evaluationQualificationBaselines) ||
+      !Array.isArray(parsed.executionPlanBlueprintOutcomeBaselines) ||
       !Array.isArray(parsed.automaticRecoveryAssessments) ||
       !Array.isArray(parsed.automaticRecoveryAttempts) ||
       migrateEvaluationCasebooks ||
@@ -8014,6 +8151,185 @@ function createExecutionPlanBlueprintRecordReplayOutcomes(
   return {
     ...content,
     generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
+  policy:
+    | Partial<ExecutionPlanBlueprintRecordOutcomeBaselinePolicy>
+    | undefined,
+): ExecutionPlanBlueprintRecordOutcomeBaselinePolicy {
+  const minReplayCount =
+    policy?.minReplayCount ??
+    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.minReplayCount;
+  const minCompletionRateBps =
+    policy?.minCompletionRateBps ??
+    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.minCompletionRateBps;
+  const maxBlockedCount =
+    policy?.maxBlockedCount ??
+    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.maxBlockedCount;
+  const maxInvalidCount =
+    policy?.maxInvalidCount ??
+    DEFAULT_EXECUTION_PLAN_BLUEPRINT_OUTCOME_BASELINE_POLICY.maxInvalidCount;
+  if (
+    !isNonNegativeInteger(minReplayCount) ||
+    minReplayCount < 1 ||
+    minReplayCount > 10_000 ||
+    !isNonNegativeInteger(minCompletionRateBps) ||
+    minCompletionRateBps > 10_000 ||
+    !isNonNegativeInteger(maxBlockedCount) ||
+    maxBlockedCount > 10_000 ||
+    !isNonNegativeInteger(maxInvalidCount) ||
+    maxInvalidCount > 10_000
+  ) {
+    throw new Error(
+      "Execution plan blueprint outcome baseline policy is invalid",
+    );
+  }
+  return {
+    minReplayCount,
+    minCompletionRateBps,
+    maxBlockedCount,
+    maxInvalidCount,
+  };
+}
+
+function executionPlanBlueprintOutcomePolicyDiagnostics(
+  outcomes: Pick<
+    ExecutionPlanBlueprintRecordReplayOutcomes,
+    "replayCount" | "completionRateBps" | "blockedCount" | "invalidCount"
+  >,
+  policy: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy,
+): string[] {
+  const diagnostics: string[] = [];
+  if (outcomes.replayCount < policy.minReplayCount) {
+    diagnostics.push("replay_count_below_min");
+  }
+  if (outcomes.completionRateBps < policy.minCompletionRateBps) {
+    diagnostics.push("completion_rate_below_min");
+  }
+  if (outcomes.blockedCount > policy.maxBlockedCount) {
+    diagnostics.push("blocked_count_above_max");
+  }
+  if (outcomes.invalidCount > policy.maxInvalidCount) {
+    diagnostics.push("invalid_count_above_max");
+  }
+  return diagnostics;
+}
+
+function createExecutionPlanBlueprintOutcomeBaseline(input: {
+  id: string;
+  recordId: string;
+  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes;
+  policy: ExecutionPlanBlueprintRecordOutcomeBaselinePolicy;
+  promotedAt: string;
+  supersedesBaselineId?: string;
+}): ExecutionPlanBlueprintRecordOutcomeBaseline {
+  const content = {
+    id: input.id,
+    recordId: input.recordId,
+    replayOutcomesSha256: input.outcomes.contentSha256,
+    replayHistorySha256: input.outcomes.replayHistorySha256,
+    outcomeSetSha256: input.outcomes.outcomeSetSha256,
+    replayCount: input.outcomes.replayCount,
+    completedCount: input.outcomes.completedCount,
+    blockedCount: input.outcomes.blockedCount,
+    invalidCount: input.outcomes.invalidCount,
+    completionRateBps: input.outcomes.completionRateBps,
+    policy: input.policy,
+    promotedAt: input.promotedAt,
+    ...(input.supersedesBaselineId
+      ? { supersedesBaselineId: input.supersedesBaselineId }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function validateExecutionPlanBlueprintOutcomeBaseline(
+  value: unknown,
+): ExecutionPlanBlueprintRecordOutcomeBaseline {
+  if (!isRecord(value)) {
+    throw new Error("Execution Plan blueprint outcome baseline is invalid");
+  }
+  const baseline =
+    value as unknown as ExecutionPlanBlueprintRecordOutcomeBaseline;
+  const policy = normalizeExecutionPlanBlueprintOutcomeBaselinePolicy(
+    baseline.policy,
+  );
+  if (
+    typeof baseline.id !== "string" ||
+    typeof baseline.recordId !== "string" ||
+    !isSha256(baseline.replayOutcomesSha256) ||
+    !isSha256(baseline.replayHistorySha256) ||
+    !isSha256(baseline.outcomeSetSha256) ||
+    !isNonNegativeInteger(baseline.replayCount) ||
+    !isNonNegativeInteger(baseline.completedCount) ||
+    !isNonNegativeInteger(baseline.blockedCount) ||
+    !isNonNegativeInteger(baseline.invalidCount) ||
+    !isNonNegativeInteger(baseline.completionRateBps) ||
+    baseline.completionRateBps > 10_000 ||
+    !Number.isFinite(Date.parse(baseline.promotedAt)) ||
+    (baseline.supersedesBaselineId !== undefined &&
+      typeof baseline.supersedesBaselineId !== "string") ||
+    !isSha256(baseline.contentSha256)
+  ) {
+    throw new Error("Execution Plan blueprint outcome baseline is invalid");
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...baseline,
+    policy,
+  };
+  if (sha256(canonicalJson(content)) !== baseline.contentSha256) {
+    throw new Error("Execution Plan blueprint outcome baseline hash mismatch");
+  }
+  return structuredClone({
+    ...baseline,
+    policy,
+  });
+}
+
+function createExecutionPlanBlueprintOutcomeQualification(
+  recordId: string,
+  outcomes: ExecutionPlanBlueprintRecordReplayOutcomes,
+  baseline: ExecutionPlanBlueprintRecordOutcomeBaseline | undefined,
+): ExecutionPlanBlueprintRecordOutcomeQualification {
+  const diagnostics = baseline
+    ? executionPlanBlueprintOutcomePolicyDiagnostics(outcomes, baseline.policy)
+    : ["baseline_missing"];
+  const status: ExecutionPlanBlueprintRecordOutcomeQualification["status"] =
+    !baseline
+      ? "missing_baseline"
+      : diagnostics.length === 0
+        ? "qualified"
+        : "policy_failed";
+  const content = {
+    schemaVersion: 1 as const,
+    status,
+    diagnostics,
+    recordId,
+    ...(baseline
+      ? {
+          baselineId: baseline.id,
+          baselineSha256: baseline.contentSha256,
+          baselineOutcomesSha256: baseline.replayOutcomesSha256,
+          policy: baseline.policy,
+        }
+      : {}),
+    currentOutcomesSha256: outcomes.contentSha256,
+    currentReplayHistorySha256: outcomes.replayHistorySha256,
+    currentOutcomeSetSha256: outcomes.outcomeSetSha256,
+    replayCount: outcomes.replayCount,
+    completedCount: outcomes.completedCount,
+    blockedCount: outcomes.blockedCount,
+    invalidCount: outcomes.invalidCount,
+    completionRateBps: outcomes.completionRateBps,
+  };
+  return {
+    ...content,
     contentSha256: sha256(canonicalJson(content)),
   };
 }
