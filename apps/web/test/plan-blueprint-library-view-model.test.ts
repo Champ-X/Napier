@@ -9,6 +9,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
+  ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -20,6 +21,7 @@ import {
   planBlueprintOutcomeBaselineReceipt,
   planBlueprintOutcomeQualificationReceipt,
   planBlueprintOutcomeReviewReceipt,
+  planBlueprintPortfolioCalibrationReceipt,
   planBlueprintPreviewReceipt,
   planBlueprintQualificationReceipt,
   planBlueprintReplayHistoryReceipt,
@@ -571,6 +573,63 @@ describe("Plan blueprint library view model", () => {
       selectedCompletionRateBps: 5_000,
       selectedReplayCount: 2,
       diagnostics: [],
+    });
+  });
+
+  it("projects blueprint portfolio calibration receipts", () => {
+    const calibration: ExecutionPlanBlueprintPortfolioCalibration = {
+      kind: "napier.execution-plan-blueprint-portfolio-calibration",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-26T00:00:06.000Z",
+      recordCount: 3,
+      activeCount: 2,
+      archivedCount: 1,
+      familyCount: 2,
+      sourceQualifiedCount: 2,
+      outcomeQualifiedCount: 1,
+      reviewedBaselineCount: 1,
+      missingBaselineCount: 1,
+      policyFailedCount: 1,
+      portfolioSetSha256: "a".repeat(64),
+      families: [
+        {
+          familySha256: "b".repeat(64),
+          recordCount: 2,
+          activeCount: 2,
+          archivedCount: 0,
+          sourceQualifiedCount: 2,
+          outcomeQualifiedCount: 1,
+          reviewedBaselineCount: 1,
+          replayCount: 4,
+          completedCount: 3,
+          blockedCount: 1,
+          invalidCount: 0,
+          completionRateBps: 7_500,
+          topRecordId: record.id,
+          topRecordScoreBps: 8_000,
+          latestBaselineSha256: "c".repeat(64),
+        },
+      ],
+      contentSha256: "d".repeat(64),
+    };
+
+    expect(planBlueprintPortfolioCalibrationReceipt(calibration)).toEqual({
+      action: "portfolioCalibrated",
+      contentSha256: calibration.contentSha256,
+      portfolioSetSha256: calibration.portfolioSetSha256,
+      recordCount: 3,
+      activeCount: 2,
+      archivedCount: 1,
+      familyCount: 2,
+      sourceQualifiedCount: 2,
+      outcomeQualifiedCount: 1,
+      reviewedBaselineCount: 1,
+      missingBaselineCount: 1,
+      policyFailedCount: 1,
+      topFamilySha256: "b".repeat(64),
+      topRecordId: record.id,
+      topRecordScoreBps: 8_000,
     });
   });
 

@@ -10,6 +10,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
+  ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -170,6 +171,24 @@ export interface PlanBlueprintLibrarySelectionReceipt {
   selectedCompletionRateBps?: number;
   selectedReplayCount?: number;
   diagnostics: string[];
+}
+
+export interface PlanBlueprintLibraryPortfolioCalibrationReceipt {
+  action: "portfolioCalibrated";
+  contentSha256: string;
+  portfolioSetSha256: string;
+  recordCount: number;
+  activeCount: number;
+  archivedCount: number;
+  familyCount: number;
+  sourceQualifiedCount: number;
+  outcomeQualifiedCount: number;
+  reviewedBaselineCount: number;
+  missingBaselineCount: number;
+  policyFailedCount: number;
+  topFamilySha256?: string;
+  topRecordId?: string;
+  topRecordScoreBps?: number;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -470,6 +489,31 @@ export function planBlueprintSelectionReceipt(
         }
       : {}),
     diagnostics,
+  };
+}
+
+export function planBlueprintPortfolioCalibrationReceipt(
+  calibration: ExecutionPlanBlueprintPortfolioCalibration,
+): PlanBlueprintLibraryPortfolioCalibrationReceipt {
+  const topFamily = calibration.families[0];
+  return {
+    action: "portfolioCalibrated",
+    contentSha256: calibration.contentSha256,
+    portfolioSetSha256: calibration.portfolioSetSha256,
+    recordCount: calibration.recordCount,
+    activeCount: calibration.activeCount,
+    archivedCount: calibration.archivedCount,
+    familyCount: calibration.familyCount,
+    sourceQualifiedCount: calibration.sourceQualifiedCount,
+    outcomeQualifiedCount: calibration.outcomeQualifiedCount,
+    reviewedBaselineCount: calibration.reviewedBaselineCount,
+    missingBaselineCount: calibration.missingBaselineCount,
+    policyFailedCount: calibration.policyFailedCount,
+    ...(topFamily ? { topFamilySha256: topFamily.familySha256 } : {}),
+    ...(topFamily?.topRecordId ? { topRecordId: topFamily.topRecordId } : {}),
+    ...(topFamily?.topRecordScoreBps !== undefined
+      ? { topRecordScoreBps: topFamily.topRecordScoreBps }
+      : {}),
   };
 }
 

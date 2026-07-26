@@ -16,6 +16,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
+  ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
@@ -35,6 +36,7 @@ import {
   createExecutionPlanFromBlueprintRecordWithReplayEvent,
   getExecutionPlanArchive,
   getExecutionPlanBlueprint,
+  getExecutionPlanBlueprintPortfolioCalibration,
   getExecutionPlanBlueprintRecordQualification,
   getExecutionPlanBlueprintRecordOutcomeBaselines,
   getExecutionPlanBlueprintRecordOutcomeQualification,
@@ -754,6 +756,42 @@ describe("Web JSON API wrappers", () => {
       ],
       contentSha256: "1".repeat(64),
     };
+    const portfolioCalibration: ExecutionPlanBlueprintPortfolioCalibration = {
+      kind: "napier.execution-plan-blueprint-portfolio-calibration",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-26T00:00:05.000Z",
+      recordCount: 1,
+      activeCount: 1,
+      archivedCount: 0,
+      familyCount: 1,
+      sourceQualifiedCount: 1,
+      outcomeQualifiedCount: 1,
+      reviewedBaselineCount: 1,
+      missingBaselineCount: 0,
+      policyFailedCount: 0,
+      portfolioSetSha256: "2".repeat(64),
+      families: [
+        {
+          familySha256: "3".repeat(64),
+          recordCount: 1,
+          activeCount: 1,
+          archivedCount: 0,
+          sourceQualifiedCount: 1,
+          outcomeQualifiedCount: 1,
+          reviewedBaselineCount: 1,
+          replayCount: replayOutcomes.replayCount,
+          completedCount: replayOutcomes.completedCount,
+          blockedCount: replayOutcomes.blockedCount,
+          invalidCount: replayOutcomes.invalidCount,
+          completionRateBps: replayOutcomes.completionRateBps,
+          topRecordId: record.id,
+          topRecordScoreBps: 0,
+          latestBaselineSha256: reviewedOutcomeBaseline.contentSha256,
+        },
+      ],
+      contentSha256: "4".repeat(64),
+    };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -834,6 +872,10 @@ describe("Web JSON API wrappers", () => {
         method: "POST",
         body: {},
         response: selection,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/calibration",
+        response: portfolioCalibration,
       },
       {
         path: "/api/plan-blueprints/blueprint_12345678/replays/events/verify",
@@ -964,6 +1006,9 @@ describe("Web JSON API wrappers", () => {
       selectExecutionPlanBlueprintRecord("thread_2"),
     ).resolves.toEqual(selection);
     await expect(
+      getExecutionPlanBlueprintPortfolioCalibration(),
+    ).resolves.toEqual(portfolioCalibration);
+    await expect(
       verifyExecutionPlanBlueprintRecordReplayEvent(record.id, {
         threadId: "thread_2",
         eventId: "event_12345678",
@@ -1015,7 +1060,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(19);
+    expect(fetchMock).toHaveBeenCalledTimes(20);
   });
 });
 

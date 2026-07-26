@@ -920,6 +920,43 @@ export interface ExecutionPlanBlueprintRecordSelection {
   contentSha256: string;
 }
 
+export interface ExecutionPlanBlueprintPortfolioCalibrationFamily {
+  familySha256: string;
+  recordCount: number;
+  activeCount: number;
+  archivedCount: number;
+  sourceQualifiedCount: number;
+  outcomeQualifiedCount: number;
+  reviewedBaselineCount: number;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  topRecordId?: string;
+  topRecordScoreBps?: number;
+  latestBaselineSha256?: string;
+}
+
+export interface ExecutionPlanBlueprintPortfolioCalibration {
+  kind: "napier.execution-plan-blueprint-portfolio-calibration";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  recordCount: number;
+  activeCount: number;
+  archivedCount: number;
+  familyCount: number;
+  sourceQualifiedCount: number;
+  outcomeQualifiedCount: number;
+  reviewedBaselineCount: number;
+  missingBaselineCount: number;
+  policyFailedCount: number;
+  portfolioSetSha256: string;
+  families: ExecutionPlanBlueprintPortfolioCalibrationFamily[];
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

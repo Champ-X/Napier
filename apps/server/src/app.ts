@@ -50,6 +50,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
+  ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
@@ -2427,6 +2428,13 @@ export function createApp(services: NapierServices): Hono {
     const records = services.store.listExecutionPlanBlueprints(status);
     setExecutionPlanBlueprintRecordListHeaders(context, records);
     return context.json(records);
+  });
+
+  app.get("/api/plan-blueprints/portfolio/calibration", async (context) => {
+    const calibration =
+      await services.store.calibrateExecutionPlanBlueprintPortfolio();
+    setExecutionPlanBlueprintPortfolioCalibrationHeaders(context, calibration);
+    return context.json(calibration);
   });
 
   app.get("/api/plan-blueprints/:recordId/qualification", async (context) => {
@@ -11968,6 +11976,54 @@ function setExecutionPlanBlueprintRecordSelectionHeaders(
     context,
     "X-Napier-Selected-Blueprint-Score-BPS",
     selection.selectedScoreBps,
+  );
+}
+
+function setExecutionPlanBlueprintPortfolioCalibrationHeaders(
+  context: Context,
+  calibration: ExecutionPlanBlueprintPortfolioCalibration,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, calibration.contentSha256);
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Record-Count",
+    String(calibration.recordCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Active-Count",
+    String(calibration.activeCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Archived-Count",
+    String(calibration.archivedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Family-Count",
+    String(calibration.familyCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Source-Qualified-Count",
+    String(calibration.sourceQualifiedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Outcome-Qualified-Count",
+    String(calibration.outcomeQualifiedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Reviewed-Baseline-Count",
+    String(calibration.reviewedBaselineCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Missing-Baseline-Count",
+    String(calibration.missingBaselineCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Policy-Failed-Count",
+    String(calibration.policyFailedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    calibration.portfolioSetSha256,
   );
 }
 

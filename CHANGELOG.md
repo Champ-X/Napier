@@ -112,6 +112,15 @@ All notable changes to Napier are recorded here.
   while the Template shelf exposes a separate Promote reviewed action and
   receipt so model-reviewed baselines remain distinguishable from plain policy
   baselines.
+- Blueprint portfolio calibration. `GET
+/api/plan-blueprints/portfolio/calibration` now returns a no-store
+  `napier.execution-plan-blueprint-portfolio-calibration` receipt over the
+  whole Template shelf. The Store groups saved templates by hashed workflow
+  shape, aggregates qualification status, reviewed baseline coverage, replay
+  outcomes, and top record IDs, and exposes only family hashes, counts, and a
+  portfolio-set SHA-256. Server headers mirror the calibration counters, and
+  the Template shelf adds a Calibrate action backed by pure ViewModel receipt
+  tests.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

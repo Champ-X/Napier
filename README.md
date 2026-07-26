@@ -894,7 +894,12 @@ the deterministic rank favors completion basis points, replay evidence volume,
 baseline recency, and record freshness. It returns only record IDs, preview
 hashes, baseline/outcome hashes, counts, diagnostics, and a selection-set
 SHA-256, so objective overrides are represented by hash rather than copied
-back into the artifact. The Plan
+back into the artifact. `GET /api/plan-blueprints/portfolio/calibration`
+returns a no-store `napier.execution-plan-blueprint-portfolio-calibration`
+receipt for the whole library. It groups templates by hashed workflow shape and
+returns only family hashes, record counts, qualification totals, reviewed
+baseline counts, aggregate replay outcomes, top record IDs, and a
+portfolio-set SHA-256. The Plan
 Workbench exposes this as a
 **Template shelf**: save the current verified blueprint, refresh the local
 library, browse active and archived templates with hash evidence, archive or
@@ -908,7 +913,9 @@ no-store validation. It provides the same export/upload loop for replay
 outcomes, keeping creation provenance and mutable delivery status visibly
 separate, can promote or qualify the current outcome baseline for each
 template, can run model review over current outcomes, and can run adaptive
-selection across the shelf before replaying a candidate.
+selection across the shelf before replaying a candidate. It can also calibrate
+the whole portfolio to compare reusable workflow families without exposing
+objective, step, or artifact prose.
 
 ## Portable Replay Fixtures
 

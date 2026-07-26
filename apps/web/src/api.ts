@@ -51,6 +51,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
+  ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   HealthResponse,
@@ -512,6 +513,10 @@ export function getExecutionPlanBlueprintRecordOutcomeBaselines(
   return requestJson(
     `/api/plan-blueprints/${encodeURIComponent(recordId)}/replays/outcomes/baselines`,
   );
+}
+
+export function getExecutionPlanBlueprintPortfolioCalibration(): Promise<ExecutionPlanBlueprintPortfolioCalibration> {
+  return requestJson("/api/plan-blueprints/portfolio/calibration");
 }
 
 export function promoteExecutionPlanBlueprintRecordOutcomeBaseline(

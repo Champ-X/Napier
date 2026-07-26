@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 40,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-D5116nmg.js",
-    "sizeBytes": 136307,
+    "path": "apps/web/dist/assets/index-CGi_8pah.js",
+    "sizeBytes": 136619,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "bddcc521da66708c0515d487212836b3be31286ae216a7106c296a422ce98a13"
+    "sha256": "a0a199ae83ef1045e8eb598b4493e5344a0dc6555b682abec5d3657433337260"
   },
-  "distContentSha256": "bddcc521da66708c0515d487212836b3be31286ae216a7106c296a422ce98a13",
+  "distContentSha256": "a0a199ae83ef1045e8eb598b4493e5344a0dc6555b682abec5d3657433337260",
   "errors": []
 }

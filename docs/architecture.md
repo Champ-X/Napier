@@ -2102,6 +2102,14 @@ select blueprint record for target Thread
   -> return napier.execution-plan-blueprint-selection with record IDs,
      preview hashes, baseline/outcome hashes, low-cardinality diagnostics,
      selection-set SHA-256, and optional objective SHA-256 rather than prose
+calibrate blueprint portfolio
+  -> group saved templates by a hash of workflow shape, using step/dependency
+     and artifact identifiers only after hashing them
+  -> aggregate source qualification, outcome qualification, reviewed baseline
+     counts, replay counts, completion basis points, and top record IDs without
+     exposing objective, step title, artifact path, blocker, or evidence prose
+  -> return napier.execution-plan-blueprint-portfolio-calibration with family
+     hashes, portfolio-set SHA-256, and no Ledger mutation
 ```
 
 Planning tools add a model-aware policy template beside the durable plan
@@ -2246,8 +2254,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- cross-record blueprint portfolio calibration receipts for comparing reusable
-  workflow families without leaking task prose.
+- portfolio-aware blueprint recommendation policies that combine calibration
+  evidence with target-Thread preview readiness.
 
 ### Layer 3: Extension fabric
 

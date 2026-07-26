@@ -32,6 +32,7 @@ import type {
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
   ExecutionPlanBlueprintRecordOutcomeReview,
+  ExecutionPlanBlueprintPortfolioCalibration,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
@@ -5284,6 +5285,57 @@ describe("Napier HTTP goal flow", () => {
         "Execution plan blueprint outcome baseline review failed: review_not_promote,review_risk_above_max",
     });
 
+    const portfolioCalibrationResponse = await app.request(
+      "/api/plan-blueprints/portfolio/calibration",
+    );
+    expect(portfolioCalibrationResponse.status).toBe(200);
+    const portfolioCalibration =
+      (await portfolioCalibrationResponse.json()) as ExecutionPlanBlueprintPortfolioCalibration;
+    expect(portfolioCalibration).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-portfolio-calibration",
+        schemaVersion: 1,
+        recordCount: 1,
+        activeCount: 1,
+        archivedCount: 0,
+        familyCount: 1,
+        sourceQualifiedCount: 1,
+        outcomeQualifiedCount: 1,
+        reviewedBaselineCount: 1,
+        missingBaselineCount: 0,
+        policyFailedCount: 0,
+        portfolioSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(portfolioCalibration.families).toEqual([
+      expect.objectContaining({
+        familySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        recordCount: 1,
+        activeCount: 1,
+        archivedCount: 0,
+        sourceQualifiedCount: 1,
+        outcomeQualifiedCount: 1,
+        reviewedBaselineCount: 1,
+        replayCount: 1,
+        completedCount: 0,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 0,
+        topRecordId: savedBlueprint.record.id,
+        topRecordScoreBps: 0,
+        latestBaselineSha256:
+          reviewedOutcomeBaselineResult.baseline.contentSha256,
+      }),
+    ]);
+    expect(JSON.stringify(portfolioCalibration)).not.toContain(
+      recordPlan.objective,
+    );
+    expectExecutionPlanBlueprintPortfolioCalibrationHeaders(
+      portfolioCalibrationResponse,
+      portfolioCalibration,
+    );
+
     const invalidOutcomeBaselineResponse = await app.request(
       `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/baselines`,
       {
@@ -9132,6 +9184,53 @@ function expectExecutionPlanBlueprintRecordSelectionHeaders(
   expect(response.headers.get("x-napier-selected-blueprint-score-bps")).toBe(
     optionalNumberHeader(selection.selectedScoreBps),
   );
+}
+
+function expectExecutionPlanBlueprintPortfolioCalibrationHeaders(
+  response: Response,
+  calibration: ExecutionPlanBlueprintPortfolioCalibration,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    calibration.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-record-count"),
+  ).toBe(String(calibration.recordCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-active-count"),
+  ).toBe(String(calibration.activeCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-archived-count"),
+  ).toBe(String(calibration.archivedCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-family-count"),
+  ).toBe(String(calibration.familyCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-portfolio-source-qualified-count",
+    ),
+  ).toBe(String(calibration.sourceQualifiedCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-portfolio-outcome-qualified-count",
+    ),
+  ).toBe(String(calibration.outcomeQualifiedCount));
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-portfolio-reviewed-baseline-count",
+    ),
+  ).toBe(String(calibration.reviewedBaselineCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-missing-baseline-count"),
+  ).toBe(String(calibration.missingBaselineCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-policy-failed-count"),
+  ).toBe(String(calibration.policyFailedCount));
+  expect(
+    response.headers.get("x-napier-blueprint-portfolio-set-sha256"),
+  ).toBe(calibration.portfolioSetSha256);
 }
 
 function expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(

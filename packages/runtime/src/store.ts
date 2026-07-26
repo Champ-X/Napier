@@ -55,6 +55,8 @@ import {
   type ExecutionPlanBlueprintRecordOutcomeBaselineReviewGate,
   type ExecutionPlanBlueprintRecordOutcomeQualification,
   type ExecutionPlanBlueprintRecordOutcomeReview,
+  type ExecutionPlanBlueprintPortfolioCalibration,
+  type ExecutionPlanBlueprintPortfolioCalibrationFamily,
   type ExecutionPlanBlueprintRecordSelection,
   type ExecutionPlanBlueprintRecordSelectionCandidate,
   type CredentialAvailability,
@@ -2447,6 +2449,33 @@ export class LocalStore {
       candidates: selectedCandidates,
       ...(objective ? { objective } : {}),
     });
+  }
+
+  async calibrateExecutionPlanBlueprintPortfolio(): Promise<ExecutionPlanBlueprintPortfolioCalibration> {
+    this.assertInitialized();
+    const records = [...this.state.executionPlanBlueprints].sort(
+      compareExecutionPlanBlueprintRecords,
+    );
+    const entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[] = [];
+    for (const record of records) {
+      const sourceQualification =
+        await this.qualifyExecutionPlanBlueprintRecord(record.id);
+      const outcomeQualification =
+        await this.qualifyExecutionPlanBlueprintRecordOutcomes(record.id);
+      const latestBaseline = this.state.executionPlanBlueprintOutcomeBaselines
+        .filter((baseline) => baseline.recordId === record.id)
+        .sort((left, right) => left.promotedAt.localeCompare(right.promotedAt))
+        .at(-1);
+      entries.push(
+        createExecutionPlanBlueprintPortfolioCalibrationEntry({
+          record,
+          sourceQualification,
+          outcomeQualification,
+          ...(latestBaseline ? { latestBaseline } : {}),
+        }),
+      );
+    }
+    return createExecutionPlanBlueprintPortfolioCalibration(entries);
   }
 
   async verifyExecutionPlanBlueprintRecordReplayEvent(
@@ -8748,6 +8777,260 @@ function createExecutionPlanBlueprintSelectionCandidate(input: {
     stepCount: input.record.blueprint.stepCount,
     artifactCount: input.record.blueprint.artifactCount,
   };
+}
+
+interface ExecutionPlanBlueprintPortfolioCalibrationEntry {
+  recordId: string;
+  recordStatus: ExecutionPlanBlueprintRecord["status"];
+  recordUpdatedAt: string;
+  familySha256: string;
+  blueprintSha256: string;
+  sourceQualificationStatus: ExecutionPlanBlueprintRecordQualification["status"];
+  outcomeQualificationStatus: ExecutionPlanBlueprintRecordOutcomeQualification["status"];
+  baselineSha256?: string;
+  baselinePromotedAt?: string;
+  reviewedBaseline: boolean;
+  currentOutcomesSha256: string;
+  currentOutcomeSetSha256: string;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  stepCount: number;
+  artifactCount: number;
+}
+
+function createExecutionPlanBlueprintPortfolioCalibrationEntry(input: {
+  record: ExecutionPlanBlueprintRecord;
+  sourceQualification: ExecutionPlanBlueprintRecordQualification;
+  outcomeQualification: ExecutionPlanBlueprintRecordOutcomeQualification;
+  latestBaseline?: ExecutionPlanBlueprintRecordOutcomeBaseline;
+}): ExecutionPlanBlueprintPortfolioCalibrationEntry {
+  return {
+    recordId: input.record.id,
+    recordStatus: input.record.status,
+    recordUpdatedAt: input.record.updatedAt,
+    familySha256: executionPlanBlueprintFamilySha256(input.record.blueprint),
+    blueprintSha256: input.record.blueprintSha256,
+    sourceQualificationStatus: input.sourceQualification.status,
+    outcomeQualificationStatus: input.outcomeQualification.status,
+    ...(input.outcomeQualification.baselineSha256
+      ? { baselineSha256: input.outcomeQualification.baselineSha256 }
+      : {}),
+    ...(input.latestBaseline?.promotedAt
+      ? { baselinePromotedAt: input.latestBaseline.promotedAt }
+      : {}),
+    reviewedBaseline: Boolean(input.latestBaseline?.reviewSha256),
+    currentOutcomesSha256: input.outcomeQualification.currentOutcomesSha256,
+    currentOutcomeSetSha256: input.outcomeQualification.currentOutcomeSetSha256,
+    replayCount: input.outcomeQualification.replayCount,
+    completedCount: input.outcomeQualification.completedCount,
+    blockedCount: input.outcomeQualification.blockedCount,
+    invalidCount: input.outcomeQualification.invalidCount,
+    completionRateBps: input.outcomeQualification.completionRateBps,
+    stepCount: input.record.blueprint.stepCount,
+    artifactCount: input.record.blueprint.artifactCount,
+  };
+}
+
+function executionPlanBlueprintFamilySha256(
+  blueprint: ExecutionPlanBlueprintRecord["blueprint"],
+): string {
+  return sha256(
+    canonicalJson({
+      stepCount: blueprint.stepCount,
+      artifactCount: blueprint.artifactCount,
+      steps: blueprint.steps
+        .map((step) => ({
+          idSha256: sha256(step.id),
+          dependsOnSha256: sha256(
+            canonicalJson([...(step.dependsOn ?? [])].sort()),
+          ),
+        }))
+        .sort((left, right) => left.idSha256.localeCompare(right.idSha256)),
+      artifacts: (blueprint.artifacts ?? [])
+        .map((artifact) => ({
+          idSha256: sha256(artifact.id),
+          kind: artifact.kind ?? "file",
+        }))
+        .sort((left, right) => left.idSha256.localeCompare(right.idSha256)),
+    }),
+  );
+}
+
+function createExecutionPlanBlueprintPortfolioCalibration(
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
+): ExecutionPlanBlueprintPortfolioCalibration {
+  const families = createExecutionPlanBlueprintPortfolioCalibrationFamilies(
+    entries,
+  );
+  const content = {
+    kind: "napier.execution-plan-blueprint-portfolio-calibration" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    recordCount: entries.length,
+    activeCount: entries.filter((entry) => entry.recordStatus === "active")
+      .length,
+    archivedCount: entries.filter((entry) => entry.recordStatus === "archived")
+      .length,
+    familyCount: families.length,
+    sourceQualifiedCount: entries.filter(
+      (entry) => entry.sourceQualificationStatus === "qualified",
+    ).length,
+    outcomeQualifiedCount: entries.filter(
+      (entry) => entry.outcomeQualificationStatus === "qualified",
+    ).length,
+    reviewedBaselineCount: entries.filter((entry) => entry.reviewedBaseline)
+      .length,
+    missingBaselineCount: entries.filter(
+      (entry) => entry.outcomeQualificationStatus === "missing_baseline",
+    ).length,
+    policyFailedCount: entries.filter(
+      (entry) => entry.outcomeQualificationStatus === "policy_failed",
+    ).length,
+    portfolioSetSha256: sha256(
+      canonicalJson(
+        entries.map((entry) => ({
+          recordId: entry.recordId,
+          recordStatus: entry.recordStatus,
+          familySha256: entry.familySha256,
+          blueprintSha256: entry.blueprintSha256,
+          sourceQualificationStatus: entry.sourceQualificationStatus,
+          outcomeQualificationStatus: entry.outcomeQualificationStatus,
+          ...(entry.baselineSha256
+            ? { baselineSha256: entry.baselineSha256 }
+            : {}),
+          reviewedBaseline: entry.reviewedBaseline,
+          currentOutcomesSha256: entry.currentOutcomesSha256,
+          currentOutcomeSetSha256: entry.currentOutcomeSetSha256,
+          replayCount: entry.replayCount,
+          completedCount: entry.completedCount,
+          blockedCount: entry.blockedCount,
+          invalidCount: entry.invalidCount,
+          completionRateBps: entry.completionRateBps,
+        })),
+      ),
+    ),
+    families,
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createExecutionPlanBlueprintPortfolioCalibrationFamilies(
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
+): ExecutionPlanBlueprintPortfolioCalibrationFamily[] {
+  const byFamily = new Map<
+    string,
+    ExecutionPlanBlueprintPortfolioCalibrationEntry[]
+  >();
+  for (const entry of entries) {
+    const current = byFamily.get(entry.familySha256) ?? [];
+    current.push(entry);
+    byFamily.set(entry.familySha256, current);
+  }
+  return [...byFamily.entries()]
+    .map(([familySha256, familyEntries]) =>
+      createExecutionPlanBlueprintPortfolioCalibrationFamily(
+        familySha256,
+        familyEntries,
+      ),
+    )
+    .sort((left, right) => {
+      const qualifiedOrder =
+        right.outcomeQualifiedCount - left.outcomeQualifiedCount;
+      if (qualifiedOrder !== 0) return qualifiedOrder;
+      const replayOrder = right.replayCount - left.replayCount;
+      if (replayOrder !== 0) return replayOrder;
+      return left.familySha256.localeCompare(right.familySha256);
+    });
+}
+
+function createExecutionPlanBlueprintPortfolioCalibrationFamily(
+  familySha256: string,
+  entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
+): ExecutionPlanBlueprintPortfolioCalibrationFamily {
+  const replayCount = entries.reduce(
+    (total, entry) => total + entry.replayCount,
+    0,
+  );
+  const completedCount = entries.reduce(
+    (total, entry) => total + entry.completedCount,
+    0,
+  );
+  const top = entries
+    .filter(
+      (entry) =>
+        entry.recordStatus === "active" &&
+        entry.sourceQualificationStatus === "qualified" &&
+        entry.outcomeQualificationStatus === "qualified",
+    )
+    .sort(compareExecutionPlanBlueprintPortfolioEntries)
+    .at(0);
+  const latestBaseline = entries
+    .filter((entry) => entry.baselineSha256 && entry.baselinePromotedAt)
+    .sort((left, right) =>
+      (right.baselinePromotedAt ?? "").localeCompare(
+        left.baselinePromotedAt ?? "",
+      ),
+    )
+    .at(0);
+  return {
+    familySha256,
+    recordCount: entries.length,
+    activeCount: entries.filter((entry) => entry.recordStatus === "active")
+      .length,
+    archivedCount: entries.filter((entry) => entry.recordStatus === "archived")
+      .length,
+    sourceQualifiedCount: entries.filter(
+      (entry) => entry.sourceQualificationStatus === "qualified",
+    ).length,
+    outcomeQualifiedCount: entries.filter(
+      (entry) => entry.outcomeQualificationStatus === "qualified",
+    ).length,
+    reviewedBaselineCount: entries.filter((entry) => entry.reviewedBaseline)
+      .length,
+    replayCount,
+    completedCount,
+    blockedCount: entries.reduce(
+      (total, entry) => total + entry.blockedCount,
+      0,
+    ),
+    invalidCount: entries.reduce(
+      (total, entry) => total + entry.invalidCount,
+      0,
+    ),
+    completionRateBps:
+      replayCount > 0 ? Math.round((completedCount / replayCount) * 10_000) : 0,
+    ...(top ? { topRecordId: top.recordId } : {}),
+    ...(top ? { topRecordScoreBps: top.completionRateBps } : {}),
+    ...(latestBaseline?.baselineSha256
+      ? { latestBaselineSha256: latestBaseline.baselineSha256 }
+      : {}),
+  };
+}
+
+function compareExecutionPlanBlueprintPortfolioEntries(
+  left: ExecutionPlanBlueprintPortfolioCalibrationEntry,
+  right: ExecutionPlanBlueprintPortfolioCalibrationEntry,
+): number {
+  const scoreOrder = right.completionRateBps - left.completionRateBps;
+  if (scoreOrder !== 0) return scoreOrder;
+  const replayOrder = right.replayCount - left.replayCount;
+  if (replayOrder !== 0) return replayOrder;
+  const completedOrder = right.completedCount - left.completedCount;
+  if (completedOrder !== 0) return completedOrder;
+  const baselineOrder = (right.baselinePromotedAt ?? "").localeCompare(
+    left.baselinePromotedAt ?? "",
+  );
+  if (baselineOrder !== 0) return baselineOrder;
+  const recordOrder = right.recordUpdatedAt.localeCompare(left.recordUpdatedAt);
+  if (recordOrder !== 0) return recordOrder;
+  return left.recordId.localeCompare(right.recordId);
 }
 
 function uniqueStrings(values: string[]): string[] {
