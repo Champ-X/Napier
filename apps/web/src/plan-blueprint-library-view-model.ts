@@ -16,6 +16,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+  RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 
@@ -246,6 +247,7 @@ export interface PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewRece
   retireRecommendedCount: number;
   missingFamilyCount: number;
   reviewedFamilySha256?: string;
+  reviewedOverrideSha256?: string;
   reviewedStatus?: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview["reviews"][number]["status"];
   reviewedRecommendation?: ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview["reviews"][number]["recommendation"];
   reviewedDiagnostics: string[];
@@ -255,6 +257,19 @@ export interface PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewRece
   bestSelectedRecordId?: string;
   overrideSelectedRecommendationScoreBps?: number;
   bestSelectedRecommendationScoreBps?: number;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt {
+  action: "policyOverrideRetired";
+  contentSha256: string;
+  portfolioSetSha256: string;
+  familySha256: string;
+  retiredOverrideSha256: string;
+  retiredRecommendationPolicyTemplate: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult["retiredRecommendationPolicyTemplate"];
+  retiredRecommendationPolicySha256: string;
+  overrideSetSha256: string;
+  driftReviewSetSha256: string;
+  remainingOverrideSetSha256: string;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -697,6 +712,7 @@ export function planBlueprintRecommendationPolicyOverrideDriftReviewReceipt(
     ...(selectedReview
       ? {
           reviewedFamilySha256: selectedReview.familySha256,
+          reviewedOverrideSha256: selectedReview.overrideSha256,
           reviewedStatus: selectedReview.status,
           reviewedRecommendation: selectedReview.recommendation,
           overridePolicyTemplate: selectedReview.overridePolicyTemplate,
@@ -724,6 +740,24 @@ export function planBlueprintRecommendationPolicyOverrideDriftReviewReceipt(
             selectedReview.bestSelectedRecommendationScoreBps,
         }
       : {}),
+  };
+}
+
+export function planBlueprintRecommendationPolicyOverrideRetirementReceipt(
+  result: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
+): PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt {
+  return {
+    action: "policyOverrideRetired",
+    contentSha256: result.contentSha256,
+    portfolioSetSha256: result.portfolioSetSha256,
+    familySha256: result.familySha256,
+    retiredOverrideSha256: result.retiredOverrideSha256,
+    retiredRecommendationPolicyTemplate:
+      result.retiredRecommendationPolicyTemplate,
+    retiredRecommendationPolicySha256: result.retiredRecommendationPolicySha256,
+    overrideSetSha256: result.overrideSetSha256,
+    driftReviewSetSha256: result.driftReviewSetSha256,
+    remainingOverrideSetSha256: result.remainingOverrideSetSha256,
   };
 }
 

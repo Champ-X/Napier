@@ -15,6 +15,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+  RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
 } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
@@ -30,6 +31,7 @@ import {
   planBlueprintRecommendationPolicyBacktestReceipt,
   planBlueprintRecommendationPolicyOverrideReceipt,
   planBlueprintRecommendationPolicyOverrideDriftReviewReceipt,
+  planBlueprintRecommendationPolicyOverrideRetirementReceipt,
   planBlueprintReplayHistoryReceipt,
   planBlueprintReplayHistoryVerificationReceipt,
   planBlueprintReplayOutcomesReceipt,
@@ -869,6 +871,7 @@ describe("Plan blueprint library view model", () => {
       retireRecommendedCount: 1,
       missingFamilyCount: 0,
       reviewedFamilySha256: "8".repeat(64),
+      reviewedOverrideSha256: "9".repeat(64),
       reviewedStatus: "retire_recommended",
       reviewedRecommendation: "retire",
       reviewedDiagnostics: ["override_policy_not_best"],
@@ -878,6 +881,41 @@ describe("Plan blueprint library view model", () => {
       bestSelectedRecordId: "blueprint_delivery",
       overrideSelectedRecommendationScoreBps: 5_450,
       bestSelectedRecommendationScoreBps: 6_400,
+    });
+  });
+
+  it("projects blueprint recommendation policy override retirement receipts", () => {
+    const result: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        familySha256: "1".repeat(64),
+        retiredOverrideSha256: "2".repeat(64),
+        retiredRecommendationPolicyTemplate: "balanced",
+        retiredRecommendationPolicySha256: "3".repeat(64),
+        portfolioSetSha256: "4".repeat(64),
+        overrideSetSha256: "5".repeat(64),
+        driftReviewSetSha256: "6".repeat(64),
+        remainingOverrideSetSha256: "7".repeat(64),
+        retiredAt: "2026-07-26T00:00:10.000Z",
+        contentSha256: "8".repeat(64),
+      };
+
+    expect(
+      planBlueprintRecommendationPolicyOverrideRetirementReceipt(result),
+    ).toEqual({
+      action: "policyOverrideRetired",
+      contentSha256: result.contentSha256,
+      portfolioSetSha256: result.portfolioSetSha256,
+      familySha256: result.familySha256,
+      retiredOverrideSha256: result.retiredOverrideSha256,
+      retiredRecommendationPolicyTemplate: "balanced",
+      retiredRecommendationPolicySha256:
+        result.retiredRecommendationPolicySha256,
+      overrideSetSha256: result.overrideSetSha256,
+      driftReviewSetSha256: result.driftReviewSetSha256,
+      remainingOverrideSetSha256: result.remainingOverrideSetSha256,
     });
   });
 

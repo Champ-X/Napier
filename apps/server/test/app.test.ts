@@ -39,6 +39,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+  RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
   EvaluationAdjudication,
@@ -5593,6 +5594,126 @@ describe("Napier HTTP goal flow", () => {
       overrideSelection,
     );
 
+    const alignedRetirementResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          familySha256: portfolioCalibration.families[0]?.familySha256,
+          expectedOverrideSha256: policyOverride.contentSha256,
+          expectedOverrideSetSha256: policyOverrideList.overrideSetSha256,
+          expectedDriftReviewSetSha256:
+            policyOverrideDriftReview.reviewSetSha256,
+          expectedPortfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        }),
+      },
+    );
+    expect(alignedRetirementResponse.status).toBe(409);
+    expect(await alignedRetirementResponse.json()).toEqual({
+      error:
+        "Execution plan blueprint recommendation policy override retirement is not retire recommended",
+    });
+
+    const driftedPolicyOverrideResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          familySha256: portfolioCalibration.families[0]?.familySha256,
+          policyTemplate: "balanced",
+          expectedPortfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        }),
+      },
+    );
+    expect(driftedPolicyOverrideResponse.status).toBe(200);
+    const driftedPolicyOverride =
+      (await driftedPolicyOverrideResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverride;
+    const driftedPolicyOverrideListResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+    );
+    expect(driftedPolicyOverrideListResponse.status).toBe(200);
+    const driftedPolicyOverrideList =
+      (await driftedPolicyOverrideListResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideList;
+    const driftedPolicyOverrideReviewResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
+    );
+    expect(driftedPolicyOverrideReviewResponse.status).toBe(200);
+    const driftedPolicyOverrideReview =
+      (await driftedPolicyOverrideReviewResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview;
+    expect(driftedPolicyOverrideReview).toEqual(
+      expect.objectContaining({
+        overrideCount: 1,
+        alignedCount: 0,
+        retireRecommendedCount: 1,
+        reviews: [
+          expect.objectContaining({
+            familySha256: portfolioCalibration.families[0]?.familySha256,
+            overrideSha256: driftedPolicyOverride.contentSha256,
+            status: "retire_recommended",
+            recommendation: "retire",
+            diagnostics: ["override_policy_not_best"],
+            overridePolicyTemplate: "balanced",
+            bestPolicyTemplate: "portfolio_first",
+          }),
+        ],
+      }),
+    );
+    const policyOverrideRetirementResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          familySha256: portfolioCalibration.families[0]?.familySha256,
+          expectedOverrideSha256: driftedPolicyOverride.contentSha256,
+          expectedOverrideSetSha256:
+            driftedPolicyOverrideList.overrideSetSha256,
+          expectedDriftReviewSetSha256:
+            driftedPolicyOverrideReview.reviewSetSha256,
+          expectedPortfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        }),
+      },
+    );
+    expect(policyOverrideRetirementResponse.status).toBe(200);
+    const policyOverrideRetirement =
+      (await policyOverrideRetirementResponse.json()) as RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult;
+    expect(policyOverrideRetirement).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement",
+        schemaVersion: 1,
+        familySha256: portfolioCalibration.families[0]?.familySha256,
+        retiredOverrideSha256: driftedPolicyOverride.contentSha256,
+        retiredRecommendationPolicyTemplate: "balanced",
+        retiredRecommendationPolicySha256:
+          driftedPolicyOverride.recommendationPolicySha256,
+        portfolioSetSha256: portfolioCalibration.portfolioSetSha256,
+        overrideSetSha256: driftedPolicyOverrideList.overrideSetSha256,
+        driftReviewSetSha256: driftedPolicyOverrideReview.reviewSetSha256,
+        remainingOverrideSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        retiredAt: expect.any(String),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
+      policyOverrideRetirementResponse,
+      policyOverrideRetirement,
+    );
+    const retiredPolicyOverrideListResponse = await app.request(
+      "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+    );
+    expect(retiredPolicyOverrideListResponse.status).toBe(200);
+    const retiredPolicyOverrideList =
+      (await retiredPolicyOverrideListResponse.json()) as ExecutionPlanBlueprintRecommendationPolicyOverrideList;
+    expect(retiredPolicyOverrideList).toEqual(
+      expect.objectContaining({
+        overrideCount: 0,
+        overrides: [],
+        overrideSetSha256: policyOverrideRetirement.remainingOverrideSetSha256,
+      }),
+    );
+
     const stalePolicyOverrideResponse = await app.request(
       "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
       {
@@ -9681,6 +9802,49 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHead
       "x-napier-blueprint-family-policy-override-drift-review-set-sha256",
     ),
   ).toBe(review.reviewSetSha256);
+}
+
+function expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
+  response: Response,
+  result: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    result.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-blueprint-family-sha256")).toBe(
+    result.familySha256,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-retired-sha256",
+    ),
+  ).toBe(result.retiredOverrideSha256);
+  expect(
+    response.headers.get("x-napier-blueprint-recommendation-policy-template"),
+  ).toBe(result.retiredRecommendationPolicyTemplate);
+  expect(
+    response.headers.get("x-napier-blueprint-recommendation-policy-sha256"),
+  ).toBe(result.retiredRecommendationPolicySha256);
+  expect(response.headers.get("x-napier-blueprint-portfolio-set-sha256")).toBe(
+    result.portfolioSetSha256,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-set-sha256",
+    ),
+  ).toBe(result.overrideSetSha256);
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-drift-review-set-sha256",
+    ),
+  ).toBe(result.driftReviewSetSha256);
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-family-policy-override-remaining-set-sha256",
+    ),
+  ).toBe(result.remainingOverrideSetSha256);
 }
 
 function expectExecutionPlanBlueprintRecordReplayEventVerificationHeaders(

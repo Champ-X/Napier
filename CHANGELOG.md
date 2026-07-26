@@ -165,6 +165,15 @@ All notable changes to Napier are recorded here.
   diagnostics. Server headers mirror the drift counters and hashes, and the
   Template shelf adds a Review override drift action backed by pure ViewModel
   receipt tests.
+- Blueprint recommendation policy override retirement. `POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire` now
+  removes a stale family override only when the request supplies matching
+  family, override, override-set, drift review-set, and portfolio-set SHA-256
+  evidence from a fresh drift review. Aligned overrides and stale evidence fail
+  closed with 409. The retirement receipt exposes the retired override/policy
+  hashes, drift review-set SHA-256, and remaining override-set SHA-256, and the
+  Template shelf can retire the highlighted drifted override from the
+  ViewModel-projected receipt.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

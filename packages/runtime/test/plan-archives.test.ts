@@ -906,9 +906,9 @@ describe("execution plan archives", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    await expect(
-      store.reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift(),
-    ).resolves.toEqual(
+    const policyOverrideDriftReview =
+      await store.reviewExecutionPlanBlueprintRecommendationPolicyOverrideDrift();
+    expect(policyOverrideDriftReview).toEqual(
       expect.objectContaining({
         kind: "napier.execution-plan-blueprint-recommendation-policy-override-drift-review",
         schemaVersion: 1,
@@ -970,6 +970,51 @@ describe("execution plan archives", () => {
         familyPolicyOverrideSha256: policyOverride.contentSha256,
       }),
     ]);
+    const policyOverrideRetirement =
+      await store.retireExecutionPlanBlueprintRecommendationPolicyOverride({
+        familySha256: selection.selectedFamilySha256!,
+        expectedOverrideSha256: policyOverride.contentSha256,
+        expectedOverrideSetSha256: policyOverrideDriftReview.overrideSetSha256,
+        expectedDriftReviewSetSha256: policyOverrideDriftReview.reviewSetSha256,
+        expectedPortfolioSetSha256: selection.portfolioSetSha256,
+      });
+    expect(policyOverrideRetirement).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement",
+        schemaVersion: 1,
+        familySha256: selection.selectedFamilySha256,
+        retiredOverrideSha256: policyOverride.contentSha256,
+        retiredRecommendationPolicyTemplate: "portfolio_first",
+        retiredRecommendationPolicySha256:
+          policyOverride.recommendationPolicySha256,
+        portfolioSetSha256: selection.portfolioSetSha256,
+        overrideSetSha256: policyOverrideDriftReview.overrideSetSha256,
+        driftReviewSetSha256: policyOverrideDriftReview.reviewSetSha256,
+        remainingOverrideSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        retiredAt: expect.any(String),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    await expect(
+      store.listExecutionPlanBlueprintRecommendationPolicyOverrides(),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        overrideCount: 0,
+        overrides: [],
+        overrideSetSha256: policyOverrideRetirement.remainingOverrideSetSha256,
+      }),
+    );
+    const postRetirementSelection =
+      await store.selectExecutionPlanBlueprintRecord(selectionThread.id);
+    expect(postRetirementSelection).toEqual(
+      expect.objectContaining({
+        selectedRecordId: first.record.id,
+        selectedRecommendationScoreBps: 7_600,
+        selectedRecommendationPolicyTemplate: "balanced",
+        selectedRecommendationPolicySource: "default",
+        familyPolicyOverrideCount: 0,
+      }),
+    );
     await expect(
       store.setExecutionPlanBlueprintRecommendationPolicyOverride({
         familySha256: selection.selectedFamilySha256!,

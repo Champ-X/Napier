@@ -69,6 +69,8 @@ import {
   type ExecutionPlanBlueprintPortfolioCalibrationFamily,
   type ExecutionPlanBlueprintRecordSelection,
   type ExecutionPlanBlueprintRecordSelectionCandidate,
+  type RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
+  type RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   type SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   type CredentialAvailability,
   type CredentialReference,
@@ -2674,6 +2676,104 @@ export class LocalStore {
       );
       await this.persistState();
       return structuredClone(override);
+    });
+  }
+
+  async retireExecutionPlanBlueprintRecommendationPolicyOverride(
+    request: RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
+  ): Promise<RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      if (
+        !isSha256(request.familySha256) ||
+        !isSha256(request.expectedOverrideSha256) ||
+        !isSha256(request.expectedOverrideSetSha256) ||
+        !isSha256(request.expectedDriftReviewSetSha256) ||
+        !isSha256(request.expectedPortfolioSetSha256)
+      ) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override retirement request is invalid",
+        );
+      }
+      const entries =
+        await this.listExecutionPlanBlueprintPortfolioCalibrationEntries();
+      const portfolioSetSha256 =
+        executionPlanBlueprintPortfolioSetSha256(entries);
+      if (request.expectedPortfolioSetSha256 !== portfolioSetSha256) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override retirement portfolio set changed",
+        );
+      }
+      const overrides =
+        this.state.executionPlanBlueprintRecommendationPolicyOverrides.map(
+          validateExecutionPlanBlueprintRecommendationPolicyOverride,
+        );
+      const overrideSetSha256 =
+        executionPlanBlueprintRecommendationPolicyOverrideSetSha256(overrides);
+      if (request.expectedOverrideSetSha256 !== overrideSetSha256) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override retirement override set changed",
+        );
+      }
+      const override = overrides.find(
+        (candidate) => candidate.familySha256 === request.familySha256,
+      );
+      if (!override) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override retirement override is missing",
+        );
+      }
+      if (request.expectedOverrideSha256 !== override.contentSha256) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override retirement override changed",
+        );
+      }
+      const families =
+        createExecutionPlanBlueprintPortfolioCalibrationFamilies(entries);
+      const driftReview =
+        createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview({
+          entries,
+          families,
+          overrides,
+          policies: listExecutionPlanBlueprintRecommendationPolicies(),
+          portfolioSetSha256,
+        });
+      if (
+        request.expectedDriftReviewSetSha256 !== driftReview.reviewSetSha256
+      ) {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override retirement drift review changed",
+        );
+      }
+      const review = driftReview.reviews.find(
+        (candidate) => candidate.familySha256 === request.familySha256,
+      );
+      if (!review || review.recommendation !== "retire") {
+        throw new Error(
+          "Execution plan blueprint recommendation policy override retirement is not retire recommended",
+        );
+      }
+      this.state.executionPlanBlueprintRecommendationPolicyOverrides =
+        overrides.filter(
+          (candidate) => candidate.familySha256 !== request.familySha256,
+        );
+      const remainingOverrideSetSha256 =
+        executionPlanBlueprintRecommendationPolicyOverrideSetSha256(
+          this.state.executionPlanBlueprintRecommendationPolicyOverrides,
+        );
+      const result =
+        createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult(
+          {
+            override,
+            portfolioSetSha256,
+            overrideSetSha256,
+            driftReviewSetSha256: driftReview.reviewSetSha256,
+            remainingOverrideSetSha256,
+            retiredAt: nowIso(),
+          },
+        );
+      await this.persistState();
+      return structuredClone(result);
     });
   }
 
@@ -9440,6 +9540,36 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewCont
   return {
     ...content,
     reviewSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult(input: {
+  override: ExecutionPlanBlueprintRecommendationPolicyOverride;
+  portfolioSetSha256: string;
+  overrideSetSha256: string;
+  driftReviewSetSha256: string;
+  remainingOverrideSetSha256: string;
+  retiredAt: string;
+}): RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult {
+  const content = {
+    kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    familySha256: input.override.familySha256,
+    retiredOverrideSha256: input.override.contentSha256,
+    retiredRecommendationPolicyTemplate:
+      input.override.recommendationPolicy.templateId,
+    retiredRecommendationPolicySha256:
+      input.override.recommendationPolicySha256,
+    portfolioSetSha256: input.portfolioSetSha256,
+    overrideSetSha256: input.overrideSetSha256,
+    driftReviewSetSha256: input.driftReviewSetSha256,
+    remainingOverrideSetSha256: input.remainingOverrideSetSha256,
+    retiredAt: input.retiredAt,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
   };
 }
 

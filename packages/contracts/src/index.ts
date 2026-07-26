@@ -1136,6 +1136,30 @@ export interface ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview {
   contentSha256: string;
 }
 
+export interface RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest {
+  familySha256: string;
+  expectedOverrideSha256: string;
+  expectedOverrideSetSha256: string;
+  expectedDriftReviewSetSha256: string;
+  expectedPortfolioSetSha256: string;
+}
+
+export interface RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement";
+  schemaVersion: 1;
+  apiVersion: string;
+  familySha256: string;
+  retiredOverrideSha256: string;
+  retiredRecommendationPolicyTemplate: ExecutionPlanBlueprintRecommendationPolicyTemplateId;
+  retiredRecommendationPolicySha256: string;
+  portfolioSetSha256: string;
+  overrideSetSha256: string;
+  driftReviewSetSha256: string;
+  remainingOverrideSetSha256: string;
+  retiredAt: string;
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

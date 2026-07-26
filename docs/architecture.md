@@ -2137,6 +2137,17 @@ review blueprint family recommendation policy override drift
      with keep/retire recommendations, aligned/retire/missing-family counts,
      override-set SHA-256, drift review-set SHA-256, policy hashes, selected
      record IDs, and low-cardinality diagnostics only
+retire blueprint family recommendation policy override
+  -> require family SHA-256 plus expected override, override-set, drift
+     review-set, and portfolio-set SHA-256 values from a fresh drift review
+  -> recompute the current drift review and fail closed with 409 if any CAS
+     evidence changed or the family override is not currently retire
+     recommended
+  -> remove the persisted override and return
+     napier.execution-plan-blueprint-recommendation-policy-override-retirement
+     with retired override/policy hashes, drift review-set SHA-256, remaining
+     override-set SHA-256, and no objective, step title, artifact path, blocker,
+     or evidence prose
 calibrate blueprint portfolio
   -> group saved templates by a hash of workflow shape, using step/dependency
      and artifact identifiers only after hashing them
@@ -2289,8 +2300,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- policy override retirement workflow that removes stale family overrides only
-  when a fresh drift review-set SHA-256 is supplied as CAS evidence.
+- append-only policy override retirement history so removed family overrides can
+  be audited after the current override set has changed.
 
 ### Layer 3: Extension fabric
 

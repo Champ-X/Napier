@@ -914,7 +914,15 @@ reviews the current override set against current portfolio/backtest evidence
 without mutating the Ledger. The no-store receipt returns aligned, retire
 recommended, and missing-family counts, plus an override drift review-set
 SHA-256 and per-family diagnostics that compare the override policy template
-and selected record with the current best policy. `GET
+and selected record with the current best policy. `POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire` removes
+a stale family override only when the caller supplies the current family hash,
+override SHA-256, override-set SHA-256, drift review-set SHA-256, and
+portfolio-set SHA-256. If the review evidence changes, the override changes, or
+the override is not retire recommended, the request fails closed with
+`409 Conflict`. The retirement receipt mirrors the retired override hash,
+retired policy hash, drift review-set hash, and remaining override-set hash.
+`GET
 /api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
 policy templates against the current library's historical replay outcomes
 without target-Thread preview or Ledger mutation. The no-store receipt returns

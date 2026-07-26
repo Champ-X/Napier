@@ -69,6 +69,8 @@ import type {
   PreviewExtensionPackageUpdateRequest,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+  RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
+  RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   PromptRequest,
   ReplanExecutionPlanRequest,
@@ -547,6 +549,18 @@ export function setExecutionPlanBlueprintRecommendationPolicyOverride(
 ): Promise<ExecutionPlanBlueprintRecommendationPolicyOverride> {
   return requestJson(
     "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function retireExecutionPlanBlueprintRecommendationPolicyOverride(
+  body: RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
+): Promise<RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult> {
+  return requestJson(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire",
     {
       method: "POST",
       body: JSON.stringify(body),

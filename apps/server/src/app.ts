@@ -82,6 +82,8 @@ import type {
   ReceiptTrustAnchor,
   RevokeExtensionPublisherTrustAnchorRequest,
   RevokeReceiptTrustAnchorRequest,
+  RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
+  RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   SignedExtensionPackageEnvelope,
   SignedPromptPackageEnvelope,
   SignedSkillPackageEnvelope,
@@ -2478,6 +2480,62 @@ export function createApp(services: NapierServices): Hono {
         review,
       );
       return context.json(review);
+    },
+  );
+
+  app.post(
+    "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
+          "Execution plan blueprint recommendation policy override retirement request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override retirement request is invalid",
+          400,
+        );
+      }
+      const request =
+        parseRetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
+          input,
+        );
+      if (!request) {
+        return jsonError(
+          context,
+          "Execution plan blueprint recommendation policy override retirement request is invalid",
+          400,
+        );
+      }
+      try {
+        const result =
+          await services.store.retireExecutionPlanBlueprintRecommendationPolicyOverride(
+            request,
+          );
+        setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
+          context,
+          result,
+        );
+        return context.json(result);
+      } catch (error) {
+        const message = errorMessage(error);
+        return jsonError(
+          context,
+          message,
+          message.includes("changed") ||
+            message.includes("missing") ||
+            message.includes("not retire recommended")
+            ? 409
+            : 400,
+        );
+      }
     },
   );
 
@@ -8409,6 +8467,40 @@ function parseSetExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
   };
 }
 
+function parseRetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest(
+  input: unknown,
+): RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest | undefined {
+  const record = requestRecord(input, [
+    "familySha256",
+    "expectedOverrideSha256",
+    "expectedOverrideSetSha256",
+    "expectedDriftReviewSetSha256",
+    "expectedPortfolioSetSha256",
+  ]);
+  if (!record) return undefined;
+  const familySha256 = record["familySha256"];
+  const expectedOverrideSha256 = record["expectedOverrideSha256"];
+  const expectedOverrideSetSha256 = record["expectedOverrideSetSha256"];
+  const expectedDriftReviewSetSha256 = record["expectedDriftReviewSetSha256"];
+  const expectedPortfolioSetSha256 = record["expectedPortfolioSetSha256"];
+  if (
+    !isSha256Hex(familySha256) ||
+    !isSha256Hex(expectedOverrideSha256) ||
+    !isSha256Hex(expectedOverrideSetSha256) ||
+    !isSha256Hex(expectedDriftReviewSetSha256) ||
+    !isSha256Hex(expectedPortfolioSetSha256)
+  ) {
+    return undefined;
+  }
+  return {
+    familySha256,
+    expectedOverrideSha256,
+    expectedOverrideSetSha256,
+    expectedDriftReviewSetSha256,
+    expectedPortfolioSetSha256,
+  };
+}
+
 function parseSetExecutionPlanBlueprintRecordStatusRequest(
   input: unknown,
 ): SetExecutionPlanBlueprintRecordStatusRequest | undefined {
@@ -12338,6 +12430,43 @@ function setExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewHeaders
   context.header(
     "X-Napier-Blueprint-Family-Policy-Override-Drift-Review-Set-SHA256",
     review.reviewSetSha256,
+  );
+}
+
+function setExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHeaders(
+  context: Context,
+  result: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, result.contentSha256);
+  context.header("X-Napier-Blueprint-Family-SHA256", result.familySha256);
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Retired-SHA256",
+    result.retiredOverrideSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-Template",
+    result.retiredRecommendationPolicyTemplate,
+  );
+  context.header(
+    "X-Napier-Blueprint-Recommendation-Policy-SHA256",
+    result.retiredRecommendationPolicySha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Portfolio-Set-SHA256",
+    result.portfolioSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Set-SHA256",
+    result.overrideSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Drift-Review-Set-SHA256",
+    result.driftReviewSetSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Family-Policy-Override-Remaining-Set-SHA256",
+    result.remainingOverrideSetSha256,
   );
 }
 
