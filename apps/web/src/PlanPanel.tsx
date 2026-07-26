@@ -33,6 +33,7 @@ import {
   getExecutionPlanBlueprintRecords,
   previewExecutionPlanFromBlueprintRecord,
   promoteExecutionPlanBlueprintRecordOutcomeBaseline,
+  reviewExecutionPlanBlueprintRecordOutcomes,
   reviewReplanDraft,
   saveExecutionPlanBlueprint,
   selectExecutionPlanBlueprintRecord,
@@ -52,6 +53,8 @@ import {
   type PlanBlueprintLibraryOutcomeBaselineReceipt,
   planBlueprintOutcomeQualificationReceipt,
   type PlanBlueprintLibraryOutcomeQualificationReceipt,
+  planBlueprintOutcomeReviewReceipt,
+  type PlanBlueprintLibraryOutcomeReviewReceipt,
   planBlueprintPreviewReceipt,
   type PlanBlueprintLibraryPreviewReceipt,
   planBlueprintQualificationReceipt,
@@ -135,6 +138,7 @@ type PlanBlueprintLibraryBusyAction =
   | "verifyOutcomes"
   | "promoteOutcomeBaseline"
   | "qualifyOutcomes"
+  | "reviewOutcomes"
   | "select";
 
 type PlanBlueprintLibraryReceipt =
@@ -155,6 +159,7 @@ type PlanBlueprintLibraryReceipt =
   | PlanBlueprintLibraryReplayOutcomesVerificationReceipt
   | PlanBlueprintLibraryOutcomeBaselineReceipt
   | PlanBlueprintLibraryOutcomeQualificationReceipt
+  | PlanBlueprintLibraryOutcomeReviewReceipt
   | PlanBlueprintLibrarySelectionReceipt;
 
 export default function PlanPanel({
@@ -732,6 +737,28 @@ export default function PlanPanel({
     }
   };
 
+  const reviewBlueprintRecordOutcomes = async (
+    record: ExecutionPlanBlueprintRecord,
+  ): Promise<void> => {
+    if (blueprintLibraryBusyAction) return;
+    setBlueprintLibraryBusyAction("reviewOutcomes");
+    setBlueprintLibraryReceipt(undefined);
+    setBlueprintLibraryError(undefined);
+    try {
+      const review = await reviewExecutionPlanBlueprintRecordOutcomes(
+        record.id,
+        {
+          model: parseModelKey(selectedModelKey),
+        },
+      );
+      setBlueprintLibraryReceipt(planBlueprintOutcomeReviewReceipt(review));
+    } catch (error) {
+      setBlueprintLibraryError(formatApiErrorMessage(error));
+    } finally {
+      setBlueprintLibraryBusyAction(undefined);
+    }
+  };
+
   const selectBestBlueprintRecord = async (): Promise<void> => {
     if (!threadId || blueprintLibraryBusyAction) return;
     setBlueprintLibraryBusyAction("select");
@@ -1061,6 +1088,9 @@ export default function PlanPanel({
         }
         onQualifyOutcomes={(record) =>
           void qualifyBlueprintRecordOutcomes(record)
+        }
+        onReviewOutcomes={(record) =>
+          void reviewBlueprintRecordOutcomes(record)
         }
         onCreate={(record) => void createFromBlueprintRecord(record)}
       />
@@ -1406,6 +1436,7 @@ function PlanBlueprintLibraryCard({
   onVerifyOutcomes,
   onPromoteOutcomeBaseline,
   onQualifyOutcomes,
+  onReviewOutcomes,
   onCreate,
 }: {
   records: ExecutionPlanBlueprintRecord[];
@@ -1430,6 +1461,7 @@ function PlanBlueprintLibraryCard({
   onVerifyOutcomes: (file: File) => void;
   onPromoteOutcomeBaseline: (record: ExecutionPlanBlueprintRecord) => void;
   onQualifyOutcomes: (record: ExecutionPlanBlueprintRecord) => void;
+  onReviewOutcomes: (record: ExecutionPlanBlueprintRecord) => void;
   onCreate: (record: ExecutionPlanBlueprintRecord) => void;
 }) {
   const historyInput = useRef<HTMLInputElement>(null);
@@ -1662,6 +1694,15 @@ function PlanBlueprintLibraryCard({
                     ? copy.plan.blueprint.library.qualifyingOutcomes
                     : copy.plan.blueprint.library.qualifyOutcomes}
                 </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onReviewOutcomes(record)}
+                >
+                  {busyAction === "reviewOutcomes"
+                    ? copy.plan.blueprint.library.reviewingOutcomes
+                    : copy.plan.blueprint.library.reviewOutcomes}
+                </button>
                 {record.status === "active" ? (
                   <button
                     type="button"
@@ -1717,15 +1758,17 @@ function PlanBlueprintLibraryReceiptView({
             ? receipt.verificationStatus === "valid"
             : receipt.action === "outcomeQualified"
               ? receipt.qualificationStatus === "qualified"
-              : receipt.action === "selection"
-                ? Boolean(receipt.selectedRecordId)
-                : receipt.action === "created" &&
-                    receipt.replayEventVerificationStatus
-                  ? receipt.replayEventVerificationStatus === "valid"
+              : receipt.action === "outcomeReviewed"
+                ? receipt.verdict === "promote"
+                : receipt.action === "selection"
+                  ? Boolean(receipt.selectedRecordId)
                   : receipt.action === "created" &&
-                      receipt.replayEventDiagnostics
-                    ? false
-                    : true;
+                      receipt.replayEventVerificationStatus
+                    ? receipt.replayEventVerificationStatus === "valid"
+                    : receipt.action === "created" &&
+                        receipt.replayEventDiagnostics
+                      ? false
+                      : true;
   const title =
     receipt.action === "qualified"
       ? copy.plan.blueprint.library.qualificationStatuses[
@@ -1745,9 +1788,13 @@ function PlanBlueprintLibraryReceiptView({
               ? copy.plan.blueprint.library.outcomeQualificationStatuses[
                   receipt.qualificationStatus
                 ]
-              : receipt.action === "selection"
-                ? copy.plan.blueprint.library.receipts.selection
-                : copy.plan.blueprint.library.receipts[receipt.action];
+              : receipt.action === "outcomeReviewed"
+                ? copy.plan.blueprint.library.outcomeReviewVerdicts[
+                    receipt.verdict
+                  ]
+                : receipt.action === "selection"
+                  ? copy.plan.blueprint.library.receipts.selection
+                  : copy.plan.blueprint.library.receipts[receipt.action];
   const receiptHash =
     "blueprintSha256" in receipt
       ? receipt.blueprintSha256
@@ -1760,13 +1807,16 @@ function PlanBlueprintLibraryReceiptView({
         ? receipt.contentSha256
         : receipt.action === "outcomeBaseline"
           ? receipt.baselineSha256
-          : undefined;
+          : receipt.action === "outcomeReviewed"
+            ? receipt.reviewSha256
+            : undefined;
   const summary =
     receipt.action === "history" || receipt.action === "historyVerified"
       ? `${receipt.replayCount.toLocaleString()} ${copy.plan.blueprint.library.replays} / ${receipt.threadCount.toLocaleString()} ${copy.plan.blueprint.library.threads} / ${receipt.planCount.toLocaleString()} ${copy.plan.blueprint.library.plans}`
       : receipt.action === "outcomes" ||
           receipt.action === "outcomesVerified" ||
           receipt.action === "outcomeBaseline" ||
+          receipt.action === "outcomeReviewed" ||
           receipt.action === "outcomeQualified"
         ? `${receipt.replayCount.toLocaleString()} ${copy.plan.blueprint.library.replays} / ${receipt.completedCount.toLocaleString()} ${copy.plan.blueprint.library.completed} / ${receipt.blockedCount.toLocaleString()} ${copy.plan.blueprint.library.blocked} / ${receipt.invalidCount.toLocaleString()} ${copy.plan.blueprint.library.invalid}`
         : receipt.action === "selection"
@@ -1783,19 +1833,21 @@ function PlanBlueprintLibraryReceiptView({
             ? shortId(receipt.latestPlanId ?? receipt.recordId)
             : receipt.action === "outcomeBaseline"
               ? shortId(receipt.baselineId)
-              : receipt.action === "selection"
-                ? receipt.selectedRecordId
-                  ? shortId(receipt.selectedRecordId)
-                  : shortId(receipt.threadId)
-                : receipt.action === "historyVerified" ||
-                    receipt.action === "outcomesVerified" ||
-                    receipt.action === "outcomeQualified"
-                  ? receipt.recordId
-                    ? shortId(receipt.recordId)
-                    : undefined
-                  : "status" in receipt
-                    ? copy.plan.blueprint.library.statuses[receipt.status]
-                    : shortId(receipt.planId);
+              : receipt.action === "outcomeReviewed"
+                ? shortId(receipt.recordId)
+                : receipt.action === "selection"
+                  ? receipt.selectedRecordId
+                    ? shortId(receipt.selectedRecordId)
+                    : shortId(receipt.threadId)
+                  : receipt.action === "historyVerified" ||
+                      receipt.action === "outcomesVerified" ||
+                      receipt.action === "outcomeQualified"
+                    ? receipt.recordId
+                      ? shortId(receipt.recordId)
+                      : undefined
+                    : "status" in receipt
+                      ? copy.plan.blueprint.library.statuses[receipt.status]
+                      : shortId(receipt.planId);
   return (
     <div
       className={`fixture-receipt status-${successful ? "valid" : "invalid"}`}
@@ -1947,6 +1999,36 @@ function PlanBlueprintLibraryReceiptView({
               ? ` / ${copy.plan.blueprint.library.min}: ${(receipt.minCompletionRateBps / 100).toFixed(2)}%`
               : ""}
           </small>
+        </>
+      ) : null}
+      {receipt.action === "outcomeReviewed" ? (
+        <>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.score}:{" "}
+            {receipt.score.toLocaleString()}
+            {" / "}
+            {copy.plan.blueprint.library.risk}:{" "}
+            {copy.plan.blueprint.library.outcomeReviewRisks[receipt.risk]}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.current}:{" "}
+            {receipt.replayOutcomesSha256.slice(0, 16)}
+            {receipt.baselineSha256
+              ? ` / ${copy.plan.blueprint.library.outcomeBaseline}: ${receipt.baselineSha256.slice(0, 16)}`
+              : ""}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.input}:{" "}
+            {receipt.inputSha256.slice(0, 16)}
+            {" / "}
+            {copy.plan.blueprint.library.response}:{" "}
+            {receipt.responseSha256.slice(0, 16)}
+          </small>
+          {receipt.concerns.length > 0 ? (
+            <small className="fixture-diagnostics">
+              {receipt.concerns.join(", ")}
+            </small>
+          ) : null}
         </>
       ) : null}
       {receipt.action === "selection" ? (

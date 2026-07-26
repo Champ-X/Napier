@@ -50,6 +50,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   HealthResponse,
@@ -67,6 +68,7 @@ import type {
   ReplanExecutionPlanRequest,
   ResumeRunRequest,
   ReviewExtensionRequest,
+  ReviewExecutionPlanBlueprintRecordOutcomesRequest,
   ReviewExecutionPlanReplanDraftRequest,
   ReviewMemoryRequest,
   ReviewMcpToolRequest,
@@ -530,6 +532,19 @@ export function getExecutionPlanBlueprintRecordOutcomeQualification(
 ): Promise<ExecutionPlanBlueprintRecordOutcomeQualification> {
   return requestJson(
     `/api/plan-blueprints/${encodeURIComponent(recordId)}/replays/outcomes/qualification`,
+  );
+}
+
+export function reviewExecutionPlanBlueprintRecordOutcomes(
+  recordId: string,
+  body: ReviewExecutionPlanBlueprintRecordOutcomesRequest,
+): Promise<ExecutionPlanBlueprintRecordOutcomeReview> {
+  return requestJson(
+    `/api/plan-blueprints/${encodeURIComponent(recordId)}/replays/outcomes/review`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
   );
 }
 

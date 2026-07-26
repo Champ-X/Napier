@@ -8,6 +8,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -119,6 +120,25 @@ export interface PlanBlueprintLibraryOutcomeQualificationReceipt {
   invalidCount: number;
   completionRateBps: number;
   minCompletionRateBps?: number;
+}
+
+export interface PlanBlueprintLibraryOutcomeReviewReceipt {
+  action: "outcomeReviewed";
+  recordId: string;
+  verdict: ExecutionPlanBlueprintRecordOutcomeReview["verdict"];
+  risk: ExecutionPlanBlueprintRecordOutcomeReview["risk"];
+  score: number;
+  reviewSha256: string;
+  inputSha256: string;
+  responseSha256: string;
+  replayOutcomesSha256: string;
+  baselineSha256?: string;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  concerns: string[];
 }
 
 export interface PlanBlueprintLibrarySelectionReceipt {
@@ -349,6 +369,29 @@ export function planBlueprintOutcomeQualificationReceipt(
     ...(qualification.policy
       ? { minCompletionRateBps: qualification.policy.minCompletionRateBps }
       : {}),
+  };
+}
+
+export function planBlueprintOutcomeReviewReceipt(
+  review: ExecutionPlanBlueprintRecordOutcomeReview,
+): PlanBlueprintLibraryOutcomeReviewReceipt {
+  return {
+    action: "outcomeReviewed",
+    recordId: review.recordId,
+    verdict: review.verdict,
+    risk: review.risk,
+    score: review.score,
+    reviewSha256: review.reviewSha256,
+    inputSha256: review.inputSha256,
+    responseSha256: review.responseSha256,
+    replayOutcomesSha256: review.replayOutcomesSha256,
+    ...(review.baselineSha256 ? { baselineSha256: review.baselineSha256 } : {}),
+    replayCount: review.replayCount,
+    completedCount: review.completedCount,
+    blockedCount: review.blockedCount,
+    invalidCount: review.invalidCount,
+    completionRateBps: review.completionRateBps,
+    concerns: review.concerns,
   };
 }
 

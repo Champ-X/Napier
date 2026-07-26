@@ -870,6 +870,16 @@ thresholds, and the supersession link, and defaults to a strict 100% completed,
 /api/plan-blueprints/:recordId/replays/outcomes/qualification` recomputes the
 current outcomes and reports `qualified`, `missing_baseline`, or
 `policy_failed` against the latest baseline without mutating state. The Plan
+Workbench can ask a selected evaluator model to review those current outcomes
+through `POST /api/plan-blueprints/:recordId/replays/outcomes/review`. The
+review is no-store and returns a
+`napier.execution-plan-blueprint-outcome-review` artifact with verdict, score,
+risk, criteria scores, model, input/prompt/response hashes, review schema hash,
+and the current outcome/baseline hashes; `napier/demo` fails closed as
+`inconclusive`. The review input uses only aggregate counts, replay statuses,
+Plan projection hashes, outcome hashes, and policy evidence, so objective text,
+artifact paths, blockers, and evidence prose are not copied into the review
+artifact. The Plan
 Workbench can also ask the server to select a policy-qualified template for the
 current Thread through `POST /api/threads/:threadId/plan-blueprints/selection`.
 The selection receipt is no-store and hash-bound: candidates must pass source
@@ -891,8 +901,8 @@ artifact, and upload it back through the same hash-verifying client for
 no-store validation. It provides the same export/upload loop for replay
 outcomes, keeping creation provenance and mutable delivery status visibly
 separate, can promote or qualify the current outcome baseline for each
-template, and can run adaptive selection across the shelf before replaying a
-candidate.
+template, can run model review over current outcomes, and can run adaptive
+selection across the shelf before replaying a candidate.
 
 ## Portable Replay Fixtures
 

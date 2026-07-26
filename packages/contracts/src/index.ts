@@ -783,6 +783,71 @@ export interface ExecutionPlanBlueprintRecordOutcomeQualification {
   contentSha256: string;
 }
 
+export interface ExecutionPlanBlueprintOutcomeReviewCriterion {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface ExecutionPlanBlueprintOutcomeReviewCriteria {
+  name: string;
+  criteria: ExecutionPlanBlueprintOutcomeReviewCriterion[];
+}
+
+export type ExecutionPlanBlueprintOutcomeReviewVerdict =
+  | "promote"
+  | "revise"
+  | "reject"
+  | "inconclusive";
+
+export type ExecutionPlanBlueprintOutcomeReviewRisk = "low" | "medium" | "high";
+
+export interface ExecutionPlanBlueprintOutcomeReviewScore {
+  criterionId: string;
+  score: number;
+  reason: string;
+}
+
+export interface ReviewExecutionPlanBlueprintRecordOutcomesRequest {
+  model: ModelRef;
+  criteria?: ExecutionPlanBlueprintOutcomeReviewCriteria;
+}
+
+export interface ExecutionPlanBlueprintRecordOutcomeReview {
+  kind: "napier.execution-plan-blueprint-outcome-review";
+  schemaVersion: 1;
+  policyId: string;
+  recordId: string;
+  blueprintSha256: string;
+  model: ModelRef;
+  criteria: ExecutionPlanBlueprintOutcomeReviewCriteria;
+  verdict: ExecutionPlanBlueprintOutcomeReviewVerdict;
+  score: number;
+  risk: ExecutionPlanBlueprintOutcomeReviewRisk;
+  reason: string;
+  concerns: string[];
+  scores: ExecutionPlanBlueprintOutcomeReviewScore[];
+  sourceQualificationStatus: ExecutionPlanBlueprintRecordQualificationStatus;
+  outcomeQualificationStatus: ExecutionPlanBlueprintRecordOutcomeQualificationStatus;
+  replayOutcomesSha256: string;
+  replayHistorySha256: string;
+  outcomeSetSha256: string;
+  replayCount: number;
+  completedCount: number;
+  blockedCount: number;
+  invalidCount: number;
+  completionRateBps: number;
+  baselineId?: string;
+  baselineSha256?: string;
+  baselineOutcomesSha256?: string;
+  inputSha256: string;
+  promptSha256: string;
+  responseSha256: string;
+  reviewSchemaSha256: string;
+  reviewSha256: string;
+  createdAt: string;
+}
+
 export interface SelectExecutionPlanBlueprintRecordRequest {
   objective?: string;
 }

@@ -1,0 +1,299 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import { afterEach, describe, expect, it } from "vitest";
+
+import { LocalStore } from "../src/store.js";
+import { ModelRegistry } from "../src/models.js";
+import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
+import {
+  parseBlueprintOutcomeReviewResponse,
+  reviewExecutionPlanBlueprintRecordOutcomes,
+} from "../src/blueprint-outcome-review.js";
+
+const temporaryRoots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    temporaryRoots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
+  );
+});
+
+async function createStore(): Promise<LocalStore> {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-outcome-review-"));
+  temporaryRoots.push(root);
+  const store = new LocalStore({
+    dataRoot: path.join(root, "data"),
+    workspaceRoot: path.join(root, "workspace"),
+  });
+  await store.initialize();
+  return store;
+}
+
+describe("blueprint outcome model review", () => {
+  it("scores completed replay outcomes without leaking delivery prose", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const sourceThread = await store.createThread({
+      title: "Outcome review source",
+      agentId: agent.id,
+    });
+    const sourcePlan = await store.createPlan(sourceThread.id, {
+      objective: "Create a reusable release review workflow.",
+      steps: [
+        {
+          id: "prepare",
+          title: "Prepare",
+          description: "Prepare the delivery.",
+          verification: "Preparation evidence is recorded.",
+        },
+        {
+          id: "verify",
+          title: "Verify",
+          description: "Verify the delivery.",
+          verification: "Verification evidence is recorded.",
+          dependsOn: ["prepare"],
+        },
+      ],
+      artifacts: [
+        {
+          id: "release-note",
+          path: "private/release-note.md",
+          description: "Sensitive release note path.",
+        },
+      ],
+    });
+    await store.appendEvent({
+      threadId: sourceThread.id,
+      runId: "runctl_source",
+      type: "plan.created",
+      category: "plan",
+      visibility: "user",
+      payload: {
+        planId: sourcePlan.id,
+        stepCount: sourcePlan.steps.length,
+        artifactCount: sourcePlan.artifacts.length,
+      },
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      store,
+      sourceThread.id,
+      sourcePlan.id,
+    );
+    const saved = await store.saveExecutionPlanBlueprint(sourceThread.id, {
+      blueprint,
+      description: "Reusable release review fixture.",
+    });
+    const targetThread = await store.createThread({
+      title: "Outcome review target",
+      agentId: agent.id,
+    });
+    const preview = await store.previewPlanFromBlueprintRecord(
+      targetThread.id,
+      {
+        recordId: saved.record.id,
+      },
+    );
+    const { plan } = await store.createPlanFromBlueprintRecord(
+      targetThread.id,
+      {
+        recordId: saved.record.id,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+    );
+    const run = await store.createRun({
+      threadId: targetThread.id,
+      agentId: agent.id,
+    });
+    await store.transitionPlanStep(plan.id, "prepare", {
+      action: "start",
+      runId: run.id,
+    });
+    await store.transitionPlanStep(plan.id, "prepare", {
+      action: "complete",
+      evidence: "Sensitive preparation evidence.",
+    });
+    await store.transitionPlanStep(plan.id, "verify", {
+      action: "start",
+      runId: run.id,
+    });
+    await store.transitionPlanStep(plan.id, "verify", {
+      action: "complete",
+      evidence: "Sensitive verification evidence.",
+    });
+    await store.updatePlanArtifact(plan.id, "release-note", {
+      status: "produced",
+      sourceRunId: run.id,
+      evidence: "Sensitive artifact production evidence.",
+    });
+    await store.updatePlanArtifact(plan.id, "release-note", {
+      status: "verified",
+      sha256: "a".repeat(64),
+      sourceRunId: run.id,
+      evidence: "Sensitive artifact verification evidence.",
+    });
+    const outcomes = await store.getExecutionPlanBlueprintRecordReplayOutcomes(
+      saved.record.id,
+    );
+    await store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+      saved.record.id,
+      { outcomes },
+    );
+
+    const provider = fauxProvider({ provider: "faux-outcome-review" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        JSON.stringify({
+          verdict: "promote",
+          score: 94,
+          risk: "low",
+          reason:
+            "The replay completed with verified projection hashes and no blocked or invalid outcomes.",
+          concerns: ["Continue collecting replay volume before broad rollout."],
+          scores: [
+            {
+              criterionId: "completion",
+              score: 100,
+              reason: "All observed replays completed.",
+            },
+            {
+              criterionId: "stability",
+              score: 80,
+              reason: "Replay count is still small.",
+            },
+            {
+              criterionId: "auditability",
+              score: 100,
+              reason: "Outcome and baseline hashes are present.",
+            },
+            {
+              criterionId: "reuse_risk",
+              score: 95,
+              reason: "No blocked or invalid outcomes are present.",
+            },
+          ],
+        }),
+      ),
+    ]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+
+    const review = await reviewExecutionPlanBlueprintRecordOutcomes(
+      store,
+      models,
+      saved.record.id,
+      {
+        model: { provider: "faux-outcome-review", id: "faux-1" },
+      },
+    );
+
+    expect(review).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-outcome-review",
+        schemaVersion: 1,
+        policyId: "napier.blueprint-outcome-review.v1",
+        recordId: saved.record.id,
+        blueprintSha256: saved.record.blueprintSha256,
+        model: { provider: "faux-outcome-review", id: "faux-1" },
+        verdict: "promote",
+        score: 94,
+        risk: "low",
+        sourceQualificationStatus: "qualified",
+        outcomeQualificationStatus: "qualified",
+        replayOutcomesSha256: outcomes.contentSha256,
+        replayHistorySha256: outcomes.replayHistorySha256,
+        outcomeSetSha256: outcomes.outcomeSetSha256,
+        replayCount: 1,
+        completedCount: 1,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 10_000,
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        promptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        responseSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        reviewSchemaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(review.scores.map((score) => score.criterionId)).toEqual([
+      "completion",
+      "stability",
+      "auditability",
+      "reuse_risk",
+    ]);
+    const serialized = JSON.stringify(review);
+    expect(serialized).not.toContain(
+      "Create a reusable release review workflow",
+    );
+    expect(serialized).not.toContain("private/release-note.md");
+    expect(serialized).not.toContain("Sensitive preparation evidence");
+    expect(review.reviewSha256).not.toBe(review.responseSha256);
+  });
+
+  it("fails closed for demo or malformed reviewer output", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const sourceThread = await store.createThread({
+      title: "Outcome review demo",
+      agentId: agent.id,
+    });
+    const sourcePlan = await store.createPlan(sourceThread.id, {
+      objective: "Review demo outcome.",
+      steps: [
+        {
+          id: "demo",
+          title: "Demo",
+          description: "Demo step.",
+          verification: "Demo verification.",
+        },
+      ],
+    });
+    await store.appendEvent({
+      threadId: sourceThread.id,
+      runId: "runctl_demo",
+      type: "plan.created",
+      category: "plan",
+      visibility: "user",
+      payload: {
+        planId: sourcePlan.id,
+        stepCount: sourcePlan.steps.length,
+        artifactCount: sourcePlan.artifacts.length,
+      },
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      store,
+      sourceThread.id,
+      sourcePlan.id,
+    );
+    const saved = await store.saveExecutionPlanBlueprint(sourceThread.id, {
+      blueprint,
+      description: "Demo outcome review fixture.",
+    });
+
+    const demoReview = await reviewExecutionPlanBlueprintRecordOutcomes(
+      store,
+      new ModelRegistry(),
+      saved.record.id,
+      {
+        model: { provider: "napier", id: "demo" },
+      },
+    );
+
+    expect(demoReview).toEqual(
+      expect.objectContaining({
+        verdict: "inconclusive",
+        score: 0,
+        risk: "high",
+        concerns: ["live_model_required"],
+      }),
+    );
+    expect(demoReview.reviewSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(() => parseBlueprintOutcomeReviewResponse("not json")).toThrow(
+      "did not contain JSON",
+    );
+  });
+});

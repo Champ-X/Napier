@@ -46,8 +46,10 @@ import type {
   ExecutionPlanBlueprintRecordReplayHistoryVerification,
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
+  ExecutionPlanBlueprintOutcomeReviewCriteria,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordSelection,
   ExecutionPlanBlueprintVerification,
   ExecutionPlanReplanDraftModelReview,
@@ -153,6 +155,7 @@ import type {
   ReviewExtensionRequest,
   ReviewMemoryRequest,
   ReviewMcpToolRequest,
+  ReviewExecutionPlanBlueprintRecordOutcomesRequest,
   ReviewRunEvaluationRequest,
   ResolveEvaluationConsensusRequest,
   ResolveEvaluationConsensusResult,
@@ -251,6 +254,7 @@ import {
   ModelRegistry,
   normalizeScheduleTrigger,
   RecoveryService,
+  reviewExecutionPlanBlueprintRecordOutcomes,
   reviewExecutionPlanReplanDraft,
   RunEvaluationService,
   signTrustedReceipt,
@@ -2537,6 +2541,53 @@ export function createApp(services: NapierServices): Hono {
         verification,
       );
       return context.json(verification);
+    },
+  );
+
+  app.post(
+    "/api/plan-blueprints/:recordId/replays/outcomes/review",
+    async (context) => {
+      const recordId = context.req.param("recordId");
+      services.store.getExecutionPlanBlueprintRecord(recordId);
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_EVALUATION_REQUEST_BYTES,
+          "Execution plan blueprint outcome review request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Execution plan blueprint outcome review request is invalid",
+          400,
+        );
+      }
+      const request =
+        parseReviewExecutionPlanBlueprintRecordOutcomesRequest(input);
+      if (!request) {
+        return jsonError(
+          context,
+          "Execution plan blueprint outcome review request is invalid",
+          400,
+        );
+      }
+      try {
+        assertAvailableModel(services, request.model);
+        const review = await reviewExecutionPlanBlueprintRecordOutcomes(
+          services.store,
+          services.models,
+          recordId,
+          request,
+        );
+        setExecutionPlanBlueprintRecordOutcomeReviewHeaders(context, review);
+        return context.json(review);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
     },
   );
 
@@ -7952,6 +8003,59 @@ function parsePromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest(
   };
 }
 
+function parseReviewExecutionPlanBlueprintRecordOutcomesRequest(
+  input: unknown,
+): ReviewExecutionPlanBlueprintRecordOutcomesRequest | undefined {
+  const record = requestRecord(input, ["model", "criteria"]);
+  const model = parseModelRef(record?.["model"]);
+  if (!record || !model) return undefined;
+  const criteria =
+    record["criteria"] === undefined
+      ? undefined
+      : parseExecutionPlanBlueprintOutcomeReviewCriteria(record["criteria"]);
+  if (record["criteria"] !== undefined && !criteria) return undefined;
+  return {
+    model,
+    ...(criteria ? { criteria } : {}),
+  };
+}
+
+function parseExecutionPlanBlueprintOutcomeReviewCriteria(
+  input: unknown,
+): ExecutionPlanBlueprintOutcomeReviewCriteria | undefined {
+  const record = requestRecord(input, ["name", "criteria"]);
+  if (!record || !boundedString(record["name"], 1, 100)) return undefined;
+  const criteria = record["criteria"];
+  if (!Array.isArray(criteria) || criteria.length < 2 || criteria.length > 6) {
+    return undefined;
+  }
+  const parsedCriteria = criteria.map((value) => {
+    const item = requestRecord(value, ["id", "name", "description"]);
+    if (
+      !item ||
+      !boundedString(item["id"], 1, 64) ||
+      !/^[a-z][a-z0-9_-]{0,63}$/.test(item["id"]) ||
+      !boundedString(item["name"], 1, 80) ||
+      !boundedString(item["description"], 1, 300)
+    ) {
+      return undefined;
+    }
+    return {
+      id: item["id"].trim().toLowerCase(),
+      name: item["name"].trim(),
+      description: item["description"].trim(),
+    };
+  });
+  if (parsedCriteria.some((criterion) => !criterion)) return undefined;
+  const ids = new Set(parsedCriteria.map((criterion) => criterion!.id));
+  if (ids.size !== parsedCriteria.length) return undefined;
+  return {
+    name: record["name"].trim(),
+    criteria:
+      parsedCriteria as ExecutionPlanBlueprintOutcomeReviewCriteria["criteria"],
+  };
+}
+
 function parseExecutionPlanBlueprintOutcomeBaselinePolicy(
   input: unknown,
 ):
@@ -11448,6 +11552,96 @@ function setExecutionPlanBlueprintRecordReplayOutcomesVerificationHeaders(
     context,
     "X-Napier-Observed-Invalid-Count",
     verification.observedInvalidCount,
+  );
+}
+
+function setExecutionPlanBlueprintRecordOutcomeReviewHeaders(
+  context: Context,
+  review: ExecutionPlanBlueprintRecordOutcomeReview,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, review.reviewSha256);
+  context.header("X-Napier-Plan-Blueprint-Record-Id", review.recordId);
+  context.header("X-Napier-Plan-Blueprint-SHA256", review.blueprintSha256);
+  context.header("X-Napier-Blueprint-Outcome-Review-Verdict", review.verdict);
+  context.header("X-Napier-Blueprint-Outcome-Review-Risk", review.risk);
+  context.header(
+    "X-Napier-Blueprint-Outcome-Review-Score",
+    String(review.score),
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Review-SHA256",
+    review.reviewSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Review-Input-SHA256",
+    review.inputSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Review-Prompt-SHA256",
+    review.promptSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Review-Response-SHA256",
+    review.responseSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Review-Schema-SHA256",
+    review.reviewSchemaSha256,
+  );
+  context.header("X-Napier-Model-Provider", review.model.provider);
+  context.header("X-Napier-Model-Id", review.model.id);
+  context.header(
+    "X-Napier-Blueprint-Source-Qualification-Status",
+    review.sourceQualificationStatus,
+  );
+  context.header(
+    "X-Napier-Blueprint-Outcome-Qualification-Status",
+    review.outcomeQualificationStatus,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Outcomes-SHA256",
+    review.replayOutcomesSha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-History-SHA256",
+    review.replayHistorySha256,
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Outcome-Set-SHA256",
+    review.outcomeSetSha256,
+  );
+  context.header("X-Napier-Blueprint-Replay-Count", String(review.replayCount));
+  context.header(
+    "X-Napier-Blueprint-Replay-Completed-Count",
+    String(review.completedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Blocked-Count",
+    String(review.blockedCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Invalid-Count",
+    String(review.invalidCount),
+  );
+  context.header(
+    "X-Napier-Blueprint-Replay-Completion-Rate-BPS",
+    String(review.completionRateBps),
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Baseline-Id",
+    review.baselineId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Outcome-Baseline-SHA256",
+    review.baselineSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Blueprint-Baseline-Outcomes-SHA256",
+    review.baselineOutcomesSha256,
   );
 }
 

@@ -2,6 +2,7 @@ export * from "./agent-runtime.js";
 export * from "./agents.js";
 export * from "./automatic-recovery.js";
 export * from "./automation.js";
+export * from "./blueprint-outcome-review.js";
 export * from "./channels.js";
 export * from "./checkpoint-calibration.js";
 export * from "./compaction.js";

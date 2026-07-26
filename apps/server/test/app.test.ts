@@ -31,6 +31,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
@@ -4978,6 +4979,74 @@ describe("Napier HTTP goal flow", () => {
       outcomeQualification,
     );
 
+    const outcomeReviewResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/review`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: "napier", id: "demo" },
+        }),
+      },
+    );
+    expect(outcomeReviewResponse.status).toBe(200);
+    const outcomeReview =
+      (await outcomeReviewResponse.json()) as ExecutionPlanBlueprintRecordOutcomeReview;
+    expect(outcomeReview).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-outcome-review",
+        schemaVersion: 1,
+        policyId: "napier.blueprint-outcome-review.v1",
+        recordId: savedBlueprint.record.id,
+        blueprintSha256: savedBlueprint.record.blueprintSha256,
+        model: { provider: "napier", id: "demo" },
+        verdict: "inconclusive",
+        score: 0,
+        risk: "high",
+        concerns: ["live_model_required"],
+        sourceQualificationStatus: "qualified",
+        outcomeQualificationStatus: "qualified",
+        replayOutcomesSha256: replayOutcomes.contentSha256,
+        replayHistorySha256: replayOutcomes.replayHistorySha256,
+        outcomeSetSha256: replayOutcomes.outcomeSetSha256,
+        replayCount: 1,
+        completedCount: 0,
+        blockedCount: 0,
+        invalidCount: 0,
+        completionRateBps: 0,
+        baselineId: outcomeBaselineResult.baseline.id,
+        baselineSha256: outcomeBaselineResult.baseline.contentSha256,
+        baselineOutcomesSha256:
+          outcomeBaselineResult.baseline.replayOutcomesSha256,
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        promptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        responseSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        reviewSchemaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(JSON.stringify(outcomeReview)).not.toContain(recordPlan.objective);
+    expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(
+      outcomeReviewResponse,
+      outcomeReview,
+    );
+
+    const invalidOutcomeReviewResponse = await app.request(
+      `/api/plan-blueprints/${savedBlueprint.record.id}/replays/outcomes/review`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: "napier", id: "demo" },
+          unexpected: true,
+        }),
+      },
+    );
+    expect(invalidOutcomeReviewResponse.status).toBe(400);
+    expect(await invalidOutcomeReviewResponse.json()).toEqual({
+      error: "Execution plan blueprint outcome review request is invalid",
+    });
+
     const selectionThread = (await (
       await app.request("/api/threads", {
         method: "POST",
@@ -8749,6 +8818,90 @@ function expectExecutionPlanBlueprintRecordOutcomeQualificationHeaders(
   ).toBe(
     qualification.policy ? String(qualification.policy.maxInvalidCount) : null,
   );
+}
+
+function expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(
+  response: Response,
+  review: ExecutionPlanBlueprintRecordOutcomeReview,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    review.reviewSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-plan-blueprint-record-id")).toBe(
+    review.recordId,
+  );
+  expect(response.headers.get("x-napier-plan-blueprint-sha256")).toBe(
+    review.blueprintSha256,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-verdict"),
+  ).toBe(review.verdict);
+  expect(response.headers.get("x-napier-blueprint-outcome-review-risk")).toBe(
+    review.risk,
+  );
+  expect(response.headers.get("x-napier-blueprint-outcome-review-score")).toBe(
+    String(review.score),
+  );
+  expect(response.headers.get("x-napier-blueprint-outcome-review-sha256")).toBe(
+    review.reviewSha256,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-input-sha256"),
+  ).toBe(review.inputSha256);
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-prompt-sha256"),
+  ).toBe(review.promptSha256);
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-response-sha256"),
+  ).toBe(review.responseSha256);
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-review-schema-sha256"),
+  ).toBe(review.reviewSchemaSha256);
+  expect(response.headers.get("x-napier-model-provider")).toBe(
+    review.model.provider,
+  );
+  expect(response.headers.get("x-napier-model-id")).toBe(review.model.id);
+  expect(
+    response.headers.get("x-napier-blueprint-source-qualification-status"),
+  ).toBe(review.sourceQualificationStatus);
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-qualification-status"),
+  ).toBe(review.outcomeQualificationStatus);
+  expect(
+    response.headers.get("x-napier-blueprint-replay-outcomes-sha256"),
+  ).toBe(review.replayOutcomesSha256);
+  expect(response.headers.get("x-napier-blueprint-replay-history-sha256")).toBe(
+    review.replayHistorySha256,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-outcome-set-sha256"),
+  ).toBe(review.outcomeSetSha256);
+  expect(response.headers.get("x-napier-blueprint-replay-count")).toBe(
+    String(review.replayCount),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-completed-count"),
+  ).toBe(String(review.completedCount));
+  expect(response.headers.get("x-napier-blueprint-replay-blocked-count")).toBe(
+    String(review.blockedCount),
+  );
+  expect(response.headers.get("x-napier-blueprint-replay-invalid-count")).toBe(
+    String(review.invalidCount),
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-replay-completion-rate-bps"),
+  ).toBe(String(review.completionRateBps));
+  expect(response.headers.get("x-napier-blueprint-outcome-baseline-id")).toBe(
+    review.baselineId ?? null,
+  );
+  expect(
+    response.headers.get("x-napier-blueprint-outcome-baseline-sha256"),
+  ).toBe(review.baselineSha256 ?? null);
+  expect(
+    response.headers.get("x-napier-blueprint-baseline-outcomes-sha256"),
+  ).toBe(review.baselineOutcomesSha256 ?? null);
 }
 
 function expectExecutionPlanBlueprintRecordSelectionHeaders(

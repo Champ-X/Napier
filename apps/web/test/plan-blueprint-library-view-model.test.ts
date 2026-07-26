@@ -8,6 +8,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomes,
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   VerifyExecutionPlanBlueprintRecordReplayEventRequest,
@@ -18,6 +19,7 @@ import {
   planBlueprintCreatedReceipt,
   planBlueprintOutcomeBaselineReceipt,
   planBlueprintOutcomeQualificationReceipt,
+  planBlueprintOutcomeReviewReceipt,
   planBlueprintPreviewReceipt,
   planBlueprintQualificationReceipt,
   planBlueprintReplayHistoryReceipt,
@@ -362,6 +364,81 @@ describe("Plan blueprint library view model", () => {
       invalidCount: 0,
       completionRateBps: 5_000,
       minCompletionRateBps: 10_000,
+    });
+  });
+
+  it("projects replay outcome model review receipts", () => {
+    const outcomes = replayOutcomesFixture();
+    const review: ExecutionPlanBlueprintRecordOutcomeReview = {
+      kind: "napier.execution-plan-blueprint-outcome-review",
+      schemaVersion: 1,
+      policyId: "napier.blueprint-outcome-review.v1",
+      recordId: record.id,
+      blueprintSha256: record.blueprintSha256,
+      model: { provider: "napier", id: "demo" },
+      criteria: {
+        name: "Reusable workflow delivery",
+        criteria: [
+          {
+            id: "completion",
+            name: "Completion",
+            description: "The workflow completes.",
+          },
+          {
+            id: "auditability",
+            name: "Auditability",
+            description: "The workflow is hash-bound.",
+          },
+        ],
+      },
+      verdict: "revise",
+      score: 62,
+      risk: "medium",
+      reason: "Replay volume is low.",
+      concerns: ["collect_more_replays"],
+      scores: [
+        {
+          criterionId: "completion",
+          score: 80,
+          reason: "One replay completed.",
+        },
+      ],
+      sourceQualificationStatus: "qualified",
+      outcomeQualificationStatus: "qualified",
+      replayOutcomesSha256: outcomes.contentSha256,
+      replayHistorySha256: outcomes.replayHistorySha256,
+      outcomeSetSha256: outcomes.outcomeSetSha256,
+      replayCount: outcomes.replayCount,
+      completedCount: outcomes.completedCount,
+      blockedCount: outcomes.blockedCount,
+      invalidCount: outcomes.invalidCount,
+      completionRateBps: outcomes.completionRateBps,
+      baselineSha256: "8".repeat(64),
+      inputSha256: "a".repeat(64),
+      promptSha256: "b".repeat(64),
+      responseSha256: "c".repeat(64),
+      reviewSchemaSha256: "d".repeat(64),
+      reviewSha256: "e".repeat(64),
+      createdAt: "2026-07-26T00:00:04.000Z",
+    };
+
+    expect(planBlueprintOutcomeReviewReceipt(review)).toEqual({
+      action: "outcomeReviewed",
+      recordId: record.id,
+      verdict: "revise",
+      risk: "medium",
+      score: 62,
+      reviewSha256: review.reviewSha256,
+      inputSha256: review.inputSha256,
+      responseSha256: review.responseSha256,
+      replayOutcomesSha256: outcomes.contentSha256,
+      baselineSha256: "8".repeat(64),
+      replayCount: 2,
+      completedCount: 1,
+      blockedCount: 1,
+      invalidCount: 0,
+      completionRateBps: 5_000,
+      concerns: ["collect_more_replays"],
     });
   });
 

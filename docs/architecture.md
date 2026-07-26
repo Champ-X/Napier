@@ -2078,6 +2078,16 @@ qualify blueprint record outcomes
      baseline policy without mutating Ledger
   -> return qualified, missing_baseline, or policy_failed plus current/baseline
      hashes and low-cardinality policy diagnostics for Template shelf receipts
+review blueprint record outcomes
+  -> build a no-store napier.execution-plan-blueprint-outcome-review artifact
+     from current replay outcomes, source/outcome qualification, optional
+     reusable criteria, and an explicit evaluator model
+  -> feed the model only aggregate counts, replay statuses, Plan projection
+     hashes, outcome hashes, baseline hashes, and policy evidence; objective,
+     artifact path, blocker, and evidence prose stay out of the artifact
+  -> bind verdict, score, risk, per-criteria scores, input SHA-256, prompt
+     SHA-256, response SHA-256, schema SHA-256, and review SHA-256; napier/demo
+     fails closed as inconclusive
 select blueprint record for target Thread
   -> recompute source qualification, outcome-baseline qualification, and
      target-Thread preview readiness for every saved template without mutating
@@ -2231,8 +2241,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- model-scored evaluation of completed workflow outcomes against reusable
-  delivery criteria.
+- trusted promotion of model-reviewed blueprint outcome baselines.
 
 ### Layer 3: Extension fabric
 

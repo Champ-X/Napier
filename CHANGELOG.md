@@ -94,6 +94,15 @@ All notable changes to Napier are recorded here.
   baseline/outcome hashes, low-cardinality diagnostics, and a selection-set
   SHA-256. The Template shelf adds a Select best action with a pure ViewModel
   receipt so blocked or unqualified libraries fail visibly.
+- Blueprint outcome model review. `POST
+/api/plan-blueprints/:recordId/replays/outcomes/review` now returns a no-store
+  `napier.execution-plan-blueprint-outcome-review` artifact that scores current
+  replay outcomes against reusable delivery criteria with an explicit evaluator
+  model. The review binds verdict, score, risk, criteria scores,
+  input/prompt/response/schema hashes, current outcome hashes, and baseline
+  hashes while keeping objective text, artifact paths, blockers, and evidence
+  prose out of the artifact. `napier/demo` fails closed as inconclusive, and
+  the Template shelf exposes Review outcomes through a ViewModel receipt.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

@@ -15,6 +15,7 @@ import type {
   ExecutionPlanBlueprintRecordReplayOutcomesVerification,
   ExecutionPlanBlueprintRecordOutcomeBaseline,
   ExecutionPlanBlueprintRecordOutcomeQualification,
+  ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ExecutionPlanBlueprintVerification,
@@ -43,6 +44,7 @@ import {
   getHealth,
   previewExecutionPlanFromBlueprintRecord,
   promoteExecutionPlanBlueprintRecordOutcomeBaseline,
+  reviewExecutionPlanBlueprintRecordOutcomes,
   saveExecutionPlanBlueprint,
   selectExecutionPlanBlueprintRecord,
   setExecutionPlanBlueprintRecordStatus,
@@ -635,6 +637,54 @@ describe("Web JSON API wrappers", () => {
         policy: outcomeBaseline.policy,
         contentSha256: "d".repeat(64),
       };
+    const outcomeReview: ExecutionPlanBlueprintRecordOutcomeReview = {
+      kind: "napier.execution-plan-blueprint-outcome-review",
+      schemaVersion: 1,
+      policyId: "napier.blueprint-outcome-review.v1",
+      recordId: record.id,
+      blueprintSha256: record.blueprintSha256,
+      model: { provider: "napier", id: "demo" },
+      criteria: {
+        name: "Reusable workflow delivery",
+        criteria: [
+          {
+            id: "completion",
+            name: "Completion",
+            description: "The workflow completes.",
+          },
+          {
+            id: "auditability",
+            name: "Auditability",
+            description: "The workflow is hash-bound.",
+          },
+        ],
+      },
+      verdict: "inconclusive",
+      score: 0,
+      risk: "high",
+      reason: "The deterministic demo model cannot score outcomes.",
+      concerns: ["live_model_required"],
+      scores: [],
+      sourceQualificationStatus: "qualified",
+      outcomeQualificationStatus: "qualified",
+      replayOutcomesSha256: replayOutcomes.contentSha256,
+      replayHistorySha256: replayOutcomes.replayHistorySha256,
+      outcomeSetSha256: replayOutcomes.outcomeSetSha256,
+      replayCount: replayOutcomes.replayCount,
+      completedCount: replayOutcomes.completedCount,
+      blockedCount: replayOutcomes.blockedCount,
+      invalidCount: replayOutcomes.invalidCount,
+      completionRateBps: replayOutcomes.completionRateBps,
+      baselineId: outcomeBaseline.id,
+      baselineSha256: outcomeBaseline.contentSha256,
+      baselineOutcomesSha256: outcomeBaseline.replayOutcomesSha256,
+      inputSha256: "2".repeat(64),
+      promptSha256: "3".repeat(64),
+      responseSha256: "4".repeat(64),
+      reviewSchemaSha256: "5".repeat(64),
+      reviewSha256: "6".repeat(64),
+      createdAt: "2026-07-26T00:00:04.000Z",
+    };
     const selection: ExecutionPlanBlueprintRecordSelection = {
       kind: "napier.execution-plan-blueprint-selection",
       schemaVersion: 1,
@@ -740,6 +790,12 @@ describe("Web JSON API wrappers", () => {
       {
         path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes/qualification",
         response: outcomeQualification,
+      },
+      {
+        path: "/api/plan-blueprints/blueprint_12345678/replays/outcomes/review",
+        method: "POST",
+        body: { model: { provider: "napier", id: "demo" } },
+        response: outcomeReview,
       },
       {
         path: "/api/threads/thread_2/plan-blueprints/selection",
@@ -862,6 +918,11 @@ describe("Web JSON API wrappers", () => {
       getExecutionPlanBlueprintRecordOutcomeQualification(record.id),
     ).resolves.toEqual(outcomeQualification);
     await expect(
+      reviewExecutionPlanBlueprintRecordOutcomes(record.id, {
+        model: { provider: "napier", id: "demo" },
+      }),
+    ).resolves.toEqual(outcomeReview);
+    await expect(
       selectExecutionPlanBlueprintRecord("thread_2"),
     ).resolves.toEqual(selection);
     await expect(
@@ -916,7 +977,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(17);
+    expect(fetchMock).toHaveBeenCalledTimes(18);
   });
 });
 
