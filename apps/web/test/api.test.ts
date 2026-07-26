@@ -22,6 +22,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
@@ -64,6 +65,7 @@ import {
   setExecutionPlanBlueprintRecordStatus,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
+  verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements,
   verifyExecutionPlanBlueprintRecordReplayEvent,
   verifyExecutionPlanBlueprintRecordReplayOutcomes,
   verifyExecutionPlanBlueprintRecordReplays,
@@ -981,6 +983,43 @@ describe("Web JSON API wrappers", () => {
         retirements: [recommendationPolicyOverrideRetirement],
         contentSha256: "5".repeat(64),
       };
+    const recommendationPolicyOverrideRetirementHistoryVerification: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-verification",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-26T00:00:12.000Z",
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256:
+          recommendationPolicyOverrideRetirementHistory.contentSha256,
+        recomputedContentSha256:
+          recommendationPolicyOverrideRetirementHistory.contentSha256,
+        observedContentSha256:
+          recommendationPolicyOverrideRetirementHistory.contentSha256,
+        declaredPortfolioSetSha256:
+          recommendationPolicyOverrideRetirementHistory.portfolioSetSha256,
+        observedPortfolioSetSha256:
+          recommendationPolicyOverrideRetirementHistory.portfolioSetSha256,
+        declaredCurrentOverrideSetSha256:
+          recommendationPolicyOverrideRetirementHistory.currentOverrideSetSha256,
+        observedCurrentOverrideSetSha256:
+          recommendationPolicyOverrideRetirementHistory.currentOverrideSetSha256,
+        declaredRetirementSetSha256:
+          recommendationPolicyOverrideRetirementHistory.retirementSetSha256,
+        recomputedRetirementSetSha256:
+          recommendationPolicyOverrideRetirementHistory.retirementSetSha256,
+        observedRetirementSetSha256:
+          recommendationPolicyOverrideRetirementHistory.retirementSetSha256,
+        retirementCount:
+          recommendationPolicyOverrideRetirementHistory.retirementCount,
+        observedRetirementCount:
+          recommendationPolicyOverrideRetirementHistory.retirementCount,
+        latestRetiredAt: recommendationPolicyOverrideRetirement.retiredAt,
+        observedLatestRetiredAt:
+          recommendationPolicyOverrideRetirement.retiredAt,
+        contentSha256: "6".repeat(64),
+      };
     const replayEventVerification: ExecutionPlanBlueprintRecordReplayEventVerification =
       {
         schemaVersion: 1,
@@ -1095,6 +1134,12 @@ describe("Web JSON API wrappers", () => {
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
         response: recommendationPolicyOverrideRetirementHistory,
+      },
+      {
+        path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify",
+        method: "POST",
+        body: { history: recommendationPolicyOverrideRetirementHistory },
+        response: recommendationPolicyOverrideRetirementHistoryVerification,
       },
       {
         path: "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
@@ -1261,6 +1306,13 @@ describe("Web JSON API wrappers", () => {
       getExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(),
     ).resolves.toEqual(recommendationPolicyOverrideRetirementHistory);
     await expect(
+      verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements({
+        history: recommendationPolicyOverrideRetirementHistory,
+      }),
+    ).resolves.toEqual(
+      recommendationPolicyOverrideRetirementHistoryVerification,
+    );
+    await expect(
       setExecutionPlanBlueprintRecommendationPolicyOverride({
         familySha256: "3".repeat(64),
         policyTemplate: "balanced",
@@ -1319,7 +1371,7 @@ describe("Web JSON API wrappers", () => {
         eventSha256: "5".repeat(64),
       },
     });
-    expect(fetchMock).toHaveBeenCalledTimes(26);
+    expect(fetchMock).toHaveBeenCalledTimes(27);
   });
 });
 

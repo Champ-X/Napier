@@ -566,6 +566,8 @@ export const copy = {
         retiringPolicyOverride: "Retiring override...",
         auditPolicyOverrideRetirements: "Audit retirements",
         auditingPolicyOverrideRetirements: "Auditing retirements...",
+        verifyPolicyOverrideRetirements: "Verify retirements",
+        verifyingPolicyOverrideRetirements: "Verifying retirements...",
         create: "Create from template",
         creating: "Creating plan...",
         preview: "Preview",
@@ -725,6 +727,8 @@ export const copy = {
           policyOverrideDriftReviewed: "Policy override drift",
           policyOverrideRetired: "Policy override retired",
           policyOverrideRetirements: "Policy override retirements",
+          policyOverrideRetirementsVerified:
+            "Policy override retirements verified",
         },
         outcomeBaselineCreated: "Baseline promoted",
         outcomeBaselineReused: "Baseline already current",
@@ -736,6 +740,10 @@ export const copy = {
           outcomesTooLarge: "Replay outcome receipts must be 2 MiB or smaller.",
           outcomesInvalid:
             "Choose a valid Napier blueprint replay outcomes JSON file.",
+          policyOverrideRetirementsTooLarge:
+            "Policy override retirement history receipts must be 2 MiB or smaller.",
+          policyOverrideRetirementsInvalid:
+            "Choose a valid Napier policy override retirement history JSON file.",
         },
       },
       errors: {

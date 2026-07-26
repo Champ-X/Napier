@@ -64,6 +64,7 @@ import {
   type ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReviewItem,
   type ExecutionPlanBlueprintRecommendationPolicyOverrideList,
   type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   type ExecutionPlanBlueprintRecommendationPolicySource,
   type ExecutionPlanBlueprintRecommendationPolicyTemplateId,
   type ExecutionPlanBlueprintPortfolioCalibration,
@@ -2639,6 +2640,18 @@ export class LocalStore {
             overrides,
           ),
       },
+    );
+  }
+
+  async verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
+    input: unknown,
+  ): Promise<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification> {
+    this.assertInitialized();
+    const observed =
+      await this.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
+    return verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProjection(
+      input,
+      observed,
     );
   }
 
@@ -9701,6 +9714,147 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   };
 }
 
+function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProjection(
+  input: unknown,
+  observed: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+): ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification {
+  const diagnostics: string[] = [];
+  const record = isRecord(input) ? input : undefined;
+  if (!record) diagnostics.push("history_not_object");
+  const declaredContentSha256 = isSha256(record?.["contentSha256"])
+    ? record["contentSha256"]
+    : undefined;
+  const recomputedContentSha256 = record
+    ? sha256(canonicalJson(retirementHistoryHashContent(record)))
+    : undefined;
+  const declaredPortfolioSetSha256 = isSha256(record?.["portfolioSetSha256"])
+    ? record["portfolioSetSha256"]
+    : undefined;
+  const declaredCurrentOverrideSetSha256 = isSha256(
+    record?.["currentOverrideSetSha256"],
+  )
+    ? record["currentOverrideSetSha256"]
+    : undefined;
+  const declaredRetirementSetSha256 = isSha256(
+    record?.["retirementSetSha256"],
+  )
+    ? record["retirementSetSha256"]
+    : undefined;
+  const retirementCount = isNonNegativeInteger(record?.["retirementCount"])
+    ? record["retirementCount"]
+    : undefined;
+  const latestRetiredAt =
+    typeof record?.["latestRetiredAt"] === "string" &&
+    Number.isFinite(Date.parse(record["latestRetiredAt"]))
+      ? record["latestRetiredAt"]
+      : undefined;
+  let recomputedRetirementSetSha256: string | undefined;
+  if (record && !Array.isArray(record["retirements"])) {
+    diagnostics.push("retirements_not_array");
+  } else if (Array.isArray(record?.["retirements"])) {
+    try {
+      recomputedRetirementSetSha256 =
+        executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
+          record["retirements"].map(
+            validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult,
+          ),
+        );
+    } catch {
+      diagnostics.push("retirements_invalid");
+    }
+  }
+  if (
+    record?.["kind"] !==
+    "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history"
+  ) {
+    diagnostics.push("kind_mismatch");
+  }
+  if (record?.["schemaVersion"] !== 1) diagnostics.push("schema_mismatch");
+  if (record?.["apiVersion"] !== NAPIER_API_VERSION) {
+    diagnostics.push("api_version_mismatch");
+  }
+  if (!declaredContentSha256) diagnostics.push("content_hash_missing");
+  if (
+    declaredContentSha256 &&
+    recomputedContentSha256 &&
+    declaredContentSha256 !== recomputedContentSha256
+  ) {
+    diagnostics.push("content_hash_mismatch");
+  }
+  if (
+    declaredContentSha256 &&
+    declaredContentSha256 !== observed.contentSha256
+  ) {
+    diagnostics.push("current_history_mismatch");
+  }
+  if (!declaredPortfolioSetSha256) diagnostics.push("portfolio_set_missing");
+  if (declaredPortfolioSetSha256 !== observed.portfolioSetSha256) {
+    diagnostics.push("portfolio_set_mismatch");
+  }
+  if (!declaredCurrentOverrideSetSha256) {
+    diagnostics.push("current_override_set_missing");
+  }
+  if (
+    declaredCurrentOverrideSetSha256 !== observed.currentOverrideSetSha256
+  ) {
+    diagnostics.push("current_override_set_mismatch");
+  }
+  if (!declaredRetirementSetSha256) diagnostics.push("retirement_set_missing");
+  if (
+    declaredRetirementSetSha256 &&
+    recomputedRetirementSetSha256 &&
+    declaredRetirementSetSha256 !== recomputedRetirementSetSha256
+  ) {
+    diagnostics.push("retirement_set_hash_mismatch");
+  }
+  if (declaredRetirementSetSha256 !== observed.retirementSetSha256) {
+    diagnostics.push("retirement_set_mismatch");
+  }
+  if (retirementCount !== observed.retirementCount) {
+    diagnostics.push("retirement_count_mismatch");
+  }
+  if (record?.["latestRetiredAt"] !== undefined && !latestRetiredAt) {
+    diagnostics.push("latest_retired_at_invalid");
+  }
+  if (latestRetiredAt !== observed.latestRetiredAt) {
+    diagnostics.push("latest_retired_at_mismatch");
+  }
+  const status: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification["status"] =
+    diagnostics.length === 0 ? "valid" : "invalid";
+  const content = {
+    kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-verification" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    status,
+    diagnostics,
+    ...(declaredContentSha256 ? { declaredContentSha256 } : {}),
+    ...(recomputedContentSha256 ? { recomputedContentSha256 } : {}),
+    observedContentSha256: observed.contentSha256,
+    ...(declaredPortfolioSetSha256 ? { declaredPortfolioSetSha256 } : {}),
+    observedPortfolioSetSha256: observed.portfolioSetSha256,
+    ...(declaredCurrentOverrideSetSha256
+      ? { declaredCurrentOverrideSetSha256 }
+      : {}),
+    observedCurrentOverrideSetSha256: observed.currentOverrideSetSha256,
+    ...(declaredRetirementSetSha256 ? { declaredRetirementSetSha256 } : {}),
+    ...(recomputedRetirementSetSha256
+      ? { recomputedRetirementSetSha256 }
+      : {}),
+    observedRetirementSetSha256: observed.retirementSetSha256,
+    ...(retirementCount !== undefined ? { retirementCount } : {}),
+    observedRetirementCount: observed.retirementCount,
+    ...(latestRetiredAt ? { latestRetiredAt } : {}),
+    ...(observed.latestRetiredAt
+      ? { observedLatestRetiredAt: observed.latestRetiredAt }
+      : {}),
+  };
+  return {
+    ...content,
+    generatedAt: nowIso(),
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
 function executionPlanBlueprintPortfolioSetSha256(
   entries: ExecutionPlanBlueprintPortfolioCalibrationEntry[],
 ): string {
@@ -10625,6 +10779,17 @@ function replayHistoryHashContent(
 }
 
 function replayOutcomesHashContent(
+  record: Record<string, unknown>,
+): Record<string, unknown> {
+  const {
+    generatedAt: _generatedAt,
+    contentSha256: _contentSha256,
+    ...content
+  } = record;
+  return content;
+}
+
+function retirementHistoryHashContent(
   record: Record<string, unknown>,
 ): Record<string, unknown> {
   const {

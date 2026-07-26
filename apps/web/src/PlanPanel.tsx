@@ -47,6 +47,7 @@ import {
   setExecutionPlanBlueprintRecordStatus,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
+  verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements,
   verifyExecutionPlanBlueprintRecordReplayEvent,
   verifyExecutionPlanBlueprintRecordReplayOutcomes,
   verifyExecutionPlanBlueprintRecordReplays,
@@ -75,7 +76,9 @@ import {
   type PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryReceipt,
+  planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt,
+  type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt,
   planBlueprintReplayHistoryReceipt,
@@ -94,6 +97,8 @@ const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_REPLAY_HISTORY_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_REPLAY_OUTCOMES_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_PLAN_BLUEPRINT_POLICY_OVERRIDE_RETIREMENT_HISTORY_FILE_BYTES =
+  2 * 1024 * 1024;
 
 type PlanArchiveReceipt =
   | {
@@ -165,6 +170,7 @@ type PlanBlueprintLibraryBusyAction =
   | "reviewPolicyOverrideDrift"
   | "retirePolicyOverride"
   | "auditPolicyOverrideRetirements"
+  | "verifyPolicyOverrideRetirements"
   | "select";
 
 type PlanBlueprintLibraryReceipt =
@@ -192,6 +198,7 @@ type PlanBlueprintLibraryReceipt =
   | PlanBlueprintLibraryRecommendationPolicyOverrideDriftReviewReceipt
   | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt
   | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryReceipt
+  | PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt
   | PlanBlueprintLibrarySelectionReceipt;
 
 export default function PlanPanel({
@@ -968,6 +975,10 @@ export default function PlanPanel({
       try {
         const history =
           await getExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
+        downloadJson(
+          history,
+          `napier-blueprint-policy-override-retirements-${history.retirementSetSha256.slice(0, 12)}.json`,
+        );
         setBlueprintLibraryReceipt(
           planBlueprintRecommendationPolicyOverrideRetirementHistoryReceipt(
             history,
@@ -979,6 +990,44 @@ export default function PlanPanel({
         setBlueprintLibraryBusyAction(undefined);
       }
     };
+
+  const verifyBlueprintRecommendationPolicyOverrideRetirementsFile = async (
+    file: File,
+  ): Promise<void> => {
+    if (blueprintLibraryBusyAction) return;
+    if (
+      file.size >
+      MAX_PLAN_BLUEPRINT_POLICY_OVERRIDE_RETIREMENT_HISTORY_FILE_BYTES
+    ) {
+      setBlueprintLibraryError(
+        copy.plan.blueprint.library.errors.policyOverrideRetirementsTooLarge,
+      );
+      return;
+    }
+    setBlueprintLibraryBusyAction("verifyPolicyOverrideRetirements");
+    setBlueprintLibraryReceipt(undefined);
+    setBlueprintLibraryError(undefined);
+    try {
+      const history = JSON.parse(await file.text()) as unknown;
+      const verification =
+        await verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
+          { history },
+        );
+      setBlueprintLibraryReceipt(
+        planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt(
+          verification,
+        ),
+      );
+    } catch (error) {
+      setBlueprintLibraryError(
+        error instanceof SyntaxError
+          ? copy.plan.blueprint.library.errors.policyOverrideRetirementsInvalid
+          : formatApiErrorMessage(error),
+      );
+    } finally {
+      setBlueprintLibraryBusyAction(undefined);
+    }
+  };
 
   const createFromBlueprintRecord = async (
     record: ExecutionPlanBlueprintRecord,
@@ -1287,6 +1336,9 @@ export default function PlanPanel({
         }
         onAuditPolicyOverrideRetirements={() =>
           void auditBlueprintRecommendationPolicyOverrideRetirements()
+        }
+        onVerifyPolicyOverrideRetirements={(file) =>
+          void verifyBlueprintRecommendationPolicyOverrideRetirementsFile(file)
         }
         onArchive={(record) =>
           void updateBlueprintRecordStatus(record, "archived")
@@ -1657,6 +1709,7 @@ function PlanBlueprintLibraryCard({
   onReviewPolicyOverrideDrift,
   onRetirePolicyOverride,
   onAuditPolicyOverrideRetirements,
+  onVerifyPolicyOverrideRetirements,
   onArchive,
   onRestore,
   onQualify,
@@ -1690,6 +1743,7 @@ function PlanBlueprintLibraryCard({
   onReviewPolicyOverrideDrift: () => void;
   onRetirePolicyOverride: () => void;
   onAuditPolicyOverrideRetirements: () => void;
+  onVerifyPolicyOverrideRetirements: (file: File) => void;
   onArchive: (record: ExecutionPlanBlueprintRecord) => void;
   onRestore: (record: ExecutionPlanBlueprintRecord) => void;
   onQualify: (record: ExecutionPlanBlueprintRecord) => void;
@@ -1708,6 +1762,7 @@ function PlanBlueprintLibraryCard({
 }) {
   const historyInput = useRef<HTMLInputElement>(null);
   const outcomesInput = useRef<HTMLInputElement>(null);
+  const policyOverrideRetirementsInput = useRef<HTMLInputElement>(null);
   const busy = Boolean(busyAction);
   const activeCount = records.filter(
     (record) => record.status === "active",
@@ -1809,6 +1864,17 @@ function PlanBlueprintLibraryCard({
           className="fixture-verify"
           type="button"
           disabled={busy}
+          onClick={() => policyOverrideRetirementsInput.current?.click()}
+        >
+          <Upload size={12} aria-hidden="true" />
+          {busyAction === "verifyPolicyOverrideRetirements"
+            ? copy.plan.blueprint.library.verifyingPolicyOverrideRetirements
+            : copy.plan.blueprint.library.verifyPolicyOverrideRetirements}
+        </button>
+        <button
+          className="fixture-verify"
+          type="button"
+          disabled={busy}
           onClick={() => historyInput.current?.click()}
         >
           <Upload size={12} aria-hidden="true" />
@@ -1848,6 +1914,18 @@ function PlanBlueprintLibraryCard({
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
             if (file) onVerifyHistory(file);
+          }}
+        />
+        <input
+          ref={policyOverrideRetirementsInput}
+          className="fixture-file-input"
+          type="file"
+          accept="application/json,.json"
+          aria-label={copy.plan.blueprint.library.verifyPolicyOverrideRetirements}
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            if (file) onVerifyPolicyOverrideRetirements(file);
           }}
         />
         <input
@@ -2089,6 +2167,9 @@ function PlanBlueprintLibraryReceiptView({
                             ? true
                             : receipt.action === "policyOverrideRetirements"
                               ? true
+                              : receipt.action ===
+                                  "policyOverrideRetirementsVerified"
+                                ? receipt.verificationStatus === "valid"
                               : receipt.action === "created" &&
                                   receipt.replayEventVerificationStatus
                                 ? receipt.replayEventVerificationStatus ===
@@ -2138,6 +2219,10 @@ function PlanBlueprintLibraryReceiptView({
                             : receipt.action === "policyOverrideRetirements"
                               ? copy.plan.blueprint.library.receipts
                                   .policyOverrideRetirements
+                              : receipt.action ===
+                                  "policyOverrideRetirementsVerified"
+                                ? copy.plan.blueprint.library.receipts
+                                    .policyOverrideRetirementsVerified
                               : copy.plan.blueprint.library.receipts[
                                   receipt.action
                                 ];
@@ -2155,6 +2240,7 @@ function PlanBlueprintLibraryReceiptView({
           receipt.action === "policyOverrideDriftReviewed" ||
           receipt.action === "policyOverrideRetired" ||
           receipt.action === "policyOverrideRetirements" ||
+          receipt.action === "policyOverrideRetirementsVerified" ||
           receipt.action === "outcomeQualified"
         ? receipt.contentSha256
         : receipt.action === "outcomeBaseline"
@@ -2185,6 +2271,9 @@ function PlanBlueprintLibraryReceiptView({
                     ? `${copy.plan.blueprint.library.retired}: ${receipt.retiredRecommendationPolicyTemplate} / ${copy.plan.blueprint.library.remaining}: ${receipt.remainingOverrideSetSha256.slice(0, 12)}`
                     : receipt.action === "policyOverrideRetirements"
                       ? `${receipt.retirementCount.toLocaleString()} ${copy.plan.blueprint.library.retired} / ${copy.plan.blueprint.library.retirementSet}: ${receipt.retirementSetSha256.slice(0, 12)}`
+                      : receipt.action ===
+                          "policyOverrideRetirementsVerified"
+                        ? `${receipt.observedRetirementCount.toLocaleString()} ${copy.plan.blueprint.library.retired} / ${copy.plan.blueprint.library.retirementSet}: ${receipt.observedRetirementSetSha256.slice(0, 12)}`
                       : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
   const identity =
     receipt.action === "qualified"
@@ -2221,6 +2310,12 @@ function PlanBlueprintLibraryReceiptView({
                             : receipt.action === "policyOverrideRetirements"
                               ? (receipt.latestFamilySha256?.slice(0, 12) ??
                                 receipt.retirementSetSha256.slice(0, 12))
+                              : receipt.action ===
+                                  "policyOverrideRetirementsVerified"
+                                ? receipt.observedRetirementSetSha256.slice(
+                                    0,
+                                    12,
+                                  )
                               : receipt.action === "historyVerified" ||
                                   receipt.action === "outcomesVerified" ||
                                   receipt.action === "outcomeQualified"
@@ -2711,6 +2806,57 @@ function PlanBlueprintLibraryReceiptView({
             {receipt.latestRetiredAt ?? copy.plan.blueprint.library.missing}
             {receipt.latestRemainingOverrideSetSha256
               ? ` / ${copy.plan.blueprint.library.remaining}: ${receipt.latestRemainingOverrideSetSha256.slice(0, 16)}`
+              : ""}
+          </small>
+        </>
+      ) : null}
+      {receipt.action === "policyOverrideRetirementsVerified" ? (
+        <>
+          <small className="fixture-diagnostics">
+            {receipt.diagnostics.length > 0
+              ? receipt.diagnostics.join(", ")
+              : copy.plan.blueprint.library.noDiagnostics}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.declared}:{" "}
+            {receipt.declaredContentSha256?.slice(0, 16) ?? "missing"}
+            {receipt.observedContentSha256
+              ? ` / ${copy.plan.blueprint.library.observed}: ${receipt.observedContentSha256.slice(0, 16)}`
+              : ""}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {receipt.declaredPortfolioSetSha256?.slice(0, 16) ?? "missing"}
+            {" / "}
+            {copy.plan.blueprint.library.observed}:{" "}
+            {receipt.observedPortfolioSetSha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {receipt.declaredCurrentOverrideSetSha256?.slice(0, 16) ??
+              "missing"}
+            {" / "}
+            {copy.plan.blueprint.library.observed}:{" "}
+            {receipt.observedCurrentOverrideSetSha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.retirementSet}:{" "}
+            {receipt.declaredRetirementSetSha256?.slice(0, 16) ?? "missing"}
+            {receipt.recomputedRetirementSetSha256
+              ? ` / ${copy.plan.blueprint.library.actual}: ${receipt.recomputedRetirementSetSha256.slice(0, 16)}`
+              : ""}
+            {" / "}
+            {copy.plan.blueprint.library.observed}:{" "}
+            {receipt.observedRetirementSetSha256.slice(0, 16)}
+          </small>
+          <small className="fixture-diagnostics">
+            {copy.plan.blueprint.library.retired}:{" "}
+            {receipt.retirementCount.toLocaleString()}
+            {" / "}
+            {copy.plan.blueprint.library.observed}:{" "}
+            {receipt.observedRetirementCount.toLocaleString()}
+            {receipt.latestRetiredAt || receipt.observedLatestRetiredAt
+              ? ` / ${copy.plan.blueprint.library.latest}: ${receipt.latestRetiredAt ?? copy.plan.blueprint.library.missing} / ${copy.plan.blueprint.library.observed}: ${receipt.observedLatestRetiredAt ?? copy.plan.blueprint.library.missing}`
               : ""}
           </small>
         </>

@@ -1174,6 +1174,38 @@ export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHis
   contentSha256: string;
 }
 
+export interface VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryRequest {
+  history: unknown;
+}
+
+export type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationStatus =
+  | "valid"
+  | "invalid";
+
+export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification {
+  kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationStatus;
+  diagnostics: string[];
+  declaredContentSha256?: string;
+  recomputedContentSha256?: string;
+  observedContentSha256: string;
+  declaredPortfolioSetSha256?: string;
+  observedPortfolioSetSha256: string;
+  declaredCurrentOverrideSetSha256?: string;
+  observedCurrentOverrideSetSha256: string;
+  declaredRetirementSetSha256?: string;
+  recomputedRetirementSetSha256?: string;
+  observedRetirementSetSha256: string;
+  retirementCount?: number;
+  observedRetirementCount: number;
+  latestRetiredAt?: string;
+  observedLatestRetiredAt?: string;
+  contentSha256: string;
+}
+
 export type ExecutionPlanBlueprintRecordReplayEventVerificationStatus =
   | "valid"
   | "invalid";

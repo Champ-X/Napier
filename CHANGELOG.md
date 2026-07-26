@@ -182,6 +182,16 @@ All notable changes to Napier are recorded here.
   so retired defaults remain auditable after the live override set changes.
   Server headers mirror the history counters/hashes, and the Template shelf can
   audit retirement history through a pure ViewModel receipt.
+- Blueprint recommendation policy override retirement history verification.
+  `POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify`
+  now accepts an exported retirement history and returns a no-store verification
+  receipt with declared/recomputed/observed content, portfolio-set,
+  current-override-set, and retirement-set hashes. The runtime validates every
+  embedded retirement receipt, distinguishes tampered files from stale durable
+  state, mirrors verification evidence in response headers, and the Template
+  shelf now downloads retirement history JSON and uploads it back through a pure
+  ViewModel receipt.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

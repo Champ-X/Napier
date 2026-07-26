@@ -927,6 +927,17 @@ The same retirement is appended into durable local history; `GET
 returns a no-store history receipt with retirement count, current override-set
 SHA-256, retirement-set SHA-256, latest retirement timestamp, and every
 retirement receipt so deleted overrides remain auditable after defaults change.
+`POST
+/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify`
+accepts an exported retirement history and returns a no-store verification
+receipt. The server recomputes the uploaded history content hash, validates each
+embedded retirement receipt, recomputes the retirement-set SHA-256, and compares
+declared portfolio/current override/retirement hashes against the current
+durable store. Diagnostics distinguish tampered files from otherwise valid
+exports that no longer match current Ledger state, while response headers mirror
+the verification status, diagnostic hash, and declared/recomputed/observed
+hashes. The Template shelf downloads the audit history JSON and can upload it
+back through the same verification flow.
 `GET
 /api/plan-blueprints/portfolio/recommendation-policy-backtest` runs the three
 policy templates against the current library's historical replay outcomes

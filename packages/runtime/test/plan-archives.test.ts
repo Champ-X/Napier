@@ -1011,6 +1011,62 @@ describe("execution plan archives", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    const policyOverrideRetirementHistory =
+      await store.listExecutionPlanBlueprintRecommendationPolicyOverrideRetirements();
+    await expect(
+      store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
+        policyOverrideRetirementHistory,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-verification",
+        schemaVersion: 1,
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256: policyOverrideRetirementHistory.contentSha256,
+        recomputedContentSha256: policyOverrideRetirementHistory.contentSha256,
+        observedContentSha256: policyOverrideRetirementHistory.contentSha256,
+        declaredPortfolioSetSha256:
+          policyOverrideRetirementHistory.portfolioSetSha256,
+        observedPortfolioSetSha256:
+          policyOverrideRetirementHistory.portfolioSetSha256,
+        declaredCurrentOverrideSetSha256:
+          policyOverrideRetirementHistory.currentOverrideSetSha256,
+        observedCurrentOverrideSetSha256:
+          policyOverrideRetirementHistory.currentOverrideSetSha256,
+        declaredRetirementSetSha256:
+          policyOverrideRetirementHistory.retirementSetSha256,
+        recomputedRetirementSetSha256:
+          policyOverrideRetirementHistory.retirementSetSha256,
+        observedRetirementSetSha256:
+          policyOverrideRetirementHistory.retirementSetSha256,
+        retirementCount: 1,
+        observedRetirementCount: 1,
+        latestRetiredAt: policyOverrideRetirement.retiredAt,
+        observedLatestRetiredAt: policyOverrideRetirement.retiredAt,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    await expect(
+      store.verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirements(
+        {
+          ...policyOverrideRetirementHistory,
+          retirementCount: 2,
+        },
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining([
+          "content_hash_mismatch",
+          "retirement_count_mismatch",
+        ]),
+        declaredContentSha256: policyOverrideRetirementHistory.contentSha256,
+        observedContentSha256: policyOverrideRetirementHistory.contentSha256,
+        retirementCount: 2,
+        observedRetirementCount: 1,
+      }),
+    );
     await expect(
       store.listExecutionPlanBlueprintRecommendationPolicyOverrides(),
     ).resolves.toEqual(

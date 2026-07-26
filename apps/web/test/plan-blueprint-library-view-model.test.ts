@@ -14,6 +14,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
@@ -33,6 +34,7 @@ import {
   planBlueprintRecommendationPolicyOverrideReceipt,
   planBlueprintRecommendationPolicyOverrideDriftReviewReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryReceipt,
+  planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementReceipt,
   planBlueprintReplayHistoryReceipt,
   planBlueprintReplayHistoryVerificationReceipt,
@@ -969,6 +971,55 @@ describe("Plan blueprint library view model", () => {
       latestRetiredOverrideSha256: retirement.retiredOverrideSha256,
       latestRetiredRecommendationPolicyTemplate: "balanced",
       latestRemainingOverrideSetSha256: retirement.remainingOverrideSetSha256,
+    });
+    const verification: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification =
+      {
+        kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-verification",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-26T00:00:12.000Z",
+        status: "invalid",
+        diagnostics: ["retirement_count_mismatch"],
+        declaredContentSha256: history.contentSha256,
+        recomputedContentSha256: "d".repeat(64),
+        observedContentSha256: "e".repeat(64),
+        declaredPortfolioSetSha256: history.portfolioSetSha256,
+        observedPortfolioSetSha256: "f".repeat(64),
+        declaredCurrentOverrideSetSha256: history.currentOverrideSetSha256,
+        observedCurrentOverrideSetSha256: "1".repeat(64),
+        declaredRetirementSetSha256: history.retirementSetSha256,
+        recomputedRetirementSetSha256: history.retirementSetSha256,
+        observedRetirementSetSha256: "2".repeat(64),
+        retirementCount: 2,
+        observedRetirementCount: 1,
+        latestRetiredAt: retirement.retiredAt,
+        observedLatestRetiredAt: "2026-07-26T00:00:13.000Z",
+        contentSha256: "3".repeat(64),
+      };
+
+    expect(
+      planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt(
+        verification,
+      ),
+    ).toEqual({
+      action: "policyOverrideRetirementsVerified",
+      verificationStatus: "invalid",
+      diagnostics: ["retirement_count_mismatch"],
+      contentSha256: verification.contentSha256,
+      declaredContentSha256: history.contentSha256,
+      recomputedContentSha256: "d".repeat(64),
+      observedContentSha256: "e".repeat(64),
+      declaredPortfolioSetSha256: history.portfolioSetSha256,
+      observedPortfolioSetSha256: "f".repeat(64),
+      declaredCurrentOverrideSetSha256: history.currentOverrideSetSha256,
+      observedCurrentOverrideSetSha256: "1".repeat(64),
+      declaredRetirementSetSha256: history.retirementSetSha256,
+      recomputedRetirementSetSha256: history.retirementSetSha256,
+      observedRetirementSetSha256: "2".repeat(64),
+      retirementCount: 2,
+      observedRetirementCount: 1,
+      latestRetiredAt: retirement.retiredAt,
+      observedLatestRetiredAt: "2026-07-26T00:00:13.000Z",
     });
   });
 

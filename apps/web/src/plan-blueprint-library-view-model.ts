@@ -15,6 +15,7 @@ import type {
   ExecutionPlanBlueprintRecommendationPolicyOverride,
   ExecutionPlanBlueprintRecommendationPolicyOverrideDriftReview,
   ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistory,
+  ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
   ExecutionPlanBlueprintRecordSelection,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
@@ -285,6 +286,27 @@ export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHisto
   latestRetiredOverrideSha256?: string;
   latestRetiredRecommendationPolicyTemplate?: RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult["retiredRecommendationPolicyTemplate"];
   latestRemainingOverrideSetSha256?: string;
+}
+
+export interface PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt {
+  action: "policyOverrideRetirementsVerified";
+  verificationStatus: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification["status"];
+  diagnostics: string[];
+  contentSha256: string;
+  declaredContentSha256?: string;
+  recomputedContentSha256?: string;
+  observedContentSha256: string;
+  declaredPortfolioSetSha256?: string;
+  observedPortfolioSetSha256: string;
+  declaredCurrentOverrideSetSha256?: string;
+  observedCurrentOverrideSetSha256: string;
+  declaredRetirementSetSha256?: string;
+  recomputedRetirementSetSha256?: string;
+  observedRetirementSetSha256: string;
+  retirementCount: number;
+  observedRetirementCount: number;
+  latestRetiredAt?: string;
+  observedLatestRetiredAt?: string;
 }
 
 export interface PlanBlueprintLibraryQualificationReceipt {
@@ -798,6 +820,55 @@ export function planBlueprintRecommendationPolicyOverrideRetirementHistoryReceip
             latest.retiredRecommendationPolicyTemplate,
           latestRemainingOverrideSetSha256: latest.remainingOverrideSetSha256,
         }
+      : {}),
+  };
+}
+
+export function planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt(
+  verification: ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification,
+): PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt {
+  return {
+    action: "policyOverrideRetirementsVerified",
+    verificationStatus: verification.status,
+    diagnostics: verification.diagnostics,
+    contentSha256: verification.contentSha256,
+    ...(verification.declaredContentSha256
+      ? { declaredContentSha256: verification.declaredContentSha256 }
+      : {}),
+    ...(verification.recomputedContentSha256
+      ? { recomputedContentSha256: verification.recomputedContentSha256 }
+      : {}),
+    observedContentSha256: verification.observedContentSha256,
+    ...(verification.declaredPortfolioSetSha256
+      ? { declaredPortfolioSetSha256: verification.declaredPortfolioSetSha256 }
+      : {}),
+    observedPortfolioSetSha256: verification.observedPortfolioSetSha256,
+    ...(verification.declaredCurrentOverrideSetSha256
+      ? {
+          declaredCurrentOverrideSetSha256:
+            verification.declaredCurrentOverrideSetSha256,
+        }
+      : {}),
+    observedCurrentOverrideSetSha256:
+      verification.observedCurrentOverrideSetSha256,
+    ...(verification.declaredRetirementSetSha256
+      ? { declaredRetirementSetSha256: verification.declaredRetirementSetSha256 }
+      : {}),
+    ...(verification.recomputedRetirementSetSha256
+      ? {
+          recomputedRetirementSetSha256:
+            verification.recomputedRetirementSetSha256,
+        }
+      : {}),
+    observedRetirementSetSha256: verification.observedRetirementSetSha256,
+    retirementCount:
+      verification.retirementCount ?? verification.observedRetirementCount,
+    observedRetirementCount: verification.observedRetirementCount,
+    ...(verification.latestRetiredAt
+      ? { latestRetiredAt: verification.latestRetiredAt }
+      : {}),
+    ...(verification.observedLatestRetiredAt
+      ? { observedLatestRetiredAt: verification.observedLatestRetiredAt }
       : {}),
   };
 }

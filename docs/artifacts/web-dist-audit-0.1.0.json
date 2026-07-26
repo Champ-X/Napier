@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 40,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BxnDuoRv.js",
-    "sizeBytes": 138349,
+    "path": "apps/web/dist/assets/index-DhrclV_4.js",
+    "sizeBytes": 138904,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "3cd9c69580e8ac24a05a68e0f2c68260bc0c784a5e8f3c22a52f6b0430c65832"
+    "sha256": "501b4f2cb7319da9bf1d86f0798a81a89b08479704dd9b5b9aa369dfb8fb20ac"
   },
-  "distContentSha256": "3cd9c69580e8ac24a05a68e0f2c68260bc0c784a5e8f3c22a52f6b0430c65832",
+  "distContentSha256": "501b4f2cb7319da9bf1d86f0798a81a89b08479704dd9b5b9aa369dfb8fb20ac",
   "errors": []
 }
