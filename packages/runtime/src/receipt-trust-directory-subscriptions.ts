@@ -138,6 +138,14 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 
 export interface PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription extends ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
   sourceUrl: string;
+  claim?: ReceiptTrustAnchorDirectorySubscriptionClaimState;
+  claimTokenSha256?: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim {
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+  sourceUrl: string;
+  token: string;
 }
 
 export function createReceiptTrustAnchorDirectorySubscription(
@@ -4480,9 +4488,23 @@ export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSele
       "Persisted receipt trust anchor directory quorum activation selection rotation proposal subscription source hash mismatch",
     );
   }
+  const claim = validateOptionalClaim(value["claim"]);
+  const claimTokenSha256 = value["claimTokenSha256"];
+  if (
+    (claim === undefined) !== (claimTokenSha256 === undefined) ||
+    (claimTokenSha256 !== undefined &&
+      (typeof claimTokenSha256 !== "string" ||
+        !SHA256_PATTERN.test(claimTokenSha256)))
+  ) {
+    throw new Error(
+      "Persisted receipt trust anchor directory quorum activation selection rotation proposal subscription claim is invalid",
+    );
+  }
   return {
     ...subscription,
     sourceUrl: sourceUrl.href,
+    ...(claim ? { claim } : {}),
+    ...(typeof claimTokenSha256 === "string" ? { claimTokenSha256 } : {}),
   };
 }
 
@@ -4612,7 +4634,12 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
 export function stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
   input: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
 ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
-  const { sourceUrl: _sourceUrl, ...subscription } = input;
+  const {
+    sourceUrl: _sourceUrl,
+    claim: _claim,
+    claimTokenSha256: _claimTokenSha256,
+    ...subscription
+  } = input;
   return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
     subscription,
   );
@@ -7179,6 +7206,8 @@ function rotationProposalSubscriptionContent(
   const {
     contentSha256: _contentSha256,
     sourceUrl: _sourceUrl,
+    claim: _claim,
+    claimTokenSha256: _claimTokenSha256,
     ...content
   } = input as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription &
     Partial<PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription>;

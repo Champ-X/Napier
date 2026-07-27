@@ -2134,9 +2134,9 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       },
     );
     expect(pauseRotationProposalSubscriptionResponse.status).toBe(200);
-    expect(
-      (await pauseRotationProposalSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
-    ).toEqual(
+    const pausedRotationProposalSubscription =
+      (await pauseRotationProposalSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+    expect(pausedRotationProposalSubscription).toEqual(
       expect.objectContaining({
         status: "paused",
         revision: 5,
@@ -3276,6 +3276,49 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         new Date("2030-01-01T00:00:00.000Z"),
       ),
     ).toBe(0);
+    const resumeRotationProposalSubscriptionResponse = await app.request(
+      `${rotationProposalSubscriptionPath}/${rotationProposalSubscription.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: pausedRotationProposalSubscription.revision,
+          status: "active",
+        }),
+      },
+    );
+    expect(resumeRotationProposalSubscriptionResponse.status).toBe(200);
+    expect(
+      (await resumeRotationProposalSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+    ).toEqual(
+      expect.objectContaining({
+        status: "active",
+        revision: 6,
+      }),
+    );
+    expect(
+      await services.receiptTrustDirectorySubscriptions.refreshDue(
+        new Date("2030-01-01T00:00:00.000Z"),
+      ),
+    ).toBe(1);
+    const dueRefreshedRotationProposalSubscription =
+      services.store
+        .listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions()
+        .find(
+          (subscription) =>
+            subscription.id === rotationProposalSubscription.id,
+        );
+    expect(dueRefreshedRotationProposalSubscription).toEqual(
+      expect.objectContaining({
+        status: "active",
+        revision: 7,
+        lastRefreshStatus: "rejected",
+        lastGoodDiscovery:
+          failedRotationProposalSubscriptionRefresh.subscription
+            .lastGoodDiscovery,
+      }),
+    );
 
     const events = await services.store.listEvents(thread.id);
     expect(
@@ -3294,7 +3337,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
           "receipt.trust_rotation_proposal_subscription.",
         ),
       ),
-    ).toHaveLength(5);
+    ).toHaveLength(7);
     expect(JSON.stringify(events)).not.toContain(sourceUrl);
     expect(JSON.stringify(events)).not.toContain(checkpointSourceUrl);
     expect(JSON.stringify(events)).not.toContain(rotationProposalSourceUrl);

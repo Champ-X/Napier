@@ -632,13 +632,14 @@ Durable hosted rotation proposal subscriptions layer persistence over that
 same no-store discovery contract. Subscription creation reruns discovery and
 stores the raw source URL only in local workspace state; public subscription
 projections, headers, and Ledger events retain URL/origin evidence as hashes.
-Manual refreshes are revision-CAS guarded and settle to `accepted`,
-`unchanged`, `rollback_rejected`, `rejected`, or `failed`. Only accepted or
-unchanged signed proposals advance last-good discovery, invalid or failed
-refreshes preserve the prior usable proposal, and a bounded transparency
-history records discovery, envelope, proposal, preflight, and predecessor
-hashes for external audit. Pause/resume changes are also CAS guarded, keeping
-operator control explicit until leased unattended refresh is added.
+Manual refreshes and leased background refreshes share the same claim/settle
+path and settle to `accepted`, `unchanged`, `rollback_rejected`, `rejected`, or
+`failed`. Only accepted or unchanged signed proposals advance last-good
+discovery, invalid or failed refreshes preserve the prior usable proposal, and
+a bounded transparency history records discovery, envelope, proposal,
+preflight, and predecessor hashes for external audit. Pause/resume changes are
+also CAS guarded, keeping operator control explicit until approval receipts can
+authorize unattended trust maintenance.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2578,7 +2579,7 @@ The current boundary has twenty-one parts:
     verifier-set selections, transparency checkpoints, hosted signed checkpoint
     discovery, durable checkpoint registries, and checkpoint-registry quorum
     alerting; hosted signed verifier-rotation proposal discovery plus durable
-    manual subscriptions with last-good preservation and hash-only transparency;
+    leased subscriptions with last-good preservation and hash-only transparency;
     fail-closed promotion preserves the active verifier set across rejected,
     failed, stale, or split rotations.
 
@@ -2602,8 +2603,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- leased refresh for hosted verifier rotation proposal subscriptions plus
-  operator approval receipts for unattended trust maintenance.
+- operator approval receipts for unattended verifier rotation maintenance.
 
 ### Layer 3: Extension fabric
 

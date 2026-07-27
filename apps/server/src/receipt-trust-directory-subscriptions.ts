@@ -7,6 +7,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   TrustedReceiptEnvelope,
 } from "@napier/contracts";
@@ -27,6 +28,7 @@ import {
   ReceiptTrustAnchorDirectoryDiscoveryService,
   type ReceiptTrustAnchorDirectoryHostedJsonSource,
 } from "./receipt-trust-directory-discovery.js";
+import { createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery } from "./receipt-trust-rotation-proposals.js";
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
 const DEFAULT_CLAIM_LEASE_MS = 30_000;
@@ -112,11 +114,26 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
           leaseMs: this.claimLeaseMs,
         },
       );
+    const { claims: rotationProposalClaims } =
+      await this.store.claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions(
+        this.workerId,
+        {
+          now,
+          leaseMs: this.claimLeaseMs,
+        },
+      );
     await Promise.all([
       ...directoryClaims.map((claim) => this.refreshClaim(claim)),
       ...checkpointClaims.map((claim) => this.refreshCheckpointClaim(claim)),
+      ...rotationProposalClaims.map((claim) =>
+        this.refreshRotationProposalClaim(claim),
+      ),
     ]);
-    return directoryClaims.length + checkpointClaims.length;
+    return (
+      directoryClaims.length +
+      checkpointClaims.length +
+      rotationProposalClaims.length
+    );
   }
 
   private scheduleTick(): void {
@@ -222,6 +239,70 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
     return result;
   }
 
+  async refreshRotationProposal(
+    subscriptionId: string,
+    threadId: string,
+    expectedRevision: number,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult> {
+    this.store.getThread(threadId);
+    const subscription =
+      this.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+        subscriptionId,
+      );
+    if (subscription.auditThreadId !== threadId) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed",
+      );
+    }
+    const claim =
+      await this.store.claimReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+        subscriptionId,
+        expectedRevision,
+        this.workerId,
+        { leaseMs: this.claimLeaseMs },
+      );
+    return this.refreshRotationProposalClaim(claim);
+  }
+
+  private async refreshRotationProposalClaim(
+    claim: Awaited<
+      ReturnType<
+        LocalStore["claimReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription"]
+      >
+    >,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult> {
+    let result: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult;
+    try {
+      const source = await this.discovery.fetchJson(claim.sourceUrl);
+      const discovery =
+        createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
+          this.store,
+          {
+            threadId: claim.subscription.auditThreadId,
+            sourceUrl: claim.sourceUrl,
+            policy: claim.subscription.policy,
+          },
+          source,
+        );
+      result =
+        await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim(
+          claim.subscription.id,
+          claim.token,
+          { discovery },
+        );
+    } catch (error) {
+      const failureSha256 = hashRefreshFailure(error);
+      result =
+        await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim(
+          claim.subscription.id,
+          claim.token,
+          { failureSha256 },
+        );
+    }
+    await this.appendRotationProposalRefreshEvent(result);
+    return result;
+  }
+
   private async appendRefreshEvent(
     result: ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ): Promise<void> {
@@ -288,6 +369,42 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
       threadId: subscription.auditThreadId,
       runId: createId("runctl"),
       type: "receipt.trust_checkpoint_subscription.refreshed",
+      category: "evaluation",
+      visibility: "user",
+      payload,
+    });
+  }
+
+  private async appendRotationProposalRefreshEvent(
+    result: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
+  ): Promise<void> {
+    const subscription = result.subscription;
+    const payload: Record<string, JsonValue> = {
+      subscriptionId: subscription.id,
+      subscriptionRevision: subscription.revision,
+      subscriptionSha256: subscription.contentSha256,
+      sourceUrlSha256: subscription.sourceUrlSha256,
+      sourceOriginSha256: subscription.sourceOriginSha256,
+      policySha256: subscription.policySha256,
+      refreshStatus: result.status,
+      refreshResultSha256: result.contentSha256,
+      transparencyEntryCount: subscription.transparencyEntryCount,
+      transparencyTailSha256: subscription.transparencyTailSha256 ?? "",
+      activeEnvelopeSha256:
+        subscription.lastGoodDiscovery?.envelopeSha256 ?? "",
+      activeProposalSha256:
+        subscription.lastGoodDiscovery?.proposalSha256 ?? "",
+      activePreflightSha256:
+        subscription.lastGoodDiscovery?.preflight?.contentSha256 ?? "",
+      ...(result.discovery
+        ? { discoverySha256: result.discovery.contentSha256 }
+        : {}),
+      ...(result.failureSha256 ? { failureSha256: result.failureSha256 } : {}),
+    };
+    await this.store.appendEvent({
+      threadId: subscription.auditThreadId,
+      runId: createId("runctl"),
+      type: "receipt.trust_rotation_proposal_subscription.refreshed",
       category: "evaluation",
       visibility: "user",
       payload,

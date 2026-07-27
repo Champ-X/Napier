@@ -1488,10 +1488,11 @@ snapshot, and exposes URL/origin evidence only as SHA-256 values in
 subscriptions, headers, receipts, and Ledger events. `GET` on that collection
 lists durable subscriptions without source locators. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/refresh`
-manually refreshes a source with revision CAS, updates last-good only for
-`accepted` or `unchanged` discoveries, rejects known rollback observations,
-preserves last-good across invalid or failed refreshes, and appends a bounded
-transparency chain over discovery, envelope, proposal, and preflight hashes.
+refreshes a source through the same leased claim path used by the background
+worker. Manual and scheduled refreshes update last-good only for `accepted` or
+`unchanged` discoveries, reject known rollback observations, preserve last-good
+across invalid or failed refreshes, and append a bounded transparency chain
+over discovery, envelope, proposal, and preflight hashes.
 `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId`
 pauses or resumes a subscription with the same revision guard.

@@ -392,6 +392,7 @@ import {
   type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim,
   type ReceiptTrustAnchorDirectorySubscriptionClaim,
 } from "./receipt-trust-directory-subscriptions.js";
 import {
@@ -649,6 +650,10 @@ export interface DueReceiptTrustAnchorDirectorySubscriptionClaims {
 
 export interface DueReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaims {
   claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim[];
+}
+
+export interface DueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaims {
+  claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim[];
 }
 
 export interface AutomaticRecoveryClaims {
@@ -2243,6 +2248,14 @@ export class LocalStore {
           "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
         );
       }
+      if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress",
+        );
+      }
+      const hadExpiredClaim = current.claim !== undefined;
+      delete current.claim;
+      delete current.claimTokenSha256;
       const updated =
         updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus(
           current,
@@ -2251,7 +2264,7 @@ export class LocalStore {
       this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
         index
       ] = updated;
-      if (updated.revision !== current.revision) {
+      if (updated.revision !== current.revision || hadExpiredClaim) {
         await this.persistState();
       }
       return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
@@ -2295,6 +2308,179 @@ export class LocalStore {
       if (current.revision !== expectedRevision) {
         throw new Error(
           "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
+        );
+      }
+      if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress",
+        );
+      }
+      delete current.claim;
+      delete current.claimTokenSha256;
+      const settled =
+        settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh(
+          current,
+          outcome,
+        );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
+        index
+      ] = settled.persisted;
+      await this.persistState();
+      return settled.result;
+    });
+  }
+
+  async claimReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+    subscriptionId: string,
+    expectedRevision: number,
+    ownerId: string,
+    options: { now?: Date; leaseMs?: number } = {},
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim> {
+    this.assertInitialized();
+    const owner = normalizeLeaseOwner(ownerId);
+    const now = options.now ?? new Date();
+    if (!Number.isFinite(now.getTime())) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal claim time is invalid",
+      );
+    }
+    const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
+    return this.stateQueue.run(async () => {
+      const subscription =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      if (!subscription) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (subscription.revision !== expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
+        );
+      }
+      if (
+        subscription.claim &&
+        Date.parse(subscription.claim.expiresAt) > now.getTime()
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription refresh is in progress",
+        );
+      }
+      const token = createLeaseToken();
+      subscription.claim = {
+        ownerId: owner,
+        acquiredAt: now.toISOString(),
+        expiresAt: new Date(now.getTime() + leaseMs).toISOString(),
+      };
+      subscription.claimTokenSha256 = sha256(token);
+      await this.persistState();
+      return {
+        subscription:
+          stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+            subscription,
+          ),
+        sourceUrl: subscription.sourceUrl,
+        token,
+      };
+    });
+  }
+
+  async claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions(
+    ownerId: string,
+    options: {
+      now?: Date;
+      leaseMs?: number;
+      limit?: number;
+    } = {},
+  ): Promise<DueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaims> {
+    this.assertInitialized();
+    const owner = normalizeLeaseOwner(ownerId);
+    const now = options.now ?? new Date();
+    if (!Number.isFinite(now.getTime())) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal claim time is invalid",
+      );
+    }
+    const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
+    const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
+    return this.stateQueue.run(async () => {
+      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim[] =
+        [];
+      const due =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+          .filter(
+            (subscription) =>
+              subscription.status === "active" &&
+              Date.parse(subscription.nextRefreshAt) <= now.getTime(),
+          )
+          .sort((left, right) =>
+            left.nextRefreshAt.localeCompare(right.nextRefreshAt),
+          );
+      for (const subscription of due) {
+        if (claims.length >= limit) break;
+        if (
+          subscription.claim &&
+          Date.parse(subscription.claim.expiresAt) > now.getTime()
+        ) {
+          continue;
+        }
+        const token = createLeaseToken();
+        subscription.claim = {
+          ownerId: owner,
+          acquiredAt: now.toISOString(),
+          expiresAt: new Date(now.getTime() + leaseMs).toISOString(),
+        };
+        subscription.claimTokenSha256 = sha256(token);
+        claims.push({
+          subscription:
+            stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+              subscription,
+            ),
+          sourceUrl: subscription.sourceUrl,
+          token,
+        });
+      }
+      if (claims.length > 0) await this.persistState();
+      return { claims };
+    });
+  }
+
+  async settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim(
+    subscriptionId: string,
+    token: string,
+    outcome:
+      | {
+          discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
+        }
+      | { failureSha256: string },
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      const index =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      const current =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
+          index
+        ];
+      if (!current) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
+        );
+      }
+      assertLeaseToken(current.claimTokenSha256, token);
+      if (!current.claim) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription claim is not active",
+        );
+      }
+      if (Date.parse(current.claim.expiresAt) <= Date.now()) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription claim expired",
         );
       }
       const settled =
