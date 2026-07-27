@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "8c97ce6af1fda31b1df4ffe65166198c75a589156028c79973d095daf3f98810",
+    "sha256": "1268d24cb3255480b00ccbfec2c2a6b8cdc38e49d587aee81f9b363b3b95150a",
     "routeCount": 219,
     "routeSetSha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
   },
   "operationCount": 219,
-  "operationSetSha256": "5291df2e09940f10f0afdff34441e1a2ba089f52f8e863a5ec6a796bfa89de2f",
+  "operationSetSha256": "b81af05a44318f22a95a30cee3a2fd0f9d32843f7449df3ef8aef63115a4b076",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -3679,8 +3679,10 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
-      "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonRequestSchemaRef": "#/components/schemas/VerifyTrustedReceiptRequest",
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/TrustedReceiptVerification"
+      },
       "responseStatuses": [
         "200",
         "400",

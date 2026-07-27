@@ -541,7 +541,9 @@ write:management-openapi` now scans `apps/server/src/app.ts`, emits
   /api/receipt-trust/anchors/directory/metadata/verify` now promote
   publisher metadata signing envelopes and metadata verification receipts,
   including signature evidence, trust-directory policy, and binding
-  diagnostics.
+  diagnostics. `POST /api/receipt-trust/verify` now promotes a generic trusted
+  receipt verification request and response schema, covering uploaded
+  directories or the active verifier selection as trust sources.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published

@@ -61,6 +61,12 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/ReceiptTrustAnchor",
     },
   },
+  "POST /api/receipt-trust/verify": {
+    request: "#/components/schemas/VerifyTrustedReceiptRequest",
+    responses: {
+      200: "#/components/schemas/TrustedReceiptVerification",
+    },
+  },
 };
 
 export async function generateManagementOpenApi(options = {}) {
@@ -495,6 +501,30 @@ export async function generateManagementOpenApi(options = {}) {
             contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
           },
         },
+        TrustedReceiptEnvelope: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "receiptKind",
+            "receipt",
+            "signature",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: { const: "napier.trusted-receipt-envelope" },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            receiptKind: { $ref: "#/components/schemas/TrustedReceiptKind" },
+            receipt: true,
+            signature: {
+              $ref: "#/components/schemas/TrustedReceiptSignature",
+            },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
         TrustedReceiptVerificationStatus: {
           type: "string",
           enum: ["trusted", "revoked", "unknown_key", "invalid"],
@@ -739,6 +769,22 @@ export async function generateManagementOpenApi(options = {}) {
               $ref: "#/components/schemas/ReceiptTrustAnchorDirectory",
             },
             trustDirectoryPolicy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
+            },
+          },
+        },
+        VerifyTrustedReceiptRequest: {
+          type: "object",
+          required: ["envelope"],
+          additionalProperties: false,
+          properties: {
+            envelope: {
+              $ref: "#/components/schemas/TrustedReceiptEnvelope",
+            },
+            directory: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectory",
+            },
+            directoryPolicy: {
               $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
             },
           },

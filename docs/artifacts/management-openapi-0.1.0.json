@@ -6638,10 +6638,12 @@
         ],
         "summary": "POST /api/receipt-trust/verify",
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
-              "schema": true
+              "schema": {
+                "$ref": "#/components/schemas/VerifyTrustedReceiptRequest"
+              }
             }
           }
         },
@@ -6650,7 +6652,9 @@
             "description": "Successful no-store JSON response",
             "content": {
               "application/json": {
-                "schema": true
+                "schema": {
+                  "$ref": "#/components/schemas/TrustedReceiptVerification"
+                }
               }
             }
           },
@@ -6667,7 +6671,11 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         },
-        "x-napier-source-route": "POST /api/receipt-trust/verify"
+        "x-napier-source-route": "POST /api/receipt-trust/verify",
+        "x-napier-promoted-request-schema-ref": "#/components/schemas/VerifyTrustedReceiptRequest",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/TrustedReceiptVerification"
+        }
       }
     },
     "/api/schedules": {
@@ -10326,6 +10334,41 @@
           }
         }
       },
+      "TrustedReceiptEnvelope": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "apiVersion",
+          "receiptKind",
+          "receipt",
+          "signature",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.trusted-receipt-envelope"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "apiVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "receiptKind": {
+            "$ref": "#/components/schemas/TrustedReceiptKind"
+          },
+          "receipt": true,
+          "signature": {
+            "$ref": "#/components/schemas/TrustedReceiptSignature"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
       "TrustedReceiptVerificationStatus": {
         "type": "string",
         "enum": [
@@ -10695,6 +10738,24 @@
             "$ref": "#/components/schemas/ReceiptTrustAnchorDirectory"
           },
           "trustDirectoryPolicy": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy"
+          }
+        }
+      },
+      "VerifyTrustedReceiptRequest": {
+        "type": "object",
+        "required": [
+          "envelope"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "envelope": {
+            "$ref": "#/components/schemas/TrustedReceiptEnvelope"
+          },
+          "directory": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectory"
+          },
+          "directoryPolicy": {
             "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy"
           }
         }

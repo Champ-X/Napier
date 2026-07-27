@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(10);
+    expect(generated.routeCount).toBe(11);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 10,
+        "x-napier-route-count": 11,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -358,6 +358,37 @@ describe("management OpenAPI generator", () => {
         },
       }),
     );
+    expect(generated.artifact.paths["/api/receipt-trust/verify"].post).toEqual(
+      expect.objectContaining({
+        operationId: "post-receipt-trust-verify",
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/VerifyTrustedReceiptRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/TrustedReceiptVerification",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/VerifyTrustedReceiptRequest",
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/TrustedReceiptVerification",
+        },
+      }),
+    );
   });
 
   it("rejects duplicate normalized operation ids", () => {
@@ -384,10 +415,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 10 routes",
+      "Wrote docs/artifacts/management-openapi.json: 11 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(10);
+    expect(artifact["x-napier-route-count"]).toBe(11);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -438,6 +469,7 @@ async function createFixture() {
       app.post("/api/receipt-trust/anchors/directory/metadata/verify", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/signed-metadata", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/verify", () => undefined);
+      app.post("/api/receipt-trust/verify", () => undefined);
       app.post(
         "/api/threads/:threadId/runs",
         () => undefined,

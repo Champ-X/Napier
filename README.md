@@ -1748,8 +1748,8 @@ check:management-openapi` fails when that artifact no longer matches the
 current management API routes. `GET /api/health` has a promoted
 `HealthResponse` schema, and the receipt-trust anchor lifecycle now promotes
 list, create, directory, directory metadata signing, metadata verification,
-directory verification, hosted discovery, revoke request, and anchor response
-schemas for external verifier management clients.
+directory verification, hosted discovery, generic receipt verification, revoke
+request, and anchor response schemas for external verifier management clients.
 `npm run
 write:management-openapi-compatibility` writes
 `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published
