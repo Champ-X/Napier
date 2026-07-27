@@ -619,6 +619,15 @@ verifier selection. A sibling no-store preflight endpoint runs the same gate
 and returns an `accepted`, `rejected`, or `not_required` receipt with stable
 hash evidence before Apply activation is invoked, giving external automation a
 dry-run artifact for rotation-change review.
+Hosted rotation proposal discovery reuses the same allowlisted public HTTPS
+fetch boundary as trust-directory and signed-checkpoint discovery. The
+discovery receipt validates the hosted trusted-receipt envelope, runs the
+signed proposal preflight gate, and then applies operator policy pins for
+envelope/proposal hashes, activation-decision ID, expected selection CAS,
+signer key IDs, and maximum envelope age. It returns only source URL/origin
+hashes, response hashes, policy hash, preflight hash, envelope/proposal hashes,
+signer key ID, and diagnostics; the raw hosted URL is never mirrored into the
+receipt body.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2580,8 +2589,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- hosted verifier rotation proposal discovery with expiry and operator policy
-  receipts for unattended trust maintenance.
+- durable hosted verifier rotation proposal subscriptions with leased refresh,
+  last-good preservation, and operator approval receipts for unattended trust
+  maintenance.
 
 ### Layer 3: Extension fabric
 

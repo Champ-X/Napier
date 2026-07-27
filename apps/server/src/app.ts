@@ -13,6 +13,7 @@ import type {
   AgentProfile,
   CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+  DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   AgentProfileRevision,
   AgentProfileRollbackResult,
   AutomationSchedule,
@@ -109,6 +110,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -2190,6 +2193,66 @@ export function createApp(services: NapierServices): Hono {
         return context.json(envelope, 201);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal discovery request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal discovery request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal discovery request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const source = await services.receiptTrustDirectories.fetchJson(
+          body.sourceUrl,
+        );
+        const discovery =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
+            services,
+            body,
+            source,
+          );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryHeaders(
+          context,
+          discovery,
+        );
+        return context.json(discovery, discovery.status === "valid" ? 200 : 422);
+      } catch (error) {
+        if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
+          return jsonError(context, error.message, error.status);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal discovery failed",
+          502,
+        );
       }
     },
   );
@@ -12837,6 +12900,104 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
   };
 }
 
+function parseDiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
+  input: unknown,
+):
+  | DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
+  | undefined {
+  const record = requestRecord(input, ["threadId", "sourceUrl", "policy"]);
+  const threadId = record?.["threadId"];
+  const sourceUrl = record?.["sourceUrl"];
+  const policy =
+    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+      record?.["policy"],
+    );
+  if (
+    !record ||
+    !validThreadId(threadId) ||
+    typeof sourceUrl !== "string" ||
+    sourceUrl.length === 0 ||
+    sourceUrl.length > 2_048 ||
+    (record["policy"] !== undefined && !policy)
+  ) {
+    return undefined;
+  }
+  return {
+    threadId,
+    sourceUrl,
+    ...(policy ? { policy } : {}),
+  };
+}
+
+function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+  input: unknown,
+):
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy
+  | undefined {
+  if (input === undefined) return {};
+  const record = requestRecord(input, [
+    "maxEnvelopeAgeMs",
+    "expectedEnvelopeSha256",
+    "expectedProposalSha256",
+    "expectedActivationDecisionRecordId",
+    "expectedCurrentSelectionSha256",
+    "requiredSignerKeyIds",
+  ]);
+  if (!record) return undefined;
+  const maxEnvelopeAgeMs = record["maxEnvelopeAgeMs"];
+  const expectedEnvelopeSha256 = record["expectedEnvelopeSha256"];
+  const expectedProposalSha256 = record["expectedProposalSha256"];
+  const expectedActivationDecisionRecordId =
+    record["expectedActivationDecisionRecordId"];
+  const expectedCurrentSelectionSha256 =
+    record["expectedCurrentSelectionSha256"];
+  const requiredSignerKeyIds = record["requiredSignerKeyIds"];
+  if (
+    (maxEnvelopeAgeMs !== undefined &&
+      (!isNonNegativeInteger(maxEnvelopeAgeMs) ||
+        maxEnvelopeAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
+    (expectedEnvelopeSha256 !== undefined &&
+      (typeof expectedEnvelopeSha256 !== "string" ||
+        !isSha256Hex(expectedEnvelopeSha256))) ||
+    (expectedProposalSha256 !== undefined &&
+      (typeof expectedProposalSha256 !== "string" ||
+        !isSha256Hex(expectedProposalSha256))) ||
+    (expectedActivationDecisionRecordId !== undefined &&
+      (typeof expectedActivationDecisionRecordId !== "string" ||
+        !/^trustqad_[a-z0-9]{8,80}$/.test(
+          expectedActivationDecisionRecordId,
+        ))) ||
+    (expectedCurrentSelectionSha256 !== undefined &&
+      (typeof expectedCurrentSelectionSha256 !== "string" ||
+        (expectedCurrentSelectionSha256 !== "" &&
+          !isSha256Hex(expectedCurrentSelectionSha256)))) ||
+    !validSha256List(
+      requiredSignerKeyIds,
+      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+    )
+  ) {
+    return undefined;
+  }
+  return {
+    ...(maxEnvelopeAgeMs !== undefined ? { maxEnvelopeAgeMs } : {}),
+    ...(typeof expectedEnvelopeSha256 === "string"
+      ? { expectedEnvelopeSha256 }
+      : {}),
+    ...(typeof expectedProposalSha256 === "string"
+      ? { expectedProposalSha256 }
+      : {}),
+    ...(typeof expectedActivationDecisionRecordId === "string"
+      ? { expectedActivationDecisionRecordId }
+      : {}),
+    ...(typeof expectedCurrentSelectionSha256 === "string"
+      ? { expectedCurrentSelectionSha256 }
+      : {}),
+    ...(Array.isArray(requiredSignerKeyIds) && requiredSignerKeyIds.length > 0
+      ? { requiredSignerKeyIds: requiredSignerKeyIds as string[] }
+      : {}),
+  };
+}
+
 function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
   input: unknown,
 ):
@@ -12994,6 +13155,137 @@ function withRotationProposalPreflightHash(
     "contentSha256"
   >,
 ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight {
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
+  services: NapierServices,
+  request: DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
+  source: Awaited<
+    ReturnType<ReceiptTrustAnchorDirectoryDiscoveryService["fetchJson"]>
+  >,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery {
+  const generatedAt = new Date().toISOString();
+  const policy = request.policy ?? {};
+  const policySha256 = sha256(canonicalJson(policy));
+  const diagnostics: string[] = [];
+  let envelope:
+    | TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>
+    | undefined;
+  let preflight:
+    | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight
+    | undefined;
+  try {
+    envelope = validateTrustedReceiptEnvelope(
+      source.value,
+    ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+  } catch {
+    diagnostics.push("envelope_invalid");
+  }
+  if (envelope) {
+    preflight =
+      createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
+        services,
+        {
+          threadId: request.threadId,
+          activationDecisionRecordId:
+            envelope.receipt.activationDecisionRecordId,
+          expectedCurrentSelectionSha256:
+            envelope.receipt.expectedCurrentSelectionSha256,
+          rotationProposalEnvelope: envelope,
+        },
+      );
+    if (preflight.status !== "accepted") {
+      diagnostics.push(`preflight_${preflight.status}`);
+      diagnostics.push(...preflight.diagnostics);
+    }
+    if (
+      policy.expectedEnvelopeSha256 &&
+      envelope.contentSha256 !== policy.expectedEnvelopeSha256
+    ) {
+      diagnostics.push("envelope_hash_mismatch");
+    }
+    if (
+      policy.expectedProposalSha256 &&
+      envelope.receipt.contentSha256 !== policy.expectedProposalSha256
+    ) {
+      diagnostics.push("proposal_hash_mismatch");
+    }
+    if (
+      policy.expectedActivationDecisionRecordId &&
+      envelope.receipt.activationDecisionRecordId !==
+        policy.expectedActivationDecisionRecordId
+    ) {
+      diagnostics.push("activation_decision_mismatch");
+    }
+    if (
+      policy.expectedCurrentSelectionSha256 !== undefined &&
+      envelope.receipt.expectedCurrentSelectionSha256 !==
+        policy.expectedCurrentSelectionSha256
+    ) {
+      diagnostics.push("expected_selection_mismatch");
+    }
+    if (
+      policy.requiredSignerKeyIds &&
+      !policy.requiredSignerKeyIds.includes(envelope.signature.keyId)
+    ) {
+      diagnostics.push("signer_not_allowed");
+    }
+    if (policy.maxEnvelopeAgeMs !== undefined) {
+      const signedAtMs = Date.parse(envelope.signature.signedAt);
+      const generatedAtMs = Date.parse(generatedAt);
+      if (signedAtMs > generatedAtMs + 5 * 60 * 1_000) {
+        diagnostics.push("envelope_signed_in_future");
+      } else if (generatedAtMs - signedAtMs > policy.maxEnvelopeAgeMs) {
+        diagnostics.push("envelope_expired");
+      }
+    }
+  }
+  const uniqueDiagnostics = Array.from(new Set(diagnostics));
+  const status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery["status"] =
+    envelope && preflight?.status === "accepted" && uniqueDiagnostics.length === 0
+      ? "valid"
+      : "invalid";
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-discovery" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    generatedAt,
+    status,
+    diagnostics: uniqueDiagnostics,
+    sourceUrlSha256: source.sourceUrlSha256,
+    sourceOriginSha256: source.sourceOriginSha256,
+    httpStatus: source.httpStatus,
+    responseMediaType: source.responseMediaType,
+    responseBytes: source.responseBytes,
+    responseBodySha256: source.responseBodySha256,
+    policy,
+    policySha256,
+    ...(preflight ? { preflight } : {}),
+    ...(envelope
+      ? {
+          envelopeSha256: envelope.contentSha256,
+          proposalSha256: envelope.receipt.contentSha256,
+          proposalReviewSha256: envelope.receipt.rotationReviewSha256,
+          ...(envelope.receipt.checkpointRegistryQuorumBaselineSha256
+            ? {
+                checkpointRegistryQuorumBaselineSha256:
+                  envelope.receipt.checkpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+          activationDecisionRecordId:
+            envelope.receipt.activationDecisionRecordId,
+          expectedCurrentSelectionSha256:
+            envelope.receipt.expectedCurrentSelectionSha256,
+          signerKeyId: envelope.signature.keyId,
+          signedAt: envelope.signature.signedAt,
+          envelope,
+        }
+      : {}),
+  };
   return {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
@@ -20097,6 +20389,84 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
     context,
     "X-Napier-Receipt-Trust-Key-Id",
     preflight.trustedReceiptVerificationKeyId,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryHeaders(
+  context: Context,
+  discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, discovery.contentSha256);
+  context.header("X-Napier-Discovery-Status", discovery.status);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(discovery.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(discovery.diagnostics),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
+    discovery.sourceUrlSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
+    discovery.sourceOriginSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Discovery-Policy-SHA256",
+    discovery.policySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Response-SHA256",
+    discovery.responseBodySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Response-Bytes",
+    String(discovery.responseBytes),
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Envelope-SHA256",
+    discovery.envelopeSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
+    discovery.proposalSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256",
+    discovery.proposalReviewSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
+    discovery.checkpointRegistryQuorumBaselineSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
+    discovery.activationDecisionRecordId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
+    discovery.expectedCurrentSelectionSha256,
+  );
+  setOptionalHeader(context, "X-Napier-Signature-Key-Id", discovery.signerKeyId);
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-Status",
+    discovery.preflight?.status,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-SHA256",
+    discovery.preflight?.contentSha256,
   );
 }
 

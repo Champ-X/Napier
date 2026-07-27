@@ -458,6 +458,14 @@ All notable changes to Napier are recorded here.
   hash-bound `accepted`, `rejected`, or `not_required` receipt with proposal,
   envelope, trusted-verification, CAS, and checkpoint-baseline evidence. The
   Receipt Trust Desk exposes **Preflight proposal** before Apply activation.
+- Hosted signed rotation proposal discovery. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover`
+  now fetches a hosted trusted receipt envelope from the allowlisted discovery
+  boundary, runs signed proposal preflight, and applies operator policy pins
+  for envelope/proposal hashes, activation decision, expected selection CAS,
+  signer key IDs, and maximum envelope age. The no-store discovery receipt
+  returns hash-only source and policy evidence plus diagnostics without
+  mirroring raw hosted URLs.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

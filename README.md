@@ -1470,6 +1470,18 @@ selection rotation. Reapplying the already active decision remains idempotent
 and does not require a rotation proposal because it does not mutate trusted
 state.
 `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover`
+fetches a hosted signed proposal envelope from the same allowlisted public
+HTTPS source boundary used by trust-directory and checkpoint discovery. The
+no-store discovery receipt never returns the raw URL; it records URL/origin,
+response, policy, envelope, proposal, review, signer, checkpoint-baseline, and
+preflight hashes. Operator policy can pin envelope/proposal hashes, activation
+decision ID, expected current selection hash, signer key IDs, and maximum
+envelope age. Discovery is `valid` only when the hosted envelope validates,
+the signed-proposal preflight is `accepted`, and all policy pins pass;
+otherwise it returns `invalid` with diagnostics such as
+`proposal_hash_mismatch`, `signer_not_allowed`, or `envelope_expired`.
+`POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
 runs that same signed-proposal gate without mutating state. The no-store
 response returns `accepted`, `rejected`, or `not_required`, includes CAS,

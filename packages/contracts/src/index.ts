@@ -4839,6 +4839,53 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
   contentSha256: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy {
+  maxEnvelopeAgeMs?: number;
+  expectedEnvelopeSha256?: string;
+  expectedProposalSha256?: string;
+  expectedActivationDecisionRecordId?: string;
+  expectedCurrentSelectionSha256?: string;
+  requiredSignerKeyIds?: string[];
+}
+
+export interface DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest {
+  threadId: string;
+  sourceUrl: string;
+  policy?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryStatus =
+  | "valid"
+  | "invalid";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-discovery";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryStatus;
+  diagnostics: string[];
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  httpStatus: number;
+  responseMediaType: string;
+  responseBytes: number;
+  responseBodySha256: string;
+  policy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy;
+  policySha256: string;
+  preflight?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight;
+  envelopeSha256?: string;
+  proposalSha256?: string;
+  proposalReviewSha256?: string;
+  checkpointRegistryQuorumBaselineSha256?: string;
+  activationDecisionRecordId?: string;
+  expectedCurrentSelectionSha256?: string;
+  signerKeyId?: string;
+  signedAt?: string;
+  envelope?: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+  contentSha256: string;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;
