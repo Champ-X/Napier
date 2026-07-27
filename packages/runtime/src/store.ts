@@ -1435,6 +1435,20 @@ export class LocalStore {
     );
   }
 
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionBySha256(
+    selectionSha256: string,
+  ): ReceiptTrustAnchorDirectoryQuorumActivationSelection | undefined {
+    this.assertInitialized();
+    if (!/^[a-f0-9]{64}$/.test(selectionSha256)) return undefined;
+    const selection =
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelections.find(
+        (candidate) => candidate.contentSha256 === selectionSha256,
+      );
+    return selection
+      ? validateReceiptTrustAnchorDirectoryQuorumActivationSelection(selection)
+      : undefined;
+  }
+
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit {
     this.assertInitialized();
     return createReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(

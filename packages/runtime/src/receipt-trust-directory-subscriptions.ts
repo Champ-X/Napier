@@ -24,6 +24,7 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus,
@@ -1881,6 +1882,121 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
     );
   }
   return structuredClone(approval);
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply replay is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "replayedAt",
+    "status",
+    "diagnostics",
+    "subscriptionId",
+    "subscriptionRevision",
+    "subscriptionSha256",
+    "sourceUrlSha256",
+    "sourceOriginSha256",
+    "policySha256",
+    "expectedSubscriptionRevision",
+    "expectedSubscriptionSha256",
+    "currentSelectionSha256",
+    "selectionStateSha256",
+    "activeSelectionSha256",
+    "activeActivationDecisionRecordId",
+    "approvalVerifierSelectionSha256",
+    "approvalVerifierDirectorySha256",
+    "approvalEnvelopeSha256",
+    "approvalSha256",
+    "approvalTrustedReceiptVerificationStatus",
+    "approvalTrustedReceiptVerificationReason",
+    "approvalTrustedReceiptVerificationKeyId",
+    "proposalEnvelopeSha256",
+    "proposalSha256",
+    "proposalReviewSha256",
+    "approvalPreflightSha256",
+    "activationDecisionRecordId",
+    "expectedCurrentSelectionSha256",
+    "checkpointRegistryQuorumBaselineSha256",
+    "contentSha256",
+  ]);
+  const replay =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay;
+  const diagnostics = [...replay.diagnostics];
+  if (
+    replay.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-apply-replay" ||
+    replay.schemaVersion !== 1 ||
+    replay.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(replay.replayedAt) ||
+    (replay.status !== "aligned" &&
+      replay.status !== "divergent" &&
+      replay.status !== "invalid") ||
+    !validDiagnostics(diagnostics) ||
+    !ROTATION_PROPOSAL_SUBSCRIPTION_ID_PATTERN.test(replay.subscriptionId) ||
+    !Number.isSafeInteger(replay.subscriptionRevision) ||
+    replay.subscriptionRevision < 1 ||
+    !SHA256_PATTERN.test(replay.subscriptionSha256) ||
+    !SHA256_PATTERN.test(replay.sourceUrlSha256) ||
+    !SHA256_PATTERN.test(replay.sourceOriginSha256) ||
+    !SHA256_PATTERN.test(replay.policySha256) ||
+    !Number.isSafeInteger(replay.expectedSubscriptionRevision) ||
+    replay.expectedSubscriptionRevision < 1 ||
+    !SHA256_PATTERN.test(replay.expectedSubscriptionSha256) ||
+    (replay.currentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(replay.currentSelectionSha256)) ||
+    !SHA256_PATTERN.test(replay.selectionStateSha256) ||
+    !optionalSha256(replay.activeSelectionSha256) ||
+    (replay.activeActivationDecisionRecordId !== undefined &&
+      !/^trustqad_[a-z0-9]{8,80}$/.test(
+        replay.activeActivationDecisionRecordId,
+      )) ||
+    !optionalSha256(replay.approvalVerifierSelectionSha256) ||
+    !optionalSha256(replay.approvalVerifierDirectorySha256) ||
+    !optionalSha256(replay.approvalEnvelopeSha256) ||
+    !optionalSha256(replay.approvalSha256) ||
+    !optionalTrustedReceiptStatus(
+      replay.approvalTrustedReceiptVerificationStatus,
+    ) ||
+    (replay.approvalTrustedReceiptVerificationReason !== undefined &&
+      typeof replay.approvalTrustedReceiptVerificationReason !== "string") ||
+    !optionalSha256(replay.approvalTrustedReceiptVerificationKeyId) ||
+    !optionalSha256(replay.proposalEnvelopeSha256) ||
+    !optionalSha256(replay.proposalSha256) ||
+    !optionalSha256(replay.proposalReviewSha256) ||
+    !optionalSha256(replay.approvalPreflightSha256) ||
+    (replay.activationDecisionRecordId !== undefined &&
+      !/^trustqad_[a-z0-9]{8,80}$/.test(replay.activationDecisionRecordId)) ||
+    (replay.expectedCurrentSelectionSha256 !== undefined &&
+      replay.expectedCurrentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(replay.expectedCurrentSelectionSha256)) ||
+    !optionalSha256(replay.checkpointRegistryQuorumBaselineSha256) ||
+    !SHA256_PATTERN.test(replay.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply replay is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...replay,
+    diagnostics,
+  };
+  if (replay.contentSha256 !== sha256(canonicalJson(content))) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply replay hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...replay,
+    diagnostics,
+  });
 }
 
 function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview(

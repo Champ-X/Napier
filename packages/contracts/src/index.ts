@@ -5022,6 +5022,47 @@ export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
   approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
 }
 
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayStatus =
+  | "aligned"
+  | "divergent"
+  | "invalid";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-apply-replay";
+  schemaVersion: 1;
+  apiVersion: string;
+  replayedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayStatus;
+  diagnostics: string[];
+  subscriptionId: string;
+  subscriptionRevision: number;
+  subscriptionSha256: string;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  policySha256: string;
+  expectedSubscriptionRevision: number;
+  expectedSubscriptionSha256: string;
+  currentSelectionSha256: string;
+  selectionStateSha256: string;
+  activeSelectionSha256?: string;
+  activeActivationDecisionRecordId?: string;
+  approvalVerifierSelectionSha256?: string;
+  approvalVerifierDirectorySha256?: string;
+  approvalEnvelopeSha256?: string;
+  approvalSha256?: string;
+  approvalTrustedReceiptVerificationStatus?: TrustedReceiptVerificationStatus;
+  approvalTrustedReceiptVerificationReason?: string;
+  approvalTrustedReceiptVerificationKeyId?: string;
+  proposalEnvelopeSha256?: string;
+  proposalSha256?: string;
+  proposalReviewSha256?: string;
+  approvalPreflightSha256?: string;
+  activationDecisionRecordId?: string;
+  expectedCurrentSelectionSha256?: string;
+  checkpointRegistryQuorumBaselineSha256?: string;
+  contentSha256: string;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;

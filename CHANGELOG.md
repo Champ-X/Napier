@@ -497,6 +497,12 @@ All notable changes to Napier are recorded here.
   public subscription hash stable, and lets the leased background worker claim
   due approvals, rerun the approval apply gate, CAS-apply the activation
   decision, and settle success or failure with hash-only events.
+- Post-apply replay receipts for unattended verifier rotation. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
+  now emits a no-mutate receipt that verifies the approval against the
+  approval-bound previous verifier selection, compares current active selection
+  to the approved activation decision, and returns `aligned`, `divergent`, or
+  `invalid` with hash-only diagnostics.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

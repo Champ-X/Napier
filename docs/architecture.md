@@ -657,6 +657,13 @@ source locators. The leased background worker claims due queued approvals,
 reruns the same approval apply gate, performs the existing CAS apply, and
 settles either the result hash or a failure hash as local-only state plus
 hash-only Ledger events.
+Post-apply replay receipts close the unattended audit loop without mutating
+state again. A replay request validates the same approval envelope and
+subscription pins, uses the approval-bound previous selection as the verifier
+directory source, and compares the current active selection to the approved
+activation decision. The result is `aligned`, `divergent`, or `invalid`, with
+diagnostics and hashes for the approval, proposal, verifier selection, active
+selection, and subscription.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2620,7 +2627,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- multi-approval verifier rotation policies with post-apply replay receipts.
+- multi-approval verifier rotation policies.
 
 ### Layer 3: Extension fabric
 

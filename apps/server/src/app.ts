@@ -117,6 +117,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -388,6 +389,7 @@ import {
   type ReceiptTrustAnchorDirectoryDiscoveryOptions,
 } from "./receipt-trust-directory-discovery.js";
 import {
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
@@ -2645,6 +2647,60 @@ export function createApp(services: NapierServices): Hono {
           approvalGate,
         );
         return context.json(result, result.applied ? 201 : 200);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply replay request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply replay request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply replay request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const subscription =
+          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+            context.req.param("subscriptionId"),
+          );
+        const replay =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(
+            services.store,
+            subscription,
+            body,
+          );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayHeaders(
+          context,
+          replay,
+        );
+        return context.json(replay);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -20856,6 +20912,91 @@ function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalRes
   context.header(
     "X-Napier-Signature-Key-Id",
     approvalGate.approvalEnvelope.signature.keyId,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayHeaders(
+  context: Context,
+  replay: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, replay.contentSha256);
+  context.header(
+    "X-Napier-Verification-Status",
+    replay.status,
+  );
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(replay.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(replay.diagnostics),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id",
+    replay.subscriptionId,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision",
+    String(replay.subscriptionRevision),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
+    replay.subscriptionSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
+    replay.currentSelectionSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
+    replay.selectionStateSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active-SHA256",
+    replay.activeSelectionSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
+    replay.activeActivationDecisionRecordId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Verifier-Selection-SHA256",
+    replay.approvalVerifierSelectionSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Verifier-Directory-SHA256",
+    replay.approvalVerifierDirectorySha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Envelope-SHA256",
+    replay.approvalEnvelopeSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-SHA256",
+    replay.approvalSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Verification-Status",
+    replay.approvalTrustedReceiptVerificationStatus,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
+    replay.proposalSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Envelope-SHA256",
+    replay.proposalEnvelopeSha256,
   );
 }
 

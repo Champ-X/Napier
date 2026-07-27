@@ -6,6 +6,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
   TrustedReceiptEnvelope,
@@ -18,6 +19,7 @@ import {
   type LocalStore,
   receiptTrustAnchorsFromDirectory,
   sha256,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   validateTrustedReceiptEnvelope,
   verifyTrustedReceiptEnvelope,
 } from "@napier/runtime";
@@ -660,6 +662,290 @@ export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
     preflight,
     verification,
   };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(
+  store: LocalStore,
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  request: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay {
+  const replayedAt = new Date().toISOString();
+  const selectionState =
+    store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+  const activeSelection = selectionState.selection;
+  const diagnostics: string[] = [];
+  const requireMatch = (condition: boolean, diagnostic: string): void => {
+    if (!condition) diagnostics.push(diagnostic);
+  };
+
+  requireMatch(
+    subscription.auditThreadId === request.threadId,
+    "subscription_thread_mismatch",
+  );
+  requireMatch(
+    subscription.revision === request.expectedSubscriptionRevision,
+    "subscription_revision_mismatch",
+  );
+  requireMatch(
+    subscription.contentSha256 === request.expectedSubscriptionSha256,
+    "subscription_hash_mismatch",
+  );
+
+  let approvalEnvelope:
+    | TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>
+    | undefined;
+  let approval:
+    | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval
+    | undefined;
+  let verification: TrustedReceiptVerification | undefined;
+  let approvalVerifierSelection:
+    | ReturnType<
+        LocalStore["getReceiptTrustAnchorDirectoryQuorumActivationSelectionBySha256"]
+      >
+    | undefined;
+  try {
+    const envelope = validateTrustedReceiptEnvelope(request.approvalEnvelope);
+    if (
+      envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
+    ) {
+      diagnostics.push("approval_receipt_kind_invalid");
+    } else {
+      approvalEnvelope =
+        envelope as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+      approval = approvalEnvelope.receipt;
+    }
+  } catch {
+    diagnostics.push("approval_envelope_invalid");
+  }
+
+  if (!activeSelection) {
+    diagnostics.push("active_selection_missing");
+  }
+
+  if (approval) {
+    approvalVerifierSelection =
+      approval.expectedCurrentSelectionSha256 === ""
+        ? undefined
+        : store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionBySha256(
+            approval.expectedCurrentSelectionSha256,
+          );
+  }
+  if (approval && !approvalVerifierSelection) {
+    diagnostics.push("approval_selection_missing");
+  }
+  if (approvalEnvelope && approvalVerifierSelection) {
+    const directoryVerification = store.verifyReceiptTrustAnchorDirectory(
+      approvalVerifierSelection.selectedDirectory,
+      {
+        expectedAnchorSetSha256:
+          approvalVerifierSelection.selectedAnchorSetSha256,
+      },
+    );
+    if (directoryVerification.status === "invalid") {
+      diagnostics.push("approval_verifier_directory_invalid");
+    } else {
+      verification = verifyTrustedReceiptEnvelope(
+        approvalEnvelope,
+        receiptTrustAnchorsFromDirectory(
+          approvalVerifierSelection.selectedDirectory,
+        ),
+      );
+      if (verification.status !== "trusted") {
+        diagnostics.push(`trusted_receipt_${verification.status}`);
+      }
+    }
+  }
+
+  const discovery = subscription.lastGoodDiscovery;
+  const proposalEnvelope = discovery?.envelope;
+  const proposal = proposalEnvelope?.receipt;
+  if (
+    !discovery ||
+    discovery.status !== "valid" ||
+    !proposalEnvelope ||
+    !proposal
+  ) {
+    diagnostics.push("last_good_proposal_missing");
+  }
+
+  if (approval) {
+    requireMatch(
+      approval.approvedByThreadId === request.threadId,
+      "approval_thread_mismatch",
+    );
+    requireMatch(
+      approval.subscriptionId === subscription.id,
+      "approval_subscription_id_mismatch",
+    );
+    requireMatch(
+      approval.subscriptionRevision === subscription.revision,
+      "approval_subscription_revision_mismatch",
+    );
+    requireMatch(
+      approval.subscriptionSha256 === subscription.contentSha256,
+      "approval_subscription_hash_mismatch",
+    );
+    requireMatch(
+      approval.sourceUrlSha256 === subscription.sourceUrlSha256,
+      "approval_source_url_hash_mismatch",
+    );
+    requireMatch(
+      approval.sourceOriginSha256 === subscription.sourceOriginSha256,
+      "approval_source_origin_hash_mismatch",
+    );
+    requireMatch(
+      approval.policySha256 === subscription.policySha256,
+      "approval_policy_hash_mismatch",
+    );
+    if (discovery) {
+      requireMatch(
+        approval.discoverySha256 === discovery.contentSha256,
+        "approval_discovery_hash_mismatch",
+      );
+    }
+    if (proposalEnvelope && proposal) {
+      requireMatch(
+        approval.envelopeSha256 === proposalEnvelope.contentSha256,
+        "approval_proposal_envelope_hash_mismatch",
+      );
+      requireMatch(
+        approval.proposalSha256 === proposal.contentSha256,
+        "approval_proposal_hash_mismatch",
+      );
+      requireMatch(
+        approval.proposalReviewSha256 === proposal.rotationReviewSha256,
+        "approval_proposal_review_hash_mismatch",
+      );
+      requireMatch(
+        approval.activationDecisionRecordId ===
+          proposal.activationDecisionRecordId,
+        "approval_activation_decision_mismatch",
+      );
+      requireMatch(
+        approval.expectedCurrentSelectionSha256 ===
+          proposal.expectedCurrentSelectionSha256,
+        "approval_expected_selection_mismatch",
+      );
+      requireMatch(
+        (approval.checkpointRegistryQuorumBaselineSha256 ?? "") ===
+          (proposal.checkpointRegistryQuorumBaselineSha256 ?? ""),
+        "approval_checkpoint_registry_quorum_baseline_hash_mismatch",
+      );
+      requireMatch(
+        approval.proposalSignerKeyId === proposalEnvelope.signature.keyId,
+        "approval_proposal_signer_mismatch",
+      );
+      requireMatch(
+        approval.proposalSignedAt === proposalEnvelope.signature.signedAt,
+        "approval_proposal_signed_at_mismatch",
+      );
+    }
+    if (
+      approval.expiresAt !== undefined &&
+      Date.parse(approval.expiresAt) <= Date.now()
+    ) {
+      diagnostics.push("approval_expired");
+    }
+  }
+
+  if (approval && activeSelection) {
+    requireMatch(
+      activeSelection.activationDecisionRecordId ===
+        approval.activationDecisionRecordId,
+      "active_selection_decision_mismatch",
+    );
+    requireMatch(
+      selectionState.currentSelectionSha256 !==
+        approval.expectedCurrentSelectionSha256,
+      "active_selection_not_advanced",
+    );
+  }
+
+  const uniqueDiagnostics = Array.from(new Set(diagnostics));
+  const status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay["status"] =
+    uniqueDiagnostics.length > 0
+      ? approvalEnvelope
+        ? "divergent"
+        : "invalid"
+      : "aligned";
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-apply-replay" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    replayedAt,
+    status,
+    diagnostics: uniqueDiagnostics,
+    subscriptionId: subscription.id,
+    subscriptionRevision: subscription.revision,
+    subscriptionSha256: subscription.contentSha256,
+    sourceUrlSha256: subscription.sourceUrlSha256,
+    sourceOriginSha256: subscription.sourceOriginSha256,
+    policySha256: subscription.policySha256,
+    expectedSubscriptionRevision: request.expectedSubscriptionRevision,
+    expectedSubscriptionSha256: request.expectedSubscriptionSha256,
+    currentSelectionSha256: selectionState.currentSelectionSha256,
+    selectionStateSha256: selectionState.contentSha256,
+    ...(activeSelection
+      ? {
+          activeSelectionSha256: activeSelection.contentSha256,
+          activeActivationDecisionRecordId:
+            activeSelection.activationDecisionRecordId,
+        }
+      : {}),
+    ...(approvalVerifierSelection
+      ? {
+          approvalVerifierSelectionSha256:
+            approvalVerifierSelection.contentSha256,
+          approvalVerifierDirectorySha256:
+            approvalVerifierSelection.selectedDirectorySha256,
+        }
+      : {}),
+    ...(approvalEnvelope
+      ? {
+          approvalEnvelopeSha256: approvalEnvelope.contentSha256,
+          approvalSha256: approvalEnvelope.receipt.contentSha256,
+        }
+      : {}),
+    ...(verification
+      ? {
+          approvalTrustedReceiptVerificationStatus: verification.status,
+          ...(verification.reason
+            ? { approvalTrustedReceiptVerificationReason: verification.reason }
+            : {}),
+          ...(verification.keyId
+            ? { approvalTrustedReceiptVerificationKeyId: verification.keyId }
+            : {}),
+        }
+      : {}),
+    ...(proposalEnvelope
+      ? { proposalEnvelopeSha256: proposalEnvelope.contentSha256 }
+      : {}),
+    ...(proposal
+      ? {
+          proposalSha256: proposal.contentSha256,
+          proposalReviewSha256: proposal.rotationReviewSha256,
+          activationDecisionRecordId: proposal.activationDecisionRecordId,
+          expectedCurrentSelectionSha256:
+            proposal.expectedCurrentSelectionSha256,
+          ...(proposal.checkpointRegistryQuorumBaselineSha256
+            ? {
+                checkpointRegistryQuorumBaselineSha256:
+                  proposal.checkpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+        }
+      : {}),
+    ...(approval
+      ? { approvalPreflightSha256: approval.approvalPreflightSha256 }
+      : {}),
+  };
+  return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(
+    {
+      ...content,
+      contentSha256: sha256(canonicalJson(content)),
+    },
+  );
 }
 
 export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate(

@@ -17,6 +17,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -3185,15 +3186,85 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
     );
     expect(postQueuedApplySelectionResponse.status).toBe(200);
-    expect(
-      (await postQueuedApplySelectionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
-    ).toEqual(
+    const postQueuedApplySelection =
+      (await postQueuedApplySelectionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionState;
+    expect(postQueuedApplySelection).toEqual(
       expect.objectContaining({
         hasSelection: true,
         selection: expect.objectContaining({
           activationDecisionRecordId: secondActivationRecordId,
           selectedDirectorySha256: hostedDirectory.contentSha256,
         }),
+      }),
+    );
+    const replayQueuedApplyResponse = await app.request(
+      `${rotationProposalSubscriptionPath}/${freshRotationProposalSubscription.id}/approval/apply/replay`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedSubscriptionRevision:
+            freshRotationProposalSubscription.revision,
+          expectedSubscriptionSha256:
+            freshRotationProposalSubscription.contentSha256,
+          approvalEnvelope: freshRotationApprovalEnvelope,
+        }),
+      },
+    );
+    expect(replayQueuedApplyResponse.status).toBe(200);
+    const replayQueuedApply =
+      (await replayQueuedApplyResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay;
+    expect(replayQueuedApply).toEqual(
+      expect.objectContaining({
+        status: "aligned",
+        diagnostics: [],
+        subscriptionId: freshRotationProposalSubscription.id,
+        subscriptionSha256: freshRotationProposalSubscription.contentSha256,
+        approvalVerifierSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        approvalVerifierDirectorySha256:
+          appliedActivationSelection.selection.selectedDirectorySha256,
+        activeSelectionSha256:
+          postQueuedApplySelection.selection?.contentSha256,
+        activeActivationDecisionRecordId: secondActivationRecordId,
+        approvalEnvelopeSha256: freshRotationApprovalEnvelope.contentSha256,
+        approvalSha256: freshRotationApprovalEnvelope.receipt.contentSha256,
+        approvalTrustedReceiptVerificationStatus: "trusted",
+        proposalSha256: freshSignedRotationProposal.receipt.contentSha256,
+        expectedCurrentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+      }),
+    );
+    expect(
+      replayQueuedApplyResponse.headers.get("x-napier-verification-status"),
+    ).toBe("aligned");
+    expect(
+      replayQueuedApplyResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-proposal-approval-verifier-selection-sha256",
+      ),
+    ).toBe(appliedActivationSelection.selection.contentSha256);
+    const divergentReplayQueuedApplyResponse = await app.request(
+      `${rotationProposalSubscriptionPath}/${freshRotationProposalSubscription.id}/approval/apply/replay`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedSubscriptionRevision:
+            freshRotationProposalSubscription.revision,
+          expectedSubscriptionSha256: "0".repeat(64),
+          approvalEnvelope: freshRotationApprovalEnvelope,
+        }),
+      },
+    );
+    expect(divergentReplayQueuedApplyResponse.status).toBe(200);
+    expect(
+      (await divergentReplayQueuedApplyResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
+    ).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        diagnostics: ["subscription_hash_mismatch"],
       }),
     );
     const pauseFreshRotationProposalSubscriptionResponse = await app.request(

@@ -1520,6 +1520,13 @@ leased subscription worker also claims queued approval applies when
 `applyAfter` is due, reruns the same gate, and settles success or failure with
 hash-only events.
 `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
+emits a no-mutate post-apply replay receipt for a signed approval. The replay
+uses the approval-bound previous selection as the verifier source, checks that
+the current active selection has advanced to the approved activation decision,
+and returns `aligned`, `divergent`, or `invalid` with only subscription,
+approval, proposal, verifier-selection, and active-selection hashes.
+`POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
 runs that same signed-proposal gate without mutating state. The no-store
 response returns `accepted`, `rejected`, or `not_required`, includes CAS,
