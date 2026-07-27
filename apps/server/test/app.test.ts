@@ -73,6 +73,7 @@ import type {
   InboundDeliveryQualification,
   InboundReceipt,
   MemoryFact,
+  AgentMilestone,
   OperatorDecision,
   ReceiptTrustAnchor,
   RunComparison,
@@ -676,6 +677,53 @@ describe("Napier HTTP goal flow", () => {
       `/api/threads/${thread.id}/runs/run_missing0000/control-messages`,
     );
     expect(missingResponse.status).toBe(404);
+  });
+
+  it("lists durable Agent milestones with hash-bound public evidence", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
+    temporaryRoots.push(root);
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    const app = createApp(services);
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Agent milestone API",
+      agentId: agent.id,
+    });
+    const run = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-milestone-api", id: "faux-1" },
+    });
+    await services.store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "workspace.inspected",
+      category: "artifact",
+      visibility: "user",
+      payload: { status: "completed" },
+    });
+    const milestone = (
+      await services.store.recordAgentMilestone({
+        threadId: thread.id,
+        runId: run.id,
+        phase: "verification",
+        title: "Public projection verified",
+        summary: "The management API exposes the durable milestone chain.",
+        completedItems: ["Bind the management projection"],
+        openLoops: ["Run the release gate"],
+      })
+    ).milestone;
+
+    const response = await app.request(
+      `/api/threads/${thread.id}/agent-milestones`,
+    );
+    expect(response.status).toBe(200);
+    const milestones = (await response.json()) as AgentMilestone[];
+    expect(milestones).toEqual([milestone]);
+    expectAgentMilestoneListHeaders(response, thread.id, milestones);
   });
 
   it("answers and continues a durable operator decision through public APIs", async () => {
@@ -9585,6 +9633,39 @@ function expectRunControlMessageListHeaders(
   expect(response.headers.get("x-napier-run-control-cancelled-count")).toBe(
     String(messages.filter((message) => message.status === "cancelled").length),
   );
+}
+
+function expectAgentMilestoneListHeaders(
+  response: Response,
+  threadId: string,
+  milestones: AgentMilestone[],
+): void {
+  const contentSha256 = createHash("sha256")
+    .update(JSON.stringify(milestones))
+    .digest("hex");
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("body");
+  expect(response.headers.get("x-napier-thread-id")).toBe(threadId);
+  expect(response.headers.get("x-napier-agent-milestone-count")).toBe(
+    String(milestones.length),
+  );
+  expect(
+    response.headers.get("x-napier-agent-milestone-evidence-event-count"),
+  ).toBe(
+    String(
+      milestones.reduce(
+        (total, milestone) => total + milestone.evidence.eventCount,
+        0,
+      ),
+    ),
+  );
+  expect(response.headers.get("x-napier-agent-milestone-latest-id")).toBe(
+    milestones.at(-1)?.id,
+  );
+  expect(
+    response.headers.get("x-napier-agent-milestone-latest-content-sha256"),
+  ).toBe(milestones.at(-1)?.contentSha256);
 }
 
 function expectOperatorDecisionHeaders(

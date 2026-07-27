@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "f74d1b5a9433034f8698a522e5441d1f4f5e8f620da6e7528db71bd94c17d958",
-    "routeCount": 228,
-    "routeSetSha256": "7d49748e5599967d6ec98ee785b46b7dbe3876870699cac99c67a8e97292cf57"
+    "sha256": "d2230f8f1ded07f8b0022a2d08d83a8d6ef0599f49d66cd5c382d7c728c0496c",
+    "routeCount": 229,
+    "routeSetSha256": "b43d3ecd8d0eafaba14e4e04ef1c5fd0a9c07b1356049f31e257149601e42096"
   },
-  "operationCount": 228,
-  "operationSetSha256": "c0253a14c5f5f635402bf57adf34cf4e973c3d655a695837f984b490c0a580ef",
+  "operationCount": 229,
+  "operationSetSha256": "8b85a58c15d90fcfa1d0adc7bba930444b8b8e6080b44ca19e7e48936e05075f",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -1007,6 +1007,30 @@
       "acceptsJsonRequestBody": false,
       "jsonRequestSchemaRef": null,
       "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/agent-milestones",
+      "method": "get",
+      "path": "/api/threads/{threadId}/agent-milestones",
+      "operationId": "get-threads-by-threadId-agent-milestones",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/AgentMilestoneList"
+      },
       "responseStatuses": [
         "200",
         "400",

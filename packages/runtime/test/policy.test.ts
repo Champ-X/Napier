@@ -70,6 +70,15 @@ describe("workspace policy", () => {
       }),
     );
     expect(
+      assessToolCall("observe", "record_run_milestone", {}, "/workspace"),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+        reason: "internal durable-ledger update",
+      }),
+    );
+    expect(
       assessToolCall(
         "observe",
         "verify_workspace",

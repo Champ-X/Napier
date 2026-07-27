@@ -54,6 +54,10 @@ Version `0.1.0` includes:
   2-4 option question, preserve answer and continuation as separate Ledger
   transitions, and resume through an explicitly linked child Run without
   allowing an ordinary Prompt to bypass the waiting gate;
+- durable Agent Milestones that let a live Agent record bounded planning,
+  execution, verification, or delivery snapshots; each immutable snapshot is
+  predecessor-linked and automatically binds the actual same-Run Ledger events
+  since the prior milestone before being reinjected on the next Pi turn;
 - workspace-confined read, list, and literal search tools with canonical
   realpath checks and complete-file SHA-256 evidence;
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
@@ -161,9 +165,10 @@ Version `0.1.0` includes:
 - portable full-thread replay fixtures that bind Agent, Runs, plans,
   evaluations, append-only human adjudications, reviewer ballots, consensus
   resolutions, evaluation suites and executions, automatic-recovery
-  assessments and attempts, subagents, Operator Decisions, and the complete
-  ordered event stream to independent content/event SHA-256 digests, with
-  atomic import and collision-free resource-ID remapping;
+  assessments and attempts, subagents, Operator Decisions, Agent Milestones,
+  and the complete ordered event stream to independent content/event SHA-256
+  digests, with atomic import, collision-free resource-ID remapping, and
+  milestone evidence-range rehashing;
 - OpenTelemetry-compatible OTLP/JSON trace export for complete Threads or
   individual Runs, with deterministic trace/span identities, GenAI semantic
   attributes, metadata-only redaction, stable artifact hashes, no-store
@@ -696,6 +701,33 @@ option descriptions, and custom answer stay local to the Ledger and are
 excluded from metadata-only OTLP. Portable Thread import remaps both origin
 and continuation Run IDs, reconstructs the decision from events, and
 recomputes its final content hash while preserving question and answer hashes.
+
+## Durable Agent Milestones
+
+The non-terminating `record_run_milestone` tool gives long-running work an
+explicit phase boundary without creating mutable task state. A milestone
+records `planning`, `execution`, `verification`, or `delivery`, a concise
+summary, concrete completed items, and every remaining open loop. Napier allows
+at most 32 milestones per Run and 128 per Thread, rejects contradictory or
+duplicate items, and requires the active Thread Run.
+
+Milestone evidence is runtime-derived rather than model-asserted. Before
+committing `agent.milestone.recorded`, the Store binds every same-Run Ledger
+event after the previous milestone and before the new event into a sequence
+range and event-stream SHA-256. Each later snapshot names the exact predecessor
+milestone and event sequence, so a tampered, reordered, or stale chain is
+ignored by normal projection and rejected by portable fixture validation.
+
+The latest bounded projection is rebuilt after tool execution and injected into
+the next Pi turn as system-maintained progress state, making open loops survive
+context compaction without accumulating messages. Milestones inside an
+imported event range contribute IDs, phases, counts, and hashes only; external
+prose is not promoted into system context, while milestones recorded by later
+local Runs regain bounded text. `GET
+/api/threads/:threadId/agent-milestones` returns the no-store, body-hash-bound
+local projection, while the lazy Trace panel renders phase, summary, open
+loops, evidence count, and receipt hash. Metadata-only OTLP excludes title,
+summary, and item text.
 
 ## Agent Configuration History
 

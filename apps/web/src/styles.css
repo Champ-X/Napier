@@ -6203,6 +6203,157 @@ button:disabled {
   border-bottom: 1px solid var(--rule);
 }
 
+.agent-milestone-ledger {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.agent-milestone-ledger > header,
+.agent-milestone-card > header,
+.agent-milestone-card > footer,
+.agent-milestone-ledger dl {
+  display: flex;
+  align-items: center;
+}
+
+.agent-milestone-ledger > header {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.agent-milestone-ledger > header div {
+  display: grid;
+  gap: 2px;
+}
+
+.agent-milestone-ledger > header span,
+.agent-milestone-card > header,
+.agent-milestone-card > footer,
+.agent-milestone-ledger dt,
+.agent-milestone-ledger dd {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.agent-milestone-ledger > header div > span {
+  font-size: 7px;
+  color: var(--vermilion);
+}
+
+.agent-milestone-ledger > header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.agent-milestone-ledger > header > span {
+  font-size: 8px;
+  color: var(--ink-faint);
+}
+
+.agent-milestone-ledger > p {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-faint);
+}
+
+.agent-milestone-ledger > ol {
+  display: grid;
+  gap: 9px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.agent-milestone-card {
+  position: relative;
+  padding: 11px 11px 10px 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgb(255 255 255 / 40%), rgb(255 255 255 / 40%)),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 21px,
+      rgb(86 71 48 / 8%) 22px
+    ),
+    #f8f3e9;
+  border: 1px solid var(--rule-strong);
+  box-shadow: 3px 3px 0 rgb(85 72 52 / 5%);
+}
+
+.agent-milestone-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: var(--vermilion);
+}
+
+.agent-milestone-card > header,
+.agent-milestone-card > footer {
+  justify-content: space-between;
+  font-size: 7px;
+  color: var(--ink-faint);
+}
+
+.agent-milestone-card > strong {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--serif);
+  font-size: 12px;
+}
+
+.agent-milestone-card > p,
+.agent-milestone-card li {
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.agent-milestone-card > p {
+  margin: 5px 0 8px;
+}
+
+.agent-milestone-card ul {
+  padding: 7px 0 0 14px;
+  margin: 7px 0 0;
+  border-top: 1px dashed var(--rule-strong);
+}
+
+.agent-milestone-ledger dl {
+  gap: 11px;
+  margin: 0;
+}
+
+.agent-milestone-ledger dl div {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+}
+
+.agent-milestone-ledger dt {
+  font-size: 6px;
+  color: var(--ink-faint);
+}
+
+.agent-milestone-ledger dd {
+  margin: 0;
+  font-size: 8px;
+}
+
+.agent-milestone-card > footer {
+  margin-top: 9px;
+}
+
+.agent-milestone-card > footer code {
+  color: var(--ledger);
+}
+
 .delegation-heading,
 .delegation-card > header,
 .delegation-card > footer,

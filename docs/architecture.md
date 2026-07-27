@@ -84,6 +84,8 @@ removal is a versioned contract change.
   enforcement;
 - append-only Operator Decision request/answer/continue/cancel projection,
   terminating Pi tool integration, and linked child-Run continuation;
+- predecessor-linked Agent Milestone projection with automatic same-Run Ledger
+  evidence ranges and bounded next-turn context reinjection;
 - transactional SQLite thread, run, and event persistence with legacy
   JSON/JSONL migration.
 
@@ -131,6 +133,7 @@ The runtime has no HTTP or React dependency.
 - bounded, strictly parsed Agent profile update and rollback administration;
 - bounded, strictly parsed Operator Decision list, answer, cancel, and SSE
   continuation APIs;
+- no-store, body-hash-bound Agent Milestone list projection;
 - adapter-normalized authenticated webhook ingestion and background schedule,
   channel, and safe recovery workers;
 - same-origin static hosting for production;
@@ -188,6 +191,11 @@ An open Operator Decision is a separate lazy Workbench docket between the
 Ledger and composer. It owns accessible option selection, custom answer,
 answer receipt, Continue, and Cancel actions. The normal composer is disabled
 until the decision reaches a terminal state.
+
+The lazy Trace chunk loads Agent Milestones independently from the primary
+Workbench entry. It renders phase, summary, open loops, bound event count, and
+receipt hash without adding milestone API code or copy to the size-constrained
+main bundle.
 
 The release check starts by auditing `package-lock.json` against the root
 package and every discovered workspace package. It requires lockfile version 3,
@@ -1206,6 +1214,44 @@ answer hashes remain stable. OTLP admits decision IDs, continuation Run IDs,
 and SHA-256 evidence only; question, options, descriptions, custom text, and
 nested tool input/details are excluded.
 
+## Agent Milestone Flow
+
+```text
+Agent reaches a meaningful phase boundary
+  -> call record_run_milestone with phase, title, summary, completed, open
+  -> require the active Thread Run and enforce 32-per-Run / 128-per-Thread
+  -> validate bounded distinct items and reject completed/open overlap
+  -> bind the prior same-Run Ledger range after the previous milestone
+  -> append one immutable agent.milestone.recorded event
+
+Pi prepares the next turn
+  -> reproject the complete milestone chain from ordered events
+  -> select only the newest two snapshots for bounded context
+  -> sanitize and truncate local text while retaining complete source hashes
+  -> replace the prior system projection without appending conversation text
+  -> record context.milestones.updated with IDs, counts, and hashes only
+
+portable import
+  -> remap Thread, Run, and event identities
+  -> replay the predecessor chain against the imported event order
+  -> recompute each evidence-range and milestone content SHA-256
+  -> reject any known milestone event that cannot be projected
+```
+
+The Agent does not provide evidence IDs or hashes. `projectAgentMilestones`
+derives `fromSeq`, `toSeq`, event count, and event-stream SHA-256 from the
+actual events preceding each milestone, preventing a model from claiming
+unobserved evidence. The event payload carries the local prose and a
+hash-bound predecessor request; no separate milestone table exists.
+
+The context projection redacts title, summary, completed items, and open loops
+for milestones at or before the imported source event count, preserving the
+imported ledger trust boundary. Milestones recorded by later local Runs can
+reinject bounded text, so imported Threads remain useful without trusting
+external prose. OTLP applies the metadata-only rule to every milestone. The
+management API is read-only so an operator or external client cannot forge
+Agent-authored progress through HTTP.
+
 ## Workspace Edit Flow
 
 General shell execution and unconstrained file writes are not Agent tools.
@@ -2013,6 +2059,8 @@ import fixture (maximum 10 MiB)
   -> recompute Run-local event hashes, assessment hashes, and attempt hashes
   -> remap Operator Decision continuation Run IDs and derive the new projection
      hash while preserving question/answer hashes
+  -> replay Agent Milestone predecessor chains and rehash remapped evidence
+     event ranges while preserving summary/item hashes
   -> strip ordinary trigger IDs and all lease ownership
   -> close claimed/running recovery attempts as imported terminal evidence
   -> convert queued/running Runs to interrupted
@@ -2829,7 +2877,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has twenty-three parts:
+The current boundary has twenty-four parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -2906,6 +2954,10 @@ The current boundary has twenty-three parts:
     continuation authorization, explicit answer/continue separation,
     first-terminal-wins projection, linked child Runs, metadata-only OTLP, and
     portable Run-ID rebinding.
+24. Agent-authored milestones with active-Run-only writes, strict text/item
+    bounds, immutable predecessor chains, runtime-derived Ledger event-range
+    evidence, imported-range text redaction, metadata-only OTLP, read-only
+    management access, and portable evidence rehashing.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.

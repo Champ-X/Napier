@@ -76,6 +76,7 @@ const SAFE_STRING_PAYLOAD_KEYS = new Set([
   "model",
   "modelVerdict",
   "operation",
+  "phase",
   "providerId",
   "reviewStatus",
   "role",
@@ -104,8 +105,10 @@ const SAFE_ID_PAYLOAD_KEYS = new Set([
   "evaluationId",
   "executionId",
   "extensionId",
+  "milestoneId",
   "parentCheckpointId",
   "parentRunId",
+  "predecessorMilestoneId",
   "continuationRunId",
   "planId",
   "referenceId",
@@ -148,6 +151,9 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "maxAttempts",
   "maxContinuations",
   "messageIndex",
+  "milestoneCount",
+  "milestoneOmittedCount",
+  "milestoneSelectedCount",
   "minimumAgreementRate",
   "minimumPassRate",
   "observed",
@@ -166,6 +172,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "toSeq",
   "turnCount",
   "unverifiedCount",
+  "predecessorEventSeq",
 ]);
 
 const SAFE_BOOLEAN_PAYLOAD_KEYS = new Set([
@@ -178,6 +185,7 @@ const SAFE_BOOLEAN_PAYLOAD_KEYS = new Set([
   "enabled",
   "networkAllowed",
   "outputCapped",
+  "milestoneTextRedacted",
   "truncated",
   "verified",
 ]);

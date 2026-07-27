@@ -6,6 +6,22 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Durable Agent Milestones. Standard live Runs now expose the non-terminating
+  `record_run_milestone` tool for immutable planning, execution, verification,
+  and delivery snapshots with bounded completed items and open loops. The Store
+  requires the active Thread Run, enforces 32-per-Run and 128-per-Thread limits,
+  predecessor-links each snapshot, and automatically binds the actual same-Run
+  Ledger range since the previous milestone into event count and event-stream
+  SHA-256 evidence. Pi rebuilds and reinjects the newest bounded projection on
+  the next turn without adding conversation messages; milestones inside an
+  imported source range receive hash-only context so external prose cannot
+  become system instructions, while later local milestones regain bounded
+  text. Portable replay rejects malformed milestone chains and recomputes
+  evidence/content hashes after identity remapping. A no-store read-only
+  management endpoint and lazy Paper Ledger Trace register expose the local
+  projection, while metadata-only OTLP omits title, summary, completed, and
+  open-loop text. The generated management OpenAPI and additive compatibility
+  baseline now contain 229 operations.
 - Durable Operator Decision gates. Live Agents can now invoke the terminating
   `request_operator_decision` tool as the only call in a turn, durably commit a
   bounded 2-4 option question, complete the origin Run into a waiting Thread,

@@ -4,6 +4,7 @@ import path from "node:path";
 
 import type {
   AnswerOperatorDecisionRequest,
+  AgentMilestone,
   ApplyExtensionPackageDeploymentRequest,
   ApplyExtensionPackageDeploymentResult,
   ApplyExtensionPackageRolloutChannelRequest,
@@ -9909,6 +9910,13 @@ export function createApp(services: NapierServices): Hono {
     return context.json(decisions);
   });
 
+  app.get("/api/threads/:threadId/agent-milestones", async (context) => {
+    const threadId = context.req.param("threadId");
+    const milestones = await services.store.listAgentMilestones(threadId);
+    setAgentMilestoneListHeaders(context, threadId, milestones);
+    return context.json(milestones);
+  });
+
   app.post(
     "/api/threads/:threadId/operator-decisions/:decisionId/answer",
     async (context) => {
@@ -19493,6 +19501,46 @@ function setOperatorDecisionListHeaders(
     context.header(
       `X-Napier-Operator-Decision-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
       String(decisions.filter((decision) => decision.status === status).length),
+    );
+  }
+}
+
+function setAgentMilestoneListHeaders(
+  context: Context,
+  threadId: string,
+  milestones: AgentMilestone[],
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, milestones);
+  context.header("X-Napier-Thread-Id", threadId);
+  context.header("X-Napier-Agent-Milestone-Count", String(milestones.length));
+  context.header(
+    "X-Napier-Agent-Milestone-Evidence-Event-Count",
+    String(
+      milestones.reduce(
+        (total, milestone) => total + milestone.evidence.eventCount,
+        0,
+      ),
+    ),
+  );
+  const latest = milestones.at(-1);
+  setOptionalHeader(context, "X-Napier-Agent-Milestone-Latest-Id", latest?.id);
+  setOptionalHeader(
+    context,
+    "X-Napier-Agent-Milestone-Latest-Content-SHA256",
+    latest?.contentSha256,
+  );
+  for (const phase of [
+    "planning",
+    "execution",
+    "verification",
+    "delivery",
+  ] satisfies AgentMilestone["phase"][]) {
+    context.header(
+      `X-Napier-Agent-Milestone-${phase[0]!.toUpperCase()}${phase.slice(1)}-Count`,
+      String(
+        milestones.filter((milestone) => milestone.phase === phase).length,
+      ),
     );
   }
 }

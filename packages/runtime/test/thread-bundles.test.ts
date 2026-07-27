@@ -138,6 +138,77 @@ describe("thread replay bundles", () => {
     );
   });
 
+  it("rebinds Agent milestone evidence after portable event remapping", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Portable Agent milestone",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-milestone", id: "faux-1" },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "message.user",
+      category: "message",
+      visibility: "user",
+      payload: { text: "Record portable progress." },
+    });
+    const sourceMilestone = (
+      await store.recordAgentMilestone({
+        threadId: thread.id,
+        runId: run.id,
+        phase: "verification",
+        title: "Portable evidence verified",
+        summary: "The milestone must survive event and Run ID remapping.",
+        completedItems: ["Bind the source Ledger range"],
+        openLoops: ["Verify imported evidence hashes"],
+      })
+    ).milestone;
+    await store.finishRun(run.id, "completed");
+
+    const invalidDetail = structuredClone(await store.getDetail(thread.id));
+    const invalidMilestoneEvent = invalidDetail.events.find(
+      (event) => event.type === "agent.milestone.recorded",
+    )!;
+    invalidMilestoneEvent.payload = {
+      ...invalidMilestoneEvent.payload,
+      summary: "Tampered without a matching request hash.",
+    };
+    expect(() => createThreadReplayBundle(invalidDetail)).toThrow(
+      "Agent milestone event chain is invalid",
+    );
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    const imported = await store.importThreadReplayBundle(bundle);
+    const importedMilestone = (
+      await store.listAgentMilestones(imported.thread.id)
+    )[0]!;
+
+    expect(importedMilestone).toEqual(
+      expect.objectContaining({
+        id: sourceMilestone.id,
+        threadId: imported.thread.id,
+        runId: imported.runs[0]!.id,
+        phase: sourceMilestone.phase,
+        summarySha256: sourceMilestone.summarySha256,
+        completedItemSetSha256: sourceMilestone.completedItemSetSha256,
+        openLoopSetSha256: sourceMilestone.openLoopSetSha256,
+      }),
+    );
+    expect(importedMilestone.runId).not.toBe(sourceMilestone.runId);
+    expect(importedMilestone.evidence.eventStreamSha256).not.toBe(
+      sourceMilestone.evidence.eventStreamSha256,
+    );
+    expect(importedMilestone.contentSha256).not.toBe(
+      sourceMilestone.contentSha256,
+    );
+  });
+
   it("reconstructs a continued operator decision after Run ID remapping", async () => {
     const { store } = await createStore();
     const agent = store.listAgents()[0]!;

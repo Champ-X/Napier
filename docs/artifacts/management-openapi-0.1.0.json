@@ -7206,6 +7206,53 @@
         "x-napier-source-route": "GET /api/threads/:threadId"
       }
     },
+    "/api/threads/{threadId}/agent-milestones": {
+      "get": {
+        "operationId": "get-threads-by-threadId-agent-milestones",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/agent-milestones",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentMilestoneList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/agent-milestones",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/AgentMilestoneList"
+        }
+      }
+    },
     "/api/threads/{threadId}/branches": {
       "post": {
         "operationId": "post-threads-by-threadId-branches",
@@ -10823,6 +10870,162 @@
           "$ref": "#/components/schemas/OperatorDecision"
         }
       },
+      "AgentMilestonePhase": {
+        "type": "string",
+        "enum": [
+          "planning",
+          "execution",
+          "verification",
+          "delivery"
+        ]
+      },
+      "AgentMilestoneEvidenceRange": {
+        "type": "object",
+        "required": [
+          "fromSeq",
+          "toSeq",
+          "eventCount",
+          "eventStreamSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "fromSeq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "toSeq": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "eventCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "eventStreamSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
+      "AgentMilestone": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "id",
+          "threadId",
+          "runId",
+          "sequence",
+          "phase",
+          "title",
+          "summary",
+          "completedItems",
+          "openLoops",
+          "summarySha256",
+          "completedItemSetSha256",
+          "openLoopSetSha256",
+          "evidence",
+          "recordedAt",
+          "eventSeq",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.agent-milestone"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^milestone_[a-z0-9]{8,80}$"
+          },
+          "threadId": {
+            "type": "string",
+            "pattern": "^thread_[a-z0-9]{8,80}$"
+          },
+          "runId": {
+            "type": "string",
+            "pattern": "^run_[a-z0-9]{8,80}$"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "phase": {
+            "$ref": "#/components/schemas/AgentMilestonePhase"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "completedItems": {
+            "type": "array",
+            "maxItems": 12,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "openLoops": {
+            "type": "array",
+            "maxItems": 12,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          },
+          "summarySha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "completedItemSetSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "openLoopSetSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/AgentMilestoneEvidenceRange"
+          },
+          "predecessorMilestoneId": {
+            "type": "string",
+            "pattern": "^milestone_[a-z0-9]{8,80}$"
+          },
+          "predecessorEventSeq": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "recordedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "eventSeq": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
+      "AgentMilestoneList": {
+        "type": "array",
+        "maxItems": 128,
+        "items": {
+          "$ref": "#/components/schemas/AgentMilestone"
+        }
+      },
       "SubagentOutcomeReviewVerdict": {
         "type": "string",
         "enum": [
@@ -12818,7 +13021,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "6e9bd24a55e1f3d6e405bfe6f1c51fda8bc0476ed84f35bf45d8a4958d665472",
-  "x-napier-route-count": 228,
-  "x-napier-route-set-sha256": "7d49748e5599967d6ec98ee785b46b7dbe3876870699cac99c67a8e97292cf57"
+  "x-napier-source-sha256": "2f33a5e6694cc16ba5bd411de5e0784d8f948342515b0e7019e21962df2f1e89",
+  "x-napier-route-count": 229,
+  "x-napier-route-set-sha256": "b43d3ecd8d0eafaba14e4e04ef1c5fd0a9c07b1356049f31e257149601e42096"
 }

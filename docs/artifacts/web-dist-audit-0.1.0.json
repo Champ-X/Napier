@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CNtToEaF.js",
+    "path": "apps/web/dist/assets/index-DzQoc_Ur.js",
     "sizeBytes": 153591,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "c46c51f2c7cc432da028aa6e7eb624527e74e136f827e20ccbbd4baa6b2a910b"
+    "sha256": "541235c76dcf74af10182e1182aa3bb85b7175f6b19dc02ec16700a430d498a0"
   },
-  "distContentSha256": "c46c51f2c7cc432da028aa6e7eb624527e74e136f827e20ccbbd4baa6b2a910b",
+  "distContentSha256": "541235c76dcf74af10182e1182aa3bb85b7175f6b19dc02ec16700a430d498a0",
   "errors": []
 }

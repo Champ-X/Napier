@@ -8,6 +8,7 @@ import {
   type AgentProfile,
   type AgentProfileRevision,
   type AgentProfileRollbackResult,
+  type AgentMilestone,
   type ApplyExtensionPackageDeploymentRequest,
   type ApplyExtensionPackageDeploymentResult,
   type ApplyExtensionPackageRolloutChannelRequest,
@@ -173,6 +174,7 @@ import {
   type RemoveEvaluationCaseRequest,
   type ReviewExtensionRequest,
   type ReviewMcpToolRequest,
+  type RecordAgentMilestoneInput,
   type RunEvent,
   type RunEvaluationRecord,
   type AnswerOperatorDecisionRequest,
@@ -484,6 +486,12 @@ import {
   validateRunConfigurationFingerprint,
 } from "./run-config.js";
 import {
+  createAgentMilestoneRecordedPayload,
+  MAX_AGENT_MILESTONES_PER_RUN,
+  MAX_AGENT_MILESTONES_PER_THREAD,
+  projectAgentMilestones,
+} from "./agent-milestones.js";
+import {
   createOperatorDecisionAnsweredPayload,
   createOperatorDecisionCancelledPayload,
   createOperatorDecisionContinuedPayload,
@@ -681,6 +689,16 @@ export interface RequestOperatorDecisionStoreInput extends RequestOperatorDecisi
 
 export interface OperatorDecisionMutation {
   decision: OperatorDecision;
+  events: RunEvent[];
+}
+
+export interface RecordAgentMilestoneStoreInput extends RecordAgentMilestoneInput {
+  threadId: string;
+  runId: string;
+}
+
+export interface AgentMilestoneMutation {
+  milestone: AgentMilestone;
   events: RunEvent[];
 }
 
@@ -7620,6 +7638,14 @@ export class LocalStore {
     return projectOperatorDecisions(events, runId);
   }
 
+  async listAgentMilestones(
+    threadId: string,
+    runId?: string,
+  ): Promise<AgentMilestone[]> {
+    const events = await this.listEvents(threadId);
+    return projectAgentMilestones(events, runId);
+  }
+
   async listEvents(threadId: string, afterSeq = 0): Promise<RunEvent[]> {
     this.assertInitialized();
     this.getThread(threadId);
@@ -8461,6 +8487,77 @@ export class LocalStore {
       await this.persistState();
       return structuredClone(stripRunSecrets(run));
     });
+  }
+
+  async recordAgentMilestone(
+    input: RecordAgentMilestoneStoreInput,
+  ): Promise<AgentMilestoneMutation> {
+    this.assertInitialized();
+    this.validateResourceId(input.threadId);
+    this.validateResourceId(input.runId);
+    return this.threadQueue(input.threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(input.threadId);
+        const run = this.mutableRun(input.runId);
+        if (
+          run.threadId !== thread.id ||
+          run.status !== "running" ||
+          thread.currentRunId !== run.id
+        ) {
+          throw new Error("Agent milestone requires the active Thread Run");
+        }
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const current = projectAgentMilestones(currentEvents);
+        if (current.length >= MAX_AGENT_MILESTONES_PER_THREAD) {
+          throw new Error(
+            `Agent milestone Thread limit reached (${MAX_AGENT_MILESTONES_PER_THREAD})`,
+          );
+        }
+        const runMilestones = current.filter(
+          (milestone) => milestone.runId === run.id,
+        );
+        if (runMilestones.length >= MAX_AGENT_MILESTONES_PER_RUN) {
+          throw new Error(
+            `Agent milestone Run limit reached (${MAX_AGENT_MILESTONES_PER_RUN})`,
+          );
+        }
+        const payload = createAgentMilestoneRecordedPayload({
+          milestoneId: createId("milestone"),
+          milestone: {
+            phase: input.phase,
+            title: input.title,
+            summary: input.summary,
+            completedItems: input.completedItems,
+            openLoops: input.openLoops,
+          },
+          ...(runMilestones.at(-1)
+            ? { predecessor: runMilestones.at(-1)! }
+            : {}),
+        });
+        const events = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: run.id,
+            type: "agent.milestone.recorded",
+            category: "plan",
+            visibility: "user",
+            payload,
+          },
+        ]);
+        await this.persistState(events);
+        const milestone = projectAgentMilestones([
+          ...currentEvents,
+          ...events,
+        ]).find((candidate) => candidate.id === payload.milestoneId);
+        if (!milestone) {
+          throw new Error("Agent milestone receipt is invalid");
+        }
+        return {
+          milestone: structuredClone(milestone),
+          events: structuredClone(events),
+        };
+      }),
+    );
   }
 
   async requestOperatorDecision(

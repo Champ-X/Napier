@@ -137,6 +137,11 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/OperatorDecisionList",
     },
   },
+  "GET /api/threads/{threadId}/agent-milestones": {
+    responses: {
+      200: "#/components/schemas/AgentMilestoneList",
+    },
+  },
   "POST /api/threads/{threadId}/operator-decisions/{decisionId}/answer": {
     request: "#/components/schemas/AnswerOperatorDecisionRequest",
     responses: {
@@ -535,6 +540,102 @@ export async function generateManagementOpenApi(options = {}) {
           type: "array",
           maxItems: 64,
           items: { $ref: "#/components/schemas/OperatorDecision" },
+        },
+        AgentMilestonePhase: {
+          type: "string",
+          enum: ["planning", "execution", "verification", "delivery"],
+        },
+        AgentMilestoneEvidenceRange: {
+          type: "object",
+          required: ["fromSeq", "toSeq", "eventCount", "eventStreamSha256"],
+          additionalProperties: false,
+          properties: {
+            fromSeq: { type: "integer", minimum: 0 },
+            toSeq: { type: "integer", minimum: 0 },
+            eventCount: { type: "integer", minimum: 0 },
+            eventStreamSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+          },
+        },
+        AgentMilestone: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "id",
+            "threadId",
+            "runId",
+            "sequence",
+            "phase",
+            "title",
+            "summary",
+            "completedItems",
+            "openLoops",
+            "summarySha256",
+            "completedItemSetSha256",
+            "openLoopSetSha256",
+            "evidence",
+            "recordedAt",
+            "eventSeq",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: { const: "napier.agent-milestone" },
+            schemaVersion: { const: 1 },
+            id: {
+              type: "string",
+              pattern: "^milestone_[a-z0-9]{8,80}$",
+            },
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            runId: {
+              type: "string",
+              pattern: "^run_[a-z0-9]{8,80}$",
+            },
+            sequence: { type: "integer", minimum: 1, maximum: 32 },
+            phase: { $ref: "#/components/schemas/AgentMilestonePhase" },
+            title: { type: "string", minLength: 1, maxLength: 80 },
+            summary: { type: "string", minLength: 1, maxLength: 4000 },
+            completedItems: {
+              type: "array",
+              maxItems: 12,
+              uniqueItems: true,
+              items: { type: "string", minLength: 1, maxLength: 500 },
+            },
+            openLoops: {
+              type: "array",
+              maxItems: 12,
+              uniqueItems: true,
+              items: { type: "string", minLength: 1, maxLength: 500 },
+            },
+            summarySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            completedItemSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            openLoopSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            evidence: {
+              $ref: "#/components/schemas/AgentMilestoneEvidenceRange",
+            },
+            predecessorMilestoneId: {
+              type: "string",
+              pattern: "^milestone_[a-z0-9]{8,80}$",
+            },
+            predecessorEventSeq: { type: "integer", minimum: 1 },
+            recordedAt: { type: "string", format: "date-time" },
+            eventSeq: { type: "integer", minimum: 1 },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        AgentMilestoneList: {
+          type: "array",
+          maxItems: 128,
+          items: { $ref: "#/components/schemas/AgentMilestone" },
         },
         SubagentOutcomeReviewVerdict: {
           type: "string",

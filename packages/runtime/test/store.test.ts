@@ -851,6 +851,113 @@ describe("LocalStore", () => {
     ).rejects.toThrow("total limit reached (64)");
   });
 
+  it("records chained Agent milestones with automatic Ledger evidence", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Durable Agent milestones",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-milestone", id: "faux-1" },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "workspace.inspected",
+      category: "artifact",
+      visibility: "user",
+      payload: { status: "completed" },
+    });
+    const first = await store.recordAgentMilestone({
+      threadId: thread.id,
+      runId: run.id,
+      phase: "execution",
+      title: "Workspace inspected",
+      summary:
+        "The implementation boundary is grounded in repository evidence.",
+      completedItems: ["Inspect current architecture"],
+      openLoops: ["Implement the selected protocol"],
+    });
+    expect(first.milestone).toEqual(
+      expect.objectContaining({
+        sequence: 1,
+        evidence: expect.objectContaining({
+          eventCount: 1,
+          eventStreamSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "verification.completed",
+      category: "artifact",
+      visibility: "user",
+      payload: { status: "passed" },
+    });
+    const second = await store.recordAgentMilestone({
+      threadId: thread.id,
+      runId: run.id,
+      phase: "verification",
+      title: "Focused checks passed",
+      summary: "The milestone protocol passes focused verification.",
+      completedItems: [
+        "Inspect current architecture",
+        "Implement the selected protocol",
+      ],
+      openLoops: ["Run the repository release gate"],
+    });
+    expect(await store.listAgentMilestones(thread.id, run.id)).toEqual([
+      first.milestone,
+      expect.objectContaining({
+        id: second.milestone.id,
+        sequence: 2,
+        predecessorMilestoneId: first.milestone.id,
+        predecessorEventSeq: first.milestone.eventSeq,
+        evidence: expect.objectContaining({ eventCount: 1 }),
+      }),
+    ]);
+    for (let sequence = 3; sequence <= 32; sequence += 1) {
+      await store.recordAgentMilestone({
+        threadId: thread.id,
+        runId: run.id,
+        phase: "verification",
+        title: `Bounded milestone ${sequence}`,
+        summary: `Milestone ${sequence} exercises the per-Run append bound.`,
+        completedItems: [`Bound milestone ${sequence}`],
+        openLoops: ["Complete the bounded milestone sequence"],
+      });
+    }
+    await expect(
+      store.recordAgentMilestone({
+        threadId: thread.id,
+        runId: run.id,
+        phase: "delivery",
+        title: "Beyond the Run bound",
+        summary: "The thirty-third milestone must fail closed.",
+        completedItems: [],
+        openLoops: [],
+      }),
+    ).rejects.toThrow("Run limit reached (32)");
+
+    await store.finishRun(run.id, "completed");
+    await expect(
+      store.recordAgentMilestone({
+        threadId: thread.id,
+        runId: run.id,
+        phase: "delivery",
+        title: "Too late",
+        summary: "A settled Run cannot add Agent-authored progress evidence.",
+        completedItems: [],
+        openLoops: [],
+      }),
+    ).rejects.toThrow("active Thread Run");
+  });
+
   it("pauses on, answers, and continues a durable operator decision", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;

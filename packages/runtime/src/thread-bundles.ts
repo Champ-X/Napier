@@ -38,6 +38,10 @@ import {
   normalizeEvaluationSuiteGate,
 } from "./evaluation-suites.js";
 import { normalizeRubric } from "./evaluation.js";
+import {
+  AGENT_MILESTONE_RECORDED_EVENT,
+  projectAgentMilestones,
+} from "./agent-milestones.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
 import {
@@ -609,6 +613,22 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
   const runsById = new Map(
     runRecords.map((run) => [String(run["id"]), run] as const),
   );
+  const milestoneEvents = typedEvents.filter(
+    (event) => event.type === AGENT_MILESTONE_RECORDED_EVENT,
+  );
+  const milestones = projectAgentMilestones(typedEvents);
+  if (milestones.length !== milestoneEvents.length) {
+    throw new Error(
+      "Thread replay bundle Agent milestone event chain is invalid",
+    );
+  }
+  for (const milestone of milestones) {
+    if (!runIds.has(milestone.runId)) {
+      throw new Error(
+        `Thread replay bundle Agent milestone references unknown Run: ${milestone.id}`,
+      );
+    }
+  }
   for (const decision of projectOperatorDecisions(typedEvents)) {
     if (!runIds.has(decision.runId)) {
       throw new Error(

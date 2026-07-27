@@ -1,4 +1,5 @@
 export * from "./agent-runtime.js";
+export * from "./agent-milestones.js";
 export * from "./agents.js";
 export * from "./automatic-recovery.js";
 export * from "./automation.js";

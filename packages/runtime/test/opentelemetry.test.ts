@@ -202,6 +202,15 @@ describe("OpenTelemetry trace export", () => {
       mode: "steering",
       text: "TOP_SECRET_RUN_CONTROL_MESSAGE",
     });
+    await store.recordAgentMilestone({
+      threadId: thread.id,
+      runId: run.id,
+      phase: "execution",
+      title: "TOP_SECRET_MILESTONE_TITLE",
+      summary: "TOP_SECRET_MILESTONE_SUMMARY",
+      completedItems: ["TOP_SECRET_MILESTONE_COMPLETED"],
+      openLoops: ["TOP_SECRET_MILESTONE_OPEN_LOOP"],
+    });
     await store.requestOperatorDecision({
       threadId: thread.id,
       runId: run.id,
@@ -313,6 +322,10 @@ describe("OpenTelemetry trace export", () => {
       "TOP_SECRET_SUBAGENT_PROMPT",
       "TOP_SECRET_SUBAGENT_RESULT",
       "TOP_SECRET_RUN_CONTROL_MESSAGE",
+      "TOP_SECRET_MILESTONE_TITLE",
+      "TOP_SECRET_MILESTONE_SUMMARY",
+      "TOP_SECRET_MILESTONE_COMPLETED",
+      "TOP_SECRET_MILESTONE_OPEN_LOOP",
       "TOP_SECRET_OPERATOR_QUESTION",
       "TOP_SECRET_OPERATOR_OPTION_A",
       "TOP_SECRET_OPERATOR_OPTION_B",

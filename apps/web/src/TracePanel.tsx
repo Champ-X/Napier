@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import type {
+  AgentMilestone,
   ModelRef,
   RunEvent,
   RunRecord,
@@ -23,6 +24,11 @@ import type {
   SubagentTask,
 } from "@napier/contracts";
 
+import {
+  latestAgentMilestoneEventSeq,
+  listAgentMilestones,
+} from "./agent-milestone-api";
+import { agentMilestoneCopy } from "./agent-milestone-copy";
 import { copy } from "./copy";
 import type {
   OpenTelemetryTraceReceipt,
@@ -55,12 +61,41 @@ export default function TracePanel({
   onVerify: (file: File) => void;
 }) {
   const [exportRunId, setExportRunId] = useState("");
+  const [milestones, setMilestones] = useState<AgentMilestone[]>();
+  const [milestonesUnavailable, setMilestonesUnavailable] = useState(false);
+  const threadId = runs[0]?.threadId ?? events[0]?.threadId;
+  const milestoneEventSeq = latestAgentMilestoneEventSeq(events);
 
   useEffect(() => {
     if (exportRunId && !runs.some((run) => run.id === exportRunId)) {
       setExportRunId("");
     }
   }, [exportRunId, runs]);
+
+  useEffect(() => {
+    let active = true;
+    if (!threadId) {
+      setMilestones([]);
+      setMilestonesUnavailable(false);
+      return () => {
+        active = false;
+      };
+    }
+    setMilestones(undefined);
+    setMilestonesUnavailable(false);
+    void listAgentMilestones(threadId)
+      .then((next) => {
+        if (active) setMilestones(next);
+      })
+      .catch(() => {
+        if (!active) return;
+        setMilestones([]);
+        setMilestonesUnavailable(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [threadId, milestoneEventSeq]);
 
   return (
     <section className="panel-section" aria-labelledby="trace-title">
@@ -186,6 +221,10 @@ export default function TracePanel({
           {copy.trace.otel.safety}
         </p>
       </section>
+      <AgentMilestoneLedger
+        milestones={milestones}
+        unavailable={milestonesUnavailable}
+      />
       <DelegationLedger tasks={subagents} reviewerModel={reviewerModel} />
       {events.length === 0 ? (
         <p className="empty-panel">{copy.trace.empty}</p>
@@ -209,6 +248,82 @@ export default function TracePanel({
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+function AgentMilestoneLedger({
+  milestones,
+  unavailable,
+}: {
+  milestones: AgentMilestone[] | undefined;
+  unavailable: boolean;
+}) {
+  return (
+    <section
+      className="agent-milestone-ledger"
+      aria-labelledby="agent-milestone-title"
+      aria-busy={milestones === undefined}
+    >
+      <header>
+        <div>
+          <span>{agentMilestoneCopy.eyebrow}</span>
+          <h3 id="agent-milestone-title">{agentMilestoneCopy.title}</h3>
+        </div>
+        <span>{String(milestones?.length ?? 0).padStart(2, "0")}</span>
+      </header>
+      {milestones === undefined ? (
+        <p>{agentMilestoneCopy.loading}</p>
+      ) : unavailable ? (
+        <p role="status">{agentMilestoneCopy.unavailable}</p>
+      ) : milestones.length === 0 ? (
+        <p>{agentMilestoneCopy.empty}</p>
+      ) : (
+        <ol>
+          {milestones
+            .slice()
+            .reverse()
+            .map((milestone) => (
+              <li className="agent-milestone-card" key={milestone.id}>
+                <header>
+                  <span>{agentMilestoneCopy.phases[milestone.phase]}</span>
+                  <code>#{String(milestone.sequence).padStart(2, "0")}</code>
+                </header>
+                <strong>{milestone.title}</strong>
+                <p>{milestone.summary}</p>
+                <dl>
+                  <div>
+                    <dt>{agentMilestoneCopy.completed}</dt>
+                    <dd>{milestone.completedItems.length}</dd>
+                  </div>
+                  <div>
+                    <dt>{agentMilestoneCopy.open}</dt>
+                    <dd>{milestone.openLoops.length}</dd>
+                  </div>
+                  <div>
+                    <dt>{agentMilestoneCopy.evidence}</dt>
+                    <dd>{milestone.evidence.eventCount}</dd>
+                  </div>
+                </dl>
+                {milestone.openLoops.length > 0 ? (
+                  <ul>
+                    {milestone.openLoops.map((openLoop) => (
+                      <li key={openLoop}>{openLoop}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <footer>
+                  <time dateTime={milestone.recordedAt}>
+                    {formatTime(milestone.recordedAt)}
+                  </time>
+                  <code title={milestone.contentSha256}>
+                    {milestone.contentSha256.slice(0, 12)}
+                  </code>
+                </footer>
+              </li>
+            ))}
+        </ol>
+      )}
     </section>
   );
 }

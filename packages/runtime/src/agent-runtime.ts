@@ -49,6 +49,11 @@ import {
   createDelegationLedgerProjection,
   formatDelegationLedgerProjection,
 } from "./delegation-ledger.js";
+import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
+import {
+  createAgentMilestoneContextProjection,
+  formatAgentMilestoneContextProjection,
+} from "./agent-milestones.js";
 import {
   applyGoalEvaluation,
   beginGoalContinuation,
@@ -990,8 +995,9 @@ export class AgentRuntime {
       profile.systemPrompt,
       skillCatalog.skills,
     );
+    const threadRecord = this.store.getThread(run.threadId);
     const importedLedgerBoundary = formatImportedLedgerBoundary(
-      this.store.getThread(run.threadId).importProvenance,
+      threadRecord.importProvenance,
     );
     await this.record(
       {
@@ -1033,6 +1039,19 @@ export class AgentRuntime {
     if (!safeReadOnlyRecovery && !advisorCorrection) {
       tools.push(...createPlanTools(this.store, run));
       tools.push(
+        createAgentMilestoneTool({
+          store: this.store,
+          threadId: run.threadId,
+          runId: run.id,
+          onRecorded: async (mutation) => {
+            if (!onEvent) return;
+            for (const event of mutation.events) {
+              await onEvent(event);
+            }
+          },
+        }),
+      );
+      tools.push(
         createOperatorDecisionTool({
           store: this.store,
           threadId: run.threadId,
@@ -1068,20 +1087,32 @@ export class AgentRuntime {
       history.checkpoint ? formatContextCheckpoint(history.checkpoint) : "",
       memoryContext.text,
     ];
+    const milestoneRedactThroughEventSeq =
+      threadRecord.importProvenance?.sourceEventCount ?? 0;
+    let milestoneContextProjection = createAgentMilestoneContextProjection(
+      run.threadId,
+      await this.store.listAgentMilestones(run.threadId),
+      { redactThroughEventSeq: milestoneRedactThroughEventSeq },
+    );
     let delegationLedgerProjection = createDelegationLedgerProjection(
       run.threadId,
       this.store.listSubagentTasks(run.threadId),
     );
     const buildSystemPrompt = (
-      projection: typeof delegationLedgerProjection,
+      delegationProjection: typeof delegationLedgerProjection,
+      milestoneProjection: typeof milestoneContextProjection,
     ): string =>
       [
         ...baseSystemPromptSections,
-        formatDelegationLedgerProjection(projection),
+        formatDelegationLedgerProjection(delegationProjection),
+        formatAgentMilestoneContextProjection(milestoneProjection),
       ]
         .filter(Boolean)
         .join("\n\n");
-    const systemPrompt = buildSystemPrompt(delegationLedgerProjection);
+    const systemPrompt = buildSystemPrompt(
+      delegationLedgerProjection,
+      milestoneContextProjection,
+    );
     const beforeToolCall = async (
       {
         assistantMessage,
@@ -1264,6 +1295,14 @@ export class AgentRuntime {
             delegationLedgerProjection.omittedTaskCount,
           delegationTaskSetSha256: delegationLedgerProjection.taskSetSha256,
           delegationProjectionSha256: delegationLedgerProjection.contentSha256,
+          milestoneCount: milestoneContextProjection.milestoneCount,
+          milestoneSelectedCount:
+            milestoneContextProjection.selectedMilestoneCount,
+          milestoneOmittedCount:
+            milestoneContextProjection.omittedMilestoneCount,
+          milestoneTextRedacted: milestoneContextProjection.textRedacted,
+          milestoneSetSha256: milestoneContextProjection.milestoneSetSha256,
+          milestoneProjectionSha256: milestoneContextProjection.contentSha256,
         },
       },
       onEvent,
@@ -1311,25 +1350,33 @@ export class AgentRuntime {
               nextTools = [...(context.tools ?? []), ...additions];
             }
           }
-          let nextSystemPrompt = context.systemPrompt;
-          let nextDelegationLedgerProjection:
-            | typeof delegationLedgerProjection
-            | undefined;
+          let nextDelegationLedgerProjection = delegationLedgerProjection;
+          let nextMilestoneContextProjection = milestoneContextProjection;
           try {
             nextDelegationLedgerProjection = createDelegationLedgerProjection(
               run.threadId,
               this.store.listSubagentTasks(run.threadId),
             );
-            nextSystemPrompt = buildSystemPrompt(
-              nextDelegationLedgerProjection,
-            );
           } catch {
-            // Retain the last verified projection if durable state is unreadable.
+            // Retain the last verified delegation projection.
           }
+          try {
+            nextMilestoneContextProjection =
+              createAgentMilestoneContextProjection(
+                run.threadId,
+                await this.store.listAgentMilestones(run.threadId),
+                { redactThroughEventSeq: milestoneRedactThroughEventSeq },
+              );
+          } catch {
+            // Retain the last verified milestone projection.
+          }
+          const nextSystemPrompt = buildSystemPrompt(
+            nextDelegationLedgerProjection,
+            nextMilestoneContextProjection,
+          );
           if (
-            nextDelegationLedgerProjection &&
             nextDelegationLedgerProjection.contentSha256 !==
-              delegationLedgerProjection.contentSha256
+            delegationLedgerProjection.contentSha256
           ) {
             const previousProjectionSha256 =
               delegationLedgerProjection.contentSha256;
@@ -1359,6 +1406,45 @@ export class AgentRuntime {
               );
             } catch {
               // Projection refresh must not fail an otherwise valid model turn.
+            }
+          }
+          if (
+            nextMilestoneContextProjection.contentSha256 !==
+            milestoneContextProjection.contentSha256
+          ) {
+            const previousProjectionSha256 =
+              milestoneContextProjection.contentSha256;
+            milestoneContextProjection = nextMilestoneContextProjection;
+            try {
+              await this.record(
+                {
+                  threadId: run.threadId,
+                  runId: run.id,
+                  type: "context.milestones.updated",
+                  category: "model",
+                  visibility: "debug",
+                  payload: {
+                    previousProjectionSha256,
+                    milestoneCount: milestoneContextProjection.milestoneCount,
+                    milestoneSelectedCount:
+                      milestoneContextProjection.selectedMilestoneCount,
+                    milestoneOmittedCount:
+                      milestoneContextProjection.omittedMilestoneCount,
+                    milestoneTextRedacted:
+                      milestoneContextProjection.textRedacted,
+                    milestoneSetSha256:
+                      milestoneContextProjection.milestoneSetSha256,
+                    milestoneProjectionSha256:
+                      milestoneContextProjection.contentSha256,
+                    milestoneId:
+                      milestoneContextProjection.milestones.at(-1)
+                        ?.milestoneId ?? "",
+                  },
+                },
+                onEvent,
+              );
+            } catch {
+              // Milestone refresh must not fail an otherwise valid model turn.
             }
           }
           if (

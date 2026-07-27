@@ -2733,6 +2733,50 @@ export interface OperatorDecision {
   contentSha256: string;
 }
 
+export type AgentMilestonePhase =
+  | "planning"
+  | "execution"
+  | "verification"
+  | "delivery";
+
+export interface RecordAgentMilestoneInput {
+  phase: AgentMilestonePhase;
+  title: string;
+  summary: string;
+  completedItems: string[];
+  openLoops: string[];
+}
+
+export interface AgentMilestoneEvidenceRange {
+  fromSeq: number;
+  toSeq: number;
+  eventCount: number;
+  eventStreamSha256: string;
+}
+
+export interface AgentMilestone {
+  kind: "napier.agent-milestone";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  sequence: number;
+  phase: AgentMilestonePhase;
+  title: string;
+  summary: string;
+  completedItems: string[];
+  openLoops: string[];
+  summarySha256: string;
+  completedItemSetSha256: string;
+  openLoopSetSha256: string;
+  evidence: AgentMilestoneEvidenceRange;
+  predecessorMilestoneId?: string;
+  predecessorEventSeq?: number;
+  recordedAt: string;
+  eventSeq: number;
+  contentSha256: string;
+}
+
 export interface RunLeaseSummary {
   ownerId: string;
   acquiredAt: string;
