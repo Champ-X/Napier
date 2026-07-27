@@ -3,6 +3,7 @@ import type {
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+  DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
   EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest,
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
@@ -29,6 +30,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -408,6 +410,18 @@ export function signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
 ): Promise<TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
+  body: DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover",
     {
       method: "POST",
       body: JSON.stringify(body),
