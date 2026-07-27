@@ -126,6 +126,9 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   type ReceiptTrustAnchorDirectoryQuorum,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+  type ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview,
@@ -135,6 +138,7 @@ import {
   type ReceiptTrustAnchorDirectoryVerification,
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
   type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  type SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   type UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
   type ReplanExecutionPlanRequest,
   type ResolveEvaluationConsensusRequest,
@@ -322,8 +326,11 @@ import {
   verifyTrustedReceiptEnvelope,
 } from "./receipt-trust.js";
 import {
+  MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS,
   MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+  createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   createReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   createReceiptTrustAnchorDirectorySubscriptionQuorum,
   createReceiptTrustAnchorDirectorySubscription,
@@ -331,8 +338,10 @@ import {
   settleReceiptTrustAnchorDirectorySubscriptionRefresh,
   stripReceiptTrustAnchorDirectorySubscriptionSecrets,
   updateReceiptTrustAnchorDirectorySubscriptionStatus,
+  validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   type PersistedReceiptTrustAnchorDirectorySubscription,
   type ReceiptTrustAnchorDirectorySubscriptionClaim,
 } from "./receipt-trust-directory-subscriptions.js";
@@ -522,6 +531,7 @@ interface PersistedState {
   receiptTrustAnchors: ReceiptTrustAnchor[];
   receiptTrustAnchorDirectorySubscriptions: PersistedReceiptTrustAnchorDirectorySubscription[];
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[];
+  receiptTrustAnchorDirectoryQuorumActivationDecisions: ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[];
   evaluationQualificationBaselines: EvaluationQualificationBaseline[];
   evaluationSuites: EvaluationSuite[];
   evaluationSuiteExecutions: EvaluationSuiteExecution[];
@@ -618,6 +628,7 @@ const EMPTY_STATE: PersistedState = {
   receiptTrustAnchors: [],
   receiptTrustAnchorDirectorySubscriptions: [],
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: [],
+  receiptTrustAnchorDirectoryQuorumActivationDecisions: [],
   evaluationQualificationBaselines: [],
   evaluationSuites: [],
   evaluationSuiteExecutions: [],
@@ -1211,10 +1222,11 @@ export class LocalStore {
           created: false,
         };
       }
-      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-        promotedByThreadId,
-        envelope,
-      );
+      const baseline =
+        this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+          promotedByThreadId,
+          envelope,
+        );
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -1298,10 +1310,11 @@ export class LocalStore {
           ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
         };
       }
-      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-        importedByThreadId,
-        importedBaseline.envelope,
-      );
+      const baseline =
+        this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+          importedByThreadId,
+          importedBaseline.envelope,
+        );
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
@@ -1309,6 +1322,71 @@ export class LocalStore {
         ...(policyReview ? { policyReview } : {}),
         ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
       };
+    });
+  }
+
+  listReceiptTrustAnchorDirectoryQuorumActivationDecisionRecords(): ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[] {
+    this.assertInitialized();
+    return structuredClone(
+      this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions
+        .slice()
+        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+    );
+  }
+
+  getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(): ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory {
+    this.assertInitialized();
+    return createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+      this.listReceiptTrustAnchorDirectoryQuorumActivationDecisionRecords(),
+    );
+  }
+
+  verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+    value: unknown,
+  ): ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification {
+    this.assertInitialized();
+    return verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+      value,
+      this.getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(),
+    );
+  }
+
+  async recordReceiptTrustAnchorDirectoryQuorumActivationDecision(
+    signedByThreadId: string,
+    result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord> {
+    this.assertInitialized();
+    this.getThread(signedByThreadId);
+    return this.stateQueue.run(async () => {
+      const anchor = this.state.receiptTrustAnchors.find(
+        (candidate) => candidate.keyId === result.envelope.signature.keyId,
+      );
+      if (!anchor) {
+        throw new Error(
+          `Receipt trust anchor not found for key: ${result.envelope.signature.keyId}`,
+        );
+      }
+      const verification = verifyTrustedReceiptEnvelope(result.envelope, [
+        anchor,
+      ]);
+      if (verification.status !== "trusted") {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation decision is not trusted: ${verification.reason}`,
+        );
+      }
+      const existing =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+          (record) =>
+            record.envelope.contentSha256 === result.envelope.contentSha256,
+        );
+      if (existing) return structuredClone(existing);
+      const record =
+        this.appendReceiptTrustAnchorDirectoryQuorumActivationDecision(
+          signedByThreadId,
+          result,
+        );
+      await this.persistState();
+      return structuredClone(record);
     });
   }
 
@@ -6839,11 +6917,14 @@ export class LocalStore {
       state.receiptTrustAnchorDirectorySubscriptions = [];
     }
     if (
-      !Array.isArray(
-        state.receiptTrustAnchorDirectoryQuorumPromotionBaselines,
-      )
+      !Array.isArray(state.receiptTrustAnchorDirectoryQuorumPromotionBaselines)
     ) {
       state.receiptTrustAnchorDirectoryQuorumPromotionBaselines = [];
+    }
+    if (
+      !Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationDecisions)
+    ) {
+      state.receiptTrustAnchorDirectoryQuorumActivationDecisions = [];
     }
     if (!Array.isArray(state.evaluationQualificationBaselines)) {
       state.evaluationQualificationBaselines = [];
@@ -7595,10 +7676,9 @@ export class LocalStore {
           input,
           state.receiptTrustAnchors,
         );
-      const baselineKey =
-        receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
-          baseline.envelope,
-        );
+      const baselineKey = receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
+        baseline.envelope,
+      );
       if (
         trustDirectoryQuorumPromotionBaselineIds.has(baseline.id) ||
         trustDirectoryQuorumPromotionBaselineKeys.has(baselineKey) ||
@@ -7616,6 +7696,45 @@ export class LocalStore {
       trustDirectoryQuorumPromotionBaselineKeys.add(baselineKey);
       latestTrustDirectoryQuorumPromotionBaseline = baseline;
       Object.assign(input, baseline);
+    }
+    if (
+      state.receiptTrustAnchorDirectoryQuorumActivationDecisions.length >
+      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
+    ) {
+      throw new Error(
+        "Persisted receipt trust anchor directory quorum activation decision limit is exceeded",
+      );
+    }
+    const trustDirectoryQuorumActivationDecisionIds = new Set<string>();
+    const trustDirectoryQuorumActivationDecisionEnvelopeHashes =
+      new Set<string>();
+    for (const input of state.receiptTrustAnchorDirectoryQuorumActivationDecisions) {
+      const record =
+        validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord(
+          input,
+        );
+      if (
+        trustDirectoryQuorumActivationDecisionIds.has(record.id) ||
+        trustDirectoryQuorumActivationDecisionEnvelopeHashes.has(
+          record.envelope.contentSha256,
+        ) ||
+        !state.threads.some(
+          (thread) => thread.id === record.signedByThreadId,
+        ) ||
+        !state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.some(
+          (baseline) =>
+            baseline.contentSha256 === record.baseline.contentSha256,
+        )
+      ) {
+        throw new Error(
+          `Persisted receipt trust anchor directory quorum activation decision is invalid: ${record.id}`,
+        );
+      }
+      trustDirectoryQuorumActivationDecisionIds.add(record.id);
+      trustDirectoryQuorumActivationDecisionEnvelopeHashes.add(
+        record.envelope.contentSha256,
+      );
+      Object.assign(input, record);
     }
     const qualificationBaselineIds = new Set<string>();
     const qualificationBaselineKeys = new Set<string>();
@@ -7732,6 +7851,33 @@ export class LocalStore {
       baseline,
     );
     return baseline;
+  }
+
+  private appendReceiptTrustAnchorDirectoryQuorumActivationDecision(
+    threadId: string,
+    result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  ): ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord {
+    if (
+      this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.length >=
+      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
+    ) {
+      throw new Error(
+        `Receipt trust anchor directory quorum activation exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS} decisions`,
+      );
+    }
+    const record =
+      createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord({
+        signedByThreadId: threadId,
+        baseline: result.baseline,
+        verification: result.verification,
+        policyReview: result.policyReview,
+        sourceAlignment: result.sourceAlignment,
+        envelope: result.envelope,
+      });
+    this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.push(
+      record,
+    );
+    return record;
   }
 
   private createRunRecord(
@@ -7968,6 +8114,9 @@ export class LocalStore {
       !Array.isArray(parsed.receiptTrustAnchorDirectorySubscriptions) ||
       !Array.isArray(
         parsed.receiptTrustAnchorDirectoryQuorumPromotionBaselines,
+      ) ||
+      !Array.isArray(
+        parsed.receiptTrustAnchorDirectoryQuorumActivationDecisions,
       ) ||
       !Array.isArray(parsed.extensionPublisherTrustAnchors) ||
       !Array.isArray(parsed.evaluationQualificationBaselines) ||

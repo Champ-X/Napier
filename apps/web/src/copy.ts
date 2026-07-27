@@ -270,6 +270,13 @@ export const copy = {
       importingBaseline: "Importing...",
       signBaselineActivation: "Sign activation",
       signingBaselineActivation: "Signing...",
+      exportBaselineActivationHistory: "Export activation history",
+      exportingBaselineActivationHistory: "Exporting history...",
+      verifyBaselineActivationHistory: "Verify activation history",
+      verifyingBaselineActivationHistory: "Checking history...",
+      baselineActivationHistory: "Activation history",
+      baselineActivationHistoryApproved: "approved decisions",
+      baselineActivationHistoryBaselines: "baselines",
       baselineUnknownSource: "Archived source",
       baselineSourceStatuses: {
         aligned: "Current last-good directory matches",
@@ -291,6 +298,11 @@ export const copy = {
       baselineActivationDecisionStatuses: {
         approved: "Activation approved",
         rejected: "Activation rejected",
+      },
+      baselineActivationHistoryVerificationStatuses: {
+        valid: "History matches local state",
+        divergent: "History diverges from local state",
+        invalid: "History invalid",
       },
       safety:
         "Private keys are read only at signing time. Subscription URLs stay in the local workspace snapshot for refresh; Ledger events expose only URL fingerprints and evidence hashes.",

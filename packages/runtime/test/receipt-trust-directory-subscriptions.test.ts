@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { canonicalJson } from "../src/ed25519.js";
 import {
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectorySubscription,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -434,20 +435,21 @@ describe("receipt trust anchor directory subscriptions", () => {
     );
 
     const dissentingDirectory = createDirectory(thread.id);
-    const dissenting = await store.createReceiptTrustAnchorDirectorySubscription(
-      {
-        threadId: thread.id,
-        label: "Dissenting trust feed",
-        sourceUrl: "https://dissent.example.test/anchors.json",
-        refreshIntervalMs: 300_000,
-        policy,
-      },
-      createDiscovery(
-        "https://dissent.example.test/anchors.json",
-        dissentingDirectory,
-        policy,
-      ),
-    );
+    const dissenting =
+      await store.createReceiptTrustAnchorDirectorySubscription(
+        {
+          threadId: thread.id,
+          label: "Dissenting trust feed",
+          sourceUrl: "https://dissent.example.test/anchors.json",
+          refreshIntervalMs: 300_000,
+          policy,
+        },
+        createDiscovery(
+          "https://dissent.example.test/anchors.json",
+          dissentingDirectory,
+          policy,
+        ),
+      );
     const split = store.getReceiptTrustAnchorDirectorySubscriptionQuorum({
       minimumSources: 3,
       minimumAgreementCount: 3,
@@ -516,39 +518,41 @@ describe("receipt trust anchor directory subscriptions", () => {
       signingAnchor,
     );
     const publisherSha256 = sha256("Napier Trust Registry");
-    const metadataPinned = store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
-      {
-        minimumMetadataPublisherCount: 1,
-        requiredMetadataPublisherSha256s: [publisherSha256],
-      },
-      [
+    const metadataPinned =
+      store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
         {
-          subscriptionId: left.id,
-          status: "trusted",
-          signatureValid: true,
-          integrityValid: true,
-          directoryBindingValid: true,
-          diagnosticCount: 0,
-          diagnosticsSha256: sha256("[]"),
-          publisherSha256,
-          signerKeyId: signingAnchor.keyId,
-          envelopeSha256: metadataEnvelope.contentSha256,
-          verificationSha256: "f".repeat(64),
+          minimumMetadataPublisherCount: 1,
+          requiredMetadataPublisherSha256s: [publisherSha256],
         },
-      ],
-    );
+        [
+          {
+            subscriptionId: left.id,
+            status: "trusted",
+            signatureValid: true,
+            integrityValid: true,
+            directoryBindingValid: true,
+            diagnosticCount: 0,
+            diagnosticsSha256: sha256("[]"),
+            publisherSha256,
+            signerKeyId: signingAnchor.keyId,
+            envelopeSha256: metadataEnvelope.contentSha256,
+            verificationSha256: "f".repeat(64),
+          },
+        ],
+      );
     expect(metadataPinned).toEqual(
       expect.objectContaining({
         status: "agreed",
         diagnostics: [],
         agreementMetadataPublisherCount: 1,
-        agreementMetadataPublisherSetSha256: expect.stringMatching(
-          /^[a-f0-9]{64}$/,
-        ),
+        agreementMetadataPublisherSetSha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
     expect(
-      metadataPinned.sources.find((source) => source.subscriptionId === left.id),
+      metadataPinned.sources.find(
+        (source) => source.subscriptionId === left.id,
+      ),
     ).toEqual(
       expect.objectContaining({
         metadata: expect.objectContaining({
@@ -595,7 +599,8 @@ describe("receipt trust anchor directory subscriptions", () => {
           promotedByThreadId: thread.id,
           selectedAnchorSetSha256: directory.anchorSetSha256,
           selectedDirectorySha256: directory.contentSha256,
-          selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
+          selectedSubscriptionSetSha256:
+            promotion.selectedSubscriptionSetSha256,
           selectedMetadataEnvelopeSetSha256:
             promotion.selectedMetadataEnvelopeSetSha256,
           envelope: expect.objectContaining({
@@ -709,6 +714,108 @@ describe("receipt trust anchor directory subscriptions", () => {
     expect(
       verifyTrustedReceiptEnvelope(activationEnvelope, [signingAnchor]),
     ).toEqual(expect.objectContaining({ status: "trusted" }));
+    const activationResult = {
+      baseline: baselineResult.baseline,
+      verification: baselineVerification,
+      policyReview: importPolicyReview,
+      sourceAlignment,
+      envelope: activationEnvelope,
+    };
+    const activationRecord =
+      await store.recordReceiptTrustAnchorDirectoryQuorumActivationDecision(
+        thread.id,
+        activationResult,
+      );
+    expect(activationRecord).toEqual(
+      expect.objectContaining({
+        id: expect.stringMatching(/^trustqad_[a-z0-9]{8,80}$/),
+        signedByThreadId: thread.id,
+        baseline: baselineResult.baseline,
+        envelope: activationEnvelope,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    await expect(
+      store.recordReceiptTrustAnchorDirectoryQuorumActivationDecision(
+        thread.id,
+        activationResult,
+      ),
+    ).resolves.toEqual(activationRecord);
+    expect(
+      store.listReceiptTrustAnchorDirectoryQuorumActivationDecisionRecords(),
+    ).toEqual([activationRecord]);
+    const activationHistory =
+      store.getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory();
+    expect(activationHistory).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision-history",
+        decisionCount: 1,
+        approvedCount: 1,
+        rejectedCount: 0,
+        distinctBaselineCount: 1,
+        latestDecisionAt: activationRecord.createdAt,
+        records: [activationRecord],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      store.verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+        activationHistory,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256: activationHistory.contentSha256,
+        currentContentSha256: activationHistory.contentSha256,
+        declaredDecisionCount: 1,
+        currentDecisionCount: 1,
+      }),
+    );
+    const reexportedActivationHistory =
+      createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+        [activationRecord],
+        "2026-07-27T00:00:00.000Z",
+      );
+    expect(reexportedActivationHistory.contentSha256).toBe(
+      activationHistory.contentSha256,
+    );
+    const divergentActivationHistory =
+      createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+        [],
+        "2026-07-27T00:00:00.000Z",
+      );
+    expect(
+      store.verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+        divergentActivationHistory,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        diagnostics: expect.arrayContaining([
+          "current_history_mismatch",
+          "decision_set_mismatch",
+          "decision_count_mismatch",
+        ]),
+      }),
+    );
+    const tamperedActivationHistory = structuredClone(activationHistory);
+    tamperedActivationHistory.records[0] = {
+      ...tamperedActivationHistory.records[0]!,
+      id: "trustqad_tampered",
+    };
+    expect(
+      store.verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+        tamperedActivationHistory,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["history_invalid"],
+        currentContentSha256: activationHistory.contentSha256,
+        currentDecisionCount: 1,
+      }),
+    );
     const imported =
       await importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
         importThread.id,
@@ -728,7 +835,8 @@ describe("receipt trust anchor directory subscriptions", () => {
           promotedByThreadId: importThread.id,
           selectedAnchorSetSha256: directory.anchorSetSha256,
           selectedDirectorySha256: directory.contentSha256,
-          selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
+          selectedSubscriptionSetSha256:
+            promotion.selectedSubscriptionSetSha256,
           envelope: expect.objectContaining({
             contentSha256: promotionEnvelope.contentSha256,
           }),
@@ -798,23 +906,24 @@ describe("receipt trust anchor directory subscriptions", () => {
       createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(split, []),
     ).toThrow("requires an agreed quorum");
 
-    const missingPublisher = store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
-      {
-        requiredMetadataPublisherSha256s: ["c".repeat(64)],
-      },
-      [
+    const missingPublisher =
+      store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
         {
-          subscriptionId: left.id,
-          status: "trusted",
-          signatureValid: true,
-          integrityValid: true,
-          directoryBindingValid: true,
-          diagnosticCount: 0,
-          diagnosticsSha256: sha256("[]"),
-          publisherSha256,
+          requiredMetadataPublisherSha256s: ["c".repeat(64)],
         },
-      ],
-    );
+        [
+          {
+            subscriptionId: left.id,
+            status: "trusted",
+            signatureValid: true,
+            integrityValid: true,
+            directoryBindingValid: true,
+            diagnosticCount: 0,
+            diagnosticsSha256: sha256("[]"),
+            publisherSha256,
+          },
+        ],
+      );
     expect(missingPublisher).toEqual(
       expect.objectContaining({
         status: "policy_failed",

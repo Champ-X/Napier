@@ -475,7 +475,15 @@ records approved/rejected diagnostics plus hashes for the baseline,
 verification, policy review, source alignment, selected origins, metadata
 publishers, and metadata signer keys. Rejected decisions are still signed so
 failed activation attempts remain externally auditable without mutating local
-trust state.
+trust state. The Store then records each trusted activation decision in a
+bounded append-only history keyed by the signed envelope hash. History export
+uses a stable content hash over the decision records and aggregate set hashes,
+while keeping `generatedAt` as export metadata only, so the same approval set
+can be re-exported and still verify across workspaces. The no-store history
+verification endpoint recomputes the uploaded history, compares it with the
+current local projection, and reports `valid`, `divergent`, or `invalid`
+diagnostics without persisting uploaded content. The Receipt Trust Desk exposes
+both export and upload verification beside the activation workbench.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2435,9 +2443,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- durable activation-decision history and replay, so signed baseline approvals
-  can be exported, verified, and compared across workspaces before trust-state
-  promotion.
+- policy-governed activation application, so verified activation-decision
+  history can be CAS-promoted into an active verifier-set selection without
+  bypassing source-drift evidence.
 
 ### Layer 3: Extension fabric
 

@@ -3684,8 +3684,7 @@ export interface SignTrustedReceiptRequest {
   threadId?: string;
 }
 
-export interface SignReceiptTrustAnchorDirectoryMetadataRequest
-  extends SignTrustedReceiptRequest {
+export interface SignReceiptTrustAnchorDirectoryMetadataRequest extends SignTrustedReceiptRequest {
   threadId: string;
   publisher: string;
   sourceUrlSha256?: string;
@@ -3895,8 +3894,7 @@ export interface EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
 export type PromoteReceiptTrustAnchorDirectoryQuorumRequest =
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest;
 
-export interface PromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest
-  extends EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
+export interface PromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest extends EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
   threadId: string;
   trustAnchorId: string;
 }
@@ -3930,8 +3928,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumSourceMetadata {
   verificationSha256?: string;
 }
 
-export interface ReceiptTrustAnchorDirectoryQuorumMetadataEvidence
-  extends ReceiptTrustAnchorDirectoryQuorumSourceMetadata {
+export interface ReceiptTrustAnchorDirectoryQuorumMetadataEvidence extends ReceiptTrustAnchorDirectoryQuorumSourceMetadata {
   subscriptionId: string;
 }
 
@@ -4038,8 +4035,7 @@ export interface VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest
   trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
-export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest
-  extends VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest {
+export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest extends VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest {
   threadId: string;
   expectedCurrentBaselineSha256: string;
   importPolicy?: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy;
@@ -4078,8 +4074,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyP
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReviewStatus =
-  | "accepted"
-  | "rejected";
+  "accepted" | "rejected";
 
 export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview {
   kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-import-policy-review";
@@ -4208,8 +4203,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt {
   contentSha256: string;
 }
 
-export interface SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest
-  extends SignTrustedReceiptRequest {
+export interface SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest extends SignTrustedReceiptRequest {
   threadId: string;
   trustAnchorId: string;
   baselineId?: string;
@@ -4224,6 +4218,55 @@ export interface SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult {
   policyReview: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
   sourceAlignment: ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment;
   envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt>;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord extends SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult {
+  id: string;
+  signedByThreadId: string;
+  createdAt: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision-history";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  decisionCount: number;
+  approvedCount: number;
+  rejectedCount: number;
+  distinctBaselineCount: number;
+  decisionSetSha256: string;
+  baselineSetSha256: string;
+  policyReviewSetSha256: string;
+  sourceAlignmentSetSha256: string;
+  latestDecisionAt?: string;
+  records: ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[];
+  contentSha256: string;
+}
+
+export interface VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest {
+  history: unknown;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerificationStatus =
+  "valid" | "divergent" | "invalid";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision-history-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  verifiedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerificationStatus;
+  diagnostics: string[];
+  declaredContentSha256?: string;
+  recomputedContentSha256?: string;
+  currentContentSha256: string;
+  declaredDecisionSetSha256?: string;
+  currentDecisionSetSha256: string;
+  declaredDecisionCount?: number;
+  currentDecisionCount: number;
+  contentSha256: string;
 }
 
 export interface EvaluationQualificationBaseline {

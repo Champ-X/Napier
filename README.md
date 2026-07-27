@@ -1400,7 +1400,16 @@ signs that activation evidence as a
 receipt binds the local baseline, verification receipt, policy review, source
 alignment projection, metadata publisher set, metadata signer set, and
 approved/rejected diagnostics into one portable envelope; the Web desk can sign
-and download it from the activation workbench.
+and download it from the activation workbench. Signed decisions are also
+retained as durable local records. `GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions`
+exports a stable hash-bound activation history with decision counts,
+baseline/source/policy set hashes, and the signed decision records. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify`
+performs no-store verification of an uploaded history against the current local
+projection, returning `valid`, `divergent`, or `invalid` diagnostics. The Web
+workbench can export that history and verify uploaded histories beside the
+activation decision receipt.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

@@ -309,6 +309,16 @@ All notable changes to Napier are recorded here.
   source-alignment projection as a
   `receipt_trust_anchor_directory_quorum_activation_decision` trusted receipt,
   returning a portable approved/rejected envelope and hash-only Ledger event.
+  Signed activation decisions are now persisted as bounded local records keyed
+  by envelope hash. `GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions`
+  exports a stable activation-decision history with aggregate set hashes and
+  signed records, while `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify`
+  verifies uploaded histories against the current local projection with
+  `valid`, `divergent`, and `invalid` diagnostics. The Receipt Trust Desk can
+  export the durable history and verify uploaded history JSON from the
+  activation workbench.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

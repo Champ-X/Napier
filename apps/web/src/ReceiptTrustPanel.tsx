@@ -20,6 +20,8 @@ import type {
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectorySubscription,
@@ -38,6 +40,7 @@ import {
   evaluateReceiptTrustAnchorDirectoryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
+  getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
   listReceiptTrustAnchorDirectorySubscriptions,
@@ -46,6 +49,7 @@ import {
   signReceiptTrustAnchorDirectoryQuorumActivationDecision,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceipt,
@@ -106,6 +110,13 @@ export default function ReceiptTrustPanel({
     useState<ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult>();
   const [baselineActivationDecision, setBaselineActivationDecision] =
     useState<SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult>();
+  const [baselineActivationHistory, setBaselineActivationHistory] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory>();
+  const [
+    baselineActivationHistoryVerification,
+    setBaselineActivationHistoryVerification,
+  ] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification>();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -167,11 +178,13 @@ export default function ReceiptTrustPanel({
     void Promise.all([
       listReceiptTrustAnchorDirectorySubscriptions(),
       listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
+      getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(),
     ])
-      .then(([subscriptions, baselines]) => {
+      .then(([subscriptions, baselines, activationHistory]) => {
         if (cancelled) return;
         setDirectorySubscriptions(subscriptions);
         setPromotionBaselines(baselines);
+        setBaselineActivationHistory(activationHistory);
         const active = subscriptions
           .filter(
             (subscription) =>
@@ -533,7 +546,9 @@ export default function ReceiptTrustPanel({
     }
   }
 
-  async function importQuorumBaselineFile(file: File | undefined): Promise<void> {
+  async function importQuorumBaselineFile(
+    file: File | undefined,
+  ): Promise<void> {
     if (!file) return;
     setBusyId("import-quorum-baseline");
     setError(undefined);
@@ -581,6 +596,7 @@ export default function ReceiptTrustPanel({
     setBusyId("sign-quorum-baseline-activation");
     setError(undefined);
     setBaselineActivationDecision(undefined);
+    setBaselineActivationHistoryVerification(undefined);
     try {
       const result =
         await signReceiptTrustAnchorDirectoryQuorumActivationDecision({
@@ -607,8 +623,60 @@ export default function ReceiptTrustPanel({
         result.envelope,
         `napier-quorum-baseline-activation-${result.envelope.receipt.contentSha256.slice(0, 12)}.json`,
       );
+      try {
+        await refreshBaselineActivationHistory();
+      } catch (historyError) {
+        setError(toErrorMessage(historyError));
+      }
     } catch (signError) {
       setError(toErrorMessage(signError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function refreshBaselineActivationHistory(): Promise<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory> {
+    const history =
+      await getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory();
+    setBaselineActivationHistory(history);
+    return history;
+  }
+
+  async function exportBaselineActivationHistory(): Promise<void> {
+    setBusyId("export-baseline-activation-history");
+    setError(undefined);
+    try {
+      const history = await refreshBaselineActivationHistory();
+      downloadJson(
+        history,
+        `napier-quorum-baseline-activation-history-${history.contentSha256.slice(0, 12)}.json`,
+      );
+    } catch (historyError) {
+      setError(toErrorMessage(historyError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function verifyBaselineActivationHistoryFile(
+    file: File | undefined,
+  ): Promise<void> {
+    if (!file) return;
+    setBusyId("verify-baseline-activation-history");
+    setError(undefined);
+    setBaselineActivationHistoryVerification(undefined);
+    try {
+      if (file.size > MAX_TRUSTED_RECEIPT_FILE_BYTES) {
+        throw new Error(copy.lab.trust.errors.tooLarge);
+      }
+      const history = JSON.parse(await file.text()) as unknown;
+      const verification =
+        await verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory({
+          history,
+        });
+      setBaselineActivationHistoryVerification(verification);
+    } catch (historyError) {
+      setError(toErrorMessage(historyError));
     } finally {
       setBusyId(undefined);
     }
@@ -640,6 +708,7 @@ export default function ReceiptTrustPanel({
     setBaselineVerification(undefined);
     setBaselineImportResult(undefined);
     setBaselineActivationDecision(undefined);
+    setBaselineActivationHistoryVerification(undefined);
   }
 
   function clearExternalDirectory(): void {
@@ -1036,7 +1105,9 @@ export default function ReceiptTrustPanel({
               </strong>
               <small>{copy.lab.trust.baselineWorkbenchBody}</small>
             </span>
-            <code>{baselineActivation.baselineCount.toString().padStart(2, "0")}</code>
+            <code>
+              {baselineActivation.baselineCount.toString().padStart(2, "0")}
+            </code>
           </header>
           {latestBaseline ? (
             <>
@@ -1112,11 +1183,7 @@ export default function ReceiptTrustPanel({
                             copy.lab.trust.baselineUnknownSource}
                         </strong>
                         <small>
-                          {
-                            copy.lab.trust.baselineSourceStatuses[
-                              source.status
-                            ]
-                          }
+                          {copy.lab.trust.baselineSourceStatuses[source.status]}
                         </small>
                       </span>
                       <code title={source.sourceOriginSha256}>
@@ -1234,7 +1301,9 @@ export default function ReceiptTrustPanel({
                       12,
                     )}
                   </code>
-                  <code title={baselineActivationDecision.envelope.contentSha256}>
+                  <code
+                    title={baselineActivationDecision.envelope.contentSha256}
+                  >
                     {baselineActivationDecision.envelope.contentSha256.slice(
                       0,
                       12,
@@ -1270,6 +1339,110 @@ export default function ReceiptTrustPanel({
               </div>
             </>
           )}
+          <div className="receipt-baseline-actions">
+            <button
+              type="button"
+              disabled={Boolean(busyId)}
+              onClick={() => void exportBaselineActivationHistory()}
+            >
+              <Download size={10} aria-hidden="true" />
+              {busyId === "export-baseline-activation-history"
+                ? copy.lab.trust.exportingBaselineActivationHistory
+                : copy.lab.trust.exportBaselineActivationHistory}
+            </button>
+            <label>
+              <Upload size={10} aria-hidden="true" />
+              <span>
+                {busyId === "verify-baseline-activation-history"
+                  ? copy.lab.trust.verifyingBaselineActivationHistory
+                  : copy.lab.trust.verifyBaselineActivationHistory}
+              </span>
+              <input
+                type="file"
+                accept="application/json,.json"
+                disabled={Boolean(busyId)}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  void verifyBaselineActivationHistoryFile(file);
+                }}
+              />
+            </label>
+          </div>
+          {baselineActivationHistory ? (
+            <output className="receipt-baseline-policy" aria-live="polite">
+              <ShieldCheck size={11} aria-hidden="true" />
+              <span>
+                <strong>{copy.lab.trust.baselineActivationHistory}</strong>
+                <small>
+                  {baselineActivationHistory.approvedCount}/
+                  {baselineActivationHistory.decisionCount}{" "}
+                  {copy.lab.trust.baselineActivationHistoryApproved} ·{" "}
+                  {baselineActivationHistory.distinctBaselineCount}{" "}
+                  {copy.lab.trust.baselineActivationHistoryBaselines}
+                </small>
+              </span>
+              <code title={baselineActivationHistory.decisionSetSha256}>
+                {baselineActivationHistory.decisionSetSha256.slice(0, 12)}
+              </code>
+              {baselineActivationHistory.latestDecisionAt ? (
+                <code title={baselineActivationHistory.latestDecisionAt}>
+                  {baselineActivationHistory.latestDecisionAt
+                    .slice(0, 16)
+                    .replace("T", " ")}
+                </code>
+              ) : null}
+            </output>
+          ) : null}
+          {baselineActivationHistoryVerification ? (
+            <output
+              className={`receipt-baseline-policy policy-${
+                baselineActivationHistoryVerification.status === "valid"
+                  ? "approved"
+                  : "rejected"
+              }`}
+              aria-live="polite"
+            >
+              {baselineActivationHistoryVerification.status === "valid" ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {
+                    copy.lab.trust
+                      .baselineActivationHistoryVerificationStatuses[
+                      baselineActivationHistoryVerification.status
+                    ]
+                  }
+                </strong>
+                <small>
+                  {baselineActivationHistoryVerification.diagnostics.length > 0
+                    ? baselineActivationHistoryVerification.diagnostics.join(
+                        ", ",
+                      )
+                    : copy.lab.trust.noDiagnostics}
+                </small>
+              </span>
+              <code title={baselineActivationHistoryVerification.contentSha256}>
+                {baselineActivationHistoryVerification.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={
+                  baselineActivationHistoryVerification.currentContentSha256
+                }
+              >
+                {baselineActivationHistoryVerification.currentContentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+            </output>
+          ) : null}
         </section>
         {externalDirectory ? (
           <output className="receipt-directory-active" aria-live="polite">

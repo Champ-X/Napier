@@ -10,6 +10,9 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   type ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+  type ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
   type ReceiptTrustAnchorDirectoryQuorumActivationSource,
   type ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
@@ -54,6 +57,7 @@ export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT = 10;
 export const MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES = 20;
+export const MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS = 50;
 export const MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 export const MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS =
   30 * 24 * 60 * 60 * 1_000;
@@ -418,7 +422,7 @@ export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
   }
   const expectedAnchorSetMismatched = Boolean(
     normalizedPolicy.expectedAnchorSetSha256 &&
-      winner?.anchorSetSha256 !== normalizedPolicy.expectedAnchorSetSha256,
+    winner?.anchorSetSha256 !== normalizedPolicy.expectedAnchorSetSha256,
   );
   const quorumAgreed =
     agreementCount >= normalizedPolicy.minimumAgreementCount &&
@@ -606,8 +610,7 @@ export function validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
     new Set(selectedMetadata.map((metadata) => metadata.envelopeSha256)),
   ).sort();
   if (
-    receipt.kind !==
-      "napier.receipt-trust-anchor-directory-quorum-promotion" ||
+    receipt.kind !== "napier.receipt-trust-anchor-directory-quorum-promotion" ||
     receipt.schemaVersion !== 1 ||
     receipt.apiVersion !== NAPIER_API_VERSION ||
     !validTimestamp(receipt.generatedAt) ||
@@ -665,8 +668,7 @@ export function createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
     envelopeInput,
   ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>;
   if (
-    envelope.receiptKind !==
-    "receipt_trust_anchor_directory_quorum_promotion"
+    envelope.receiptKind !== "receipt_trust_anchor_directory_quorum_promotion"
   ) {
     throw new Error(
       "Receipt trust anchor directory quorum promotion baseline requires a promotion receipt",
@@ -692,9 +694,8 @@ export function createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
   };
   return {
     ...content,
-    contentSha256: hashReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-      content,
-    ),
+    contentSha256:
+      hashReceiptTrustAnchorDirectoryQuorumPromotionBaseline(content),
   };
 }
 
@@ -789,7 +790,8 @@ export function verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
   const verifiedAt = nowIso();
   let baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
   try {
-    baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(value);
+    baseline =
+      validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(value);
   } catch {
     return createQuorumPromotionBaselineVerification({
       verifiedAt,
@@ -850,7 +852,8 @@ export function reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPo
     );
   let baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
   try {
-    baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(value);
+    baseline =
+      validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(value);
   } catch {
     return createQuorumPromotionBaselineImportPolicyReview({
       reviewedAt,
@@ -1069,10 +1072,11 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt
     input.policyReview,
     baseline,
   );
-  const sourceAlignment = validateReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
-    input.sourceAlignment,
-    baseline,
-  );
+  const sourceAlignment =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+      input.sourceAlignment,
+      baseline,
+    );
   const diagnostics: string[] = [];
   if (
     verification.status !== "trusted" ||
@@ -1121,7 +1125,8 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt
     schemaVersion: 1 as const,
     apiVersion: NAPIER_API_VERSION,
     generatedAt,
-    decision: diagnostics.length === 0 ? ("approved" as const) : ("rejected" as const),
+    decision:
+      diagnostics.length === 0 ? ("approved" as const) : ("rejected" as const),
     diagnostics,
     baselineId: baseline.id,
     baselineSha256: baseline.contentSha256,
@@ -1237,6 +1242,338 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecei
   return structuredClone(receipt);
 }
 
+export function createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord(
+  input: {
+    signedByThreadId: string;
+    baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+    verification: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+    policyReview: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
+    sourceAlignment: ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment;
+    envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt>;
+  },
+  createdAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord {
+  const createdAt = requireTimestamp(
+    createdAtInput,
+    "anchor directory quorum activation decision record time",
+  );
+  const baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+    input.baseline,
+  );
+  const verification = validateQuorumPromotionBaselineVerification(
+    input.verification,
+    baseline,
+  );
+  const policyReview = validateQuorumPromotionBaselineImportPolicyReview(
+    input.policyReview,
+    baseline,
+  );
+  const sourceAlignment =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+      input.sourceAlignment,
+      baseline,
+    );
+  const envelope = validateTrustedReceiptEnvelope(
+    input.envelope,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt>;
+  if (
+    envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_decision" ||
+    envelope.receipt.baselineSha256 !== baseline.contentSha256 ||
+    envelope.receipt.verificationSha256 !== verification.contentSha256 ||
+    envelope.receipt.policyReviewSha256 !== policyReview.contentSha256 ||
+    envelope.receipt.sourceAlignmentSha256 !== sourceAlignment.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision record envelope binding is invalid",
+    );
+  }
+  const content = {
+    id: createId("trustqad"),
+    signedByThreadId: input.signedByThreadId,
+    baseline,
+    verification,
+    policyReview,
+    sourceAlignment,
+    envelope,
+    createdAt,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision record is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "id",
+    "signedByThreadId",
+    "baseline",
+    "verification",
+    "policyReview",
+    "sourceAlignment",
+    "envelope",
+    "createdAt",
+    "contentSha256",
+  ]);
+  const record =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord;
+  const baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+    record.baseline,
+  );
+  const verification = validateQuorumPromotionBaselineVerification(
+    record.verification,
+    baseline,
+  );
+  const policyReview = validateQuorumPromotionBaselineImportPolicyReview(
+    record.policyReview,
+    baseline,
+  );
+  const sourceAlignment =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+      record.sourceAlignment,
+      baseline,
+    );
+  const envelope = validateTrustedReceiptEnvelope(
+    record.envelope,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt>;
+  if (
+    !RESOURCE_ID_PATTERN.test(record.id) ||
+    !RESOURCE_ID_PATTERN.test(record.signedByThreadId) ||
+    !validTimestamp(record.createdAt) ||
+    !SHA256_PATTERN.test(record.contentSha256) ||
+    envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_decision" ||
+    envelope.receipt.baselineSha256 !== baseline.contentSha256 ||
+    envelope.receipt.verificationSha256 !== verification.contentSha256 ||
+    envelope.receipt.policyReviewSha256 !== policyReview.contentSha256 ||
+    envelope.receipt.sourceAlignmentSha256 !== sourceAlignment.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision record is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...record,
+    baseline,
+    verification,
+    policyReview,
+    sourceAlignment,
+    envelope,
+  };
+  if (sha256(canonicalJson(content)) !== record.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision record hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...content,
+    contentSha256: record.contentSha256,
+  });
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+  recordsInput: readonly ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[],
+  generatedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory {
+  const generatedAt = requireTimestamp(
+    generatedAtInput,
+    "anchor directory quorum activation decision history time",
+  );
+  const records = recordsInput
+    .map(validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord)
+    .sort((left, right) => {
+      const createdOrder = left.createdAt.localeCompare(right.createdAt);
+      if (createdOrder !== 0) return createdOrder;
+      return left.id.localeCompare(right.id);
+    });
+  const decisionHashes = records
+    .map((record) => record.envelope.receipt.contentSha256)
+    .sort();
+  const baselineHashes = records
+    .map((record) => record.baseline.contentSha256)
+    .sort();
+  const policyReviewHashes = records
+    .map((record) => record.policyReview.contentSha256)
+    .sort();
+  const sourceAlignmentHashes = records
+    .map((record) => record.sourceAlignment.contentSha256)
+    .sort();
+  const latestDecisionAt = records.at(-1)?.createdAt;
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision-history" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    decisionCount: records.length,
+    approvedCount: records.filter(
+      (record) => record.envelope.receipt.decision === "approved",
+    ).length,
+    rejectedCount: records.filter(
+      (record) => record.envelope.receipt.decision === "rejected",
+    ).length,
+    distinctBaselineCount: new Set(baselineHashes).size,
+    decisionSetSha256: sha256(canonicalJson(decisionHashes)),
+    baselineSetSha256: sha256(canonicalJson(baselineHashes)),
+    policyReviewSetSha256: sha256(canonicalJson(policyReviewHashes)),
+    sourceAlignmentSetSha256: sha256(canonicalJson(sourceAlignmentHashes)),
+    ...(latestDecisionAt ? { latestDecisionAt } : {}),
+    records,
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision history is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "decisionCount",
+    "approvedCount",
+    "rejectedCount",
+    "distinctBaselineCount",
+    "decisionSetSha256",
+    "baselineSetSha256",
+    "policyReviewSetSha256",
+    "sourceAlignmentSetSha256",
+    "latestDecisionAt",
+    "records",
+    "contentSha256",
+  ]);
+  const history =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory;
+  if (
+    history.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-decision-history" ||
+    history.schemaVersion !== 1 ||
+    history.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(history.generatedAt) ||
+    !Array.isArray(history.records) ||
+    history.records.length !== history.decisionCount ||
+    !nonNegativeInteger(history.approvedCount) ||
+    !nonNegativeInteger(history.rejectedCount) ||
+    !nonNegativeInteger(history.distinctBaselineCount) ||
+    !SHA256_PATTERN.test(history.decisionSetSha256) ||
+    !SHA256_PATTERN.test(history.baselineSetSha256) ||
+    !SHA256_PATTERN.test(history.policyReviewSetSha256) ||
+    !SHA256_PATTERN.test(history.sourceAlignmentSetSha256) ||
+    !optionalTimestamp(history.latestDecisionAt) ||
+    !SHA256_PATTERN.test(history.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision history is invalid",
+    );
+  }
+  const observed =
+    createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+      history.records,
+      history.generatedAt,
+    );
+  if (
+    observed.decisionCount !== history.decisionCount ||
+    observed.approvedCount !== history.approvedCount ||
+    observed.rejectedCount !== history.rejectedCount ||
+    observed.distinctBaselineCount !== history.distinctBaselineCount ||
+    observed.decisionSetSha256 !== history.decisionSetSha256 ||
+    observed.baselineSetSha256 !== history.baselineSetSha256 ||
+    observed.policyReviewSetSha256 !== history.policyReviewSetSha256 ||
+    observed.sourceAlignmentSetSha256 !== history.sourceAlignmentSetSha256 ||
+    observed.latestDecisionAt !== history.latestDecisionAt ||
+    observed.contentSha256 !== history.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision history hash mismatch",
+    );
+  }
+  return observed;
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+  value: unknown,
+  currentHistory: ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+): ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification {
+  const verifiedAt = nowIso();
+  let declared: ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory;
+  try {
+    declared =
+      validateReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(value);
+  } catch {
+    return createQuorumActivationDecisionHistoryVerification({
+      verifiedAt,
+      status: "invalid",
+      diagnostics: ["history_invalid"],
+      currentHistory,
+    });
+  }
+  const diagnostics: string[] = [];
+  if (declared.contentSha256 !== currentHistory.contentSha256) {
+    diagnostics.push("current_history_mismatch");
+  }
+  if (declared.decisionSetSha256 !== currentHistory.decisionSetSha256) {
+    diagnostics.push("decision_set_mismatch");
+  }
+  if (declared.decisionCount !== currentHistory.decisionCount) {
+    diagnostics.push("decision_count_mismatch");
+  }
+  return createQuorumActivationDecisionHistoryVerification({
+    verifiedAt,
+    status: diagnostics.length === 0 ? "valid" : "divergent",
+    diagnostics,
+    declared,
+    currentHistory,
+  });
+}
+
+function createQuorumActivationDecisionHistoryVerification(input: {
+  verifiedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification["status"];
+  diagnostics: string[];
+  declared?: ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory;
+  currentHistory: ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory;
+}): ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification {
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision-history-verification" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    verifiedAt: input.verifiedAt,
+    status: input.status,
+    diagnostics: input.diagnostics,
+    ...(input.declared
+      ? {
+          declaredContentSha256: input.declared.contentSha256,
+          recomputedContentSha256: input.declared.contentSha256,
+          declaredDecisionSetSha256: input.declared.decisionSetSha256,
+          declaredDecisionCount: input.declared.decisionCount,
+        }
+      : {}),
+    currentContentSha256: input.currentHistory.contentSha256,
+    currentDecisionSetSha256: input.currentHistory.decisionSetSha256,
+    currentDecisionCount: input.currentHistory.decisionCount,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
 export function validateReceiptTrustAnchorDirectoryQuorum(
   value: unknown,
 ): ReceiptTrustAnchorDirectoryQuorum {
@@ -1302,14 +1639,17 @@ export function validateReceiptTrustAnchorDirectoryQuorum(
   ) {
     throw new Error("Receipt trust anchor directory quorum is invalid");
   }
-  const { generatedAt: _generatedAt, contentSha256: _contentSha256, ...content } =
-    {
-      ...quorum,
-      policy,
-      sources,
-      candidates,
-      ...(selectedDirectory ? { selectedDirectory } : {}),
-    };
+  const {
+    generatedAt: _generatedAt,
+    contentSha256: _contentSha256,
+    ...content
+  } = {
+    ...quorum,
+    policy,
+    sources,
+    candidates,
+    ...(selectedDirectory ? { selectedDirectory } : {}),
+  };
   if (sha256(canonicalJson(content)) !== quorum.contentSha256) {
     throw new Error("Receipt trust anchor directory quorum hash mismatch");
   }
@@ -1745,9 +2085,7 @@ function normalizeReceiptTrustAnchorDirectoryQuorumPolicy(
     policy?.["requiredMetadataPublisherSha256s"],
     "metadata publisher pins",
   );
-  const sourceWeights = normalizeQuorumSourceWeights(
-    policy?.["sourceWeights"],
-  );
+  const sourceWeights = normalizeQuorumSourceWeights(policy?.["sourceWeights"]);
   return {
     minimumSources,
     minimumAgreementCount,
@@ -1844,10 +2182,7 @@ function normalizeReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy
   };
 }
 
-function normalizeImportPolicyDuration(
-  value: unknown,
-  label: string,
-): number {
+function normalizeImportPolicyDuration(value: unknown, label: string): number {
   if (value === undefined) return 0;
   if (!Number.isSafeInteger(value) || typeof value !== "number" || value < 0) {
     throw new Error(
@@ -2097,8 +2432,7 @@ function createQuorumPromotionBaselineImportPolicyReview(input: {
           keyId: input.baseline.envelope.signature.keyId,
           selectedAnchorSetSha256: input.baseline.selectedAnchorSetSha256,
           selectedDirectorySha256: input.baseline.selectedDirectorySha256,
-          selectedSourceOriginCount:
-            input.selectedSourceOrigins?.length ?? 0,
+          selectedSourceOriginCount: input.selectedSourceOrigins?.length ?? 0,
           selectedSourceOriginSetSha256: sha256(
             canonicalJson(input.selectedSourceOrigins ?? []),
           ),
@@ -2604,11 +2938,15 @@ function validateQuorumSources(
     !Array.isArray(value) ||
     value.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
   ) {
-    throw new Error("Receipt trust anchor directory quorum sources are invalid");
+    throw new Error(
+      "Receipt trust anchor directory quorum sources are invalid",
+    );
   }
   return value
     .map(validateQuorumSource)
-    .sort((left, right) => left.subscriptionId.localeCompare(right.subscriptionId));
+    .sort((left, right) =>
+      left.subscriptionId.localeCompare(right.subscriptionId),
+    );
 }
 
 function validateQuorumSource(
@@ -2699,12 +3037,14 @@ function validateQuorumCandidates(
       "Receipt trust anchor directory quorum candidates are invalid",
     );
   }
-  return value.map(validateQuorumCandidate).sort(
-    (left, right) =>
-      right.weight - left.weight ||
-      right.sourceCount - left.sourceCount ||
-      left.anchorSetSha256.localeCompare(right.anchorSetSha256),
-  );
+  return value
+    .map(validateQuorumCandidate)
+    .sort(
+      (left, right) =>
+        right.weight - left.weight ||
+        right.sourceCount - left.sourceCount ||
+        left.anchorSetSha256.localeCompare(right.anchorSetSha256),
+    );
 }
 
 function validateQuorumCandidate(
@@ -3109,8 +3449,7 @@ function validDiagnostics(value: unknown): value is string[] {
     value.length <= 64 &&
     value.every(
       (diagnostic) =>
-        typeof diagnostic === "string" &&
-        /^[a-z0-9_]{1,80}$/.test(diagnostic),
+        typeof diagnostic === "string" && /^[a-z0-9_]{1,80}$/.test(diagnostic),
     )
   );
 }

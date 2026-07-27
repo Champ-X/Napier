@@ -6,6 +6,8 @@ import type {
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -25,6 +27,7 @@ import {
   evaluateReceiptTrustAnchorDirectoryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
+  getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectorySubscriptions,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
@@ -35,6 +38,7 @@ import {
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryMetadata,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifyTrustedReceipt,
 } from "../src/receipt-trust-api";
@@ -482,8 +486,7 @@ describe("receipt trust Web API wrappers", () => {
       kind: "napier.trusted-receipt-envelope",
       schemaVersion: 1,
       apiVersion: "0.1.0",
-      receiptKind:
-        "receipt_trust_anchor_directory_quorum_activation_decision",
+      receiptKind: "receipt_trust_anchor_directory_quorum_activation_decision",
       receipt: {
         kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision",
         schemaVersion: 1,
@@ -533,6 +536,47 @@ describe("receipt trust Web API wrappers", () => {
       sourceAlignment: activationSourceAlignment,
       envelope: activationEnvelope,
     } satisfies SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult;
+    const activationDecisionHistory = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision-history",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:00.000Z",
+      decisionCount: 1,
+      approvedCount: 1,
+      rejectedCount: 0,
+      distinctBaselineCount: 1,
+      decisionSetSha256: "1".repeat(64),
+      baselineSetSha256: "2".repeat(64),
+      policyReviewSetSha256: "3".repeat(64),
+      sourceAlignmentSetSha256: "4".repeat(64),
+      latestDecisionAt: "2026-07-27T00:00:00.000Z",
+      records: [
+        {
+          id: "trustqad_1234567890abcdef1234",
+          signedByThreadId: promotionBaseline.promotedByThreadId,
+          createdAt: "2026-07-27T00:00:00.000Z",
+          ...activationDecisionResult,
+          contentSha256: "5".repeat(64),
+        },
+      ],
+      contentSha256: "6".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory;
+    const activationDecisionHistoryVerification = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision-history-verification",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      verifiedAt: "2026-07-27T00:00:01.000Z",
+      status: "valid",
+      diagnostics: [],
+      declaredContentSha256: activationDecisionHistory.contentSha256,
+      recomputedContentSha256: activationDecisionHistory.contentSha256,
+      currentContentSha256: activationDecisionHistory.contentSha256,
+      declaredDecisionSetSha256: activationDecisionHistory.decisionSetSha256,
+      currentDecisionSetSha256: activationDecisionHistory.decisionSetSha256,
+      declaredDecisionCount: activationDecisionHistory.decisionCount,
+      currentDecisionCount: activationDecisionHistory.decisionCount,
+      contentSha256: "7".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -603,6 +647,16 @@ describe("receipt trust Web API wrappers", () => {
         body: activationDecisionRequest,
         response: activationDecisionResult,
       },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions",
+        response: activationDecisionHistory,
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
+        method: "POST",
+        body: { history: activationDecisionHistory },
+        response: activationDecisionHistoryVerification,
+      },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       const call = calls[fetchMock.mock.calls.length - 1]!;
@@ -666,7 +720,15 @@ describe("receipt trust Web API wrappers", () => {
         activationDecisionRequest,
       ),
     ).resolves.toEqual(activationDecisionResult);
-    expect(fetchMock).toHaveBeenCalledTimes(11);
+    await expect(
+      getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(),
+    ).resolves.toEqual(activationDecisionHistory);
+    await expect(
+      verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory({
+        history: activationDecisionHistory,
+      }),
+    ).resolves.toEqual(activationDecisionHistoryVerification);
+    expect(fetchMock).toHaveBeenCalledTimes(13);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

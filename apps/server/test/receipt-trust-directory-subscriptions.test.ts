@@ -8,6 +8,8 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -364,7 +366,8 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
           promotedByThreadId: thread.id,
           selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
           selectedDirectorySha256: hostedDirectory.contentSha256,
-          selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
+          selectedSubscriptionSetSha256:
+            promotion.selectedSubscriptionSetSha256,
           selectedMetadataEnvelopeSetSha256:
             promotion.selectedMetadataEnvelopeSetSha256,
           envelope: expect.objectContaining({
@@ -455,6 +458,26 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-promotion-baseline-sha256",
       ),
     ).toBe(baselineResult.baseline.contentSha256);
+    const emptyActivationHistoryResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions",
+    );
+    expect(emptyActivationHistoryResponse.status).toBe(200);
+    const emptyActivationHistory =
+      (await emptyActivationHistoryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory;
+    expect(emptyActivationHistory).toEqual(
+      expect.objectContaining({
+        decisionCount: 0,
+        approvedCount: 0,
+        rejectedCount: 0,
+        records: [],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      emptyActivationHistoryResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-decision-count",
+      ),
+    ).toBe("0");
     const activationPolicy = {
       maxBaselineAgeMs: 86_400_000,
       maxReceiptAgeMs: 86_400_000,
@@ -526,6 +549,110 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-source-alignment-sha256",
       ),
     ).toBe(activation.sourceAlignment.contentSha256);
+    const activationHistoryResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions",
+    );
+    expect(activationHistoryResponse.status).toBe(200);
+    const activationHistory =
+      (await activationHistoryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory;
+    expect(activationHistory).toEqual(
+      expect.objectContaining({
+        decisionCount: 1,
+        approvedCount: 1,
+        rejectedCount: 0,
+        distinctBaselineCount: 1,
+        records: [
+          expect.objectContaining({
+            signedByThreadId: thread.id,
+            baseline: baselineResult.baseline,
+            envelope: activation.envelope,
+          }),
+        ],
+      }),
+    );
+    expect(
+      activationHistoryResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-decision-count",
+      ),
+    ).toBe("1");
+    expect(
+      activationHistoryResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-decision-set-sha256",
+      ),
+    ).toBe(activationHistory.decisionSetSha256);
+    const activationHistoryVerifyResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ history: activationHistory }),
+      },
+    );
+    expect(activationHistoryVerifyResponse.status).toBe(200);
+    const activationHistoryVerification =
+      (await activationHistoryVerifyResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification;
+    expect(activationHistoryVerification).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256: activationHistory.contentSha256,
+        currentContentSha256: activationHistory.contentSha256,
+        declaredDecisionSetSha256: activationHistory.decisionSetSha256,
+        currentDecisionSetSha256: activationHistory.decisionSetSha256,
+        declaredDecisionCount: 1,
+        currentDecisionCount: 1,
+      }),
+    );
+    expect(
+      activationHistoryVerifyResponse.headers.get(
+        "x-napier-verification-status",
+      ),
+    ).toBe("valid");
+    const divergentActivationHistoryResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ history: emptyActivationHistory }),
+      },
+    );
+    expect(divergentActivationHistoryResponse.status).toBe(200);
+    expect(
+      (await divergentActivationHistoryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        diagnostics: expect.arrayContaining([
+          "current_history_mismatch",
+          "decision_set_mismatch",
+          "decision_count_mismatch",
+        ]),
+        currentDecisionCount: 1,
+      }),
+    );
+    const tamperedActivationHistory = structuredClone(activationHistory);
+    tamperedActivationHistory.records[0] = {
+      ...tamperedActivationHistory.records[0]!,
+      id: "trustqad_tampered",
+    };
+    const invalidActivationHistoryResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ history: tamperedActivationHistory }),
+      },
+    );
+    expect(invalidActivationHistoryResponse.status).toBe(200);
+    expect(
+      (await invalidActivationHistoryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["history_invalid"],
+        currentDecisionCount: 1,
+      }),
+    );
     const importRoot = await mkdtemp(
       path.join(tmpdir(), "napier-trust-baseline-import-http-"),
     );

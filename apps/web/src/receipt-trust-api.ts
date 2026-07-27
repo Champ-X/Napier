@@ -15,6 +15,8 @@ import type {
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -28,6 +30,7 @@ import type {
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
   UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
@@ -164,6 +167,24 @@ export function signReceiptTrustAnchorDirectoryQuorumActivationDecision(
 ): Promise<SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(): Promise<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions",
+  );
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(
+  body: VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
     {
       method: "POST",
       body: JSON.stringify(body),
