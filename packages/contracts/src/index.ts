@@ -3874,13 +3874,18 @@ export interface ReceiptTrustAnchorDirectoryQuorumPolicy {
   minimumAgreementCount?: number;
   minimumDistinctSourceOrigins?: number;
   minimumAgreementWeight?: number;
+  minimumMetadataPublisherCount?: number;
   expectedAnchorSetSha256?: string;
   requiredSourceOriginSha256s?: string[];
+  requiredMetadataPublisherSha256s?: string[];
   sourceWeights?: ReceiptTrustAnchorDirectoryQuorumSourceWeight[];
 }
 
 export interface EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
   policy?: ReceiptTrustAnchorDirectoryQuorumPolicy;
+  metadata?: ReceiptTrustAnchorDirectoryQuorumMetadataInput[];
+  trustDirectory?: unknown;
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumStatus =
@@ -3894,12 +3899,36 @@ export interface ReceiptTrustAnchorDirectoryQuorumSourceWeight {
   weight: number;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumMetadataInput {
+  subscriptionId: string;
+  envelope: unknown;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumSourceMetadata {
+  status: TrustedReceiptVerificationStatus;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  directoryBindingValid: boolean;
+  diagnosticCount: number;
+  diagnosticsSha256: string;
+  publisherSha256?: string;
+  signerKeyId?: string;
+  envelopeSha256?: string;
+  verificationSha256?: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumMetadataEvidence
+  extends ReceiptTrustAnchorDirectoryQuorumSourceMetadata {
+  subscriptionId: string;
+}
+
 export interface ReceiptTrustAnchorDirectoryQuorumSource {
   subscriptionId: string;
   subscriptionSha256: string;
   sourceUrlSha256: string;
   sourceOriginSha256: string;
   weight: number;
+  metadata?: ReceiptTrustAnchorDirectoryQuorumSourceMetadata;
   revision: number;
   directorySha256: string;
   anchorSetSha256: string;
@@ -3914,6 +3943,8 @@ export interface ReceiptTrustAnchorDirectoryQuorumCandidate {
   sourceCount: number;
   distinctSourceOriginCount: number;
   weight: number;
+  metadataPublisherCount: number;
+  metadataPublisherSetSha256: string;
   trustedCount: number;
   subscriptionSetSha256: string;
   directorySetSha256: string;
@@ -3934,6 +3965,8 @@ export interface ReceiptTrustAnchorDirectoryQuorum {
   agreementCount: number;
   agreementWeight: number;
   agreementDistinctSourceOriginCount: number;
+  agreementMetadataPublisherCount: number;
+  agreementMetadataPublisherSetSha256: string;
   selectedAnchorSetSha256?: string;
   selectedDirectorySha256?: string;
   selectedDirectory?: ReceiptTrustAnchorDirectory;

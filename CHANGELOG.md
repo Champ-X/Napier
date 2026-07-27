@@ -267,10 +267,12 @@ All notable changes to Napier are recorded here.
   SHA-256, and returns a stable no-store receipt with
   source/candidate/agreement counts, agreement weight, distinct-origin count,
   policy hash, diagnostics, selected directory hash, selected anchor-set hash,
-  and hash-only source evidence. Policies can now pin required source-origin
-  hashes and assign bounded per-origin weights. The Receipt trust desk exposes a
-  quorum action and renders agreement status next to durable directory
-  subscriptions.
+  metadata publisher count/set hash, and hash-only source evidence. Policies
+  can now pin required source-origin hashes, assign bounded per-origin weights,
+  require metadata publisher counts, and pin required metadata publisher hashes
+  from signed directory metadata envelopes supplied with the no-store quorum
+  request. The Receipt trust desk exposes a quorum action and renders agreement
+  status next to durable directory subscriptions.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

@@ -1,13 +1,15 @@
-import { generateKeyPairSync } from "node:crypto";
+import { createHash, generateKeyPairSync } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
+  ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
+  TrustedReceiptEnvelope,
 } from "@napier/contracts";
 import {
   createReceiptTrustAnchor,
@@ -22,8 +24,10 @@ import {
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createNapierServices>>[] = [];
+const SIGNING_ENV = "NAPIER_TEST_QUORUM_METADATA_SIGNING_KEY";
 
 afterEach(async () => {
+  delete process.env[SIGNING_ENV];
   for (const services of openServices.splice(0)) {
     await services.receiptTrustDirectorySubscriptions.stop();
     await services.recovery.stop();
@@ -84,7 +88,22 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     openServices.push(services);
     const app = createApp(services);
     const thread = services.store.listThreads()[0]!;
-    hostedDirectory = createDirectory(thread.id, "Hosted verifier A");
+    const { privateKey } = generateKeyPairSync("ed25519");
+    process.env[SIGNING_ENV] = privateKey
+      .export({ format: "pem", type: "pkcs8" })
+      .toString();
+    const anchorResponse = await app.request("/api/receipt-trust/anchors", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        threadId: thread.id,
+        label: "Hosted verifier A",
+        source: { type: "environment", variable: SIGNING_ENV },
+      }),
+    });
+    expect(anchorResponse.status).toBe(201);
+    const signingAnchor = (await anchorResponse.json()) as ReceiptTrustAnchor;
+    hostedDirectory = services.store.getReceiptTrustAnchorDirectory();
     const policy = {
       maxAgeMs: 24 * 60 * 60 * 1_000,
       minimumTrustedCount: 1,
@@ -198,6 +217,62 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-distinct-origin-count",
       ),
     ).toBe("2");
+    const metadataSignResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/signed-metadata",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          publisher: "Napier Trust Registry",
+        }),
+      },
+    );
+    expect(metadataSignResponse.status).toBe(201);
+    const metadataEnvelope =
+      (await metadataSignResponse.json()) as TrustedReceiptEnvelope;
+    const publisherSha256 = createHash("sha256")
+      .update("Napier Trust Registry")
+      .digest("hex");
+    const metadataQuorumResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          policy: {
+            minimumSources: 2,
+            minimumAgreementCount: 2,
+            minimumMetadataPublisherCount: 1,
+            requiredMetadataPublisherSha256s: [publisherSha256],
+          },
+          metadata: [
+            { subscriptionId: created.id, envelope: metadataEnvelope },
+            { subscriptionId: mirror.id, envelope: metadataEnvelope },
+          ],
+        }),
+      },
+    );
+    expect(metadataQuorumResponse.status).toBe(200);
+    const metadataQuorum =
+      (await metadataQuorumResponse.json()) as ReceiptTrustAnchorDirectoryQuorum;
+    expect(metadataQuorum).toEqual(
+      expect.objectContaining({
+        status: "agreed",
+        diagnostics: [],
+        agreementMetadataPublisherCount: 1,
+        selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+      }),
+    );
+    expect(
+      metadataQuorum.sources.map((source) => source.metadata?.status),
+    ).toEqual(["trusted", "trusted"]);
+    expect(
+      metadataQuorumResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-metadata-publisher-count",
+      ),
+    ).toBe("1");
     expect(JSON.stringify(quorum)).not.toContain(sourceUrl);
     expect(JSON.stringify(quorum)).not.toContain(mirrorSourceUrl);
 

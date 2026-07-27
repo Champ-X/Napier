@@ -5,8 +5,10 @@ import {
   type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   type ReceiptTrustAnchorDirectoryQuorum,
   type ReceiptTrustAnchorDirectoryQuorumCandidate,
+  type ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
   type ReceiptTrustAnchorDirectoryQuorumSource,
+  type ReceiptTrustAnchorDirectoryQuorumSourceMetadata,
   type ReceiptTrustAnchorDirectoryQuorumSourceWeight,
   type ReceiptTrustAnchorDirectoryDiscovery,
   type ReceiptTrustAnchorDirectorySubscription,
@@ -270,9 +272,14 @@ export function settleReceiptTrustAnchorDirectorySubscriptionRefresh(
 export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
   subscriptions: ReceiptTrustAnchorDirectorySubscription[],
   policy?: ReceiptTrustAnchorDirectoryQuorumPolicy,
+  metadataEvidence: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[] = [],
 ): ReceiptTrustAnchorDirectoryQuorum {
   const normalizedPolicy =
     normalizeReceiptTrustAnchorDirectoryQuorumPolicy(policy);
+  const metadataBySubscriptionId =
+    receiptTrustAnchorDirectoryQuorumMetadataEvidenceBySubscriptionId(
+      metadataEvidence,
+    );
   const sources = subscriptions
     .map(validateReceiptTrustAnchorDirectorySubscription)
     .filter(
@@ -280,7 +287,13 @@ export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
         subscription.status === "active" &&
         Boolean(subscription.lastGoodDiscovery?.directory),
     )
-    .map((subscription) => createQuorumSource(subscription, normalizedPolicy))
+    .map((subscription) =>
+      createQuorumSource(
+        subscription,
+        normalizedPolicy,
+        metadataBySubscriptionId.get(subscription.id),
+      ),
+    )
     .sort((left, right) =>
       left.subscriptionId.localeCompare(right.subscriptionId),
     );
@@ -315,9 +328,20 @@ export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
           .map((source) => source.sourceOriginSha256)
       : [],
   );
+  const winningMetadataPublishers = metadataPublisherSetForSources(
+    winner
+      ? sources.filter(
+          (source) => source.anchorSetSha256 === winner.anchorSetSha256,
+        )
+      : [],
+  );
   const requiredSourceOriginMissing =
     normalizedPolicy.requiredSourceOriginSha256s.some(
       (originSha256) => !winningSourceOrigins.has(originSha256),
+    );
+  const requiredMetadataPublisherMissing =
+    normalizedPolicy.requiredMetadataPublisherSha256s.some(
+      (publisherSha256) => !winningMetadataPublishers.has(publisherSha256),
     );
   const selectedSource = winner
     ? sources
@@ -362,6 +386,15 @@ export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
   if (requiredSourceOriginMissing) {
     diagnostics.push("required_source_origin_missing");
   }
+  if (
+    winningMetadataPublishers.size <
+    normalizedPolicy.minimumMetadataPublisherCount
+  ) {
+    diagnostics.push("insufficient_metadata_publishers");
+  }
+  if (requiredMetadataPublisherMissing) {
+    diagnostics.push("required_metadata_publisher_missing");
+  }
   const expectedAnchorSetMismatched = Boolean(
     normalizedPolicy.expectedAnchorSetSha256 &&
       winner?.anchorSetSha256 !== normalizedPolicy.expectedAnchorSetSha256,
@@ -370,11 +403,15 @@ export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
     agreementCount >= normalizedPolicy.minimumAgreementCount &&
     agreementWeight >= normalizedPolicy.minimumAgreementWeight &&
     agreementDistinctSourceOriginCount >=
-      normalizedPolicy.minimumDistinctSourceOrigins;
+      normalizedPolicy.minimumDistinctSourceOrigins &&
+    winningMetadataPublishers.size >=
+      normalizedPolicy.minimumMetadataPublisherCount;
   const status: ReceiptTrustAnchorDirectoryQuorum["status"] =
     sources.length < normalizedPolicy.minimumSources
       ? "insufficient_sources"
-      : expectedAnchorSetMismatched || requiredSourceOriginMissing
+      : expectedAnchorSetMismatched ||
+          requiredSourceOriginMissing ||
+          requiredMetadataPublisherMissing
         ? "policy_failed"
         : quorumAgreed
           ? "agreed"
@@ -393,6 +430,10 @@ export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
     agreementCount,
     agreementWeight,
     agreementDistinctSourceOriginCount,
+    agreementMetadataPublisherCount: winningMetadataPublishers.size,
+    agreementMetadataPublisherSetSha256: sha256(
+      canonicalJson([...winningMetadataPublishers].sort()),
+    ),
     ...(winner ? { selectedAnchorSetSha256: winner.anchorSetSha256 } : {}),
     ...(selectedDirectory
       ? {
@@ -699,6 +740,7 @@ function assertDiscoveryBinding(
 function createQuorumSource(
   subscription: ReceiptTrustAnchorDirectorySubscription,
   policy: Required<ReceiptTrustAnchorDirectoryQuorumPolicy>,
+  metadata?: ReceiptTrustAnchorDirectoryQuorumSourceMetadata,
 ): ReceiptTrustAnchorDirectoryQuorumSource {
   const discovery = subscription.lastGoodDiscovery;
   const directory = discovery?.directory;
@@ -719,6 +761,7 @@ function createQuorumSource(
     sourceUrlSha256: subscription.sourceUrlSha256,
     sourceOriginSha256: subscription.sourceOriginSha256,
     weight: sourceWeightForOrigin(subscription.sourceOriginSha256, policy),
+    ...(metadata ? { metadata } : {}),
     revision: subscription.revision,
     directorySha256: directory.contentSha256,
     anchorSetSha256: directory.anchorSetSha256,
@@ -736,6 +779,7 @@ function createQuorumCandidate(
   const sorted = [...sources].sort((left, right) =>
     left.subscriptionId.localeCompare(right.subscriptionId),
   );
+  const metadataPublishers = [...metadataPublisherSetForSources(sorted)].sort();
   return {
     anchorSetSha256,
     sourceCount: sorted.length,
@@ -743,6 +787,8 @@ function createQuorumCandidate(
       sorted.map((source) => source.sourceOriginSha256),
     ).size,
     weight: sorted.reduce((sum, source) => sum + source.weight, 0),
+    metadataPublisherCount: metadataPublishers.length,
+    metadataPublisherSetSha256: sha256(canonicalJson(metadataPublishers)),
     trustedCount: Math.max(...sorted.map((source) => source.trustedCount)),
     subscriptionSetSha256: sha256(
       canonicalJson(sorted.map((source) => source.subscriptionId)),
@@ -770,8 +816,10 @@ function normalizeReceiptTrustAnchorDirectoryQuorumPolicy(
       "minimumAgreementCount",
       "minimumDistinctSourceOrigins",
       "minimumAgreementWeight",
+      "minimumMetadataPublisherCount",
       "expectedAnchorSetSha256",
       "requiredSourceOriginSha256s",
+      "requiredMetadataPublisherSha256s",
       "sourceWeights",
     ]);
   }
@@ -790,6 +838,10 @@ function normalizeReceiptTrustAnchorDirectoryQuorumPolicy(
   const minimumAgreementWeight = normalizeQuorumWeight(
     policy?.["minimumAgreementWeight"] ?? minimumAgreementCount,
     "minimum agreement weight",
+  );
+  const minimumMetadataPublisherCount = normalizeQuorumOptionalCount(
+    policy?.["minimumMetadataPublisherCount"] ?? 0,
+    "minimum metadata publisher count",
   );
   const expectedAnchorSetSha256Input = policy?.["expectedAnchorSetSha256"];
   if (
@@ -816,6 +868,11 @@ function normalizeReceiptTrustAnchorDirectoryQuorumPolicy(
   }
   const requiredSourceOriginSha256s = normalizeSourceOriginPins(
     policy?.["requiredSourceOriginSha256s"],
+    "source origin pins",
+  );
+  const requiredMetadataPublisherSha256s = normalizeSourceOriginPins(
+    policy?.["requiredMetadataPublisherSha256s"],
+    "metadata publisher pins",
   );
   const sourceWeights = normalizeQuorumSourceWeights(
     policy?.["sourceWeights"],
@@ -825,8 +882,10 @@ function normalizeReceiptTrustAnchorDirectoryQuorumPolicy(
     minimumAgreementCount,
     minimumDistinctSourceOrigins,
     minimumAgreementWeight,
+    minimumMetadataPublisherCount,
     expectedAnchorSetSha256,
     requiredSourceOriginSha256s,
+    requiredMetadataPublisherSha256s,
     sourceWeights,
   };
 }
@@ -836,6 +895,20 @@ function normalizeQuorumCount(value: unknown, label: string): number {
     !Number.isSafeInteger(value) ||
     typeof value !== "number" ||
     value < 1 ||
+    value > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
+  ) {
+    throw new Error(
+      `Receipt trust anchor directory quorum ${label} is invalid`,
+    );
+  }
+  return value;
+}
+
+function normalizeQuorumOptionalCount(value: unknown, label: string): number {
+  if (
+    !Number.isSafeInteger(value) ||
+    typeof value !== "number" ||
+    value < 0 ||
     value > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
   ) {
     throw new Error(
@@ -861,7 +934,7 @@ function normalizeQuorumWeight(value: unknown, label: string): number {
   return value;
 }
 
-function normalizeSourceOriginPins(value: unknown): string[] {
+function normalizeSourceOriginPins(value: unknown, label: string): string[] {
   if (value === undefined) return [];
   if (
     !Array.isArray(value) ||
@@ -869,7 +942,7 @@ function normalizeSourceOriginPins(value: unknown): string[] {
     value.some((item) => typeof item !== "string" || !SHA256_PATTERN.test(item))
   ) {
     throw new Error(
-      "Receipt trust anchor directory quorum source origin pins are invalid",
+      `Receipt trust anchor directory quorum ${label} are invalid`,
     );
   }
   return Array.from(new Set(value as string[])).sort();
@@ -927,6 +1000,103 @@ function sourceWeightForOrigin(
       (weight) => weight.sourceOriginSha256 === sourceOriginSha256,
     )?.weight ?? 1
   );
+}
+
+function metadataPublisherSetForSources(
+  sources: ReceiptTrustAnchorDirectoryQuorumSource[],
+): Set<string> {
+  return new Set(
+    sources.flatMap((source) =>
+      source.metadata?.status === "trusted" &&
+      source.metadata.directoryBindingValid &&
+      source.metadata.publisherSha256
+        ? [source.metadata.publisherSha256]
+        : [],
+    ),
+  );
+}
+
+function receiptTrustAnchorDirectoryQuorumMetadataEvidenceBySubscriptionId(
+  values: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[],
+): Map<string, ReceiptTrustAnchorDirectoryQuorumSourceMetadata> {
+  if (values.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS) {
+    throw new Error(
+      "Receipt trust anchor directory quorum metadata evidence is invalid",
+    );
+  }
+  const metadataBySubscriptionId = new Map<
+    string,
+    ReceiptTrustAnchorDirectoryQuorumSourceMetadata
+  >();
+  for (const value of values) {
+    const metadata = validateReceiptTrustAnchorDirectoryQuorumMetadata(value);
+    if (metadataBySubscriptionId.has(value.subscriptionId)) {
+      throw new Error(
+        "Receipt trust anchor directory quorum metadata evidence is invalid",
+      );
+    }
+    metadataBySubscriptionId.set(value.subscriptionId, metadata);
+  }
+  return metadataBySubscriptionId;
+}
+
+function validateReceiptTrustAnchorDirectoryQuorumMetadata(
+  value: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
+): ReceiptTrustAnchorDirectoryQuorumSourceMetadata {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum metadata evidence is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "subscriptionId",
+    "status",
+    "signatureValid",
+    "integrityValid",
+    "directoryBindingValid",
+    "diagnosticCount",
+    "diagnosticsSha256",
+    "publisherSha256",
+    "signerKeyId",
+    "envelopeSha256",
+    "verificationSha256",
+  ]);
+  if (
+    !SUBSCRIPTION_ID_PATTERN.test(value.subscriptionId) ||
+    (value.status !== "trusted" &&
+      value.status !== "revoked" &&
+      value.status !== "unknown_key" &&
+      value.status !== "invalid") ||
+    typeof value.signatureValid !== "boolean" ||
+    typeof value.integrityValid !== "boolean" ||
+    typeof value.directoryBindingValid !== "boolean" ||
+    !Number.isSafeInteger(value.diagnosticCount) ||
+    value.diagnosticCount < 0 ||
+    value.diagnosticCount > 64 ||
+    !SHA256_PATTERN.test(value.diagnosticsSha256) ||
+    !optionalSha256(value.publisherSha256) ||
+    !optionalSha256(value.signerKeyId) ||
+    !optionalSha256(value.envelopeSha256) ||
+    !optionalSha256(value.verificationSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum metadata evidence is invalid",
+    );
+  }
+  return {
+    status: value.status,
+    signatureValid: value.signatureValid,
+    integrityValid: value.integrityValid,
+    directoryBindingValid: value.directoryBindingValid,
+    diagnosticCount: value.diagnosticCount,
+    diagnosticsSha256: value.diagnosticsSha256,
+    ...(value.publisherSha256 ? { publisherSha256: value.publisherSha256 } : {}),
+    ...(value.signerKeyId ? { signerKeyId: value.signerKeyId } : {}),
+    ...(value.envelopeSha256 ? { envelopeSha256: value.envelopeSha256 } : {}),
+    ...(value.verificationSha256
+      ? { verificationSha256: value.verificationSha256 }
+      : {}),
+  };
 }
 
 function migrateReceiptTrustAnchorDirectorySubscription(

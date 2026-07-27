@@ -422,9 +422,12 @@ subscriptions. It groups sources by anchor-set SHA-256 rather than
 time-sensitive directory content, applies minimum source/agreement thresholds
 with distinct-origin, weighted-agreement, required-source-origin, and optional
 expected anchor-set gates, and returns selected-directory public keys only when
-the policy agrees. Source rows carry subscription/content, URL/origin, source
-weight, discovery, directory, transparency-tail, and trusted-count hashes; no
-raw locator or private key material leaves the workspace.
+the policy agrees. Signed metadata envelopes supplied with the no-store quorum
+request are verified against each subscription's last-good directory, then
+reduced to publisher SHA-256 pins before source selection. Source rows carry
+subscription/content, URL/origin, source weight, metadata status/hash evidence,
+discovery, directory, transparency-tail, and trusted-count hashes; no raw
+locator or private key material leaves the workspace.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2358,10 +2361,10 @@ The current boundary has twenty-one parts:
 22. allowlisted receipt-trust directory subscriptions with private local
     source locators, hash-only public evidence, policy-bound last-good
     discoveries, bounded transparency histories, rollback detection,
-    weighted independent-origin quorum receipts, expiring refresh claims,
-    revision CAS, and publisher-signed directory metadata; fail-closed
-    promotion preserves the active verifier set across rejected, failed, or
-    stale rotations.
+    weighted independent-origin quorum receipts with publisher metadata pins,
+    expiring refresh claims, revision CAS, and publisher-signed directory
+    metadata; fail-closed promotion preserves the active verifier set across
+    rejected, failed, or stale rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2383,9 +2386,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- publisher-pinned receipt-trust quorum promotion rules, so signed source
-  metadata can participate directly in source selection without trusting a
-  single hosted directory.
+- quorum promotion receipts that can bundle the selected signed metadata
+  envelopes for external archiving without re-querying hosted sources.
 
 ### Layer 3: Extension fabric
 

@@ -123,6 +123,7 @@ import {
   type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectory,
   type ReceiptTrustAnchorDirectoryDiscovery,
+  type ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   type ReceiptTrustAnchorDirectoryQuorum,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
   type ReceiptTrustAnchorDirectorySubscription,
@@ -1145,11 +1146,13 @@ export class LocalStore {
 
   getReceiptTrustAnchorDirectorySubscriptionQuorum(
     policy?: ReceiptTrustAnchorDirectoryQuorumPolicy,
+    metadataEvidence?: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[],
   ): ReceiptTrustAnchorDirectoryQuorum {
     this.assertInitialized();
     return createReceiptTrustAnchorDirectorySubscriptionQuorum(
       this.listReceiptTrustAnchorDirectorySubscriptions(),
       policy,
+      metadataEvidence,
     );
   }
 

@@ -198,6 +198,7 @@ export const copy = {
       evaluatingQuorum: "Evaluating...",
       quorumAgreement: "source agreement",
       quorumWeight: "weight",
+      quorumPublishers: "publishers",
       nextRefresh: "next",
       transparencyTail: "tail",
       useSubscription: "Use",

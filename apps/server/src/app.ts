@@ -91,6 +91,8 @@ import type {
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
+  ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   ReceiptTrustAnchorDirectoryQuorumPolicy,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -721,9 +723,25 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
+      let metadataEvidence: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[] =
+        [];
+      try {
+        metadataEvidence =
+          createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
+            services,
+            body,
+          );
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
       const quorum =
         services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
           body.policy,
+          metadataEvidence,
         );
       setReceiptTrustAnchorDirectoryQuorumHeaders(context, quorum);
       return context.json(quorum);
@@ -10793,16 +10811,131 @@ function parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(
 function parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(
   input: unknown,
 ): EvaluateReceiptTrustAnchorDirectoryQuorumRequest | undefined {
-  const record = requestRecord(input, ["policy"]);
+  const record = requestRecord(input, [
+    "policy",
+    "metadata",
+    "trustDirectory",
+    "trustDirectoryPolicy",
+  ]);
   const policy = parseReceiptTrustAnchorDirectoryQuorumPolicy(
     record?.["policy"],
   );
-  if (!record || (record["policy"] !== undefined && !policy)) {
+  const metadata = parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(
+    record?.["metadata"],
+  );
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
+    record?.["trustDirectoryPolicy"],
+  );
+  if (
+    !record ||
+    (record["policy"] !== undefined && !policy) ||
+    (record["metadata"] !== undefined && !metadata) ||
+    (record["trustDirectoryPolicy"] !== undefined &&
+      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
+  ) {
     return undefined;
   }
   return {
     ...(policy ? { policy } : {}),
+    ...(metadata ? { metadata } : {}),
+    ...(record["trustDirectory"] !== undefined
+      ? { trustDirectory: record["trustDirectory"] }
+      : {}),
+    ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
+}
+
+function parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(
+  input: unknown,
+): ReceiptTrustAnchorDirectoryQuorumMetadataInput[] | undefined {
+  if (input === undefined) return undefined;
+  if (
+    !Array.isArray(input) ||
+    input.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
+  ) {
+    return undefined;
+  }
+  const seen = new Set<string>();
+  const metadata: ReceiptTrustAnchorDirectoryQuorumMetadataInput[] = [];
+  for (const item of input) {
+    const record = requestRecord(item, ["subscriptionId", "envelope"]);
+    const subscriptionId = record?.["subscriptionId"];
+    if (
+      !record ||
+      typeof subscriptionId !== "string" ||
+      !/^trustdir_[a-f0-9]{20}$/.test(subscriptionId) ||
+      record["envelope"] === undefined ||
+      seen.has(subscriptionId)
+    ) {
+      return undefined;
+    }
+    seen.add(subscriptionId);
+    metadata.push({ subscriptionId, envelope: record["envelope"] });
+  }
+  return metadata.sort((left, right) =>
+    left.subscriptionId.localeCompare(right.subscriptionId),
+  );
+}
+
+function createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
+  services: NapierServices,
+  request: EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
+): ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[] {
+  if (!request.metadata?.length) return [];
+  const trustDirectoryVerification =
+    request.trustDirectory === undefined
+      ? undefined
+      : services.store.verifyReceiptTrustAnchorDirectory(
+          request.trustDirectory,
+          request.trustDirectoryPolicy,
+        );
+  const anchors =
+    request.trustDirectory === undefined
+      ? services.store.listReceiptTrustAnchors()
+      : trustDirectoryVerification?.status === "valid"
+        ? receiptTrustAnchorsFromDirectory(request.trustDirectory)
+        : [];
+  return request.metadata.map((metadata) => {
+    const subscription =
+      services.store.getReceiptTrustAnchorDirectorySubscription(
+        metadata.subscriptionId,
+      );
+    const directory = subscription.lastGoodDiscovery?.directory;
+    if (!directory) {
+      throw new Error(
+        "Receipt trust anchor directory quorum metadata subscription has no last-good directory",
+      );
+    }
+    const verification = verifyReceiptTrustAnchorDirectoryMetadata(
+      metadata.envelope,
+      directory,
+      anchors,
+      {
+        directoryPolicy: subscription.policy,
+        ...(trustDirectoryVerification ? { trustDirectoryVerification } : {}),
+      },
+    );
+    return {
+      subscriptionId: metadata.subscriptionId,
+      status: verification.status,
+      signatureValid: verification.signatureValid,
+      integrityValid: verification.integrityValid,
+      directoryBindingValid: verification.directoryBindingValid,
+      diagnosticCount: verification.diagnostics.length,
+      diagnosticsSha256: sha256Json(verification.diagnostics),
+      ...(verification.publisher
+        ? { publisherSha256: sha256Text(verification.publisher) }
+        : {}),
+      ...(verification.signerKeyId
+        ? { signerKeyId: verification.signerKeyId }
+        : {}),
+      ...(verification.envelopeSha256
+        ? { envelopeSha256: verification.envelopeSha256 }
+        : {}),
+      verificationSha256: verification.contentSha256,
+    };
+  });
 }
 
 function parseReceiptTrustAnchorDirectoryQuorumPolicy(
@@ -10814,8 +10947,10 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
     "minimumAgreementCount",
     "minimumDistinctSourceOrigins",
     "minimumAgreementWeight",
+    "minimumMetadataPublisherCount",
     "expectedAnchorSetSha256",
     "requiredSourceOriginSha256s",
+    "requiredMetadataPublisherSha256s",
     "sourceWeights",
   ]);
   if (!record) return undefined;
@@ -10823,8 +10958,11 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
   const minimumAgreementCount = record["minimumAgreementCount"];
   const minimumDistinctSourceOrigins = record["minimumDistinctSourceOrigins"];
   const minimumAgreementWeight = record["minimumAgreementWeight"];
+  const minimumMetadataPublisherCount = record["minimumMetadataPublisherCount"];
   const expectedAnchorSetSha256 = record["expectedAnchorSetSha256"];
   const requiredSourceOriginSha256s = record["requiredSourceOriginSha256s"];
+  const requiredMetadataPublisherSha256s =
+    record["requiredMetadataPublisherSha256s"];
   const sourceWeights = record["sourceWeights"];
   const effectiveMinimumSources =
     typeof minimumSources === "number" ? minimumSources : 2;
@@ -10849,6 +10987,10 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
         minimumAgreementWeight >
           MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS *
             MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT)) ||
+    (minimumMetadataPublisherCount !== undefined &&
+      (!isNonNegativeInteger(minimumMetadataPublisherCount) ||
+        minimumMetadataPublisherCount >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
     (minimumAgreementCount !== undefined &&
       minimumAgreementCount > effectiveMinimumSources) ||
     (expectedAnchorSetSha256 !== undefined &&
@@ -10860,6 +11002,13 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
         requiredSourceOriginSha256s.length >
           MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
         requiredSourceOriginSha256s.some((origin) => !isSha256Hex(origin)))) ||
+    (requiredMetadataPublisherSha256s !== undefined &&
+      (!Array.isArray(requiredMetadataPublisherSha256s) ||
+        requiredMetadataPublisherSha256s.length >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
+        requiredMetadataPublisherSha256s.some(
+          (publisherSha256) => !isSha256Hex(publisherSha256),
+        ))) ||
     (sourceWeights !== undefined &&
       (!Array.isArray(sourceWeights) ||
         sourceWeights.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
@@ -10890,6 +11039,12 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
     requiredSourceOriginSha256s === undefined
       ? undefined
       : Array.from(new Set(requiredSourceOriginSha256s as string[])).sort();
+  const normalizedRequiredMetadataPublishers =
+    requiredMetadataPublisherSha256s === undefined
+      ? undefined
+      : Array.from(
+          new Set(requiredMetadataPublisherSha256s as string[]),
+        ).sort();
   const normalizedSourceWeights =
     sourceWeights === undefined
       ? undefined
@@ -10908,11 +11063,17 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
       ? { minimumDistinctSourceOrigins }
       : {}),
     ...(minimumAgreementWeight !== undefined ? { minimumAgreementWeight } : {}),
+    ...(minimumMetadataPublisherCount !== undefined
+      ? { minimumMetadataPublisherCount }
+      : {}),
     ...(typeof expectedAnchorSetSha256 === "string"
       ? { expectedAnchorSetSha256 }
       : {}),
     ...(normalizedRequiredSourceOrigins !== undefined
       ? { requiredSourceOriginSha256s: normalizedRequiredSourceOrigins }
+      : {}),
+    ...(normalizedRequiredMetadataPublishers !== undefined
+      ? { requiredMetadataPublisherSha256s: normalizedRequiredMetadataPublishers }
       : {}),
     ...(normalizedSourceWeights !== undefined
       ? { sourceWeights: normalizedSourceWeights }
@@ -15478,6 +15639,14 @@ function setReceiptTrustAnchorDirectoryQuorumHeaders(
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Distinct-Origin-Count",
     String(quorum.agreementDistinctSourceOriginCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Metadata-Publisher-Count",
+    String(quorum.agreementMetadataPublisherCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Metadata-Publisher-Set-SHA256",
+    quorum.agreementMetadataPublisherSetSha256,
   );
   context.header(
     "X-Napier-Diagnostic-Count",

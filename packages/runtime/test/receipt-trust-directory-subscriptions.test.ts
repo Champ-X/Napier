@@ -489,6 +489,74 @@ describe("receipt trust anchor directory subscriptions", () => {
         diagnostics: ["required_source_origin_missing"],
       }),
     );
+
+    const publisherSha256 = sha256("Napier Trust Registry");
+    const metadataPinned = store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
+      {
+        minimumMetadataPublisherCount: 1,
+        requiredMetadataPublisherSha256s: [publisherSha256],
+      },
+      [
+        {
+          subscriptionId: left.id,
+          status: "trusted",
+          signatureValid: true,
+          integrityValid: true,
+          directoryBindingValid: true,
+          diagnosticCount: 0,
+          diagnosticsSha256: sha256("[]"),
+          publisherSha256,
+          signerKeyId: "d".repeat(64),
+          envelopeSha256: "e".repeat(64),
+          verificationSha256: "f".repeat(64),
+        },
+      ],
+    );
+    expect(metadataPinned).toEqual(
+      expect.objectContaining({
+        status: "agreed",
+        diagnostics: [],
+        agreementMetadataPublisherCount: 1,
+        agreementMetadataPublisherSetSha256: expect.stringMatching(
+          /^[a-f0-9]{64}$/,
+        ),
+      }),
+    );
+    expect(
+      metadataPinned.sources.find((source) => source.subscriptionId === left.id),
+    ).toEqual(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          status: "trusted",
+          publisherSha256,
+          directoryBindingValid: true,
+        }),
+      }),
+    );
+
+    const missingPublisher = store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
+      {
+        requiredMetadataPublisherSha256s: ["c".repeat(64)],
+      },
+      [
+        {
+          subscriptionId: left.id,
+          status: "trusted",
+          signatureValid: true,
+          integrityValid: true,
+          directoryBindingValid: true,
+          diagnosticCount: 0,
+          diagnosticsSha256: sha256("[]"),
+          publisherSha256,
+        },
+      ],
+    );
+    expect(missingPublisher).toEqual(
+      expect.objectContaining({
+        status: "policy_failed",
+        diagnostics: ["required_metadata_publisher_missing"],
+      }),
+    );
   });
 });
 
