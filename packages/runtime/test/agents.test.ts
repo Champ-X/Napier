@@ -77,6 +77,7 @@ describe("Agent profile updates", () => {
         mode: "observe",
         enabledRules: ["destructive_command_reference"],
         maxCorrectionAttempts: 2,
+        reviewModel: { provider: "google", id: "gemini-2.5-pro" },
       },
     });
 
@@ -107,6 +108,7 @@ describe("Agent profile updates", () => {
           mode: "observe",
           enabledRules: ["destructive_command_reference"],
           maxCorrectionAttempts: 2,
+          reviewModel: { provider: "google", id: "gemini-2.5-pro" },
         },
         revision: 2,
       }),
@@ -232,6 +234,16 @@ describe("Agent profile updates", () => {
         },
       }),
     ).toThrow("Model Advisor policy is invalid");
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        modelAdvisor: {
+          mode: "enforce",
+          enabledRules: [],
+          maxCorrectionAttempts: 1,
+          reviewModel: PROFILE.model,
+        },
+      }),
+    ).toThrow("must differ from the primary model");
   });
 
   it("hashes immutable revisions and restores history as a new revision", () => {

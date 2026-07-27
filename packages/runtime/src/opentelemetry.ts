@@ -78,6 +78,7 @@ const SAFE_STRING_PAYLOAD_KEYS = new Set([
   "operation",
   "phase",
   "providerId",
+  "risk",
   "reviewStatus",
   "role",
   "source",
@@ -87,6 +88,8 @@ const SAFE_STRING_PAYLOAD_KEYS = new Set([
   "toolName",
   "verdict",
 ]);
+
+const SAFE_MODEL_PAYLOAD_KEYS = new Set(["candidateModel", "reviewerModel"]);
 
 const SAFE_ID_PAYLOAD_KEYS = new Set([
   "adjudicationId",
@@ -136,6 +139,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "cacheReadTokens",
   "cacheWriteTokens",
   "caseCount",
+  "candidateTextBytes",
   "conclusiveCount",
   "continuation",
   "costUsd",
@@ -165,6 +169,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "reviewerCount",
   "revision",
   "sampleCount",
+  "score",
   "sizeBytes",
   "sourceEventCount",
   "spanCount",
@@ -257,6 +262,7 @@ const SAFE_EVENT_PAYLOAD_ATTRIBUTE_KEYS = new Set(
     ...SAFE_ID_PAYLOAD_KEYS,
     ...SAFE_NUMBER_PAYLOAD_KEYS,
     ...SAFE_BOOLEAN_PAYLOAD_KEYS,
+    ...SAFE_MODEL_PAYLOAD_KEYS,
   ].map((key) => `napier.event.payload.${camelToSnake(key)}`),
 );
 
@@ -909,6 +915,19 @@ function safePayloadAttributes(payload: JsonValue): {
       continue;
     }
     const normalizedKey = `napier.event.payload.${camelToSnake(key)}`;
+    if (
+      SAFE_MODEL_PAYLOAD_KEYS.has(key) &&
+      isRecord(value) &&
+      typeof value["provider"] === "string" &&
+      typeof value["id"] === "string" &&
+      /^[a-z][a-z0-9_-]{0,63}$/u.test(value["provider"]) &&
+      value["id"].length > 0 &&
+      value["id"].length <= 200 &&
+      !/[\u0000-\u001f\u007f<>\s]/u.test(value["id"])
+    ) {
+      values[normalizedKey] = `${value["provider"]}/${value["id"]}`;
+      continue;
+    }
     if (
       typeof value === "number" &&
       Number.isFinite(value) &&

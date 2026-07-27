@@ -6203,6 +6203,159 @@ button:disabled {
   border-bottom: 1px solid var(--rule);
 }
 
+.independent-advisor-ledger {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.independent-advisor-ledger > header,
+.independent-advisor-card > header,
+.independent-advisor-card > footer,
+.independent-advisor-card dl,
+.independent-advisor-card dl div,
+.independent-advisor-card > p {
+  display: flex;
+  align-items: center;
+}
+
+.independent-advisor-ledger > header,
+.independent-advisor-card > header {
+  justify-content: space-between;
+}
+
+.independent-advisor-ledger > header {
+  margin-bottom: 10px;
+}
+
+.independent-advisor-ledger > header div {
+  display: grid;
+  gap: 2px;
+}
+
+.independent-advisor-ledger > header div > span,
+.independent-advisor-card dt,
+.independent-advisor-card > p span {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.independent-advisor-ledger > header div > span {
+  color: var(--ledger);
+}
+
+.independent-advisor-ledger > header h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.independent-advisor-ledger > header > span,
+.independent-advisor-ledger > p {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-faint);
+}
+
+.independent-advisor-ledger > ol {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.independent-advisor-card {
+  position: relative;
+  padding: 10px 11px 9px 14px;
+  overflow: hidden;
+  background: #f5f1e8;
+  border: 1px solid var(--rule-strong);
+}
+
+.independent-advisor-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: var(--ink-faint);
+}
+
+.independent-advisor-card.verdict-accept::before {
+  background: var(--ledger);
+}
+
+.independent-advisor-card.verdict-revise::before {
+  background: var(--ochre);
+}
+
+.independent-advisor-card.verdict-block::before,
+.independent-advisor-card.verdict-inconclusive::before {
+  background: var(--vermilion);
+}
+
+.independent-advisor-card > header {
+  font-family: var(--mono);
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.independent-advisor-card dl {
+  gap: 12px;
+  margin: 9px 0 7px;
+}
+
+.independent-advisor-card dl div {
+  gap: 4px;
+}
+
+.independent-advisor-card dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 8px;
+}
+
+.independent-advisor-card > p {
+  gap: 6px;
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+
+.independent-advisor-card > p code {
+  font-size: 8px;
+  color: var(--ink-soft);
+}
+
+.independent-advisor-card ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0;
+  margin: 7px 0 0;
+  list-style: none;
+}
+
+.independent-advisor-card li {
+  padding: 2px 5px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ledger);
+  background: rgb(53 91 74 / 8%);
+  border: 1px solid rgb(53 91 74 / 18%);
+}
+
+.independent-advisor-card > footer {
+  justify-content: flex-end;
+  margin-top: 8px;
+  font-size: 7px;
+  color: var(--ink-faint);
+}
+
 .agent-milestone-ledger {
   padding-bottom: 18px;
   margin-bottom: 18px;

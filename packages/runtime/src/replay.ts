@@ -204,7 +204,8 @@ export function aggregateRunUsage(
       event.type === "context.compaction.failed" ||
       event.type === "goal.evaluated" ||
       event.type === "memory.extraction.completed" ||
-      event.type === "memory.extraction.failed",
+      event.type === "memory.extraction.failed" ||
+      event.type === "model.advisor.independent.reviewed",
   );
   return [
     ...primaryUsageEvents.map(eventUsage),

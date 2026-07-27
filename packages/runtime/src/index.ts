@@ -22,6 +22,7 @@ export * from "./extensions.js";
 export * from "./goals.js";
 export * from "./ids.js";
 export * from "./inbound-dead-letters.js";
+export * from "./independent-model-advisor.js";
 export * from "./inspector-packages.js";
 export * from "./memory.js";
 export * from "./model-advisor.js";

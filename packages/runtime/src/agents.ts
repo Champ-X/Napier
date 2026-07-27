@@ -8,6 +8,7 @@ import type {
   AutomaticRecoveryPolicy,
   ModelAdvisorPolicy,
   ModelAdvisorRuleId,
+  ModelRef,
   ResolvedModelAdvisorPolicy,
   RunLimits,
   SubagentLimits,
@@ -178,6 +179,7 @@ export function updateAgentProfile(
       ? optionalModelAdvisorUpdate(current.modelAdvisor, request.modelAdvisor)
       : {}),
   };
+  assertIndependentAdvisorModel(updated);
   if (configSignature(updated) === configSignature(current)) {
     return structuredClone(current);
   }
@@ -380,6 +382,38 @@ function assertAgentProfileSnapshot(profile: AgentProfile): void {
   normalizeModelAdvisorPolicy(
     profile.modelAdvisor ?? structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
   );
+  assertIndependentAdvisorModel(profile);
+}
+
+function normalizeAdvisorReviewModel(
+  value: ModelAdvisorPolicy["reviewModel"],
+): ModelRef | undefined {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== "object") {
+    throw new Error("Model Advisor review model is invalid");
+  }
+  if (typeof value.provider !== "string" || typeof value.id !== "string") {
+    throw new Error("Model Advisor review model is invalid");
+  }
+  return {
+    provider: normalizeProviderId(value.provider),
+    id: normalizeModelId(value.id),
+  };
+}
+
+function assertIndependentAdvisorModel(
+  profile: Pick<AgentProfile, "model" | "modelAdvisor">,
+): void {
+  const reviewModel = effectiveModelAdvisorPolicy(profile).reviewModel;
+  if (
+    reviewModel &&
+    reviewModel.provider === profile.model.provider &&
+    reviewModel.id === profile.model.id
+  ) {
+    throw new Error(
+      "Model Advisor review model must differ from the primary model",
+    );
+  }
 }
 
 function sha256(value: string): string {
@@ -467,10 +501,12 @@ export function normalizeModelAdvisorPolicy(
   if (unsupported) {
     throw new Error(`Unsupported Model Advisor rule: ${unsupported}`);
   }
+  const reviewModel = normalizeAdvisorReviewModel(input.reviewModel);
   return {
     mode: input.mode,
     enabledRules,
     maxCorrectionAttempts: input.maxCorrectionAttempts ?? 0,
+    ...(reviewModel ? { reviewModel } : {}),
   };
 }
 

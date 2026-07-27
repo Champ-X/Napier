@@ -683,6 +683,229 @@ describe("AgentRuntime demo path", () => {
     expect(JSON.stringify(events)).not.toContain("git reset --hard");
   });
 
+  it("uses an independent zero-tool Advisor before accepting a visible turn", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      modelAdvisor: {
+        mode: "enforce",
+        enabledRules: [],
+        maxCorrectionAttempts: 1,
+        reviewModel: { provider: "faux-turn-reviewer", id: "faux-1" },
+      },
+    });
+    const thread = await store.createThread({
+      title: "Independent turn review",
+      agentId: agent.id,
+    });
+    const candidate =
+      "All checks passed even though no verification evidence was recorded.";
+    const guidance =
+      "Remove the unsupported completion claim and state the evidence boundary.";
+    const worker = fauxProvider({ provider: "faux-turn-worker" });
+    worker.setResponses([
+      fauxAssistantMessage(candidate),
+      (context) => {
+        expect(context.tools).toEqual([]);
+        expect(JSON.stringify(context.messages)).toContain(
+          "Address blocker categories: independent_review:evidence",
+        );
+        return fauxAssistantMessage(
+          "I inspected the available ledger metadata; verification remains open.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const reviewer = fauxProvider({ provider: "faux-turn-reviewer" });
+    reviewer.setResponses([
+      (context) => {
+        expect(context.tools).toEqual([]);
+        expect(JSON.stringify(context.messages)).toContain(candidate);
+        return fauxMessageWithUsage(
+          JSON.stringify({
+            verdict: "revise",
+            score: 62,
+            risk: "medium",
+            issues: [
+              {
+                code: "evidence",
+                severity: "warning",
+                guidance,
+              },
+            ],
+          }),
+          10,
+          5,
+        );
+      },
+      fauxMessageWithUsage(
+        JSON.stringify({
+          verdict: "accept",
+          score: 94,
+          risk: "low",
+          issues: [],
+        }),
+        11,
+        4,
+      ),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(worker.provider);
+    registry.registerProvider(reviewer.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Report only evidence-backed verification status.",
+      model: { provider: "faux-turn-worker", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(run.configuration).toEqual(
+      expect.objectContaining({
+        schemaVersion: 6,
+        modelAdvisor: expect.objectContaining({
+          reviewModel: { provider: "faux-turn-reviewer", id: "faux-1" },
+        }),
+      }),
+    );
+    expect(worker.state.callCount).toBe(3);
+    expect(reviewer.state.callCount).toBe(2);
+    const events = await store.listEvents(thread.id);
+    const reviewEvents = events.filter(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    );
+    expect(reviewEvents).toHaveLength(2);
+    expect(
+      reviewEvents
+        .map(ledgerEventUsage)
+        .every((usage) => usage.inputTokens > 0 && usage.outputTokens > 0),
+    ).toBe(true);
+    const accountedUsage = events
+      .filter((event) =>
+        [
+          "model.response",
+          "context.compaction.completed",
+          "context.compaction.failed",
+          "goal.evaluated",
+          "memory.extraction.completed",
+          "memory.extraction.failed",
+          "model.advisor.independent.reviewed",
+        ].includes(event.type),
+      )
+      .map(ledgerEventUsage)
+      .reduce(
+        (total, usage) => ({
+          inputTokens: total.inputTokens + usage.inputTokens,
+          outputTokens: total.outputTokens + usage.outputTokens,
+          cacheReadTokens: total.cacheReadTokens + usage.cacheReadTokens,
+          cacheWriteTokens: total.cacheWriteTokens + usage.cacheWriteTokens,
+          costUsd: total.costUsd + usage.costUsd,
+        }),
+        {
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          costUsd: 0,
+        },
+      );
+    expect(run.usage).toEqual(accountedUsage);
+    expect(
+      events.find(
+        (event) => event.type === "model.advisor.correction.requested",
+      )?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        source: "combined_advisor",
+        blockerRuleIds: ["independent_review:evidence"],
+      }),
+    );
+    expect(
+      events.find((event) => event.type === "model.advisor.correction.outcome")
+        ?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        source: "combined_advisor",
+        status: "accepted",
+        attempt: 1,
+      }),
+    );
+    expect(
+      events
+        .filter((event) => event.type === "message.assistant")
+        .map((event) => event.payload),
+    ).toEqual([
+      expect.objectContaining({
+        text: "I inspected the available ledger metadata; verification remains open.",
+      }),
+    ]);
+    expect(JSON.stringify(events)).not.toContain(candidate);
+    expect(JSON.stringify(events)).not.toContain(guidance);
+  });
+
+  it("fails independent enforcement immediately when the reviewer is unavailable", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      modelAdvisor: {
+        mode: "enforce",
+        enabledRules: [],
+        maxCorrectionAttempts: 3,
+        reviewModel: { provider: "missing-reviewer", id: "missing-1" },
+      },
+    });
+    const thread = await store.createThread({
+      title: "Missing independent reviewer",
+      agentId: agent.id,
+    });
+    const candidate = "This candidate must remain hidden.";
+    const worker = fauxProvider({ provider: "faux-reviewer-missing-worker" });
+    worker.setResponses([fauxAssistantMessage(candidate)]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(worker.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Require an independent review.",
+      model: { provider: worker.provider.id, id: "faux-1" },
+    });
+
+    expect(run.status).toBe("failed");
+    expect(worker.state.callCount).toBe(1);
+    const events = await store.listEvents(thread.id);
+    expect(
+      events.find(
+        (event) => event.type === "model.advisor.independent.reviewed",
+      )?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        verdict: "inconclusive",
+        diagnosticCodes: ["review_model_missing"],
+      }),
+    );
+    expect(
+      events.some(
+        (event) => event.type === "model.advisor.correction.requested",
+      ),
+    ).toBe(false);
+    expect(events.some((event) => event.type === "message.assistant")).toBe(
+      false,
+    );
+    expect(JSON.stringify(events)).not.toContain(candidate);
+  });
+
   it("fails closed after exhausting bounded advisor corrections", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

@@ -1,4 +1,6 @@
 import type {
+  IndependentModelAdvisorReview,
+  ModelAdvisorBlockerId,
   ModelAdvisorCorrectionOutcomePayload,
   ModelAdvisorCorrectionRequestPayload,
   ModelAdvisorDiagnostic,
@@ -9,6 +11,7 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import type { IndependentModelAdvisorGuidance } from "./independent-model-advisor.js";
 
 export interface CreateModelAdvisorNoticeInput {
   assistantText: string;
@@ -22,12 +25,29 @@ export interface ModelAdvisorCorrectionRequest {
   payload: ModelAdvisorCorrectionRequestPayload;
 }
 
+export interface ModelAdvisorBlockEvidence {
+  textSha256: string;
+  evidenceSha256: string;
+  blockerIds: ModelAdvisorBlockerId[];
+  guidance: string[];
+  correctable: boolean;
+}
+
 export class ModelAdvisorBlockedError extends Error {
+  readonly block: ModelAdvisorBlockEvidence;
+
   constructor(readonly notice: ModelAdvisorNoticePayload) {
-    super(
-      `Model Advisor blocked assistant response: ${notice.diagnosticSetSha256}`,
-    );
+    const block = createModelAdvisorBlockFromNotice(notice);
+    super(`Model Advisor blocked assistant response: ${block.evidenceSha256}`);
     this.name = "ModelAdvisorBlockedError";
+    this.block = block;
+  }
+}
+
+export class CombinedModelAdvisorBlockedError extends Error {
+  constructor(readonly block: ModelAdvisorBlockEvidence) {
+    super(`Model Advisor blocked assistant response: ${block.evidenceSha256}`);
+    this.name = "CombinedModelAdvisorBlockedError";
   }
 }
 
@@ -110,32 +130,54 @@ export function createModelAdvisorCorrectionRequest(input: {
   attempt: number;
   maxAttempts: number;
 }): ModelAdvisorCorrectionRequest {
+  if (!isModelAdvisorBlocked(input.notice)) {
+    throw new Error("Model Advisor correction request is invalid");
+  }
+  return createModelAdvisorCorrectionRequestFromBlock({
+    block: createModelAdvisorBlockFromNotice(input.notice),
+    turnSource: input.turnSource,
+    attempt: input.attempt,
+    maxAttempts: input.maxAttempts,
+  });
+}
+
+export function createModelAdvisorCorrectionRequestFromBlock(input: {
+  block: ModelAdvisorBlockEvidence;
+  turnSource: string;
+  attempt: number;
+  maxAttempts: number;
+}): ModelAdvisorCorrectionRequest {
   if (
-    !isModelAdvisorBlocked(input.notice) ||
     !Number.isSafeInteger(input.attempt) ||
     input.attempt < 1 ||
     !Number.isSafeInteger(input.maxAttempts) ||
-    input.maxAttempts < input.attempt
+    input.maxAttempts < input.attempt ||
+    !input.block.correctable ||
+    !/^[a-f0-9]{64}$/u.test(input.block.textSha256) ||
+    !/^[a-f0-9]{64}$/u.test(input.block.evidenceSha256)
   ) {
     throw new Error("Model Advisor correction request is invalid");
   }
   const blockerRuleIds = [
-    ...new Set(
-      input.notice.diagnostics
-        .filter((diagnostic) => diagnostic.severity === "blocker")
-        .map((diagnostic) => diagnostic.ruleId),
-    ),
-  ].sort();
+    ...new Set(input.block.blockerIds),
+  ].sort() as ModelAdvisorBlockerId[];
   if (blockerRuleIds.length === 0) {
     throw new Error("Model Advisor correction request has no blocker rule");
   }
+  const guidance = input.block.guidance.map((entry) =>
+    normalizeCorrectionGuidance(entry),
+  );
+  if (guidance.length > 6) {
+    throw new Error("Model Advisor correction guidance is invalid");
+  }
   const prompt = [
     "<model-advisor-correction>",
-    "The previous draft was blocked by deterministic output policy.",
+    "The previous draft was blocked by the configured output advisors.",
     "Rewrite the final answer for the original operator request.",
     "Do not call tools, claim new tool results, or quote the previous draft.",
-    `Remove or safely paraphrase content matching: ${blockerRuleIds.join(", ")}.`,
-    `Diagnostic set SHA-256: ${input.notice.diagnosticSetSha256}`,
+    `Address blocker categories: ${blockerRuleIds.join(", ")}.`,
+    ...guidance.map((entry) => `Reviewer guidance: ${entry}`),
+    `Advisor evidence SHA-256: ${input.block.evidenceSha256}`,
     `Correction attempt: ${input.attempt} of ${input.maxAttempts}`,
     "Return only the corrected final answer.",
     "</model-advisor-correction>",
@@ -143,12 +185,16 @@ export function createModelAdvisorCorrectionRequest(input: {
   const content = {
     kind: "napier.model-advisor-correction-request" as const,
     schemaVersion: 1 as const,
-    source: "deterministic_stream_lint" as const,
+    source: blockerRuleIds.some((rule) =>
+      rule.startsWith("independent_review:"),
+    )
+      ? ("combined_advisor" as const)
+      : ("deterministic_stream_lint" as const),
     turnSource: input.turnSource,
     attempt: input.attempt,
     maxAttempts: input.maxAttempts,
-    predecessorTextSha256: input.notice.textSha256,
-    diagnosticSetSha256: input.notice.diagnosticSetSha256,
+    predecessorTextSha256: input.block.textSha256,
+    diagnosticSetSha256: input.block.evidenceSha256,
     blockerRuleIds,
     correctivePromptSha256: sha256(prompt),
   };
@@ -158,6 +204,61 @@ export function createModelAdvisorCorrectionRequest(input: {
       ...content,
       contentSha256: sha256(canonicalJson(content)),
     },
+  };
+}
+
+export function createCombinedModelAdvisorBlock(input: {
+  notice?: ModelAdvisorNoticePayload;
+  review?: IndependentModelAdvisorReview;
+  reviewGuidance?: IndependentModelAdvisorGuidance[];
+  policy: ResolvedModelAdvisorPolicy;
+}): ModelAdvisorBlockEvidence | undefined {
+  const deterministicBlocked = Boolean(
+    input.notice && isModelAdvisorBlocked(input.notice),
+  );
+  const independentBlocked = Boolean(
+    input.review &&
+    input.policy.mode === "enforce" &&
+    input.review.verdict !== "accept",
+  );
+  if (!deterministicBlocked && !independentBlocked) return undefined;
+  const blockerIds: ModelAdvisorBlockerId[] = [
+    ...(deterministicBlocked
+      ? input
+          .notice!.diagnostics.filter(
+            (diagnostic) => diagnostic.severity === "blocker",
+          )
+          .map((diagnostic) => diagnostic.ruleId)
+      : []),
+    ...(independentBlocked && input.review
+      ? input.review.issues.length > 0
+        ? input.review.issues.map(
+            (issue) =>
+              `independent_review:${issue.code}` as ModelAdvisorBlockerId,
+          )
+        : (["independent_review:inconclusive"] as ModelAdvisorBlockerId[])
+      : []),
+  ];
+  const evidenceParts = {
+    deterministicNoticeSha256: input.notice?.contentSha256 ?? "",
+    independentReviewSha256: input.review?.contentSha256 ?? "",
+  };
+  const evidenceSha256 =
+    deterministicBlocked && !independentBlocked
+      ? input.notice!.diagnosticSetSha256
+      : sha256(canonicalJson(evidenceParts));
+  return {
+    textSha256: input.review?.candidateTextSha256 ?? input.notice!.textSha256,
+    evidenceSha256,
+    blockerIds,
+    guidance:
+      input.reviewGuidance?.map((issue) => issue.guidance) ??
+      (independentBlocked
+        ? [
+            "Return a conservative answer that clearly states unresolved evidence and uncertainty.",
+          ]
+        : []),
+    correctable: input.review?.verdict !== "inconclusive",
   };
 }
 
@@ -178,7 +279,7 @@ export function createModelAdvisorCorrectionOutcome(input: {
   const content = {
     kind: "napier.model-advisor-correction-outcome" as const,
     schemaVersion: 1 as const,
-    source: "deterministic_stream_lint" as const,
+    source: input.request.source,
     status: input.status,
     attempt: input.request.attempt,
     maxAttempts: input.request.maxAttempts,
@@ -274,6 +375,31 @@ function countPatternHits(text: string, patterns: RegExp[]): number {
     (count, pattern) => count + (pattern.test(text) ? 1 : 0),
     0,
   );
+}
+
+function normalizeCorrectionGuidance(value: string): string {
+  const normalized = value
+    .replace(/[\u0000-\u001f\u007f<>]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+  if (!normalized || normalized.length > 600) {
+    throw new Error("Model Advisor correction guidance is invalid");
+  }
+  return normalized;
+}
+
+export function createModelAdvisorBlockFromNotice(
+  notice: ModelAdvisorNoticePayload,
+): ModelAdvisorBlockEvidence {
+  return {
+    textSha256: notice.textSha256,
+    evidenceSha256: notice.diagnosticSetSha256,
+    blockerIds: notice.diagnostics
+      .filter((diagnostic) => diagnostic.severity === "blocker")
+      .map((diagnostic) => diagnostic.ruleId),
+    guidance: [],
+    correctable: true,
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

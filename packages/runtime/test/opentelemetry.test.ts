@@ -9,6 +9,7 @@ import type {
 } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { createId } from "../src/ids.js";
 import {
   createOpenTelemetryTraceArtifact,
@@ -211,6 +212,54 @@ describe("OpenTelemetry trace export", () => {
       completedItems: ["TOP_SECRET_MILESTONE_COMPLETED"],
       openLoops: ["TOP_SECRET_MILESTONE_OPEN_LOOP"],
     });
+    const advisorIssues = [
+      {
+        code: "evidence" as const,
+        severity: "warning" as const,
+        guidanceSha256: "a".repeat(64),
+      },
+    ];
+    const advisorReviewContent = {
+      kind: "napier.independent-model-advisor-review" as const,
+      schemaVersion: 1 as const,
+      policyId: "napier.independent-model-advisor.v1" as const,
+      turnSource: "user",
+      candidateModel: { provider: "faux-secure", id: "faux-1" },
+      reviewerModel: { provider: "faux-reviewer", id: "faux-2" },
+      verdict: "revise" as const,
+      score: 61,
+      risk: "medium" as const,
+      issues: advisorIssues,
+      diagnosticCodes: [],
+      candidateTextSha256: "b".repeat(64),
+      candidateTextBytes: 128,
+      turnPromptSha256: "c".repeat(64),
+      evidenceSha256: "d".repeat(64),
+      criteriaSha256: "e".repeat(64),
+      inputSha256: "f".repeat(64),
+      promptSha256: "1".repeat(64),
+      responseSha256: "2".repeat(64),
+      reviewSchemaSha256: "3".repeat(64),
+      issueSetSha256: sha256(canonicalJson(advisorIssues)),
+      usage: {
+        inputTokens: 12,
+        outputTokens: 4,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costUsd: 0.002,
+      },
+    };
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "model.advisor.independent.reviewed",
+      category: "system",
+      visibility: "debug",
+      payload: {
+        ...advisorReviewContent,
+        contentSha256: sha256(canonicalJson(advisorReviewContent)),
+      },
+    });
     await store.requestOperatorDecision({
       threadId: thread.id,
       runId: run.id,
@@ -310,6 +359,24 @@ describe("OpenTelemetry trace export", () => {
     expect(attributeValue(unknownTool.attributes, "napier.outcome.known")).toBe(
       false,
     );
+    const advisorEvent = traceSpans
+      .flatMap((span) => span.events)
+      .find((event) => event.name === "model.advisor.independent.reviewed")!;
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.reviewer_model",
+      ),
+    ).toBe("faux-reviewer/faux-2");
+    expect(
+      attributeValue(advisorEvent.attributes, "napier.event.payload.verdict"),
+    ).toBe("revise");
+    expect(
+      attributeValue(advisorEvent.attributes, "napier.event.payload.risk"),
+    ).toBe("medium");
+    expect(
+      attributeValue(advisorEvent.attributes, "napier.event.payload.score"),
+    ).toBe(61);
 
     const serialized = JSON.stringify(first);
     for (const secret of [

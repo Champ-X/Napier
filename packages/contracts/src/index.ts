@@ -162,6 +162,59 @@ export type ModelAdvisorSeverity = "warning" | "blocker";
 
 export type ModelAdvisorMode = "observe" | "enforce" | "off";
 
+export type IndependentModelAdvisorIssueCode =
+  | "instruction_following"
+  | "correctness"
+  | "evidence"
+  | "safety"
+  | "scope"
+  | "regression";
+
+export type ModelAdvisorBlockerId =
+  | ModelAdvisorRuleId
+  | `independent_review:${IndependentModelAdvisorIssueCode}`
+  | "independent_review:inconclusive";
+
+export type IndependentModelAdvisorVerdict =
+  | "accept"
+  | "revise"
+  | "block"
+  | "inconclusive";
+
+export type IndependentModelAdvisorRisk = "low" | "medium" | "high";
+
+export interface IndependentModelAdvisorIssue {
+  code: IndependentModelAdvisorIssueCode;
+  severity: ModelAdvisorSeverity;
+  guidanceSha256: string;
+}
+
+export interface IndependentModelAdvisorReview {
+  kind: "napier.independent-model-advisor-review";
+  schemaVersion: 1;
+  policyId: "napier.independent-model-advisor.v1";
+  turnSource: string;
+  candidateModel: ModelRef;
+  reviewerModel: ModelRef;
+  verdict: IndependentModelAdvisorVerdict;
+  score: number;
+  risk: IndependentModelAdvisorRisk;
+  issues: IndependentModelAdvisorIssue[];
+  diagnosticCodes: string[];
+  candidateTextSha256: string;
+  candidateTextBytes: number;
+  turnPromptSha256: string;
+  evidenceSha256: string;
+  criteriaSha256: string;
+  inputSha256: string;
+  promptSha256: string;
+  responseSha256: string;
+  reviewSchemaSha256: string;
+  issueSetSha256: string;
+  usage: Usage;
+  contentSha256: string;
+}
+
 export interface ModelAdvisorDiagnostic {
   ruleId: ModelAdvisorRuleId;
   severity: ModelAdvisorSeverity;
@@ -198,22 +251,27 @@ export interface LegacyModelAdvisorPolicy {
 
 export interface ModelAdvisorPolicy extends LegacyModelAdvisorPolicy {
   maxCorrectionAttempts?: number;
+  reviewModel?: ModelRef;
 }
 
 export interface ResolvedModelAdvisorPolicy extends ModelAdvisorPolicy {
   maxCorrectionAttempts: number;
 }
 
+export interface LegacyResolvedModelAdvisorPolicy extends LegacyModelAdvisorPolicy {
+  maxCorrectionAttempts: number;
+}
+
 export interface ModelAdvisorCorrectionRequestPayload {
   kind: "napier.model-advisor-correction-request";
   schemaVersion: 1;
-  source: "deterministic_stream_lint";
+  source: "deterministic_stream_lint" | "combined_advisor";
   turnSource: string;
   attempt: number;
   maxAttempts: number;
   predecessorTextSha256: string;
   diagnosticSetSha256: string;
-  blockerRuleIds: ModelAdvisorRuleId[];
+  blockerRuleIds: ModelAdvisorBlockerId[];
   correctivePromptSha256: string;
   contentSha256: string;
 }
@@ -221,7 +279,7 @@ export interface ModelAdvisorCorrectionRequestPayload {
 export interface ModelAdvisorCorrectionOutcomePayload {
   kind: "napier.model-advisor-correction-outcome";
   schemaVersion: 1;
-  source: "deterministic_stream_lint";
+  source: "deterministic_stream_lint" | "combined_advisor";
   status: "accepted" | "blocked" | "exhausted";
   attempt: number;
   maxAttempts: number;
@@ -2518,6 +2576,14 @@ export interface RunConfigurationFingerprintV5 extends RunConfigurationFingerpri
   automaticRecovery: AutomaticRecoveryPolicy;
   executionMode: RunExecutionMode;
   skillCatalogSha256: string;
+  modelAdvisor: LegacyResolvedModelAdvisorPolicy;
+}
+
+export interface RunConfigurationFingerprintV6 extends RunConfigurationFingerprintBase {
+  schemaVersion: 6;
+  automaticRecovery: AutomaticRecoveryPolicy;
+  executionMode: RunExecutionMode;
+  skillCatalogSha256: string;
   modelAdvisor: ResolvedModelAdvisorPolicy;
 }
 
@@ -2526,7 +2592,8 @@ export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV2
   | RunConfigurationFingerprintV3
   | RunConfigurationFingerprintV4
-  | RunConfigurationFingerprintV5;
+  | RunConfigurationFingerprintV5
+  | RunConfigurationFingerprintV6;
 
 export type AutomaticRecoveryBlockReason =
   | "configuration_missing"

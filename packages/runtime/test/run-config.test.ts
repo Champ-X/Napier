@@ -169,6 +169,58 @@ describe("Run configuration fingerprints", () => {
     );
   });
 
+  it("binds an independent Advisor model in schema-6 fingerprints", () => {
+    const fingerprint = createRunConfigurationFingerprint(
+      {
+        ...PROFILE,
+        modelAdvisor: {
+          ...PROFILE.modelAdvisor!,
+          reviewModel: {
+            provider: "openrouter",
+            id: "anthropic/claude-sonnet",
+          },
+        },
+      },
+      PROFILE.model,
+      "standard",
+      { skillCatalogSha256: "a".repeat(64) },
+    );
+
+    expect(fingerprint).toEqual(
+      expect.objectContaining({
+        schemaVersion: 6,
+        modelAdvisor: {
+          mode: "observe",
+          enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 2,
+          reviewModel: {
+            provider: "openrouter",
+            id: "anthropic/claude-sonnet",
+          },
+        },
+      }),
+    );
+    expect(validateRunConfigurationFingerprint(fingerprint)).toEqual(
+      fingerprint,
+    );
+    expect(fingerprintModelAdvisor(fingerprint)).toEqual(
+      fingerprint.modelAdvisor,
+    );
+
+    const missingReviewer = structuredClone(fingerprint);
+    delete missingReviewer.modelAdvisor.reviewModel;
+    const content = {
+      ...missingReviewer,
+      contentSha256: undefined,
+    };
+    missingReviewer.contentSha256 = createHash("sha256")
+      .update(canonicalJson(content))
+      .digest("hex");
+    expect(() => validateRunConfigurationFingerprint(missingReviewer)).toThrow(
+      "schema 6 requires a review model",
+    );
+  });
+
   it("preserves schema-4 Advisor hashes with zero correction attempts", () => {
     const current = createRunConfigurationFingerprint(
       PROFILE,

@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createCombinedModelAdvisorBlock,
   createModelAdvisorCorrectionOutcome,
   createModelAdvisorCorrectionRequest,
+  createModelAdvisorCorrectionRequestFromBlock,
   createModelAdvisorNotice,
+  ModelAdvisorBlockedError,
 } from "../src/model-advisor.js";
 
 const DEFAULT_POLICY = {
@@ -119,6 +122,15 @@ describe("model advisor stream lint", () => {
         ],
       }),
     );
+    if (!notice) throw new Error("Expected blocked notice");
+    const legacyError = new ModelAdvisorBlockedError(notice);
+    expect(legacyError.notice).toBe(notice);
+    expect(legacyError.block).toEqual(
+      expect.objectContaining({
+        evidenceSha256: notice.diagnosticSetSha256,
+        correctable: true,
+      }),
+    );
   });
 
   it("does not record notices when advisor policy is off", () => {
@@ -188,5 +200,101 @@ describe("model advisor stream lint", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+  });
+
+  it("combines independent review guidance without persisting its prose", () => {
+    const guidance =
+      "Remove the unsupported claim and state the remaining evidence gap.";
+    const review = {
+      kind: "napier.independent-model-advisor-review" as const,
+      schemaVersion: 1 as const,
+      policyId: "napier.independent-model-advisor.v1" as const,
+      turnSource: "user",
+      candidateModel: { provider: "worker", id: "worker-1" },
+      reviewerModel: { provider: "reviewer", id: "reviewer-1" },
+      verdict: "revise" as const,
+      score: 65,
+      risk: "medium" as const,
+      issues: [
+        {
+          code: "evidence" as const,
+          severity: "warning" as const,
+          guidanceSha256: "a".repeat(64),
+        },
+      ],
+      diagnosticCodes: [],
+      candidateTextSha256: "b".repeat(64),
+      candidateTextBytes: 42,
+      turnPromptSha256: "c".repeat(64),
+      evidenceSha256: "d".repeat(64),
+      criteriaSha256: "e".repeat(64),
+      inputSha256: "f".repeat(64),
+      promptSha256: "1".repeat(64),
+      responseSha256: "2".repeat(64),
+      reviewSchemaSha256: "3".repeat(64),
+      issueSetSha256: "4".repeat(64),
+      usage: {
+        inputTokens: 10,
+        outputTokens: 5,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        costUsd: 0.01,
+      },
+      contentSha256: "5".repeat(64),
+    };
+    const block = createCombinedModelAdvisorBlock({
+      review,
+      reviewGuidance: [{ code: "evidence", severity: "warning", guidance }],
+      policy: {
+        mode: "enforce",
+        enabledRules: [],
+        maxCorrectionAttempts: 1,
+        reviewModel: review.reviewerModel,
+      },
+    });
+    if (!block) throw new Error("Expected independent review blocker");
+    expect(block.correctable).toBe(true);
+    const request = createModelAdvisorCorrectionRequestFromBlock({
+      block,
+      turnSource: "user",
+      attempt: 1,
+      maxAttempts: 1,
+    });
+
+    expect(request.prompt).toContain(guidance);
+    expect(request.payload).toEqual(
+      expect.objectContaining({
+        source: "combined_advisor",
+        blockerRuleIds: ["independent_review:evidence"],
+        predecessorTextSha256: review.candidateTextSha256,
+      }),
+    );
+    expect(JSON.stringify(request.payload)).not.toContain(guidance);
+
+    const inconclusive = createCombinedModelAdvisorBlock({
+      review: {
+        ...review,
+        verdict: "inconclusive",
+        score: 0,
+        risk: "high",
+        issues: [],
+        diagnosticCodes: ["review_failed_closed"],
+      },
+      policy: {
+        mode: "enforce",
+        enabledRules: [],
+        maxCorrectionAttempts: 1,
+        reviewModel: review.reviewerModel,
+      },
+    });
+    expect(inconclusive?.correctable).toBe(false);
+    expect(() =>
+      createModelAdvisorCorrectionRequestFromBlock({
+        block: inconclusive!,
+        turnSource: "user",
+        attempt: 1,
+        maxAttempts: 1,
+      }),
+    ).toThrow("correction request is invalid");
   });
 });

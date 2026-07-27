@@ -42,6 +42,10 @@ import {
   AGENT_MILESTONE_RECORDED_EVENT,
   projectAgentMilestones,
 } from "./agent-milestones.js";
+import {
+  INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
+  projectIndependentModelAdvisorReviews,
+} from "./independent-model-advisor.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
 import {
@@ -628,6 +632,15 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         `Thread replay bundle Agent milestone references unknown Run: ${milestone.id}`,
       );
     }
+  }
+  const advisorReviewEvents = typedEvents.filter(
+    (event) => event.type === INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
+  );
+  const advisorReviews = projectIndependentModelAdvisorReviews(typedEvents);
+  if (advisorReviews.length !== advisorReviewEvents.length) {
+    throw new Error(
+      "Thread replay bundle independent Model Advisor review is invalid",
+    );
   }
   for (const decision of projectOperatorDecisions(typedEvents)) {
     if (!runIds.has(decision.runId)) {

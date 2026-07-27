@@ -1761,6 +1761,10 @@ describe("Napier HTTP goal flow", () => {
           mode: "enforce",
           enabledRules: ["destructive_command_reference"],
           maxCorrectionAttempts: 2,
+          reviewModel: {
+            provider: "openrouter",
+            id: "anthropic/claude-sonnet",
+          },
         },
         threadId: created.thread.id,
       }),
@@ -1793,6 +1797,10 @@ describe("Napier HTTP goal flow", () => {
           mode: "enforce",
           enabledRules: ["destructive_command_reference"],
           maxCorrectionAttempts: 2,
+          reviewModel: {
+            provider: "openrouter",
+            id: "anthropic/claude-sonnet",
+          },
         },
       }),
     );

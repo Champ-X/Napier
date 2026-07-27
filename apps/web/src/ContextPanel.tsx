@@ -260,6 +260,11 @@ export default function ContextPanel({
       agent.modelAdvisor?.maxCorrectionAttempts ??
         DEFAULT_MODEL_ADVISOR_POLICY.maxCorrectionAttempts,
     );
+  const [agentAdvisorReviewModelKey, setAgentAdvisorReviewModelKey] = useState(
+    agent.modelAdvisor?.reviewModel
+      ? `${agent.modelAdvisor.reviewModel.provider}/${agent.modelAdvisor.reviewModel.id}`
+      : "",
+  );
   const [agentRunMaxTurns, setAgentRunMaxTurns] = useState(
     agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
   );
@@ -367,6 +372,11 @@ export default function ContextPanel({
       agent.modelAdvisor?.maxCorrectionAttempts ??
         DEFAULT_MODEL_ADVISOR_POLICY.maxCorrectionAttempts,
     );
+    setAgentAdvisorReviewModelKey(
+      agent.modelAdvisor?.reviewModel
+        ? `${agent.modelAdvisor.reviewModel.provider}/${agent.modelAdvisor.reviewModel.id}`
+        : "",
+    );
     setAgentRunMaxTurns(
       agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
     );
@@ -389,6 +399,12 @@ export default function ContextPanel({
     );
     setRollbackTarget(undefined);
   }, [agent.id, agent.revision]);
+
+  useEffect(() => {
+    if (agentAdvisorReviewModelKey === selectedModelKey) {
+      setAgentAdvisorReviewModelKey("");
+    }
+  }, [agentAdvisorReviewModelKey, selectedModelKey]);
 
   useEffect(() => {
     let active = true;
@@ -466,6 +482,9 @@ export default function ContextPanel({
           mode: agentAdvisorMode,
           enabledRules: agentAdvisorRules,
           maxCorrectionAttempts: agentAdvisorCorrectionAttempts,
+          ...(agentAdvisorReviewModelKey
+            ? { reviewModel: parseModelKey(agentAdvisorReviewModelKey) }
+            : {}),
         },
         runLimits: {
           maxTurns: agentRunMaxTurns,
@@ -1207,6 +1226,41 @@ export default function ContextPanel({
             max={3}
             onChange={setAgentAdvisorCorrectionAttempts}
           />
+          <label className="context-field">
+            <span>{copy.context.modelAdvisorReviewModel}</span>
+            <select
+              value={agentAdvisorReviewModelKey}
+              disabled={configurationBusy || agentAdvisorMode === "off"}
+              onChange={(event) =>
+                setAgentAdvisorReviewModelKey(event.target.value)
+              }
+            >
+              <option value="">
+                {copy.context.modelAdvisorReviewModelDisabled}
+              </option>
+              {models
+                .filter(
+                  (model) => `${model.provider}/${model.id}` !== "napier/demo",
+                )
+                .map((model) => {
+                  const key = `${model.provider}/${model.id}`;
+                  return (
+                    <option
+                      key={key}
+                      value={key}
+                      disabled={!model.configured || key === selectedModelKey}
+                    >
+                      {model.provider} / {model.name}
+                      {model.configured
+                        ? key === selectedModelKey
+                          ? ` · ${copy.context.modelAdvisorReviewModelPrimary}`
+                          : ""
+                        : ` · ${copy.context.unavailable}`}
+                    </option>
+                  );
+                })}
+            </select>
+          </label>
           <p className="guardrail-note">
             <ShieldCheck size={11} aria-hidden="true" />
             {copy.context.modelAdvisorBody}
@@ -2880,6 +2934,7 @@ function comparableModelAdvisor(agent: AgentProfile) {
     mode: policy.mode,
     enabledRules: [...policy.enabledRules].sort(),
     maxCorrectionAttempts: policy.maxCorrectionAttempts ?? 0,
+    reviewModel: agent.modelAdvisor?.reviewModel,
   };
 }
 

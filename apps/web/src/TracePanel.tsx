@@ -30,6 +30,11 @@ import {
 } from "./agent-milestone-api";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
 import { copy } from "./copy";
+import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
+import {
+  independentModelAdvisorReviewViews,
+  type IndependentModelAdvisorReviewView,
+} from "./model-advisor-review-view";
 import type {
   OpenTelemetryTraceReceipt,
   OpenTelemetryTraceVerificationReceipt,
@@ -65,6 +70,7 @@ export default function TracePanel({
   const [milestonesUnavailable, setMilestonesUnavailable] = useState(false);
   const threadId = runs[0]?.threadId ?? events[0]?.threadId;
   const milestoneEventSeq = latestAgentMilestoneEventSeq(events);
+  const advisorReviews = independentModelAdvisorReviewViews(events);
 
   useEffect(() => {
     if (exportRunId && !runs.some((run) => run.id === exportRunId)) {
@@ -225,6 +231,7 @@ export default function TracePanel({
         milestones={milestones}
         unavailable={milestonesUnavailable}
       />
+      <IndependentAdvisorLedger reviews={advisorReviews} />
       <DelegationLedger tasks={subagents} reviewerModel={reviewerModel} />
       {events.length === 0 ? (
         <p className="empty-panel">{copy.trace.empty}</p>
@@ -248,6 +255,81 @@ export default function TracePanel({
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+function IndependentAdvisorLedger({
+  reviews,
+}: {
+  reviews: IndependentModelAdvisorReviewView[];
+}) {
+  return (
+    <section
+      className="independent-advisor-ledger"
+      aria-labelledby="independent-advisor-title"
+    >
+      <header>
+        <div>
+          <span>{modelAdvisorReviewCopy.eyebrow}</span>
+          <h3 id="independent-advisor-title">{modelAdvisorReviewCopy.title}</h3>
+        </div>
+        <span>{String(reviews.length).padStart(2, "0")}</span>
+      </header>
+      {reviews.length === 0 ? (
+        <p>{modelAdvisorReviewCopy.empty}</p>
+      ) : (
+        <ol>
+          {reviews.map((review) => (
+            <li
+              className={`independent-advisor-card verdict-${review.verdict}`}
+              key={`${review.eventSeq}:${review.contentSha256}`}
+            >
+              <header>
+                <strong>
+                  {modelAdvisorReviewCopy.verdicts[review.verdict]}
+                </strong>
+                <code>#{String(review.eventSeq).padStart(3, "0")}</code>
+              </header>
+              <dl>
+                <div>
+                  <dt>{modelAdvisorReviewCopy.score}</dt>
+                  <dd>{review.score}</dd>
+                </div>
+                <div>
+                  <dt>{modelAdvisorReviewCopy.risk}</dt>
+                  <dd>{review.risk}</dd>
+                </div>
+                <div>
+                  <dt>{modelAdvisorReviewCopy.issues}</dt>
+                  <dd>{review.issueCodes.length}</dd>
+                </div>
+              </dl>
+              <p>
+                <span>{modelAdvisorReviewCopy.reviewer}</span>
+                <code>{review.reviewerModel}</code>
+              </p>
+              {review.issueCodes.length > 0 ? (
+                <ul>
+                  {review.issueCodes.map((code) => (
+                    <li key={code}>{code}</li>
+                  ))}
+                </ul>
+              ) : review.diagnosticCodes.length > 0 ? (
+                <p>
+                  <span>{modelAdvisorReviewCopy.diagnostics}</span>
+                  <code>{review.diagnosticCodes.join(", ")}</code>
+                </p>
+              ) : null}
+              <footer>
+                <code title={review.contentSha256}>
+                  {review.contentSha256.slice(0, 12)}
+                </code>
+              </footer>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 }

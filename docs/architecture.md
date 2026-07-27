@@ -48,9 +48,10 @@ removal is a versioned contract change.
 - tool assembly, canonical workspace-path checks, hash-bound atomic editing
   with Hashline-style line anchors, sandboxed structured verification, and
   last-moment policy checks;
-- configurable deterministic Model Advisor notices that inspect assistant output
-  before the user-visible assistant message is recorded, while retaining only
-  hash-bound diagnostics;
+- configurable Model Advisor gates that combine deterministic output checks
+  with an optional distinct zero-tool review model before the user-visible
+  assistant message is recorded, while retaining only hash-bound candidate and
+  guidance evidence;
 - standard Agent Skills discovery;
 - hash-only signed Skill, Prompt, and Inspector package baselines plus local
   qualification checks;
@@ -361,14 +362,26 @@ deterministic Model Advisor lint pass over the assistant text and the current
 Run evidence. The first rules flag verification claims such as
 tests/build/checks passing without a completed `verify_workspace` tool, and
 destructive command references such as `git reset --hard` or `rm -rf` patterns.
-The Agent profile can switch the advisor `off`, choose the enabled rule set, or
-set `enforce` mode with zero to three correction attempts. Schema-5 Run
-configuration fingerprints bind that effective policy so replay comparison can
-detect correction-budget drift while preserving schema-4 verification for
-legacy Runs. In observe mode the resulting `model.advisor.notice` event is
-debug-only and hash-only: it records rule IDs, severity, match counts, text
-SHA-256, diagnostic-set SHA-256, tool evidence counts, the effective policy,
-and a stable content SHA-256, but not the matching text.
+The Agent profile can switch the advisor `off`, choose the enabled rule set,
+configure a distinct `reviewModel`, or set `enforce` mode with zero to three
+correction attempts. Schema-5 Run configuration fingerprints bind the
+deterministic policy and correction budget; schema 6 additionally binds the
+independent reviewer while preserving schema 1-5 verification. In observe mode
+the resulting `model.advisor.notice` event is debug-only and hash-only: it
+records rule IDs, severity, match counts, text SHA-256, diagnostic-set SHA-256,
+tool evidence counts, the effective policy, and a stable content SHA-256, but
+not the matching text.
+
+When `reviewModel` is configured, each non-tool candidate also enters one
+isolated `completeSimple` call with no tools. The reviewer sees the current turn
+prompt, candidate, frozen model identities, typed criteria, and metadata-only
+counts/names for completed or failed tools, milestones, and operator decisions.
+Its strict response is limited to verdict, score, risk, and six unique typed
+issues. `model.advisor.independent.reviewed` persists only model identities,
+issue codes/severities, usage, diagnostics, and SHA-256 bindings for candidate,
+turn prompt, evidence, criteria, input, prompt, response, issue set, and receipt.
+Free-form reviewer guidance exists only long enough to build a correction
+prompt and is never copied to the Ledger.
 
 Enforce mode replaces candidate text, reasoning, and delta content in model
 debug events with SHA-256 and byte-count evidence, and withholds deltas from the
@@ -381,7 +394,14 @@ extension, or subagent tools, so it can rewrite the answer without repeating
 side effects. `model.advisor.correction.outcome` binds the request to the
 accepted or blocked response hash. Exhausting the configured attempts fails the
 Run before `message.assistant` is recorded, and the failure message contains
-only the final diagnostic-set SHA-256.
+only the final diagnostic-set SHA-256. Independent `revise`, `block`, and
+`inconclusive` verdicts join deterministic blockers through one combined
+evidence hash and the same correction loop, so competing advisor state machines
+cannot authorize different candidates. Reviewer usage consumes the frozen Run
+budget and is included exactly once in final settlement. Portable fixtures
+recompute every known review receipt and fail closed on malformed payloads;
+OTLP admits reviewer/candidate model identities, verdict, score, risk, usage,
+and hashes while dropping nested issue data and all content prose.
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
 frames must not carry `id:`, and stream-local event sequence values must
@@ -884,12 +904,14 @@ profile revision ledger. Schema 3 adds `skillCatalogSha256`, computed from a
 canonical manifest of the enabled Skill files loaded for that Run. Schema 4
 also binds the effective Model Advisor mode and deterministic rule set. Schema
 5 adds the bounded correction-attempt policy while retaining schema-4 hash
-verification with an effective legacy budget of zero. The manifest contains
-requested/loaded/missing Skill names, relative `SKILL.md` paths, byte counts,
-diagnostics hash, and file SHA-256 values; it never stores Skill instruction
-text. The Agent records the same manifest as a `context.skills` debug event
-before model execution, so replay comparison can detect Skill content drift
-even when the enabled Skill names did not change.
+verification with an effective legacy budget of zero. Schema 6 adds the
+optional independent review model; schema-6 validation requires that identity
+to be present, while profiles reject a reviewer equal to their primary model.
+The manifest contains requested/loaded/missing Skill names, relative
+`SKILL.md` paths, byte counts, diagnostics hash, and file SHA-256 values; it
+never stores Skill instruction text. The Agent records the same manifest as a
+`context.skills` debug event before model execution, so replay comparison can
+detect Skill content drift even when the enabled Skill names did not change.
 
 Signed Skill package baselines reuse the Extension publisher trust domain but
 emit a distinct `napier.signed-skill-package` artifact. The manifest contains
@@ -1650,7 +1672,9 @@ delegation and Run limits, automatic-recovery policy, execution mode, and
 `systemPromptSha256`. The prompt itself is not duplicated. `contentSha256`
 covers every fingerprint field, while the duplicate Run-level revision and
 limits must agree with it. Schema 1 keeps its original exact key set and hash;
-schema 2 adds recovery policy and execution mode. A schema-1 Run compares
+schema 2 adds recovery policy and execution mode, schema 3 binds the Skill
+catalog, schemas 4-5 bind deterministic Advisor policy and correction limits,
+and schema 6 binds an independent reviewer identity. A schema-1 Run compares
 normally but is never automatically recovered.
 
 Run comparison reports changed configuration fields plus added/removed tools,
@@ -2877,7 +2901,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has twenty-four parts:
+The current boundary has twenty-five parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -2958,6 +2982,11 @@ The current boundary has twenty-four parts:
     bounds, immutable predecessor chains, runtime-derived Ledger event-range
     evidence, imported-range text redaction, metadata-only OTLP, read-only
     management access, and portable evidence rehashing.
+25. independent final-turn review with primary/reviewer identity separation,
+    zero-tool model calls, strict typed verdicts, hash-only candidate and
+    guidance receipts, shared bounded correction, frozen-budget accounting,
+    fail-closed inconclusive enforcement, metadata-only OTLP, lazy inspection,
+    and portable receipt revalidation.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.

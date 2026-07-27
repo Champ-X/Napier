@@ -71,13 +71,19 @@ import {
 } from "./memory.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
+  CombinedModelAdvisorBlockedError,
+  createCombinedModelAdvisorBlock,
   createModelAdvisorCorrectionOutcome,
-  createModelAdvisorCorrectionRequest,
+  createModelAdvisorCorrectionRequestFromBlock,
   createModelAdvisorNotice,
   isModelAdvisorBlocked,
   ModelAdvisorBlockedError,
   type ModelAdvisorCorrectionRequest,
 } from "./model-advisor.js";
+import {
+  INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
+  reviewIndependentModelAdvisorCandidate,
+} from "./independent-model-advisor.js";
 import { ModelRegistry } from "./models.js";
 import { createId } from "./ids.js";
 import { createOperatorDecisionTool } from "./operator-decision-tool.js";
@@ -362,6 +368,7 @@ export class AgentRuntime {
         text: string,
         source: TurnSource,
         advisorCorrection: boolean,
+        advisorReviewPrompt: string,
       ): Promise<string> => {
         return model
           ? this.runLive(
@@ -374,6 +381,7 @@ export class AgentRuntime {
               safeReadOnlyRecovery,
               skillCatalog,
               advisorCorrection,
+              advisorReviewPrompt,
               abortController.signal,
               budget,
               options.onEvent,
@@ -383,6 +391,7 @@ export class AgentRuntime {
               agentProfile,
               text,
               source,
+              advisorReviewPrompt,
               abortController.signal,
               budget,
               options.onEvent,
@@ -402,6 +411,7 @@ export class AgentRuntime {
               currentText,
               currentSource,
               currentSource === "advisor_correction",
+              text,
             );
             if (correctionRequest) {
               await this.recordModelAdvisorCorrectionOutcome(
@@ -416,7 +426,12 @@ export class AgentRuntime {
             }
             return response;
           } catch (error) {
-            if (!(error instanceof ModelAdvisorBlockedError)) throw error;
+            const block =
+              error instanceof ModelAdvisorBlockedError ||
+              error instanceof CombinedModelAdvisorBlockedError
+                ? error.block
+                : undefined;
+            if (!block) throw error;
             if (correctionRequest) {
               await this.recordModelAdvisorCorrectionOutcome(
                 run,
@@ -426,18 +441,19 @@ export class AgentRuntime {
                     correctionAttempt < modelAdvisorPolicy.maxCorrectionAttempts
                       ? "blocked"
                       : "exhausted",
-                  responseTextSha256: error.notice.textSha256,
-                  diagnosticSetSha256: error.notice.diagnosticSetSha256,
+                  responseTextSha256: block.textSha256,
+                  diagnosticSetSha256: block.evidenceSha256,
                 }),
                 options.onEvent,
               );
             }
+            if (!block.correctable) throw error;
             if (correctionAttempt >= modelAdvisorPolicy.maxCorrectionAttempts) {
               throw error;
             }
             correctionAttempt += 1;
-            correctionRequest = createModelAdvisorCorrectionRequest({
-              notice: error.notice,
+            correctionRequest = createModelAdvisorCorrectionRequestFromBlock({
+              block,
               turnSource: source,
               attempt: correctionAttempt,
               maxAttempts: modelAdvisorPolicy.maxCorrectionAttempts,
@@ -771,7 +787,8 @@ export class AgentRuntime {
     if (
       interrupted.configuration.schemaVersion === 3 ||
       interrupted.configuration.schemaVersion === 4 ||
-      interrupted.configuration.schemaVersion === 5
+      interrupted.configuration.schemaVersion === 5 ||
+      interrupted.configuration.schemaVersion === 6
     ) {
       const currentSkillCatalog = await loadWorkspaceSkills(
         this.store.workspaceRoot,
@@ -826,6 +843,7 @@ export class AgentRuntime {
     profile: AgentProfile,
     prompt: string,
     source: TurnSource,
+    advisorReviewPrompt: string,
     signal: AbortSignal,
     budget: RunBudgetTracker,
     onEvent?: EventSink,
@@ -884,6 +902,7 @@ export class AgentRuntime {
       { provider: "napier", id: "demo" },
       usage,
     );
+    budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
     const modelAdvisorPolicy = effectiveModelAdvisorPolicy(profile);
     const redactCandidate = modelAdvisorPolicy.mode === "enforce";
 
@@ -912,11 +931,15 @@ export class AgentRuntime {
         redactCandidate ? undefined : onEvent,
       );
     }
-    await this.recordModelAdvisorNotice(
+    await this.recordModelAdvisorGate(
       run,
       response,
+      { provider: "napier", id: "demo" },
+      advisorReviewPrompt,
       source,
       modelAdvisorPolicy,
+      signal,
+      budget,
       onEvent,
     );
     await this.record(
@@ -936,7 +959,6 @@ export class AgentRuntime {
       },
       onEvent,
     );
-    budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
     budget.throwIfExhausted();
     return response;
   }
@@ -951,6 +973,7 @@ export class AgentRuntime {
     safeReadOnlyRecovery: boolean,
     skillCatalog: LoadedSkillCatalog,
     advisorCorrection: boolean,
+    advisorReviewPrompt: string,
     signal: AbortSignal,
     budget: RunBudgetTracker,
     onEvent?: EventSink,
@@ -1482,6 +1505,8 @@ export class AgentRuntime {
           source,
           budget,
           effectiveModelAdvisorPolicy(profile),
+          advisorReviewPrompt,
+          signal,
           preRecordedControlMessages,
           onEvent,
         );
@@ -1506,6 +1531,8 @@ export class AgentRuntime {
     source: TurnSource,
     budget: RunBudgetTracker,
     modelAdvisorPolicy: ReturnType<typeof effectiveModelAdvisorPolicy>,
+    advisorReviewPrompt: string,
+    signal: AbortSignal,
     preRecordedControlMessages: Map<string, number>,
     onEvent?: EventSink,
   ): Promise<string | undefined> {
@@ -1622,11 +1649,15 @@ export class AgentRuntime {
         );
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
         if (event.message.stopReason === "toolUse") return undefined;
-        await this.recordModelAdvisorNotice(
+        await this.recordModelAdvisorGate(
           run,
           text,
+          { provider: event.message.provider, id: event.message.model },
+          advisorReviewPrompt,
           source,
           modelAdvisorPolicy,
+          signal,
+          budget,
           onEvent,
         );
         await this.record(
@@ -1702,11 +1733,15 @@ export class AgentRuntime {
     return undefined;
   }
 
-  private async recordModelAdvisorNotice(
+  private async recordModelAdvisorGate(
     run: RunRecord,
     assistantText: string,
+    candidateModel: ModelRef,
+    advisorReviewPrompt: string,
     source: TurnSource,
     modelAdvisorPolicy: ReturnType<typeof effectiveModelAdvisorPolicy>,
+    signal: AbortSignal,
+    budget: RunBudgetTracker,
     onEvent?: EventSink,
   ): Promise<void> {
     const runEvents = (await this.store.listEvents(run.threadId)).filter(
@@ -1718,23 +1753,78 @@ export class AgentRuntime {
       turnSource: source,
       policy: modelAdvisorPolicy,
     });
-    if (!notice) return;
-    await this.record(
-      {
-        threadId: run.threadId,
-        runId: run.id,
-        type: isModelAdvisorBlocked(notice)
-          ? "model.advisor.blocked"
-          : "model.advisor.notice",
-        category: "system",
-        visibility: "debug",
-        payload: toJsonValue(notice),
-      },
-      onEvent,
-    );
-    if (isModelAdvisorBlocked(notice)) {
+    if (notice) {
+      await this.record(
+        {
+          threadId: run.threadId,
+          runId: run.id,
+          type: isModelAdvisorBlocked(notice)
+            ? "model.advisor.blocked"
+            : "model.advisor.notice",
+          category: "system",
+          visibility: "debug",
+          payload: toJsonValue(notice),
+        },
+        onEvent,
+      );
+    }
+    let independentReview:
+      | Awaited<ReturnType<typeof reviewIndependentModelAdvisorCandidate>>
+      | undefined;
+    if (
+      (!notice || !isModelAdvisorBlocked(notice)) &&
+      modelAdvisorPolicy.mode !== "off" &&
+      modelAdvisorPolicy.reviewModel
+    ) {
+      budget.assertCanStartAuxiliaryCall();
+      independentReview = await reviewIndependentModelAdvisorCandidate(
+        this.modelRegistry,
+        {
+          turnSource: source,
+          turnPrompt: advisorReviewPrompt,
+          candidateText: assistantText,
+          candidateModel,
+          reviewerModel: modelAdvisorPolicy.reviewModel,
+          runEvents,
+          signal,
+        },
+      );
+      const usageAccounting = createUsageAccounting(
+        modelAdvisorPolicy.reviewModel,
+        independentReview.review.usage,
+      );
+      budget.observeAuxiliaryUsage(
+        independentReview.review.usage,
+        Date.now(),
+        usageAccounting,
+      );
+      await this.record(
+        {
+          threadId: run.threadId,
+          runId: run.id,
+          type: INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
+          category: "system",
+          visibility: "debug",
+          payload: toJsonValue(independentReview.review),
+        },
+        onEvent,
+      );
+    }
+    const block = createCombinedModelAdvisorBlock({
+      ...(notice ? { notice } : {}),
+      ...(independentReview
+        ? {
+            review: independentReview.review,
+            reviewGuidance: independentReview.guidance,
+          }
+        : {}),
+      policy: modelAdvisorPolicy,
+    });
+    if (!block) return;
+    if (notice && isModelAdvisorBlocked(notice) && !independentReview) {
       throw new ModelAdvisorBlockedError(notice);
     }
+    throw new CombinedModelAdvisorBlockedError(block);
   }
 
   private async recordModelAdvisorCorrectionRequest(
@@ -2636,7 +2726,9 @@ function effectiveRunProfile(
           automaticRecovery: structuredClone(configuration.automaticRecovery),
         }
       : {}),
-    ...(configuration.schemaVersion === 4 || configuration.schemaVersion === 5
+    ...(configuration.schemaVersion === 4 ||
+    configuration.schemaVersion === 5 ||
+    configuration.schemaVersion === 6
       ? {
           modelAdvisor: structuredClone(configuration.modelAdvisor),
         }
@@ -2648,14 +2740,15 @@ function modernRunConfiguration(
   configuration: RunRecord["configuration"],
 ): configuration is Extract<
   NonNullable<RunRecord["configuration"]>,
-  { schemaVersion: 2 | 3 | 4 | 5 }
+  { schemaVersion: 2 | 3 | 4 | 5 | 6 }
 > {
   return (
     configuration !== undefined &&
     (configuration.schemaVersion === 2 ||
       configuration.schemaVersion === 3 ||
       configuration.schemaVersion === 4 ||
-      configuration.schemaVersion === 5)
+      configuration.schemaVersion === 5 ||
+      configuration.schemaVersion === 6)
   );
 }
 

@@ -58,8 +58,11 @@ export const contextCopy = {
     destructive_command_reference: "Dangerous command",
   },
   modelAdvisorCorrectionAttempts: "Correction attempts",
+  modelAdvisorReviewModel: "Independent review model",
+  modelAdvisorReviewModelDisabled: "Deterministic rules only",
+  modelAdvisorReviewModelPrimary: "primary model",
   modelAdvisorBody:
-    "Assistant output is linted before the visible message is recorded. Enforced blockers can trigger up to three tool-free rewrites; notices and correction receipts store rule IDs and hashes only.",
+    "Candidate output is linted and can be reviewed by a distinct zero-tool model before it becomes visible. Enforced blockers share up to three tool-free rewrites; candidate text and reviewer guidance remain hash-only in receipts.",
   recoveryShort: "Recovery",
   tools: "Workspace tools",
   toolLabels: {

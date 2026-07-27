@@ -10595,10 +10595,15 @@ function parseModelAdvisorPolicy(
     "mode",
     "enabledRules",
     "maxCorrectionAttempts",
+    "reviewModel",
   ]);
   const mode = record?.["mode"];
   const enabledRules = record?.["enabledRules"];
   const maxCorrectionAttempts = record?.["maxCorrectionAttempts"];
+  const reviewModel =
+    record?.["reviewModel"] === undefined
+      ? undefined
+      : parseModelRef(record["reviewModel"]);
   if (
     !record ||
     (mode !== "observe" && mode !== "enforce" && mode !== "off") ||
@@ -10613,7 +10618,8 @@ function parseModelAdvisorPolicy(
       (typeof maxCorrectionAttempts !== "number" ||
         !Number.isSafeInteger(maxCorrectionAttempts) ||
         maxCorrectionAttempts < 0 ||
-        maxCorrectionAttempts > 3))
+        maxCorrectionAttempts > 3)) ||
+    (record["reviewModel"] !== undefined && !reviewModel)
   ) {
     return undefined;
   }
@@ -10623,6 +10629,7 @@ function parseModelAdvisorPolicy(
     ...(typeof maxCorrectionAttempts === "number"
       ? { maxCorrectionAttempts }
       : {}),
+    ...(reviewModel ? { reviewModel } : {}),
   };
 }
 

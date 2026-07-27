@@ -63,11 +63,10 @@ Version `0.1.0` includes:
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
   replacement, and Hashline-style line-anchor replacement under the explicit
   `workspace` policy, without general shell or file deletion;
-- configurable deterministic Model Advisor notices that scan assistant text for
-  risky verification claims or destructive command references, then record only
-  hash-bound diagnostics before the assistant message is shown, with optional
-  bounded tool-free correction and fail-closed enforcement for blocker-level
-  findings;
+- configurable Model Advisor gates that combine deterministic checks with an
+  optional distinct zero-tool review model before assistant text becomes
+  visible; candidate and reviewer guidance prose remain hash-only while
+  observe/enforce modes share bounded tool-free correction receipts;
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
@@ -729,6 +728,34 @@ local projection, while the lazy Trace panel renders phase, summary, open
 loops, evidence count, and receipt hash. Metadata-only OTLP excludes title,
 summary, and item text.
 
+## Independent Model Advisor
+
+An Agent can add a distinct `modelAdvisor.reviewModel` to review every final
+candidate turn before `message.assistant` is committed. The reviewer receives
+the current turn prompt, candidate text, and a metadata-only summary of Run
+evidence in an isolated zero-tool call. It must return strict JSON containing
+an `accept`, `revise`, `block`, or `inconclusive` verdict, score, risk, and up
+to six typed issue codes. The primary and review models cannot be the same in
+the saved Agent profile.
+
+The durable `model.advisor.independent.reviewed` receipt stores model
+identities, issue codes, severities, usage, and SHA-256 bindings for the
+candidate, prompt, evidence, response, issue set, and complete review. Candidate
+text and free-form reviewer guidance are never copied into the receipt. In
+`observe` mode the turn remains visible with an auditable second opinion. In
+`enforce` mode a non-accept verdict joins deterministic blockers in the
+existing correction state machine: at most three subsequent primary-model
+turns run without tools, and only a candidate accepted by every configured
+advisor is persisted as the visible answer.
+
+Reviewer usage participates in the same frozen Run token, cost, and time
+budgets and in final Run settlement. Schema-6 Run fingerprints bind the review
+model while schema 1-5 fingerprints remain verifiable. Portable replay rejects
+malformed review receipts; metadata-only OTLP exposes verdict, risk, score,
+model identities, usage, and hashes but no candidate or guidance prose. The
+lazy Trace register renders the same receipt metadata outside the
+size-constrained main Workbench bundle.
+
 ## Agent Configuration History
 
 Context treats Agent configuration as an append-only revision ledger. Every
@@ -754,9 +781,10 @@ or operator scripts can audit configuration movement without scraping events.
 changed fields, provenance revisions, and snapshot hashes. Run configuration
 fingerprints remain separate and continue to prove the effective configuration
 used by each execution. Schema 3 Run fingerprints additionally bind the
-enabled Skill catalog SHA-256. The corresponding `context.skills` Ledger event
-records only Skill names, relative `SKILL.md` paths, byte counts, diagnostics
-hashes, and file SHA-256 values, never Skill instructions. Portable
+enabled Skill catalog SHA-256; schema 6 additionally binds an optional
+independent Model Advisor identity. The corresponding `context.skills` Ledger
+event records only Skill names, relative `SKILL.md` paths, byte counts,
+diagnostics hashes, and file SHA-256 values, never Skill instructions. Portable
 full-thread fixtures optionally carry the complete Agent revision ledger, remap
 the Agent ID, and recompute every revision hash during atomic import; legacy
 schema-version-1 fixtures remain valid.
@@ -1201,11 +1229,13 @@ execution. It binds the actual model selection (including a one-Run override),
 Agent revision, thinking and tool policies, canonical tool/skill/subagent sets,
 effective limits, interruption policy, execution mode, and a SHA-256 of the
 system prompt. The prompt text is not copied into the fingerprint. Schema 3
-also binds the enabled Skill catalog SHA-256. Schema 1 remains hash-compatible
-and is interpreted as manual recovery; schema 2 remains valid for Runs created
-before Skill catalog binding. **Lab → Compare** reports the exact fields that
-drifted and shows both fingerprint hashes; a legacy Run without this evidence
-is labeled unavailable rather than reconstructed from the current Agent.
+also binds the enabled Skill catalog SHA-256, schemas 4-5 bind deterministic
+Advisor policy and correction limits, and schema 6 binds an independent review
+model. Schema 1 remains hash-compatible and is interpreted as manual recovery;
+schemas 2-5 remain valid for Runs created before later bindings. **Lab →
+Compare** reports the exact fields that drifted and shows both fingerprint
+hashes; a legacy Run without this evidence is labeled unavailable rather than
+reconstructed from the current Agent.
 
 Import accepts at most 10 MiB and verifies both the complete content digest and
 the event-stream digest before mutation. Napier remaps every resource ID,

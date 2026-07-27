@@ -12,6 +12,7 @@ import type {
   RunConfigurationFingerprintV3,
   RunConfigurationFingerprintV4,
   RunConfigurationFingerprintV5,
+  RunConfigurationFingerprintV6,
   RunExecutionMode,
   SubagentRole,
 } from "@napier/contracts";
@@ -73,6 +74,7 @@ const V3_FINGERPRINT_KEYS = new Set([
 ]);
 const V4_FINGERPRINT_KEYS = new Set([...V3_FINGERPRINT_KEYS, "modelAdvisor"]);
 const V5_FINGERPRINT_KEYS = new Set(V4_FINGERPRINT_KEYS);
+const V6_FINGERPRINT_KEYS = new Set(V5_FINGERPRINT_KEYS);
 
 type FingerprintV1Content = Omit<
   RunConfigurationFingerprintV1,
@@ -94,6 +96,10 @@ type FingerprintV5Content = Omit<
   RunConfigurationFingerprintV5,
   "contentSha256"
 >;
+type FingerprintV6Content = Omit<
+  RunConfigurationFingerprintV6,
+  "contentSha256"
+>;
 
 export function createRunConfigurationFingerprint(
   profile: AgentProfile,
@@ -111,8 +117,13 @@ export function createRunConfigurationFingerprint(
     throw new Error("Run configuration skill catalog hash is invalid");
   }
   const safeRecovery = executionMode === "safe_read_only_recovery";
+  const modelAdvisor = effectiveModelAdvisorPolicy(profile);
   const content = {
-    schemaVersion: options.skillCatalogSha256 ? (5 as const) : (2 as const),
+    schemaVersion: options.skillCatalogSha256
+      ? modelAdvisor.reviewModel
+        ? (6 as const)
+        : (5 as const)
+      : (2 as const),
     agentRevision: profile.revision,
     model: structuredClone(model),
     thinkingLevel: profile.thinkingLevel,
@@ -138,7 +149,7 @@ export function createRunConfigurationFingerprint(
     ...(options.skillCatalogSha256
       ? {
           skillCatalogSha256: options.skillCatalogSha256,
-          modelAdvisor: effectiveModelAdvisorPolicy(profile),
+          modelAdvisor,
         }
       : {}),
   };
@@ -164,7 +175,9 @@ export function validateRunConfigurationFingerprint(
             ? V4_FINGERPRINT_KEYS
             : schemaVersion === 5
               ? V5_FINGERPRINT_KEYS
-              : undefined;
+              : schemaVersion === 6
+                ? V6_FINGERPRINT_KEYS
+                : undefined;
   if (!keys) {
     throw new Error("Run configuration fingerprint schema is unsupported");
   }
@@ -309,13 +322,29 @@ export function validateRunConfigurationFingerprint(
     }
     return { ...content, contentSha256 };
   }
-  const modelAdvisor = assertModelAdvisorPolicy(record["modelAdvisor"]);
-  const content: FingerprintV5Content = {
-    schemaVersion: 5,
-    ...modernShared,
-    skillCatalogSha256,
-    modelAdvisor,
-  };
+  const modelAdvisor =
+    schemaVersion === 5
+      ? assertLegacyResolvedModelAdvisorPolicy(record["modelAdvisor"])
+      : assertModelAdvisorPolicy(record["modelAdvisor"]);
+  if (schemaVersion === 6 && !modelAdvisor.reviewModel) {
+    throw new Error(
+      "Run configuration fingerprint schema 6 requires a review model",
+    );
+  }
+  const content: FingerprintV5Content | FingerprintV6Content =
+    schemaVersion === 5
+      ? {
+          schemaVersion: 5,
+          ...modernShared,
+          skillCatalogSha256,
+          modelAdvisor,
+        }
+      : {
+          schemaVersion: 6,
+          ...modernShared,
+          skillCatalogSha256,
+          modelAdvisor,
+        };
   if (sha256(canonicalJson(content)) !== contentSha256) {
     throw new Error("Run configuration fingerprint hash mismatch");
   }
@@ -412,7 +441,8 @@ export function fingerprintAutomaticRecovery(
   return fingerprint.schemaVersion === 2 ||
     fingerprint.schemaVersion === 3 ||
     fingerprint.schemaVersion === 4 ||
-    fingerprint.schemaVersion === 5
+    fingerprint.schemaVersion === 5 ||
+    fingerprint.schemaVersion === 6
     ? structuredClone(fingerprint.automaticRecovery)
     : structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY);
 }
@@ -423,7 +453,8 @@ export function fingerprintExecutionMode(
   return fingerprint.schemaVersion === 2 ||
     fingerprint.schemaVersion === 3 ||
     fingerprint.schemaVersion === 4 ||
-    fingerprint.schemaVersion === 5
+    fingerprint.schemaVersion === 5 ||
+    fingerprint.schemaVersion === 6
     ? fingerprint.executionMode
     : "standard";
 }
@@ -433,7 +464,8 @@ export function fingerprintSkillCatalogSha256(
 ): string {
   return fingerprint.schemaVersion === 3 ||
     fingerprint.schemaVersion === 4 ||
-    fingerprint.schemaVersion === 5
+    fingerprint.schemaVersion === 5 ||
+    fingerprint.schemaVersion === 6
     ? fingerprint.skillCatalogSha256
     : "";
 }
@@ -441,7 +473,9 @@ export function fingerprintSkillCatalogSha256(
 export function fingerprintModelAdvisor(
   fingerprint: RunConfigurationFingerprint,
 ) {
-  return fingerprint.schemaVersion === 4 || fingerprint.schemaVersion === 5
+  return fingerprint.schemaVersion === 4 ||
+    fingerprint.schemaVersion === 5 ||
+    fingerprint.schemaVersion === 6
     ? normalizeModelAdvisorPolicy(fingerprint.modelAdvisor)
     : structuredClone(DEFAULT_MODEL_ADVISOR_POLICY);
 }
@@ -568,7 +602,7 @@ function assertLegacyModelAdvisorPolicy(
   };
 }
 
-function assertModelAdvisorPolicy(value: unknown) {
+function assertLegacyResolvedModelAdvisorPolicy(value: unknown) {
   const policy = assertExactRecord(
     value,
     "Run configuration fingerprint modelAdvisor",
@@ -590,6 +624,40 @@ function assertModelAdvisorPolicy(value: unknown) {
       enabledRules: policy["enabledRules"],
     }),
     maxCorrectionAttempts: Number(maxCorrectionAttempts),
+  });
+}
+
+function assertModelAdvisorPolicy(value: unknown) {
+  const policy = assertRecord(
+    value,
+    "Run configuration fingerprint modelAdvisor",
+  );
+  const requiredKeys = [
+    "mode",
+    "enabledRules",
+    "maxCorrectionAttempts",
+  ] as const;
+  const allowedKeys = new Set([...requiredKeys, "reviewModel"]);
+  if (
+    requiredKeys.some((key) => !(key in policy)) ||
+    Object.keys(policy).some((key) => !allowedKeys.has(key))
+  ) {
+    throw new Error(
+      "Run configuration fingerprint modelAdvisor fields are invalid",
+    );
+  }
+  const legacy = assertLegacyResolvedModelAdvisorPolicy({
+    mode: policy["mode"],
+    enabledRules: policy["enabledRules"],
+    maxCorrectionAttempts: policy["maxCorrectionAttempts"],
+  });
+  const reviewModel =
+    policy["reviewModel"] === undefined
+      ? undefined
+      : assertModel(policy["reviewModel"]);
+  return normalizeModelAdvisorPolicy({
+    ...legacy,
+    ...(reviewModel ? { reviewModel } : {}),
   });
 }
 

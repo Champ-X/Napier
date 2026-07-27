@@ -14,6 +14,8 @@ import {
   hashThreadEventStream,
   LEDGER_DATABASE_FILENAME,
   LocalStore,
+  ModelRegistry,
+  reviewIndependentModelAdvisorCandidate,
   validateSubagentOutcomeRepairOutcome,
   validateSubagentOutcomeRepairRequest,
   validateThreadReplayBundle,
@@ -207,6 +209,60 @@ describe("thread replay bundles", () => {
     expect(importedMilestone.contentSha256).not.toBe(
       sourceMilestone.contentSha256,
     );
+  });
+
+  it("rejects tampered independent Advisor reviews and preserves valid receipts", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Portable independent review",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-review", id: "faux-1" },
+    });
+    const result = await reviewIndependentModelAdvisorCandidate(
+      new ModelRegistry(),
+      {
+        turnSource: "user",
+        turnPrompt: "Review portable evidence.",
+        candidateText: "The evidence remains incomplete.",
+        candidateModel: { provider: "faux-review", id: "faux-1" },
+        reviewerModel: { provider: "faux-review", id: "faux-1" },
+        runEvents: [],
+      },
+    );
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "model.advisor.independent.reviewed",
+      category: "system",
+      visibility: "debug",
+      payload: result.review,
+    });
+    await store.finishRun(run.id, "completed");
+
+    const invalidDetail = structuredClone(await store.getDetail(thread.id));
+    const invalidReviewEvent = invalidDetail.events.find(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    )!;
+    invalidReviewEvent.payload = {
+      ...invalidReviewEvent.payload,
+      score: 100,
+    };
+    expect(() => createThreadReplayBundle(invalidDetail)).toThrow(
+      "independent Model Advisor review is invalid",
+    );
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    const imported = await store.importThreadReplayBundle(bundle);
+    const importedEvent = (await store.listEvents(imported.thread.id)).find(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    )!;
+    expect(importedEvent.runId).not.toBe(run.id);
+    expect(importedEvent.payload).toEqual(result.review);
   });
 
   it("reconstructs a continued operator decision after Run ID remapping", async () => {

@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Independent Model Advisor. Agent profiles can now bind an optional review
+  model that must differ from the primary model. Every final candidate is
+  reviewed through a zero-tool strict-JSON call using the current turn prompt
+  and metadata-only Run evidence. Durable receipts retain verdict, score, risk,
+  typed issue codes, usage, model identities, and candidate/prompt/evidence/
+  response/issue-set SHA-256 values without copying candidate text or free-form
+  reviewer guidance into the review receipt. Observe mode records the second opinion;
+  enforce mode combines non-accept reviews with deterministic blockers in the
+  existing bounded tool-free correction state machine. Reviewer usage now
+  participates in live budget enforcement and final Run settlement. Schema-6
+  Run fingerprints bind the review model while schemas 1-5 remain verifiable;
+  portable replay rejects malformed review receipts, metadata-only OTLP exposes
+  only safe review metadata, and the lazy Trace panel renders an independent
+  review register without increasing the main-entry dependency surface.
 - Durable Agent Milestones. Standard live Runs now expose the non-terminating
   `record_run_milestone` tool for immutable planning, execution, verification,
   and delivery snapshots with bounded completed items and open loops. The Store
