@@ -133,7 +133,9 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       "body",
     );
 
-    hostedDirectory = createDirectory(thread.id, "Hosted verifier B");
+    const firstDirectory = hostedDirectory;
+    const secondDirectory = createDirectory(thread.id, "Hosted verifier B");
+    hostedDirectory = secondDirectory;
     const refreshResponse = await refreshSubscription(
       app,
       created.id,
@@ -154,7 +156,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     );
     expect(
       promoted.subscription.lastGoodDiscovery?.directory?.anchorSetSha256,
-    ).toBe(hostedDirectory.anchorSetSha256);
+    ).toBe(secondDirectory.anchorSetSha256);
     expect(
       refreshResponse.headers.get(
         "x-napier-receipt-trust-directory-subscription-refresh-status",
@@ -170,12 +172,41 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     expect(staleResponse.status).toBe(409);
     expect(fetchCount).toBe(2);
 
+    hostedDirectory = firstDirectory;
+    const rollbackResponse = await refreshSubscription(
+      app,
+      created.id,
+      thread.id,
+      promoted.subscription.revision,
+    );
+    expect(rollbackResponse.status).toBe(200);
+    const rollback =
+      (await rollbackResponse.json()) as ReceiptTrustAnchorDirectorySubscriptionRefreshResult;
+    expect(rollback).toEqual(
+      expect.objectContaining({
+        status: "rollback_rejected",
+        subscription: expect.objectContaining({
+          lastRefreshStatus: "rollback_rejected",
+          lastDiscoverySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          transparencyTailSha256: promoted.subscription.transparencyTailSha256,
+        }),
+      }),
+    );
+    expect(
+      rollback.subscription.lastGoodDiscovery?.directory?.anchorSetSha256,
+    ).toBe(secondDirectory.anchorSetSha256);
+    expect(
+      rollbackResponse.headers.get(
+        "x-napier-receipt-trust-directory-subscription-refresh-status",
+      ),
+    ).toBe("rollback_rejected");
+
     responseMode = "invalid";
     const rejectedResponse = await refreshSubscription(
       app,
       created.id,
       thread.id,
-      promoted.subscription.revision,
+      rollback.subscription.revision,
     );
     expect(rejectedResponse.status).toBe(200);
     const rejected =
@@ -183,7 +214,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     expect(rejected.status).toBe("rejected");
     expect(
       rejected.subscription.lastGoodDiscovery?.directory?.anchorSetSha256,
-    ).toBe(hostedDirectory.anchorSetSha256);
+    ).toBe(secondDirectory.anchorSetSha256);
 
     responseMode = "failure";
     const failedResponse = await refreshSubscription(
@@ -234,7 +265,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       events.filter((event) =>
         event.type.startsWith("receipt.trust_directory_subscription."),
       ),
-    ).toHaveLength(5);
+    ).toHaveLength(6);
     expect(JSON.stringify(events)).not.toContain(sourceUrl);
     expect(JSON.stringify(events)).not.toContain("private upstream detail");
   });

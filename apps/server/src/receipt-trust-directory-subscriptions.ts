@@ -144,6 +144,8 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
       policySha256: subscription.policySha256,
       refreshStatus: result.status,
       refreshResultSha256: result.contentSha256,
+      transparencyEntryCount: subscription.transparencyEntryCount,
+      transparencyTailSha256: subscription.transparencyTailSha256 ?? "",
       activeDirectorySha256:
         subscription.lastGoodDiscovery?.directory?.contentSha256 ?? "",
       activeAnchorSetSha256:

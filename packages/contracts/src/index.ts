@@ -1179,8 +1179,7 @@ export interface VerifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirem
 }
 
 export type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationStatus =
-  | "valid"
-  | "invalid";
+  "valid" | "invalid";
 
 export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryVerification {
   kind: "napier.execution-plan-blueprint-recommendation-policy-override-retirement-history-verification";
@@ -1217,13 +1216,10 @@ export interface SignExecutionPlanBlueprintRecommendationPolicyOverrideRetiremen
 }
 
 export type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleStatus =
-  | "aligned"
-  | "divergent"
-  | "invalid";
+  "aligned" | "divergent" | "invalid";
 
 export type ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItemStatus =
-  | "valid"
-  | "invalid";
+  "valid" | "invalid";
 
 export interface ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundleItem {
   index: number;
@@ -3688,9 +3684,7 @@ export interface ReceiptTrustAnchorDirectoryVerificationPolicy {
   requiredTrustedKeyIds?: string[];
 }
 
-export type ReceiptTrustAnchorDirectoryVerificationStatus =
-  | "valid"
-  | "invalid";
+export type ReceiptTrustAnchorDirectoryVerificationStatus = "valid" | "invalid";
 
 export interface ReceiptTrustAnchorDirectoryVerification {
   kind: "napier.receipt-trust-anchor-directory-verification";
@@ -3730,15 +3724,33 @@ export interface ReceiptTrustAnchorDirectoryDiscovery {
   contentSha256: string;
 }
 
-export type ReceiptTrustAnchorDirectorySubscriptionStatus =
-  | "active"
-  | "paused";
+export type ReceiptTrustAnchorDirectorySubscriptionStatus = "active" | "paused";
 
 export type ReceiptTrustAnchorDirectorySubscriptionRefreshStatus =
   | "promoted"
   | "unchanged"
+  | "rollback_rejected"
   | "rejected"
   | "failed";
+
+export type ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus =
+  | "promoted"
+  | "unchanged";
+
+export interface ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry {
+  kind: "napier.receipt-trust-anchor-directory-subscription-transparency-entry";
+  schemaVersion: 1;
+  apiVersion: string;
+  sequence: number;
+  status: ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus;
+  observedAt: string;
+  discoverySha256: string;
+  directorySha256: string;
+  anchorSetSha256: string;
+  trustedCount: number;
+  previousEntrySha256?: string;
+  contentSha256: string;
+}
 
 export interface ReceiptTrustAnchorDirectorySubscription {
   kind: "napier.receipt-trust-anchor-directory-subscription";
@@ -3760,6 +3772,9 @@ export interface ReceiptTrustAnchorDirectorySubscription {
   lastDiscoverySha256?: string;
   lastFailureSha256?: string;
   lastGoodDiscovery?: ReceiptTrustAnchorDirectoryDiscovery;
+  transparencyEntryCount: number;
+  transparencyTailSha256?: string;
+  transparencyHistory: ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry[];
   createdAt: string;
   updatedAt: string;
   contentSha256: string;

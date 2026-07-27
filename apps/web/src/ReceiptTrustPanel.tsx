@@ -665,6 +665,12 @@ export default function ReceiptTrustPanel({
                     <code title={subscription.sourceUrlSha256}>
                       {subscription.sourceUrlSha256.slice(0, 12)}
                     </code>
+                    {subscription.transparencyTailSha256 ? (
+                      <code title={subscription.transparencyTailSha256}>
+                        {copy.lab.trust.transparencyTail}{" "}
+                        {subscription.transparencyTailSha256.slice(0, 8)}
+                      </code>
+                    ) : null}
                     <span className="receipt-directory-actions">
                       <button
                         type="button"

@@ -1324,11 +1324,16 @@ subscriptions with expiring tokens and refresh them in the background.
 /api/receipt-trust/anchors/directory/subscriptions/:subscriptionId/refresh`
 uses the same path for an immediate refresh, while the subscription update
 endpoint pauses or resumes polling through an expected-revision CAS. Invalid,
-failed, concurrent, or stale refreshes cannot replace `lastGoodDiscovery`;
-they record only bounded status/discovery/failure hashes and advance the
-schedule. The Receipt trust desk restores the newest active last-good
-directory after reload and exposes refresh, pause/resume, and explicit
-verifier-selection controls.
+failed, rollback, concurrent, or stale refreshes cannot replace
+`lastGoodDiscovery`; they record only bounded status/discovery/failure hashes
+and advance the schedule. Accepted observations append a bounded transparency
+entry chain with sequence, previous-entry SHA-256, discovery hash, directory
+hash, anchor-set hash, and trusted-key count. If a later hosted response
+returns a previously observed non-current directory, refresh returns
+`rollback_rejected` and preserves the active verifier set. The Receipt trust
+desk restores the newest active last-good directory after reload and exposes
+refresh, pause/resume, transparency-tail, and explicit verifier-selection
+controls.
 
 A Casebook qualification baseline can be promoted only from a current
 revision's `passed` receipt signed by a currently trusted local signer. It

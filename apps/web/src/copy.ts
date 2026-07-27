@@ -190,6 +190,7 @@ export const copy = {
       subscribingDirectory: "Subscribing...",
       directorySubscriptions: "Directory subscriptions",
       nextRefresh: "next",
+      transparencyTail: "tail",
       useSubscription: "Use",
       subscriptionInUse: "In use",
       refreshSubscription: "Refresh subscription",
@@ -230,6 +231,7 @@ export const copy = {
       subscriptionRefreshStatuses: {
         promoted: "rotation promoted",
         unchanged: "directory unchanged",
+        rollback_rejected: "rollback rejected",
         rejected: "refresh rejected",
         failed: "refresh failed",
       },

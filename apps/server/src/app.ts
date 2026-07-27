@@ -611,18 +611,15 @@ export function createApp(services: NapierServices): Hono {
     return context.json(directory);
   });
 
-  app.get(
-    "/api/receipt-trust/anchors/directory/subscriptions",
-    (context) => {
-      const subscriptions =
-        services.store.listReceiptTrustAnchorDirectorySubscriptions();
-      setReceiptTrustAnchorDirectorySubscriptionListHeaders(
-        context,
-        subscriptions,
-      );
-      return context.json(subscriptions);
-    },
-  );
+  app.get("/api/receipt-trust/anchors/directory/subscriptions", (context) => {
+    const subscriptions =
+      services.store.listReceiptTrustAnchorDirectorySubscriptions();
+    setReceiptTrustAnchorDirectorySubscriptionListHeaders(
+      context,
+      subscriptions,
+    );
+    return context.json(subscriptions);
+  });
 
   app.post(
     "/api/receipt-trust/anchors/directory/subscriptions",
@@ -694,10 +691,7 @@ export function createApp(services: NapierServices): Hono {
             subscription.lastGoodDiscovery?.directory?.anchorSetSha256 ?? "",
         },
       );
-      setReceiptTrustAnchorDirectorySubscriptionHeaders(
-        context,
-        subscription,
-      );
+      setReceiptTrustAnchorDirectorySubscriptionHeaders(context, subscription);
       return context.json(subscription, 201);
     },
   );
@@ -730,16 +724,12 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const result =
-        await services.receiptTrustDirectorySubscriptions.refresh(
-          context.req.param("subscriptionId"),
-          body.threadId,
-          body.expectedRevision,
-        );
-      setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(
-        context,
-        result,
+      const result = await services.receiptTrustDirectorySubscriptions.refresh(
+        context.req.param("subscriptionId"),
+        body.threadId,
+        body.expectedRevision,
       );
+      setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(context, result);
       return context.json(result);
     },
   );
@@ -772,10 +762,9 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      const before =
-        services.store.getReceiptTrustAnchorDirectorySubscription(
-          context.req.param("subscriptionId"),
-        );
+      const before = services.store.getReceiptTrustAnchorDirectorySubscription(
+        context.req.param("subscriptionId"),
+      );
       const subscription =
         await services.store.updateReceiptTrustAnchorDirectorySubscription(
           before.id,
@@ -796,10 +785,7 @@ export function createApp(services: NapierServices): Hono {
           },
         );
       }
-      setReceiptTrustAnchorDirectorySubscriptionHeaders(
-        context,
-        subscription,
-      );
+      setReceiptTrustAnchorDirectorySubscriptionHeaders(context, subscription);
       return context.json(subscription);
     },
   );
@@ -838,50 +824,46 @@ export function createApp(services: NapierServices): Hono {
     return context.json(verification);
   });
 
-  app.post(
-    "/api/receipt-trust/anchors/directory/discover",
-    async (context) => {
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_TRUST_ADMIN_REQUEST_BYTES,
-          "Receipt trust anchor directory discovery request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          error instanceof RequestBodyTooLargeError
-            ? error.message
-            : "Receipt trust anchor directory discovery request is invalid",
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
+  app.post("/api/receipt-trust/anchors/directory/discover", async (context) => {
+    let input: unknown;
+    try {
+      input = await readLimitedJson(
+        context.req.raw,
+        MAX_TRUST_ADMIN_REQUEST_BYTES,
+        "Receipt trust anchor directory discovery request",
+      );
+    } catch (error) {
+      return jsonError(
+        context,
+        error instanceof RequestBodyTooLargeError
+          ? error.message
+          : "Receipt trust anchor directory discovery request is invalid",
+        error instanceof RequestBodyTooLargeError ? 413 : 400,
+      );
+    }
+    const body = parseDiscoverReceiptTrustAnchorDirectoryRequest(input);
+    if (!body) {
+      return jsonError(
+        context,
+        "Receipt trust anchor directory discovery request is invalid",
+        400,
+      );
+    }
+    try {
+      const discovery = await services.receiptTrustDirectories.discover(body);
+      setReceiptTrustAnchorDirectoryDiscoveryHeaders(context, discovery);
+      return context.json(discovery);
+    } catch (error) {
+      if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
+        return jsonError(context, error.message, error.status);
       }
-      const body = parseDiscoverReceiptTrustAnchorDirectoryRequest(input);
-      if (!body) {
-        return jsonError(
-          context,
-          "Receipt trust anchor directory discovery request is invalid",
-          400,
-        );
-      }
-      try {
-        const discovery =
-          await services.receiptTrustDirectories.discover(body);
-        setReceiptTrustAnchorDirectoryDiscoveryHeaders(context, discovery);
-        return context.json(discovery);
-      } catch (error) {
-        if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
-          return jsonError(context, error.message, error.status);
-        }
-        return jsonError(
-          context,
-          "Receipt trust anchor directory discovery failed",
-          502,
-        );
-      }
-    },
-  );
+      return jsonError(
+        context,
+        "Receipt trust anchor directory discovery failed",
+        502,
+      );
+    }
+  });
 
   app.post("/api/receipt-trust/anchors", async (context) => {
     let input: unknown;
@@ -1058,8 +1040,7 @@ export function createApp(services: NapierServices): Hono {
               : {}),
             ...(directoryVerification.anchorCount !== undefined
               ? {
-                  anchorDirectoryAnchorCount:
-                    directoryVerification.anchorCount,
+                  anchorDirectoryAnchorCount: directoryVerification.anchorCount,
                 }
               : {}),
           }
@@ -15171,6 +15152,16 @@ function setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(
     "X-Napier-Receipt-Trust-Directory-Subscription-Next-Refresh-At",
     subscription.nextRefreshAt,
   );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Transparency-Entry-Count",
+    String(subscription.transparencyEntryCount),
+  );
+  if (subscription.transparencyTailSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Subscription-Transparency-Tail-SHA256",
+      subscription.transparencyTailSha256,
+    );
+  }
   if (subscription.lastRefreshStatus) {
     context.header(
       "X-Napier-Receipt-Trust-Directory-Subscription-Last-Refresh-Status",
@@ -15266,10 +15257,7 @@ function setReceiptTrustAnchorDirectoryVerificationHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setStableContentSha256Header(context, verification.contentSha256);
-  context.header(
-    "X-Napier-Verification-Status",
-    verification.status,
-  );
+  context.header("X-Napier-Verification-Status", verification.status);
   context.header(
     "X-Napier-Diagnostic-Count",
     String(verification.diagnostics.length),

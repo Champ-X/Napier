@@ -8,6 +8,8 @@ import {
   type ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectorySubscriptionRefreshStatus,
   type ReceiptTrustAnchorDirectorySubscriptionStatus,
+  type ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry,
+  type ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus,
 } from "@napier/contracts";
 
 import { canonicalJson } from "./ed25519.js";
@@ -22,6 +24,7 @@ const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const SUBSCRIPTION_ID_PATTERN = /^trustdir_[a-f0-9]{20}$/;
 
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS = 20;
+export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
 export const MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 export const MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS =
   30 * 24 * 60 * 60 * 1_000;
@@ -73,6 +76,11 @@ export function createReceiptTrustAnchorDirectorySubscription(
     );
   }
   const now = requireTimestamp(createdAt, "subscription creation time");
+  const transparencyEntry = createTransparencyEntry({
+    discovery,
+    status: "promoted",
+    observedAt: now,
+  });
   const content = {
     kind: "napier.receipt-trust-anchor-directory-subscription" as const,
     schemaVersion: 1 as const,
@@ -92,6 +100,9 @@ export function createReceiptTrustAnchorDirectorySubscription(
     lastRefreshStatus: "promoted" as const,
     lastDiscoverySha256: discovery.contentSha256,
     lastGoodDiscovery: discovery,
+    transparencyEntryCount: transparencyEntry.sequence,
+    transparencyTailSha256: transparencyEntry.contentSha256,
+    transparencyHistory: [transparencyEntry],
     createdAt: now,
     updatedAt: now,
   };
@@ -149,17 +160,48 @@ export function settleReceiptTrustAnchorDirectorySubscriptionRefresh(
   let failureSha256: string | undefined;
   let status: ReceiptTrustAnchorDirectorySubscriptionRefreshStatus;
   let lastGoodDiscovery = current.lastGoodDiscovery;
+  let transparencyHistory = current.transparencyHistory;
+  let transparencyEntryCount = current.transparencyEntryCount;
+  let transparencyTailSha256 = current.transparencyTailSha256;
 
   if ("discovery" in outcome) {
     discovery = validateReceiptTrustAnchorDirectoryDiscovery(outcome.discovery);
     assertDiscoveryBinding(discovery, sourceUrl, current.policySha256);
     if (discovery.status === "valid" && discovery.directory) {
-      status =
-        current.lastGoodDiscovery?.directory?.contentSha256 ===
-        discovery.directory.contentSha256
-          ? "unchanged"
-          : "promoted";
-      lastGoodDiscovery = discovery;
+      const directorySha256 = discovery.directory.contentSha256;
+      const currentDirectorySha256 =
+        current.lastGoodDiscovery?.directory?.contentSha256;
+      const isKnownRollback =
+        directorySha256 !== currentDirectorySha256 &&
+        current.transparencyHistory.some(
+          (entry) => entry.directorySha256 === directorySha256,
+        );
+      if (isKnownRollback) {
+        status = "rollback_rejected";
+      } else {
+        const transparencyStatus: ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus =
+          directorySha256 === currentDirectorySha256 ? "unchanged" : "promoted";
+        status = transparencyStatus;
+        lastGoodDiscovery = discovery;
+        transparencyHistory = appendTransparencyEntry(
+          current.transparencyHistory,
+          createTransparencyEntry({
+            discovery,
+            status: transparencyStatus,
+            observedAt: refreshTime,
+            previousSequence: current.transparencyEntryCount,
+            ...(current.transparencyTailSha256
+              ? { previousEntrySha256: current.transparencyTailSha256 }
+              : {}),
+          }),
+        );
+        transparencyEntryCount =
+          transparencyHistory.at(-1)?.sequence ??
+          current.transparencyEntryCount;
+        transparencyTailSha256 =
+          transparencyHistory.at(-1)?.contentSha256 ??
+          current.transparencyTailSha256;
+      }
     } else {
       status = "rejected";
     }
@@ -189,6 +231,9 @@ export function settleReceiptTrustAnchorDirectorySubscriptionRefresh(
     ...(discovery ? { lastDiscoverySha256: discovery.contentSha256 } : {}),
     ...(failureSha256 ? { lastFailureSha256: failureSha256 } : {}),
     ...(lastGoodDiscovery ? { lastGoodDiscovery } : {}),
+    transparencyEntryCount,
+    ...(transparencyTailSha256 ? { transparencyTailSha256 } : {}),
+    transparencyHistory,
     updatedAt: refreshTime,
   };
   const persisted: PersistedReceiptTrustAnchorDirectorySubscription = {
@@ -227,7 +272,9 @@ export function validatePersistedReceiptTrustAnchorDirectorySubscription(
   const sourceUrl = normalizeReceiptTrustAnchorDirectorySubscriptionUrl(
     value["sourceUrl"],
   );
-  const subscription = validateReceiptTrustAnchorDirectorySubscription(value);
+  const migrated = migrateReceiptTrustAnchorDirectorySubscription(value);
+  const subscription =
+    validateReceiptTrustAnchorDirectorySubscription(migrated);
   if (
     sha256(sourceUrl.href) !== subscription.sourceUrlSha256 ||
     sha256(sourceUrl.origin) !== subscription.sourceOriginSha256
@@ -273,6 +320,10 @@ export function validateReceiptTrustAnchorDirectorySubscription(
       : validateReceiptTrustAnchorDirectoryDiscovery(
           subscription.lastGoodDiscovery,
         );
+  const transparencyHistory = validateTransparencyHistory(
+    subscription.transparencyHistory,
+  );
+  const transparencyTail = transparencyHistory.at(-1);
   if (
     subscription.kind !==
       "napier.receipt-trust-anchor-directory-subscription" ||
@@ -298,9 +349,23 @@ export function validateReceiptTrustAnchorDirectorySubscription(
     !optionalRefreshStatus(subscription.lastRefreshStatus) ||
     !optionalSha256(subscription.lastDiscoverySha256) ||
     !optionalSha256(subscription.lastFailureSha256) ||
+    !nonNegativeInteger(subscription.transparencyEntryCount) ||
+    !optionalSha256(subscription.transparencyTailSha256) ||
     !SHA256_PATTERN.test(subscription.contentSha256)
   ) {
     throw new Error("Receipt trust anchor directory subscription is invalid");
+  }
+  if (
+    (transparencyHistory.length === 0 &&
+      (subscription.transparencyEntryCount !== 0 ||
+        subscription.transparencyTailSha256 !== undefined)) ||
+    (transparencyTail &&
+      (subscription.transparencyEntryCount !== transparencyTail.sequence ||
+        subscription.transparencyTailSha256 !== transparencyTail.contentSha256))
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory subscription transparency tail is invalid",
+    );
   }
   if (
     lastGoodDiscovery &&
@@ -315,10 +380,24 @@ export function validateReceiptTrustAnchorDirectorySubscription(
       "Receipt trust anchor directory subscription last-good discovery is invalid",
     );
   }
+  if (lastGoodDiscovery) {
+    const lastGoodDirectory = lastGoodDiscovery.directory;
+    if (
+      !lastGoodDirectory ||
+      !transparencyTail ||
+      transparencyTail.directorySha256 !== lastGoodDirectory.contentSha256 ||
+      transparencyTail.anchorSetSha256 !== lastGoodDirectory.anchorSetSha256
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory subscription transparency history is stale",
+      );
+    }
+  }
   const content = {
     ...subscriptionContent(subscription),
     policy,
     ...(lastGoodDiscovery ? { lastGoodDiscovery } : {}),
+    transparencyHistory,
   };
   if (hashSubscriptionContent(content) !== subscription.contentSha256) {
     throw new Error(
@@ -329,6 +408,7 @@ export function validateReceiptTrustAnchorDirectorySubscription(
     ...subscription,
     policy,
     ...(lastGoodDiscovery ? { lastGoodDiscovery } : {}),
+    transparencyHistory,
   });
 }
 
@@ -467,6 +547,186 @@ function assertDiscoveryBinding(
   }
 }
 
+function migrateReceiptTrustAnchorDirectorySubscription(
+  value: Record<string, unknown>,
+): Record<string, unknown> {
+  if (
+    Array.isArray(value["transparencyHistory"]) &&
+    value["transparencyEntryCount"] !== undefined
+  ) {
+    return value;
+  }
+  const lastGoodDiscovery =
+    value["lastGoodDiscovery"] === undefined
+      ? undefined
+      : validateReceiptTrustAnchorDirectoryDiscovery(
+          value["lastGoodDiscovery"],
+        );
+  if (!lastGoodDiscovery?.directory) {
+    return value;
+  }
+  const observedAt = validTimestamp(lastGoodDiscovery.generatedAt)
+    ? lastGoodDiscovery.generatedAt
+    : validTimestamp(value["lastRefreshAt"])
+      ? value["lastRefreshAt"]
+      : validTimestamp(value["createdAt"])
+        ? value["createdAt"]
+        : new Date().toISOString();
+  const entry = createTransparencyEntry({
+    discovery: lastGoodDiscovery,
+    status: "promoted",
+    observedAt,
+  });
+  const migrated = {
+    ...value,
+    transparencyEntryCount: entry.sequence,
+    transparencyTailSha256: entry.contentSha256,
+    transparencyHistory: [entry],
+  };
+  const content = subscriptionContent(
+    migrated as unknown as ReceiptTrustAnchorDirectorySubscription,
+  );
+  return {
+    ...migrated,
+    contentSha256: hashSubscriptionContent(content),
+  };
+}
+
+function createTransparencyEntry(input: {
+  discovery: ReceiptTrustAnchorDirectoryDiscovery;
+  status: ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus;
+  observedAt: string;
+  previousEntrySha256?: string;
+  previousSequence?: number;
+}): ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry {
+  if (!input.discovery.directory) {
+    throw new Error(
+      "Receipt trust anchor directory transparency entry requires a directory",
+    );
+  }
+  const observedAt = requireTimestamp(
+    input.observedAt,
+    "subscription transparency observation time",
+  );
+  if (
+    input.previousEntrySha256 !== undefined &&
+    !SHA256_PATTERN.test(input.previousEntrySha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory transparency predecessor is invalid",
+    );
+  }
+  const sequence = (input.previousSequence ?? 0) + 1;
+  if (!Number.isSafeInteger(sequence) || sequence < 1) {
+    throw new Error(
+      "Receipt trust anchor directory transparency sequence is invalid",
+    );
+  }
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-subscription-transparency-entry" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    sequence,
+    status: input.status,
+    observedAt,
+    discoverySha256: input.discovery.contentSha256,
+    directorySha256: input.discovery.directory.contentSha256,
+    anchorSetSha256: input.discovery.directory.anchorSetSha256,
+    trustedCount: input.discovery.directory.trustedCount,
+    ...(input.previousEntrySha256
+      ? { previousEntrySha256: input.previousEntrySha256 }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function appendTransparencyEntry(
+  history: ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry[],
+  entry: ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry,
+): ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry[] {
+  return [...history, entry].slice(
+    -MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES,
+  );
+}
+
+function validateTransparencyHistory(
+  value: unknown,
+): ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry[] {
+  if (
+    !Array.isArray(value) ||
+    value.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory subscription transparency history is invalid",
+    );
+  }
+  const entries = value.map(validateTransparencyEntry);
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index]!;
+    const previous = entries[index - 1];
+    if (previous) {
+      if (
+        entry.sequence !== previous.sequence + 1 ||
+        entry.previousEntrySha256 !== previous.contentSha256
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory subscription transparency chain is invalid",
+        );
+      }
+    } else if (
+      (entry.sequence === 1 && entry.previousEntrySha256 !== undefined) ||
+      (entry.sequence > 1 && !entry.previousEntrySha256)
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory subscription transparency chain is invalid",
+      );
+    }
+  }
+  return entries;
+}
+
+function validateTransparencyEntry(
+  value: unknown,
+): ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory subscription transparency entry is invalid",
+    );
+  }
+  const entry =
+    value as unknown as ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry;
+  if (
+    entry.kind !==
+      "napier.receipt-trust-anchor-directory-subscription-transparency-entry" ||
+    entry.schemaVersion !== 1 ||
+    entry.apiVersion !== NAPIER_API_VERSION ||
+    !Number.isSafeInteger(entry.sequence) ||
+    entry.sequence < 1 ||
+    (entry.status !== "promoted" && entry.status !== "unchanged") ||
+    !validTimestamp(entry.observedAt) ||
+    !SHA256_PATTERN.test(entry.discoverySha256) ||
+    !SHA256_PATTERN.test(entry.directorySha256) ||
+    !SHA256_PATTERN.test(entry.anchorSetSha256) ||
+    !nonNegativeInteger(entry.trustedCount) ||
+    !optionalSha256(entry.previousEntrySha256) ||
+    !SHA256_PATTERN.test(entry.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory subscription transparency entry is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = entry;
+  if (sha256(canonicalJson(content)) !== entry.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory subscription transparency entry hash mismatch",
+    );
+  }
+  return structuredClone(entry);
+}
+
 function subscriptionContent(
   input: ReceiptTrustAnchorDirectorySubscription,
 ): Omit<ReceiptTrustAnchorDirectorySubscription, "contentSha256"> {
@@ -543,6 +803,7 @@ function optionalRefreshStatus(
     value === undefined ||
     value === "promoted" ||
     value === "unchanged" ||
+    value === "rollback_rejected" ||
     value === "rejected" ||
     value === "failed"
   );
@@ -567,6 +828,10 @@ function optionalSha256(value: unknown): boolean {
     value === undefined ||
     (typeof value === "string" && SHA256_PATTERN.test(value))
   );
+}
+
+function nonNegativeInteger(value: unknown): value is number {
+  return Number.isSafeInteger(value) && typeof value === "number" && value >= 0;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

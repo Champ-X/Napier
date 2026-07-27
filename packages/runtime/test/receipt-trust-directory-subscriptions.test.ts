@@ -43,7 +43,6 @@ describe("receipt trust anchor directory subscriptions", () => {
     const policy: ReceiptTrustAnchorDirectoryVerificationPolicy = {
       maxAgeMs: 24 * 60 * 60 * 1_000,
       minimumTrustedCount: 1,
-      expectedAnchorSetSha256: directory.anchorSetSha256,
     };
     const discovery = createDiscovery(sourceUrl, directory, policy);
     const request = {
@@ -64,6 +63,17 @@ describe("receipt trust anchor directory subscriptions", () => {
         revision: 1,
         lastRefreshStatus: "promoted",
         lastGoodDiscovery: discovery,
+        transparencyEntryCount: 1,
+        transparencyTailSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        transparencyHistory: [
+          expect.objectContaining({
+            sequence: 1,
+            status: "promoted",
+            discoverySha256: discovery.contentSha256,
+            directorySha256: directory.contentSha256,
+            anchorSetSha256: directory.anchorSetSha256,
+          }),
+        ],
       }),
     );
     expect(JSON.stringify(created)).not.toContain(sourceUrl);
@@ -115,6 +125,88 @@ describe("receipt trust anchor directory subscriptions", () => {
           revision: 2,
           lastRefreshStatus: "unchanged",
           lastGoodDiscovery: discovery,
+          transparencyEntryCount: 2,
+        }),
+      }),
+    );
+
+    const rotatedDirectory = createDirectory(thread.id);
+    const rotatedPolicy: ReceiptTrustAnchorDirectoryVerificationPolicy = {
+      ...policy,
+      expectedAnchorSetSha256: rotatedDirectory.anchorSetSha256,
+    };
+    const rotatedDiscovery = createDiscovery(
+      sourceUrl,
+      rotatedDirectory,
+      rotatedPolicy,
+    );
+    const rotatedClaim =
+      await store.claimReceiptTrustAnchorDirectorySubscription(
+        created.id,
+        unchanged.subscription.revision,
+        "test-worker",
+      );
+    await expect(
+      store.settleReceiptTrustAnchorDirectorySubscriptionClaim(
+        created.id,
+        rotatedClaim.token,
+        { discovery: rotatedDiscovery },
+      ),
+    ).rejects.toThrow("discovery binding changed");
+
+    const acceptedRotation = createDiscovery(
+      sourceUrl,
+      rotatedDirectory,
+      policy,
+    );
+    const promoted =
+      await store.settleReceiptTrustAnchorDirectorySubscriptionClaim(
+        created.id,
+        rotatedClaim.token,
+        { discovery: acceptedRotation },
+      );
+    expect(promoted).toEqual(
+      expect.objectContaining({
+        status: "promoted",
+        subscription: expect.objectContaining({
+          revision: 3,
+          lastGoodDiscovery: acceptedRotation,
+          transparencyEntryCount: 3,
+          transparencyHistory: expect.arrayContaining([
+            expect.objectContaining({
+              sequence: 3,
+              status: "promoted",
+              directorySha256: rotatedDirectory.contentSha256,
+              previousEntrySha256:
+                unchanged.subscription.transparencyTailSha256,
+            }),
+          ]),
+        }),
+      }),
+    );
+
+    const rollbackClaim =
+      await store.claimReceiptTrustAnchorDirectorySubscription(
+        created.id,
+        promoted.subscription.revision,
+        "test-worker",
+      );
+    const rollbackRejected =
+      await store.settleReceiptTrustAnchorDirectorySubscriptionClaim(
+        created.id,
+        rollbackClaim.token,
+        { discovery },
+      );
+    expect(rollbackRejected).toEqual(
+      expect.objectContaining({
+        status: "rollback_rejected",
+        subscription: expect.objectContaining({
+          revision: 4,
+          lastRefreshStatus: "rollback_rejected",
+          lastDiscoverySha256: discovery.contentSha256,
+          lastGoodDiscovery: acceptedRotation,
+          transparencyEntryCount: 3,
+          transparencyTailSha256: promoted.subscription.transparencyTailSha256,
         }),
       }),
     );
@@ -136,7 +228,7 @@ describe("receipt trust anchor directory subscriptions", () => {
     const rejectedClaim =
       await store.claimReceiptTrustAnchorDirectorySubscription(
         created.id,
-        unchanged.subscription.revision,
+        rollbackRejected.subscription.revision,
         "test-worker",
       );
     const rejected =
@@ -149,10 +241,10 @@ describe("receipt trust anchor directory subscriptions", () => {
       expect.objectContaining({
         status: "rejected",
         subscription: expect.objectContaining({
-          revision: 3,
+          revision: 5,
           lastRefreshStatus: "rejected",
           lastDiscoverySha256: invalidDiscovery.contentSha256,
-          lastGoodDiscovery: discovery,
+          lastGoodDiscovery: acceptedRotation,
         }),
       }),
     );
@@ -175,10 +267,12 @@ describe("receipt trust anchor directory subscriptions", () => {
         status: "failed",
         failureSha256,
         subscription: expect.objectContaining({
-          revision: 4,
+          revision: 6,
           lastRefreshStatus: "failed",
           lastFailureSha256: failureSha256,
-          lastGoodDiscovery: discovery,
+          lastGoodDiscovery: acceptedRotation,
+          transparencyEntryCount: 3,
+          transparencyTailSha256: promoted.subscription.transparencyTailSha256,
         }),
       }),
     );

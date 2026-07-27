@@ -255,9 +255,11 @@ All notable changes to Napier are recorded here.
   immediate refresh and pause/resume APIs use revision CAS. Valid rotations
   atomically promote the new directory, while invalid, failed, concurrent, or
   stale refreshes preserve the prior last-good trust set and record bounded
-  rejection/failure evidence. The Receipt trust desk restores active
-  last-good trust after reload and exposes subscribe, refresh, pause/resume,
-  and explicit verifier-selection controls.
+  rejection/failure evidence. Subscriptions now retain a bounded hash-only
+  transparency chain of accepted observations; returning to a previously seen
+  non-current directory is rejected as `rollback_rejected` without replacing
+  last-good trust. Server headers, Ledger events, and the Receipt trust desk
+  expose transparency entry count and tail hash for audit binding.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

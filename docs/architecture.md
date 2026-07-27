@@ -410,7 +410,13 @@ claim a due subscription with an expiring token, run the same bounded
 allowlisted discovery path, and settle through that token. Only a policy-valid
 discovery can replace last-good trust. Invalid directories, transport
 failures, stale revisions, and concurrent claims retain the previous verifier
-set and record bounded hash evidence.
+set and record bounded hash evidence. Accepted observations append a bounded
+transparency entry with sequence, previous-entry SHA-256, discovery hash,
+directory hash, anchor-set hash, and trusted-key count; subscription headers
+and Ledger events expose the transparency tail. A valid hosted response that
+returns to a previously observed non-current directory is treated as
+`rollback_rejected`, preserving the active verifier set while binding the
+attempt as hash-only evidence.
 
 Extension publisher anchors are a separate workspace-owned trust domain with
 the same private-key boundary: durable state contains only normalized Ed25519
@@ -2335,9 +2341,9 @@ The current boundary has twenty-one parts:
     never inherit local approval.
 22. allowlisted receipt-trust directory subscriptions with private local
     source locators, hash-only public evidence, policy-bound last-good
-    discoveries, expiring refresh claims, revision CAS, and fail-closed
-    promotion that preserves the active verifier set across rejected or failed
-    rotations.
+    discoveries, bounded transparency histories, rollback detection, expiring
+    refresh claims, revision CAS, and fail-closed promotion that preserves the
+    active verifier set across rejected, failed, or stale rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2359,9 +2365,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- receipt-trust directory transparency histories and multi-source quorum
-  policies, including rollback detection and publisher-signed metadata, so an
-  allowlisted host compromise cannot silently rewrite verifier-key history.
+- multi-source receipt-trust directory quorum policies and publisher-signed
+  metadata, so an allowlisted host compromise cannot silently rewrite
+  verifier-key history or outvote independent trust sources.
 
 ### Layer 3: Extension fabric
 
