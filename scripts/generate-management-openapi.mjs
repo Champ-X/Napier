@@ -13,6 +13,17 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/HealthResponse",
     },
   },
+  "GET /api/receipt-trust/anchors": {
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchorList",
+    },
+  },
+  "POST /api/receipt-trust/anchors": {
+    request: "#/components/schemas/CreateReceiptTrustAnchorRequest",
+    responses: {
+      201: "#/components/schemas/ReceiptTrustAnchor",
+    },
+  },
 };
 
 export async function generateManagementOpenApi(options = {}) {
@@ -141,6 +152,105 @@ export async function generateManagementOpenApi(options = {}) {
             name: { type: "string" },
             appliedAt: { type: "string", format: "date-time" },
           },
+        },
+        ReceiptTrustAnchorList: {
+          type: "array",
+          items: { $ref: "#/components/schemas/ReceiptTrustAnchor" },
+        },
+        ReceiptTrustAnchor: {
+          type: "object",
+          required: [
+            "id",
+            "label",
+            "algorithm",
+            "keyId",
+            "publicKeySpki",
+            "status",
+            "createdAt",
+            "updatedAt",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            id: { type: "string", pattern: "^trustkey_[a-z0-9]{8,80}$" },
+            label: { type: "string", minLength: 1, maxLength: 100 },
+            algorithm: { const: "Ed25519" },
+            keyId: { $ref: "#/components/schemas/Sha256Hex" },
+            publicKeySpki: { type: "string", minLength: 1 },
+            signingSource: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorSigningSource",
+            },
+            status: { $ref: "#/components/schemas/ReceiptTrustAnchorStatus" },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+            revokedAt: { type: "string", format: "date-time" },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        ReceiptTrustAnchorStatus: {
+          type: "string",
+          enum: ["trusted", "revoked"],
+        },
+        ReceiptTrustAnchorSigningSource: {
+          type: "object",
+          required: ["type", "variable"],
+          additionalProperties: false,
+          properties: {
+            type: { const: "environment" },
+            variable: { $ref: "#/components/schemas/EnvironmentVariableName" },
+          },
+        },
+        CreateReceiptTrustAnchorRequest: {
+          type: "object",
+          required: ["threadId", "label", "source"],
+          additionalProperties: false,
+          properties: {
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            label: { type: "string", minLength: 1, maxLength: 100 },
+            source: {
+              oneOf: [
+                {
+                  $ref: "#/components/schemas/CreateReceiptTrustAnchorEnvironmentSource",
+                },
+                {
+                  $ref: "#/components/schemas/CreateReceiptTrustAnchorPublicKeySource",
+                },
+              ],
+            },
+          },
+        },
+        CreateReceiptTrustAnchorEnvironmentSource: {
+          type: "object",
+          required: ["type", "variable"],
+          additionalProperties: false,
+          properties: {
+            type: { const: "environment" },
+            variable: { $ref: "#/components/schemas/EnvironmentVariableName" },
+          },
+        },
+        CreateReceiptTrustAnchorPublicKeySource: {
+          type: "object",
+          required: ["type", "publicKeySpki"],
+          additionalProperties: false,
+          properties: {
+            type: { const: "public_key" },
+            publicKeySpki: {
+              type: "string",
+              minLength: 1,
+              maxLength: 4096,
+            },
+          },
+        },
+        EnvironmentVariableName: {
+          type: "string",
+          pattern: "^[A-Z_][A-Z0-9_]{1,127}$",
+        },
+        Sha256Hex: {
+          type: "string",
+          pattern: "^[a-f0-9]{64}$",
         },
       },
       responses: {
@@ -300,8 +410,30 @@ function applyPromotedOperationSchemas(route, operation) {
       `${route.method.toUpperCase()} ${route.openapiPath}`
     ];
   if (!overlay) return operation;
+  let promotedRequestSchemaRef;
+  if (overlay.request) {
+    operation.requestBody ??= {
+      required: true,
+      content: {
+        "application/json": {},
+      },
+    };
+    operation.requestBody.content ??= {};
+    operation.requestBody.required = true;
+    operation.requestBody.content["application/json"] ??= {};
+    operation.requestBody.content["application/json"].schema = {
+      $ref: overlay.request,
+    };
+    promotedRequestSchemaRef = overlay.request;
+  }
   const promotedResponseSchemaRefs = {};
   for (const [status, schemaRef] of Object.entries(overlay.responses ?? {})) {
+    operation.responses[status] ??= {
+      description: `Successful ${status} no-store JSON response`,
+      content: {
+        "application/json": {},
+      },
+    };
     const response = operation.responses[status];
     if (!isRecord(response)) continue;
     response.content ??= {};
@@ -311,6 +443,9 @@ function applyPromotedOperationSchemas(route, operation) {
   }
   return {
     ...operation,
+    ...(promotedRequestSchemaRef
+      ? { "x-napier-promoted-request-schema-ref": promotedRequestSchemaRef }
+      : {}),
     "x-napier-promoted-response-schema-refs": promotedResponseSchemaRefs,
   };
 }

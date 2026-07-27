@@ -524,7 +524,11 @@ write:management-openapi` now scans `apps/server/src/app.ts`, emits
   OpenAPI path parameters, source SHA-256, and route-set SHA-256 evidence.
   `npm run check:management-openapi` fails on route drift. `GET /api/health`
   now has the first promoted endpoint response schema, binding its `200`
-  response to `#/components/schemas/HealthResponse`.
+  response to `#/components/schemas/HealthResponse`. `GET
+  /api/receipt-trust/anchors` and `POST /api/receipt-trust/anchors` now
+  promote `ReceiptTrustAnchorList`, `CreateReceiptTrustAnchorRequest`, and
+  `ReceiptTrustAnchor` schemas, including a required JSON request body and the
+  real `201` create response for trust-anchor enrollment clients.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published

@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(2);
+    expect(generated.routeCount).toBe(4);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 2,
+        "x-napier-route-count": 4,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -111,6 +111,53 @@ describe("management OpenAPI generator", () => {
         }),
       }),
     );
+    expect(generated.artifact.paths["/api/receipt-trust/anchors"].get).toEqual(
+      expect.objectContaining({
+        operationId: "get-receipt-trust-anchors",
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorList",
+                },
+              },
+            },
+          }),
+        }),
+      }),
+    );
+    expect(generated.artifact.paths["/api/receipt-trust/anchors"].post).toEqual(
+      expect.objectContaining({
+        operationId: "post-receipt-trust-anchors",
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/CreateReceiptTrustAnchorRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          201: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchor",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/CreateReceiptTrustAnchorRequest",
+        "x-napier-promoted-response-schema-refs": {
+          201: "#/components/schemas/ReceiptTrustAnchor",
+        },
+      }),
+    );
   });
 
   it("rejects duplicate normalized operation ids", () => {
@@ -137,10 +184,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 2 routes",
+      "Wrote docs/artifacts/management-openapi.json: 4 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(2);
+    expect(artifact["x-napier-route-count"]).toBe(4);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -183,6 +230,8 @@ async function createFixture() {
     path.join(root, "apps/server/src/app.ts"),
     `
       app.get("/api/health", () => undefined);
+      app.get("/api/receipt-trust/anchors", () => undefined);
+      app.post("/api/receipt-trust/anchors", () => undefined);
       app.post(
         "/api/threads/:threadId/runs",
         () => undefined,

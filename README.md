@@ -1745,9 +1745,11 @@ intentional dependency changes. `npm run write:management-openapi` scans
 `docs/artifacts/management-openapi-0.1.0.json`, a stable OpenAPI 3.1 route
 catalog with source and route-set SHA-256 evidence; `npm run
 check:management-openapi` fails when that artifact no longer matches the
-current management API routes. `GET /api/health` is the first endpoint with a
-promoted response schema, referencing `#/components/schemas/HealthResponse` in
-the generated OpenAPI artifact. `npm run
+current management API routes. `GET /api/health` has a promoted
+`HealthResponse` schema, and `GET /api/receipt-trust/anchors` plus
+`POST /api/receipt-trust/anchors` now promote the trust-anchor list, create
+request, and `201` anchor response schemas for external enrollment clients.
+`npm run
 write:management-openapi-compatibility` writes
 `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published
 operation baseline derived from that OpenAPI artifact; `npm run

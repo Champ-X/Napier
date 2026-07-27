@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "5e76a79d628dc3d7d030e34d6bdaed56a5da76b1f9e8194b0abde117c4da223d",
+    "sha256": "8c7192a8d1991d869087002f779c844669eea366cad7c3d01bdd5e9491c26322",
     "routeCount": 219,
     "routeSetSha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
   },
   "operationCount": 219,
-  "operationSetSha256": "b10ea69a9076937a9222307a4a52881f545f94d9443f66ae651ca5785abaa85d",
+  "operationSetSha256": "855ad1eaeabc404cca521bdc006cf5b0e7d0b1d968c382b6e6a68b8a0c4c01aa",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -718,7 +718,9 @@
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
       "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/ReceiptTrustAnchorList"
+      },
       "responseStatuses": [
         "200",
         "400",
@@ -2753,10 +2755,13 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
-      "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonRequestSchemaRef": "#/components/schemas/CreateReceiptTrustAnchorRequest",
+      "jsonResponseSchemaRefs": {
+        "201": "#/components/schemas/ReceiptTrustAnchor"
+      },
       "responseStatuses": [
         "200",
+        "201",
         "400",
         "404",
         "409",

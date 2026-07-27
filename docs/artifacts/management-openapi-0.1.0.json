@@ -4296,7 +4296,9 @@
             "description": "Successful no-store JSON response",
             "content": {
               "application/json": {
-                "schema": true
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTrustAnchorList"
+                }
               }
             }
           },
@@ -4313,7 +4315,10 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         },
-        "x-napier-source-route": "GET /api/receipt-trust/anchors"
+        "x-napier-source-route": "GET /api/receipt-trust/anchors",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/ReceiptTrustAnchorList"
+        }
       },
       "post": {
         "operationId": "post-receipt-trust-anchors",
@@ -4322,10 +4327,12 @@
         ],
         "summary": "POST /api/receipt-trust/anchors",
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
-              "schema": true
+              "schema": {
+                "$ref": "#/components/schemas/CreateReceiptTrustAnchorRequest"
+              }
             }
           }
         },
@@ -4338,6 +4345,16 @@
               }
             }
           },
+          "201": {
+            "description": "Successful 201 no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTrustAnchor"
+                }
+              }
+            }
+          },
           "400": {
             "$ref": "#/components/responses/ErrorResponse"
           },
@@ -4351,7 +4368,11 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         },
-        "x-napier-source-route": "POST /api/receipt-trust/anchors"
+        "x-napier-source-route": "POST /api/receipt-trust/anchors",
+        "x-napier-promoted-request-schema-ref": "#/components/schemas/CreateReceiptTrustAnchorRequest",
+        "x-napier-promoted-response-schema-refs": {
+          "201": "#/components/schemas/ReceiptTrustAnchor"
+        }
       }
     },
     "/api/receipt-trust/anchors/{anchorId}/revoke": {
@@ -9741,6 +9762,164 @@
             "format": "date-time"
           }
         }
+      },
+      "ReceiptTrustAnchorList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ReceiptTrustAnchor"
+        }
+      },
+      "ReceiptTrustAnchor": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "algorithm",
+          "keyId",
+          "publicKeySpki",
+          "status",
+          "createdAt",
+          "updatedAt",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^trustkey_[a-z0-9]{8,80}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "algorithm": {
+            "const": "Ed25519"
+          },
+          "keyId": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "publicKeySpki": {
+            "type": "string",
+            "minLength": 1
+          },
+          "signingSource": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorSigningSource"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revokedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
+      "ReceiptTrustAnchorStatus": {
+        "type": "string",
+        "enum": [
+          "trusted",
+          "revoked"
+        ]
+      },
+      "ReceiptTrustAnchorSigningSource": {
+        "type": "object",
+        "required": [
+          "type",
+          "variable"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "const": "environment"
+          },
+          "variable": {
+            "$ref": "#/components/schemas/EnvironmentVariableName"
+          }
+        }
+      },
+      "CreateReceiptTrustAnchorRequest": {
+        "type": "object",
+        "required": [
+          "threadId",
+          "label",
+          "source"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "threadId": {
+            "type": "string",
+            "pattern": "^thread_[a-z0-9]{8,80}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "source": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CreateReceiptTrustAnchorEnvironmentSource"
+              },
+              {
+                "$ref": "#/components/schemas/CreateReceiptTrustAnchorPublicKeySource"
+              }
+            ]
+          }
+        }
+      },
+      "CreateReceiptTrustAnchorEnvironmentSource": {
+        "type": "object",
+        "required": [
+          "type",
+          "variable"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "const": "environment"
+          },
+          "variable": {
+            "$ref": "#/components/schemas/EnvironmentVariableName"
+          }
+        }
+      },
+      "CreateReceiptTrustAnchorPublicKeySource": {
+        "type": "object",
+        "required": [
+          "type",
+          "publicKeySpki"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "const": "public_key"
+          },
+          "publicKeySpki": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          }
+        }
+      },
+      "EnvironmentVariableName": {
+        "type": "string",
+        "pattern": "^[A-Z_][A-Z0-9_]{1,127}$"
+      },
+      "Sha256Hex": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{64}$"
       }
     },
     "responses": {
