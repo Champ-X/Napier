@@ -442,6 +442,11 @@ directory, selected subscription set, metadata-envelope set, signer key, and
 prior baseline ID. Idempotency is based on the selected verifier set plus
 signer key, not one-time metadata verification timestamps, so rechecking the
 same external sources cannot create duplicate active pins.
+External baseline verification is stateless and no-store: an uploaded baseline
+is validated for baseline hash, embedded promotion receipt hash, envelope
+integrity, Ed25519 signature, selected-set hashes, and optional uploaded trust
+directory verification. The response is itself hash-bound and exposes only
+diagnostic codes plus baseline/envelope/receipt/signature/directory hashes.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2401,8 +2406,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- baseline import/export verification for quorum-promotion pins, so external
-  archives can be replayed into a new workspace without trusting local state.
+- CAS-gated import for verified quorum-promotion baselines, so an external
+  archive can be replayed into a new workspace without bypassing local
+  trust-policy checks.
 
 ### Layer 3: Extension fabric
 

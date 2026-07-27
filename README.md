@@ -1367,7 +1367,12 @@ it into local long-lived trust state. Baseline idempotency is keyed by selected
 anchor set, selected directory, selected subscription set, and signer key, so
 re-running metadata verification cannot create duplicate active verifier pins.
 Responses are no-store and expose baseline, envelope, receipt artifact,
-selected verifier-set, and signer-key hashes.
+selected verifier-set, and signer-key hashes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify`
+verifies an uploaded baseline against either local receipt-trust anchors or an
+uploaded public trust directory, returning a hash-bound verification receipt
+with trusted/revoked/unknown/invalid status, diagnostic hashes, selected-set
+hashes, and optional trust-directory verification evidence.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

@@ -11,6 +11,7 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   type ReceiptTrustAnchorDirectoryQuorumPromotionMetadata,
   type ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   type ReceiptTrustAnchorDirectoryQuorumSource,
@@ -23,6 +24,7 @@ import {
   type ReceiptTrustAnchorDirectorySubscriptionStatus,
   type ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry,
   type ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus,
+  type ReceiptTrustAnchorDirectoryVerification,
   type TrustedReceiptEnvelope,
 } from "@napier/contracts";
 
@@ -765,6 +767,62 @@ export function validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
   });
 }
 
+export function verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+  value: unknown,
+  anchors: ReceiptTrustAnchor[],
+  options: {
+    trustDirectoryVerification?: ReceiptTrustAnchorDirectoryVerification;
+  } = {},
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification {
+  const verifiedAt = nowIso();
+  let baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  try {
+    baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(value);
+  } catch {
+    return createQuorumPromotionBaselineVerification({
+      verifiedAt,
+      status: "invalid",
+      diagnostics: ["baseline_invalid"],
+      baselineValid: false,
+      signatureValid: false,
+      integrityValid: false,
+      ...(options.trustDirectoryVerification
+        ? { trustDirectoryVerification: options.trustDirectoryVerification }
+        : {}),
+    });
+  }
+  if (options.trustDirectoryVerification?.status === "invalid") {
+    return createQuorumPromotionBaselineVerification({
+      verifiedAt,
+      status: "invalid",
+      diagnostics: ["trust_directory_invalid"],
+      baselineValid: true,
+      signatureValid: false,
+      integrityValid: true,
+      baseline,
+      trustDirectoryVerification: options.trustDirectoryVerification,
+    });
+  }
+  const trustedReceiptVerification = verifyTrustedReceiptEnvelope(
+    baseline.envelope,
+    anchors,
+  );
+  return createQuorumPromotionBaselineVerification({
+    verifiedAt,
+    status: trustedReceiptVerification.status,
+    diagnostics: diagnosticsForTrustedReceiptVerification(
+      trustedReceiptVerification.status,
+    ),
+    baselineValid: true,
+    signatureValid: trustedReceiptVerification.signatureValid,
+    integrityValid: trustedReceiptVerification.integrityValid,
+    baseline,
+    ...(options.trustDirectoryVerification
+      ? { trustDirectoryVerification: options.trustDirectoryVerification }
+      : {}),
+  });
+}
+
 export function validateReceiptTrustAnchorDirectoryQuorum(
   value: unknown,
 ): ReceiptTrustAnchorDirectoryQuorum {
@@ -1413,6 +1471,81 @@ function metadataPublisherSetForSources(
         : [],
     ),
   );
+}
+
+function createQuorumPromotionBaselineVerification(input: {
+  verifiedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification["status"];
+  diagnostics: string[];
+  baselineValid: boolean;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  baseline?: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  trustDirectoryVerification?: ReceiptTrustAnchorDirectoryVerification;
+}): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification {
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-verification" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    verifiedAt: input.verifiedAt,
+    status: input.status,
+    diagnostics: input.diagnostics,
+    baselineValid: input.baselineValid,
+    signatureValid: input.signatureValid,
+    integrityValid: input.integrityValid,
+    ...(input.baseline
+      ? {
+          baselineSha256: input.baseline.contentSha256,
+          envelopeSha256: input.baseline.envelope.contentSha256,
+          receiptSha256: input.baseline.envelope.receipt.contentSha256,
+          receiptArtifactSha256:
+            input.baseline.envelope.signature.receiptArtifactSha256,
+          keyId: input.baseline.envelope.signature.keyId,
+          selectedAnchorSetSha256: input.baseline.selectedAnchorSetSha256,
+          selectedDirectorySha256: input.baseline.selectedDirectorySha256,
+          selectedSubscriptionSetSha256:
+            input.baseline.selectedSubscriptionSetSha256,
+          selectedMetadataEnvelopeSetSha256:
+            input.baseline.selectedMetadataEnvelopeSetSha256,
+        }
+      : {}),
+    ...(input.trustDirectoryVerification
+      ? {
+          ...(input.trustDirectoryVerification.recomputedContentSha256
+            ? {
+                anchorDirectorySha256:
+                  input.trustDirectoryVerification.recomputedContentSha256,
+              }
+            : input.trustDirectoryVerification.declaredContentSha256
+              ? {
+                  anchorDirectorySha256:
+                    input.trustDirectoryVerification.declaredContentSha256,
+                }
+              : {}),
+          anchorDirectoryVerificationSha256:
+            input.trustDirectoryVerification.contentSha256,
+          ...(input.trustDirectoryVerification.policySha256
+            ? {
+                anchorDirectoryPolicySha256:
+                  input.trustDirectoryVerification.policySha256,
+              }
+            : {}),
+        }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function diagnosticsForTrustedReceiptVerification(
+  status: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification["status"],
+): string[] {
+  if (status === "trusted") return [];
+  if (status === "revoked") return ["signer_revoked"];
+  if (status === "unknown_key") return ["signer_unknown"];
+  return ["signature_invalid"];
 }
 
 function validateQuorumPromotionMetadataList(

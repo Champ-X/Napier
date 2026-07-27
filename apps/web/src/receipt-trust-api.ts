@@ -14,6 +14,7 @@ import type {
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -23,6 +24,7 @@ import type {
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
   UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
 } from "@napier/contracts";
@@ -122,6 +124,18 @@ export function promoteReceiptTrustAnchorDirectoryQuorumBaseline(
 ): Promise<PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+  body: VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
     {
       method: "POST",
       body: JSON.stringify(body),

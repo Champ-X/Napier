@@ -6,6 +6,7 @@ import type {
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -30,6 +31,7 @@ import {
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryMetadata,
+  verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifyTrustedReceipt,
 } from "../src/receipt-trust-api";
 
@@ -372,6 +374,30 @@ describe("receipt trust Web API wrappers", () => {
       baseline: promotionBaseline,
       created: true,
     } satisfies PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult;
+    const promotionBaselineVerification = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-verification",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      verifiedAt: "2026-07-27T00:00:00.000Z",
+      status: "trusted",
+      diagnostics: [],
+      baselineValid: true,
+      signatureValid: true,
+      integrityValid: true,
+      baselineSha256: promotionBaseline.contentSha256,
+      envelopeSha256: promotionBaseline.envelope.contentSha256,
+      receiptSha256: promotionBaseline.envelope.receipt.contentSha256,
+      receiptArtifactSha256:
+        promotionBaseline.envelope.signature.receiptArtifactSha256,
+      keyId: promotionBaseline.envelope.signature.keyId,
+      selectedAnchorSetSha256: promotionBaseline.selectedAnchorSetSha256,
+      selectedDirectorySha256: promotionBaseline.selectedDirectorySha256,
+      selectedSubscriptionSetSha256:
+        promotionBaseline.selectedSubscriptionSetSha256,
+      selectedMetadataEnvelopeSetSha256:
+        promotionBaseline.selectedMetadataEnvelopeSetSha256,
+      contentSha256: "2".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -424,6 +450,12 @@ describe("receipt trust Web API wrappers", () => {
         body: promotionBaselineRequest,
         response: promotionBaselineResult,
       },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
+        method: "POST",
+        body: { baseline: promotionBaseline },
+        response: promotionBaselineVerification,
+      },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       const call = calls[fetchMock.mock.calls.length - 1]!;
@@ -472,7 +504,12 @@ describe("receipt trust Web API wrappers", () => {
         promotionBaselineRequest,
       ),
     ).resolves.toEqual(promotionBaselineResult);
-    expect(fetchMock).toHaveBeenCalledTimes(8);
+    await expect(
+      verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
+        baseline: promotionBaseline,
+      }),
+    ).resolves.toEqual(promotionBaselineVerification);
+    expect(fetchMock).toHaveBeenCalledTimes(9);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

@@ -11,8 +11,8 @@
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "bce806cc37969583f5a0aff81c10fdfac10718e78329c3d8a5bd00caaf1e23ee"
+    "sha256": "d51dffdce65e08c12c8b32cd1f330759ca0506d8c9815cc91f8bb66216f65589"
   },
-  "distContentSha256": "bce806cc37969583f5a0aff81c10fdfac10718e78329c3d8a5bd00caaf1e23ee",
+  "distContentSha256": "d51dffdce65e08c12c8b32cd1f330759ca0506d8c9815cc91f8bb66216f65589",
   "errors": []
 }

@@ -8,6 +8,7 @@ import type {
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -408,6 +409,50 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       baseline: baselineResult.baseline,
       created: false,
     });
+    const baselineVerificationResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          baseline: baselineResult.baseline,
+          trustDirectory: hostedDirectory,
+          trustDirectoryPolicy: {
+            expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+            minimumTrustedCount: 1,
+          },
+        }),
+      },
+    );
+    expect(baselineVerificationResponse.status).toBe(200);
+    const baselineVerification =
+      (await baselineVerificationResponse.json()) as ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+    expect(baselineVerification).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-verification",
+        status: "trusted",
+        diagnostics: [],
+        baselineValid: true,
+        signatureValid: true,
+        integrityValid: true,
+        baselineSha256: baselineResult.baseline.contentSha256,
+        envelopeSha256: baselineResult.baseline.envelope.contentSha256,
+        receiptSha256: baselineResult.baseline.envelope.receipt.contentSha256,
+        selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+        selectedDirectorySha256: hostedDirectory.contentSha256,
+        anchorDirectorySha256: hostedDirectory.contentSha256,
+      }),
+    );
+    expect(
+      baselineVerificationResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-baseline-verification-status",
+      ),
+    ).toBe("trusted");
+    expect(
+      baselineVerificationResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-baseline-sha256",
+      ),
+    ).toBe(baselineResult.baseline.contentSha256);
     expect(JSON.stringify(quorum)).not.toContain(sourceUrl);
     expect(JSON.stringify(quorum)).not.toContain(mirrorSourceUrl);
 

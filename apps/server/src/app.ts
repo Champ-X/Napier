@@ -98,6 +98,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   ReceiptTrustAnchorDirectoryQuorumPolicy,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -243,6 +244,7 @@ import type {
   VerifyThreadReplayBundleRequest,
   VerifyUsagePriceTableCatalogRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
   ApplySkillContentRequest,
   PreviewSkillContentRequest,
@@ -304,6 +306,7 @@ import {
   reviewExecutionPlanReplanDraft,
   RunEvaluationService,
   signTrustedReceipt,
+  verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifySignedExtensionPackageEnvelope,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceiptEnvelope,
@@ -912,6 +915,68 @@ export function createApp(services: NapierServices): Hono {
             : 400,
         );
       }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum promotion baseline verification request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum promotion baseline verification request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseVerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum promotion baseline verification request is invalid",
+          400,
+        );
+      }
+      const trustDirectoryVerification =
+        body.trustDirectory === undefined
+          ? undefined
+          : services.store.verifyReceiptTrustAnchorDirectory(
+              body.trustDirectory,
+              body.trustDirectoryPolicy,
+            );
+      const anchors =
+        body.trustDirectory === undefined
+          ? services.store.listReceiptTrustAnchors()
+          : trustDirectoryVerification?.status === "valid"
+            ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+            : [];
+      const verification =
+        verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+          body.baseline,
+          anchors,
+          {
+            ...(trustDirectoryVerification
+              ? { trustDirectoryVerification }
+              : {}),
+          },
+        );
+      setReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerificationHeaders(
+        context,
+        verification,
+      );
+      return context.json(verification);
     },
   );
 
@@ -10890,6 +10955,37 @@ function parseVerifyReceiptTrustAnchorDirectoryMetadataRequest(
   };
 }
 
+function parseVerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
+  input: unknown,
+):
+  | VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "baseline",
+    "trustDirectory",
+    "trustDirectoryPolicy",
+  ]);
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
+    record?.["trustDirectoryPolicy"],
+  );
+  if (
+    !record ||
+    record["baseline"] === undefined ||
+    (record["trustDirectoryPolicy"] !== undefined &&
+      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
+  ) {
+    return undefined;
+  }
+  return {
+    baseline: record["baseline"],
+    ...(record["trustDirectory"] !== undefined
+      ? { trustDirectory: record["trustDirectory"] }
+      : {}),
+    ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
+  };
+}
+
 function parseVerifyReceiptTrustAnchorDirectoryRequest(
   input: unknown,
 ): VerifyReceiptTrustAnchorDirectoryRequest | undefined {
@@ -15999,6 +16095,62 @@ function setPromoteReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeade
     "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Envelope-Set-SHA256",
     result.baseline.selectedMetadataEnvelopeSetSha256,
   );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerificationHeaders(
+  context: Context,
+  verification: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, verification.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-Status",
+    verification.status,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Valid",
+    String(verification.baselineValid),
+  );
+  context.header(
+    "X-Napier-Receipt-Signature-Valid",
+    String(verification.signatureValid),
+  );
+  context.header(
+    "X-Napier-Receipt-Integrity-Valid",
+    String(verification.integrityValid),
+  );
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(verification.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(verification.diagnostics),
+  );
+  if (verification.baselineSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
+      verification.baselineSha256,
+    );
+  }
+  if (verification.receiptSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
+      verification.receiptSha256,
+    );
+  }
+  if (verification.envelopeSha256) {
+    context.header("X-Napier-Envelope-SHA256", verification.envelopeSha256);
+  }
+  if (verification.keyId) {
+    context.header("X-Napier-Signature-Key-Id", verification.keyId);
+  }
+  if (verification.anchorDirectoryVerificationSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
+      verification.anchorDirectoryVerificationSha256,
+    );
+  }
 }
 
 function setReceiptTrustAnchorDirectorySubscriptionListHeaders(

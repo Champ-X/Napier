@@ -4030,6 +4030,37 @@ export interface PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult {
   created: boolean;
 }
 
+export interface VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest {
+  baseline: unknown;
+  trustDirectory?: unknown;
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification {
+  kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  verifiedAt: string;
+  status: TrustedReceiptVerificationStatus;
+  diagnostics: string[];
+  baselineValid: boolean;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  baselineSha256?: string;
+  envelopeSha256?: string;
+  receiptSha256?: string;
+  receiptArtifactSha256?: string;
+  keyId?: string;
+  selectedAnchorSetSha256?: string;
+  selectedDirectorySha256?: string;
+  selectedSubscriptionSetSha256?: string;
+  selectedMetadataEnvelopeSetSha256?: string;
+  anchorDirectorySha256?: string;
+  anchorDirectoryVerificationSha256?: string;
+  anchorDirectoryPolicySha256?: string;
+  contentSha256: string;
+}
+
 export interface EvaluationQualificationBaseline {
   id: string;
   casebookId: string;

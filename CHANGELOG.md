@@ -286,7 +286,11 @@ All notable changes to Napier are recorded here.
   `receipt_trust_anchor_directory_quorum_promotion`. Baseline idempotency binds
   the selected verifier set and signer key rather than one-time metadata
   verification timestamps, while headers expose baseline, envelope, receipt,
-  selected set, and signer hashes.
+  selected set, and signer hashes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify`
+  verifies uploaded baselines against local or uploaded public trust
+  directories and returns a no-store verification receipt with status,
+  diagnostics, selected-set hashes, and trust-directory evidence.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current
