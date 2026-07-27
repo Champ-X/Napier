@@ -781,6 +781,14 @@ evidence-set SHA-256. Missing, escaping, oversized, non-text, or out-of-range
 references fail closed.
 Grounded receipts use schema 2; existing schema-1 outcomes remain verifiable
 and portable without grounding fields.
+The Trace delegation card can recheck a stored outcome against the current
+workspace through `POST
+/api/threads/:threadId/subagents/:taskId/outcome/verify`. This no-store read
+returns `aligned`, `divergent`, or legacy `unavailable`, with per-reference
+`aligned`, `divergent`, or `missing` status. Reports bind expected and observed
+file/range hashes, counts, hash-only diagnostics, the source outcome hash, and
+a stable content SHA-256 without appending Ledger events or returning file
+content.
 
 ## Sandboxed Workspace Verification
 

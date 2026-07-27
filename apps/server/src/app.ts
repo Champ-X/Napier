@@ -242,6 +242,7 @@ import type {
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
   RunStatus,
+  SubagentOutcomeEvidenceVerification,
   EvaluationReviewerBallot,
   EvaluationConsensusReport,
   EvaluationConsensusResolution,
@@ -385,6 +386,7 @@ import {
   verifyExecutionPlanBlueprint,
   verifyOpenTelemetryTraceArtifact,
   verifyRunReplaySnapshot,
+  verifySubagentOutcomeEvidence,
   validateThreadReplayBundle,
   verifyThreadReplayBundle,
   verifyInboundDeadLetterExportArtifact,
@@ -4297,6 +4299,30 @@ export function createApp(services: NapierServices): Hono {
     setThreadDetailProjectionHeaders(context, detail);
     return context.json(detail);
   });
+
+  app.post(
+    "/api/threads/:threadId/subagents/:taskId/outcome/verify",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const taskId = context.req.param("taskId");
+      services.store.getThread(threadId);
+      const task = services.store
+        .listSubagentTasks(threadId)
+        .find((candidate) => candidate.id === taskId);
+      if (!task) {
+        return jsonError(context, "Subagent task not found", 404);
+      }
+      if (!task.outcome) {
+        return jsonError(context, "Subagent outcome is unavailable", 409);
+      }
+      const verification = await verifySubagentOutcomeEvidence(
+        task.outcome,
+        services.store.workspaceRoot,
+      );
+      setSubagentOutcomeEvidenceVerificationHeaders(context, verification);
+      return context.json(verification);
+    },
+  );
 
   app.get("/api/threads/:threadId/recovery", (context) => {
     const threadId = context.req.param("threadId");
@@ -18912,6 +18938,33 @@ function setThreadDetailProjectionHeaders(
   context.header(
     "X-Napier-Recovery-Attempt-Count",
     String(detail.automaticRecoveryAttempts.length),
+  );
+}
+
+function setSubagentOutcomeEvidenceVerificationHeaders(
+  context: Context,
+  verification: SubagentOutcomeEvidenceVerification,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, verification.contentSha256);
+  context.header("X-Napier-Evidence-Verification-Status", verification.status);
+  context.header("X-Napier-Subagent-Task-Id", verification.taskId);
+  context.header(
+    "X-Napier-Subagent-Outcome-SHA256",
+    verification.outcomeSha256,
+  );
+  context.header("X-Napier-Evidence-Count", String(verification.evidenceCount));
+  context.header(
+    "X-Napier-Evidence-Aligned-Count",
+    String(verification.alignedCount),
+  );
+  context.header(
+    "X-Napier-Evidence-Divergent-Count",
+    String(verification.divergentCount),
+  );
+  context.header(
+    "X-Napier-Evidence-Missing-Count",
+    String(verification.missingCount),
   );
 }
 

@@ -102,6 +102,12 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/TrustedReceiptVerification",
     },
   },
+  "POST /api/threads/{threadId}/subagents/{taskId}/outcome/verify": {
+    request: false,
+    responses: {
+      200: "#/components/schemas/SubagentOutcomeEvidenceVerification",
+    },
+  },
 };
 
 export async function generateManagementOpenApi(options = {}) {
@@ -229,6 +235,106 @@ export async function generateManagementOpenApi(options = {}) {
             version: { type: "integer", minimum: 0 },
             name: { type: "string" },
             appliedAt: { type: "string", format: "date-time" },
+          },
+        },
+        SubagentOutcomeEvidenceVerificationStatus: {
+          type: "string",
+          enum: ["aligned", "divergent", "unavailable"],
+        },
+        SubagentOutcomeEvidenceVerificationItemStatus: {
+          type: "string",
+          enum: ["aligned", "divergent", "missing"],
+        },
+        SubagentOutcomeEvidenceVerificationItem: {
+          type: "object",
+          required: [
+            "path",
+            "status",
+            "expectedFileSha256",
+            "expectedRangeSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            path: { type: "string", minLength: 1, maxLength: 500 },
+            lineStart: { type: "integer", minimum: 1 },
+            lineEnd: { type: "integer", minimum: 1 },
+            status: {
+              $ref: "#/components/schemas/SubagentOutcomeEvidenceVerificationItemStatus",
+            },
+            expectedFileSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            observedFileSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            expectedRangeSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            observedRangeSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            diagnosticSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+          },
+        },
+        SubagentOutcomeEvidenceVerification: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "status",
+            "taskId",
+            "outcomeSha256",
+            "evidenceCount",
+            "alignedCount",
+            "divergentCount",
+            "missingCount",
+            "items",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: {
+              const: "napier.subagent-outcome-evidence-verification",
+            },
+            schemaVersion: { const: 1 },
+            status: {
+              $ref: "#/components/schemas/SubagentOutcomeEvidenceVerificationStatus",
+            },
+            taskId: {
+              type: "string",
+              pattern: "^task_[a-z0-9]{8,80}$",
+            },
+            outcomeSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            evidenceCount: {
+              type: "integer",
+              minimum: 0,
+              maximum: 200,
+            },
+            alignedCount: {
+              type: "integer",
+              minimum: 0,
+              maximum: 200,
+            },
+            divergentCount: {
+              type: "integer",
+              minimum: 0,
+              maximum: 200,
+            },
+            missingCount: {
+              type: "integer",
+              minimum: 0,
+              maximum: 200,
+            },
+            items: {
+              type: "array",
+              maxItems: 200,
+              items: {
+                $ref: "#/components/schemas/SubagentOutcomeEvidenceVerificationItem",
+              },
+            },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
           },
         },
         ReceiptTrustAnchorList: {
@@ -1509,7 +1615,9 @@ function applyPromotedOperationSchemas(route, operation) {
     ];
   if (!overlay) return operation;
   let promotedRequestSchemaRef;
-  if (overlay.request) {
+  if (overlay.request === false) {
+    delete operation.requestBody;
+  } else if (overlay.request) {
     operation.requestBody ??= {
       required: true,
       content: {

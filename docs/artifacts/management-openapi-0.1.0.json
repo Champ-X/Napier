@@ -9470,6 +9470,61 @@
         "x-napier-source-route": "POST /api/threads/:threadId/stop"
       }
     },
+    "/api/threads/{threadId}/subagents/{taskId}/outcome/verify": {
+      "post": {
+        "operationId": "post-threads-by-threadId-subagents-by-taskId-outcome-verify",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/subagents/{taskId}/outcome/verify",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubagentOutcomeEvidenceVerification"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/subagents/:taskId/outcome/verify",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/SubagentOutcomeEvidenceVerification"
+        }
+      }
+    },
     "/api/threads/{threadId}/trace/otlp": {
       "post": {
         "operationId": "post-threads-by-threadId-trace-otlp",
@@ -9877,6 +9932,130 @@
           "appliedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "SubagentOutcomeEvidenceVerificationStatus": {
+        "type": "string",
+        "enum": [
+          "aligned",
+          "divergent",
+          "unavailable"
+        ]
+      },
+      "SubagentOutcomeEvidenceVerificationItemStatus": {
+        "type": "string",
+        "enum": [
+          "aligned",
+          "divergent",
+          "missing"
+        ]
+      },
+      "SubagentOutcomeEvidenceVerificationItem": {
+        "type": "object",
+        "required": [
+          "path",
+          "status",
+          "expectedFileSha256",
+          "expectedRangeSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "lineStart": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "lineEnd": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubagentOutcomeEvidenceVerificationItemStatus"
+          },
+          "expectedFileSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "observedFileSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "expectedRangeSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "observedRangeSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "diagnosticSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
+      "SubagentOutcomeEvidenceVerification": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "status",
+          "taskId",
+          "outcomeSha256",
+          "evidenceCount",
+          "alignedCount",
+          "divergentCount",
+          "missingCount",
+          "items",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.subagent-outcome-evidence-verification"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubagentOutcomeEvidenceVerificationStatus"
+          },
+          "taskId": {
+            "type": "string",
+            "pattern": "^task_[a-z0-9]{8,80}$"
+          },
+          "outcomeSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "evidenceCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "alignedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "divergentCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "missingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/SubagentOutcomeEvidenceVerificationItem"
+            }
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
           }
         }
       },
@@ -11594,7 +11773,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "efce79d3af95694354848495db13dbadbb75693977209f1b6770d165812799ef",
-  "x-napier-route-count": 219,
-  "x-napier-route-set-sha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
+  "x-napier-source-sha256": "69b735554b9c9b8cbc6f620f24a7a719c1068b47e2a30c788aad7f36b8833c41",
+  "x-napier-route-count": 220,
+  "x-napier-route-set-sha256": "48a13751fb8b9dc2b37d92a6fa9c53b41efbf57f9ab24bf89fc94472b17b3a4e"
 }

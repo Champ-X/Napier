@@ -1030,6 +1030,18 @@ export const copy = {
     evidence: "Evidence",
     unknowns: "Unknowns",
     receipt: "Receipt",
+    verifyEvidence: "Verify evidence",
+    verifyingEvidence: "Verifying...",
+    verifyFailed: "Evidence verification failed.",
+    aligned: "Aligned",
+    drifted: "Drifted",
+    missing: "Missing",
+    legacyEvidence: "Legacy outcome has no workspace hashes.",
+    verificationStatuses: {
+      aligned: "Current evidence aligned",
+      divergent: "Evidence drift detected",
+      unavailable: "Verification unavailable",
+    },
     statuses: {
       pending: "Queued",
       running: "Working",

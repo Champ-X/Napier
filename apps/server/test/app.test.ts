@@ -81,6 +81,7 @@ import type {
   RunReplaySnapshotVerification,
   SaveExecutionPlanBlueprintResult,
   StreamFrame,
+  SubagentOutcomeEvidenceVerification,
   ThreadDetail,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
@@ -6412,9 +6413,16 @@ describe("Napier HTTP goal flow", () => {
   it("streams and returns the durable delegation ledger through public APIs", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
     temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    await writeFile(
+      path.join(workspaceRoot, "src/public-api.ts"),
+      "export const durable = true;\nexport const inspectable = true;\n",
+      "utf8",
+    );
     const services = await createServices({
       dataRoot: path.join(root, "data"),
-      workspaceRoot: path.join(root, "workspace"),
+      workspaceRoot,
     });
     const faux = fauxProvider({ provider: "faux-server-delegation" });
     faux.setResponses([
@@ -6440,7 +6448,13 @@ describe("Napier HTTP goal flow", () => {
               title: "Durable API projection",
               detail:
                 "The thread detail returns the persisted delegation ledger.",
-              evidence: [],
+              evidence: [
+                {
+                  path: "src/public-api.ts",
+                  lineStart: 1,
+                  lineEnd: 2,
+                },
+              ],
             },
           ],
           unknowns: [],
@@ -6511,7 +6525,7 @@ describe("Napier HTTP goal flow", () => {
           kind: "napier.subagent-outcome",
           itemCount: 1,
           unknownCount: 0,
-          evidenceCount: 0,
+          evidenceCount: 1,
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         }),
       }),
@@ -6521,6 +6535,78 @@ describe("Napier HTTP goal flow", () => {
       await app.request(`/api/threads/${created.thread.id}`)
     ).json()) as ThreadDetail;
     expect(detail.subagents).toEqual(snapshot?.detail.subagents);
+
+    const task = detail.subagents[0]!;
+    const eventCount = detail.events.length;
+    const verificationResponse = await app.request(
+      `/api/threads/${created.thread.id}/subagents/${task.id}/outcome/verify`,
+      { method: "POST" },
+    );
+    expect(verificationResponse.status).toBe(200);
+    const verification =
+      (await verificationResponse.json()) as SubagentOutcomeEvidenceVerification;
+    expect(verification).toEqual(
+      expect.objectContaining({
+        kind: "napier.subagent-outcome-evidence-verification",
+        status: "aligned",
+        taskId: task.id,
+        outcomeSha256: task.outcome?.contentSha256,
+        evidenceCount: 1,
+        alignedCount: 1,
+        divergentCount: 0,
+        missingCount: 0,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(verificationResponse.headers.get("cache-control")).toBe("no-store");
+    expect(
+      verificationResponse.headers.get("x-napier-content-sha256-mode"),
+    ).toBe("stable");
+    expect(verificationResponse.headers.get("x-napier-content-sha256")).toBe(
+      verification.contentSha256,
+    );
+    expect(
+      verificationResponse.headers.get("x-napier-evidence-verification-status"),
+    ).toBe("aligned");
+    expect(verificationResponse.headers.get("x-napier-subagent-task-id")).toBe(
+      task.id,
+    );
+    expect(
+      verificationResponse.headers.get("x-napier-evidence-aligned-count"),
+    ).toBe("1");
+
+    await writeFile(
+      path.join(workspaceRoot, "src/public-api.ts"),
+      "export const durable = false;\nexport const inspectable = true;\n",
+      "utf8",
+    );
+    const driftResponse = await app.request(
+      `/api/threads/${created.thread.id}/subagents/${task.id}/outcome/verify`,
+      { method: "POST" },
+    );
+    const drift =
+      (await driftResponse.json()) as SubagentOutcomeEvidenceVerification;
+    expect(drift).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        alignedCount: 0,
+        divergentCount: 1,
+        missingCount: 0,
+      }),
+    );
+    expect(
+      driftResponse.headers.get("x-napier-evidence-verification-status"),
+    ).toBe("divergent");
+    expect(await services.store.listEvents(created.thread.id)).toHaveLength(
+      eventCount,
+    );
+
+    const missingTaskResponse = await app.request(
+      `/api/threads/${created.thread.id}/subagents/task_missing/outcome/verify`,
+      { method: "POST" },
+    );
+    expect(missingTaskResponse.status).toBe(404);
+    expect(missingTaskResponse.headers.get("cache-control")).toBe("no-store");
     expect(faux.state.callCount).toBe(4);
   });
 

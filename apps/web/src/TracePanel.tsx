@@ -14,7 +14,12 @@ import {
   Upload,
 } from "lucide-react";
 
-import type { RunEvent, RunRecord, SubagentTask } from "@napier/contracts";
+import type {
+  RunEvent,
+  RunRecord,
+  SubagentOutcomeEvidenceVerification,
+  SubagentTask,
+} from "@napier/contracts";
 
 import { copy } from "./copy";
 import type {
@@ -219,74 +224,147 @@ function DelegationLedger({ tasks }: { tasks: SubagentTask[] }) {
         {tasks
           .slice()
           .reverse()
-          .map((task) => {
-            const summary =
-              task.error ?? task.outcome?.summary ?? task.result ?? task.prompt;
-            const summaryLabel = task.error
-              ? copy.delegation.error
-              : task.outcome
-                ? copy.delegation.outcome
-                : task.result
-                  ? copy.delegation.result
-                  : copy.delegation.prompt;
-            return (
-              <article
-                className={`delegation-card delegation-${task.status}`}
-                key={task.id}
-              >
-                <header>
-                  <span className="delegation-role">
-                    <Layers size={11} aria-hidden="true" />
-                    {task.role}
-                  </span>
-                  <span className="delegation-state">
-                    {delegationStatusLabel(task.status)}
-                  </span>
-                </header>
-                <h4>{task.description}</h4>
-                <div className="delegation-result">
-                  <span>{summaryLabel}</span>
-                  <p>{summary}</p>
-                </div>
-                <footer>
-                  <dl>
-                    <div>
-                      <dt>{copy.delegation.turns}</dt>
-                      <dd>{task.turnCount}</dd>
-                    </div>
-                    <div>
-                      <dt>{copy.delegation.steps}</dt>
-                      <dd>{task.stepCount}</dd>
-                    </div>
-                    {task.outcome ? (
-                      <>
-                        <div>
-                          <dt>{copy.delegation.items}</dt>
-                          <dd>{task.outcome.itemCount}</dd>
-                        </div>
-                        <div>
-                          <dt>{copy.delegation.evidence}</dt>
-                          <dd>{task.outcome.evidenceCount ?? 0}</dd>
-                        </div>
-                        <div>
-                          <dt>{copy.delegation.unknowns}</dt>
-                          <dd>{task.outcome.unknownCount}</dd>
-                        </div>
-                      </>
-                    ) : null}
-                  </dl>
-                  <code title={task.outcome?.contentSha256}>
-                    {task.model.provider}/{task.model.id}
-                    {task.outcome
-                      ? ` · ${copy.delegation.receipt} ${task.outcome.contentSha256.slice(0, 10)}`
-                      : ""}
-                  </code>
-                </footer>
-              </article>
-            );
-          })}
+          .map((task) => (
+            <DelegationCard key={task.id} task={task} />
+          ))}
       </div>
     </section>
+  );
+}
+
+function DelegationCard({ task }: { task: SubagentTask }) {
+  const [verification, setVerification] =
+    useState<SubagentOutcomeEvidenceVerification>();
+  const [verifying, setVerifying] = useState(false);
+  const [verificationFailed, setVerificationFailed] = useState(false);
+  const outcomeSha256 = task.outcome?.contentSha256;
+
+  useEffect(() => {
+    setVerification(undefined);
+    setVerificationFailed(false);
+  }, [outcomeSha256]);
+
+  const summary =
+    task.error ?? task.outcome?.summary ?? task.result ?? task.prompt;
+  const summaryLabel = task.error
+    ? copy.delegation.error
+    : task.outcome
+      ? copy.delegation.outcome
+      : task.result
+        ? copy.delegation.result
+        : copy.delegation.prompt;
+
+  async function verifyEvidence(): Promise<void> {
+    if (!task.outcome || verifying) return;
+    setVerifying(true);
+    setVerificationFailed(false);
+    try {
+      const api = await import("./subagent-api");
+      setVerification(
+        await api.verifySubagentOutcomeEvidence(task.threadId, task.id),
+      );
+    } catch {
+      setVerification(undefined);
+      setVerificationFailed(true);
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  return (
+    <article className={`delegation-card delegation-${task.status}`}>
+      <header>
+        <span className="delegation-role">
+          <Layers size={11} aria-hidden="true" />
+          {task.role}
+        </span>
+        <span className="delegation-state">
+          {delegationStatusLabel(task.status)}
+        </span>
+      </header>
+      <h4>{task.description}</h4>
+      <div className="delegation-result">
+        <span>{summaryLabel}</span>
+        <p>{summary}</p>
+      </div>
+      {task.outcome ? (
+        <div className="delegation-evidence-check">
+          <button
+            type="button"
+            disabled={verifying}
+            onClick={() => void verifyEvidence()}
+          >
+            <ShieldCheck size={10} aria-hidden="true" />
+            {verifying
+              ? copy.delegation.verifyingEvidence
+              : copy.delegation.verifyEvidence}
+          </button>
+          {verification ? (
+            <output
+              className={`delegation-evidence-receipt status-${verification.status}`}
+              aria-live="polite"
+            >
+              <strong>
+                {copy.delegation.verificationStatuses[verification.status]}
+              </strong>
+              {verification.status === "unavailable" ? (
+                <span>{copy.delegation.legacyEvidence}</span>
+              ) : (
+                <span>
+                  {copy.delegation.aligned} {verification.alignedCount}
+                  {" · "}
+                  {copy.delegation.drifted} {verification.divergentCount}
+                  {" · "}
+                  {copy.delegation.missing} {verification.missingCount}
+                </span>
+              )}
+              <code title={verification.contentSha256}>
+                {verification.contentSha256.slice(0, 12)}
+              </code>
+            </output>
+          ) : null}
+          {verificationFailed ? (
+            <p className="delegation-evidence-error" role="status">
+              {copy.delegation.verifyFailed}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+      <footer>
+        <dl>
+          <div>
+            <dt>{copy.delegation.turns}</dt>
+            <dd>{task.turnCount}</dd>
+          </div>
+          <div>
+            <dt>{copy.delegation.steps}</dt>
+            <dd>{task.stepCount}</dd>
+          </div>
+          {task.outcome ? (
+            <>
+              <div>
+                <dt>{copy.delegation.items}</dt>
+                <dd>{task.outcome.itemCount}</dd>
+              </div>
+              <div>
+                <dt>{copy.delegation.evidence}</dt>
+                <dd>{task.outcome.evidenceCount ?? 0}</dd>
+              </div>
+              <div>
+                <dt>{copy.delegation.unknowns}</dt>
+                <dd>{task.outcome.unknownCount}</dd>
+              </div>
+            </>
+          ) : null}
+        </dl>
+        <code title={task.outcome?.contentSha256}>
+          {task.model.provider}/{task.model.id}
+          {task.outcome
+            ? ` · ${copy.delegation.receipt} ${task.outcome.contentSha256.slice(0, 10)}`
+            : ""}
+        </code>
+      </footer>
+    </article>
   );
 }
 

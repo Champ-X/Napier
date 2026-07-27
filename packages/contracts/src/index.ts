@@ -1556,6 +1556,37 @@ export interface GroundedSubagentOutcome extends SubagentOutcome {
   evidenceSetSha256: string;
 }
 
+export type SubagentOutcomeEvidenceVerificationItemStatus =
+  | "aligned"
+  | "divergent"
+  | "missing";
+
+export interface SubagentOutcomeEvidenceVerificationItem {
+  path: string;
+  lineStart?: number;
+  lineEnd?: number;
+  status: SubagentOutcomeEvidenceVerificationItemStatus;
+  expectedFileSha256: string;
+  observedFileSha256?: string;
+  expectedRangeSha256: string;
+  observedRangeSha256?: string;
+  diagnosticSha256?: string;
+}
+
+export interface SubagentOutcomeEvidenceVerification {
+  kind: "napier.subagent-outcome-evidence-verification";
+  schemaVersion: 1;
+  status: "aligned" | "divergent" | "unavailable";
+  taskId: string;
+  outcomeSha256: string;
+  evidenceCount: number;
+  alignedCount: number;
+  divergentCount: number;
+  missingCount: number;
+  items: SubagentOutcomeEvidenceVerificationItem[];
+  contentSha256: string;
+}
+
 export interface SubagentLimits {
   maxConcurrent: number;
   maxTotal: number;

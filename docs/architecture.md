@@ -1936,6 +1936,14 @@ parent tool call
   -> bind task/role/model/instructions/prompt/result/item-set hashes into a receipt
   -> persist assistant/tool steps, usage, turns, and terminal outcome receipt
   -> return bounded formatted evidence plus receipt metadata to the parent
+
+operator verifies stored outcome
+  -> resolve the task inside the path-bound Thread
+  -> validate the immutable outcome receipt before trusting its references
+  -> return unavailable for schema 1, which has no workspace hashes
+  -> reread schema-2 files and ranges through the same bounded no-follow boundary
+  -> classify current references as aligned, divergent, or missing
+  -> return a no-store stable-hash report without appending Ledger evidence
 ```
 
 Researcher, reviewer, and general roles have separate system prompts. A
@@ -1953,7 +1961,11 @@ Schema-1 role and output instructions are immutable because their exact bytes
 are receipt-bound; instruction changes require a new outcome schema version.
 Replay verification checks the task binding, while cross-workspace import
 remaps the task ID and recomputes the receipt without changing its raw-result
-or item-set hashes.
+or item-set hashes. Task-scoped evidence verification distinguishes the
+historical claim from current workspace state. It returns expected and observed
+file/range hashes, aggregate counts, and stable hash-only diagnostics; it does
+not return file content, persist the report, or reinterpret schema-1 receipts
+as grounded. The Trace delegation card loads this verifier on demand.
 Concurrency, total tasks, model turns, and wall time are bounded per parent
 run. Profile validation and the coordinator share the same bounds; runtime
 does not silently clamp a saved value a second time. Cancellation and budget

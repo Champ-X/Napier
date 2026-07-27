@@ -11,6 +11,7 @@ import {
   formatSubagentOutcome,
   rebindSubagentOutcome,
   validateSubagentOutcome,
+  verifySubagentOutcomeEvidence,
 } from "../src/subagent-outcomes.js";
 
 const temporaryRoots: string[] = [];
@@ -121,6 +122,147 @@ describe("Subagent outcomes", () => {
     expect(legacy).not.toHaveProperty("evidenceCount");
     expect(legacy).not.toHaveProperty("evidenceSetSha256");
     expect(validateSubagentOutcome(legacy)).toEqual(legacy);
+  });
+
+  it("verifies grounded evidence against current workspace bytes", async () => {
+    const workspaceRoot = await createWorkspace();
+    const outcome = await createGroundedSubagentOutcome({
+      ...TASK,
+      resultText: RESULT,
+      workspaceRoot,
+    });
+
+    const aligned = await verifySubagentOutcomeEvidence(outcome, workspaceRoot);
+    expect(aligned).toEqual({
+      kind: "napier.subagent-outcome-evidence-verification",
+      schemaVersion: 1,
+      status: "aligned",
+      taskId: TASK.taskId,
+      outcomeSha256: outcome.contentSha256,
+      evidenceCount: 1,
+      alignedCount: 1,
+      divergentCount: 0,
+      missingCount: 0,
+      items: [
+        expect.objectContaining({
+          path: "src/example.ts",
+          lineStart: 1,
+          lineEnd: 2,
+          status: "aligned",
+          expectedFileSha256: outcome.items[0]?.evidence[0]?.fileSha256,
+          observedFileSha256: outcome.items[0]?.evidence[0]?.fileSha256,
+          expectedRangeSha256: outcome.items[0]?.evidence[0]?.rangeSha256,
+          observedRangeSha256: outcome.items[0]?.evidence[0]?.rangeSha256,
+        }),
+      ],
+      contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+    await expect(
+      verifySubagentOutcomeEvidence(outcome, workspaceRoot),
+    ).resolves.toEqual(aligned);
+
+    await writeFile(
+      path.join(workspaceRoot, "src/example.ts"),
+      "changed one\nline two\nline three\n",
+      "utf8",
+    );
+    const divergent = await verifySubagentOutcomeEvidence(
+      outcome,
+      workspaceRoot,
+    );
+    expect(divergent).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        evidenceCount: 1,
+        alignedCount: 0,
+        divergentCount: 1,
+        missingCount: 0,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(divergent.items[0]).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        observedFileSha256: expect.not.stringMatching(
+          outcome.items[0]!.evidence[0]!.fileSha256!,
+        ),
+        observedRangeSha256: expect.not.stringMatching(
+          outcome.items[0]!.evidence[0]!.rangeSha256!,
+        ),
+      }),
+    );
+  });
+
+  it("distinguishes unavailable ranges, missing files, and legacy receipts", async () => {
+    const workspaceRoot = await createWorkspace();
+    const outcome = await createGroundedSubagentOutcome({
+      ...TASK,
+      resultText: RESULT,
+      workspaceRoot,
+    });
+    const target = path.join(workspaceRoot, "src/example.ts");
+
+    await writeFile(target, "one line", "utf8");
+    const rangeDrift = await verifySubagentOutcomeEvidence(
+      outcome,
+      workspaceRoot,
+    );
+    expect(rangeDrift).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        divergentCount: 1,
+        missingCount: 0,
+      }),
+    );
+    expect(rangeDrift.items[0]).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        observedFileSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        diagnosticSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(rangeDrift.items[0]).not.toHaveProperty("observedRangeSha256");
+
+    await rm(target);
+    const missing = await verifySubagentOutcomeEvidence(outcome, workspaceRoot);
+    expect(missing).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        divergentCount: 0,
+        missingCount: 1,
+      }),
+    );
+    expect(missing.items[0]).toEqual(
+      expect.objectContaining({
+        status: "missing",
+        diagnosticSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(missing.items[0]).not.toHaveProperty("observedFileSha256");
+
+    const legacy = createSubagentOutcome({
+      ...TASK,
+      resultText: JSON.stringify({
+        summary: "Legacy receipt remains valid.",
+        items: [],
+        unknowns: [],
+      }),
+    });
+    await expect(
+      verifySubagentOutcomeEvidence(legacy, workspaceRoot),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "unavailable",
+        taskId: TASK.taskId,
+        outcomeSha256: legacy.contentSha256,
+        evidenceCount: 0,
+        alignedCount: 0,
+        divergentCount: 0,
+        missingCount: 0,
+        items: [],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
   });
 
   it("rejects unknown fields, unsafe paths, and incomplete line evidence", () => {

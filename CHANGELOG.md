@@ -996,6 +996,16 @@ write:management-openapi-compatibility` now emits
   out-of-range, escaping, oversized, or non-text references fail the
   delegation. Grounded receipts use schema 2 while existing schema-1 receipts
   remain valid and importable.
+- No-store Subagent evidence drift verification. `POST
+/api/threads/:threadId/subagents/:taskId/outcome/verify` revalidates a stored
+  schema-2 receipt against current workspace bytes and reports aligned,
+  divergent, missing, or legacy-unavailable references with expected/observed
+  file and range hashes plus hash-only diagnostics. The task-scoped operation
+  appends no Ledger event, returns a stable content SHA-256 with count/status
+  headers, and has a promoted OpenAPI response schema with no request body.
+  Trace delegation cards load the verifier on demand and render current,
+  drifted, missing, and legacy states without exposing file content or raw
+  filesystem errors.
 - Shared Agent-profile and Subagent-coordinator limit normalization without a
   second silent runtime clamp.
 - Auditable delegation events and dedicated Trace workcells that preserve
