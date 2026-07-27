@@ -4040,6 +4040,67 @@ export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest
   extends VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest {
   threadId: string;
   expectedCurrentBaselineSha256: string;
+  importPolicy?: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy {
+  maxBaselineAgeMs?: number;
+  maxReceiptAgeMs?: number;
+  maxSourceObservedAgeMs?: number;
+  minimumAgreementCount?: number;
+  minimumAgreementWeight?: number;
+  minimumDistinctSourceOrigins?: number;
+  minimumMetadataPublisherCount?: number;
+  minimumSelectedMetadataCount?: number;
+  expectedAnchorSetSha256?: string;
+  expectedDirectorySha256?: string;
+  requiredSourceOriginSha256s?: string[];
+  requiredMetadataPublisherSha256s?: string[];
+  requiredMetadataSignerKeyIds?: string[];
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyProjection {
+  maxBaselineAgeMs: number;
+  maxReceiptAgeMs: number;
+  maxSourceObservedAgeMs: number;
+  minimumAgreementCount: number;
+  minimumAgreementWeight: number;
+  minimumDistinctSourceOrigins: number;
+  minimumMetadataPublisherCount: number;
+  minimumSelectedMetadataCount: number;
+  expectedAnchorSetSha256: string;
+  expectedDirectorySha256: string;
+  requiredSourceOriginSha256s: string[];
+  requiredMetadataPublisherSha256s: string[];
+  requiredMetadataSignerKeyIds: string[];
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReviewStatus =
+  | "accepted"
+  | "rejected";
+
+export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview {
+  kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-import-policy-review";
+  schemaVersion: 1;
+  apiVersion: string;
+  reviewedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReviewStatus;
+  diagnostics: string[];
+  policy: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyProjection;
+  policySha256: string;
+  baselineSha256?: string;
+  envelopeSha256?: string;
+  receiptSha256?: string;
+  keyId?: string;
+  selectedAnchorSetSha256?: string;
+  selectedDirectorySha256?: string;
+  selectedSourceOriginCount?: number;
+  selectedSourceOriginSetSha256?: string;
+  selectedMetadataPublisherCount?: number;
+  selectedMetadataPublisherSetSha256?: string;
+  selectedMetadataSignerCount?: number;
+  selectedMetadataSignerSetSha256?: string;
+  contentSha256: string;
 }
 
 export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification {
@@ -4071,6 +4132,7 @@ export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult 
   baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
   imported: boolean;
   verification: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+  policyReview?: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
   expectedCurrentBaselineSha256: string;
   previousBaselineSha256?: string;
 }

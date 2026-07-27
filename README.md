@@ -1378,7 +1378,14 @@ performs the same verification and then appends a local baseline only when
 `expectedCurrentBaselineSha256` matches the current latest baseline hash; use
 an empty string when importing into a workspace with no existing quorum
 baseline. The imported local baseline keeps the archived signed envelope but
-receives a local ID, local audit Thread, and local supersession link.
+receives a local ID, local audit Thread, and local supersession link. Import
+requests can also include an optional `importPolicy`. When present, the server
+emits a hash-bound `policyReview` and refuses activation before persistence
+unless the uploaded archive satisfies local freshness limits, minimum quorum
+strength, selected anchor/directory pins, required source-origin hashes, and
+required signed-metadata publisher or signer hashes. Successful responses expose
+the import policy hash and policy-review hash in headers and in the result
+body.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

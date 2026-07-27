@@ -14,6 +14,7 @@ import { canonicalJson } from "../src/ed25519.js";
 import {
   createReceiptTrustAnchorDirectorySubscription,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
+  reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
 } from "../src/receipt-trust-directory-subscriptions.js";
 import {
@@ -618,16 +619,56 @@ describe("receipt trust anchor directory subscriptions", () => {
       label: "Imported quorum signer",
       source: { type: "environment", variable: SIGNING_ENV },
     });
+    const importPolicy = {
+      maxBaselineAgeMs: 60_000,
+      maxReceiptAgeMs: 60_000,
+      maxSourceObservedAgeMs: 60_000,
+      minimumAgreementCount: 2,
+      minimumAgreementWeight: 2,
+      minimumDistinctSourceOrigins: 2,
+      minimumMetadataPublisherCount: 1,
+      minimumSelectedMetadataCount: 1,
+      expectedAnchorSetSha256: directory.anchorSetSha256,
+      expectedDirectorySha256: directory.contentSha256,
+      requiredSourceOriginSha256s: [left.sourceOriginSha256],
+      requiredMetadataPublisherSha256s: [publisherSha256],
+      requiredMetadataSignerKeyIds: [signingAnchor.keyId],
+    };
+    const importPolicyReview =
+      reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+        baselineResult.baseline,
+        importPolicy,
+      );
+    expect(importPolicyReview).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-import-policy-review",
+        status: "accepted",
+        diagnostics: [],
+        baselineSha256: baselineResult.baseline.contentSha256,
+        selectedAnchorSetSha256: directory.anchorSetSha256,
+        selectedDirectorySha256: directory.contentSha256,
+        selectedSourceOriginCount: 2,
+        selectedMetadataPublisherCount: 1,
+        selectedMetadataSignerCount: 1,
+        policySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
     const imported =
       await importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
         importThread.id,
         baselineResult.baseline,
         "",
         [importSigningAnchor],
+        importPolicy,
       );
     expect(imported).toEqual(
       expect.objectContaining({
         imported: true,
+        policyReview: expect.objectContaining({
+          status: "accepted",
+          policySha256: importPolicyReview.policySha256,
+        }),
         baseline: expect.objectContaining({
           promotedByThreadId: importThread.id,
           selectedAnchorSetSha256: directory.anchorSetSha256,
@@ -658,6 +699,18 @@ describe("receipt trust anchor directory subscriptions", () => {
         [],
       ),
     ).rejects.toThrow("signature is invalid");
+    await expect(
+      importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        importThread.id,
+        baselineResult.baseline,
+        imported.baseline.contentSha256,
+        [importSigningAnchor],
+        {
+          ...importPolicy,
+          requiredSourceOriginSha256s: ["e".repeat(64)],
+        },
+      ),
+    ).rejects.toThrow("policy rejected");
     await expect(
       importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
         importThread.id,

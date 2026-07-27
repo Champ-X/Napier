@@ -294,6 +294,11 @@ All notable changes to Napier are recorded here.
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import`
   now CAS-imports verified archives into local append-only trust state when
   `expectedCurrentBaselineSha256` matches the current latest baseline hash.
+  Import requests can include an optional `importPolicy`; accepted imports now
+  return a hash-bound `policyReview`, expose policy/review SHA-256 headers, and
+  reject activation before persistence when local freshness, quorum strength,
+  source-origin, publisher, signer, anchor-set, or directory pins are not
+  satisfied.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

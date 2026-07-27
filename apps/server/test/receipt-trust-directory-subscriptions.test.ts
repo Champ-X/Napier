@@ -469,6 +469,24 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       baseline: baselineResult.baseline,
       threadId: importThread.id,
       expectedCurrentBaselineSha256: "",
+      importPolicy: {
+        maxBaselineAgeMs: 86_400_000,
+        maxReceiptAgeMs: 86_400_000,
+        maxSourceObservedAgeMs: 86_400_000,
+        minimumAgreementCount: 2,
+        minimumAgreementWeight: 2,
+        minimumDistinctSourceOrigins: 2,
+        minimumMetadataPublisherCount: 1,
+        minimumSelectedMetadataCount: 2,
+        expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+        expectedDirectorySha256: hostedDirectory.contentSha256,
+        requiredSourceOriginSha256s: [
+          created.sourceOriginSha256,
+          mirror.sourceOriginSha256,
+        ],
+        requiredMetadataPublisherSha256s: [publisherSha256],
+        requiredMetadataSignerKeyIds: [signingAnchor.keyId],
+      },
       trustDirectory: hostedDirectory,
       trustDirectoryPolicy: {
         expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
@@ -494,6 +512,14 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
           status: "trusted",
           baselineSha256: baselineResult.baseline.contentSha256,
         }),
+        policyReview: expect.objectContaining({
+          status: "accepted",
+          diagnostics: [],
+          baselineSha256: baselineResult.baseline.contentSha256,
+          selectedSourceOriginCount: 2,
+          selectedMetadataPublisherCount: 1,
+          selectedMetadataSignerCount: 1,
+        }),
         baseline: expect.objectContaining({
           promotedByThreadId: importThread.id,
           envelope: baselineResult.baseline.envelope,
@@ -508,6 +534,37 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-promotion-baseline-imported",
       ),
     ).toBe("true");
+    expect(
+      baselineImportResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-baseline-import-policy-sha256",
+      ),
+    ).toBe(baselineImport.policyReview?.policySha256);
+    expect(
+      baselineImportResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-baseline-import-policy-review-sha256",
+      ),
+    ).toBe(baselineImport.policyReview?.contentSha256);
+    const rejectedPolicyImportResponse = await importApp.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...baselineImportRequest,
+          expectedCurrentBaselineSha256: baselineImport.baseline.contentSha256,
+          importPolicy: {
+            ...baselineImportRequest.importPolicy,
+            requiredSourceOriginSha256s: ["e".repeat(64)],
+          },
+        }),
+      },
+    );
+    expect(rejectedPolicyImportResponse.status).toBe(409);
+    expect(await rejectedPolicyImportResponse.json()).toEqual(
+      expect.objectContaining({
+        error: expect.stringContaining("policy rejected"),
+      }),
+    );
     const duplicateImportResponse = await importApp.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
       {

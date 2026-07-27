@@ -127,6 +127,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorum,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview,
   type ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   type ReceiptTrustAnchorDirectorySubscription,
   type ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -325,6 +327,7 @@ import {
   createReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   createReceiptTrustAnchorDirectorySubscriptionQuorum,
   createReceiptTrustAnchorDirectorySubscription,
+  reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   settleReceiptTrustAnchorDirectorySubscriptionRefresh,
   stripReceiptTrustAnchorDirectorySubscriptionSecrets,
   updateReceiptTrustAnchorDirectorySubscriptionStatus,
@@ -1225,9 +1228,11 @@ export class LocalStore {
     baselineInput: unknown,
     expectedCurrentBaselineSha256: string,
     trustedAnchors: ReceiptTrustAnchor[],
+    importPolicy?: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   ): Promise<{
     baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
     imported: boolean;
+    policyReview?: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
     previousBaselineSha256?: string;
   }> {
     this.assertInitialized();
@@ -1263,6 +1268,18 @@ export class LocalStore {
           `Receipt trust anchor directory quorum promotion baseline import is not trusted: ${verification.reason}`,
         );
       }
+      const policyReview =
+        importPolicy === undefined
+          ? undefined
+          : reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+              importedBaseline,
+              importPolicy,
+            );
+      if (policyReview?.status === "rejected") {
+        throw new Error(
+          `Receipt trust anchor directory quorum promotion baseline import policy rejected: ${policyReview.diagnostics.join(",")}`,
+        );
+      }
       const existing =
         this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.find(
           (baseline) =>
@@ -1277,6 +1294,7 @@ export class LocalStore {
         return {
           baseline: structuredClone(existing),
           imported: false,
+          ...(policyReview ? { policyReview } : {}),
           ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
         };
       }
@@ -1288,6 +1306,7 @@ export class LocalStore {
       return {
         baseline: structuredClone(baseline),
         imported: true,
+        ...(policyReview ? { policyReview } : {}),
         ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
       };
     });

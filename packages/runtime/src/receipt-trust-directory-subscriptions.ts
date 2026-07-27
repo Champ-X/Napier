@@ -17,6 +17,9 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumSource,
   type ReceiptTrustAnchorDirectoryQuorumSourceMetadata,
   type ReceiptTrustAnchorDirectoryQuorumSourceWeight,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyProjection,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview,
   type ReceiptTrustAnchorDirectoryDiscovery,
   type ReceiptTrustAnchorDirectorySubscription,
   type ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -827,6 +830,152 @@ export function verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
   });
 }
 
+export function reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+  value: unknown,
+  policyInput?: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
+  reviewedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview {
+  const reviewedAt = requireTimestamp(
+    reviewedAtInput,
+    "anchor directory quorum promotion baseline import policy review time",
+  );
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+      policyInput,
+    );
+  let baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  try {
+    baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(value);
+  } catch {
+    return createQuorumPromotionBaselineImportPolicyReview({
+      reviewedAt,
+      status: "rejected",
+      diagnostics: ["baseline_invalid"],
+      policy,
+    });
+  }
+  const receipt = baseline.envelope.receipt;
+  const selectedSources = receipt.quorum.sources.filter(
+    (source) => source.anchorSetSha256 === receipt.selectedAnchorSetSha256,
+  );
+  const selectedSourceOrigins = Array.from(
+    new Set(selectedSources.map((source) => source.sourceOriginSha256)),
+  ).sort();
+  const selectedMetadataPublishers = Array.from(
+    new Set(
+      receipt.selectedMetadata.flatMap((metadata) =>
+        metadata.publisherSha256 ? [metadata.publisherSha256] : [],
+      ),
+    ),
+  ).sort();
+  const selectedMetadataSigners = Array.from(
+    new Set(
+      receipt.selectedMetadata.flatMap((metadata) =>
+        metadata.signerKeyId ? [metadata.signerKeyId] : [],
+      ),
+    ),
+  ).sort();
+  const diagnostics: string[] = [];
+  const reviewedAtMs = Date.parse(reviewedAt);
+  if (
+    policy.maxBaselineAgeMs > 0 &&
+    reviewedAtMs - Date.parse(baseline.createdAt) > policy.maxBaselineAgeMs
+  ) {
+    diagnostics.push("baseline_stale");
+  }
+  if (
+    policy.maxReceiptAgeMs > 0 &&
+    reviewedAtMs - Date.parse(receipt.generatedAt) > policy.maxReceiptAgeMs
+  ) {
+    diagnostics.push("receipt_stale");
+  }
+  if (
+    policy.maxSourceObservedAgeMs > 0 &&
+    selectedSources.some(
+      (source) =>
+        reviewedAtMs - Date.parse(source.observedAt) >
+        policy.maxSourceObservedAgeMs,
+    )
+  ) {
+    diagnostics.push("source_observation_stale");
+  }
+  if (
+    policy.minimumAgreementCount > 0 &&
+    receipt.quorum.agreementCount < policy.minimumAgreementCount
+  ) {
+    diagnostics.push("insufficient_agreement_count");
+  }
+  if (
+    policy.minimumAgreementWeight > 0 &&
+    receipt.quorum.agreementWeight < policy.minimumAgreementWeight
+  ) {
+    diagnostics.push("insufficient_agreement_weight");
+  }
+  if (
+    policy.minimumDistinctSourceOrigins > 0 &&
+    receipt.quorum.agreementDistinctSourceOriginCount <
+      policy.minimumDistinctSourceOrigins
+  ) {
+    diagnostics.push("insufficient_distinct_source_origins");
+  }
+  if (
+    policy.minimumMetadataPublisherCount > 0 &&
+    receipt.quorum.agreementMetadataPublisherCount <
+      policy.minimumMetadataPublisherCount
+  ) {
+    diagnostics.push("insufficient_metadata_publishers");
+  }
+  if (
+    policy.minimumSelectedMetadataCount > 0 &&
+    receipt.selectedMetadataCount < policy.minimumSelectedMetadataCount
+  ) {
+    diagnostics.push("insufficient_selected_metadata");
+  }
+  if (
+    policy.expectedAnchorSetSha256 &&
+    baseline.selectedAnchorSetSha256 !== policy.expectedAnchorSetSha256
+  ) {
+    diagnostics.push("expected_anchor_set_mismatch");
+  }
+  if (
+    policy.expectedDirectorySha256 &&
+    baseline.selectedDirectorySha256 !== policy.expectedDirectorySha256
+  ) {
+    diagnostics.push("expected_directory_mismatch");
+  }
+  if (
+    policy.requiredSourceOriginSha256s.some(
+      (origin) => !selectedSourceOrigins.includes(origin),
+    )
+  ) {
+    diagnostics.push("required_source_origin_missing");
+  }
+  if (
+    policy.requiredMetadataPublisherSha256s.some(
+      (publisher) => !selectedMetadataPublishers.includes(publisher),
+    )
+  ) {
+    diagnostics.push("required_metadata_publisher_missing");
+  }
+  if (
+    policy.requiredMetadataSignerKeyIds.some(
+      (keyId) => !selectedMetadataSigners.includes(keyId),
+    )
+  ) {
+    diagnostics.push("required_metadata_signer_missing");
+  }
+  return createQuorumPromotionBaselineImportPolicyReview({
+    reviewedAt,
+    status: diagnostics.length === 0 ? "accepted" : "rejected",
+    diagnostics,
+    policy,
+    baseline,
+    selectedSourceOrigins,
+    selectedMetadataPublishers,
+    selectedMetadataSigners,
+  });
+}
+
 export function validateReceiptTrustAnchorDirectoryQuorum(
   value: unknown,
 ): ReceiptTrustAnchorDirectoryQuorum {
@@ -1351,6 +1500,118 @@ function normalizeReceiptTrustAnchorDirectoryQuorumPolicy(
   };
 }
 
+function normalizeReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+  policy:
+    | ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy
+    | undefined,
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyProjection {
+  if (policy !== undefined) {
+    if (!isRecord(policy)) {
+      throw new Error(
+        "Receipt trust anchor directory quorum promotion baseline import policy is invalid",
+      );
+    }
+    assertAllowedKeys(policy, [
+      "maxBaselineAgeMs",
+      "maxReceiptAgeMs",
+      "maxSourceObservedAgeMs",
+      "minimumAgreementCount",
+      "minimumAgreementWeight",
+      "minimumDistinctSourceOrigins",
+      "minimumMetadataPublisherCount",
+      "minimumSelectedMetadataCount",
+      "expectedAnchorSetSha256",
+      "expectedDirectorySha256",
+      "requiredSourceOriginSha256s",
+      "requiredMetadataPublisherSha256s",
+      "requiredMetadataSignerKeyIds",
+    ]);
+  }
+  return {
+    maxBaselineAgeMs: normalizeImportPolicyDuration(
+      policy?.["maxBaselineAgeMs"],
+      "baseline age",
+    ),
+    maxReceiptAgeMs: normalizeImportPolicyDuration(
+      policy?.["maxReceiptAgeMs"],
+      "receipt age",
+    ),
+    maxSourceObservedAgeMs: normalizeImportPolicyDuration(
+      policy?.["maxSourceObservedAgeMs"],
+      "source observation age",
+    ),
+    minimumAgreementCount: normalizeQuorumOptionalCount(
+      policy?.["minimumAgreementCount"] ?? 0,
+      "minimum agreement",
+    ),
+    minimumAgreementWeight: normalizeQuorumOptionalWeight(
+      policy?.["minimumAgreementWeight"],
+      "minimum agreement weight",
+    ),
+    minimumDistinctSourceOrigins: normalizeQuorumOptionalCount(
+      policy?.["minimumDistinctSourceOrigins"] ?? 0,
+      "minimum distinct source origins",
+    ),
+    minimumMetadataPublisherCount: normalizeQuorumOptionalCount(
+      policy?.["minimumMetadataPublisherCount"] ?? 0,
+      "minimum metadata publisher count",
+    ),
+    minimumSelectedMetadataCount: normalizeQuorumOptionalCount(
+      policy?.["minimumSelectedMetadataCount"] ?? 0,
+      "minimum selected metadata count",
+    ),
+    expectedAnchorSetSha256: normalizeOptionalImportPolicySha256(
+      policy?.["expectedAnchorSetSha256"],
+      "expected anchor set",
+    ),
+    expectedDirectorySha256: normalizeOptionalImportPolicySha256(
+      policy?.["expectedDirectorySha256"],
+      "expected directory",
+    ),
+    requiredSourceOriginSha256s: normalizeSourceOriginPins(
+      policy?.["requiredSourceOriginSha256s"],
+      "required source origins",
+    ),
+    requiredMetadataPublisherSha256s: normalizeSourceOriginPins(
+      policy?.["requiredMetadataPublisherSha256s"],
+      "required metadata publishers",
+    ),
+    requiredMetadataSignerKeyIds: normalizeSourceOriginPins(
+      policy?.["requiredMetadataSignerKeyIds"],
+      "required metadata signer key ids",
+    ),
+  };
+}
+
+function normalizeImportPolicyDuration(
+  value: unknown,
+  label: string,
+): number {
+  if (value === undefined) return 0;
+  if (!Number.isSafeInteger(value) || typeof value !== "number" || value < 0) {
+    throw new Error(
+      `Receipt trust anchor directory quorum promotion baseline import policy ${label} is invalid`,
+    );
+  }
+  return value;
+}
+
+function normalizeOptionalImportPolicySha256(
+  value: unknown,
+  label: string,
+): string {
+  if (value === undefined) return "";
+  if (
+    typeof value !== "string" ||
+    (value !== "" && !SHA256_PATTERN.test(value))
+  ) {
+    throw new Error(
+      `Receipt trust anchor directory quorum promotion baseline import policy ${label} is invalid`,
+    );
+  }
+  return value;
+}
+
 function normalizeQuorumCount(value: unknown, label: string): number {
   if (
     !Number.isSafeInteger(value) ||
@@ -1377,6 +1638,11 @@ function normalizeQuorumOptionalCount(value: unknown, label: string): number {
     );
   }
   return value;
+}
+
+function normalizeQuorumOptionalWeight(value: unknown, label: string): number {
+  if (value === undefined || value === 0) return 0;
+  return normalizeQuorumWeight(value, label);
 }
 
 function normalizeQuorumWeight(value: unknown, label: string): number {
@@ -1534,6 +1800,57 @@ function createQuorumPromotionBaselineVerification(input: {
                   input.trustDirectoryVerification.policySha256,
               }
             : {}),
+        }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createQuorumPromotionBaselineImportPolicyReview(input: {
+  reviewedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview["status"];
+  diagnostics: string[];
+  policy: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyProjection;
+  baseline?: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  selectedSourceOrigins?: string[];
+  selectedMetadataPublishers?: string[];
+  selectedMetadataSigners?: string[];
+}): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview {
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-import-policy-review" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    reviewedAt: input.reviewedAt,
+    status: input.status,
+    diagnostics: input.diagnostics,
+    policy: input.policy,
+    policySha256: sha256(canonicalJson(input.policy)),
+    ...(input.baseline
+      ? {
+          baselineSha256: input.baseline.contentSha256,
+          envelopeSha256: input.baseline.envelope.contentSha256,
+          receiptSha256: input.baseline.envelope.receipt.contentSha256,
+          keyId: input.baseline.envelope.signature.keyId,
+          selectedAnchorSetSha256: input.baseline.selectedAnchorSetSha256,
+          selectedDirectorySha256: input.baseline.selectedDirectorySha256,
+          selectedSourceOriginCount:
+            input.selectedSourceOrigins?.length ?? 0,
+          selectedSourceOriginSetSha256: sha256(
+            canonicalJson(input.selectedSourceOrigins ?? []),
+          ),
+          selectedMetadataPublisherCount:
+            input.selectedMetadataPublishers?.length ?? 0,
+          selectedMetadataPublisherSetSha256: sha256(
+            canonicalJson(input.selectedMetadataPublishers ?? []),
+          ),
+          selectedMetadataSignerCount:
+            input.selectedMetadataSigners?.length ?? 0,
+          selectedMetadataSignerSetSha256: sha256(
+            canonicalJson(input.selectedMetadataSigners ?? []),
+          ),
         }
       : {}),
   };

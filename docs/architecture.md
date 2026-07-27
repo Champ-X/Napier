@@ -452,6 +452,14 @@ precondition. The archive keeps its original signed envelope, while the local
 record receives a new baseline ID, local audit Thread, and supersession link.
 An empty expected-current hash means no local baseline exists; stale or
 mismatched expectations fail before any state mutation.
+Policy-bound import review adds a second local activation gate without changing
+the signed archive. Import callers may attach an `importPolicy`; the runtime
+normalizes it into a hash-bound review receipt and rejects the import before
+persistence unless the archive satisfies local baseline/receipt/source
+freshness limits, minimum agreement and metadata counts, selected
+anchor/directory pins, required source-origin hashes, and required signed
+metadata publisher or signer hashes. Successful imports carry the policy-review
+hash in the response and in hash-only Ledger event evidence.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2411,9 +2419,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- policy-bound review for imported quorum-promotion baselines, so external
-  archive replay can require local freshness, publisher, and source-origin
-  constraints before activation.
+- activation workbench affordances for imported quorum-promotion baselines, so
+  operators can compare the trusted verification receipt, policy review, and
+  current last-good directory subscriptions before enabling a new verifier set.
 
 ### Layer 3: Extension fabric
 

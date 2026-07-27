@@ -100,6 +100,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   ReceiptTrustAnchorDirectoryQuorumPolicy,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
@@ -1055,6 +1056,7 @@ export function createApp(services: NapierServices): Hono {
             body.baseline,
             body.expectedCurrentBaselineSha256,
             anchors,
+            body.importPolicy,
           );
         if (imported.imported) {
           await appendReceiptTrustEvent(
@@ -1074,6 +1076,13 @@ export function createApp(services: NapierServices): Hono {
                 ? { previousBaselineSha256: imported.previousBaselineSha256 }
                 : {}),
               verificationSha256: verification.contentSha256,
+              ...(imported.policyReview
+                ? {
+                    importPolicySha256: imported.policyReview.policySha256,
+                    importPolicyReviewSha256:
+                      imported.policyReview.contentSha256,
+                  }
+                : {}),
             },
           );
         }
@@ -1082,6 +1091,9 @@ export function createApp(services: NapierServices): Hono {
             baseline: imported.baseline,
             imported: imported.imported,
             verification,
+            ...(imported.policyReview
+              ? { policyReview: imported.policyReview }
+              : {}),
             expectedCurrentBaselineSha256:
               body.expectedCurrentBaselineSha256,
             ...(imported.previousBaselineSha256
@@ -1098,7 +1110,10 @@ export function createApp(services: NapierServices): Hono {
         return jsonError(
           context,
           message,
-          message.includes("precondition") ? 409 : 400,
+          message.includes("precondition") ||
+            message.includes("policy rejected")
+            ? 409
+            : 400,
         );
       }
     },
@@ -11119,12 +11134,17 @@ function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
     "baseline",
     "threadId",
     "expectedCurrentBaselineSha256",
+    "importPolicy",
     "trustDirectory",
     "trustDirectoryPolicy",
   ]);
   const threadId = record?.["threadId"];
   const expectedCurrentBaselineSha256 =
     record?.["expectedCurrentBaselineSha256"];
+  const importPolicy =
+    parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+      record?.["importPolicy"],
+    );
   const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
     record?.["trustDirectoryPolicy"],
   );
@@ -11135,6 +11155,7 @@ function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
     typeof expectedCurrentBaselineSha256 !== "string" ||
     (expectedCurrentBaselineSha256 !== "" &&
       !isSha256Hex(expectedCurrentBaselineSha256)) ||
+    (record["importPolicy"] !== undefined && !importPolicy) ||
     (record["trustDirectoryPolicy"] !== undefined &&
       record["trustDirectory"] === undefined) ||
     (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
@@ -11145,6 +11166,7 @@ function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
     baseline: record["baseline"],
     threadId,
     expectedCurrentBaselineSha256,
+    ...(importPolicy ? { importPolicy } : {}),
     ...(record["trustDirectory"] !== undefined
       ? { trustDirectory: record["trustDirectory"] }
       : {}),
@@ -11556,6 +11578,152 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
       ? { sourceWeights: normalizedSourceWeights }
       : {}),
   };
+}
+
+function parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+  input: unknown,
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy | undefined {
+  if (input === undefined) return undefined;
+  const record = requestRecord(input, [
+    "maxBaselineAgeMs",
+    "maxReceiptAgeMs",
+    "maxSourceObservedAgeMs",
+    "minimumAgreementCount",
+    "minimumAgreementWeight",
+    "minimumDistinctSourceOrigins",
+    "minimumMetadataPublisherCount",
+    "minimumSelectedMetadataCount",
+    "expectedAnchorSetSha256",
+    "expectedDirectorySha256",
+    "requiredSourceOriginSha256s",
+    "requiredMetadataPublisherSha256s",
+    "requiredMetadataSignerKeyIds",
+  ]);
+  if (!record) return undefined;
+  const maxBaselineAgeMs = record["maxBaselineAgeMs"];
+  const maxReceiptAgeMs = record["maxReceiptAgeMs"];
+  const maxSourceObservedAgeMs = record["maxSourceObservedAgeMs"];
+  const minimumAgreementCount = record["minimumAgreementCount"];
+  const minimumAgreementWeight = record["minimumAgreementWeight"];
+  const minimumDistinctSourceOrigins = record["minimumDistinctSourceOrigins"];
+  const minimumMetadataPublisherCount =
+    record["minimumMetadataPublisherCount"];
+  const minimumSelectedMetadataCount = record["minimumSelectedMetadataCount"];
+  const expectedAnchorSetSha256 = record["expectedAnchorSetSha256"];
+  const expectedDirectorySha256 = record["expectedDirectorySha256"];
+  const requiredSourceOriginSha256s = record["requiredSourceOriginSha256s"];
+  const requiredMetadataPublisherSha256s =
+    record["requiredMetadataPublisherSha256s"];
+  const requiredMetadataSignerKeyIds = record["requiredMetadataSignerKeyIds"];
+  if (
+    (maxBaselineAgeMs !== undefined &&
+      !isNonNegativeInteger(maxBaselineAgeMs)) ||
+    (maxReceiptAgeMs !== undefined &&
+      !isNonNegativeInteger(maxReceiptAgeMs)) ||
+    (maxSourceObservedAgeMs !== undefined &&
+      !isNonNegativeInteger(maxSourceObservedAgeMs)) ||
+    (minimumAgreementCount !== undefined &&
+      (!isNonNegativeInteger(minimumAgreementCount) ||
+        minimumAgreementCount >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumAgreementWeight !== undefined &&
+      (!isNonNegativeInteger(minimumAgreementWeight) ||
+        minimumAgreementWeight >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS *
+            MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT)) ||
+    (minimumDistinctSourceOrigins !== undefined &&
+      (!isNonNegativeInteger(minimumDistinctSourceOrigins) ||
+        minimumDistinctSourceOrigins >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumMetadataPublisherCount !== undefined &&
+      (!isNonNegativeInteger(minimumMetadataPublisherCount) ||
+        minimumMetadataPublisherCount >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumSelectedMetadataCount !== undefined &&
+      (!isNonNegativeInteger(minimumSelectedMetadataCount) ||
+        minimumSelectedMetadataCount >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (expectedAnchorSetSha256 !== undefined &&
+      (typeof expectedAnchorSetSha256 !== "string" ||
+        (expectedAnchorSetSha256 !== "" &&
+          !isSha256Hex(expectedAnchorSetSha256)))) ||
+    (expectedDirectorySha256 !== undefined &&
+      (typeof expectedDirectorySha256 !== "string" ||
+        (expectedDirectorySha256 !== "" &&
+          !isSha256Hex(expectedDirectorySha256)))) ||
+    !validSha256List(
+      requiredSourceOriginSha256s,
+      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+    ) ||
+    !validSha256List(
+      requiredMetadataPublisherSha256s,
+      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+    ) ||
+    !validSha256List(
+      requiredMetadataSignerKeyIds,
+      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+    )
+  ) {
+    return undefined;
+  }
+  return {
+    ...(maxBaselineAgeMs !== undefined ? { maxBaselineAgeMs } : {}),
+    ...(maxReceiptAgeMs !== undefined ? { maxReceiptAgeMs } : {}),
+    ...(maxSourceObservedAgeMs !== undefined
+      ? { maxSourceObservedAgeMs }
+      : {}),
+    ...(minimumAgreementCount !== undefined
+      ? { minimumAgreementCount }
+      : {}),
+    ...(minimumAgreementWeight !== undefined
+      ? { minimumAgreementWeight }
+      : {}),
+    ...(minimumDistinctSourceOrigins !== undefined
+      ? { minimumDistinctSourceOrigins }
+      : {}),
+    ...(minimumMetadataPublisherCount !== undefined
+      ? { minimumMetadataPublisherCount }
+      : {}),
+    ...(minimumSelectedMetadataCount !== undefined
+      ? { minimumSelectedMetadataCount }
+      : {}),
+    ...(typeof expectedAnchorSetSha256 === "string"
+      ? { expectedAnchorSetSha256 }
+      : {}),
+    ...(typeof expectedDirectorySha256 === "string"
+      ? { expectedDirectorySha256 }
+      : {}),
+    ...(requiredSourceOriginSha256s !== undefined
+      ? {
+          requiredSourceOriginSha256s: Array.from(
+            new Set(requiredSourceOriginSha256s as string[]),
+          ).sort(),
+        }
+      : {}),
+    ...(requiredMetadataPublisherSha256s !== undefined
+      ? {
+          requiredMetadataPublisherSha256s: Array.from(
+            new Set(requiredMetadataPublisherSha256s as string[]),
+          ).sort(),
+        }
+      : {}),
+    ...(requiredMetadataSignerKeyIds !== undefined
+      ? {
+          requiredMetadataSignerKeyIds: Array.from(
+            new Set(requiredMetadataSignerKeyIds as string[]),
+          ).sort(),
+        }
+      : {}),
+  };
+}
+
+function validSha256List(value: unknown, maxLength: number): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.length <= maxLength &&
+      value.every((item) => isSha256Hex(item)))
+  );
 }
 
 function parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(
@@ -16295,6 +16463,16 @@ function setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeader
     "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-SHA256",
     result.verification.contentSha256,
   );
+  if (result.policyReview) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-SHA256",
+      result.policyReview.policySha256,
+    );
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-Review-SHA256",
+      result.policyReview.contentSha256,
+    );
+  }
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
     result.baseline.envelope.receipt.contentSha256,
