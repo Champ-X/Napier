@@ -4269,6 +4269,54 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerif
   contentSha256: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelection {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection";
+  schemaVersion: 1;
+  apiVersion: string;
+  id: string;
+  activatedAt: string;
+  activatedByThreadId: string;
+  activationDecisionRecordId: string;
+  activationDecisionRecordSha256: string;
+  activationDecisionReceiptSha256: string;
+  activationDecisionEnvelopeSha256: string;
+  baselineId: string;
+  baselineSha256: string;
+  selectedAnchorSetSha256: string;
+  selectedDirectorySha256: string;
+  selectedDirectory: ReceiptTrustAnchorDirectory;
+  policyReviewSha256: string;
+  sourceAlignmentSha256: string;
+  previousSelectionSha256?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionState {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-state";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  hasSelection: boolean;
+  currentSelectionSha256: string;
+  selection?: ReceiptTrustAnchorDirectoryQuorumActivationSelection;
+  contentSha256: string;
+}
+
+export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
+  threadId: string;
+  activationDecisionRecordId: string;
+  expectedCurrentSelectionSha256: string;
+}
+
+export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult {
+  applied: boolean;
+  expectedCurrentSelectionSha256: string;
+  selection: ReceiptTrustAnchorDirectoryQuorumActivationSelection;
+  selectionState: ReceiptTrustAnchorDirectoryQuorumActivationSelectionState;
+  previousSelectionSha256?: string;
+  contentSha256: string;
+}
+
 export interface EvaluationQualificationBaseline {
   id: string;
   casebookId: string;

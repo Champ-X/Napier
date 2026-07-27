@@ -1409,7 +1409,15 @@ baseline/source/policy set hashes, and the signed decision records. `POST
 performs no-store verification of an uploaded history against the current local
 projection, returning `valid`, `divergent`, or `invalid` diagnostics. The Web
 workbench can export that history and verify uploaded histories beside the
-activation decision receipt.
+activation decision receipt. `GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection`
+returns the current active verifier-set selection state. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply`
+CAS-applies an approved activation-decision record into that active selection,
+binding the public selected directory, baseline hash, decision record hash, and
+previous selection hash without importing private signing material. The Web
+workbench exposes this as **Apply activation** and renders the active verifier
+selection receipt.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

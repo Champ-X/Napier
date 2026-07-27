@@ -816,6 +816,72 @@ describe("receipt trust anchor directory subscriptions", () => {
         currentDecisionCount: 1,
       }),
     );
+    const emptyActivationSelectionState =
+      store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+    expect(emptyActivationSelectionState).toEqual(
+      expect.objectContaining({
+        hasSelection: false,
+        currentSelectionSha256: "",
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    const appliedSelection =
+      await store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+        thread.id,
+        activationRecord.id,
+        "",
+      );
+    expect(appliedSelection).toEqual(
+      expect.objectContaining({
+        applied: true,
+        expectedCurrentSelectionSha256: "",
+        selection: expect.objectContaining({
+          activationDecisionRecordId: activationRecord.id,
+          activationDecisionRecordSha256: activationRecord.contentSha256,
+          baselineId: baselineResult.baseline.id,
+          baselineSha256: baselineResult.baseline.contentSha256,
+          selectedAnchorSetSha256: directory.anchorSetSha256,
+          selectedDirectorySha256: directory.contentSha256,
+          selectedDirectory: directory,
+        }),
+        selectionState: expect.objectContaining({
+          hasSelection: true,
+          selection: expect.objectContaining({
+            activationDecisionRecordId: activationRecord.id,
+          }),
+        }),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
+    ).toEqual(
+      expect.objectContaining({
+        hasSelection: true,
+        currentSelectionSha256: appliedSelection.selection.contentSha256,
+        selection: appliedSelection.selection,
+        contentSha256: appliedSelection.selectionState.contentSha256,
+      }),
+    );
+    await expect(
+      store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+        thread.id,
+        activationRecord.id,
+        appliedSelection.selection.contentSha256,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        applied: false,
+        selection: appliedSelection.selection,
+      }),
+    );
+    await expect(
+      store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+        thread.id,
+        activationRecord.id,
+        "",
+      ),
+    ).rejects.toThrow("precondition failed");
     const imported =
       await importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
         importThread.id,

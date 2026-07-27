@@ -483,7 +483,13 @@ can be re-exported and still verify across workspaces. The no-store history
 verification endpoint recomputes the uploaded history, compares it with the
 current local projection, and reports `valid`, `divergent`, or `invalid`
 diagnostics without persisting uploaded content. The Receipt Trust Desk exposes
-both export and upload verification beside the activation workbench.
+both export and upload verification beside the activation workbench. Approved
+decision records can then be CAS-applied into a single active verifier-set
+selection. The selection record stores the public selected directory from the
+signed quorum receipt, baseline hash, decision-record hash, previous selection
+hash, and activation Thread, but no private signing source or raw subscription
+URL. Applying the same decision is idempotent; stale expected-selection hashes
+fail before mutation, and Ledger evidence remains hash-only.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2443,9 +2449,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- policy-governed activation application, so verified activation-decision
-  history can be CAS-promoted into an active verifier-set selection without
-  bypassing source-drift evidence.
+- active-selection-backed receipt verification, so the applied verifier-set
+  directory can be used as the default trust source for future receipt checks
+  while still permitting explicit uploaded trust directories.
 
 ### Layer 3: Extension fabric
 

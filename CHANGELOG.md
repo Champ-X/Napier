@@ -318,7 +318,16 @@ All notable changes to Napier are recorded here.
   verifies uploaded histories against the current local projection with
   `valid`, `divergent`, and `invalid` diagnostics. The Receipt Trust Desk can
   export the durable history and verify uploaded history JSON from the
-  activation workbench.
+  activation workbench. `GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection`
+  now exports the active verifier-set selection state, and `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply`
+  CAS-applies an approved activation-decision record into that active
+  selection. The selection binds the public selected directory, baseline hash,
+  decision record hash, and previous selection hash without importing private
+  signing material; stale selection hashes fail closed and duplicate applies
+  are idempotent. The Web workbench adds **Apply activation** and renders the
+  active verifier selection receipt.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

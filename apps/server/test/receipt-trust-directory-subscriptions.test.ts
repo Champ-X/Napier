@@ -10,11 +10,13 @@ import type {
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   TrustedReceiptEnvelope,
@@ -653,6 +655,114 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         currentDecisionCount: 1,
       }),
     );
+    const emptyActivationSelectionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
+    );
+    expect(emptyActivationSelectionResponse.status).toBe(200);
+    const emptyActivationSelectionState =
+      (await emptyActivationSelectionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionState;
+    expect(emptyActivationSelectionState).toEqual(
+      expect.objectContaining({
+        hasSelection: false,
+        currentSelectionSha256: "",
+      }),
+    );
+    expect(
+      emptyActivationSelectionResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-active",
+      ),
+    ).toBe("false");
+    const activationRecord = activationHistory.records[0]!;
+    const applyActivationSelectionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256: "",
+        }),
+      },
+    );
+    expect(applyActivationSelectionResponse.status).toBe(201);
+    const appliedActivationSelection =
+      (await applyActivationSelectionResponse.json()) as ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult;
+    expect(appliedActivationSelection).toEqual(
+      expect.objectContaining({
+        applied: true,
+        expectedCurrentSelectionSha256: "",
+        selection: expect.objectContaining({
+          activationDecisionRecordId: activationRecord.id,
+          activationDecisionRecordSha256: activationRecord.contentSha256,
+          baselineId: baselineResult.baseline.id,
+          baselineSha256: baselineResult.baseline.contentSha256,
+          selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+          selectedDirectorySha256: hostedDirectory.contentSha256,
+          selectedDirectory: hostedDirectory,
+        }),
+        selectionState: expect.objectContaining({
+          hasSelection: true,
+          currentSelectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      applyActivationSelectionResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-applied",
+      ),
+    ).toBe("true");
+    const activationSelectionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
+    );
+    expect(activationSelectionResponse.status).toBe(200);
+    expect(
+      (await activationSelectionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
+    ).toEqual(
+      expect.objectContaining({
+        hasSelection: true,
+        currentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        selection: appliedActivationSelection.selection,
+        contentSha256: appliedActivationSelection.selectionState.contentSha256,
+      }),
+    );
+    const duplicateActivationSelectionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+        }),
+      },
+    );
+    expect(duplicateActivationSelectionResponse.status).toBe(200);
+    expect(
+      (await duplicateActivationSelectionResponse.json()) as ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+    ).toEqual(
+      expect.objectContaining({
+        applied: false,
+        selection: appliedActivationSelection.selection,
+      }),
+    );
+    const staleActivationSelectionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256: "",
+        }),
+      },
+    );
+    expect(staleActivationSelectionResponse.status).toBe(409);
     const importRoot = await mkdtemp(
       path.join(tmpdir(), "napier-trust-baseline-import-http-"),
     );

@@ -22,6 +22,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectorySubscription,
@@ -34,6 +35,7 @@ import type {
 
 import { copy } from "./copy";
 import {
+  applyReceiptTrustAnchorDirectoryQuorumActivationSelection,
   createReceiptTrustAnchor,
   createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
@@ -41,6 +43,7 @@ import {
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
   getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
   listReceiptTrustAnchorDirectorySubscriptions,
@@ -117,6 +120,10 @@ export default function ReceiptTrustPanel({
     setBaselineActivationHistoryVerification,
   ] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification>();
+  const [
+    baselineActivationSelectionState,
+    setBaselineActivationSelectionState,
+  ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionState>();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -172,6 +179,15 @@ export default function ReceiptTrustPanel({
         Boolean(anchor.signingSource),
     ) &&
     !busyId;
+  const latestApprovedActivationRecord = useMemo(
+    () =>
+      baselineActivationHistory?.records
+        .filter((record) => record.envelope.receipt.decision === "approved")
+        .at(-1),
+    [baselineActivationHistory],
+  );
+  const canApplyActivationSelection =
+    Boolean(latestApprovedActivationRecord) && !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -179,22 +195,33 @@ export default function ReceiptTrustPanel({
       listReceiptTrustAnchorDirectorySubscriptions(),
       listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
       getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(),
+      getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
     ])
-      .then(([subscriptions, baselines, activationHistory]) => {
-        if (cancelled) return;
-        setDirectorySubscriptions(subscriptions);
-        setPromotionBaselines(baselines);
-        setBaselineActivationHistory(activationHistory);
-        const active = subscriptions
-          .filter(
-            (subscription) =>
-              subscription.status === "active" &&
-              Boolean(subscription.lastGoodDiscovery?.directory),
-          )
-          .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-          .at(0);
-        if (active) activateSubscription(active);
-      })
+      .then(
+        ([
+          subscriptions,
+          baselines,
+          activationHistory,
+          activationSelectionState,
+        ]) => {
+          if (cancelled) return;
+          setDirectorySubscriptions(subscriptions);
+          setPromotionBaselines(baselines);
+          setBaselineActivationHistory(activationHistory);
+          setBaselineActivationSelectionState(activationSelectionState);
+          const active = subscriptions
+            .filter(
+              (subscription) =>
+                subscription.status === "active" &&
+                Boolean(subscription.lastGoodDiscovery?.directory),
+            )
+            .sort((left, right) =>
+              right.updatedAt.localeCompare(left.updatedAt),
+            )
+            .at(0);
+          if (active) activateSubscription(active);
+        },
+      )
       .catch((loadError) => {
         if (!cancelled) setError(toErrorMessage(loadError));
       });
@@ -640,6 +667,28 @@ export default function ReceiptTrustPanel({
       await getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory();
     setBaselineActivationHistory(history);
     return history;
+  }
+
+  async function applyBaselineActivationSelection(): Promise<void> {
+    if (!latestApprovedActivationRecord || !canApplyActivationSelection) {
+      return;
+    }
+    setBusyId("apply-baseline-activation-selection");
+    setError(undefined);
+    try {
+      const result =
+        await applyReceiptTrustAnchorDirectoryQuorumActivationSelection({
+          threadId,
+          activationDecisionRecordId: latestApprovedActivationRecord.id,
+          expectedCurrentSelectionSha256:
+            baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+        });
+      setBaselineActivationSelectionState(result.selectionState);
+    } catch (applyError) {
+      setError(toErrorMessage(applyError));
+    } finally {
+      setBusyId(undefined);
+    }
   }
 
   async function exportBaselineActivationHistory(): Promise<void> {
@@ -1342,6 +1391,16 @@ export default function ReceiptTrustPanel({
           <div className="receipt-baseline-actions">
             <button
               type="button"
+              disabled={!canApplyActivationSelection}
+              onClick={() => void applyBaselineActivationSelection()}
+            >
+              <ShieldCheck size={10} aria-hidden="true" />
+              {busyId === "apply-baseline-activation-selection"
+                ? copy.lab.trust.applyingBaselineActivation
+                : copy.lab.trust.applyBaselineActivation}
+            </button>
+            <button
+              type="button"
               disabled={Boolean(busyId)}
               onClick={() => void exportBaselineActivationHistory()}
             >
@@ -1369,6 +1428,41 @@ export default function ReceiptTrustPanel({
               />
             </label>
           </div>
+          {baselineActivationSelectionState?.selection ? (
+            <output className="receipt-baseline-policy" aria-live="polite">
+              <Check size={11} aria-hidden="true" />
+              <span>
+                <strong>{copy.lab.trust.activeBaselineActivation}</strong>
+                <small>
+                  {copy.lab.trust.activeBaselineActivationBody} ·{" "}
+                  {
+                    baselineActivationSelectionState.selection.selectedDirectory
+                      .trustedCount
+                  }{" "}
+                  {copy.lab.trust.externalTrustedKeys}
+                </small>
+              </span>
+              <code
+                title={baselineActivationSelectionState.selection.contentSha256}
+              >
+                {baselineActivationSelectionState.selection.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={
+                  baselineActivationSelectionState.selection
+                    .selectedDirectorySha256
+                }
+              >
+                {baselineActivationSelectionState.selection.selectedDirectorySha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+            </output>
+          ) : null}
           {baselineActivationHistory ? (
             <output className="receipt-baseline-policy" aria-live="polite">
               <ShieldCheck size={11} aria-hidden="true" />

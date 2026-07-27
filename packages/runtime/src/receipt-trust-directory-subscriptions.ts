@@ -14,6 +14,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumActivationSource,
   type ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   type ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus,
@@ -1572,6 +1574,243 @@ function createQuorumActivationDecisionHistoryVerification(input: {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
   };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelection(
+  input: {
+    activatedByThreadId: string;
+    activationDecisionRecord: ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord;
+    previousSelectionSha256?: string;
+  },
+  activatedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationSelection {
+  const activatedAt = requireTimestamp(
+    activatedAtInput,
+    "anchor directory quorum activation selection time",
+  );
+  if (
+    input.previousSelectionSha256 !== undefined &&
+    !SHA256_PATTERN.test(input.previousSelectionSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection previous hash is invalid",
+    );
+  }
+  const record =
+    validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord(
+      input.activationDecisionRecord,
+    );
+  const selectedDirectoryInput =
+    record.baseline.envelope.receipt.quorum.selectedDirectory;
+  if (!selectedDirectoryInput) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection requires a selected directory",
+    );
+  }
+  const selectedDirectory = validateReceiptTrustAnchorDirectory(
+    selectedDirectoryInput,
+  );
+  if (
+    record.envelope.receipt.decision !== "approved" ||
+    record.verification.status !== "trusted" ||
+    !record.verification.signatureValid ||
+    !record.verification.integrityValid ||
+    record.policyReview.status !== "accepted" ||
+    record.sourceAlignment.driftedSourceCount !== 0 ||
+    record.sourceAlignment.missingSourceCount !== 0 ||
+    selectedDirectory.contentSha256 !== record.baseline.selectedDirectorySha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection requires approved current evidence",
+    );
+  }
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    id: createId("trustqas"),
+    activatedAt,
+    activatedByThreadId: input.activatedByThreadId,
+    activationDecisionRecordId: record.id,
+    activationDecisionRecordSha256: record.contentSha256,
+    activationDecisionReceiptSha256: record.envelope.receipt.contentSha256,
+    activationDecisionEnvelopeSha256: record.envelope.contentSha256,
+    baselineId: record.baseline.id,
+    baselineSha256: record.baseline.contentSha256,
+    selectedAnchorSetSha256: record.baseline.selectedAnchorSetSha256,
+    selectedDirectorySha256: record.baseline.selectedDirectorySha256,
+    selectedDirectory,
+    policyReviewSha256: record.policyReview.contentSha256,
+    sourceAlignmentSha256: record.sourceAlignment.contentSha256,
+    ...(input.previousSelectionSha256
+      ? { previousSelectionSha256: input.previousSelectionSha256 }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelection(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelection {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "id",
+    "activatedAt",
+    "activatedByThreadId",
+    "activationDecisionRecordId",
+    "activationDecisionRecordSha256",
+    "activationDecisionReceiptSha256",
+    "activationDecisionEnvelopeSha256",
+    "baselineId",
+    "baselineSha256",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "selectedDirectory",
+    "policyReviewSha256",
+    "sourceAlignmentSha256",
+    "previousSelectionSha256",
+    "contentSha256",
+  ]);
+  const selection =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelection;
+  const selectedDirectory = validateReceiptTrustAnchorDirectory(
+    selection.selectedDirectory,
+  );
+  if (
+    selection.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection" ||
+    selection.schemaVersion !== 1 ||
+    selection.apiVersion !== NAPIER_API_VERSION ||
+    !/^trustqas_[a-z0-9]{8,80}$/.test(selection.id) ||
+    !validTimestamp(selection.activatedAt) ||
+    !/^thread_[a-z0-9]{8,80}$/.test(selection.activatedByThreadId) ||
+    !/^trustqad_[a-z0-9]{8,80}$/.test(selection.activationDecisionRecordId) ||
+    !SHA256_PATTERN.test(selection.activationDecisionRecordSha256) ||
+    !SHA256_PATTERN.test(selection.activationDecisionReceiptSha256) ||
+    !SHA256_PATTERN.test(selection.activationDecisionEnvelopeSha256) ||
+    !/^trustqpb_[a-z0-9]{8,80}$/.test(selection.baselineId) ||
+    !SHA256_PATTERN.test(selection.baselineSha256) ||
+    !SHA256_PATTERN.test(selection.selectedAnchorSetSha256) ||
+    !SHA256_PATTERN.test(selection.selectedDirectorySha256) ||
+    selection.selectedDirectorySha256 !== selectedDirectory.contentSha256 ||
+    selection.selectedAnchorSetSha256 !== selectedDirectory.anchorSetSha256 ||
+    !SHA256_PATTERN.test(selection.policyReviewSha256) ||
+    !SHA256_PATTERN.test(selection.sourceAlignmentSha256) ||
+    (selection.previousSelectionSha256 !== undefined &&
+      !SHA256_PATTERN.test(selection.previousSelectionSha256)) ||
+    !SHA256_PATTERN.test(selection.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...selection,
+    selectedDirectory,
+  };
+  if (sha256(canonicalJson(content)) !== selection.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...content,
+    contentSha256: selection.contentSha256,
+  });
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
+  selectionInput?: ReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  generatedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionState {
+  const generatedAt = requireTimestamp(
+    generatedAtInput,
+    "anchor directory quorum activation selection state time",
+  );
+  const selection = selectionInput
+    ? validateReceiptTrustAnchorDirectoryQuorumActivationSelection(
+        selectionInput,
+      )
+    : undefined;
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-state" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    hasSelection: Boolean(selection),
+    currentSelectionSha256: selection?.contentSha256 ?? "",
+    ...(selection ? { selection } : {}),
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionState {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection state is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "hasSelection",
+    "currentSelectionSha256",
+    "selection",
+    "contentSha256",
+  ]);
+  const state =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionState;
+  const selection =
+    state.selection === undefined
+      ? undefined
+      : validateReceiptTrustAnchorDirectoryQuorumActivationSelection(
+          state.selection,
+        );
+  if (
+    state.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-state" ||
+    state.schemaVersion !== 1 ||
+    state.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(state.generatedAt) ||
+    typeof state.hasSelection !== "boolean" ||
+    (state.currentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(state.currentSelectionSha256)) ||
+    state.hasSelection !== Boolean(selection) ||
+    state.currentSelectionSha256 !== (selection?.contentSha256 ?? "") ||
+    !SHA256_PATTERN.test(state.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection state is invalid",
+    );
+  }
+  const observed =
+    createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
+      selection,
+      state.generatedAt,
+    );
+  if (observed.contentSha256 !== state.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection state hash mismatch",
+    );
+  }
+  return observed;
 }
 
 export function validateReceiptTrustAnchorDirectoryQuorum(

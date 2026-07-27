@@ -14,6 +14,7 @@ import {
   type ApplyExtensionPackageRolloutChannelResult,
   type ApplyExtensionPackageUpdateRequest,
   type ApplyExtensionPackageUpdateResult,
+  type ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
   type AutomaticRecoveryAssessment,
   type AutomaticRecoveryAttempt,
   type AutomaticRecoveryClaim,
@@ -129,6 +130,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview,
@@ -331,6 +334,9 @@ import {
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
+  createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   createReceiptTrustAnchorDirectorySubscriptionQuorum,
   createReceiptTrustAnchorDirectorySubscription,
@@ -339,6 +345,7 @@ import {
   stripReceiptTrustAnchorDirectorySubscriptionSecrets,
   updateReceiptTrustAnchorDirectorySubscriptionStatus,
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelection,
   validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
@@ -532,6 +539,7 @@ interface PersistedState {
   receiptTrustAnchorDirectorySubscriptions: PersistedReceiptTrustAnchorDirectorySubscription[];
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[];
   receiptTrustAnchorDirectoryQuorumActivationDecisions: ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[];
+  receiptTrustAnchorDirectoryQuorumActivationSelection?: ReceiptTrustAnchorDirectoryQuorumActivationSelection;
   evaluationQualificationBaselines: EvaluationQualificationBaseline[];
   evaluationSuites: EvaluationSuite[];
   evaluationSuiteExecutions: EvaluationSuiteExecution[];
@@ -1349,6 +1357,108 @@ export class LocalStore {
       value,
       this.getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(),
     );
+  }
+
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionState {
+    this.assertInitialized();
+    return createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelection,
+    );
+  }
+
+  async applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+    threadId: string,
+    activationDecisionRecordId: string,
+    expectedCurrentSelectionSha256: string,
+  ): Promise<ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult> {
+    this.assertInitialized();
+    this.getThread(threadId);
+    return this.stateQueue.run(async () => {
+      const currentSelection =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelection;
+      const currentSelectionSha256 = currentSelection?.contentSha256 ?? "";
+      if (expectedCurrentSelectionSha256 !== currentSelectionSha256) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection precondition failed",
+        );
+      }
+      const record =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+          (candidate) => candidate.id === activationDecisionRecordId,
+        );
+      if (!record) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation decision not found: ${activationDecisionRecordId}`,
+        );
+      }
+      if (currentSelection?.activationDecisionRecordId === record.id) {
+        const selectionState =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
+            currentSelection,
+          );
+        const content = {
+          applied: false,
+          expectedCurrentSelectionSha256,
+          selection: structuredClone(currentSelection),
+          selectionState,
+          ...(currentSelection.previousSelectionSha256
+            ? {
+                previousSelectionSha256:
+                  currentSelection.previousSelectionSha256,
+              }
+            : {}),
+        };
+        return {
+          ...content,
+          contentSha256: sha256(canonicalJson(content)),
+        };
+      }
+      const currentSourceAlignment =
+        createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+          record.baseline,
+          this.state.receiptTrustAnchorDirectorySubscriptions,
+        );
+      if (
+        currentSourceAlignment.selectedSourceOriginSetSha256 !==
+          record.sourceAlignment.selectedSourceOriginSetSha256 ||
+        currentSourceAlignment.alignedSourceCount !==
+          record.sourceAlignment.alignedSourceCount ||
+        currentSourceAlignment.driftedSourceCount !== 0 ||
+        currentSourceAlignment.missingSourceCount !== 0
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection source alignment drifted",
+        );
+      }
+      const selection =
+        createReceiptTrustAnchorDirectoryQuorumActivationSelection({
+          activatedByThreadId: threadId,
+          activationDecisionRecord: record,
+          ...(currentSelectionSha256
+            ? { previousSelectionSha256: currentSelectionSha256 }
+            : {}),
+        });
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelection =
+        selection;
+      await this.persistState();
+      const selectionState =
+        createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
+          selection,
+        );
+      const content = {
+        applied: true,
+        expectedCurrentSelectionSha256,
+        selection: structuredClone(selection),
+        selectionState,
+        ...(currentSelectionSha256
+          ? { previousSelectionSha256: currentSelectionSha256 }
+          : {}),
+      };
+      return {
+        ...content,
+        contentSha256: sha256(canonicalJson(content)),
+      };
+    });
   }
 
   async recordReceiptTrustAnchorDirectoryQuorumActivationDecision(
@@ -7735,6 +7845,35 @@ export class LocalStore {
         record.envelope.contentSha256,
       );
       Object.assign(input, record);
+    }
+    if (state.receiptTrustAnchorDirectoryQuorumActivationSelection) {
+      const selection =
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelection(
+          state.receiptTrustAnchorDirectoryQuorumActivationSelection,
+        );
+      const record =
+        state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+          (candidate) => candidate.id === selection.activationDecisionRecordId,
+        );
+      if (
+        !record ||
+        record.contentSha256 !== selection.activationDecisionRecordSha256 ||
+        record.envelope.contentSha256 !==
+          selection.activationDecisionEnvelopeSha256 ||
+        record.envelope.receipt.contentSha256 !==
+          selection.activationDecisionReceiptSha256 ||
+        !state.threads.some(
+          (thread) => thread.id === selection.activatedByThreadId,
+        )
+      ) {
+        throw new Error(
+          `Persisted receipt trust anchor directory quorum activation selection is invalid: ${selection.id}`,
+        );
+      }
+      Object.assign(
+        state.receiptTrustAnchorDirectoryQuorumActivationSelection,
+        selection,
+      );
     }
     const qualificationBaselineIds = new Set<string>();
     const qualificationBaselineKeys = new Set<string>();
