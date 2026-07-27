@@ -75,6 +75,8 @@ import {
 } from "./model-advisor.js";
 import { ModelRegistry } from "./models.js";
 import { createId } from "./ids.js";
+import { createOperatorDecisionTool } from "./operator-decision-tool.js";
+import { formatOperatorDecisionContinuation } from "./operator-decisions.js";
 import { assessToolCall } from "./policy.js";
 import { createPlanTools } from "./plan-tools.js";
 import { aggregateRunUsage } from "./replay.js";
@@ -106,6 +108,7 @@ export interface RunPromptOptions {
   onEvent?: EventSink;
   onRunCreated?: (run: RunRecord) => Promise<void> | void;
   parentRunId?: string;
+  operatorDecisionId?: string;
   source?: RunInvocationSource;
   triggerId?: string;
   recovery?: {
@@ -131,6 +134,14 @@ export interface ResumeInterruptedRunAutomaticallyOptions {
   onRunCreated?: (run: RunRecord) => Promise<void> | void;
 }
 
+export interface ContinueOperatorDecisionOptions {
+  threadId: string;
+  decisionId: string;
+  signal?: AbortSignal;
+  onEvent?: EventSink;
+  onRunCreated?: (run: RunRecord) => Promise<void> | void;
+}
+
 interface ActiveRun {
   runId: string;
   abort: () => void;
@@ -143,6 +154,13 @@ type TurnSource =
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
+
+class OperatorDecisionPendingError extends Error {
+  constructor(readonly decisionId: string) {
+    super(`Run is waiting for operator decision ${decisionId}`);
+    this.name = "OperatorDecisionPendingError";
+  }
+}
 
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, ActiveRun>();
@@ -190,6 +208,9 @@ export class AgentRuntime {
           : {}),
         ...(options.triggerId ? { triggerId: options.triggerId } : {}),
         ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
+        ...(options.operatorDecisionId
+          ? { operatorDecisionId: options.operatorDecisionId }
+          : {}),
       },
       {
         ownerId: this.workerId,
@@ -522,6 +543,27 @@ export class AgentRuntime {
         leaseToken: leasedRun.token,
       });
     } catch (error) {
+      if (error instanceof OperatorDecisionPendingError) {
+        await this.record(
+          {
+            threadId: thread.id,
+            runId: run.id,
+            type: "run.waiting_for_operator",
+            category: "lifecycle",
+            visibility: "user",
+            payload: {
+              status: "waiting",
+              operatorDecisionId: error.decisionId,
+            },
+          },
+          options.onEvent,
+        );
+        return await this.store.finishRun(run.id, "completed", {
+          usage: await this.collectRunUsage(thread.id, run.id),
+          leaseToken: leasedRun.token,
+          waitForOperatorDecisionId: error.decisionId,
+        });
+      }
       const budgetExhaustion =
         budget.exhaustion ??
         (error instanceof RunBudgetExceededError
@@ -637,6 +679,53 @@ export class AgentRuntime {
       ...(options.model ? { model: options.model } : {}),
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+    });
+  }
+
+  async continueOperatorDecision(
+    options: ContinueOperatorDecisionOptions,
+  ): Promise<RunRecord> {
+    const decision = (
+      await this.store.listOperatorDecisions(options.threadId)
+    ).find((candidate) => candidate.id === options.decisionId);
+    if (!decision) {
+      throw new Error(`Operator decision not found: ${options.decisionId}`);
+    }
+    if (decision.status !== "answered") {
+      throw new Error(
+        `Operator decision cannot continue in ${decision.status} state`,
+      );
+    }
+    const originRun = this.store
+      .listRuns(options.threadId)
+      .find((run) => run.id === decision.runId);
+    if (!originRun) {
+      throw new Error(
+        `Operator decision origin Run not found: ${decision.runId}`,
+      );
+    }
+    return this.runPrompt({
+      threadId: options.threadId,
+      text: formatOperatorDecisionContinuation(decision),
+      ...(originRun.configuration
+        ? { model: originRun.configuration.model }
+        : {}),
+      ...(originRun.agentRevision !== undefined
+        ? { agentRevision: originRun.agentRevision }
+        : {}),
+      parentRunId: originRun.id,
+      operatorDecisionId: decision.id,
+      source: "user",
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      onRunCreated: async (run) => {
+        await this.store.continueOperatorDecision(
+          options.threadId,
+          decision.id,
+          run.id,
+        );
+        await options.onRunCreated?.(run);
+      },
     });
   }
 
@@ -928,6 +1017,7 @@ export class AgentRuntime {
           includeWriteTools: profile.toolPolicy !== "observe",
           dataRoot: this.store.dataRoot,
         }).filter((tool) => profile.enabledTools.includes(tool.name));
+    let pendingOperatorDecisionId: string | undefined;
     if (
       !advisorCorrection &&
       profile.toolPolicy !== "observe" &&
@@ -942,6 +1032,20 @@ export class AgentRuntime {
     }
     if (!safeReadOnlyRecovery && !advisorCorrection) {
       tools.push(...createPlanTools(this.store, run));
+      tools.push(
+        createOperatorDecisionTool({
+          store: this.store,
+          threadId: run.threadId,
+          runId: run.id,
+          onRequested: async (mutation) => {
+            pendingOperatorDecisionId = mutation.decision.id;
+            if (!onEvent) return;
+            for (const event of mutation.events) {
+              await onEvent(event);
+            }
+          },
+        }),
+      );
     }
     let deferredExtensionTools: AgentTool[] = [];
     if (this.extensionManager && !safeReadOnlyRecovery && !advisorCorrection) {
@@ -980,16 +1084,36 @@ export class AgentRuntime {
     const systemPrompt = buildSystemPrompt(delegationLedgerProjection);
     const beforeToolCall = async (
       {
+        assistantMessage,
         toolCall,
         args,
       }: {
+        assistantMessage: AssistantMessage;
         toolCall: { id: string; name: string };
         args: unknown;
       },
       toolSignal?: AbortSignal,
     ) => {
       if (toolSignal?.aborted && !budget.exhaustion) return undefined;
-      const budgetExhaustion = budget.exhaustBeforeNextPrimaryTurn();
+      const toolCalls = assistantMessage.content.filter(
+        (content) => content.type === "toolCall",
+      );
+      if (
+        toolCalls.some(
+          (candidate) => candidate.name === "request_operator_decision",
+        ) &&
+        toolCalls.length !== 1
+      ) {
+        return {
+          block: true,
+          reason:
+            "request_operator_decision must be the only tool call in its assistant turn",
+        };
+      }
+      const budgetExhaustion =
+        toolCall.name === "request_operator_decision"
+          ? budget.exhaustion
+          : budget.exhaustBeforeNextPrimaryTurn();
       if (budgetExhaustion) {
         await this.record(
           {
@@ -1256,6 +1380,7 @@ export class AgentRuntime {
             this.store.listSubagentTasks(run.threadId, run.id),
           );
           if (budget.exhaustion) return true;
+          if (pendingOperatorDecisionId) return true;
           const requiresNextTurn =
             toolResults.length > 0 ||
             (!advisorCorrection && (await hasQueuedControlMessage()));
@@ -1283,6 +1408,9 @@ export class AgentRuntime {
       throw new Error("Run was cancelled");
     }
     budget.throwIfExhausted();
+    if (pendingOperatorDecisionId) {
+      throw new OperatorDecisionPendingError(pendingOperatorDecisionId);
+    }
     return finalText;
   }
 

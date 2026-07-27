@@ -1,4 +1,5 @@
 import type {
+  AnswerOperatorDecisionRequest,
   ApplyExtensionPackageDeploymentRequest,
   ApplyExtensionPackageDeploymentResult,
   ApplyExtensionPackageRolloutChannelRequest,
@@ -67,6 +68,7 @@ import type {
   MemoryFact,
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
+  OperatorDecision,
   PreviewExtensionPackageDeploymentRequest,
   PublishExtensionPackageRolloutChannelRequest,
   PreviewExtensionPackageUpdateRequest,
@@ -207,6 +209,7 @@ const THREAD_DETAIL_ARRAY_FIELDS = [
   "automaticRecoveryAttempts",
   "subagents",
   "runControlMessages",
+  "operatorDecisions",
 ] as const;
 const SHA256 = /^[a-f0-9]{64}$/;
 const RUN_STREAM_ERROR_MESSAGE = "Run failed while streaming.";
@@ -921,6 +924,30 @@ export function cancelRunControlMessage(
   );
 }
 
+export function answerOperatorDecision(
+  threadId: string,
+  decisionId: string,
+  body: AnswerOperatorDecisionRequest,
+): Promise<OperatorDecision> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/operator-decisions/${encodeURIComponent(decisionId)}/answer`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function cancelOperatorDecision(
+  threadId: string,
+  decisionId: string,
+): Promise<OperatorDecision> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/operator-decisions/${encodeURIComponent(decisionId)}/cancel`,
+    { method: "POST" },
+  );
+}
+
 export function proposeMemory(body: CreateMemoryRequest): Promise<MemoryFact> {
   return requestJson("/api/memories", {
     method: "POST",
@@ -1212,6 +1239,23 @@ export async function resumeInterruptedRun(
   );
 }
 
+export async function continueOperatorDecision(
+  threadId: string,
+  decisionId: string,
+  onFrame: (frame: StreamFrame) => void,
+): Promise<void> {
+  return streamRunFrames(
+    `/api/threads/${encodeURIComponent(threadId)}/operator-decisions/${encodeURIComponent(decisionId)}/continue`,
+    {},
+    {
+      kind: "operator_decision",
+      threadId,
+      decisionId,
+    },
+    onFrame,
+  );
+}
+
 type StreamRunExpectation =
   | {
       kind: "prompt";
@@ -1223,6 +1267,11 @@ type StreamRunExpectation =
       threadId: string;
       runId?: string;
       model?: ResumeRunRequest["model"];
+    }
+  | {
+      kind: "operator_decision";
+      threadId: string;
+      decisionId: string;
     };
 
 interface ParsedStreamFrame {
@@ -1232,7 +1281,7 @@ interface ParsedStreamFrame {
 
 async function streamRunFrames(
   path: string,
-  body: PromptRequest | ResumeRunRequest,
+  body: PromptRequest | ResumeRunRequest | Record<string, never>,
   expectation: StreamRunExpectation,
   onFrame: (frame: StreamFrame) => void,
 ): Promise<void> {
@@ -1535,26 +1584,25 @@ async function verifyStreamRunResponseContract(
   expectHeader(
     path,
     response,
-    expectation.kind === "prompt"
-      ? "x-napier-prompt-requested"
-      : "x-napier-resume-requested",
-    "true",
+    expectation.kind === "operator_decision"
+      ? "x-napier-operator-decision-id"
+      : expectation.kind === "prompt"
+        ? "x-napier-prompt-requested"
+        : "x-napier-resume-requested",
+    expectation.kind === "operator_decision" ? expectation.decisionId : "true",
   );
   if (expectation.kind === "resume") {
     expectOptionalHeader(path, response, "x-napier-run-id", expectation.runId);
   }
+  const expectedModel =
+    expectation.kind === "operator_decision" ? undefined : expectation.model;
   expectOptionalHeader(
     path,
     response,
     "x-napier-model-provider",
-    expectation.model?.provider,
+    expectedModel?.provider,
   );
-  expectOptionalHeader(
-    path,
-    response,
-    "x-napier-model-id",
-    expectation.model?.id,
-  );
+  expectOptionalHeader(path, response, "x-napier-model-id", expectedModel?.id);
   expectHeader(
     path,
     response,

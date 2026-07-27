@@ -894,6 +894,281 @@ button:disabled {
   border-radius: 50%;
 }
 
+.operator-decision {
+  position: relative;
+  z-index: 4;
+  margin: 0 24px 14px 69px;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgb(183 74 52 / 7%) 1px, transparent 1px) 17px 0 /
+      22px 100%,
+    #fbf7ee;
+  border: 1px solid #b98b78;
+  border-radius: 4px;
+  box-shadow:
+    0 10px 30px rgb(79 54 39 / 10%),
+    inset 3px 0 0 var(--vermilion);
+}
+
+.operator-decision::after {
+  position: absolute;
+  top: -24px;
+  right: 44px;
+  width: 88px;
+  height: 36px;
+  content: "";
+  background: rgb(226 212 181 / 52%);
+  border: 1px solid rgb(173 147 111 / 25%);
+  transform: rotate(2deg);
+}
+
+.operator-decision-heading {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px 11px 18px;
+  border-bottom: 1px solid rgb(185 139 120 / 45%);
+}
+
+.operator-decision-glyph {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  color: var(--vermilion);
+  border: 1px solid rgb(183 74 52 / 34%);
+  border-radius: 50%;
+}
+
+.operator-decision-heading div:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.operator-decision-heading span,
+.operator-decision-mode,
+.operator-decision-custom > span,
+.operator-decision-receipt {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.operator-decision-heading strong {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.operator-decision-heading > code {
+  padding: 3px 5px;
+  font-size: 7px;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule);
+}
+
+.operator-decision form {
+  padding: 14px 16px 12px 18px;
+}
+
+.operator-decision fieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.operator-decision legend {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  width: 100%;
+  padding: 0;
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.operator-decision legend > span {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--vermilion);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.operator-decision-mode {
+  margin: 5px 0 9px;
+}
+
+.operator-decision-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.operator-decision-options label {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  min-height: 58px;
+  padding: 9px 10px;
+  cursor: pointer;
+  background: rgb(255 255 255 / 38%);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  transition:
+    border-color 130ms ease,
+    background 130ms ease,
+    transform 130ms ease;
+}
+
+.operator-decision-options label:hover {
+  border-color: #b98b78;
+  transform: translateY(-1px);
+}
+
+.operator-decision-options label.is-selected {
+  background: rgb(183 74 52 / 7%);
+  border-color: var(--vermilion);
+}
+
+.operator-decision-options input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.operator-decision-options label:has(input:focus-visible) {
+  outline: 2px solid var(--ledger);
+  outline-offset: 2px;
+}
+
+.operator-option-index {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+}
+
+.is-selected .operator-option-index {
+  color: #fff8ef;
+  background: var(--vermilion);
+  border-color: var(--vermilion);
+}
+
+.operator-decision-options label > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.operator-decision-options strong {
+  font-family: var(--serif);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.operator-decision-options small {
+  font-size: 9px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.operator-decision-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.operator-decision-custom textarea {
+  width: 100%;
+  padding: 8px 9px;
+  resize: vertical;
+  font-family: var(--serif);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: rgb(255 255 255 / 34%);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.operator-decision-custom textarea:focus {
+  border-color: var(--ledger);
+  outline: 0;
+  box-shadow: 0 0 0 2px rgb(41 76 64 / 10%);
+}
+
+.operator-decision footer,
+.operator-decision footer > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.operator-decision footer {
+  justify-content: space-between;
+  padding-top: 11px;
+  margin-top: 11px;
+  border-top: 1px solid var(--rule);
+}
+
+.operator-decision-receipt {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.operator-decision-receipt code {
+  color: var(--ledger);
+}
+
+.operator-decision-primary,
+.operator-decision-cancel {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  min-height: 29px;
+  padding: 6px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.operator-decision-primary {
+  color: #fff8ef;
+  background: var(--ledger);
+  border: 1px solid #1f4035;
+}
+
+.operator-decision-cancel {
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+}
+
+.operator-decision button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
 .composer {
   position: relative;
   z-index: 3;
@@ -11660,6 +11935,25 @@ button:disabled {
 
   .welcome-panel h2 {
     font-size: 40px;
+  }
+
+  .operator-decision {
+    margin-right: 12px;
+    margin-left: 41px;
+  }
+
+  .operator-decision-options {
+    grid-template-columns: 1fr;
+  }
+
+  .operator-decision footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .operator-decision footer > div {
+    align-self: stretch;
+    justify-content: flex-end;
   }
 
   .composer {

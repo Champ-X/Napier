@@ -3,7 +3,11 @@ import { createHash } from "node:crypto";
 import type { StreamFrame } from "@napier/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { resumeInterruptedRun, streamPrompt } from "../src/api";
+import {
+  continueOperatorDecision,
+  resumeInterruptedRun,
+  streamPrompt,
+} from "../src/api";
 import {
   formatApiErrorMessage,
   NapierApiError,
@@ -1411,6 +1415,44 @@ describe("streaming Run API client", () => {
     expect(frames).toEqual([snapshot, doneFrame]);
   });
 
+  it("verifies operator decision continuation stream headers", async () => {
+    const frames: StreamFrame[] = [];
+    const snapshot = streamSnapshotFrame(
+      "thread_1",
+      [],
+      [streamRunRecord("thread_1", "run_decision")],
+    );
+    const doneFrame = streamDoneFrame("run_decision", "completed", snapshot);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (path: string, init?: RequestInit) => {
+        expect(path).toBe(
+          "/api/threads/thread_1/operator-decisions/decision_1/continue",
+        );
+        expect(init?.body).toBe("{}");
+        return sseResponse(
+          [
+            `data: ${JSON.stringify(snapshot)}`,
+            "",
+            `data: ${JSON.stringify(doneFrame)}`,
+          ].join("\n"),
+          {
+            headers: {
+              "X-Napier-Prompt-Requested": null,
+              "X-Napier-Operator-Decision-Id": "decision_1",
+            },
+          },
+        );
+      }),
+    );
+
+    await continueOperatorDecision("thread_1", "decision_1", (frame) =>
+      frames.push(frame),
+    );
+
+    expect(frames).toEqual([snapshot, doneFrame]);
+  });
+
   it("rejects completed streams that omit the final snapshot before dispatching done", async () => {
     const data = JSON.stringify(
       streamDoneFrame("run_missing_snapshot", "completed", "a".repeat(64)),
@@ -2137,6 +2179,7 @@ function streamSnapshotFrame(
     automaticRecoveryAttempts: [],
     subagents: [],
     runControlMessages: [],
+    operatorDecisions: [],
     contextCheckpointCalibration: {},
     events,
   };

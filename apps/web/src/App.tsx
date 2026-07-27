@@ -36,6 +36,7 @@ const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
 const LazyMemoryPanel = lazy(() => import("./MemoryPanel"));
+const LazyOperatorDecisionPanel = lazy(() => import("./OperatorDecisionPanel"));
 const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
 const LazyPlanPanel = lazy(() => import("./PlanPanel"));
 const LazyTracePanel = lazy(() => import("./TracePanel"));
@@ -203,6 +204,18 @@ export function App() {
           )}
         </section>
 
+        {vm.openOperatorDecision ? (
+          <Suspense fallback={null}>
+            <LazyOperatorDecisionPanel
+              decision={vm.openOperatorDecision}
+              busy={vm.operatorDecisionBusy}
+              onAnswer={vm.answerOperatorDecision}
+              onContinue={vm.continueOperatorDecision}
+              onCancel={vm.cancelOperatorDecision}
+            />
+          </Suspense>
+        ) : null}
+
         <form
           className="composer"
           onSubmit={(event) => {
@@ -212,7 +225,13 @@ export function App() {
         >
           <div className="composer-rule" aria-hidden="true">
             <span />
-            <span>{vm.isRunning ? copy.runControlMode : copy.inputMode}</span>
+            <span>
+              {vm.openOperatorDecision
+                ? vm.openOperatorDecision.header
+                : vm.isRunning
+                  ? copy.runControlMode
+                  : copy.inputMode}
+            </span>
             <span />
           </div>
           <textarea
@@ -224,7 +243,7 @@ export function App() {
             }
             value={vm.composer}
             rows={3}
-            disabled={!vm.detail}
+            disabled={!vm.detail || Boolean(vm.openOperatorDecision)}
             onChange={(event) => vm.setComposer(event.target.value)}
             onKeyDown={(event) =>
               handleComposerKeys(event, () => void vm.submit())
@@ -287,7 +306,11 @@ export function App() {
               <button
                 className="run-button"
                 type="submit"
-                disabled={!vm.composer.trim() || !vm.detail}
+                disabled={
+                  !vm.composer.trim() ||
+                  !vm.detail ||
+                  Boolean(vm.openOperatorDecision)
+                }
               >
                 <Send size={14} aria-hidden="true" />
                 {copy.send}

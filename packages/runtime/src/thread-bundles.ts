@@ -38,6 +38,7 @@ import {
   normalizeEvaluationSuiteGate,
 } from "./evaluation-suites.js";
 import { normalizeRubric } from "./evaluation.js";
+import { projectOperatorDecisions } from "./operator-decisions.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
 import {
   assertSubagentOutcomeBinding,
@@ -604,6 +605,25 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     assertIsoDate(event["createdAt"], `events[${index}].createdAt`);
     assertJsonValue(event["payload"], `events[${index}].payload`);
     typedEvents.push(value as RunEvent);
+  }
+  const runsById = new Map(
+    runRecords.map((run) => [String(run["id"]), run] as const),
+  );
+  for (const decision of projectOperatorDecisions(typedEvents)) {
+    if (!runIds.has(decision.runId)) {
+      throw new Error(
+        `Thread replay bundle Operator Decision references unknown origin Run: ${decision.id}`,
+      );
+    }
+    if (decision.status !== "continued") continue;
+    const continuationRun = decision.continuationRunId
+      ? runsById.get(decision.continuationRunId)
+      : undefined;
+    if (!continuationRun || continuationRun["parentRunId"] !== decision.runId) {
+      throw new Error(
+        `Thread replay bundle Operator Decision continuation binding is invalid: ${decision.id}`,
+      );
+    }
   }
 
   const planIds = new Set<string>();

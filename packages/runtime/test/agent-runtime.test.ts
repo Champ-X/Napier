@@ -1496,6 +1496,109 @@ describe("AgentRuntime demo path", () => {
     ).toEqual(expect.objectContaining({ reason: "turns", limit: 1 }));
   });
 
+  it("pauses for a durable operator decision and resumes in a linked Run", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Operator decision continuation",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-operator-decision" });
+    faux.setResponses([
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toContain(
+          "request_operator_decision",
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("request_operator_decision", {
+            header: "Scope",
+            question: "Which scope should the implementation use?",
+            options: [
+              {
+                label: "Runtime",
+                description: "Implement the runtime boundary only.",
+              },
+              {
+                label: "Full product",
+                description: "Include APIs and the Workbench.",
+              },
+            ],
+            multiSelect: false,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("Full product");
+        expect(messages).toContain("Preserve API compatibility.");
+        return fauxAssistantMessage(
+          "Continued with the full product scope and preserved compatibility.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const originRun = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Implement the next product slice.",
+      model: { provider: "faux-operator-decision", id: "faux-1" },
+    });
+
+    expect(originRun.status).toBe("completed");
+    expect(faux.state.callCount).toBe(1);
+    expect(store.getThread(thread.id).status).toBe("waiting");
+    const pending = (await store.listOperatorDecisions(thread.id))[0]!;
+    expect(pending).toEqual(
+      expect.objectContaining({
+        status: "pending",
+        runId: originRun.id,
+      }),
+    );
+    expect(
+      (await store.listEvents(thread.id)).map((event) => event.type),
+    ).toEqual(
+      expect.arrayContaining([
+        "operator.decision.requested",
+        "tool.completed",
+        "run.waiting_for_operator",
+      ]),
+    );
+
+    await store.answerOperatorDecision(thread.id, pending.id, {
+      selectedOptionIds: ["option_2"],
+      customText: "Preserve API compatibility.",
+    });
+    const continuationRun = await runtime.continueOperatorDecision({
+      threadId: thread.id,
+      decisionId: pending.id,
+    });
+
+    expect(continuationRun).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        parentRunId: originRun.id,
+      }),
+    );
+    expect(faux.state.callCount).toBe(3);
+    expect(store.getThread(thread.id).status).toBe("idle");
+    expect((await store.listOperatorDecisions(thread.id))[0]).toEqual(
+      expect.objectContaining({
+        status: "continued",
+        continuationRunId: continuationRun.id,
+      }),
+    );
+  });
+
   it("delegates into an isolated subagent and returns evidence to the parent", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

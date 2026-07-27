@@ -202,6 +202,23 @@ describe("OpenTelemetry trace export", () => {
       mode: "steering",
       text: "TOP_SECRET_RUN_CONTROL_MESSAGE",
     });
+    await store.requestOperatorDecision({
+      threadId: thread.id,
+      runId: run.id,
+      header: "Secret",
+      question: "TOP_SECRET_OPERATOR_QUESTION",
+      options: [
+        {
+          label: "Private A",
+          description: "TOP_SECRET_OPERATOR_OPTION_A",
+        },
+        {
+          label: "Private B",
+          description: "TOP_SECRET_OPERATOR_OPTION_B",
+        },
+      ],
+      multiSelect: false,
+    });
     await store.appendEvent({
       threadId: thread.id,
       runId: run.id,
@@ -296,6 +313,9 @@ describe("OpenTelemetry trace export", () => {
       "TOP_SECRET_SUBAGENT_PROMPT",
       "TOP_SECRET_SUBAGENT_RESULT",
       "TOP_SECRET_RUN_CONTROL_MESSAGE",
+      "TOP_SECRET_OPERATOR_QUESTION",
+      "TOP_SECRET_OPERATOR_OPTION_A",
+      "TOP_SECRET_OPERATOR_OPTION_B",
       "TOP_SECRET_CREDENTIAL_LABEL",
       "TOP_SECRET_USER_ID",
     ]) {

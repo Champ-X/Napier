@@ -851,6 +851,140 @@ describe("LocalStore", () => {
     ).rejects.toThrow("total limit reached (64)");
   });
 
+  it("pauses on, answers, and continues a durable operator decision", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Durable operator gate",
+      agentId: agent.id,
+    });
+    const originRun = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-decision", id: "faux-1" },
+    });
+    const requested = await store.requestOperatorDecision({
+      threadId: thread.id,
+      runId: originRun.id,
+      header: "Scope",
+      question: "Which scope should continue?",
+      options: [
+        {
+          label: "Runtime",
+          description: "Continue with the runtime boundary only.",
+        },
+        {
+          label: "Full product",
+          description: "Continue through the management and UI surfaces.",
+        },
+      ],
+      multiSelect: false,
+    });
+
+    await store.finishRun(originRun.id, "completed", {
+      waitForOperatorDecisionId: requested.decision.id,
+    });
+    const waitingThread = store.getThread(thread.id);
+    expect(waitingThread.status).toBe("waiting");
+    expect(waitingThread.currentRunId).toBeUndefined();
+    expect(await store.listOperatorDecisions(thread.id)).toEqual([
+      expect.objectContaining({
+        id: requested.decision.id,
+        status: "pending",
+      }),
+    ]);
+
+    const answered = await store.answerOperatorDecision(
+      thread.id,
+      requested.decision.id,
+      {
+        selectedOptionIds: ["option_2"],
+        customText: "Keep API compatibility.",
+      },
+    );
+    expect(answered.decision).toEqual(
+      expect.objectContaining({
+        status: "answered",
+        selectedOptionIds: ["option_2"],
+        customText: "Keep API compatibility.",
+      }),
+    );
+
+    await store.updateAgent(agent.id, { name: "Changed after decision" });
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        model: { provider: "faux-decision", id: "faux-1" },
+        parentRunId: originRun.id,
+        operatorDecisionId: requested.decision.id,
+      }),
+    ).rejects.toThrow("must reuse the origin Agent revision");
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        agentRevision: originRun.agentRevision!,
+        model: { provider: "different-model", id: "faux-2" },
+        parentRunId: originRun.id,
+        operatorDecisionId: requested.decision.id,
+      }),
+    ).rejects.toThrow("must reuse the origin model");
+
+    const continuationRun = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      agentRevision: originRun.agentRevision!,
+      model: { provider: "faux-decision", id: "faux-1" },
+      parentRunId: originRun.id,
+      operatorDecisionId: requested.decision.id,
+    });
+    const continued = await store.continueOperatorDecision(
+      thread.id,
+      requested.decision.id,
+      continuationRun.id,
+    );
+    expect(continued.decision).toEqual(
+      expect.objectContaining({
+        status: "continued",
+        continuationRunId: continuationRun.id,
+      }),
+    );
+    await store.finishRun(continuationRun.id, "completed");
+    expect(store.getThread(thread.id).status).toBe("idle");
+    expect((await store.getDetail(thread.id)).operatorDecisions).toEqual([
+      continued.decision,
+    ]);
+
+    const failedRun = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-decision", id: "faux-1" },
+    });
+    const abandoned = await store.requestOperatorDecision({
+      threadId: thread.id,
+      runId: failedRun.id,
+      header: "Retry",
+      question: "Should this failed Run be retried?",
+      options: [
+        { label: "Retry", description: "Retry the failed work." },
+        { label: "Stop", description: "Do not retry the failed work." },
+      ],
+      multiSelect: false,
+    });
+    await store.finishRun(failedRun.id, "failed");
+    expect(
+      (await store.listOperatorDecisions(thread.id)).find(
+        (decision) => decision.id === abandoned.decision.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "cancelled",
+        cancellationReason: "run_failed",
+      }),
+    );
+  });
+
   it("reconciles orphan runs and subagents exactly once after restart", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-store-"));
     temporaryRoots.push(root);
@@ -920,6 +1054,17 @@ describe("LocalStore", () => {
       mode: "steering",
       text: "Verify current state before continuing.",
     });
+    const requestedDecision = await store.requestOperatorDecision({
+      threadId: thread.id,
+      runId: run.id,
+      header: "Recovery",
+      question: "Should the interrupted work continue?",
+      options: [
+        { label: "Continue", description: "Inspect and continue the work." },
+        { label: "Cancel", description: "Leave the interrupted work stopped." },
+      ],
+      multiSelect: false,
+    });
 
     const reopened = new LocalStore(options);
     await reopened.initialize();
@@ -952,6 +1097,12 @@ describe("LocalStore", () => {
         cancellationReason: "run_interrupted_before_delivery",
       }),
     ]);
+    expect(detail.operatorDecisions).toEqual([
+      expect.objectContaining({
+        id: requestedDecision.decision.id,
+        status: "pending",
+      }),
+    ]);
     expect(detail.plans).toEqual([
       expect.objectContaining({
         id: plan.id,
@@ -977,6 +1128,11 @@ describe("LocalStore", () => {
     expect(
       detail.events.filter((event) => event.type === "plan.step.blocked"),
     ).toHaveLength(1);
+    await reopened.cancelOperatorDecision(
+      thread.id,
+      requestedDecision.decision.id,
+    );
+    expect(reopened.getThread(thread.id).status).toBe("idle");
 
     const reopenedAgain = new LocalStore(options);
     await reopenedAgain.initialize();

@@ -22,6 +22,7 @@ const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
   "update_plan_step",
   "update_plan_artifact",
+  "request_operator_decision",
 ]);
 const BLOCKED_COMMAND_PATTERNS: ReadonlyArray<{
   pattern: RegExp;

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import type {
+  AnswerOperatorDecisionRequest,
   ApplyExtensionPackageDeploymentRequest,
   ApplyExtensionPackageDeploymentResult,
   ApplyExtensionPackageRolloutChannelRequest,
@@ -209,6 +210,7 @@ import type {
   McpTransportConfig,
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
+  OperatorDecision,
   ThreadDetail,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
@@ -600,6 +602,7 @@ const MAX_THREAD_CREATE_REQUEST_BYTES = 8 * 1024;
 const MAX_GOAL_REQUEST_BYTES = 8 * 1024;
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
 const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
+const MAX_OPERATOR_DECISION_REQUEST_BYTES = 32 * 1024;
 // A JSON control-character escape can expand one UTF-8 byte to six bytes.
 const MAX_RUN_CONTROL_MESSAGE_REQUEST_BYTES =
   MAX_RUN_CONTROL_MESSAGE_BYTES * 6 + 1024;
@@ -9899,6 +9902,125 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
+  app.get("/api/threads/:threadId/operator-decisions", async (context) => {
+    const threadId = context.req.param("threadId");
+    const decisions = await services.store.listOperatorDecisions(threadId);
+    setOperatorDecisionListHeaders(context, threadId, decisions);
+    return context.json(decisions);
+  });
+
+  app.post(
+    "/api/threads/:threadId/operator-decisions/:decisionId/answer",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const decisionId = context.req.param("decisionId");
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_OPERATOR_DECISION_REQUEST_BYTES,
+          "Operator decision answer request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body = parseAnswerOperatorDecisionRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Operator decision answer request is invalid",
+          400,
+        );
+      }
+      try {
+        const mutation = await services.store.answerOperatorDecision(
+          threadId,
+          decisionId,
+          body,
+        );
+        setOperatorDecisionHeaders(context, mutation.decision);
+        return context.json(mutation.decision, 202);
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          operatorDecisionErrorStatus(error),
+        );
+      }
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/operator-decisions/:decisionId/cancel",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const decisionId = context.req.param("decisionId");
+      try {
+        const mutation = await services.store.cancelOperatorDecision(
+          threadId,
+          decisionId,
+        );
+        setOperatorDecisionHeaders(context, mutation.decision);
+        return context.json(mutation.decision);
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          operatorDecisionErrorStatus(error),
+        );
+      }
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/operator-decisions/:decisionId/continue",
+    (context) => {
+      const threadId = context.req.param("threadId");
+      const decisionId = context.req.param("decisionId");
+      setOperatorDecisionContinueStreamHeaders(context, threadId, decisionId);
+      return streamSSE(context, async (stream) => {
+        const writeFrame = async (
+          frame: StreamFrame,
+          id?: string,
+        ): Promise<void> => {
+          await stream.writeSSE({
+            event: frame.type,
+            data: JSON.stringify(frame),
+            ...(id ? { id } : {}),
+          });
+        };
+        try {
+          const run = await services.runtime.continueOperatorDecision({
+            threadId,
+            decisionId,
+            onEvent: async (event) => {
+              await writeFrame(streamEventFrame(event), String(event.seq));
+            },
+          });
+          const snapshotFrame = streamSnapshotFrame(
+            await services.store.getDetail(threadId),
+          );
+          const doneFrame = streamRunDoneFrame(
+            threadId,
+            run.id,
+            run.status,
+            snapshotFrame.detailSha256,
+            snapshotFrame.detail.thread.eventCount,
+            hashEventStream(snapshotFrame.detail.events),
+          );
+          await writeFrame(snapshotFrame);
+          await writeFrame(doneFrame);
+        } catch (error) {
+          await writeFrame(streamRunErrorFrame(threadId, error));
+        }
+      });
+    },
+  );
+
   app.post("/api/threads/:threadId/stop", (context) => {
     const threadId = context.req.param("threadId");
     const receipt = { stopped: services.runtime.stop(threadId) };
@@ -10297,6 +10419,37 @@ function parseQueueRunControlMessageRequest(
     return undefined;
   }
   return { mode, text };
+}
+
+function parseAnswerOperatorDecisionRequest(
+  input: unknown,
+): AnswerOperatorDecisionRequest | undefined {
+  const record = requestRecord(input, ["selectedOptionIds", "customText"]);
+  const selectedOptionIds = record?.["selectedOptionIds"];
+  const customText =
+    typeof record?.["customText"] === "string"
+      ? record["customText"].trim()
+      : undefined;
+  if (
+    !Array.isArray(selectedOptionIds) ||
+    selectedOptionIds.length > 4 ||
+    selectedOptionIds.some(
+      (optionId) =>
+        typeof optionId !== "string" || !/^option_[1-4]$/.test(optionId),
+    ) ||
+    new Set(selectedOptionIds).size !== selectedOptionIds.length ||
+    (record?.["customText"] !== undefined &&
+      typeof record["customText"] !== "string") ||
+    (customText !== undefined &&
+      Buffer.byteLength(customText, "utf8") > 4 * 1024) ||
+    (selectedOptionIds.length === 0 && !customText)
+  ) {
+    return undefined;
+  }
+  return {
+    selectedOptionIds,
+    ...(customText ? { customText } : {}),
+  };
 }
 
 function parseModelRef(input: unknown): PromptRequest["model"] | undefined {
@@ -19110,6 +19263,10 @@ function setThreadDetailProjectionHeaders(
     String(detail.runControlMessages.length),
   );
   context.header(
+    "X-Napier-Operator-Decision-Count",
+    String(detail.operatorDecisions.length),
+  );
+  context.header(
     "X-Napier-Recovery-Assessment-Count",
     String(detail.automaticRecoveryAssessments.length),
   );
@@ -19258,6 +19415,110 @@ function runControlMessageErrorStatus(error: unknown): 400 | 404 | 409 {
     message.includes("cannot be cancelled") ||
     message.includes("limit reached") ||
     message.includes("demo model")
+  ) {
+    return 409;
+  }
+  return 400;
+}
+
+function setOperatorDecisionHeaders(
+  context: Context,
+  decision: OperatorDecision,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, decision.contentSha256);
+  context.header("X-Napier-Thread-Id", decision.threadId);
+  context.header("X-Napier-Run-Id", decision.runId);
+  context.header("X-Napier-Operator-Decision-Id", decision.id);
+  context.header("X-Napier-Operator-Decision-Status", decision.status);
+  context.header(
+    "X-Napier-Operator-Decision-Question-SHA256",
+    decision.questionSha256,
+  );
+  context.header(
+    "X-Napier-Operator-Decision-Option-Count",
+    String(decision.options.length),
+  );
+  context.header(
+    "X-Napier-Operator-Decision-Requested-Event-Seq",
+    String(decision.requestedEventSeq),
+  );
+  setOptionalNumberHeader(
+    context,
+    "X-Napier-Operator-Decision-Answered-Event-Seq",
+    decision.answeredEventSeq,
+  );
+  setOptionalNumberHeader(
+    context,
+    "X-Napier-Operator-Decision-Continued-Event-Seq",
+    decision.continuedEventSeq,
+  );
+  setOptionalNumberHeader(
+    context,
+    "X-Napier-Operator-Decision-Cancellation-Event-Seq",
+    decision.cancellationEventSeq,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Operator-Decision-Answer-SHA256",
+    decision.answerSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Operator-Decision-Continuation-Run-Id",
+    decision.continuationRunId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Operator-Decision-Cancellation-Reason",
+    decision.cancellationReason,
+  );
+}
+
+function setOperatorDecisionListHeaders(
+  context: Context,
+  threadId: string,
+  decisions: OperatorDecision[],
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, decisions);
+  context.header("X-Napier-Thread-Id", threadId);
+  context.header("X-Napier-Operator-Decision-Count", String(decisions.length));
+  for (const status of [
+    "pending",
+    "answered",
+    "continued",
+    "cancelled",
+  ] satisfies OperatorDecision["status"][]) {
+    context.header(
+      `X-Napier-Operator-Decision-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
+      String(decisions.filter((decision) => decision.status === status).length),
+    );
+  }
+}
+
+function setOperatorDecisionContinueStreamHeaders(
+  context: Context,
+  threadId: string,
+  decisionId: string,
+): void {
+  context.header("X-Accel-Buffering", "no");
+  context.header("X-Napier-Thread-Id", threadId);
+  context.header("X-Napier-Operator-Decision-Id", decisionId);
+  context.header("X-Napier-Run-Intent", "operator-decision-continuation");
+  setThreadRunStreamErrorHeaders(context);
+}
+
+function operatorDecisionErrorStatus(error: unknown): 400 | 404 | 409 {
+  const message = errorMessage(error).toLowerCase();
+  if (message.includes("not found")) return 404;
+  if (
+    message.includes("requires a waiting thread") ||
+    message.includes("already been answered") ||
+    message.includes("cannot be answered") ||
+    message.includes("cannot be cancelled") ||
+    message.includes("cannot continue") ||
+    message.includes("while the thread is running")
   ) {
     return 409;
   }

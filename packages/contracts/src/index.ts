@@ -2672,6 +2672,67 @@ export interface RunControlMessage {
   contentSha256: string;
 }
 
+export type OperatorDecisionStatus =
+  | "pending"
+  | "answered"
+  | "continued"
+  | "cancelled";
+
+export type OperatorDecisionCancellationReason =
+  | "operator_cancelled"
+  | "run_completed_without_wait"
+  | "run_failed"
+  | "run_cancelled";
+
+export interface OperatorDecisionOption {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface RequestOperatorDecisionInput {
+  header: string;
+  question: string;
+  options: Array<{
+    label: string;
+    description: string;
+  }>;
+  multiSelect: boolean;
+}
+
+export interface AnswerOperatorDecisionRequest {
+  selectedOptionIds: string[];
+  customText?: string;
+}
+
+export interface OperatorDecision {
+  kind: "napier.operator-decision";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  status: OperatorDecisionStatus;
+  header: string;
+  question: string;
+  options: OperatorDecisionOption[];
+  multiSelect: boolean;
+  questionSha256: string;
+  requestedAt: string;
+  requestedEventSeq: number;
+  answeredAt?: string;
+  answeredEventSeq?: number;
+  selectedOptionIds?: string[];
+  customText?: string;
+  answerSha256?: string;
+  continuedAt?: string;
+  continuedEventSeq?: number;
+  continuationRunId?: string;
+  cancelledAt?: string;
+  cancellationEventSeq?: number;
+  cancellationReason?: OperatorDecisionCancellationReason;
+  contentSha256: string;
+}
+
 export interface RunLeaseSummary {
   ownerId: string;
   acquiredAt: string;
@@ -6131,6 +6192,7 @@ export interface ThreadDetail {
   automaticRecoveryAttempts: AutomaticRecoveryAttempt[];
   subagents: SubagentTask[];
   runControlMessages: RunControlMessage[];
+  operatorDecisions: OperatorDecision[];
   contextCheckpointCalibration: ContextCheckpointCalibrationReport;
   events: RunEvent[];
 }

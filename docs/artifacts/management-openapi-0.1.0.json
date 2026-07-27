@@ -8382,6 +8382,240 @@
         "x-napier-source-route": "POST /api/threads/:threadId/messages"
       }
     },
+    "/api/threads/{threadId}/operator-decisions": {
+      "get": {
+        "operationId": "get-threads-by-threadId-operator-decisions",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/operator-decisions",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorDecisionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/operator-decisions",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/OperatorDecisionList"
+        }
+      }
+    },
+    "/api/threads/{threadId}/operator-decisions/{decisionId}/answer": {
+      "post": {
+        "operationId": "post-threads-by-threadId-operator-decisions-by-decisionId-answer",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/operator-decisions/{decisionId}/answer",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "decisionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerOperatorDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "202": {
+            "description": "Successful 202 no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorDecision"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/operator-decisions/:decisionId/answer",
+        "x-napier-promoted-request-schema-ref": "#/components/schemas/AnswerOperatorDecisionRequest",
+        "x-napier-promoted-response-schema-refs": {
+          "202": "#/components/schemas/OperatorDecision"
+        }
+      }
+    },
+    "/api/threads/{threadId}/operator-decisions/{decisionId}/cancel": {
+      "post": {
+        "operationId": "post-threads-by-threadId-operator-decisions-by-decisionId-cancel",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/operator-decisions/{decisionId}/cancel",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "decisionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorDecision"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/operator-decisions/:decisionId/cancel",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/OperatorDecision"
+        }
+      }
+    },
+    "/api/threads/{threadId}/operator-decisions/{decisionId}/continue": {
+      "post": {
+        "operationId": "post-threads-by-threadId-operator-decisions-by-decisionId-continue",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/operator-decisions/{decisionId}/continue",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "decisionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/operator-decisions/:decisionId/continue"
+      }
+    },
     "/api/threads/{threadId}/plan-blueprints": {
       "post": {
         "operationId": "post-threads-by-threadId-plan-blueprints",
@@ -10390,6 +10624,205 @@
           "$ref": "#/components/schemas/RunControlMessage"
         }
       },
+      "OperatorDecisionStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "answered",
+          "continued",
+          "cancelled"
+        ]
+      },
+      "OperatorDecisionCancellationReason": {
+        "type": "string",
+        "enum": [
+          "operator_cancelled",
+          "run_completed_without_wait",
+          "run_failed",
+          "run_cancelled"
+        ]
+      },
+      "OperatorDecisionOption": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "description"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^option_[1-4]$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          }
+        }
+      },
+      "AnswerOperatorDecisionRequest": {
+        "type": "object",
+        "required": [
+          "selectedOptionIds"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "selectedOptionIds": {
+            "type": "array",
+            "maxItems": 4,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^option_[1-4]$"
+            }
+          },
+          "customText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          }
+        }
+      },
+      "OperatorDecision": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "id",
+          "threadId",
+          "runId",
+          "status",
+          "header",
+          "question",
+          "options",
+          "multiSelect",
+          "questionSha256",
+          "requestedAt",
+          "requestedEventSeq",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.operator-decision"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^decision_[a-z0-9]{8,80}$"
+          },
+          "threadId": {
+            "type": "string",
+            "pattern": "^thread_[a-z0-9]{8,80}$"
+          },
+          "runId": {
+            "type": "string",
+            "pattern": "^run_[a-z0-9]{8,80}$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OperatorDecisionStatus"
+          },
+          "header": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "options": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 4,
+            "items": {
+              "$ref": "#/components/schemas/OperatorDecisionOption"
+            }
+          },
+          "multiSelect": {
+            "type": "boolean"
+          },
+          "questionSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestedEventSeq": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "answeredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "answeredEventSeq": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "selectedOptionIds": {
+            "type": "array",
+            "maxItems": 4,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^option_[1-4]$"
+            }
+          },
+          "customText": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "answerSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "continuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "continuedEventSeq": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "continuationRunId": {
+            "type": "string",
+            "pattern": "^run_[a-z0-9]{8,80}$"
+          },
+          "cancelledAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancellationEventSeq": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "cancellationReason": {
+            "$ref": "#/components/schemas/OperatorDecisionCancellationReason"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
+      "OperatorDecisionList": {
+        "type": "array",
+        "maxItems": 64,
+        "items": {
+          "$ref": "#/components/schemas/OperatorDecision"
+        }
+      },
       "SubagentOutcomeReviewVerdict": {
         "type": "string",
         "enum": [
@@ -12385,7 +12818,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "ffb167e0ed4b1bf63f540dcff9da0593c91754105a1c24b08c4b34619ae7b42a",
-  "x-napier-route-count": 224,
-  "x-napier-route-set-sha256": "4590023ac57dbdfb2701ca6e5f8d42385210a3b2e6922e085577f870805adb94"
+  "x-napier-source-sha256": "6e9bd24a55e1f3d6e405bfe6f1c51fda8bc0476ed84f35bf45d8a4958d665472",
+  "x-napier-route-count": 228,
+  "x-napier-route-set-sha256": "7d49748e5599967d6ec98ee785b46b7dbe3876870699cac99c67a8e97292cf57"
 }

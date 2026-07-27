@@ -73,6 +73,7 @@ import type {
   InboundDeliveryQualification,
   InboundReceipt,
   MemoryFact,
+  OperatorDecision,
   ReceiptTrustAnchor,
   RunComparison,
   RunControlMessage,
@@ -340,7 +341,7 @@ describe("Napier HTTP goal flow", () => {
     ];
 
     expect(directDoneRunStatusWrites).toHaveLength(0);
-    expect(guardedDoneFrameWrites).toHaveLength(2);
+    expect(guardedDoneFrameWrites).toHaveLength(3);
     expect(source).toContain("threadId,");
     expect(source).toContain("snapshotSha256,");
     expect(source).toContain("eventCount,");
@@ -367,7 +368,7 @@ describe("Napier HTTP goal flow", () => {
     ];
 
     expect(directSnapshotWrites).toHaveLength(0);
-    expect(guardedSnapshotWrites).toHaveLength(2);
+    expect(guardedSnapshotWrites).toHaveLength(3);
     expect(source).toContain(
       "detailSha256: sha256Text(JSON.stringify(detail))",
     );
@@ -383,7 +384,7 @@ describe("Napier HTTP goal flow", () => {
       ),
     ];
 
-    expect(snapshotBeforeDoneWrites).toHaveLength(2);
+    expect(snapshotBeforeDoneWrites).toHaveLength(3);
   });
 
   it("keeps Run SSE event frames behind the event hash guard", async () => {
@@ -402,7 +403,7 @@ describe("Napier HTTP goal flow", () => {
     ];
 
     expect(directEventWrites).toHaveLength(0);
-    expect(guardedEventWrites).toHaveLength(2);
+    expect(guardedEventWrites).toHaveLength(3);
     expect(source).toContain("eventSha256: sha256Text(JSON.stringify(event))");
   });
 
@@ -420,7 +421,7 @@ describe("Napier HTTP goal flow", () => {
     ];
 
     expect(directErrorWrites).toHaveLength(0);
-    expect(guardedErrorWrites).toHaveLength(2);
+    expect(guardedErrorWrites).toHaveLength(3);
     expect(source).toContain("threadId,");
     expect(source).toContain(
       "diagnosticSha256: sha256Text(errorMessage(error))",
@@ -675,6 +676,153 @@ describe("Napier HTTP goal flow", () => {
       `/api/threads/${thread.id}/runs/run_missing0000/control-messages`,
     );
     expect(missingResponse.status).toBe(404);
+  });
+
+  it("answers and continues a durable operator decision through public APIs", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
+    temporaryRoots.push(root);
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    const app = createApp(services);
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Operator decision API",
+      agentId: agent.id,
+    });
+    const originRun = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-decision-api", id: "faux-1" },
+    });
+    const requested = await services.store.requestOperatorDecision({
+      threadId: thread.id,
+      runId: originRun.id,
+      header: "Scope",
+      question: "Which delivery scope should continue?",
+      options: [
+        {
+          label: "Runtime",
+          description: "Continue with the runtime only.",
+        },
+        {
+          label: "Full product",
+          description: "Continue through APIs and the Workbench.",
+        },
+      ],
+      multiSelect: false,
+    });
+    await services.store.finishRun(originRun.id, "completed", {
+      waitForOperatorDecisionId: requested.decision.id,
+    });
+    const endpointPath = `/api/threads/${thread.id}/operator-decisions`;
+
+    const listResponse = await app.request(endpointPath);
+    expect(listResponse.status).toBe(200);
+    const listed = (await listResponse.json()) as OperatorDecision[];
+    expect(listed).toEqual([requested.decision]);
+    expectOperatorDecisionListHeaders(listResponse, thread.id, listed);
+
+    const invalidAnswerResponse = await app.request(
+      `${endpointPath}/${requested.decision.id}/answer`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          selectedOptionIds: ["option_2"],
+          unsupported: true,
+        }),
+      },
+    );
+    expect(invalidAnswerResponse.status).toBe(400);
+
+    const answerResponse = await app.request(
+      `${endpointPath}/${requested.decision.id}/answer`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          selectedOptionIds: ["option_2"],
+          customText: "Preserve every published API.",
+        }),
+      },
+    );
+    expect(answerResponse.status).toBe(202);
+    const answered = (await answerResponse.json()) as OperatorDecision;
+    expect(answered).toEqual(
+      expect.objectContaining({
+        status: "answered",
+        selectedOptionIds: ["option_2"],
+        customText: "Preserve every published API.",
+      }),
+    );
+    expectOperatorDecisionHeaders(answerResponse, answered);
+
+    const faux = fauxProvider({ provider: "faux-decision-api" });
+    faux.setResponses([
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("Full product");
+        expect(messages).toContain("Preserve every published API.");
+        return fauxAssistantMessage("Continued with the full product scope.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    services.models.registerProvider(faux.provider);
+    const continueResponse = await app.request(
+      `${endpointPath}/${requested.decision.id}/continue`,
+      { method: "POST" },
+    );
+    expect(continueResponse.status).toBe(200);
+    expect(continueResponse.headers.get("cache-control")).toBe("no-cache");
+    expect(continueResponse.headers.get("x-napier-operator-decision-id")).toBe(
+      requested.decision.id,
+    );
+    const frames = parseSseFrames(await continueResponse.text());
+    expectFinalDoneMatchesSnapshot(frames);
+    expect(faux.state.callCount).toBe(2);
+    const continued = (
+      await services.store.listOperatorDecisions(thread.id)
+    )[0]!;
+    expect(continued).toEqual(
+      expect.objectContaining({
+        status: "continued",
+        continuationRunId: expect.stringMatching(/^run_/),
+      }),
+    );
+
+    const cancellableRun = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-decision-api", id: "faux-1" },
+    });
+    const cancellable = await services.store.requestOperatorDecision({
+      threadId: thread.id,
+      runId: cancellableRun.id,
+      header: "Retry",
+      question: "Should another continuation run?",
+      options: [
+        { label: "Continue", description: "Start another continuation." },
+        { label: "Stop", description: "Leave the work stopped." },
+      ],
+      multiSelect: false,
+    });
+    await services.store.finishRun(cancellableRun.id, "completed", {
+      waitForOperatorDecisionId: cancellable.decision.id,
+    });
+    const cancelResponse = await app.request(
+      `${endpointPath}/${cancellable.decision.id}/cancel`,
+      { method: "POST" },
+    );
+    expect(cancelResponse.status).toBe(200);
+    expect(await cancelResponse.json()).toEqual(
+      expect.objectContaining({
+        status: "cancelled",
+        cancellationReason: "operator_cancelled",
+      }),
+    );
+    expect(services.store.getThread(thread.id).status).toBe("idle");
   });
 
   it("redacts post-stream run errors into hash-only SSE diagnostics", async () => {
@@ -9352,6 +9500,9 @@ function expectThreadDetailProjectionHeaders(
   expect(response.headers.get("x-napier-run-control-message-count")).toBe(
     String(detail.runControlMessages.length),
   );
+  expect(response.headers.get("x-napier-operator-decision-count")).toBe(
+    String(detail.operatorDecisions.length),
+  );
   expect(response.headers.get("x-napier-recovery-assessment-count")).toBe(
     String(detail.automaticRecoveryAssessments.length),
   );
@@ -9433,6 +9584,56 @@ function expectRunControlMessageListHeaders(
   );
   expect(response.headers.get("x-napier-run-control-cancelled-count")).toBe(
     String(messages.filter((message) => message.status === "cancelled").length),
+  );
+}
+
+function expectOperatorDecisionHeaders(
+  response: Response,
+  decision: OperatorDecision,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    decision.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-thread-id")).toBe(decision.threadId);
+  expect(response.headers.get("x-napier-run-id")).toBe(decision.runId);
+  expect(response.headers.get("x-napier-operator-decision-id")).toBe(
+    decision.id,
+  );
+  expect(response.headers.get("x-napier-operator-decision-status")).toBe(
+    decision.status,
+  );
+  expect(
+    response.headers.get("x-napier-operator-decision-question-sha256"),
+  ).toBe(decision.questionSha256);
+  expect(response.headers.get("x-napier-operator-decision-option-count")).toBe(
+    String(decision.options.length),
+  );
+  expect(
+    response.headers.get("x-napier-operator-decision-requested-event-seq"),
+  ).toBe(String(decision.requestedEventSeq));
+}
+
+function expectOperatorDecisionListHeaders(
+  response: Response,
+  threadId: string,
+  decisions: OperatorDecision[],
+): void {
+  const contentSha256 = createHash("sha256")
+    .update(JSON.stringify(decisions))
+    .digest("hex");
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("body");
+  expect(response.headers.get("x-napier-thread-id")).toBe(threadId);
+  expect(response.headers.get("x-napier-operator-decision-count")).toBe(
+    String(decisions.length),
+  );
+  expect(response.headers.get("x-napier-operator-decision-pending-count")).toBe(
+    String(
+      decisions.filter((decision) => decision.status === "pending").length,
+    ),
   );
 }
 

@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "0c10ad4d088d7032386ffbc2991b8cfe26070b33c5e1ae24ce1aa2efb37e6ad7",
-    "routeCount": 224,
-    "routeSetSha256": "4590023ac57dbdfb2701ca6e5f8d42385210a3b2e6922e085577f870805adb94"
+    "sha256": "f74d1b5a9433034f8698a522e5441d1f4f5e8f620da6e7528db71bd94c17d958",
+    "routeCount": 228,
+    "routeSetSha256": "7d49748e5599967d6ec98ee785b46b7dbe3876870699cac99c67a8e97292cf57"
   },
-  "operationCount": 224,
-  "operationSetSha256": "0dcd6aeed57ae44dfe5812516e6bcf8fe9953c70195cd061965a19d4bade2352",
+  "operationCount": 228,
+  "operationSetSha256": "c0253a14c5f5f635402bf57adf34cf4e973c3d655a695837f984b490c0a580ef",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -1252,6 +1252,30 @@
       "acceptsJsonRequestBody": false,
       "jsonRequestSchemaRef": null,
       "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/operator-decisions",
+      "method": "get",
+      "path": "/api/threads/{threadId}/operator-decisions",
+      "operationId": "get-threads-by-threadId-operator-decisions",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/OperatorDecisionList"
+      },
       "responseStatuses": [
         "200",
         "400",
@@ -4102,6 +4126,80 @@
         "threads"
       ],
       "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/operator-decisions/{decisionId}/answer",
+      "method": "post",
+      "path": "/api/threads/{threadId}/operator-decisions/{decisionId}/answer",
+      "operationId": "post-threads-by-threadId-operator-decisions-by-decisionId-answer",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "decisionId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": "#/components/schemas/AnswerOperatorDecisionRequest",
+      "jsonResponseSchemaRefs": {
+        "202": "#/components/schemas/OperatorDecision"
+      },
+      "responseStatuses": [
+        "200",
+        "202",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/operator-decisions/{decisionId}/cancel",
+      "method": "post",
+      "path": "/api/threads/{threadId}/operator-decisions/{decisionId}/cancel",
+      "operationId": "post-threads-by-threadId-operator-decisions-by-decisionId-cancel",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "decisionId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/OperatorDecision"
+      },
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/operator-decisions/{decisionId}/continue",
+      "method": "post",
+      "path": "/api/threads/{threadId}/operator-decisions/{decisionId}/continue",
+      "operationId": "post-threads-by-threadId-operator-decisions-by-decisionId-continue",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "decisionId",
         "threadId"
       ],
       "acceptsJsonRequestBody": true,

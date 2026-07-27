@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Durable Operator Decision gates. Live Agents can now invoke the terminating
+  `request_operator_decision` tool as the only call in a turn, durably commit a
+  bounded 2-4 option question, complete the origin Run into a waiting Thread,
+  and stop without another provider request. Answer and Continue are separate
+  append-only transitions, so an answered gate survives process failure before
+  explicit continuation creates a child Run with the origin model, Agent
+  revision, and `parentRunId`. Store authorization prevents ordinary Prompts
+  from bypassing an open gate; pending/answered gates can also be cancelled,
+  and terminal Run outcomes settle unpreserved requests. Strict no-store
+  list/answer/cancel management APIs, hash-verified continuation SSE, a lazy
+  accessible Paper Ledger decision docket, portable Run-ID remapping, and
+  metadata-only OTLP privacy coverage complete the runtime-to-Workbench flow.
+  The generated management OpenAPI and additive compatibility baseline now
+  contain 228 operations.
 - Persistent Workflow Blueprint Library. Verified
   `napier.execution-plan-blueprint` artifacts can now be saved as
   `ExecutionPlanBlueprintRecord` entries, listed with no-store active/archived

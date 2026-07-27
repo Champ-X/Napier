@@ -28,6 +28,7 @@ export * from "./mcp.js";
 export * from "./mcp-stdio.js";
 export * from "./models.js";
 export * from "./opentelemetry.js";
+export * from "./operator-decisions.js";
 export * from "./plan-archives.js";
 export * from "./plan-tools.js";
 export * from "./plans.js";

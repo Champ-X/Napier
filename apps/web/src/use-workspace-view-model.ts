@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   AgentProfile,
+  AnswerOperatorDecisionRequest,
   BootstrapResponse,
   ContextCheckpointSnapshot,
   CreateMcpExtensionRequest,
@@ -18,6 +19,7 @@ import type {
   McpToolEffect,
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
+  OperatorDecision,
   ReviewExtensionRequest,
   ReviewMemoryRequest,
   RunControlMessageMode,
@@ -34,12 +36,15 @@ import type {
 } from "@napier/contracts";
 
 import {
+  answerOperatorDecision as answerOperatorDecisionApi,
   applyExtensionPackageDeployment as applyExtensionPackageDeploymentApi,
   applyExtensionPackageRolloutChannel as applyExtensionPackageRolloutChannelApi,
   applyExtensionPackageUpdate as applyExtensionPackageUpdateApi,
+  cancelOperatorDecision as cancelOperatorDecisionApi,
   clearGoal,
   compareThreadRuns,
   connectExtension,
+  continueOperatorDecision as continueOperatorDecisionApi,
   createBranch,
   createExtensionPublisherTrustAnchor as createExtensionPublisherTrustAnchorApi,
   createMcpExtension,
@@ -220,6 +225,7 @@ export function useWorkspaceViewModel() {
   const [streamingText, setStreamingText] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
+  const [operatorDecisionBusy, setOperatorDecisionBusy] = useState(false);
   const [error, setError] = useState<string>();
 
   const loadBootstrap = useCallback(async (threadId?: string) => {
@@ -279,6 +285,14 @@ export function useWorkspaceViewModel() {
             .find((run) => run.status === "interrupted")
         : undefined,
     [detail],
+  );
+  const openOperatorDecision = useMemo(
+    () =>
+      detail?.operatorDecisions.findLast(
+        (decision) =>
+          decision.status === "pending" || decision.status === "answered",
+      ),
+    [detail?.operatorDecisions],
   );
   const terminalRuns = useMemo(
     () =>
@@ -405,10 +419,47 @@ export function useWorkspaceViewModel() {
     }
   }, []);
 
+  const refreshBootstrap = useCallback(async (threadId: string) => {
+    const refreshed = await getBootstrap(threadId);
+    setBootstrap(refreshed);
+    setDetail(refreshed.activeThread);
+  }, []);
+
+  const refreshActiveThread = useCallback(async (): Promise<void> => {
+    if (!detail) return;
+    const refreshed = await getThread(detail.thread.id);
+    setDetail(refreshed);
+    setBootstrap((current) =>
+      current
+        ? {
+            ...current,
+            threads: upsertThread(current.threads, refreshed.thread),
+            activeThread: refreshed,
+          }
+        : current,
+    );
+  }, [detail]);
+
+  const startRunUi = useCallback(() => {
+    setStreamingText("");
+    setIsRunning(true);
+    setActiveRunId(undefined);
+    setRunReplayVerificationReceipt(undefined);
+    setTraceExportReceipt(undefined);
+    setTraceVerificationReceipt(undefined);
+    setError(undefined);
+  }, []);
+
+  const finishRunUi = useCallback(() => {
+    setIsRunning(false);
+    setActiveRunId(undefined);
+    setStreamingText("");
+  }, []);
+
   const submit = useCallback(
     async (override?: string) => {
       const text = (override ?? composer).trim();
-      if (!text || !detail) return;
+      if (!text || !detail || openOperatorDecision) return;
       if (isRunning) {
         if (!activeRunId) return;
         setComposer("");
@@ -442,28 +493,18 @@ export function useWorkspaceViewModel() {
         return;
       }
       setComposer("");
-      setStreamingText("");
-      setIsRunning(true);
-      setActiveRunId(undefined);
-      setRunReplayVerificationReceipt(undefined);
-      setTraceExportReceipt(undefined);
-      setTraceVerificationReceipt(undefined);
-      setError(undefined);
+      startRunUi();
       try {
         await streamPrompt(
           detail.thread.id,
           { text, model: parseModelKey(selectedModelKey) },
           handleStreamFrame,
         );
-        const refreshed = await getBootstrap(detail.thread.id);
-        setBootstrap(refreshed);
-        setDetail(refreshed.activeThread);
+        await refreshBootstrap(detail.thread.id);
       } catch (runError) {
         setError(toErrorMessage(runError));
       } finally {
-        setIsRunning(false);
-        setActiveRunId(undefined);
-        setStreamingText("");
+        finishRunUi();
       }
     },
     [
@@ -471,21 +512,19 @@ export function useWorkspaceViewModel() {
       composer,
       controlMessageMode,
       detail,
+      finishRunUi,
       handleStreamFrame,
       isRunning,
+      openOperatorDecision,
+      refreshBootstrap,
       selectedModelKey,
+      startRunUi,
     ],
   );
 
   const resume = useCallback(async () => {
     if (!detail || !resumableRun || isRunning) return;
-    setStreamingText("");
-    setIsRunning(true);
-    setActiveRunId(undefined);
-    setRunReplayVerificationReceipt(undefined);
-    setTraceExportReceipt(undefined);
-    setTraceVerificationReceipt(undefined);
-    setError(undefined);
+    startRunUi();
     try {
       await resumeRunApi(
         detail.thread.id,
@@ -495,17 +534,22 @@ export function useWorkspaceViewModel() {
         },
         handleStreamFrame,
       );
-      const refreshed = await getBootstrap(detail.thread.id);
-      setBootstrap(refreshed);
-      setDetail(refreshed.activeThread);
+      await refreshBootstrap(detail.thread.id);
     } catch (runError) {
       setError(toErrorMessage(runError));
     } finally {
-      setIsRunning(false);
-      setActiveRunId(undefined);
-      setStreamingText("");
+      finishRunUi();
     }
-  }, [detail, handleStreamFrame, isRunning, resumableRun, selectedModelKey]);
+  }, [
+    detail,
+    finishRunUi,
+    handleStreamFrame,
+    isRunning,
+    refreshBootstrap,
+    resumableRun,
+    selectedModelKey,
+    startRunUi,
+  ]);
 
   const stop = useCallback(async () => {
     if (!detail) return;
@@ -515,6 +559,82 @@ export function useWorkspaceViewModel() {
       setError(toErrorMessage(stopError));
     }
   }, [detail]);
+
+  const answerOperatorDecision = useCallback(
+    async (
+      decisionId: string,
+      answer: AnswerOperatorDecisionRequest,
+    ): Promise<void> => {
+      if (!detail || operatorDecisionBusy) return;
+      setOperatorDecisionBusy(true);
+      setError(undefined);
+      try {
+        await answerOperatorDecisionApi(detail.thread.id, decisionId, answer);
+        await refreshActiveThread();
+      } catch (answerError) {
+        setError(toErrorMessage(answerError));
+      } finally {
+        setOperatorDecisionBusy(false);
+      }
+    },
+    [detail, operatorDecisionBusy, refreshActiveThread],
+  );
+
+  const cancelOperatorDecision = useCallback(
+    async (decisionId: string): Promise<void> => {
+      if (!detail || operatorDecisionBusy) return;
+      setOperatorDecisionBusy(true);
+      setError(undefined);
+      try {
+        await cancelOperatorDecisionApi(detail.thread.id, decisionId);
+        await refreshActiveThread();
+      } catch (cancelError) {
+        setError(toErrorMessage(cancelError));
+      } finally {
+        setOperatorDecisionBusy(false);
+      }
+    },
+    [detail, operatorDecisionBusy, refreshActiveThread],
+  );
+
+  const continueOperatorDecision = useCallback(
+    async (decision: OperatorDecision): Promise<void> => {
+      if (
+        !detail ||
+        decision.status !== "answered" ||
+        operatorDecisionBusy ||
+        isRunning
+      ) {
+        return;
+      }
+      setOperatorDecisionBusy(true);
+      startRunUi();
+      try {
+        await continueOperatorDecisionApi(
+          detail.thread.id,
+          decision.id,
+          handleStreamFrame,
+        );
+        await refreshBootstrap(detail.thread.id);
+      } catch (continueError) {
+        setError(toErrorMessage(continueError));
+        await refreshActiveThread().catch(() => undefined);
+      } finally {
+        setOperatorDecisionBusy(false);
+        finishRunUi();
+      }
+    },
+    [
+      detail,
+      finishRunUi,
+      handleStreamFrame,
+      isRunning,
+      operatorDecisionBusy,
+      refreshActiveThread,
+      refreshBootstrap,
+      startRunUi,
+    ],
+  );
 
   const saveGoal = useCallback(async () => {
     if (!detail || !goalDraft.trim()) return;
@@ -1828,21 +1948,6 @@ export function useWorkspaceViewModel() {
     [],
   );
 
-  const refreshActiveThread = useCallback(async (): Promise<void> => {
-    if (!detail) return;
-    const refreshed = await getThread(detail.thread.id);
-    setDetail(refreshed);
-    setBootstrap((current) =>
-      current
-        ? {
-            ...current,
-            threads: upsertThread(current.threads, refreshed.thread),
-            activeThread: refreshed,
-          }
-        : current,
-    );
-  }, [detail]);
-
   return {
     bootstrap,
     detail,
@@ -1874,6 +1979,7 @@ export function useWorkspaceViewModel() {
     traceVerificationReceipt,
     labBusyAction,
     labFixtureReceipt,
+    operatorDecisionBusy,
     streamingText,
     messages,
     visibleTrace,
@@ -1881,6 +1987,7 @@ export function useWorkspaceViewModel() {
     isRunning,
     error,
     activeGoal: detail?.thread.goal as GoalState | undefined,
+    openOperatorDecision,
     resumableRun,
     terminalRuns,
     contextCheckpoint,
@@ -1901,6 +2008,9 @@ export function useWorkspaceViewModel() {
     submit,
     resume,
     stop,
+    answerOperatorDecision,
+    cancelOperatorDecision,
+    continueOperatorDecision,
     saveGoal,
     removeGoal,
     branchFrom,

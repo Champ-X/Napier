@@ -175,6 +175,10 @@ import {
   type ReviewMcpToolRequest,
   type RunEvent,
   type RunEvaluationRecord,
+  type AnswerOperatorDecisionRequest,
+  type OperatorDecision,
+  type OperatorDecisionCancellationReason,
+  type RequestOperatorDecisionInput,
   type RunControlMessage,
   type RunControlMessageCancellationReason,
   type RunControlMessageMode,
@@ -480,6 +484,14 @@ import {
   validateRunConfigurationFingerprint,
 } from "./run-config.js";
 import {
+  createOperatorDecisionAnsweredPayload,
+  createOperatorDecisionCancelledPayload,
+  createOperatorDecisionContinuedPayload,
+  createOperatorDecisionRequestedPayload,
+  MAX_OPERATOR_DECISIONS_PER_THREAD,
+  projectOperatorDecisions,
+} from "./operator-decisions.js";
+import {
   createRunControlMessageCancelledPayload,
   createRunControlMessageDeliveredPayload,
   createRunControlMessageQueuedPayload,
@@ -662,6 +674,16 @@ export interface RunControlMessageDelivery {
   events: RunEvent[];
 }
 
+export interface RequestOperatorDecisionStoreInput extends RequestOperatorDecisionInput {
+  threadId: string;
+  runId: string;
+}
+
+export interface OperatorDecisionMutation {
+  decision: OperatorDecision;
+  events: RunEvent[];
+}
+
 export interface CreateRunInput {
   threadId: string;
   agentId: string;
@@ -670,6 +692,7 @@ export interface CreateRunInput {
   executionMode?: RunExecutionMode;
   skillCatalogSha256?: string;
   parentRunId?: string;
+  operatorDecisionId?: string;
   branchFromSeq?: number;
   source?: RunInvocationSource;
   triggerId?: string;
@@ -7572,6 +7595,7 @@ export class LocalStore {
       automaticRecoveryAttempts: this.listAutomaticRecoveryAttempts(threadId),
       subagents: this.listSubagentTasks(threadId),
       runControlMessages: projectRunControlMessages(events),
+      operatorDecisions: projectOperatorDecisions(events),
       contextCheckpointCalibration: createContextCheckpointCalibrationReport(
         threadId,
         events,
@@ -7586,6 +7610,14 @@ export class LocalStore {
   ): Promise<RunControlMessage[]> {
     const events = await this.listEvents(threadId);
     return projectRunControlMessages(events, runId);
+  }
+
+  async listOperatorDecisions(
+    threadId: string,
+    runId?: string,
+  ): Promise<OperatorDecision[]> {
+    const events = await this.listEvents(threadId);
+    return projectOperatorDecisions(events, runId);
   }
 
   async listEvents(threadId: string, afterSeq = 0): Promise<RunEvent[]> {
@@ -8431,6 +8463,277 @@ export class LocalStore {
     });
   }
 
+  async requestOperatorDecision(
+    input: RequestOperatorDecisionStoreInput,
+  ): Promise<OperatorDecisionMutation> {
+    this.assertInitialized();
+    this.validateResourceId(input.threadId);
+    this.validateResourceId(input.runId);
+    return this.threadQueue(input.threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(input.threadId);
+        const run = this.mutableRun(input.runId);
+        if (
+          run.threadId !== thread.id ||
+          run.status !== "running" ||
+          thread.currentRunId !== run.id
+        ) {
+          throw new Error("Operator decision requires the active Thread Run");
+        }
+        if (
+          run.configuration?.model.provider === "napier" &&
+          run.configuration.model.id === "demo"
+        ) {
+          throw new Error("The demo model cannot request operator decisions");
+        }
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const current = projectOperatorDecisions(currentEvents);
+        if (current.length >= MAX_OPERATOR_DECISIONS_PER_THREAD) {
+          throw new Error(
+            `Operator decision limit reached (${MAX_OPERATOR_DECISIONS_PER_THREAD})`,
+          );
+        }
+        if (
+          current.some(
+            (decision) =>
+              decision.status === "pending" || decision.status === "answered",
+          )
+        ) {
+          throw new Error("Thread already has an open operator decision");
+        }
+        const payload = createOperatorDecisionRequestedPayload({
+          decisionId: createId("decision"),
+          request: {
+            header: input.header,
+            question: input.question,
+            options: input.options,
+            multiSelect: input.multiSelect,
+          },
+        });
+        const events = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: run.id,
+            type: "operator.decision.requested",
+            category: "system",
+            visibility: "user",
+            payload,
+          },
+        ]);
+        await this.persistState(events);
+        const decision = projectOperatorDecisions([
+          ...currentEvents,
+          ...events,
+        ]).find((candidate) => candidate.id === payload.decisionId);
+        if (!decision || decision.status !== "pending") {
+          throw new Error("Operator decision request receipt is invalid");
+        }
+        return {
+          decision: structuredClone(decision),
+          events: structuredClone(events),
+        };
+      }),
+    );
+  }
+
+  async answerOperatorDecision(
+    threadId: string,
+    decisionId: string,
+    answer: AnswerOperatorDecisionRequest,
+  ): Promise<OperatorDecisionMutation> {
+    this.assertInitialized();
+    this.validateResourceId(threadId);
+    this.validateResourceId(decisionId);
+    return this.threadQueue(threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(threadId);
+        if (thread.currentRunId || thread.status !== "waiting") {
+          throw new Error("Operator decision answer requires a waiting Thread");
+        }
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const current = projectOperatorDecisions(currentEvents).find(
+          (decision) => decision.id === decisionId,
+        );
+        if (!current) {
+          throw new Error(`Operator decision not found: ${decisionId}`);
+        }
+        if (current.status === "answered") {
+          throw new Error("Operator decision has already been answered");
+        }
+        if (current.status !== "pending") {
+          throw new Error(
+            `Operator decision cannot be answered in ${current.status} state`,
+          );
+        }
+        const originRun = this.mutableRun(current.runId);
+        if (
+          originRun.threadId !== thread.id ||
+          (originRun.status !== "completed" &&
+            originRun.status !== "interrupted")
+        ) {
+          throw new Error(
+            "Operator decision origin Run is not waiting for input",
+          );
+        }
+        const payload = createOperatorDecisionAnsweredPayload({
+          decision: current,
+          answer,
+        });
+        const events = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: current.runId,
+            type: "operator.decision.answered",
+            category: "system",
+            visibility: "user",
+            payload,
+          },
+        ]);
+        await this.persistState(events);
+        const decision = projectOperatorDecisions([
+          ...currentEvents,
+          ...events,
+        ]).find((candidate) => candidate.id === decisionId);
+        if (!decision || decision.status !== "answered") {
+          throw new Error("Operator decision answer receipt is invalid");
+        }
+        return {
+          decision: structuredClone(decision),
+          events: structuredClone(events),
+        };
+      }),
+    );
+  }
+
+  async continueOperatorDecision(
+    threadId: string,
+    decisionId: string,
+    continuationRunId: string,
+  ): Promise<OperatorDecisionMutation> {
+    this.assertInitialized();
+    this.validateResourceId(threadId);
+    this.validateResourceId(decisionId);
+    this.validateResourceId(continuationRunId);
+    return this.threadQueue(threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(threadId);
+        const continuationRun = this.mutableRun(continuationRunId);
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const current = projectOperatorDecisions(currentEvents).find(
+          (decision) => decision.id === decisionId,
+        );
+        if (!current) {
+          throw new Error(`Operator decision not found: ${decisionId}`);
+        }
+        if (current.status !== "answered") {
+          throw new Error(
+            `Operator decision cannot continue in ${current.status} state`,
+          );
+        }
+        if (
+          thread.currentRunId !== continuationRun.id ||
+          continuationRun.threadId !== thread.id ||
+          continuationRun.status !== "running" ||
+          continuationRun.parentRunId !== current.runId
+        ) {
+          throw new Error(
+            "Operator decision continuation Run binding is invalid",
+          );
+        }
+        const payload = createOperatorDecisionContinuedPayload({
+          decision: current,
+          continuationRunId: continuationRun.id,
+        });
+        const events = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: current.runId,
+            type: "operator.decision.continued",
+            category: "system",
+            visibility: "user",
+            payload,
+          },
+        ]);
+        await this.persistState(events);
+        const decision = projectOperatorDecisions([
+          ...currentEvents,
+          ...events,
+        ]).find((candidate) => candidate.id === decisionId);
+        if (!decision || decision.status !== "continued") {
+          throw new Error("Operator decision continuation receipt is invalid");
+        }
+        return {
+          decision: structuredClone(decision),
+          events: structuredClone(events),
+        };
+      }),
+    );
+  }
+
+  async cancelOperatorDecision(
+    threadId: string,
+    decisionId: string,
+    reason: OperatorDecisionCancellationReason = "operator_cancelled",
+  ): Promise<OperatorDecisionMutation> {
+    this.assertInitialized();
+    this.validateResourceId(threadId);
+    this.validateResourceId(decisionId);
+    return this.threadQueue(threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(threadId);
+        if (thread.currentRunId) {
+          throw new Error(
+            "Operator decision cannot be cancelled while the Thread is running",
+          );
+        }
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const current = projectOperatorDecisions(currentEvents).find(
+          (decision) => decision.id === decisionId,
+        );
+        if (!current) {
+          throw new Error(`Operator decision not found: ${decisionId}`);
+        }
+        if (current.status === "cancelled") {
+          return { decision: structuredClone(current), events: [] };
+        }
+        const payload = createOperatorDecisionCancelledPayload({
+          decision: current,
+          reason,
+        });
+        const events = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: current.runId,
+            type: "operator.decision.cancelled",
+            category: "system",
+            visibility: "user",
+            payload,
+          },
+        ]);
+        const originRun = this.mutableRun(current.runId);
+        if (
+          thread.status === "waiting" &&
+          (originRun.status === "completed" ||
+            originRun.status === "interrupted")
+        ) {
+          thread.status = "idle";
+        }
+        await this.persistState(events);
+        const decision = projectOperatorDecisions([
+          ...currentEvents,
+          ...events,
+        ]).find((candidate) => candidate.id === decisionId);
+        if (!decision || decision.status !== "cancelled") {
+          throw new Error("Operator decision cancellation receipt is invalid");
+        }
+        return {
+          decision: structuredClone(decision),
+          events: structuredClone(events),
+        };
+      }),
+    );
+  }
+
   async queueRunControlMessage(
     input: QueueRunControlMessageInput,
   ): Promise<RunControlMessage> {
@@ -8639,6 +8942,7 @@ export class LocalStore {
       error?: string;
       usage?: RunRecord["usage"];
       leaseToken?: string;
+      waitForOperatorDecisionId?: string;
     } = {},
   ): Promise<RunRecord> {
     this.assertInitialized();
@@ -8647,15 +8951,34 @@ export class LocalStore {
       if (run.leaseTokenSha256) {
         assertLeaseToken(run.leaseTokenSha256, options.leaseToken);
       }
+      const thread = this.mutableThread(run.threadId);
+      const waitingDecision = options.waitForOperatorDecisionId
+        ? projectOperatorDecisions(
+            this.requireLedger().listEvents(thread.id),
+            run.id,
+          ).find(
+            (decision) =>
+              decision.id === options.waitForOperatorDecisionId &&
+              decision.status === "pending",
+          )
+        : undefined;
+      if (
+        options.waitForOperatorDecisionId &&
+        (status !== "completed" || !waitingDecision)
+      ) {
+        throw new Error(
+          "Run cannot wait without its pending operator decision",
+        );
+      }
       run.status = status;
       run.finishedAt = nowIso();
       if (options.error) run.error = options.error;
       if (options.usage) run.usage = structuredClone(options.usage);
       delete run.lease;
       delete run.leaseTokenSha256;
-      const thread = this.mutableThread(run.threadId);
-      thread.status =
-        status === "completed"
+      thread.status = waitingDecision
+        ? "waiting"
+        : status === "completed"
           ? "idle"
           : status === "cancelled"
             ? "idle"
@@ -8664,11 +8987,19 @@ export class LocalStore {
               : "failed";
       delete thread.currentRunId;
       thread.updatedAt = run.finishedAt;
-      const cancellationEvents = this.cancelPendingRunControlMessages(
-        thread,
-        run.id,
-        runControlMessageCancellationReason(status),
-      );
+      const cancellationEvents = [
+        ...this.cancelPendingRunControlMessages(
+          thread,
+          run.id,
+          runControlMessageCancellationReason(status),
+        ),
+        ...this.cancelPendingOperatorDecisions(
+          thread,
+          run.id,
+          operatorDecisionCancellationReason(status),
+          waitingDecision?.id,
+        ),
+      ];
       await this.persistState(cancellationEvents);
       return structuredClone(stripRunSecrets(run));
     });
@@ -10495,6 +10826,33 @@ export class LocalStore {
     );
   }
 
+  private cancelPendingOperatorDecisions(
+    thread: ThreadRecord,
+    runId: string,
+    reason: OperatorDecisionCancellationReason,
+    preservedDecisionId?: string,
+  ): RunEvent[] {
+    const currentEvents = this.requireLedger().listEvents(thread.id);
+    const pending = projectOperatorDecisions(currentEvents, runId).filter(
+      (decision) =>
+        decision.status === "pending" && decision.id !== preservedDecisionId,
+    );
+    return this.appendEventsToThread(
+      thread,
+      pending.map((decision) => ({
+        threadId: thread.id,
+        runId,
+        type: "operator.decision.cancelled",
+        category: "system",
+        visibility: "user",
+        payload: createOperatorDecisionCancelledPayload({
+          decision,
+          reason,
+        }),
+      })),
+    );
+  }
+
   private createRunRecord(
     input: CreateRunInput,
     lease?: {
@@ -10506,6 +10864,27 @@ export class LocalStore {
     if (thread.currentRunId) {
       throw new Error(
         `Thread already has an active run: ${thread.currentRunId}`,
+      );
+    }
+    const openOperatorDecision = projectOperatorDecisions(
+      this.requireLedger().listEvents(thread.id),
+    ).find(
+      (decision) =>
+        decision.status === "pending" || decision.status === "answered",
+    );
+    if (
+      openOperatorDecision &&
+      (openOperatorDecision.status !== "answered" ||
+        input.operatorDecisionId !== openOperatorDecision.id ||
+        input.parentRunId !== openOperatorDecision.runId)
+    ) {
+      throw new Error(
+        `Thread is waiting for operator decision: ${openOperatorDecision.id}`,
+      );
+    }
+    if (!openOperatorDecision && input.operatorDecisionId) {
+      throw new Error(
+        `Operator decision not found for continuation: ${input.operatorDecisionId}`,
       );
     }
     if (thread.agentId !== input.agentId) {
@@ -10529,6 +10908,35 @@ export class LocalStore {
       );
     }
     const executionMode = input.executionMode ?? "standard";
+    if (openOperatorDecision) {
+      const originRun = this.state.runs.find(
+        (candidate) => candidate.id === openOperatorDecision.runId,
+      );
+      if (
+        !originRun ||
+        originRun.threadId !== thread.id ||
+        originRun.agentId !== input.agentId ||
+        !originRun.configuration
+      ) {
+        throw new Error(
+          "Operator decision origin Run configuration is unavailable",
+        );
+      }
+      if (runAgent.revision !== originRun.agentRevision) {
+        throw new Error(
+          "Operator decision continuation must reuse the origin Agent revision",
+        );
+      }
+      const continuationModel = input.model ?? runAgent.model;
+      if (
+        continuationModel.provider !== originRun.configuration.model.provider ||
+        continuationModel.id !== originRun.configuration.model.id
+      ) {
+        throw new Error(
+          "Operator decision continuation must reuse the origin model",
+        );
+      }
+    }
     if (executionMode === "safe_read_only_recovery") {
       const parent = input.parentRunId
         ? this.state.runs.find(
@@ -10879,6 +11287,14 @@ function runControlMessageCancellationReason(
   if (status === "cancelled") return "run_cancelled_before_delivery";
   if (status === "interrupted") return "run_interrupted_before_delivery";
   return "run_failed_before_delivery";
+}
+
+function operatorDecisionCancellationReason(
+  status: Exclude<RunStatus, "queued" | "running">,
+): OperatorDecisionCancellationReason {
+  if (status === "completed") return "run_completed_without_wait";
+  if (status === "cancelled") return "run_cancelled";
+  return "run_failed";
 }
 
 function stripAutomaticRecoverySecrets(
@@ -14593,8 +15009,7 @@ function normalizeInboundModel(model: { provider: string; id: string }) {
 
 function extractMessagePreview(event: RunEvent): string | undefined {
   if (
-    (event.type !== "message.user" &&
-      event.type !== "message.assistant") ||
+    (event.type !== "message.user" && event.type !== "message.assistant") ||
     event.category !== "message" ||
     !event.payload ||
     Array.isArray(event.payload) ||

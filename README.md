@@ -50,6 +50,10 @@ Version `0.1.0` includes:
 - a durable in-flight Run control inbox with one-at-a-time steering and
   follow-up delivery, atomic user-message evidence, bounded queues, terminal
   settlement, and a live Workbench composer;
+- durable Operator Decision gates that let the Agent stop on one structured
+  2-4 option question, preserve answer and continuation as separate Ledger
+  transitions, and resume through an explicitly linked child Run without
+  allowing an ordinary Prompt to bypass the waiting gate;
 - workspace-confined read, list, and literal search tools with canonical
   realpath checks and complete-file SHA-256 evidence;
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
@@ -157,9 +161,9 @@ Version `0.1.0` includes:
 - portable full-thread replay fixtures that bind Agent, Runs, plans,
   evaluations, append-only human adjudications, reviewer ballots, consensus
   resolutions, evaluation suites and executions, automatic-recovery
-  assessments and attempts, subagents, and the complete ordered event stream
-  to independent content/event SHA-256 digests, with atomic import and
-  collision-free ID remapping;
+  assessments and attempts, subagents, Operator Decisions, and the complete
+  ordered event stream to independent content/event SHA-256 digests, with
+  atomic import and collision-free resource-ID remapping;
 - OpenTelemetry-compatible OTLP/JSON trace export for complete Threads or
   individual Runs, with deterministic trace/span identities, GenAI semantic
   attributes, metadata-only redaction, stable artifact hashes, no-store
@@ -662,6 +666,36 @@ First terminal state wins. Restart recovery summaries and metadata-only OTLP
 exports retain only control IDs, mode, reason, byte count, and text hash for
 undelivered items. The zero-key demo model rejects live control messages
 because it does not run the Pi queue hooks.
+
+## Durable Operator Decisions
+
+A live Agent can call `request_operator_decision` when progress requires a
+human choice. The call must be the only tool request in its assistant turn and
+contains a short header, one bounded question, 2-4 described options, and a
+single/multi-select flag. The tool first commits
+`operator.decision.requested`, returns a terminating Pi tool result, and
+gracefully completes the origin Run while leaving the Thread `waiting`.
+Napier permits one open decision at a time and at most 64 decisions per
+Thread.
+
+Answer and continuation are separate durable operations. `POST
+/api/threads/:threadId/operator-decisions/:decisionId/answer` records selected
+option IDs and optional custom text; an answered decision survives a process
+exit without starting work. Explicit `POST .../:decisionId/continue` then
+starts an SSE child Run with the origin model and Agent revision,
+`parentRunId` pointing to the origin Run, and a user-authored continuation
+message. Store-level authorization rejects every ordinary Prompt while the
+decision is pending or answered. `GET
+/api/threads/:threadId/operator-decisions` returns the ordered projection, and
+`POST .../:decisionId/cancel` settles an open gate without resuming it.
+
+The Workbench renders the open decision as a lazy Paper Ledger docket with
+radio/checkbox semantics, custom answer, receipt hash, Continue, and Cancel;
+the ordinary composer remains disabled until the gate is terminal. Question,
+option descriptions, and custom answer stay local to the Ledger and are
+excluded from metadata-only OTLP. Portable Thread import remaps both origin
+and continuation Run IDs, reconstructs the decision from events, and
+recomputes its final content hash while preserving question and answer hashes.
 
 ## Agent Configuration History
 

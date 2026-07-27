@@ -132,6 +132,23 @@ const PROMOTED_OPERATION_SCHEMAS = {
         200: "#/components/schemas/RunControlMessage",
       },
     },
+  "GET /api/threads/{threadId}/operator-decisions": {
+    responses: {
+      200: "#/components/schemas/OperatorDecisionList",
+    },
+  },
+  "POST /api/threads/{threadId}/operator-decisions/{decisionId}/answer": {
+    request: "#/components/schemas/AnswerOperatorDecisionRequest",
+    responses: {
+      202: "#/components/schemas/OperatorDecision",
+    },
+  },
+  "POST /api/threads/{threadId}/operator-decisions/{decisionId}/cancel": {
+    request: false,
+    responses: {
+      200: "#/components/schemas/OperatorDecision",
+    },
+  },
 };
 
 export async function generateManagementOpenApi(options = {}) {
@@ -384,6 +401,140 @@ export async function generateManagementOpenApi(options = {}) {
           type: "array",
           maxItems: 64,
           items: { $ref: "#/components/schemas/RunControlMessage" },
+        },
+        OperatorDecisionStatus: {
+          type: "string",
+          enum: ["pending", "answered", "continued", "cancelled"],
+        },
+        OperatorDecisionCancellationReason: {
+          type: "string",
+          enum: [
+            "operator_cancelled",
+            "run_completed_without_wait",
+            "run_failed",
+            "run_cancelled",
+          ],
+        },
+        OperatorDecisionOption: {
+          type: "object",
+          required: ["id", "label", "description"],
+          additionalProperties: false,
+          properties: {
+            id: {
+              type: "string",
+              pattern: "^option_[1-4]$",
+            },
+            label: { type: "string", minLength: 1, maxLength: 80 },
+            description: {
+              type: "string",
+              minLength: 1,
+              maxLength: 400,
+            },
+          },
+        },
+        AnswerOperatorDecisionRequest: {
+          type: "object",
+          required: ["selectedOptionIds"],
+          additionalProperties: false,
+          properties: {
+            selectedOptionIds: {
+              type: "array",
+              maxItems: 4,
+              uniqueItems: true,
+              items: {
+                type: "string",
+                pattern: "^option_[1-4]$",
+              },
+            },
+            customText: {
+              type: "string",
+              minLength: 1,
+              maxLength: 4096,
+            },
+          },
+        },
+        OperatorDecision: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "id",
+            "threadId",
+            "runId",
+            "status",
+            "header",
+            "question",
+            "options",
+            "multiSelect",
+            "questionSha256",
+            "requestedAt",
+            "requestedEventSeq",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: { const: "napier.operator-decision" },
+            schemaVersion: { const: 1 },
+            id: {
+              type: "string",
+              pattern: "^decision_[a-z0-9]{8,80}$",
+            },
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            runId: {
+              type: "string",
+              pattern: "^run_[a-z0-9]{8,80}$",
+            },
+            status: {
+              $ref: "#/components/schemas/OperatorDecisionStatus",
+            },
+            header: { type: "string", minLength: 1, maxLength: 12 },
+            question: { type: "string", minLength: 1, maxLength: 4096 },
+            options: {
+              type: "array",
+              minItems: 2,
+              maxItems: 4,
+              items: {
+                $ref: "#/components/schemas/OperatorDecisionOption",
+              },
+            },
+            multiSelect: { type: "boolean" },
+            questionSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            requestedAt: { type: "string", format: "date-time" },
+            requestedEventSeq: { type: "integer", minimum: 1 },
+            answeredAt: { type: "string", format: "date-time" },
+            answeredEventSeq: { type: "integer", minimum: 1 },
+            selectedOptionIds: {
+              type: "array",
+              maxItems: 4,
+              uniqueItems: true,
+              items: {
+                type: "string",
+                pattern: "^option_[1-4]$",
+              },
+            },
+            customText: { type: "string", minLength: 1, maxLength: 4096 },
+            answerSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            continuedAt: { type: "string", format: "date-time" },
+            continuedEventSeq: { type: "integer", minimum: 1 },
+            continuationRunId: {
+              type: "string",
+              pattern: "^run_[a-z0-9]{8,80}$",
+            },
+            cancelledAt: { type: "string", format: "date-time" },
+            cancellationEventSeq: { type: "integer", minimum: 1 },
+            cancellationReason: {
+              $ref: "#/components/schemas/OperatorDecisionCancellationReason",
+            },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        OperatorDecisionList: {
+          type: "array",
+          maxItems: 64,
+          items: { $ref: "#/components/schemas/OperatorDecision" },
         },
         SubagentOutcomeReviewVerdict: {
           type: "string",

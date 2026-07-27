@@ -138,6 +138,110 @@ describe("thread replay bundles", () => {
     );
   });
 
+  it("reconstructs a continued operator decision after Run ID remapping", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Portable operator decision",
+      agentId: agent.id,
+    });
+    const originRun = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-decision", id: "faux-1" },
+    });
+    const requested = await store.requestOperatorDecision({
+      threadId: thread.id,
+      runId: originRun.id,
+      header: "Scope",
+      question: "Which portable scope should continue?",
+      options: [
+        {
+          label: "Runtime",
+          description: "Continue with runtime evidence only.",
+        },
+        {
+          label: "Product",
+          description: "Continue through every product surface.",
+        },
+      ],
+      multiSelect: false,
+    });
+    await store.finishRun(originRun.id, "completed", {
+      waitForOperatorDecisionId: requested.decision.id,
+    });
+    await store.answerOperatorDecision(thread.id, requested.decision.id, {
+      selectedOptionIds: ["option_2"],
+      customText: "Preserve the portable evidence chain.",
+    });
+    const continuationRun = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-decision", id: "faux-1" },
+      parentRunId: originRun.id,
+      operatorDecisionId: requested.decision.id,
+    });
+    const sourceDecision = (
+      await store.continueOperatorDecision(
+        thread.id,
+        requested.decision.id,
+        continuationRun.id,
+      )
+    ).decision;
+    await store.finishRun(continuationRun.id, "completed");
+
+    const invalidDetail = structuredClone(await store.getDetail(thread.id));
+    const invalidContinuedEvent = invalidDetail.events.find(
+      (event) => event.type === "operator.decision.continued",
+    )!;
+    invalidContinuedEvent.payload = {
+      ...invalidContinuedEvent.payload,
+      continuationRunId: "run_phantom1234",
+    };
+    expect(() => createThreadReplayBundle(invalidDetail)).toThrow(
+      "Operator Decision continuation binding is invalid",
+    );
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    const imported = await store.importThreadReplayBundle(bundle);
+    const importedContinuation = imported.runs.find(
+      (run) => run.parentRunId !== undefined,
+    )!;
+    const importedOrigin = imported.runs.find(
+      (run) => run.id === importedContinuation.parentRunId,
+    )!;
+    const importedDecision = imported.operatorDecisions[0]!;
+
+    expect(importedOrigin.id).not.toBe(originRun.id);
+    expect(importedContinuation.id).not.toBe(continuationRun.id);
+    expect(importedContinuation.parentRunId).toBe(importedOrigin.id);
+    expect(importedDecision).toEqual(
+      expect.objectContaining({
+        id: sourceDecision.id,
+        threadId: imported.thread.id,
+        runId: importedOrigin.id,
+        status: "continued",
+        continuationRunId: importedContinuation.id,
+        questionSha256: sourceDecision.questionSha256,
+        answerSha256: sourceDecision.answerSha256,
+        selectedOptionIds: ["option_2"],
+        customText: "Preserve the portable evidence chain.",
+      }),
+    );
+    expect(importedDecision.contentSha256).not.toBe(
+      sourceDecision.contentSha256,
+    );
+    expect(
+      imported.events.find(
+        (event) => event.type === "operator.decision.continued",
+      )?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        continuationRunId: importedContinuation.id,
+      }),
+    );
+  });
+
   it("atomically imports every thread-owned record with remapped IDs and closed in-flight state", async () => {
     const { store } = await createStore();
     const originalAgent = store.listAgents()[0]!;

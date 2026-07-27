@@ -31,6 +31,7 @@ import type {
   HealthResponse,
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
+  OperatorDecision,
   RunControlMessage,
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
@@ -41,6 +42,8 @@ import type {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  answerOperatorDecision,
+  cancelOperatorDecision,
   createExecutionPlanFromBlueprint,
   createExecutionPlanFromBlueprintRecord,
   createExecutionPlanFromBlueprintRecordWithReplayEvent,
@@ -202,6 +205,103 @@ describe("Web JSON API wrappers", () => {
     ).resolves.toEqual(queued);
     await expect(
       cancelRunControlMessage("thread_1", "run_1", "control_message1234"),
+    ).resolves.toEqual(cancelled);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("answers and cancels durable operator decisions", async () => {
+    const pending: OperatorDecision = {
+      kind: "napier.operator-decision",
+      schemaVersion: 1,
+      id: "decision_message1234",
+      threadId: "thread_1",
+      runId: "run_1",
+      status: "pending",
+      header: "Scope",
+      question: "Which scope should continue?",
+      options: [
+        {
+          id: "option_1",
+          label: "Runtime",
+          description: "Continue with runtime only.",
+        },
+        {
+          id: "option_2",
+          label: "Full product",
+          description: "Continue through the Workbench.",
+        },
+      ],
+      multiSelect: false,
+      questionSha256: "a".repeat(64),
+      requestedAt: "2026-07-28T00:00:00.000Z",
+      requestedEventSeq: 4,
+      contentSha256: "b".repeat(64),
+    };
+    const answered: OperatorDecision = {
+      ...pending,
+      status: "answered",
+      answeredAt: "2026-07-28T00:00:01.000Z",
+      answeredEventSeq: 5,
+      selectedOptionIds: ["option_2"],
+      customText: "Preserve compatibility.",
+      answerSha256: "c".repeat(64),
+      contentSha256: "d".repeat(64),
+    };
+    const cancelled: OperatorDecision = {
+      ...answered,
+      status: "cancelled",
+      cancelledAt: "2026-07-28T00:00:02.000Z",
+      cancellationEventSeq: 6,
+      cancellationReason: "operator_cancelled",
+      contentSha256: "e".repeat(64),
+    };
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(async (path: string, init?: RequestInit) => {
+        expect(path).toBe(
+          "/api/threads/thread_1/operator-decisions/decision_message1234/answer",
+        );
+        expect(init?.method).toBe("POST");
+        expect(init?.body).toBe(
+          JSON.stringify({
+            selectedOptionIds: ["option_2"],
+            customText: "Preserve compatibility.",
+          }),
+        );
+        const text = JSON.stringify(answered);
+        return new Response(text, {
+          status: 202,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Napier-Content-SHA256": sha256Text(text),
+            "X-Napier-Content-SHA256-Mode": "body",
+          },
+        });
+      })
+      .mockImplementationOnce(async (path: string, init?: RequestInit) => {
+        expect(path).toBe(
+          "/api/threads/thread_1/operator-decisions/decision_message1234/cancel",
+        );
+        expect(init?.method).toBe("POST");
+        const text = JSON.stringify(cancelled);
+        return new Response(text, {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Napier-Content-SHA256": sha256Text(text),
+            "X-Napier-Content-SHA256-Mode": "body",
+          },
+        });
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      answerOperatorDecision("thread_1", pending.id, {
+        selectedOptionIds: ["option_2"],
+        customText: "Preserve compatibility.",
+      }),
+    ).resolves.toEqual(answered);
+    await expect(
+      cancelOperatorDecision("thread_1", pending.id),
     ).resolves.toEqual(cancelled);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

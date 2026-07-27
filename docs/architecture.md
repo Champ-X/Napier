@@ -82,6 +82,8 @@ removal is a versioned contract change.
   history, and append-only rollback;
 - snapshotted parent-Run limits with turn, usage, cost, and wall-time
   enforcement;
+- append-only Operator Decision request/answer/continue/cancel projection,
+  terminating Pi tool integration, and linked child-Run continuation;
 - transactional SQLite thread, run, and event persistence with legacy
   JSON/JSONL migration.
 
@@ -127,6 +129,8 @@ The runtime has no HTTP or React dependency.
 - bounded, strictly parsed Memory proposal/review and credential-reference
   administration;
 - bounded, strictly parsed Agent profile update and rollback administration;
+- bounded, strictly parsed Operator Decision list, answer, cancel, and SSE
+  continuation APIs;
 - adapter-normalized authenticated webhook ingestion and background schedule,
   channel, and safe recovery workers;
 - same-origin static hosting for production;
@@ -179,6 +183,11 @@ Trace, Plan, Run Lab, Evaluation Suite, Memory, Extensions, Context, and
 Automations are separate browser chunks. Their forms and mutation clients
 remain inside those lazy boundaries so the primary Workbench entry stays under
 its 150 kB budget.
+
+An open Operator Decision is a separate lazy Workbench docket between the
+Ledger and composer. It owns accessible option selection, custom answer,
+answer receipt, Continue, and Cancel actions. The normal composer is disabled
+until the decision reaches a terminal state.
 
 The release check starts by auditing `package-lock.json` against the root
 package and every discovered workspace package. It requires lockfile version 3,
@@ -1154,6 +1163,49 @@ Steering/Follow-up selector while the SSE Run is active, while Stop remains
 independent. Undelivered text is excluded from OTLP attributes and recovery
 summaries; only a delivered `message.user` becomes conversational context.
 
+## Operator Decision Flow
+
+```text
+Agent calls request_operator_decision as the only tool in its turn
+  -> strictly validate header, question, 2-4 options, and selection mode
+  -> reject the demo model, a second open gate, or the 64-decision limit
+  -> append operator.decision.requested before returning from the tool
+  -> return terminate: true and stop Pi without another provider request
+  -> complete the origin Run and set the Thread to waiting
+
+operator answers
+  -> require the origin Run to be completed or interrupted
+  -> validate option IDs, single/multi-select cardinality, and <=4 KiB custom text
+  -> append operator.decision.answered without starting a Run
+
+operator explicitly continues
+  -> create one child Run with the origin model and Agent revision
+  -> require parentRunId = origin Run and matching operatorDecisionId
+  -> append operator.decision.continued against the origin Run
+  -> inject the formatted answer as user-authored continuation input
+  -> stream only child-Run events, then include the binding event in the snapshot
+
+operator cancels or the origin Run fails
+  -> append operator.decision.cancelled with a bounded reason
+  -> preserve first-terminal-wins projection semantics
+```
+
+The four decision events are the only source of truth; there is no mutable
+decision table. Answer and Continue deliberately use separate commits so an
+answer survives a crash before child-Run creation. `createRunRecord` rejects an
+ordinary Prompt while any decision is pending or answered and only admits the
+matching continuation tuple, closing the management and UI bypass paths.
+
+The continuation binding event belongs to the origin Run. It is durable before
+the child executes but is not emitted as the first continuation SSE event,
+because a single stream may not change Run identity. The final snapshot
+contains the complete event sequence and proves the binding. Portable import
+recursively remaps the continuation Run ID in the event payload and derives a
+fresh final decision hash from remapped Thread/Run identities. Question and
+answer hashes remain stable. OTLP admits decision IDs, continuation Run IDs,
+and SHA-256 evidence only; question, options, descriptions, custom text, and
+nested tool input/details are excluded.
+
 ## Workspace Edit Flow
 
 General shell execution and unconstrained file writes are not Agent tools.
@@ -1959,6 +2011,8 @@ import fixture (maximum 10 MiB)
   -> recompute remapped pair-evaluation and suite-execution SHA-256 digests
   -> remap recovery root/source/child IDs and deterministic trigger links
   -> recompute Run-local event hashes, assessment hashes, and attempt hashes
+  -> remap Operator Decision continuation Run IDs and derive the new projection
+     hash while preserving question/answer hashes
   -> strip ordinary trigger IDs and all lease ownership
   -> close claimed/running recovery attempts as imported terminal evidence
   -> convert queued/running Runs to interrupted
@@ -2775,7 +2829,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has twenty-one parts:
+The current boundary has twenty-three parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -2847,6 +2901,11 @@ The current boundary has twenty-one parts:
     leased subscriptions with last-good preservation and hash-only transparency;
     fail-closed promotion preserves the active verifier set across rejected,
     failed, stale, or split rotations.
+23. durable Operator Decision gates with one-open/total bounds, strict
+    selection validation, single-tool terminating turns, Store-enforced
+    continuation authorization, explicit answer/continue separation,
+    first-terminal-wins projection, linked child Runs, metadata-only OTLP, and
+    portable Run-ID rebinding.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
