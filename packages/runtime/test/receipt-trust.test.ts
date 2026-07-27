@@ -21,6 +21,7 @@ import {
 } from "../src/evaluation-suites.js";
 import { createId } from "../src/ids.js";
 import {
+  createReceiptTrustAnchorDirectoryMetadataReceipt,
   createReceiptTrustAnchorDirectory,
   createReceiptTrustAnchor,
   hashTrustedReceiptEnvelope,
@@ -30,6 +31,7 @@ import {
   validateReceiptTrustAnchorDirectory,
   validateTrustedReceiptEnvelope,
   verifyReceiptTrustAnchorDirectory,
+  verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceiptEnvelope,
 } from "../src/receipt-trust.js";
 import { createRunReplaySnapshot } from "../src/replay.js";
@@ -362,6 +364,93 @@ describe("trusted receipt provenance", () => {
         status: "invalid",
         signatureValid: false,
         integrityValid: false,
+      }),
+    );
+  });
+
+  it("signs publisher metadata for receipt trust anchor directories", async () => {
+    installSigningKey();
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Signed receipt trust directory metadata",
+      agentId: agent.id,
+    });
+    const signer = await store.createReceiptTrustAnchor({
+      threadId: thread.id,
+      label: "Directory metadata signer",
+      source: { type: "environment", variable: SIGNING_ENV },
+    });
+    const directory = createReceiptTrustAnchorDirectory([signer]);
+    const receipt = createReceiptTrustAnchorDirectoryMetadataReceipt(
+      directory,
+      {
+        publisher: "Napier Trust Registry",
+        sourceUrlSha256: "a".repeat(64),
+        sourceOriginSha256: "b".repeat(64),
+        expiresAt: "2999-01-01T00:00:00.000Z",
+      },
+    );
+    const envelope = signTrustedReceipt(receipt, signer);
+
+    expect(validateTrustedReceiptEnvelope(envelope)).toEqual(envelope);
+    expect(envelope).toEqual(
+      expect.objectContaining({
+        receiptKind: "receipt_trust_anchor_directory_metadata",
+        receipt: expect.objectContaining({
+          publisher: "Napier Trust Registry",
+          directorySha256: directory.contentSha256,
+          anchorSetSha256: directory.anchorSetSha256,
+          contentSha256: receipt.contentSha256,
+        }),
+      }),
+    );
+    expect(
+      verifyReceiptTrustAnchorDirectoryMetadata(envelope, directory, [signer]),
+    ).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        diagnostics: [],
+        publisher: "Napier Trust Registry",
+        directorySha256: directory.contentSha256,
+        anchorSetSha256: directory.anchorSetSha256,
+        signerKeyId: signer.keyId,
+        signatureValid: true,
+        integrityValid: true,
+        directoryBindingValid: true,
+      }),
+    );
+
+    const mismatchedDirectory = createReceiptTrustAnchorDirectory([
+      createReceiptTrustAnchor({
+        threadId: thread.id,
+        label: "Other verifier",
+        source: { type: "public_key", publicKeySpki: signer.publicKeySpki },
+      }),
+    ]);
+    expect(
+      verifyReceiptTrustAnchorDirectoryMetadata(envelope, mismatchedDirectory, [
+        signer,
+      ]),
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining(["directory_binding_mismatch"]),
+        signatureValid: true,
+        integrityValid: true,
+        directoryBindingValid: false,
+      }),
+    );
+
+    expect(
+      verifyReceiptTrustAnchorDirectoryMetadata(envelope, directory, []),
+    ).toEqual(
+      expect.objectContaining({
+        status: "unknown_key",
+        diagnostics: ["signer_unknown"],
+        signatureValid: false,
+        integrityValid: true,
+        directoryBindingValid: true,
       }),
     );
   });

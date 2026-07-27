@@ -18,6 +18,7 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectoryVerification,
@@ -31,12 +32,14 @@ import {
   createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
   evaluateReceiptTrustAnchorDirectoryQuorum,
+  getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
   revokeReceiptTrustAnchor,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
+  verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceipt,
 } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
@@ -74,6 +77,8 @@ export default function ReceiptTrustPanel({
     useState<ReceiptTrustAnchorDirectoryVerification>();
   const [directoryDiscovery, setDirectoryDiscovery] =
     useState<ReceiptTrustAnchorDirectoryDiscovery>();
+  const [directoryMetadataVerification, setDirectoryMetadataVerification] =
+    useState<ReceiptTrustAnchorDirectoryMetadataVerification>();
   const [directorySourceUrl, setDirectorySourceUrl] = useState("");
   const [directorySubscriptionLabel, setDirectorySubscriptionLabel] =
     useState("");
@@ -109,6 +114,15 @@ export default function ReceiptTrustPanel({
     );
   const canDiscover = Boolean(discoveryRequest) && !busyId;
   const canSubscribe = Boolean(subscriptionRequest) && !busyId;
+  const canSignDirectoryMetadata =
+    Boolean(selectedAnchorId) &&
+    anchors.some(
+      (anchor) =>
+        anchor.id === selectedAnchorId &&
+        anchor.status === "trusted" &&
+        Boolean(anchor.signingSource),
+    ) &&
+    !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -230,11 +244,33 @@ export default function ReceiptTrustPanel({
     }
   }
 
+  async function signDirectoryMetadata(): Promise<void> {
+    if (!canSignDirectoryMetadata) return;
+    setBusyId("sign-directory-metadata");
+    setError(undefined);
+    try {
+      const envelope = await getSignedReceiptTrustAnchorDirectoryMetadata({
+        threadId,
+        trustAnchorId: selectedAnchorId,
+        publisher: copy.lab.trust.directoryMetadataPublisher,
+      });
+      downloadJson(
+        envelope,
+        `napier-signed-anchor-directory-metadata-${envelope.contentSha256.slice(0, 12)}.json`,
+      );
+    } catch (signError) {
+      setError(toErrorMessage(signError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
   async function verifyDirectoryFile(file: File | undefined): Promise<void> {
     if (!file) return;
     setBusyId("verify-directory");
     setError(undefined);
     setDirectoryVerification(undefined);
+    setDirectoryMetadataVerification(undefined);
     try {
       if (file.size > MAX_RECEIPT_TRUST_DIRECTORY_FILE_BYTES) {
         throw new Error(copy.lab.trust.errors.directoryTooLarge);
@@ -259,12 +295,50 @@ export default function ReceiptTrustPanel({
     }
   }
 
+  async function verifyDirectoryMetadataFile(
+    file: File | undefined,
+  ): Promise<void> {
+    if (!file) return;
+    setBusyId("verify-directory-metadata");
+    setError(undefined);
+    setDirectoryMetadataVerification(undefined);
+    try {
+      if (file.size > MAX_TRUSTED_RECEIPT_FILE_BYTES) {
+        throw new Error(copy.lab.trust.errors.tooLarge);
+      }
+      const envelope = JSON.parse(await file.text()) as unknown;
+      const directory =
+        externalDirectory ?? (await getReceiptTrustAnchorDirectory());
+      const verification = await verifyReceiptTrustAnchorDirectoryMetadata({
+        envelope,
+        directory,
+        ...(externalDirectoryPolicy
+          ? { directoryPolicy: externalDirectoryPolicy }
+          : {}),
+        ...(externalDirectory
+          ? {
+              trustDirectory: externalDirectory,
+              ...(externalDirectoryPolicy
+                ? { trustDirectoryPolicy: externalDirectoryPolicy }
+                : {}),
+            }
+          : {}),
+      });
+      setDirectoryMetadataVerification(verification);
+    } catch (verifyError) {
+      setError(toErrorMessage(verifyError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
   async function discoverDirectory(): Promise<void> {
     if (!discoveryRequest || !canDiscover) return;
     setBusyId("discover-directory");
     setError(undefined);
     setDirectoryDiscovery(undefined);
     setDirectoryVerification(undefined);
+    setDirectoryMetadataVerification(undefined);
     try {
       const discovery =
         await discoverReceiptTrustAnchorDirectory(discoveryRequest);
@@ -405,6 +479,7 @@ export default function ReceiptTrustPanel({
     setExternalDirectorySubscriptionId(undefined);
     setDirectoryDiscovery(undefined);
     setDirectoryVerification(undefined);
+    setDirectoryMetadataVerification(undefined);
     setVerification(undefined);
   }
 
@@ -828,6 +903,16 @@ export default function ReceiptTrustPanel({
             ? copy.lab.trust.exportingDirectory
             : copy.lab.trust.exportDirectory}
         </button>
+        <button
+          type="button"
+          disabled={!canSignDirectoryMetadata}
+          onClick={() => void signDirectoryMetadata()}
+        >
+          <ShieldCheck size={11} aria-hidden="true" />
+          {busyId === "sign-directory-metadata"
+            ? copy.lab.trust.signingDirectoryMetadata
+            : copy.lab.trust.signDirectoryMetadata}
+        </button>
         <label>
           <Upload size={11} aria-hidden="true" />
           <span>
@@ -843,6 +928,24 @@ export default function ReceiptTrustPanel({
               const file = event.target.files?.[0];
               event.target.value = "";
               void verifyDirectoryFile(file);
+            }}
+          />
+        </label>
+        <label>
+          <Upload size={11} aria-hidden="true" />
+          <span>
+            {busyId === "verify-directory-metadata"
+              ? copy.lab.trust.verifyingDirectoryMetadata
+              : copy.lab.trust.verifyDirectoryMetadata}
+          </span>
+          <input
+            type="file"
+            accept="application/json,.json"
+            disabled={Boolean(busyId)}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              void verifyDirectoryMetadataFile(file);
             }}
           />
         </label>
@@ -939,6 +1042,42 @@ export default function ReceiptTrustPanel({
               <code title={directoryVerification.policySha256}>
                 {copy.lab.trust.policyHash}{" "}
                 {directoryVerification.policySha256.slice(0, 8)}
+              </code>
+            ) : null}
+          </output>
+        ) : null}
+        {directoryMetadataVerification ? (
+          <output
+            className={`receipt-verification verification-${directoryMetadataVerification.status}`}
+            aria-live="polite"
+          >
+            {directoryMetadataVerification.status === "trusted" ? (
+              <Check size={11} aria-hidden="true" />
+            ) : (
+              <ShieldCheck size={11} aria-hidden="true" />
+            )}
+            <span>
+              <strong>
+                {
+                  copy.lab.trust.directoryMetadataVerificationStatuses[
+                    directoryMetadataVerification.status
+                  ]
+                }
+              </strong>
+              <small>
+                {directoryMetadataVerification.diagnostics.length > 0
+                  ? directoryMetadataVerification.diagnostics.join(", ")
+                  : directoryMetadataVerification.publisher}
+              </small>
+            </span>
+            {directoryMetadataVerification.signerKeyId ? (
+              <code title={directoryMetadataVerification.signerKeyId}>
+                {directoryMetadataVerification.signerKeyId.slice(0, 12)}
+              </code>
+            ) : null}
+            {directoryMetadataVerification.anchorSetSha256 ? (
+              <code title={directoryMetadataVerification.anchorSetSha256}>
+                {directoryMetadataVerification.anchorSetSha256.slice(0, 12)}
               </code>
             ) : null}
           </output>

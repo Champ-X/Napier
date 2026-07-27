@@ -268,6 +268,15 @@ All notable changes to Napier are recorded here.
   directory hash, selected anchor-set hash, and hash-only source evidence. The
   Receipt trust desk exposes a quorum action and renders agreement status next
   to durable directory subscriptions.
+- Publisher-signed receipt trust directory metadata. `POST
+/api/receipt-trust/anchors/directory/signed-metadata` now emits a
+  `receipt_trust_anchor_directory_metadata` trusted receipt over the current
+  public anchor directory, binding publisher, directory hash, anchor-set hash,
+  public key counts, optional source hashes, and optional expiry. `POST
+/api/receipt-trust/anchors/directory/metadata/verify` verifies both the
+  Ed25519 envelope and the supplied directory binding with either local anchors
+  or an uploaded trust directory. The Receipt trust desk can export signed
+  metadata and verify uploaded metadata against the active external directory.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

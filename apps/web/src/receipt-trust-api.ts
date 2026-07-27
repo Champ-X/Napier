@@ -8,13 +8,16 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
+  SignReceiptTrustAnchorDirectoryMetadataRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
+  VerifyReceiptTrustAnchorDirectoryMetadataRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
   UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
 } from "@napier/contracts";
@@ -36,6 +39,30 @@ export function verifyReceiptTrustAnchorDirectory(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export function getSignedReceiptTrustAnchorDirectoryMetadata(
+  body: SignReceiptTrustAnchorDirectoryMetadataRequest,
+): Promise<TrustedReceiptEnvelope> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/signed-metadata",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function verifyReceiptTrustAnchorDirectoryMetadata(
+  body: VerifyReceiptTrustAnchorDirectoryMetadataRequest,
+): Promise<ReceiptTrustAnchorDirectoryMetadataVerification> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/metadata/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 export function discoverReceiptTrustAnchorDirectory(

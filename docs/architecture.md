@@ -424,6 +424,14 @@ and an optional expected anchor-set pin, and returns selected-directory public
 keys only when the policy agrees. Source rows carry subscription/content,
 URL/origin, discovery, directory, transparency-tail, and trusted-count hashes;
 no raw locator or private key material leaves the workspace.
+Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
+introducing another signature format. The metadata receipt binds publisher,
+directory SHA-256, anchor-set SHA-256, public key counts, optional source
+URL/origin hashes, and optional expiry; verification checks both the Ed25519
+receipt signature and the supplied directory binding. Consumers can verify that
+metadata with local receipt anchors or with an uploaded public trust directory,
+so hosted verifier-key sources can be audited without copying local trust
+state.
 
 Extension publisher anchors are a separate workspace-owned trust domain with
 the same private-key boundary: durable state contains only normalized Ed25519
@@ -2350,8 +2358,8 @@ The current boundary has twenty-one parts:
     source locators, hash-only public evidence, policy-bound last-good
     discoveries, bounded transparency histories, rollback detection,
     multi-source quorum receipts, expiring refresh claims, revision CAS, and
-    fail-closed promotion that preserves the active verifier set across
-    rejected, failed, or stale rotations.
+    publisher-signed directory metadata; fail-closed promotion preserves the
+    active verifier set across rejected, failed, or stale rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2373,9 +2381,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- richer multi-source receipt-trust quorum policies and publisher-signed
-  metadata, so independent verifier-key sources can be weighted, pinned, and
-  audited without trusting a single hosted directory.
+- richer multi-source receipt-trust quorum policies with weighted source
+  classes, publisher pins, and independent-source audit rules, so verifier-key
+  sources can be promoted without trusting a single hosted directory.
 
 ### Layer 3: Extension fabric
 

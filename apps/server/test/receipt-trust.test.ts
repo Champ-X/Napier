@@ -12,6 +12,7 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryVerification,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -183,6 +184,7 @@ describe("trusted receipt HTTP surface", () => {
           "evaluation_gate",
           "casebook_qualification",
           "policy_retirement_proof_bundle",
+          "receipt_trust_anchor_directory_metadata",
         ],
         anchorSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         anchors: [
@@ -285,6 +287,119 @@ describe("trusted receipt HTTP surface", () => {
         diagnostics: expect.arrayContaining(["directory_expired"]),
         policy: { maxAgeMs: 1 },
         policySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    const metadataSignResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/signed-metadata",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: anchor.id,
+          publisher: "Napier Trust Registry",
+          sourceUrlSha256: "a".repeat(64),
+          sourceOriginSha256: "b".repeat(64),
+          expiresAt: "2999-01-01T00:00:00.000Z",
+        }),
+      },
+    );
+    expect(metadataSignResponse.status).toBe(201);
+    const metadataEnvelope =
+      (await metadataSignResponse.json()) as TrustedReceiptEnvelope;
+    expect(metadataEnvelope).toEqual(
+      expect.objectContaining({
+        receiptKind: "receipt_trust_anchor_directory_metadata",
+        receipt: expect.objectContaining({
+          publisher: "Napier Trust Registry",
+          directorySha256: directory.contentSha256,
+          anchorSetSha256: directory.anchorSetSha256,
+          sourceUrlSha256: "a".repeat(64),
+          sourceOriginSha256: "b".repeat(64),
+        }),
+        signature: expect.objectContaining({
+          keyId: anchor.keyId,
+        }),
+      }),
+    );
+    expect(metadataSignResponse.headers.get("x-napier-receipt-sha256")).toBe(
+      metadataEnvelope.receipt.contentSha256,
+    );
+    expect(metadataSignResponse.headers.get("x-napier-signature-key-id")).toBe(
+      anchor.keyId,
+    );
+    expect(JSON.stringify(metadataEnvelope)).not.toContain(discoverySourceUrl);
+
+    const metadataVerifyResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/metadata/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          envelope: metadataEnvelope,
+          directory,
+          directoryPolicy,
+          trustDirectory: directory,
+          trustDirectoryPolicy: directoryPolicy,
+        }),
+      },
+    );
+    expect(metadataVerifyResponse.status).toBe(200);
+    const metadataVerification =
+      (await metadataVerifyResponse.json()) as ReceiptTrustAnchorDirectoryMetadataVerification;
+    expectReceiptTrustAnchorDirectoryMetadataVerificationHeaders(
+      metadataVerifyResponse,
+      metadataVerification,
+    );
+    expect(metadataVerification).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        diagnostics: [],
+        publisher: "Napier Trust Registry",
+        directorySha256: directory.contentSha256,
+        anchorSetSha256: directory.anchorSetSha256,
+        signerKeyId: anchor.keyId,
+        signatureValid: true,
+        integrityValid: true,
+        directoryBindingValid: true,
+      }),
+    );
+
+    const metadataMismatchResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/metadata/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          envelope: metadataEnvelope,
+          directory: {
+            ...directory,
+            anchors: [
+              {
+                ...directory.anchors[0]!,
+                label: "Tampered metadata directory",
+              },
+            ],
+          },
+          trustDirectory: directory,
+          trustDirectoryPolicy: directoryPolicy,
+        }),
+      },
+    );
+    expect(metadataMismatchResponse.status).toBe(200);
+    const metadataMismatch =
+      (await metadataMismatchResponse.json()) as ReceiptTrustAnchorDirectoryMetadataVerification;
+    expectReceiptTrustAnchorDirectoryMetadataVerificationHeaders(
+      metadataMismatchResponse,
+      metadataMismatch,
+    );
+    expect(metadataMismatch).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining(["directory_invalid"]),
+        signatureValid: true,
+        integrityValid: true,
+        directoryBindingValid: false,
       }),
     );
     const eventCountBeforeDiscovery = (
@@ -441,11 +556,20 @@ describe("trusted receipt HTTP surface", () => {
         error: "Signed evaluation gate receipt request is invalid",
       }),
     );
-    expect(
-      (await services.store.listEvents(thread.id)).filter(
-        (event) => event.type === "receipt.signed",
-      ),
-    ).toHaveLength(0);
+    const signedEventsBeforeGate = (
+      await services.store.listEvents(thread.id)
+    ).filter((event) => event.type === "receipt.signed");
+    expect(signedEventsBeforeGate).toHaveLength(1);
+    expect(signedEventsBeforeGate[0]?.payload).toEqual(
+      expect.objectContaining({
+        receiptKind: "receipt_trust_anchor_directory_metadata",
+        directorySha256: directory.contentSha256,
+        anchorSetSha256: directory.anchorSetSha256,
+      }),
+    );
+    expect(JSON.stringify(signedEventsBeforeGate)).not.toContain(
+      discoverySourceUrl,
+    );
 
     const signedResponse = await app.request(
       `/api/threads/${thread.id}/evaluation-suites/${suite.id}/signed-receipt`,
@@ -1192,6 +1316,56 @@ function expectReceiptTrustAnchorDirectoryVerificationHeaders(
       ? null
       : String(verification.revokedCount),
   );
+}
+
+function expectReceiptTrustAnchorDirectoryMetadataVerificationHeaders(
+  response: Response,
+  verification: ReceiptTrustAnchorDirectoryMetadataVerification,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    verification.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-verification-status")).toBe(
+    verification.status,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-anchor-directory-metadata-verification-sha256",
+    ),
+  ).toBe(verification.contentSha256);
+  expect(response.headers.get("x-napier-diagnostic-count")).toBe(
+    String(verification.diagnostics.length),
+  );
+  expect(response.headers.get("x-napier-diagnostics-sha256")).toBe(
+    createHash("sha256")
+      .update(JSON.stringify(verification.diagnostics))
+      .digest("hex"),
+  );
+  expect(response.headers.get("x-napier-signature-valid")).toBe(
+    String(verification.signatureValid),
+  );
+  expect(response.headers.get("x-napier-integrity-valid")).toBe(
+    String(verification.integrityValid),
+  );
+  expect(response.headers.get("x-napier-directory-binding-valid")).toBe(
+    String(verification.directoryBindingValid),
+  );
+  expect(response.headers.get("x-napier-signature-key-id")).toBe(
+    verification.signerKeyId ?? null,
+  );
+  expect(response.headers.get("x-napier-envelope-sha256")).toBe(
+    verification.envelopeSha256 ?? null,
+  );
+  expect(
+    response.headers.get("x-napier-receipt-trust-anchor-directory-sha256"),
+  ).toBe(verification.directorySha256 ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-anchor-directory-anchor-set-sha256",
+    ),
+  ).toBe(verification.anchorSetSha256 ?? null);
 }
 
 function expectTrustedReceiptVerificationHeaders(

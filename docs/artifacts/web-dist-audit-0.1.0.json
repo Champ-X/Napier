@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 42,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-C_vKAK91.js",
-    "sizeBytes": 142003,
+    "path": "apps/web/dist/assets/index-CFUzhRRQ.js",
+    "sizeBytes": 142415,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "431094c97599f6afbcaa8fe4e12d0d1a9e9553e31846384cad0dbe1c83467704"
+    "sha256": "cb28b24bba5820e716c8cf7895a62168cdd5f1dc3a0ad498401aab2d7467b7b1"
   },
-  "distContentSha256": "431094c97599f6afbcaa8fe4e12d0d1a9e9553e31846384cad0dbe1c83467704",
+  "distContentSha256": "cb28b24bba5820e716c8cf7895a62168cdd5f1dc3a0ad498401aab2d7467b7b1",
   "errors": []
 }

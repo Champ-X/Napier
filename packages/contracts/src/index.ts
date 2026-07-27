@@ -3534,15 +3534,34 @@ export interface EvaluationSuiteGateReceipt {
   contentSha256: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryMetadataReceipt {
+  kind: "napier.receipt-trust-anchor-directory-metadata-receipt";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  publisher: string;
+  directorySha256: string;
+  anchorSetSha256: string;
+  anchorCount: number;
+  trustedCount: number;
+  revokedCount: number;
+  sourceUrlSha256?: string;
+  sourceOriginSha256?: string;
+  expiresAt?: string;
+  contentSha256: string;
+}
+
 export type TrustedReceipt =
   | EvaluationSuiteGateReceipt
   | EvaluationCasebookQualificationReceipt
-  | ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle;
+  | ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle
+  | ReceiptTrustAnchorDirectoryMetadataReceipt;
 
 export type TrustedReceiptKind =
   | "evaluation_gate"
   | "casebook_qualification"
-  | "policy_retirement_proof_bundle";
+  | "policy_retirement_proof_bundle"
+  | "receipt_trust_anchor_directory_metadata";
 
 export type ReceiptTrustAnchorStatus = "trusted" | "revoked";
 
@@ -3661,10 +3680,27 @@ export interface SignTrustedReceiptRequest {
   threadId?: string;
 }
 
+export interface SignReceiptTrustAnchorDirectoryMetadataRequest
+  extends SignTrustedReceiptRequest {
+  threadId: string;
+  publisher: string;
+  sourceUrlSha256?: string;
+  sourceOriginSha256?: string;
+  expiresAt?: string;
+}
+
 export interface VerifyTrustedReceiptRequest {
   envelope: unknown;
   directory?: unknown;
   directoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
+export interface VerifyReceiptTrustAnchorDirectoryMetadataRequest {
+  envelope: unknown;
+  directory: unknown;
+  directoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+  trustDirectory?: unknown;
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
 export interface VerifyReceiptTrustAnchorDirectoryRequest {
@@ -3704,6 +3740,29 @@ export interface ReceiptTrustAnchorDirectoryVerification {
   anchorCount?: number;
   trustedCount?: number;
   revokedCount?: number;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryMetadataVerification {
+  kind: "napier.receipt-trust-anchor-directory-metadata-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: TrustedReceiptVerificationStatus;
+  diagnostics: string[];
+  trustedReceiptVerification: TrustedReceiptVerification;
+  directoryVerification: ReceiptTrustAnchorDirectoryVerification;
+  trustDirectoryVerification?: ReceiptTrustAnchorDirectoryVerification;
+  metadata?: ReceiptTrustAnchorDirectoryMetadataReceipt;
+  publisher?: string;
+  directorySha256?: string;
+  anchorSetSha256?: string;
+  signerKeyId?: string;
+  envelopeSha256?: string;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  directoryBindingValid: boolean;
+  expiresAt?: string;
   contentSha256: string;
 }
 

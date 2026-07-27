@@ -1345,6 +1345,20 @@ evidence. The Receipt trust desk can request this quorum receipt and renders
 its status, agreement count, selected anchor set, and receipt hash beside the
 subscription list.
 
+Publisher-signed directory metadata adds a signed statement around a public
+anchor directory without changing the directory format. `POST
+/api/receipt-trust/anchors/directory/signed-metadata` signs the current local
+directory as a `receipt_trust_anchor_directory_metadata` trusted receipt,
+binding publisher, directory SHA-256, anchor-set SHA-256, key counts, optional
+source URL/origin hashes, and optional expiry. `POST
+/api/receipt-trust/anchors/directory/metadata/verify` verifies the envelope
+against either local receipt-trust anchors or an uploaded trust directory, then
+separately verifies that the signed metadata still matches the supplied
+directory. Responses are no-store and expose signature, integrity,
+directory-binding, diagnostics, signer key, directory hash, and anchor-set hash
+headers. The Receipt trust desk can export signed metadata and verify uploaded
+metadata against the active external directory.
+
 A Casebook qualification baseline can be promoted only from a current
 revision's `passed` receipt signed by a currently trusted local signer. It
 freezes the complete signed envelope and exact qualification execution,

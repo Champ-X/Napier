@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type {
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -16,11 +17,13 @@ import {
   createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
   evaluateReceiptTrustAnchorDirectoryQuorum,
+  getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
+  verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceipt,
 } from "../src/receipt-trust-api";
 
@@ -39,6 +42,7 @@ describe("receipt trust Web API wrappers", () => {
         "evaluation_gate",
         "casebook_qualification",
         "policy_retirement_proof_bundle",
+        "receipt_trust_anchor_directory_metadata",
       ],
       anchorCount: 1,
       trustedCount: 1,
@@ -102,7 +106,51 @@ describe("receipt trust Web API wrappers", () => {
       directory,
       contentSha256: "3".repeat(64),
     };
+    const metadataEnvelope = {
+      kind: "napier.trusted-receipt-envelope",
+      receiptKind: "receipt_trust_anchor_directory_metadata",
+      receipt: {
+        kind: "napier.receipt-trust-anchor-directory-metadata-receipt",
+        contentSha256: "4".repeat(64),
+      },
+      signature: { keyId: directory.anchors[0]!.keyId },
+      contentSha256: "5".repeat(64),
+    } as TrustedReceiptEnvelope;
+    const metadataVerification: ReceiptTrustAnchorDirectoryMetadataVerification =
+      {
+        kind: "napier.receipt-trust-anchor-directory-metadata-verification",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-27T00:00:03.000Z",
+        status: "trusted",
+        diagnostics: [],
+        trustedReceiptVerification: {
+          status: "trusted",
+          verifiedAt: "2026-07-27T00:00:03.000Z",
+          receiptKind: "receipt_trust_anchor_directory_metadata",
+          keyId: directory.anchors[0]!.keyId,
+          envelopeSha256: metadataEnvelope.contentSha256,
+          signatureValid: true,
+          integrityValid: true,
+          reason: "Receipt signature and evidence are trusted",
+        },
+        directoryVerification: verification,
+        publisher: "Napier Trust Registry",
+        directorySha256: directory.contentSha256,
+        anchorSetSha256: directory.anchorSetSha256,
+        signerKeyId: directory.anchors[0]!.keyId,
+        envelopeSha256: metadataEnvelope.contentSha256,
+        signatureValid: true,
+        integrityValid: true,
+        directoryBindingValid: true,
+        contentSha256: "6".repeat(64),
+      };
     const sourceUrl = "https://trust.example.test/anchors.json";
+    const signMetadataRequest = {
+      threadId: "thread_12345678",
+      trustAnchorId: directory.anchors[0]!.id,
+      publisher: "Napier Trust Registry",
+    };
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory",
@@ -119,6 +167,24 @@ describe("receipt trust Web API wrappers", () => {
         method: "POST",
         body: { sourceUrl, policy: directoryPolicy },
         response: discovery,
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/signed-metadata",
+        method: "POST",
+        body: signMetadataRequest,
+        response: metadataEnvelope,
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/metadata/verify",
+        method: "POST",
+        body: {
+          envelope: metadataEnvelope,
+          directory,
+          directoryPolicy,
+          trustDirectory: directory,
+          trustDirectoryPolicy: directoryPolicy,
+        },
+        response: metadataVerification,
       },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
@@ -144,7 +210,19 @@ describe("receipt trust Web API wrappers", () => {
         policy: directoryPolicy,
       }),
     ).resolves.toEqual(discovery);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    await expect(
+      getSignedReceiptTrustAnchorDirectoryMetadata(signMetadataRequest),
+    ).resolves.toEqual(metadataEnvelope);
+    await expect(
+      verifyReceiptTrustAnchorDirectoryMetadata({
+        envelope: metadataEnvelope,
+        directory,
+        directoryPolicy,
+        trustDirectory: directory,
+        trustDirectoryPolicy: directoryPolicy,
+      }),
+    ).resolves.toEqual(metadataVerification);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("creates, refreshes, and pauses durable directory subscriptions", async () => {

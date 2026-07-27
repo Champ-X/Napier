@@ -176,6 +176,11 @@ export const copy = {
       verifying: "Verifying envelope...",
       exportDirectory: "Export anchor directory",
       exportingDirectory: "Exporting directory...",
+      signDirectoryMetadata: "Sign directory metadata",
+      signingDirectoryMetadata: "Signing metadata...",
+      verifyDirectoryMetadata: "Verify directory metadata",
+      verifyingDirectoryMetadata: "Verifying metadata...",
+      directoryMetadataPublisher: "Napier Trust Registry",
       chooseDirectory: "Verify anchor directory",
       verifyingDirectory: "Verifying directory...",
       directorySource: "Hosted directory URL",
@@ -222,6 +227,12 @@ export const copy = {
       directoryVerificationStatuses: {
         valid: "Directory valid",
         invalid: "Directory invalid",
+      },
+      directoryMetadataVerificationStatuses: {
+        trusted: "Metadata trusted",
+        revoked: "Metadata key revoked",
+        unknown_key: "Unknown metadata signer",
+        invalid: "Metadata invalid",
       },
       directoryDiscoveryStatuses: {
         valid: "Hosted directory accepted",

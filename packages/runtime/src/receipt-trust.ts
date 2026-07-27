@@ -18,8 +18,11 @@ import {
   type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectory,
   type ReceiptTrustAnchorDirectoryEntry,
+  type ReceiptTrustAnchorDirectoryMetadataReceipt,
+  type ReceiptTrustAnchorDirectoryMetadataVerification,
   type ReceiptTrustAnchorDirectoryVerification,
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
+  type SignReceiptTrustAnchorDirectoryMetadataRequest,
   type TrustedReceipt,
   type TrustedReceiptEnvelope,
   type TrustedReceiptKind,
@@ -41,6 +44,7 @@ const TRUSTED_RECEIPT_KINDS: TrustedReceiptKind[] = [
   "evaluation_gate",
   "casebook_qualification",
   "policy_retirement_proof_bundle",
+  "receipt_trust_anchor_directory_metadata",
 ];
 const RECEIPT_TRUST_ANCHOR_DIRECTORY_KEYS = [
   "kind",
@@ -484,6 +488,228 @@ export function verifyReceiptTrustAnchorDirectory(
   };
 }
 
+export function createReceiptTrustAnchorDirectoryMetadataReceipt(
+  input: unknown,
+  request: Pick<
+    SignReceiptTrustAnchorDirectoryMetadataRequest,
+    | "publisher"
+    | "sourceUrlSha256"
+    | "sourceOriginSha256"
+    | "expiresAt"
+  >,
+): ReceiptTrustAnchorDirectoryMetadataReceipt {
+  const directory = validateReceiptTrustAnchorDirectory(input);
+  const publisher = normalizePublisher(request.publisher);
+  const generatedAt = nowIso();
+  const sourceHashes = normalizeOptionalSourceHashes(
+    request.sourceUrlSha256,
+    request.sourceOriginSha256,
+  );
+  const expiresAt = normalizeOptionalMetadataExpiry(
+    request.expiresAt,
+    generatedAt,
+  );
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-metadata-receipt" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    publisher,
+    directorySha256: directory.contentSha256,
+    anchorSetSha256: directory.anchorSetSha256,
+    anchorCount: directory.anchorCount,
+    trustedCount: directory.trustedCount,
+    revokedCount: directory.revokedCount,
+    ...sourceHashes,
+    ...(expiresAt ? { expiresAt } : {}),
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: hashReceiptTrustAnchorDirectoryMetadataReceipt(content),
+  };
+}
+
+export function hashReceiptTrustAnchorDirectoryMetadataReceipt(
+  input: Omit<
+    ReceiptTrustAnchorDirectoryMetadataReceipt,
+    "generatedAt" | "contentSha256"
+  >,
+): string {
+  return sha256(canonicalJson(input));
+}
+
+export function validateReceiptTrustAnchorDirectoryMetadataReceipt(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryMetadataReceipt {
+  if (!isRecord(value)) {
+    throw new Error("Receipt trust anchor directory metadata receipt is invalid");
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "publisher",
+    "directorySha256",
+    "anchorSetSha256",
+    "anchorCount",
+    "trustedCount",
+    "revokedCount",
+    "sourceUrlSha256",
+    "sourceOriginSha256",
+    "expiresAt",
+    "contentSha256",
+  ]);
+  const receipt =
+    value as unknown as ReceiptTrustAnchorDirectoryMetadataReceipt;
+  if (
+    receipt.kind !==
+      "napier.receipt-trust-anchor-directory-metadata-receipt" ||
+    receipt.schemaVersion !== 1 ||
+    receipt.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(receipt.generatedAt) ||
+    normalizePublisher(receipt.publisher) !== receipt.publisher ||
+    !SHA256_PATTERN.test(receipt.directorySha256) ||
+    !SHA256_PATTERN.test(receipt.anchorSetSha256) ||
+    !nonNegativeInteger(receipt.anchorCount) ||
+    !nonNegativeInteger(receipt.trustedCount) ||
+    !nonNegativeInteger(receipt.revokedCount) ||
+    receipt.trustedCount + receipt.revokedCount !== receipt.anchorCount ||
+    !optionalSha256(receipt.sourceUrlSha256) ||
+    !optionalSha256(receipt.sourceOriginSha256) ||
+    ((receipt.sourceUrlSha256 === undefined) !==
+      (receipt.sourceOriginSha256 === undefined)) ||
+    (receipt.expiresAt !== undefined &&
+      (!validTimestamp(receipt.expiresAt) ||
+        receipt.expiresAt <= receipt.generatedAt)) ||
+    !SHA256_PATTERN.test(receipt.contentSha256)
+  ) {
+    throw new Error("Receipt trust anchor directory metadata receipt is invalid");
+  }
+  const { generatedAt: _generatedAt, contentSha256: _contentSha256, ...content } =
+    receipt;
+  if (
+    hashReceiptTrustAnchorDirectoryMetadataReceipt(content) !==
+    receipt.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory metadata receipt hash mismatch",
+    );
+  }
+  return structuredClone(receipt);
+}
+
+export function verifyReceiptTrustAnchorDirectoryMetadata(
+  envelopeInput: unknown,
+  directoryInput: unknown,
+  anchors: ReceiptTrustAnchor[],
+  options: {
+    directoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+    trustDirectoryVerification?: ReceiptTrustAnchorDirectoryVerification;
+  } = {},
+): ReceiptTrustAnchorDirectoryMetadataVerification {
+  const generatedAt = nowIso();
+  const directoryVerification = verifyReceiptTrustAnchorDirectory(
+    directoryInput,
+    options.directoryPolicy,
+  );
+  const trustedReceiptVerification = verifyTrustedReceiptEnvelope(
+    envelopeInput,
+    anchors,
+  );
+  const diagnostics: string[] = [];
+  let metadata: ReceiptTrustAnchorDirectoryMetadataReceipt | undefined;
+  let directory: ReceiptTrustAnchorDirectory | undefined;
+
+  if (directoryVerification.status === "invalid") {
+    diagnostics.push("directory_invalid");
+  } else {
+    directory = validateReceiptTrustAnchorDirectory(directoryInput);
+  }
+  if (options.trustDirectoryVerification?.status === "invalid") {
+    diagnostics.push("trust_directory_invalid");
+  }
+  try {
+    const envelope = validateTrustedReceiptEnvelope(envelopeInput);
+    if (
+      envelope.receiptKind !== "receipt_trust_anchor_directory_metadata" ||
+      envelope.receipt.kind !==
+        "napier.receipt-trust-anchor-directory-metadata-receipt"
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory metadata envelope kind mismatch",
+      );
+    }
+    metadata = validateReceiptTrustAnchorDirectoryMetadataReceipt(
+      envelope.receipt,
+    );
+  } catch {
+    diagnostics.push("metadata_envelope_invalid");
+  }
+
+  if (trustedReceiptVerification.status === "invalid") {
+    diagnostics.push("signature_invalid");
+  } else if (trustedReceiptVerification.status === "unknown_key") {
+    diagnostics.push("signer_unknown");
+  } else if (trustedReceiptVerification.status === "revoked") {
+    diagnostics.push("signer_revoked");
+  }
+
+  const directoryBindingValid = Boolean(
+    metadata &&
+      directory &&
+      metadata.directorySha256 === directory.contentSha256 &&
+      metadata.anchorSetSha256 === directory.anchorSetSha256 &&
+      metadata.anchorCount === directory.anchorCount &&
+      metadata.trustedCount === directory.trustedCount &&
+      metadata.revokedCount === directory.revokedCount,
+  );
+  if (metadata && directory && !directoryBindingValid) {
+    diagnostics.push("directory_binding_mismatch");
+  }
+  if (metadata?.expiresAt && Date.parse(metadata.expiresAt) <= Date.now()) {
+    diagnostics.push("metadata_expired");
+  }
+
+  const hardInvalid = diagnostics.some(
+    (diagnostic) =>
+      diagnostic !== "signer_unknown" && diagnostic !== "signer_revoked",
+  );
+  const status: ReceiptTrustAnchorDirectoryMetadataVerification["status"] =
+    hardInvalid ? "invalid" : trustedReceiptVerification.status;
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-metadata-verification" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    status,
+    diagnostics,
+    trustedReceiptVerification,
+    directoryVerification,
+    ...(options.trustDirectoryVerification
+      ? { trustDirectoryVerification: options.trustDirectoryVerification }
+      : {}),
+    ...(metadata ? { metadata } : {}),
+    ...(metadata ? { publisher: metadata.publisher } : {}),
+    ...(metadata ? { directorySha256: metadata.directorySha256 } : {}),
+    ...(metadata ? { anchorSetSha256: metadata.anchorSetSha256 } : {}),
+    ...(trustedReceiptVerification.keyId
+      ? { signerKeyId: trustedReceiptVerification.keyId }
+      : {}),
+    ...(trustedReceiptVerification.envelopeSha256
+      ? { envelopeSha256: trustedReceiptVerification.envelopeSha256 }
+      : {}),
+    signatureValid: trustedReceiptVerification.signatureValid,
+    integrityValid: trustedReceiptVerification.integrityValid,
+    directoryBindingValid,
+    ...(metadata?.expiresAt ? { expiresAt: metadata.expiresAt } : {}),
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
 export function receiptTrustAnchorsFromDirectory(
   input: unknown,
 ): ReceiptTrustAnchor[] {
@@ -592,9 +818,7 @@ export function validateTrustedReceiptEnvelope(
     envelope.kind !== "napier.trusted-receipt-envelope" ||
     envelope.schemaVersion !== 1 ||
     envelope.apiVersion !== NAPIER_API_VERSION ||
-    (envelope.receiptKind !== "evaluation_gate" &&
-      envelope.receiptKind !== "casebook_qualification" &&
-      envelope.receiptKind !== "policy_retirement_proof_bundle") ||
+    !TRUSTED_RECEIPT_KINDS.includes(envelope.receiptKind) ||
     !SHA256_PATTERN.test(envelope.contentSha256)
   ) {
     throw new Error("Trusted receipt envelope header is invalid");
@@ -876,6 +1100,12 @@ function validateTrustedReceipt(value: unknown): TrustedReceipt {
       value,
     );
   }
+  if (
+    value["kind"] ===
+    "napier.receipt-trust-anchor-directory-metadata-receipt"
+  ) {
+    return validateReceiptTrustAnchorDirectoryMetadataReceipt(value);
+  }
   throw new Error("Trusted receipt kind is unsupported");
 }
 
@@ -1016,6 +1246,11 @@ function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
   if (receipt.kind === "napier.evaluation-casebook-qualification-receipt") {
     return "casebook_qualification";
   }
+  if (
+    receipt.kind === "napier.receipt-trust-anchor-directory-metadata-receipt"
+  ) {
+    return "receipt_trust_anchor_directory_metadata";
+  }
   return "policy_retirement_proof_bundle";
 }
 
@@ -1130,6 +1365,51 @@ function normalizeEnvironmentName(value: string): string {
   return variable;
 }
 
+function normalizePublisher(value: string): string {
+  const publisher = value?.replace(/\s+/g, " ").trim();
+  if (
+    !publisher ||
+    publisher.length > 120 ||
+    /[\u0000-\u001f\u007f<>]/.test(publisher)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory metadata publisher is invalid",
+    );
+  }
+  return publisher;
+}
+
+function normalizeOptionalSourceHashes(
+  sourceUrlSha256: string | undefined,
+  sourceOriginSha256: string | undefined,
+): { sourceUrlSha256?: string; sourceOriginSha256?: string } {
+  if (
+    (sourceUrlSha256 === undefined) !== (sourceOriginSha256 === undefined) ||
+    !optionalSha256(sourceUrlSha256) ||
+    !optionalSha256(sourceOriginSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory metadata source hash is invalid",
+    );
+  }
+  return sourceUrlSha256 && sourceOriginSha256
+    ? { sourceUrlSha256, sourceOriginSha256 }
+    : {};
+}
+
+function normalizeOptionalMetadataExpiry(
+  expiresAt: string | undefined,
+  generatedAt: string,
+): string | undefined {
+  if (expiresAt === undefined) return undefined;
+  if (!validTimestamp(expiresAt) || expiresAt <= generatedAt) {
+    throw new Error(
+      "Receipt trust anchor directory metadata expiry is invalid",
+    );
+  }
+  return expiresAt;
+}
+
 function validTimestamp(value: unknown): value is string {
   return typeof value === "string" && Number.isFinite(Date.parse(value));
 }
@@ -1147,7 +1427,10 @@ function optionalNonNegativeInteger(value: unknown): boolean {
 }
 
 function optionalSha256(value: unknown): boolean {
-  return value === undefined || (typeof value === "string" && SHA256_PATTERN.test(value));
+  return (
+    value === undefined ||
+    (typeof value === "string" && SHA256_PATTERN.test(value))
+  );
 }
 
 function isSha256(value: unknown): value is string {
