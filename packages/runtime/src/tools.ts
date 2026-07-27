@@ -20,11 +20,13 @@ import { isPathInsideWorkspace } from "./policy.js";
 
 const MAX_LIST_ENTRIES = 300;
 const MAX_READ_BYTES = 96 * 1024;
+const MAX_READ_LINE_ANCHORS = 80;
 const MAX_HASHABLE_TEXT_BYTES = 2 * 1024 * 1024;
 const MAX_SEARCH_MATCHES = 80;
 const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
+const SHA256_PATTERN_RE = /^[a-f0-9]{64}$/;
 const PROTECTED_PATH_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 
 const listFilesSchema = Type.Object({
@@ -102,6 +104,46 @@ const applyPatchSchema = Type.Union([
     },
     { additionalProperties: false },
   ),
+  Type.Object(
+    {
+      operation: Type.Literal("hashline_replace"),
+      path: Type.String({
+        minLength: 1,
+        description: "Workspace-relative path for an existing UTF-8 file.",
+      }),
+      expectedSha256: Type.String({
+        pattern: SHA256_PATTERN,
+        description:
+          "SHA-256 of the complete current file, obtained from read_file.",
+      }),
+      edits: Type.Array(
+        Type.Object(
+          {
+            line: Type.Optional(
+              Type.Integer({
+                minimum: 1,
+                description:
+                  "Optional 1-based line number from read_file. When omitted, the anchor hash must identify exactly one line.",
+              }),
+            ),
+            anchorSha256: Type.String({
+              pattern: SHA256_PATTERN,
+              description:
+                "SHA-256 of the exact line content from read_file lineAnchors.",
+            }),
+            newText: Type.String({
+              maxLength: MAX_PATCH_BYTES,
+              description:
+                "Replacement line content. May include newlines to expand the matched line into a block.",
+            }),
+          },
+          { additionalProperties: false },
+        ),
+        { minItems: 1, maxItems: MAX_PATCH_EDITS },
+      ),
+    },
+    { additionalProperties: false },
+  ),
 ]);
 
 export type WorkspacePatchInput =
@@ -116,6 +158,16 @@ export type WorkspacePatchInput =
       path: string;
       expectedSha256: string;
       edits: Array<{ oldText: string; newText: string }>;
+    }
+  | {
+      operation: "hashline_replace";
+      path: string;
+      expectedSha256: string;
+      edits: Array<{
+        line?: number;
+        anchorSha256: string;
+        newText: string;
+      }>;
     };
 
 export interface WorkspacePatchResult {
@@ -283,6 +335,80 @@ function applyExactEdits(
   return updated;
 }
 
+function applyHashlineEdits(
+  source: string,
+  edits: Array<{
+    line?: number;
+    anchorSha256: string;
+    newText: string;
+  }>,
+): string {
+  const lines = source.split("\n");
+  const resolvedEdits: Array<{ lineIndex: number; newText: string }> =
+    edits.map((edit, index) => {
+      const label = `apply_patch hashline edit ${index + 1}`;
+      if (!SHA256_PATTERN_RE.test(edit.anchorSha256)) {
+        throw new Error(`${label} anchorSha256 is invalid`);
+      }
+      if (edit.newText.includes("\u0000")) {
+        throw new Error(`${label} contains a null byte`);
+      }
+      if (edit.line !== undefined) {
+        if (!Number.isSafeInteger(edit.line) || edit.line < 1) {
+          throw new Error(`${label} line must be a positive integer`);
+        }
+        const lineIndex = edit.line - 1;
+        if (
+          lineIndex >= lines.length ||
+          sha256(lines[lineIndex] ?? "") !== edit.anchorSha256
+        ) {
+          throw new Error(`${label} did not match line ${edit.line}`);
+        }
+        return {
+          lineIndex,
+          newText: edit.newText,
+        };
+      }
+
+      const matches = lines.flatMap((line, lineIndex) =>
+        sha256(line) === edit.anchorSha256 ? [lineIndex] : [],
+      );
+      if (matches.length === 0) {
+        throw new Error(`${label} did not match`);
+      }
+      if (matches.length > 1) {
+        throw new Error(
+          `${label} is ambiguous; provide the read_file line number`,
+        );
+      }
+      const [lineIndex] = matches;
+      if (lineIndex === undefined) {
+        throw new Error(`${label} did not match`);
+      }
+      return {
+        lineIndex,
+        newText: edit.newText,
+      };
+    });
+
+  const seenLineIndexes = new Set<number>();
+  for (const [index, edit] of resolvedEdits.entries()) {
+    if (seenLineIndexes.has(edit.lineIndex)) {
+      throw new Error(
+        `apply_patch hashline edit ${index + 1} targets a line more than once`,
+      );
+    }
+    seenLineIndexes.add(edit.lineIndex);
+  }
+
+  for (const edit of resolvedEdits
+    .slice()
+    .sort((left, right) => right.lineIndex - left.lineIndex)) {
+    lines.splice(edit.lineIndex, 1, ...edit.newText.split("\n"));
+  }
+  return lines.join("\n");
+}
+
 async function withEditLock<T>(
   dataRoot: string,
   target: string,
@@ -416,7 +542,9 @@ export async function applyWorkspacePatch(
     const updated =
       input.operation === "create"
         ? input.content
-        : applyExactEdits(source, input.edits);
+        : input.operation === "replace"
+          ? applyExactEdits(source, input.edits)
+          : applyHashlineEdits(source, input.edits);
     if (updated.includes("\u0000")) {
       throw new Error("apply_patch output contains a null byte");
     }
@@ -485,6 +613,24 @@ export async function applyWorkspacePatch(
       editCount: input.operation === "create" ? 0 : input.edits.length,
     };
   });
+}
+
+function createLineAnchors(
+  lines: string[],
+  start: number,
+  end: number,
+): {
+  lineAnchors: Array<{ line: number; sha256: string }>;
+  lineAnchorsTruncated: boolean;
+} {
+  const cappedEnd = Math.min(end, start + MAX_READ_LINE_ANCHORS);
+  return {
+    lineAnchors: lines.slice(start, cappedEnd).map((line, index) => ({
+      line: start + index + 1,
+      sha256: sha256(line),
+    })),
+    lineAnchorsTruncated: cappedEnd < end,
+  };
 }
 
 async function walkFiles(root: string, depth: number): Promise<string[]> {
@@ -567,6 +713,8 @@ export function createWorkspaceTools(
       sha256: string;
       sizeBytes: number;
       truncated: boolean;
+      lineAnchors: Array<{ line: number; sha256: string }>;
+      lineAnchorsTruncated: boolean;
     }
   > = {
     name: "read_file",
@@ -595,10 +743,17 @@ export function createWorkspaceTools(
         bytes <= MAX_READ_BYTES
           ? selected
           : `${Buffer.from(selected).subarray(0, MAX_READ_BYTES).toString("utf8")}\n\n[truncated]`;
+      const { lineAnchors, lineAnchorsTruncated } = createLineAnchors(
+        lines,
+        start,
+        end,
+      );
       const metadata = JSON.stringify({
         path: path.relative(resolved.root, target),
         sha256: contentSha256,
         sizeBytes: buffer.byteLength,
+        lineAnchors,
+        lineAnchorsTruncated,
       });
       return {
         content: [
@@ -615,6 +770,8 @@ export function createWorkspaceTools(
           sha256: contentSha256,
           sizeBytes: buffer.byteLength,
           truncated: bytes > MAX_READ_BYTES,
+          lineAnchors,
+          lineAnchorsTruncated,
         },
       };
     },
@@ -682,7 +839,7 @@ export function createWorkspaceTools(
         name: "apply_patch",
         label: "Apply patch",
         description:
-          "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file, and every replacement must match exactly once. Deletion is not supported.",
+          "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file, and replacements can match exact text or read_file line hash anchors. Deletion is not supported.",
         parameters: applyPatchSchema,
         async execute(_toolCallId, input) {
           const result = await applyWorkspacePatch(
@@ -699,7 +856,7 @@ export function createWorkspaceTools(
                   `Before SHA-256: ${result.beforeSha256 ?? "absent"}`,
                   `After SHA-256: ${result.afterSha256}`,
                   `Bytes: ${result.beforeBytes} -> ${result.afterBytes}`,
-                  `Exact edits: ${result.editCount}`,
+                  `Edits: ${result.editCount}`,
                 ].join("\n"),
               },
             ],

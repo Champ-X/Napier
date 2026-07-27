@@ -30,7 +30,7 @@ export const contextCopy = {
     unrestricted: "Unrestricted policy",
   },
   policyHint:
-    "Authorization is checked immediately before every call. Edits require a fresh SHA-256; verification runs read-only, offline, and without a shell.",
+    "Authorization is checked immediately before every call. Edits require a fresh SHA-256 and can use read_file line anchors; verification runs read-only, offline, and without a shell.",
   recoveryPolicy: "Interruption policy",
   recoveryTitle: "Safe automatic recovery",
   recoveryKicker: "SNAPSHOT-BOUND · FAIL CLOSED",

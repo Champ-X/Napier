@@ -46,9 +46,9 @@ Version `0.1.0` includes:
   evidence;
 - workspace-confined read, list, and literal search tools with canonical
   realpath checks and complete-file SHA-256 evidence;
-- a hash-bound `apply_patch` tool for atomic UTF-8 file creation and exact
-  replacement under the explicit `workspace` policy, without general shell or
-  file deletion;
+- a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
+  replacement, and Hashline-style line-anchor replacement under the explicit
+  `workspace` policy, without general shell or file deletion;
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
@@ -748,6 +748,13 @@ when only a line range is returned. A write-capable Agent must pass that digest
 back to `apply_patch`; creation instead requires `expectedSha256: null` to
 assert non-existence. Every replacement must match exactly once, and a stale
 digest fails without changing the file.
+
+`read_file` also emits bounded line hash anchors for the returned range.
+`apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
+optional line number, so small line edits do not require the model to retype
+the old text. Duplicate anchors fail closed unless the read line number is
+provided, and the complete-file SHA-256 is still checked before and immediately
+before the atomic commit.
 
 Edits are limited to 256 KiB and cannot target `.git`, `.napier`, or
 `node_modules`, follow a symlink outside the workspace, delete a file, or
@@ -1912,9 +1919,9 @@ The default Agent policy is `observe`:
   `unrestricted` policy.
 
 Selecting `workspace` exposes only individually enabled structured tools:
-**Atomic patch** is hash-preconditioned, while **Sandbox verify** is read-only,
-offline, and command-closed. Authorization is checked again immediately before
-every call.
+**Atomic patch** is hash-preconditioned and supports Hashline-style line
+anchors, while **Sandbox verify** is read-only, offline, and command-closed.
+Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.
 General shell execution remains disabled. Stdio MCP and structured workspace

@@ -560,6 +560,11 @@ write:management-openapi-compatibility` now emits
   promoted schema refs, and response status sets. The top-level release
   artifact receipt now binds both OpenAPI artifacts alongside runtime,
   package-lock, Web dist, and manifest evidence.
+- Hashline-style workspace edits. `read_file` now returns bounded line
+  SHA-256 anchors for the selected range, and `apply_patch hashline_replace`
+  can replace anchored lines without retyping old text while still requiring
+  the complete-file SHA-256, per-target write lock, atomic commit,
+  protected-path checks, and fail-closed duplicate-anchor diagnostics.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

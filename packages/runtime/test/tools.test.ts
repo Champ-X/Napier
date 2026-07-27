@@ -61,10 +61,15 @@ describe("workspace tools", () => {
       endLine: 2,
     });
     const digest = createHash("sha256").update(source).digest("hex");
+    const secondLineDigest = createHash("sha256")
+      .update("second line")
+      .digest("hex");
     expect(result.content[0]).toEqual(
       expect.objectContaining({
         type: "text",
-        text: expect.stringContaining(`"sha256":"${digest}"`),
+        text: expect.stringContaining(
+          `"lineAnchors":[{"line":2,"sha256":"${secondLineDigest}"}]`,
+        ),
       }),
     );
     expect(result.details).toEqual(
@@ -74,6 +79,8 @@ describe("workspace tools", () => {
         sizeBytes: Buffer.byteLength(source),
         startLine: 2,
         endLine: 2,
+        lineAnchors: [{ line: 2, sha256: secondLineDigest }],
+        lineAnchorsTruncated: false,
       }),
     );
 
@@ -130,6 +137,40 @@ describe("workspace tools", () => {
     );
   });
 
+  it("replaces lines by read_file hash anchors without retyping old text", async () => {
+    const { workspaceRoot, dataRoot } = await createFixture();
+    const source = "title: Draft\nstatus: pending\nnotes: keep\n";
+    await writeFile(path.join(workspaceRoot, "hashline.txt"), source, "utf8");
+    const digest = createHash("sha256").update(source).digest("hex");
+    const statusLineDigest = createHash("sha256")
+      .update("status: pending")
+      .digest("hex");
+
+    const updated = await applyWorkspacePatch(workspaceRoot, dataRoot, {
+      operation: "hashline_replace",
+      path: "hashline.txt",
+      expectedSha256: digest,
+      edits: [
+        {
+          line: 2,
+          anchorSha256: statusLineDigest,
+          newText: "status: verified",
+        },
+      ],
+    });
+
+    expect(updated).toEqual(
+      expect.objectContaining({
+        operation: "hashline_replace",
+        beforeSha256: digest,
+        editCount: 1,
+      }),
+    );
+    expect(
+      await readFile(path.join(workspaceRoot, "hashline.txt"), "utf8"),
+    ).toBe("title: Draft\nstatus: verified\nnotes: keep\n");
+  });
+
   it("rejects stale or ambiguous edits without changing the target", async () => {
     const { workspaceRoot, dataRoot } = await createFixture();
     const target = path.join(workspaceRoot, "state.txt");
@@ -161,6 +202,51 @@ describe("workspace tools", () => {
       ),
     ).toEqual([]);
     expect(await readdir(path.join(dataRoot, "file-edit-locks"))).toEqual([]);
+  });
+
+  it("rejects stale or ambiguous hashline edits without changing the target", async () => {
+    const { workspaceRoot, dataRoot } = await createFixture();
+    const target = path.join(workspaceRoot, "hashline-state.txt");
+    const source = "same\nunique\nsame\n";
+    await writeFile(target, source, "utf8");
+    const digest = createHash("sha256").update(source).digest("hex");
+    const sameDigest = createHash("sha256").update("same").digest("hex");
+    const uniqueDigest = createHash("sha256").update("unique").digest("hex");
+
+    await expect(
+      applyWorkspacePatch(workspaceRoot, dataRoot, {
+        operation: "hashline_replace",
+        path: "hashline-state.txt",
+        expectedSha256: digest,
+        edits: [
+          {
+            line: 2,
+            anchorSha256: sameDigest,
+            newText: "changed",
+          },
+        ],
+      }),
+    ).rejects.toThrow("did not match line 2");
+    await expect(
+      applyWorkspacePatch(workspaceRoot, dataRoot, {
+        operation: "hashline_replace",
+        path: "hashline-state.txt",
+        expectedSha256: digest,
+        edits: [{ anchorSha256: sameDigest, newText: "changed" }],
+      }),
+    ).rejects.toThrow("ambiguous");
+    await expect(
+      applyWorkspacePatch(workspaceRoot, dataRoot, {
+        operation: "hashline_replace",
+        path: "hashline-state.txt",
+        expectedSha256: digest,
+        edits: [{ anchorSha256: uniqueDigest, newText: "changed" }],
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({ operation: "hashline_replace" }),
+    );
+
+    expect(await readFile(target, "utf8")).toBe("same\nchanged\nsame\n");
   });
 
   it("serializes concurrent writers so only one matching hash can commit", async () => {

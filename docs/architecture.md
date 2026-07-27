@@ -45,8 +45,9 @@ removal is a versioned contract change.
 
 - Pi model registration and agent-loop execution;
 - conversion from Pi events to Napier events;
-- tool assembly, canonical workspace-path checks, hash-bound atomic editing,
-  sandboxed structured verification, and last-moment policy checks;
+- tool assembly, canonical workspace-path checks, hash-bound atomic editing
+  with Hashline-style line anchors, sandboxed structured verification, and
+  last-moment policy checks;
 - standard Agent Skills discovery;
 - hash-only signed Skill, Prompt, and Inspector package baselines plus local
   qualification checks;
@@ -1076,14 +1077,19 @@ The only built-in write primitive is hash-bound, structured `apply_patch`:
 read_file
   -> resolve the target's canonical realpath inside the workspace
   -> reject external symlinks, non-files, invalid UTF-8, and oversized input
-  -> return requested lines plus complete-file size and SHA-256
+  -> return requested lines plus complete-file size, SHA-256, and bounded line
+     anchors
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require an existing safe parent and a missing target
 apply_patch replace
   -> require workspace policy + enabled tool + complete expected SHA-256
   -> require every oldText to occur exactly once in the evolving buffer
-both operations
+apply_patch hashline_replace
+  -> require workspace policy + enabled tool + complete expected SHA-256
+  -> replace lines by read_file anchor SHA-256 and optional line number
+  -> reject missing, stale, duplicate, or ambiguous anchors before mutation
+all operations
   -> reject .git / .napier / node_modules and symlink path components
   -> cap output at 256 KiB and reject null bytes or no-op output
   -> acquire a per-target dataRoot lock, recovering only a dead owner's lock
