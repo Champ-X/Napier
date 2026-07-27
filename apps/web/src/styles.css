@@ -2425,6 +2425,7 @@ button:disabled {
 
 .receipt-directory-subscriptions > header {
   display: flex;
+  gap: 6px;
   align-items: center;
   justify-content: space-between;
   font-family: var(--mono);
@@ -2432,6 +2433,29 @@ button:disabled {
   color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.receipt-directory-subscriptions > header strong {
+  flex: 1;
+}
+
+.receipt-directory-subscriptions > header button {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 3px 5px;
+  font-family: var(--mono);
+  font-size: 5px;
+  color: var(--ledger);
+  cursor: pointer;
+  background: var(--ledger-soft);
+  border: 1px solid #9fb8a8;
+  border-radius: 2px;
+}
+
+.receipt-directory-subscriptions > header button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .receipt-directory-subscriptions ol {
@@ -2485,6 +2509,45 @@ button:disabled {
   cursor: pointer;
   background: var(--ledger-soft);
   border: 1px solid #9fb8a8;
+}
+
+.receipt-directory-quorum {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 6px;
+  color: var(--ledger);
+  background: rgb(45 85 71 / 8%);
+  border-left: 2px solid var(--ledger);
+}
+
+.receipt-directory-quorum.quorum-split,
+.receipt-directory-quorum.quorum-policy_failed,
+.receipt-directory-quorum.quorum-insufficient_sources {
+  color: var(--vermilion);
+  background: var(--vermilion-soft);
+  border-left-color: var(--vermilion);
+}
+
+.receipt-directory-quorum > span {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
+}
+
+.receipt-directory-quorum strong,
+.receipt-directory-quorum small,
+.receipt-directory-quorum code {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receipt-directory-quorum small {
+  color: var(--ink-faint);
 }
 
 .receipt-directory-active {

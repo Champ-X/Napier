@@ -5,6 +5,7 @@ import path from "node:path";
 
 import type {
   ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
 } from "@napier/contracts";
@@ -133,6 +134,58 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       "body",
     );
 
+    const mirrorSourceUrl =
+      "https://trust.example.test/napier/anchors-mirror.json";
+    const mirrorCreateResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          label: "Release trust mirror",
+          sourceUrl: mirrorSourceUrl,
+          refreshIntervalMs: 5 * 60 * 1_000,
+          policy,
+        }),
+      },
+    );
+    expect(mirrorCreateResponse.status).toBe(201);
+    const mirror =
+      (await mirrorCreateResponse.json()) as ReceiptTrustAnchorDirectorySubscription;
+    const quorumResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          policy: { minimumSources: 2, minimumAgreementCount: 2 },
+        }),
+      },
+    );
+    expect(quorumResponse.status).toBe(200);
+    const quorum =
+      (await quorumResponse.json()) as ReceiptTrustAnchorDirectoryQuorum;
+    expect(quorum).toEqual(
+      expect.objectContaining({
+        status: "agreed",
+        sourceCount: 2,
+        candidateCount: 1,
+        agreementCount: 2,
+        selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+      }),
+    );
+    expect(
+      quorum.sources.map((source) => source.subscriptionId).sort(),
+    ).toEqual([created.id, mirror.id].sort());
+    expect(
+      quorumResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-status",
+      ),
+    ).toBe("agreed");
+    expect(JSON.stringify(quorum)).not.toContain(sourceUrl);
+    expect(JSON.stringify(quorum)).not.toContain(mirrorSourceUrl);
+
     const firstDirectory = hostedDirectory;
     const secondDirectory = createDirectory(thread.id, "Hosted verifier B");
     hostedDirectory = secondDirectory;
@@ -170,7 +223,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       created.revision,
     );
     expect(staleResponse.status).toBe(409);
-    expect(fetchCount).toBe(2);
+    expect(fetchCount).toBe(3);
 
     hostedDirectory = firstDirectory;
     const rollbackResponse = await refreshSubscription(
@@ -254,6 +307,19 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     const paused =
       (await pauseResponse.json()) as ReceiptTrustAnchorDirectorySubscription;
     expect(paused.status).toBe("paused");
+    const pauseMirrorResponse = await app.request(
+      `/api/receipt-trust/anchors/directory/subscriptions/${mirror.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: mirror.revision,
+          status: "paused",
+        }),
+      },
+    );
+    expect(pauseMirrorResponse.status).toBe(200);
     expect(
       await services.receiptTrustDirectorySubscriptions.refreshDue(
         new Date("2030-01-01T00:00:00.000Z"),
@@ -265,7 +331,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       events.filter((event) =>
         event.type.startsWith("receipt.trust_directory_subscription."),
       ),
-    ).toHaveLength(6);
+    ).toHaveLength(8);
     expect(JSON.stringify(events)).not.toContain(sourceUrl);
     expect(JSON.stringify(events)).not.toContain("private upstream detail");
   });

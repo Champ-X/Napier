@@ -123,6 +123,8 @@ import {
   type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectory,
   type ReceiptTrustAnchorDirectoryDiscovery,
+  type ReceiptTrustAnchorDirectoryQuorum,
+  type ReceiptTrustAnchorDirectoryQuorumPolicy,
   type ReceiptTrustAnchorDirectorySubscription,
   type ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryVerification,
@@ -315,6 +317,7 @@ import {
 } from "./receipt-trust.js";
 import {
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+  createReceiptTrustAnchorDirectorySubscriptionQuorum,
   createReceiptTrustAnchorDirectorySubscription,
   settleReceiptTrustAnchorDirectorySubscriptionRefresh,
   stripReceiptTrustAnchorDirectorySubscriptionSecrets,
@@ -1140,6 +1143,16 @@ export class LocalStore {
     return stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription);
   }
 
+  getReceiptTrustAnchorDirectorySubscriptionQuorum(
+    policy?: ReceiptTrustAnchorDirectoryQuorumPolicy,
+  ): ReceiptTrustAnchorDirectoryQuorum {
+    this.assertInitialized();
+    return createReceiptTrustAnchorDirectorySubscriptionQuorum(
+      this.listReceiptTrustAnchorDirectorySubscriptions(),
+      policy,
+    );
+  }
+
   async createReceiptTrustAnchorDirectorySubscription(
     request: CreateReceiptTrustAnchorDirectorySubscriptionRequest,
     discovery: ReceiptTrustAnchorDirectoryDiscovery,
@@ -1198,10 +1211,7 @@ export class LocalStore {
           "Receipt trust anchor directory subscription revision changed",
         );
       }
-      if (
-        current.claim &&
-        Date.parse(current.claim.expiresAt) > Date.now()
-      ) {
+      if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
         throw new Error(
           "Receipt trust anchor directory subscription refresh is in progress",
         );
@@ -1214,10 +1224,7 @@ export class LocalStore {
         request.status,
       );
       this.state.receiptTrustAnchorDirectorySubscriptions[index] = updated;
-      if (
-        updated.revision !== current.revision ||
-        hadExpiredClaim
-      ) {
+      if (updated.revision !== current.revision || hadExpiredClaim) {
         await this.persistState();
       }
       return stripReceiptTrustAnchorDirectorySubscriptionSecrets(updated);
@@ -1362,8 +1369,10 @@ export class LocalStore {
           "Receipt trust anchor directory subscription claim expired",
         );
       }
-      const settled =
-        settleReceiptTrustAnchorDirectorySubscriptionRefresh(current, outcome);
+      const settled = settleReceiptTrustAnchorDirectorySubscriptionRefresh(
+        current,
+        outcome,
+      );
       this.state.receiptTrustAnchorDirectorySubscriptions[index] =
         settled.persisted;
       await this.persistState();
@@ -7398,9 +7407,7 @@ export class LocalStore {
         );
       }
       trustDirectorySubscriptionIds.add(subscription.id);
-      trustDirectorySubscriptionSourceHashes.add(
-        subscription.sourceUrlSha256,
-      );
+      trustDirectorySubscriptionSourceHashes.add(subscription.sourceUrlSha256);
       Object.assign(input, subscription);
     }
     const qualificationBaselineIds = new Set<string>();
@@ -10075,9 +10082,7 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   )
     ? record["currentOverrideSetSha256"]
     : undefined;
-  const declaredRetirementSetSha256 = isSha256(
-    record?.["retirementSetSha256"],
-  )
+  const declaredRetirementSetSha256 = isSha256(record?.["retirementSetSha256"])
     ? record["retirementSetSha256"]
     : undefined;
   const retirementCount = isNonNegativeInteger(record?.["retirementCount"])
@@ -10134,9 +10139,7 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   if (!declaredCurrentOverrideSetSha256) {
     diagnostics.push("current_override_set_missing");
   }
-  if (
-    declaredCurrentOverrideSetSha256 !== observed.currentOverrideSetSha256
-  ) {
+  if (declaredCurrentOverrideSetSha256 !== observed.currentOverrideSetSha256) {
     diagnostics.push("current_override_set_mismatch");
   }
   if (!declaredRetirementSetSha256) diagnostics.push("retirement_set_missing");
@@ -10177,9 +10180,7 @@ function verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
       : {}),
     observedCurrentOverrideSetSha256: observed.currentOverrideSetSha256,
     ...(declaredRetirementSetSha256 ? { declaredRetirementSetSha256 } : {}),
-    ...(recomputedRetirementSetSha256
-      ? { recomputedRetirementSetSha256 }
-      : {}),
+    ...(recomputedRetirementSetSha256 ? { recomputedRetirementSetSha256 } : {}),
     observedRetirementSetSha256: observed.retirementSetSha256,
     ...(retirementCount !== undefined ? { retirementCount } : {}),
     observedRetirementCount: observed.retirementCount,
@@ -10219,16 +10220,16 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     .filter(isSha256);
   const distinctHistoryCount = new Set(validContentHashes).size;
   const distinctPortfolioSetCount = new Set(validPortfolioSetHashes).size;
-  const distinctCurrentOverrideSetCount = new Set(
-    validCurrentOverrideSetHashes,
-  ).size;
+  const distinctCurrentOverrideSetCount = new Set(validCurrentOverrideSetHashes)
+    .size;
   const distinctRetirementSetCount = new Set(validRetirementSetHashes).size;
   const diagnostics: string[] = [];
   if (histories.length < 2) diagnostics.push("history_count_below_min");
   if (proofItems.length !== validItems.length) {
     diagnostics.push("histories_invalid");
   }
-  if (distinctPortfolioSetCount > 1) diagnostics.push("portfolio_set_divergent");
+  if (distinctPortfolioSetCount > 1)
+    diagnostics.push("portfolio_set_divergent");
   if (distinctCurrentOverrideSetCount > 1) {
     diagnostics.push("current_override_set_divergent");
   }
@@ -10254,9 +10255,10 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     distinctPortfolioSetCount,
     distinctCurrentOverrideSetCount,
     distinctRetirementSetCount,
-    historySetSha256: executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
-      validContentHashes,
-    ),
+    historySetSha256:
+      executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
+        validContentHashes,
+      ),
     portfolioSetBundleSha256:
       executionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryBundleSetSha256(
         validPortfolioSetHashes,
@@ -10299,9 +10301,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
   )
     ? record["currentOverrideSetSha256"]
     : undefined;
-  const declaredRetirementSetSha256 = isSha256(
-    record?.["retirementSetSha256"],
-  )
+  const declaredRetirementSetSha256 = isSha256(record?.["retirementSetSha256"])
     ? record["retirementSetSha256"]
     : undefined;
   const retirementCount = isNonNegativeInteger(record?.["retirementCount"])
@@ -10323,7 +10323,9 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
         .map(
           validateExecutionPlanBlueprintRecommendationPolicyOverrideRetirementResult,
         )
-        .sort(compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements);
+        .sort(
+          compareExecutionPlanBlueprintRecommendationPolicyOverrideRetirements,
+        );
       recomputedRetirementSetSha256 =
         executionPlanBlueprintRecommendationPolicyOverrideRetirementSetSha256(
           retirements,
@@ -10390,9 +10392,7 @@ function createExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
       ? { declaredCurrentOverrideSetSha256 }
       : {}),
     ...(declaredRetirementSetSha256 ? { declaredRetirementSetSha256 } : {}),
-    ...(recomputedRetirementSetSha256
-      ? { recomputedRetirementSetSha256 }
-      : {}),
+    ...(recomputedRetirementSetSha256 ? { recomputedRetirementSetSha256 } : {}),
     ...(retirementCount !== undefined ? { retirementCount } : {}),
     ...(recomputedRetirementCount !== undefined
       ? { recomputedRetirementCount }

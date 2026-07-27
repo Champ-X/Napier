@@ -260,6 +260,14 @@ All notable changes to Napier are recorded here.
   non-current directory is rejected as `rollback_rejected` without replacing
   last-good trust. Server headers, Ledger events, and the Receipt trust desk
   expose transparency entry count and tail hash for audit binding.
+- Receipt trust directory subscription quorum receipts. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum` now evaluates
+  active last-good subscriptions without mutation. The default 2-of-2 policy
+  groups sources by anchor-set SHA-256 and returns a stable no-store receipt
+  with source/candidate/agreement counts, policy hash, diagnostics, selected
+  directory hash, selected anchor-set hash, and hash-only source evidence. The
+  Receipt trust desk exposes a quorum action and renders agreement status next
+  to durable directory subscriptions.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

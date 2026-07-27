@@ -3810,6 +3810,65 @@ export interface ReceiptTrustAnchorDirectorySubscriptionRefreshResult {
   contentSha256: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumPolicy {
+  minimumSources?: number;
+  minimumAgreementCount?: number;
+  expectedAnchorSetSha256?: string;
+}
+
+export interface EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
+  policy?: ReceiptTrustAnchorDirectoryQuorumPolicy;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumStatus =
+  | "agreed"
+  | "insufficient_sources"
+  | "split"
+  | "policy_failed";
+
+export interface ReceiptTrustAnchorDirectoryQuorumSource {
+  subscriptionId: string;
+  subscriptionSha256: string;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  revision: number;
+  directorySha256: string;
+  anchorSetSha256: string;
+  discoverySha256: string;
+  transparencyTailSha256: string;
+  trustedCount: number;
+  observedAt: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumCandidate {
+  anchorSetSha256: string;
+  sourceCount: number;
+  trustedCount: number;
+  subscriptionSetSha256: string;
+  directorySetSha256: string;
+  discoverySetSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorum {
+  kind: "napier.receipt-trust-anchor-directory-quorum";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumStatus;
+  diagnostics: string[];
+  policy: Required<ReceiptTrustAnchorDirectoryQuorumPolicy>;
+  policySha256: string;
+  sourceCount: number;
+  candidateCount: number;
+  agreementCount: number;
+  selectedAnchorSetSha256?: string;
+  selectedDirectorySha256?: string;
+  selectedDirectory?: ReceiptTrustAnchorDirectory;
+  sources: ReceiptTrustAnchorDirectoryQuorumSource[];
+  candidates: ReceiptTrustAnchorDirectoryQuorumCandidate[];
+  contentSha256: string;
+}
+
 export interface EvaluationQualificationBaseline {
   id: string;
   casebookId: string;

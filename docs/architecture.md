@@ -417,6 +417,13 @@ and Ledger events expose the transparency tail. A valid hosted response that
 returns to a previously observed non-current directory is treated as
 `rollback_rejected`, preserving the active verifier set while binding the
 attempt as hash-only evidence.
+The quorum projection is a stateless receipt over active last-good
+subscriptions. It groups sources by anchor-set SHA-256 rather than
+time-sensitive directory content, applies minimum source/agreement thresholds
+and an optional expected anchor-set pin, and returns selected-directory public
+keys only when the policy agrees. Source rows carry subscription/content,
+URL/origin, discovery, directory, transparency-tail, and trusted-count hashes;
+no raw locator or private key material leaves the workspace.
 
 Extension publisher anchors are a separate workspace-owned trust domain with
 the same private-key boundary: durable state contains only normalized Ed25519
@@ -2341,9 +2348,10 @@ The current boundary has twenty-one parts:
     never inherit local approval.
 22. allowlisted receipt-trust directory subscriptions with private local
     source locators, hash-only public evidence, policy-bound last-good
-    discoveries, bounded transparency histories, rollback detection, expiring
-    refresh claims, revision CAS, and fail-closed promotion that preserves the
-    active verifier set across rejected, failed, or stale rotations.
+    discoveries, bounded transparency histories, rollback detection,
+    multi-source quorum receipts, expiring refresh claims, revision CAS, and
+    fail-closed promotion that preserves the active verifier set across
+    rejected, failed, or stale rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2365,9 +2373,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- multi-source receipt-trust directory quorum policies and publisher-signed
-  metadata, so an allowlisted host compromise cannot silently rewrite
-  verifier-key history or outvote independent trust sources.
+- richer multi-source receipt-trust quorum policies and publisher-signed
+  metadata, so independent verifier-key sources can be weighted, pinned, and
+  audited without trusting a single hosted directory.
 
 ### Layer 3: Extension fabric
 

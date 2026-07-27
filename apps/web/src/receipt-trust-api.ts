@@ -2,11 +2,13 @@ import type {
   CreateReceiptTrustAnchorRequest,
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
+  EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   EvaluationQualificationBaseline,
   PromoteEvaluationQualificationBaselineResult,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
@@ -49,6 +51,18 @@ export function listReceiptTrustAnchorDirectorySubscriptions(): Promise<
   ReceiptTrustAnchorDirectorySubscription[]
 > {
   return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions");
+}
+
+export function evaluateReceiptTrustAnchorDirectoryQuorum(
+  body: EvaluateReceiptTrustAnchorDirectoryQuorumRequest = {},
+): Promise<ReceiptTrustAnchorDirectoryQuorum> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 export function createReceiptTrustAnchorDirectorySubscription(

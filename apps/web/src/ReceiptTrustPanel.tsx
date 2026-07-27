@@ -18,6 +18,7 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
@@ -29,6 +30,7 @@ import {
   createReceiptTrustAnchor,
   createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
+  evaluateReceiptTrustAnchorDirectoryQuorum,
   getReceiptTrustAnchorDirectory,
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
@@ -78,6 +80,8 @@ export default function ReceiptTrustPanel({
   const [directorySubscriptions, setDirectorySubscriptions] = useState<
     ReceiptTrustAnchorDirectorySubscription[]
   >([]);
+  const [directoryQuorum, setDirectoryQuorum] =
+    useState<ReceiptTrustAnchorDirectoryQuorum>();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -292,6 +296,7 @@ export default function ReceiptTrustPanel({
           subscriptionRequest,
         );
       upsertDirectorySubscription(subscription);
+      setDirectoryQuorum(undefined);
       setDirectorySubscriptionLabel("");
       activateSubscription(subscription);
     } catch (subscriptionError) {
@@ -313,6 +318,7 @@ export default function ReceiptTrustPanel({
         subscription.revision,
       );
       upsertDirectorySubscription(result.subscription);
+      setDirectoryQuorum(undefined);
       if (result.discovery) {
         setDirectoryDiscovery(result.discovery);
         setDirectoryVerification(result.discovery.verification);
@@ -345,6 +351,7 @@ export default function ReceiptTrustPanel({
         },
       );
       upsertDirectorySubscription(updated);
+      setDirectoryQuorum(undefined);
       if (updated.status === "active" && updated.lastGoodDiscovery?.directory) {
         activateSubscription(updated);
       } else if (externalDirectorySubscriptionId === updated.id) {
@@ -367,6 +374,18 @@ export default function ReceiptTrustPanel({
     setExternalDirectorySubscriptionId(subscription.id);
     setDirectoryDiscovery(discovery);
     setDirectoryVerification(discovery.verification);
+  }
+
+  async function evaluateDirectoryQuorum(): Promise<void> {
+    setBusyId("directory-quorum");
+    setError(undefined);
+    try {
+      setDirectoryQuorum(await evaluateReceiptTrustAnchorDirectoryQuorum());
+    } catch (quorumError) {
+      setError(toErrorMessage(quorumError));
+    } finally {
+      setBusyId(undefined);
+    }
   }
 
   function upsertDirectorySubscription(
@@ -628,6 +647,16 @@ export default function ReceiptTrustPanel({
               <strong id="receipt-directory-subscriptions-title">
                 {copy.lab.trust.directorySubscriptions}
               </strong>
+              <button
+                type="button"
+                disabled={Boolean(busyId)}
+                onClick={() => void evaluateDirectoryQuorum()}
+              >
+                <ShieldCheck size={10} aria-hidden="true" />
+                {busyId === "directory-quorum"
+                  ? copy.lab.trust.evaluatingQuorum
+                  : copy.lab.trust.evaluateQuorum}
+              </button>
               <code>
                 {directorySubscriptions.length.toString().padStart(2, "0")}
               </code>
@@ -720,6 +749,32 @@ export default function ReceiptTrustPanel({
                 );
               })}
             </ol>
+            {directoryQuorum ? (
+              <output
+                className={`receipt-directory-quorum quorum-${directoryQuorum.status}`}
+                aria-live="polite"
+              >
+                <ShieldCheck size={11} aria-hidden="true" />
+                <span>
+                  <strong>
+                    {copy.lab.trust.quorumStatuses[directoryQuorum.status]}
+                  </strong>
+                  <small>
+                    {directoryQuorum.agreementCount}/
+                    {directoryQuorum.sourceCount}{" "}
+                    {copy.lab.trust.quorumAgreement}
+                  </small>
+                </span>
+                {directoryQuorum.selectedAnchorSetSha256 ? (
+                  <code title={directoryQuorum.selectedAnchorSetSha256}>
+                    {directoryQuorum.selectedAnchorSetSha256.slice(0, 12)}
+                  </code>
+                ) : null}
+                <code title={directoryQuorum.contentSha256}>
+                  {directoryQuorum.contentSha256.slice(0, 12)}
+                </code>
+              </output>
+            ) : null}
           </section>
         ) : null}
         {externalDirectory ? (

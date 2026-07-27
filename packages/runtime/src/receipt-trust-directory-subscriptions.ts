@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import {
   NAPIER_API_VERSION,
   type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  type ReceiptTrustAnchorDirectoryQuorum,
+  type ReceiptTrustAnchorDirectoryQuorumCandidate,
+  type ReceiptTrustAnchorDirectoryQuorumPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumSource,
   type ReceiptTrustAnchorDirectoryDiscovery,
   type ReceiptTrustAnchorDirectorySubscription,
   type ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
@@ -258,6 +262,112 @@ export function settleReceiptTrustAnchorDirectorySubscriptionRefresh(
       ...resultContent,
       contentSha256: sha256(canonicalJson(resultContent)),
     },
+  };
+}
+
+export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
+  subscriptions: ReceiptTrustAnchorDirectorySubscription[],
+  policy?: ReceiptTrustAnchorDirectoryQuorumPolicy,
+): ReceiptTrustAnchorDirectoryQuorum {
+  const normalizedPolicy =
+    normalizeReceiptTrustAnchorDirectoryQuorumPolicy(policy);
+  const sources = subscriptions
+    .map(validateReceiptTrustAnchorDirectorySubscription)
+    .filter(
+      (subscription) =>
+        subscription.status === "active" &&
+        Boolean(subscription.lastGoodDiscovery?.directory),
+    )
+    .map(createQuorumSource)
+    .sort((left, right) =>
+      left.subscriptionId.localeCompare(right.subscriptionId),
+    );
+  const sourceGroups = new Map<
+    string,
+    ReceiptTrustAnchorDirectoryQuorumSource[]
+  >();
+  for (const source of sources) {
+    const group = sourceGroups.get(source.anchorSetSha256) ?? [];
+    group.push(source);
+    sourceGroups.set(source.anchorSetSha256, group);
+  }
+  const candidates = Array.from(sourceGroups.entries())
+    .map(([anchorSetSha256, group]) =>
+      createQuorumCandidate(anchorSetSha256, group),
+    )
+    .sort(
+      (left, right) =>
+        right.sourceCount - left.sourceCount ||
+        left.anchorSetSha256.localeCompare(right.anchorSetSha256),
+    );
+  const winner = candidates.at(0);
+  const agreementCount = winner?.sourceCount ?? 0;
+  const selectedSource = winner
+    ? sources
+        .filter((source) => source.anchorSetSha256 === winner.anchorSetSha256)
+        .sort(
+          (left, right) =>
+            right.observedAt.localeCompare(left.observedAt) ||
+            left.subscriptionId.localeCompare(right.subscriptionId),
+        )
+        .at(0)
+    : undefined;
+  const selectedSubscription = selectedSource
+    ? subscriptions
+        .map(validateReceiptTrustAnchorDirectorySubscription)
+        .find(
+          (subscription) => subscription.id === selectedSource.subscriptionId,
+        )
+    : undefined;
+  const selectedDirectory = selectedSubscription?.lastGoodDiscovery?.directory;
+  const diagnostics: string[] = [];
+  if (sources.length < normalizedPolicy.minimumSources) {
+    diagnostics.push("insufficient_sources");
+  }
+  if (agreementCount < normalizedPolicy.minimumAgreementCount) {
+    diagnostics.push("insufficient_agreement");
+  }
+  if (
+    normalizedPolicy.expectedAnchorSetSha256 &&
+    winner?.anchorSetSha256 !== normalizedPolicy.expectedAnchorSetSha256
+  ) {
+    diagnostics.push("anchor_set_unexpected");
+  }
+  const status: ReceiptTrustAnchorDirectoryQuorum["status"] =
+    sources.length < normalizedPolicy.minimumSources
+      ? "insufficient_sources"
+      : normalizedPolicy.expectedAnchorSetSha256 &&
+          winner?.anchorSetSha256 !== normalizedPolicy.expectedAnchorSetSha256
+        ? "policy_failed"
+        : agreementCount >= normalizedPolicy.minimumAgreementCount
+          ? "agreed"
+          : "split";
+  const policySha256 = sha256(canonicalJson(normalizedPolicy));
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    status,
+    diagnostics,
+    policy: normalizedPolicy,
+    policySha256,
+    sourceCount: sources.length,
+    candidateCount: candidates.length,
+    agreementCount,
+    ...(winner ? { selectedAnchorSetSha256: winner.anchorSetSha256 } : {}),
+    ...(selectedDirectory
+      ? {
+          selectedDirectorySha256: selectedDirectory.contentSha256,
+          selectedDirectory,
+        }
+      : {}),
+    sources,
+    candidates,
+  };
+  return {
+    ...content,
+    generatedAt: new Date().toISOString(),
+    contentSha256: sha256(canonicalJson(content)),
   };
 }
 
@@ -547,6 +657,127 @@ function assertDiscoveryBinding(
   }
 }
 
+function createQuorumSource(
+  subscription: ReceiptTrustAnchorDirectorySubscription,
+): ReceiptTrustAnchorDirectoryQuorumSource {
+  const discovery = subscription.lastGoodDiscovery;
+  const directory = discovery?.directory;
+  const tail = subscription.transparencyHistory.at(-1);
+  if (
+    !discovery ||
+    !directory ||
+    !tail ||
+    !subscription.transparencyTailSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum source is missing last-good evidence",
+    );
+  }
+  return {
+    subscriptionId: subscription.id,
+    subscriptionSha256: subscription.contentSha256,
+    sourceUrlSha256: subscription.sourceUrlSha256,
+    sourceOriginSha256: subscription.sourceOriginSha256,
+    revision: subscription.revision,
+    directorySha256: directory.contentSha256,
+    anchorSetSha256: directory.anchorSetSha256,
+    discoverySha256: discovery.contentSha256,
+    transparencyTailSha256: subscription.transparencyTailSha256,
+    trustedCount: directory.trustedCount,
+    observedAt: tail.observedAt,
+  };
+}
+
+function createQuorumCandidate(
+  anchorSetSha256: string,
+  sources: ReceiptTrustAnchorDirectoryQuorumSource[],
+): ReceiptTrustAnchorDirectoryQuorumCandidate {
+  const sorted = [...sources].sort((left, right) =>
+    left.subscriptionId.localeCompare(right.subscriptionId),
+  );
+  return {
+    anchorSetSha256,
+    sourceCount: sorted.length,
+    trustedCount: Math.max(...sorted.map((source) => source.trustedCount)),
+    subscriptionSetSha256: sha256(
+      canonicalJson(sorted.map((source) => source.subscriptionId)),
+    ),
+    directorySetSha256: sha256(
+      canonicalJson(sorted.map((source) => source.directorySha256).sort()),
+    ),
+    discoverySetSha256: sha256(
+      canonicalJson(sorted.map((source) => source.discoverySha256).sort()),
+    ),
+  };
+}
+
+function normalizeReceiptTrustAnchorDirectoryQuorumPolicy(
+  policy: ReceiptTrustAnchorDirectoryQuorumPolicy | undefined,
+): Required<ReceiptTrustAnchorDirectoryQuorumPolicy> {
+  if (policy !== undefined) {
+    if (!isRecord(policy)) {
+      throw new Error(
+        "Receipt trust anchor directory quorum policy is invalid",
+      );
+    }
+    assertAllowedKeys(policy, [
+      "minimumSources",
+      "minimumAgreementCount",
+      "expectedAnchorSetSha256",
+    ]);
+  }
+  const minimumSources = normalizeQuorumCount(
+    policy?.["minimumSources"] ?? 2,
+    "minimum sources",
+  );
+  const minimumAgreementCount = normalizeQuorumCount(
+    policy?.["minimumAgreementCount"] ?? 2,
+    "minimum agreement",
+  );
+  const expectedAnchorSetSha256Input = policy?.["expectedAnchorSetSha256"];
+  if (
+    expectedAnchorSetSha256Input !== undefined &&
+    typeof expectedAnchorSetSha256Input !== "string"
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum expected anchor set is invalid",
+    );
+  }
+  const expectedAnchorSetSha256 = expectedAnchorSetSha256Input ?? "";
+  if (
+    expectedAnchorSetSha256 !== "" &&
+    !SHA256_PATTERN.test(expectedAnchorSetSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum expected anchor set is invalid",
+    );
+  }
+  if (minimumAgreementCount > minimumSources) {
+    throw new Error(
+      "Receipt trust anchor directory quorum agreement cannot exceed sources",
+    );
+  }
+  return {
+    minimumSources,
+    minimumAgreementCount,
+    expectedAnchorSetSha256,
+  };
+}
+
+function normalizeQuorumCount(value: unknown, label: string): number {
+  if (
+    !Number.isSafeInteger(value) ||
+    typeof value !== "number" ||
+    value < 1 ||
+    value > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
+  ) {
+    throw new Error(
+      `Receipt trust anchor directory quorum ${label} is invalid`,
+    );
+  }
+  return value;
+}
+
 function migrateReceiptTrustAnchorDirectorySubscription(
   value: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -832,6 +1063,19 @@ function optionalSha256(value: unknown): boolean {
 
 function nonNegativeInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && typeof value === "number" && value >= 0;
+}
+
+function assertAllowedKeys(
+  value: Record<string, unknown>,
+  allowedKeys: string[],
+): void {
+  const allowed = new Set(allowedKeys);
+  const unsupported = Object.keys(value).filter((key) => !allowed.has(key));
+  if (unsupported.length > 0) {
+    throw new Error(
+      "Receipt trust anchor directory payload has unsupported fields",
+    );
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

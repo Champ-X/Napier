@@ -18,6 +18,7 @@ import type {
   CreateExtensionPublisherTrustAnchorRequest,
   CreateReceiptTrustAnchorRequest,
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   CreateInboundChannelRequest,
   ApplyInboundDeadLetterRetryRequest,
   CreateMacOsKeychainCredentialRequest,
@@ -87,6 +88,8 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumPolicy,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
@@ -262,6 +265,7 @@ import {
   hashEventStream,
   LocalStore,
   MAX_RECEIPT_TRUST_ANCHORS,
+  MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
   MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS,
   MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS,
   MAX_EXTENSION_PACKAGE_DEPENDENCIES,
@@ -620,6 +624,42 @@ export function createApp(services: NapierServices): Hono {
     );
     return context.json(subscriptions);
   });
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust anchor directory quorum request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body = parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum request is invalid",
+          400,
+        );
+      }
+      const quorum =
+        services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
+          body.policy,
+        );
+      setReceiptTrustAnchorDirectoryQuorumHeaders(context, quorum);
+      return context.json(quorum);
+    },
+  );
 
   app.post(
     "/api/receipt-trust/anchors/directory/subscriptions",
@@ -10532,6 +10572,62 @@ function parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(
   };
 }
 
+function parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(
+  input: unknown,
+): EvaluateReceiptTrustAnchorDirectoryQuorumRequest | undefined {
+  const record = requestRecord(input, ["policy"]);
+  const policy = parseReceiptTrustAnchorDirectoryQuorumPolicy(
+    record?.["policy"],
+  );
+  if (!record || (record["policy"] !== undefined && !policy)) {
+    return undefined;
+  }
+  return {
+    ...(policy ? { policy } : {}),
+  };
+}
+
+function parseReceiptTrustAnchorDirectoryQuorumPolicy(
+  input: unknown,
+): ReceiptTrustAnchorDirectoryQuorumPolicy | undefined {
+  if (input === undefined) return undefined;
+  const record = requestRecord(input, [
+    "minimumSources",
+    "minimumAgreementCount",
+    "expectedAnchorSetSha256",
+  ]);
+  if (!record) return undefined;
+  const minimumSources = record["minimumSources"];
+  const minimumAgreementCount = record["minimumAgreementCount"];
+  const expectedAnchorSetSha256 = record["expectedAnchorSetSha256"];
+  if (
+    (minimumSources !== undefined &&
+      (!isNonNegativeInteger(minimumSources) ||
+        minimumSources < 1 ||
+        minimumSources > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumAgreementCount !== undefined &&
+      (!isNonNegativeInteger(minimumAgreementCount) ||
+        minimumAgreementCount < 1 ||
+        minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumSources !== undefined &&
+      minimumAgreementCount !== undefined &&
+      minimumAgreementCount > minimumSources) ||
+    (expectedAnchorSetSha256 !== undefined &&
+      (typeof expectedAnchorSetSha256 !== "string" ||
+        (expectedAnchorSetSha256 !== "" &&
+          !isSha256Hex(expectedAnchorSetSha256))))
+  ) {
+    return undefined;
+  }
+  return {
+    ...(minimumSources !== undefined ? { minimumSources } : {}),
+    ...(minimumAgreementCount !== undefined ? { minimumAgreementCount } : {}),
+    ...(typeof expectedAnchorSetSha256 === "string"
+      ? { expectedAnchorSetSha256 }
+      : {}),
+  };
+}
+
 function parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(
   input: unknown,
 ): RefreshReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
@@ -15051,6 +15147,55 @@ function setReceiptTrustAnchorDirectoryHeaders(
     "X-Napier-Receipt-Trust-Revoked-Count",
     String(directory.revokedCount),
   );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumHeaders(
+  context: Context,
+  quorum: ReceiptTrustAnchorDirectoryQuorum,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, quorum.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-SHA256",
+    quorum.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Status",
+    quorum.status,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Policy-SHA256",
+    quorum.policySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Source-Count",
+    String(quorum.sourceCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Candidate-Count",
+    String(quorum.candidateCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Count",
+    String(quorum.agreementCount),
+  );
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(quorum.diagnostics.length),
+  );
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(quorum.diagnostics));
+  if (quorum.selectedAnchorSetSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
+      quorum.selectedAnchorSetSha256,
+    );
+  }
+  if (quorum.selectedDirectorySha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
+      quorum.selectedDirectorySha256,
+    );
+  }
 }
 
 function setReceiptTrustAnchorDirectorySubscriptionListHeaders(

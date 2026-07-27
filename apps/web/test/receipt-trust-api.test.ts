@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type {
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
@@ -14,6 +15,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
+  evaluateReceiptTrustAnchorDirectoryQuorum,
   getReceiptTrustAnchorDirectory,
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
@@ -202,6 +204,28 @@ describe("receipt trust Web API wrappers", () => {
       status: "paused",
       revision: 3,
     } satisfies ReceiptTrustAnchorDirectorySubscription;
+    const quorum = {
+      kind: "napier.receipt-trust-anchor-directory-quorum",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:00.000Z",
+      status: "agreed",
+      diagnostics: [],
+      policy: {
+        minimumSources: 2,
+        minimumAgreementCount: 2,
+        expectedAnchorSetSha256: "",
+      },
+      policySha256: "4".repeat(64),
+      sourceCount: 2,
+      candidateCount: 1,
+      agreementCount: 2,
+      selectedAnchorSetSha256: "5".repeat(64),
+      selectedDirectorySha256: "6".repeat(64),
+      sources: [],
+      candidates: [],
+      contentSha256: "7".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorum;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -231,6 +255,12 @@ describe("receipt trust Web API wrappers", () => {
           status: "paused",
         },
         response: paused,
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum",
+        method: "POST",
+        body: { policy: { minimumSources: 2, minimumAgreementCount: 2 } },
+        response: quorum,
       },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
@@ -262,7 +292,12 @@ describe("receipt trust Web API wrappers", () => {
         status: "paused",
       }),
     ).resolves.toEqual(paused);
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    await expect(
+      evaluateReceiptTrustAnchorDirectoryQuorum({
+        policy: { minimumSources: 2, minimumAgreementCount: 2 },
+      }),
+    ).resolves.toEqual(quorum);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

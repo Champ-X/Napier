@@ -189,6 +189,9 @@ export const copy = {
       subscribeDirectory: "Subscribe",
       subscribingDirectory: "Subscribing...",
       directorySubscriptions: "Directory subscriptions",
+      evaluateQuorum: "Evaluate quorum",
+      evaluatingQuorum: "Evaluating...",
+      quorumAgreement: "source agreement",
       nextRefresh: "next",
       transparencyTail: "tail",
       useSubscription: "Use",
@@ -234,6 +237,12 @@ export const copy = {
         rollback_rejected: "rollback rejected",
         rejected: "refresh rejected",
         failed: "refresh failed",
+      },
+      quorumStatuses: {
+        agreed: "Quorum agreed",
+        insufficient_sources: "Quorum lacks sources",
+        split: "Quorum split",
+        policy_failed: "Quorum policy failed",
       },
       safety:
         "Private keys are read only at signing time. Subscription URLs stay in the local workspace snapshot for refresh; Ledger events expose only URL fingerprints and evidence hashes.",

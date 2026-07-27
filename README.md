@@ -1334,6 +1334,16 @@ returns a previously observed non-current directory, refresh returns
 desk restores the newest active last-good directory after reload and exposes
 refresh, pause/resume, transparency-tail, and explicit verifier-selection
 controls.
+`POST /api/receipt-trust/anchors/directory/subscriptions/quorum` evaluates the
+active last-good subscription set without mutating Ledger state. The default
+policy requires at least two active sources and two sources agreeing on the
+same anchor-set SHA-256; callers can provide `minimumSources`,
+`minimumAgreementCount`, and an optional expected anchor-set pin. The quorum
+receipt groups sources by anchor set, exposes source/candidate/agreement
+counts, policy hash, diagnostics, selected directory hash, and hash-only source
+evidence. The Receipt trust desk can request this quorum receipt and renders
+its status, agreement count, selected anchor set, and receipt hash beside the
+subscription list.
 
 A Casebook qualification baseline can be promoted only from a current
 revision's `passed` receipt signed by a currently trusted local signer. It

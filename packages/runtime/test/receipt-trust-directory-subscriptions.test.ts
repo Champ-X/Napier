@@ -354,6 +354,102 @@ describe("receipt trust anchor directory subscriptions", () => {
       ),
     ).toThrow("discovery is invalid");
   });
+
+  it("evaluates hash-only quorum across independent last-good sources", async () => {
+    const { store } = await createStore();
+    const thread = store.listThreads()[0]!;
+    const directory = createDirectory(thread.id);
+    const policy = {
+      maxAgeMs: 86_400_000,
+      minimumTrustedCount: 1,
+    };
+    const left = await store.createReceiptTrustAnchorDirectorySubscription(
+      {
+        threadId: thread.id,
+        label: "Left trust feed",
+        sourceUrl: "https://left.example.test/anchors.json",
+        refreshIntervalMs: 300_000,
+        policy,
+      },
+      createDiscovery(
+        "https://left.example.test/anchors.json",
+        directory,
+        policy,
+      ),
+    );
+    const right = await store.createReceiptTrustAnchorDirectorySubscription(
+      {
+        threadId: thread.id,
+        label: "Right trust feed",
+        sourceUrl: "https://right.example.test/anchors.json",
+        refreshIntervalMs: 300_000,
+        policy,
+      },
+      createDiscovery(
+        "https://right.example.test/anchors.json",
+        directory,
+        policy,
+      ),
+    );
+
+    const agreed = store.getReceiptTrustAnchorDirectorySubscriptionQuorum();
+    expect(agreed).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum",
+        status: "agreed",
+        diagnostics: [],
+        sourceCount: 2,
+        candidateCount: 1,
+        agreementCount: 2,
+        selectedAnchorSetSha256: directory.anchorSetSha256,
+        selectedDirectorySha256: directory.contentSha256,
+        selectedDirectory: directory,
+      }),
+    );
+    expect(JSON.stringify(agreed)).not.toContain("left.example.test");
+    expect(
+      agreed.sources.map((source) => source.subscriptionId).sort(),
+    ).toEqual([left.id, right.id].sort());
+
+    const unexpected = store.getReceiptTrustAnchorDirectorySubscriptionQuorum({
+      expectedAnchorSetSha256: "f".repeat(64),
+    });
+    expect(unexpected).toEqual(
+      expect.objectContaining({
+        status: "policy_failed",
+        diagnostics: ["anchor_set_unexpected"],
+      }),
+    );
+
+    const dissentingDirectory = createDirectory(thread.id);
+    await store.createReceiptTrustAnchorDirectorySubscription(
+      {
+        threadId: thread.id,
+        label: "Dissenting trust feed",
+        sourceUrl: "https://dissent.example.test/anchors.json",
+        refreshIntervalMs: 300_000,
+        policy,
+      },
+      createDiscovery(
+        "https://dissent.example.test/anchors.json",
+        dissentingDirectory,
+        policy,
+      ),
+    );
+    const split = store.getReceiptTrustAnchorDirectorySubscriptionQuorum({
+      minimumSources: 3,
+      minimumAgreementCount: 3,
+    });
+    expect(split).toEqual(
+      expect.objectContaining({
+        status: "split",
+        diagnostics: ["insufficient_agreement"],
+        sourceCount: 3,
+        candidateCount: 2,
+        agreementCount: 2,
+      }),
+    );
+  });
 });
 
 async function createStore(): Promise<{
