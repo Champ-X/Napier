@@ -4036,6 +4036,12 @@ export interface VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest
   trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
+export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest
+  extends VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest {
+  threadId: string;
+  expectedCurrentBaselineSha256: string;
+}
+
 export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification {
   kind: "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-verification";
   schemaVersion: 1;
@@ -4059,6 +4065,14 @@ export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification 
   anchorDirectoryVerificationSha256?: string;
   anchorDirectoryPolicySha256?: string;
   contentSha256: string;
+}
+
+export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult {
+  baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  imported: boolean;
+  verification: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+  expectedCurrentBaselineSha256: string;
+  previousBaselineSha256?: string;
 }
 
 export interface EvaluationQualificationBaseline {

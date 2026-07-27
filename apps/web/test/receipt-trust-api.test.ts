@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import type {
+  ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
@@ -23,6 +24,7 @@ import {
   evaluateReceiptTrustAnchorDirectoryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
+  importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectorySubscriptions,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
   promoteReceiptTrustAnchorDirectoryQuorumBaseline,
@@ -398,6 +400,17 @@ describe("receipt trust Web API wrappers", () => {
         promotionBaseline.selectedMetadataEnvelopeSetSha256,
       contentSha256: "2".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+    const promotionBaselineImportRequest = {
+      baseline: promotionBaseline,
+      threadId: promotionBaseline.promotedByThreadId,
+      expectedCurrentBaselineSha256: "",
+    };
+    const promotionBaselineImportResult = {
+      baseline: promotionBaseline,
+      imported: true,
+      verification: promotionBaselineVerification,
+      expectedCurrentBaselineSha256: "",
+    } satisfies ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -456,6 +469,12 @@ describe("receipt trust Web API wrappers", () => {
         body: { baseline: promotionBaseline },
         response: promotionBaselineVerification,
       },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+        method: "POST",
+        body: promotionBaselineImportRequest,
+        response: promotionBaselineImportResult,
+      },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       const call = calls[fetchMock.mock.calls.length - 1]!;
@@ -509,7 +528,12 @@ describe("receipt trust Web API wrappers", () => {
         baseline: promotionBaseline,
       }),
     ).resolves.toEqual(promotionBaselineVerification);
-    expect(fetchMock).toHaveBeenCalledTimes(9);
+    await expect(
+      importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        promotionBaselineImportRequest,
+      ),
+    ).resolves.toEqual(promotionBaselineImportResult);
+    expect(fetchMock).toHaveBeenCalledTimes(10);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

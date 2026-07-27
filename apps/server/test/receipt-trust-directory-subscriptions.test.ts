@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
+  ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorum,
@@ -453,6 +454,82 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-promotion-baseline-sha256",
       ),
     ).toBe(baselineResult.baseline.contentSha256);
+    const importRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-trust-baseline-import-http-"),
+    );
+    temporaryRoots.push(importRoot);
+    const importServices = await createNapierServices({
+      dataRoot: path.join(importRoot, "data"),
+      workspaceRoot: path.join(importRoot, "workspace"),
+    });
+    openServices.push(importServices);
+    const importApp = createApp(importServices);
+    const importThread = importServices.store.listThreads()[0]!;
+    const baselineImportRequest = {
+      baseline: baselineResult.baseline,
+      threadId: importThread.id,
+      expectedCurrentBaselineSha256: "",
+      trustDirectory: hostedDirectory,
+      trustDirectoryPolicy: {
+        expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+        minimumTrustedCount: 1,
+      },
+    };
+    const baselineImportResponse = await importApp.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(baselineImportRequest),
+      },
+    );
+    expect(baselineImportResponse.status).toBe(201);
+    const baselineImport =
+      (await baselineImportResponse.json()) as ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult;
+    expect(baselineImport).toEqual(
+      expect.objectContaining({
+        imported: true,
+        expectedCurrentBaselineSha256: "",
+        verification: expect.objectContaining({
+          status: "trusted",
+          baselineSha256: baselineResult.baseline.contentSha256,
+        }),
+        baseline: expect.objectContaining({
+          promotedByThreadId: importThread.id,
+          envelope: baselineResult.baseline.envelope,
+          selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+          selectedDirectorySha256: hostedDirectory.contentSha256,
+        }),
+      }),
+    );
+    expect(baselineImport.baseline.id).not.toBe(baselineResult.baseline.id);
+    expect(
+      baselineImportResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-baseline-imported",
+      ),
+    ).toBe("true");
+    const duplicateImportResponse = await importApp.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...baselineImportRequest,
+          expectedCurrentBaselineSha256: baselineImport.baseline.contentSha256,
+        }),
+      },
+    );
+    expect(duplicateImportResponse.status).toBe(200);
+    const duplicateImport =
+      (await duplicateImportResponse.json()) as ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult;
+    expect(duplicateImport).toEqual(
+      expect.objectContaining({
+        imported: false,
+        expectedCurrentBaselineSha256: baselineImport.baseline.contentSha256,
+        previousBaselineSha256: baselineImport.baseline.contentSha256,
+        baseline: baselineImport.baseline,
+      }),
+    );
     expect(JSON.stringify(quorum)).not.toContain(sourceUrl);
     expect(JSON.stringify(quorum)).not.toContain(mirrorSourceUrl);
 

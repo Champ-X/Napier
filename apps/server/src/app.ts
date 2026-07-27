@@ -82,6 +82,8 @@ import type {
   ExportOpenTelemetryTraceRequest,
   ExportExtensionPackageLockfileRequest,
   HealthResponse,
+  ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
+  ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   PromoteEvaluationQualificationBaselineRequest,
   PromoteEvaluationQualificationBaselineResult,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
@@ -977,6 +979,128 @@ export function createApp(services: NapierServices): Hono {
         verification,
       );
       return context.json(verification);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum promotion baseline import request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum promotion baseline import request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum promotion baseline import request is invalid",
+          400,
+        );
+      }
+      const trustDirectoryVerification =
+        body.trustDirectory === undefined
+          ? undefined
+          : services.store.verifyReceiptTrustAnchorDirectory(
+              body.trustDirectory,
+              body.trustDirectoryPolicy,
+            );
+      const anchors =
+        body.trustDirectory === undefined
+          ? services.store.listReceiptTrustAnchors()
+          : trustDirectoryVerification?.status === "valid"
+            ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+            : [];
+      const verification =
+        verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+          body.baseline,
+          anchors,
+          {
+            ...(trustDirectoryVerification
+              ? { trustDirectoryVerification }
+              : {}),
+          },
+        );
+      if (
+        verification.status !== "trusted" ||
+        !verification.baselineValid ||
+        !verification.signatureValid ||
+        !verification.integrityValid
+      ) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum promotion baseline import requires trusted verification",
+          409,
+        );
+      }
+      try {
+        const imported =
+          await services.store.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+            body.threadId,
+            body.baseline,
+            body.expectedCurrentBaselineSha256,
+            anchors,
+          );
+        if (imported.imported) {
+          await appendReceiptTrustEvent(
+            services,
+            body.threadId,
+            "receipt_trust.directory_quorum_promotion_baseline.imported",
+            {
+              baselineId: imported.baseline.id,
+              baselineSha256: imported.baseline.contentSha256,
+              importedReceiptSha256:
+                imported.baseline.envelope.receipt.contentSha256,
+              envelopeSha256: imported.baseline.envelope.contentSha256,
+              keyId: imported.baseline.envelope.signature.keyId,
+              expectedCurrentBaselineSha256:
+                body.expectedCurrentBaselineSha256,
+              ...(imported.previousBaselineSha256
+                ? { previousBaselineSha256: imported.previousBaselineSha256 }
+                : {}),
+              verificationSha256: verification.contentSha256,
+            },
+          );
+        }
+        const result: ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult =
+          {
+            baseline: imported.baseline,
+            imported: imported.imported,
+            verification,
+            expectedCurrentBaselineSha256:
+              body.expectedCurrentBaselineSha256,
+            ...(imported.previousBaselineSha256
+              ? { previousBaselineSha256: imported.previousBaselineSha256 }
+              : {}),
+          };
+        setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeaders(
+          context,
+          result,
+        );
+        return context.json(result, imported.imported ? 201 : 200);
+      } catch (error) {
+        const message = errorMessage(error);
+        return jsonError(
+          context,
+          message,
+          message.includes("precondition") ? 409 : 400,
+        );
+      }
     },
   );
 
@@ -10986,6 +11110,48 @@ function parseVerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
   };
 }
 
+function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
+  input: unknown,
+):
+  | ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "baseline",
+    "threadId",
+    "expectedCurrentBaselineSha256",
+    "trustDirectory",
+    "trustDirectoryPolicy",
+  ]);
+  const threadId = record?.["threadId"];
+  const expectedCurrentBaselineSha256 =
+    record?.["expectedCurrentBaselineSha256"];
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
+    record?.["trustDirectoryPolicy"],
+  );
+  if (
+    !record ||
+    record["baseline"] === undefined ||
+    !validThreadId(threadId) ||
+    typeof expectedCurrentBaselineSha256 !== "string" ||
+    (expectedCurrentBaselineSha256 !== "" &&
+      !isSha256Hex(expectedCurrentBaselineSha256)) ||
+    (record["trustDirectoryPolicy"] !== undefined &&
+      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
+  ) {
+    return undefined;
+  }
+  return {
+    baseline: record["baseline"],
+    threadId,
+    expectedCurrentBaselineSha256,
+    ...(record["trustDirectory"] !== undefined
+      ? { trustDirectory: record["trustDirectory"] }
+      : {}),
+    ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
+  };
+}
+
 function parseVerifyReceiptTrustAnchorDirectoryRequest(
   input: unknown,
 ): VerifyReceiptTrustAnchorDirectoryRequest | undefined {
@@ -16094,6 +16260,52 @@ function setPromoteReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeade
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Envelope-Set-SHA256",
     result.baseline.selectedMetadataEnvelopeSetSha256,
+  );
+}
+
+function setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeaders(
+  context: Context,
+  result: ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, result);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Imported",
+    String(result.imported),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Expected-Current-SHA256",
+    result.expectedCurrentBaselineSha256,
+  );
+  if (result.previousBaselineSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Previous-SHA256",
+      result.previousBaselineSha256,
+    );
+  }
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
+    result.baseline.id,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
+    result.baseline.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-SHA256",
+    result.verification.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
+    result.baseline.envelope.receipt.contentSha256,
+  );
+  context.header(
+    "X-Napier-Envelope-SHA256",
+    result.baseline.envelope.contentSha256,
+  );
+  context.header(
+    "X-Napier-Signature-Key-Id",
+    result.baseline.envelope.signature.keyId,
   );
 }
 

@@ -1372,7 +1372,13 @@ selected verifier-set, and signer-key hashes. `POST
 verifies an uploaded baseline against either local receipt-trust anchors or an
 uploaded public trust directory, returning a hash-bound verification receipt
 with trusted/revoked/unknown/invalid status, diagnostic hashes, selected-set
-hashes, and optional trust-directory verification evidence.
+hashes, and optional trust-directory verification evidence. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import`
+performs the same verification and then appends a local baseline only when
+`expectedCurrentBaselineSha256` matches the current latest baseline hash; use
+an empty string when importing into a workspace with no existing quorum
+baseline. The imported local baseline keeps the archived signed envelope but
+receives a local ID, local audit Thread, and local supersession link.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

@@ -447,6 +447,11 @@ is validated for baseline hash, embedded promotion receipt hash, envelope
 integrity, Ed25519 signature, selected-set hashes, and optional uploaded trust
 directory verification. The response is itself hash-bound and exposes only
 diagnostic codes plus baseline/envelope/receipt/signature/directory hashes.
+CAS-gated import composes that verification with a local latest-baseline
+precondition. The archive keeps its original signed envelope, while the local
+record receives a new baseline ID, local audit Thread, and supersession link.
+An empty expected-current hash means no local baseline exists; stale or
+mismatched expectations fail before any state mutation.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2406,9 +2411,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- CAS-gated import for verified quorum-promotion baselines, so an external
-  archive can be replayed into a new workspace without bypassing local
-  trust-policy checks.
+- policy-bound review for imported quorum-promotion baselines, so external
+  archive replay can require local freshness, publisher, and source-origin
+  constraints before activation.
 
 ### Layer 3: Extension fabric
 

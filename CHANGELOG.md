@@ -290,7 +290,10 @@ All notable changes to Napier are recorded here.
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify`
   verifies uploaded baselines against local or uploaded public trust
   directories and returns a no-store verification receipt with status,
-  diagnostics, selected-set hashes, and trust-directory evidence.
+  diagnostics, selected-set hashes, and trust-directory evidence. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import`
+  now CAS-imports verified archives into local append-only trust state when
+  `expectedCurrentBaselineSha256` matches the current latest baseline hash.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

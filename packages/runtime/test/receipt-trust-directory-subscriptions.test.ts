@@ -611,6 +611,65 @@ describe("receipt trust anchor directory subscriptions", () => {
       baseline: baselineResult.baseline,
       created: false,
     });
+    const { store: importStore } = await createStore();
+    const importThread = importStore.listThreads()[0]!;
+    const importSigningAnchor = await importStore.createReceiptTrustAnchor({
+      threadId: importThread.id,
+      label: "Imported quorum signer",
+      source: { type: "environment", variable: SIGNING_ENV },
+    });
+    const imported =
+      await importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        importThread.id,
+        baselineResult.baseline,
+        "",
+        [importSigningAnchor],
+      );
+    expect(imported).toEqual(
+      expect.objectContaining({
+        imported: true,
+        baseline: expect.objectContaining({
+          promotedByThreadId: importThread.id,
+          selectedAnchorSetSha256: directory.anchorSetSha256,
+          selectedDirectorySha256: directory.contentSha256,
+          selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
+          envelope: expect.objectContaining({
+            contentSha256: promotionEnvelope.contentSha256,
+          }),
+        }),
+      }),
+    );
+    expect(
+      importStore.listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
+    ).toEqual([imported.baseline]);
+    await expect(
+      importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        importThread.id,
+        baselineResult.baseline,
+        "0".repeat(64),
+        [importSigningAnchor],
+      ),
+    ).rejects.toThrow("precondition failed");
+    await expect(
+      importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        importThread.id,
+        baselineResult.baseline,
+        imported.baseline.contentSha256,
+        [],
+      ),
+    ).rejects.toThrow("signature is invalid");
+    await expect(
+      importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        importThread.id,
+        baselineResult.baseline,
+        imported.baseline.contentSha256,
+        [importSigningAnchor],
+      ),
+    ).resolves.toEqual({
+      baseline: imported.baseline,
+      imported: false,
+      previousBaselineSha256: imported.baseline.contentSha256,
+    });
     const tamperedMetadataQuorum = structuredClone(metadataPinned);
     const sourceMetadata = tamperedMetadataQuorum.sources.find(
       (source) => source.subscriptionId === left.id,

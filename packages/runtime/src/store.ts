@@ -1208,28 +1208,87 @@ export class LocalStore {
           created: false,
         };
       }
-      if (
-        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >=
-        MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES
-      ) {
-        throw new Error(
-          `Receipt trust anchor directory quorum promotion exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES} baselines`,
-        );
-      }
-      const current =
-        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
-      const baseline = createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
-        envelope,
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
         promotedByThreadId,
-        current?.id,
-      );
-      this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.push(
-        baseline,
+        envelope,
       );
       await this.persistState();
       return {
         baseline: structuredClone(baseline),
         created: true,
+      };
+    });
+  }
+
+  async importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+    importedByThreadId: string,
+    baselineInput: unknown,
+    expectedCurrentBaselineSha256: string,
+    trustedAnchors: ReceiptTrustAnchor[],
+  ): Promise<{
+    baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+    imported: boolean;
+    previousBaselineSha256?: string;
+  }> {
+    this.assertInitialized();
+    this.getThread(importedByThreadId);
+    if (
+      expectedCurrentBaselineSha256 !== "" &&
+      !isSha256(expectedCurrentBaselineSha256)
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory quorum promotion baseline import precondition is invalid",
+      );
+    }
+    return this.stateQueue.run(async () => {
+      const current =
+        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
+      const currentSha256 = current?.contentSha256 ?? "";
+      if (currentSha256 !== expectedCurrentBaselineSha256) {
+        throw new Error(
+          "Receipt trust anchor directory quorum promotion baseline import precondition failed",
+        );
+      }
+      const importedBaseline =
+        validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+          baselineInput,
+          trustedAnchors,
+        );
+      const verification = verifyTrustedReceiptEnvelope(
+        importedBaseline.envelope,
+        trustedAnchors,
+      );
+      if (verification.status !== "trusted") {
+        throw new Error(
+          `Receipt trust anchor directory quorum promotion baseline import is not trusted: ${verification.reason}`,
+        );
+      }
+      const existing =
+        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.find(
+          (baseline) =>
+            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
+              baseline.envelope,
+            ) ===
+            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
+              importedBaseline.envelope,
+            ),
+        );
+      if (existing) {
+        return {
+          baseline: structuredClone(existing),
+          imported: false,
+          ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
+        };
+      }
+      const baseline = this.appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        importedByThreadId,
+        importedBaseline.envelope,
+      );
+      await this.persistState();
+      return {
+        baseline: structuredClone(baseline),
+        imported: true,
+        ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
       };
     });
   }
@@ -7629,6 +7688,31 @@ export class LocalStore {
       await this.persistState();
       return structuredClone(updated);
     });
+  }
+
+  private appendReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+    threadId: string,
+    envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>,
+  ): ReceiptTrustAnchorDirectoryQuorumPromotionBaseline {
+    if (
+      this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >=
+      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES
+    ) {
+      throw new Error(
+        `Receipt trust anchor directory quorum promotion exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES} baselines`,
+      );
+    }
+    const current =
+      this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
+    const baseline = createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+      envelope,
+      threadId,
+      current?.id,
+    );
+    this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.push(
+      baseline,
+    );
+    return baseline;
   }
 
   private createRunRecord(

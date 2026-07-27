@@ -4,6 +4,8 @@ import type {
   DiscoverReceiptTrustAnchorDirectoryRequest,
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   EvaluationQualificationBaseline,
+  ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
+  ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   PromoteEvaluationQualificationBaselineResult,
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest,
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
@@ -136,6 +138,18 @@ export function verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
 ): Promise<ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+  body: ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
+): Promise<ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
     {
       method: "POST",
       body: JSON.stringify(body),

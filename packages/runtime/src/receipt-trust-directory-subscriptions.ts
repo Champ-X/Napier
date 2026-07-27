@@ -33,6 +33,7 @@ import { createId, nowIso } from "./ids.js";
 import {
   hashReceiptTrustAnchorDirectoryVerificationPolicy,
   normalizeReceiptTrustAnchorDirectoryVerificationPolicy,
+  receiptTrustAnchorsFromDirectory,
   validateReceiptTrustAnchorDirectory,
   validateTrustedReceiptEnvelope,
   verifyTrustedReceiptEnvelope,
@@ -742,7 +743,10 @@ export function validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
     );
   }
   if (anchors) {
-    const verification = verifyTrustedReceiptEnvelope(envelope, anchors);
+    const verification = verifyTrustedReceiptEnvelope(
+      envelope,
+      receiptAnchorsForQuorumPromotionBaseline(envelope, anchors),
+    );
     if (!verification.integrityValid || !verification.signatureValid) {
       throw new Error(
         `Receipt trust anchor directory quorum promotion baseline signature is invalid: ${verification.reason}`,
@@ -1546,6 +1550,21 @@ function diagnosticsForTrustedReceiptVerification(
   if (status === "revoked") return ["signer_revoked"];
   if (status === "unknown_key") return ["signer_unknown"];
   return ["signature_invalid"];
+}
+
+function receiptAnchorsForQuorumPromotionBaseline(
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>,
+  anchors: ReceiptTrustAnchor[],
+): ReceiptTrustAnchor[] {
+  const byKeyId = new Map<string, ReceiptTrustAnchor>();
+  for (const anchor of anchors) byKeyId.set(anchor.keyId, anchor);
+  const selectedDirectory = envelope.receipt.quorum.selectedDirectory;
+  if (selectedDirectory) {
+    for (const anchor of receiptTrustAnchorsFromDirectory(selectedDirectory)) {
+      if (!byKeyId.has(anchor.keyId)) byKeyId.set(anchor.keyId, anchor);
+    }
+  }
+  return [...byKeyId.values()];
 }
 
 function validateQuorumPromotionMetadataList(
