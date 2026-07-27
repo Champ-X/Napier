@@ -789,6 +789,17 @@ returns `aligned`, `divergent`, or legacy `unavailable`, with per-reference
 file/range hashes, counts, hash-only diagnostics, the source outcome hash, and
 a stable content SHA-256 without appending Ledger events or returning file
 content.
+When a final Subagent candidate fails only the strict JSON/output contract,
+Napier may spend one remaining Subagent turn on a dedicated tool-free repair
+pass. The repair request binds the task, role, model, original prompt,
+immutable outcome instructions, predecessor-result hash/size, diagnostic, and
+repair prompt/instructions. The outcome receipt binds the repaired result to
+that request and the accepted outcome receipt or a hash-only rejection.
+Grounding failures, oversized output, cancellation, timeout, and exhausted
+turn budgets never trigger repair. Final and repaired candidate steps persist
+only SHA-256 and byte counts; raw malformed candidates and repair prompts do
+not enter the Ledger. Replay import remaps task IDs and recomputes both repair
+receipts without changing result or diagnostic hashes.
 
 ## Sandboxed Workspace Verification
 

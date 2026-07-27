@@ -7,11 +7,15 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   createSubagentOutcome,
+  createSubagentOutcomeRepairOutcome,
+  createSubagentOutcomeRepairRequest,
   createThreadReplayBundle,
   exportThreadReplayBundle,
   hashThreadEventStream,
   LEDGER_DATABASE_FILENAME,
   LocalStore,
+  validateSubagentOutcomeRepairOutcome,
+  validateSubagentOutcomeRepairRequest,
   validateThreadReplayBundle,
   verifyThreadReplayBundle,
 } from "../src/index.js";
@@ -179,16 +183,37 @@ describe("thread replay bundles", () => {
       model: { provider: "napier", id: "demo" },
     });
     await store.startSubagentTask(completedTask.id);
+    const completedResultText = JSON.stringify({
+      summary: "The completed trace is ledger-backed.",
+      items: [],
+      unknowns: [],
+    });
     const completedOutcome = createSubagentOutcome({
       taskId: completedTask.id,
       role: completedTask.role,
       model: completedTask.model,
       prompt: completedTask.prompt,
-      resultText: JSON.stringify({
-        summary: "The completed trace is ledger-backed.",
-        items: [],
-        unknowns: [],
-      }),
+      resultText: completedResultText,
+    });
+    const repairRequest = createSubagentOutcomeRepairRequest({
+      taskId: completedTask.id,
+      role: completedTask.role,
+      model: completedTask.model,
+      taskPrompt: completedTask.prompt,
+      predecessorResult: "Malformed source candidate.",
+      diagnostic: "Subagent result must be one valid JSON object",
+      attempt: 1,
+      maxAttempts: 1,
+    });
+    const repairOutcome = createSubagentOutcomeRepairOutcome({
+      request: repairRequest.payload,
+      status: "accepted",
+      resultText: completedResultText,
+      outcomeSha256: completedOutcome.contentSha256,
+    });
+    await store.recordSubagentProgress(completedTask.id, {
+      turnDelta: 2,
+      stepDelta: 2,
     });
     const completedTaskRecord = await store.finishSubagentTask(
       completedTask.id,
@@ -199,6 +224,47 @@ describe("thread replay bundles", () => {
         outcome: completedOutcome,
       },
     );
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: right.id,
+      type: "subagent.step",
+      category: "subagent",
+      payload: {
+        taskId: completedTask.id,
+        kind: "assistant",
+        contentRedacted: true,
+        textSha256: repairRequest.payload.predecessorResultSha256,
+        textBytes: repairRequest.payload.predecessorResultBytes,
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: right.id,
+      type: "subagent.outcome.repair.requested",
+      category: "subagent",
+      payload: repairRequest.payload,
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: right.id,
+      type: "subagent.step",
+      category: "subagent",
+      payload: {
+        taskId: completedTask.id,
+        kind: "outcome_repair",
+        contentRedacted: true,
+        textSha256: completedOutcome.resultSha256,
+        textBytes: Buffer.byteLength(completedResultText, "utf8"),
+        toolCallCount: 0,
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: right.id,
+      type: "subagent.outcome.repair.outcome",
+      category: "subagent",
+      payload: repairOutcome,
+    });
     await store.appendEvent({
       threadId: thread.id,
       runId: right.id,
@@ -384,6 +450,27 @@ describe("thread replay bundles", () => {
     expect(() => validateThreadReplayBundle(tamperedAdjudication)).toThrow(
       "revision hash mismatch",
     );
+    const tamperedRepairStep = structuredClone(bundle);
+    const sourceCandidateStep = tamperedRepairStep.events.find(
+      (event) =>
+        event.type === "subagent.step" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["kind"] === "assistant" &&
+        event.payload["contentRedacted"] === true,
+    );
+    if (
+      !sourceCandidateStep?.payload ||
+      Array.isArray(sourceCandidateStep.payload) ||
+      typeof sourceCandidateStep.payload !== "object"
+    ) {
+      throw new Error("Repair source candidate step fixture is missing");
+    }
+    sourceCandidateStep.payload["textSha256"] = "f".repeat(64);
+    expect(() => validateThreadReplayBundle(tamperedRepairStep)).toThrow(
+      "outcome repair request is invalid",
+    );
     const imported = await store.importThreadReplayBundle(
       bundle,
       "Imported verification fixture",
@@ -556,6 +643,34 @@ describe("thread replay bundles", () => {
     const importedOutcomeAccepted = imported.events.find(
       (event) => event.type === "subagent.outcome.accepted",
     )!;
+    const importedRepairRequest = validateSubagentOutcomeRepairRequest(
+      imported.events.find(
+        (event) => event.type === "subagent.outcome.repair.requested",
+      )!.payload,
+    );
+    const importedRepairOutcome = validateSubagentOutcomeRepairOutcome(
+      imported.events.find(
+        (event) => event.type === "subagent.outcome.repair.outcome",
+      )!.payload,
+    );
+    expect(importedRepairRequest).toEqual(
+      expect.objectContaining({
+        taskId: importedCompletedTask.id,
+        predecessorResultSha256: repairRequest.payload.predecessorResultSha256,
+        contentSha256: expect.not.stringMatching(
+          repairRequest.payload.contentSha256,
+        ),
+      }),
+    );
+    expect(importedRepairOutcome).toEqual(
+      expect.objectContaining({
+        taskId: importedCompletedTask.id,
+        requestContentSha256: importedRepairRequest.contentSha256,
+        resultSha256: repairOutcome.resultSha256,
+        outcomeSha256: importedCompletedTask.outcome!.contentSha256,
+        contentSha256: expect.not.stringMatching(repairOutcome.contentSha256),
+      }),
+    );
     expect(importedOutcomeAccepted.payload).toEqual(
       expect.objectContaining({
         taskId: importedCompletedTask.id,

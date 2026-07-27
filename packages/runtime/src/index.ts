@@ -48,6 +48,7 @@ export * from "./skills.js";
 export * from "./sqlite-ledger.js";
 export * from "./store.js";
 export * from "./subagents.js";
+export * from "./subagent-outcome-repair.js";
 export * from "./subagent-outcomes.js";
 export * from "./thread-bundles.js";
 export * from "./token-accounting.js";

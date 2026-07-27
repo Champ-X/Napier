@@ -1006,6 +1006,17 @@ write:management-openapi-compatibility` now emits
   Trace delegation cards load the verifier on demand and render current,
   drifted, missing, and legacy states without exposing file content or raw
   filesystem errors.
+- Bounded typed Subagent outcome repair. A structurally malformed final
+  candidate can consume one remaining Subagent turn in a dedicated zero-tool
+  Agent that only rewrites the strict outcome JSON. Hash-only request and
+  outcome receipts bind task/role/model, original task and immutable
+  instruction hashes, predecessor/result hashes, diagnostic, repair
+  prompt/instruction hashes, and the accepted outcome receipt. Grounding
+  failures, oversized candidates, exhausted turns, timeout, and cancellation
+  remain fail-closed without repair. Terminal candidate steps now persist only
+  SHA-256 and byte counts, preventing rejected raw output from leaking through
+  `subagent.step`; cross-workspace fixture import validates and rebinds the
+  repair receipt chain.
 - Shared Agent-profile and Subagent-coordinator limit normalization without a
   second silent runtime clamp.
 - Auditable delegation events and dedicated Trace workcells that preserve

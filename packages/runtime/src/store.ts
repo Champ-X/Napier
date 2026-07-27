@@ -480,6 +480,12 @@ import {
   assertSubagentOutcomeBinding,
   rebindSubagentOutcome,
 } from "./subagent-outcomes.js";
+import {
+  rebindSubagentOutcomeRepairOutcome,
+  rebindSubagentOutcomeRepairRequest,
+  validateSubagentOutcomeRepairOutcome,
+  validateSubagentOutcomeRepairRequest,
+} from "./subagent-outcome-repair.js";
 import { validateThreadReplayBundle } from "./thread-bundles.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
@@ -8129,8 +8135,10 @@ export class LocalStore {
       const events: RunEvent[] = bundle.events.map((source) => {
         const payload = rebindImportedSubagentEventPayload(
           source.type,
+          source.payload,
           remapJsonValue(source.payload, idMap),
           subagentsById,
+          idMap,
         );
         return {
           id: eventIds.get(source.id)!,
@@ -11287,9 +11295,46 @@ function remapJsonValue(
 
 function rebindImportedSubagentEventPayload(
   type: string,
+  sourcePayload: JsonValue,
   payload: JsonValue,
   tasks: ReadonlyMap<string, SubagentTask>,
+  idMap: Map<string, string>,
 ): JsonValue {
+  if (type === "subagent.outcome.repair.requested") {
+    const source = validateSubagentOutcomeRepairRequest(sourcePayload);
+    const taskId = idMap.get(source.taskId);
+    if (!taskId || !tasks.has(taskId)) {
+      throw new Error("Imported Subagent outcome repair task is missing");
+    }
+    const rebound = rebindSubagentOutcomeRepairRequest(source, taskId);
+    idMap.set(source.contentSha256, rebound.contentSha256);
+    return rebound as unknown as JsonValue;
+  }
+  if (type === "subagent.outcome.repair.outcome") {
+    const source = validateSubagentOutcomeRepairOutcome(sourcePayload);
+    const taskId = idMap.get(source.taskId);
+    const requestContentSha256 = idMap.get(source.requestContentSha256);
+    const task = taskId ? tasks.get(taskId) : undefined;
+    const importedOutcomeSha256 =
+      source.status === "accepted" ? task?.outcome?.contentSha256 : undefined;
+    if (
+      !taskId ||
+      !requestContentSha256 ||
+      !task ||
+      (source.status === "accepted" && !importedOutcomeSha256)
+    ) {
+      throw new Error("Imported Subagent outcome repair binding is missing");
+    }
+    const rebound = rebindSubagentOutcomeRepairOutcome(source, {
+      taskId,
+      requestContentSha256,
+      ...(importedOutcomeSha256
+        ? { outcomeSha256: importedOutcomeSha256 }
+        : {}),
+    });
+    idMap.set(source.contentSha256, rebound.contentSha256);
+    return rebound as unknown as JsonValue;
+  }
   if (
     (type !== "subagent.outcome.accepted" && type !== "subagent.completed") ||
     !payload ||

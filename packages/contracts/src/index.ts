@@ -1556,6 +1556,40 @@ export interface GroundedSubagentOutcome extends SubagentOutcome {
   evidenceSetSha256: string;
 }
 
+export interface SubagentOutcomeRepairRequestPayload {
+  kind: "napier.subagent-outcome-repair-request";
+  schemaVersion: 1;
+  taskId: string;
+  role: SubagentRole;
+  model: ModelRef;
+  attempt: number;
+  maxAttempts: number;
+  taskPromptSha256: string;
+  outcomeInstructionsSha256: string;
+  predecessorResultSha256: string;
+  predecessorResultBytes: number;
+  diagnosticSha256: string;
+  repairInstructionsSha256: string;
+  repairPromptSha256: string;
+  contentSha256: string;
+}
+
+export type SubagentOutcomeRepairStatus = "accepted" | "rejected" | "error";
+
+export interface SubagentOutcomeRepairOutcomePayload {
+  kind: "napier.subagent-outcome-repair-outcome";
+  schemaVersion: 1;
+  taskId: string;
+  status: SubagentOutcomeRepairStatus;
+  attempt: number;
+  maxAttempts: number;
+  requestContentSha256: string;
+  resultSha256?: string;
+  outcomeSha256?: string;
+  diagnosticSha256?: string;
+  contentSha256: string;
+}
+
 export type SubagentOutcomeEvidenceVerificationItemStatus =
   | "aligned"
   | "divergent"

@@ -39,7 +39,15 @@ import {
 } from "./evaluation-suites.js";
 import { normalizeRubric } from "./evaluation.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
-import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
+import {
+  assertSubagentOutcomeBinding,
+  subagentRoleInstructions,
+} from "./subagent-outcomes.js";
+import {
+  subagentOutcomeRepairInstructions,
+  validateSubagentOutcomeRepairOutcome,
+  validateSubagentOutcomeRepairRequest,
+} from "./subagent-outcome-repair.js";
 
 export const MAX_THREAD_REPLAY_BUNDLE_BYTES = 10 * 1024 * 1024;
 
@@ -1034,6 +1042,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
   }
 
   const taskIds = new Set<string>();
+  const taskRecords = new Map<string, SubagentTask>();
   for (const [index, value] of subagents.entries()) {
     const task = assertRecord(value, `subagents[${index}]`);
     const taskId = assertResourceId(task["id"], `subagents[${index}].id`);
@@ -1093,6 +1102,113 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       if (task[key] !== undefined) {
         assertIsoDate(task[key], `subagents[${index}].${key}`);
       }
+    }
+    taskRecords.set(taskId, value as SubagentTask);
+  }
+
+  const outcomeRepairRequests = new Map<
+    string,
+    ReturnType<typeof validateSubagentOutcomeRepairRequest>
+  >();
+  const outcomeRepairTaskIds = new Set<string>();
+  const outcomeRepairCandidateSteps = new Map<
+    string,
+    {
+      runId: string;
+      textSha256: string;
+      textBytes: number;
+      toolCallCount?: number;
+    }
+  >();
+  for (const event of typedEvents) {
+    if (
+      event.type === "subagent.step" &&
+      event.payload &&
+      !Array.isArray(event.payload) &&
+      typeof event.payload === "object"
+    ) {
+      const taskId = event.payload["taskId"];
+      const kind = event.payload["kind"];
+      const textSha256 = event.payload["textSha256"];
+      const textBytes = event.payload["textBytes"];
+      if (
+        typeof taskId === "string" &&
+        (kind === "assistant" || kind === "outcome_repair") &&
+        event.payload["contentRedacted"] === true &&
+        typeof textSha256 === "string" &&
+        Number.isSafeInteger(textBytes) &&
+        Number(textBytes) >= 0
+      ) {
+        outcomeRepairCandidateSteps.set(`${taskId}:${kind}`, {
+          runId: event.runId,
+          textSha256,
+          textBytes: Number(textBytes),
+          ...(Number.isSafeInteger(event.payload["toolCallCount"])
+            ? { toolCallCount: Number(event.payload["toolCallCount"]) }
+            : {}),
+        });
+      }
+    }
+    if (event.type === "subagent.outcome.repair.requested") {
+      const request = validateSubagentOutcomeRepairRequest(event.payload);
+      const task = taskRecords.get(request.taskId);
+      const predecessor = outcomeRepairCandidateSteps.get(
+        `${request.taskId}:assistant`,
+      );
+      if (
+        !task ||
+        !predecessor ||
+        event.category !== "subagent" ||
+        event.runId !== task.runId ||
+        predecessor.runId !== task.runId ||
+        request.role !== task.role ||
+        canonicalJson(request.model) !== canonicalJson(task.model) ||
+        request.taskPromptSha256 !== sha256(task.prompt) ||
+        request.outcomeInstructionsSha256 !==
+          sha256(subagentRoleInstructions(task.role)) ||
+        request.repairInstructionsSha256 !==
+          sha256(subagentOutcomeRepairInstructions()) ||
+        request.predecessorResultSha256 !== predecessor.textSha256 ||
+        request.predecessorResultBytes !== predecessor.textBytes ||
+        outcomeRepairRequests.has(request.contentSha256) ||
+        [...outcomeRepairRequests.values()].some(
+          (candidate) => candidate.taskId === task.id,
+        )
+      ) {
+        throw new Error(
+          `Thread replay bundle Subagent outcome repair request is invalid: ${request.taskId}`,
+        );
+      }
+      outcomeRepairRequests.set(request.contentSha256, request);
+    }
+    if (event.type === "subagent.outcome.repair.outcome") {
+      const outcome = validateSubagentOutcomeRepairOutcome(event.payload);
+      const request = outcomeRepairRequests.get(outcome.requestContentSha256);
+      const task = taskRecords.get(outcome.taskId);
+      const result = outcomeRepairCandidateSteps.get(
+        `${outcome.taskId}:outcome_repair`,
+      );
+      if (
+        !request ||
+        !task ||
+        event.category !== "subagent" ||
+        event.runId !== task.runId ||
+        (outcome.resultSha256 !== undefined && result?.runId !== task.runId) ||
+        request.taskId !== task.id ||
+        request.attempt !== outcome.attempt ||
+        request.maxAttempts !== outcome.maxAttempts ||
+        outcomeRepairTaskIds.has(task.id) ||
+        (outcome.resultSha256 !== undefined &&
+          outcome.resultSha256 !== result?.textSha256) ||
+        (outcome.status !== "error" && result?.toolCallCount !== 0) ||
+        (outcome.status === "accepted" &&
+          outcome.outcomeSha256 !== task.outcome?.contentSha256)
+      ) {
+        throw new Error(
+          `Thread replay bundle Subagent outcome repair outcome is invalid: ${outcome.taskId}`,
+        );
+      }
+      outcomeRepairTaskIds.add(task.id);
     }
   }
 

@@ -1931,6 +1931,9 @@ parent tool call
   -> expose read-only workspace tools, never delegate_task
   -> require one strict typed outcome JSON object
   -> normalize workspace-relative evidence and reject unknown fields
+  -> if only the output contract is malformed and one turn remains,
+     issue one hash-bound tool-free repair request
+  -> retain candidate steps as hash + byte count; never persist repair prompts
   -> resolve cited files through the read_file realpath/UTF-8 boundary
   -> hash each observed file and exact cited line range
   -> bind task/role/model/instructions/prompt/result/item-set hashes into a receipt
@@ -1955,6 +1958,17 @@ hash drift fail closed. Cited evidence must exist at completion time and fit
 the bounded text-file policy; the receipt records file/range hashes, byte and
 line counts, plus an aggregate evidence-set SHA-256. Grounding is additive in
 schema 2; published schema-1 receipts remain verifiable without those fields.
+Malformed JSON, unsupported fields, or invalid output shape may use one
+remaining Subagent turn for format repair. A separate Agent receives the
+original task and candidate in an ephemeral prompt, has no tools, and cannot
+extend the task timeout or turn budget. Request and outcome receipts bind
+task/role/model, immutable instructions, predecessor/result hashes,
+diagnostics, and an accepted outcome hash. Structurally valid output with
+missing, escaping, oversized, non-text, or out-of-range evidence is a grounding
+failure and is never repaired. Terminal candidate `subagent.step` events carry
+only hash and byte count, so a malformed candidate cannot leak through the
+step ledger before rejection. Cross-workspace import rebinds repair task IDs,
+request hashes, and accepted outcome hashes in event order.
 Legacy tasks without an outcome remain readable; new
 coordinator completions always carry a `napier.subagent-outcome` receipt.
 Schema-1 role and output instructions are immutable because their exact bytes

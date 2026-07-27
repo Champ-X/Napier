@@ -117,6 +117,20 @@ export function subagentRoleInstructions(role: SubagentRole): string {
   return [...ROLE_INSTRUCTIONS[role], OUTCOME_INSTRUCTIONS].join("\n");
 }
 
+export function subagentOutcomeContractInstructions(): string {
+  return OUTCOME_INSTRUCTIONS;
+}
+
+export function isRepairableSubagentOutcomeResult(resultText: string): boolean {
+  if (Buffer.byteLength(resultText, "utf8") > MAX_RESULT_BYTES) return false;
+  try {
+    parseSubagentResult(resultText);
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 export function createSubagentOutcome(
   input: CreateSubagentOutcomeInput,
 ): SubagentOutcome {
