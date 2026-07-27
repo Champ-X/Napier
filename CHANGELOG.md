@@ -536,7 +536,12 @@ write:management-openapi` now scans `apps/server/src/app.ts`, emits
   /api/receipt-trust/anchors/directory/verify` and `POST
   /api/receipt-trust/anchors/directory/discover` now promote no-store
   directory verification and hosted discovery schemas, including verification
-  policy, hash diagnostics, and discovery response evidence.
+  policy, hash diagnostics, and discovery response evidence. `POST
+  /api/receipt-trust/anchors/directory/signed-metadata` and `POST
+  /api/receipt-trust/anchors/directory/metadata/verify` now promote
+  publisher metadata signing envelopes and metadata verification receipts,
+  including signature evidence, trust-directory policy, and binding
+  diagnostics.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published

@@ -4526,10 +4526,12 @@
         ],
         "summary": "POST /api/receipt-trust/anchors/directory/metadata/verify",
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
-              "schema": true
+              "schema": {
+                "$ref": "#/components/schemas/VerifyReceiptTrustAnchorDirectoryMetadataRequest"
+              }
             }
           }
         },
@@ -4538,7 +4540,9 @@
             "description": "Successful no-store JSON response",
             "content": {
               "application/json": {
-                "schema": true
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataVerification"
+                }
               }
             }
           },
@@ -4555,7 +4559,11 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         },
-        "x-napier-source-route": "POST /api/receipt-trust/anchors/directory/metadata/verify"
+        "x-napier-source-route": "POST /api/receipt-trust/anchors/directory/metadata/verify",
+        "x-napier-promoted-request-schema-ref": "#/components/schemas/VerifyReceiptTrustAnchorDirectoryMetadataRequest",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataVerification"
+        }
       }
     },
     "/api/receipt-trust/anchors/directory/signed-metadata": {
@@ -4566,10 +4574,12 @@
         ],
         "summary": "POST /api/receipt-trust/anchors/directory/signed-metadata",
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
-              "schema": true
+              "schema": {
+                "$ref": "#/components/schemas/SignReceiptTrustAnchorDirectoryMetadataRequest"
+              }
             }
           }
         },
@@ -4579,6 +4589,16 @@
             "content": {
               "application/json": {
                 "schema": true
+              }
+            }
+          },
+          "201": {
+            "description": "Successful 201 no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataEnvelope"
+                }
               }
             }
           },
@@ -4595,7 +4615,11 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         },
-        "x-napier-source-route": "POST /api/receipt-trust/anchors/directory/signed-metadata"
+        "x-napier-source-route": "POST /api/receipt-trust/anchors/directory/signed-metadata",
+        "x-napier-promoted-request-schema-ref": "#/components/schemas/SignReceiptTrustAnchorDirectoryMetadataRequest",
+        "x-napier-promoted-response-schema-refs": {
+          "201": "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataEnvelope"
+        }
       }
     },
     "/api/receipt-trust/anchors/directory/subscriptions": {
@@ -10160,6 +10184,329 @@
           }
         }
       },
+      "ReceiptTrustAnchorDirectoryMetadataReceipt": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "apiVersion",
+          "generatedAt",
+          "publisher",
+          "directorySha256",
+          "anchorSetSha256",
+          "anchorCount",
+          "trustedCount",
+          "revokedCount",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.receipt-trust-anchor-directory-metadata-receipt"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "apiVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publisher": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "directorySha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorSetSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "trustedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "revokedCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sourceUrlSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "sourceOriginSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
+      "TrustedReceiptSignature": {
+        "type": "object",
+        "required": [
+          "algorithm",
+          "keyId",
+          "signedAt",
+          "receiptArtifactSha256",
+          "statementSha256",
+          "value"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "algorithm": {
+            "const": "Ed25519"
+          },
+          "keyId": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "signedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receiptArtifactSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "statementSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        }
+      },
+      "ReceiptTrustAnchorDirectoryMetadataEnvelope": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "apiVersion",
+          "receiptKind",
+          "receipt",
+          "signature",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.trusted-receipt-envelope"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "apiVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "receiptKind": {
+            "const": "receipt_trust_anchor_directory_metadata"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataReceipt"
+          },
+          "signature": {
+            "$ref": "#/components/schemas/TrustedReceiptSignature"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
+      "TrustedReceiptVerificationStatus": {
+        "type": "string",
+        "enum": [
+          "trusted",
+          "revoked",
+          "unknown_key",
+          "invalid"
+        ]
+      },
+      "TrustedReceiptAnchorDirectorySource": {
+        "type": "string",
+        "enum": [
+          "uploaded",
+          "active_selection"
+        ]
+      },
+      "TrustedReceiptVerification": {
+        "type": "object",
+        "required": [
+          "status",
+          "verifiedAt",
+          "signatureValid",
+          "integrityValid",
+          "reason"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/TrustedReceiptVerificationStatus"
+          },
+          "verifiedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "receiptKind": {
+            "$ref": "#/components/schemas/TrustedReceiptKind"
+          },
+          "receiptContentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "receiptArtifactSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "keyId": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "envelopeSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorDirectorySha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorDirectoryVerificationSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorDirectoryPolicySha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorDirectoryGeneratedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "anchorDirectoryAgeMs": {
+            "type": "integer"
+          },
+          "anchorDirectoryAnchorCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "anchorDirectorySource": {
+            "$ref": "#/components/schemas/TrustedReceiptAnchorDirectorySource"
+          },
+          "anchorDirectorySelectionId": {
+            "type": "string",
+            "pattern": "^sel_[a-z0-9]{8,80}$"
+          },
+          "anchorDirectorySelectionSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorDirectorySelectionStateSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "signatureValid": {
+            "type": "boolean"
+          },
+          "integrityValid": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "ReceiptTrustAnchorDirectoryMetadataVerification": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "apiVersion",
+          "generatedAt",
+          "status",
+          "diagnostics",
+          "trustedReceiptVerification",
+          "directoryVerification",
+          "signatureValid",
+          "integrityValid",
+          "directoryBindingValid",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.receipt-trust-anchor-directory-metadata-verification"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "apiVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TrustedReceiptVerificationStatus"
+          },
+          "diagnostics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trustedReceiptVerification": {
+            "$ref": "#/components/schemas/TrustedReceiptVerification"
+          },
+          "directoryVerification": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryVerification"
+          },
+          "trustDirectoryVerification": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryVerification"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataReceipt"
+          },
+          "publisher": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "directorySha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "anchorSetSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "signerKeyId": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "envelopeSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "signatureValid": {
+            "type": "boolean"
+          },
+          "integrityValid": {
+            "type": "boolean"
+          },
+          "directoryBindingValid": {
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
       "ReceiptTrustAnchorSigningSource": {
         "type": "object",
         "required": [
@@ -10281,6 +10628,73 @@
             "maxLength": 2048
           },
           "policy": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy"
+          }
+        }
+      },
+      "SignReceiptTrustAnchorDirectoryMetadataRequest": {
+        "type": "object",
+        "required": [
+          "trustAnchorId",
+          "threadId",
+          "publisher"
+        ],
+        "additionalProperties": false,
+        "dependentRequired": {
+          "sourceUrlSha256": [
+            "sourceOriginSha256"
+          ],
+          "sourceOriginSha256": [
+            "sourceUrlSha256"
+          ]
+        },
+        "properties": {
+          "trustAnchorId": {
+            "type": "string",
+            "pattern": "^trustkey_[a-z0-9]{8,80}$"
+          },
+          "threadId": {
+            "type": "string",
+            "pattern": "^thread_[a-z0-9]{8,80}$"
+          },
+          "publisher": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "sourceUrlSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "sourceOriginSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "VerifyReceiptTrustAnchorDirectoryMetadataRequest": {
+        "type": "object",
+        "required": [
+          "envelope",
+          "directory"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "envelope": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataEnvelope"
+          },
+          "directory": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectory"
+          },
+          "directoryPolicy": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy"
+          },
+          "trustDirectory": {
+            "$ref": "#/components/schemas/ReceiptTrustAnchorDirectory"
+          },
+          "trustDirectoryPolicy": {
             "$ref": "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy"
           }
         }
