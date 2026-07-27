@@ -31,6 +31,7 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus,
@@ -79,6 +80,7 @@ const RESOURCE_ID_PATTERN = /^[a-z][a-z0-9_]{2,80}$/;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
 export const MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS = 20;
+export const MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES = 20;
 export const MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT = 10;
 export const MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES = 20;
@@ -881,6 +883,304 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
     ...content,
     contentSha256: sha256(canonicalJson(content)),
   };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "status",
+    "diagnostics",
+    "policy",
+    "policySha256",
+    "sourceCount",
+    "eligibleSourceCount",
+    "staleSourceCount",
+    "candidateCount",
+    "agreementCount",
+    "agreementDistinctSourceOriginCount",
+    "agreementSignerCount",
+    "selectedCheckpointSha256",
+    "selectedSelectionSetSha256",
+    "selectedSelectionChainTailSha256",
+    "sources",
+    "candidates",
+    "contentSha256",
+  ]);
+  const quorum =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+      quorum.policy,
+    );
+  const sources = validateCheckpointRegistrySources(quorum.sources);
+  const candidates = validateCheckpointRegistryCandidates(quorum.candidates);
+  const eligibleSources = sources.filter(
+    (source) => source.status === "eligible" && source.checkpointSha256,
+  );
+  const staleSourceCount = sources.filter(
+    (source) => source.status === "stale",
+  ).length;
+  const selectedCandidate = quorum.selectedCheckpointSha256
+    ? candidates.find(
+        (candidate) =>
+          candidate.checkpointSha256 === quorum.selectedCheckpointSha256,
+      )
+    : undefined;
+  if (
+    quorum.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum" ||
+    quorum.schemaVersion !== 1 ||
+    quorum.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(quorum.generatedAt) ||
+    !validCheckpointRegistryQuorumStatus(quorum.status) ||
+    !validDiagnostics(quorum.diagnostics) ||
+    quorum.policySha256 !==
+      hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+        policy,
+      ) ||
+    !nonNegativeInteger(quorum.sourceCount) ||
+    !nonNegativeInteger(quorum.eligibleSourceCount) ||
+    !nonNegativeInteger(quorum.staleSourceCount) ||
+    !nonNegativeInteger(quorum.candidateCount) ||
+    !nonNegativeInteger(quorum.agreementCount) ||
+    !nonNegativeInteger(quorum.agreementDistinctSourceOriginCount) ||
+    !nonNegativeInteger(quorum.agreementSignerCount) ||
+    (quorum.selectedCheckpointSha256 !== undefined &&
+      !SHA256_PATTERN.test(quorum.selectedCheckpointSha256)) ||
+    (quorum.selectedSelectionSetSha256 !== undefined &&
+      !SHA256_PATTERN.test(quorum.selectedSelectionSetSha256)) ||
+    (quorum.selectedSelectionChainTailSha256 !== undefined &&
+      !SHA256_PATTERN.test(quorum.selectedSelectionChainTailSha256)) ||
+    !SHA256_PATTERN.test(quorum.contentSha256) ||
+    quorum.sourceCount !== sources.length ||
+    quorum.eligibleSourceCount !== eligibleSources.length ||
+    quorum.staleSourceCount !== staleSourceCount ||
+    quorum.candidateCount !== candidates.length ||
+    quorum.agreementCount !== (selectedCandidate?.sourceCount ?? 0) ||
+    quorum.agreementDistinctSourceOriginCount !==
+      (selectedCandidate?.distinctSourceOriginCount ?? 0) ||
+    quorum.agreementSignerCount !== (selectedCandidate?.signerCount ?? 0) ||
+    quorum.selectedSelectionSetSha256 !==
+      selectedCandidate?.selectionSetSha256 ||
+    quorum.selectedSelectionChainTailSha256 !==
+      selectedCandidate?.selectionChainTailSha256 ||
+    (quorum.status === "agreed" && !selectedCandidate)
+  ) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum is invalid",
+    );
+  }
+  const content = {
+    kind: quorum.kind,
+    schemaVersion: quorum.schemaVersion,
+    apiVersion: quorum.apiVersion,
+    generatedAt: quorum.generatedAt,
+    status: quorum.status,
+    diagnostics: quorum.diagnostics,
+    policy,
+    policySha256: quorum.policySha256,
+    sourceCount: quorum.sourceCount,
+    eligibleSourceCount: quorum.eligibleSourceCount,
+    staleSourceCount: quorum.staleSourceCount,
+    candidateCount: quorum.candidateCount,
+    agreementCount: quorum.agreementCount,
+    agreementDistinctSourceOriginCount:
+      quorum.agreementDistinctSourceOriginCount,
+    agreementSignerCount: quorum.agreementSignerCount,
+    ...(quorum.selectedCheckpointSha256
+      ? { selectedCheckpointSha256: quorum.selectedCheckpointSha256 }
+      : {}),
+    ...(quorum.selectedSelectionSetSha256
+      ? { selectedSelectionSetSha256: quorum.selectedSelectionSetSha256 }
+      : {}),
+    ...(quorum.selectedSelectionChainTailSha256
+      ? {
+          selectedSelectionChainTailSha256:
+            quorum.selectedSelectionChainTailSha256,
+        }
+      : {}),
+    sources,
+    candidates,
+  };
+  if (sha256(canonicalJson(content)) !== quorum.contentSha256) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...quorum,
+    policy,
+    sources,
+    candidates,
+  });
+}
+
+export function hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+  baseline: Omit<
+    ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
+    "contentSha256"
+  >,
+): string {
+  return sha256(canonicalJson(baseline));
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+  envelopeInput: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>,
+  promotedByThreadId: string,
+  supersedesBaselineId?: string,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline {
+  const envelope = validateTrustedReceiptEnvelope(
+    envelopeInput,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>;
+  if (
+    envelope.receiptKind !==
+    "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum"
+  ) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum baseline requires a checkpoint registry quorum receipt",
+    );
+  }
+  const quorum =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+      envelope.receipt,
+    );
+  const candidate = selectedCheckpointRegistryCandidate(quorum);
+  const content = {
+    id: createId("trustcpqb"),
+    envelope: {
+      ...envelope,
+      receipt: quorum,
+    },
+    promotedByThreadId,
+    selectedCheckpointSha256: quorum.selectedCheckpointSha256!,
+    selectedSelectionSetSha256: quorum.selectedSelectionSetSha256!,
+    ...(quorum.selectedSelectionChainTailSha256
+      ? {
+          selectedSelectionChainTailSha256:
+            quorum.selectedSelectionChainTailSha256,
+        }
+      : {}),
+    selectedSubscriptionSetSha256: candidate.subscriptionSetSha256,
+    selectedSourceOriginSetSha256: candidate.sourceOriginSetSha256,
+    selectedSignerSetSha256: candidate.signerSetSha256,
+    ...(supersedesBaselineId ? { supersedesBaselineId } : {}),
+    createdAt: nowIso(),
+  };
+  return {
+    ...content,
+    contentSha256:
+      hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        content,
+      ),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+  value: unknown,
+  anchors?: ReceiptTrustAnchor[],
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum baseline is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "id",
+    "envelope",
+    "promotedByThreadId",
+    "selectedCheckpointSha256",
+    "selectedSelectionSetSha256",
+    "selectedSelectionChainTailSha256",
+    "selectedSubscriptionSetSha256",
+    "selectedSourceOriginSetSha256",
+    "selectedSignerSetSha256",
+    "supersedesBaselineId",
+    "createdAt",
+    "contentSha256",
+  ]);
+  const baseline =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+  const envelope = validateTrustedReceiptEnvelope(
+    baseline.envelope,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>;
+  const quorum =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+      envelope.receipt,
+    );
+  const candidate = selectedCheckpointRegistryCandidate(quorum);
+  if (
+    !/^trustcpqb_[a-z0-9]{8,80}$/.test(baseline.id) ||
+    !/^thread_[a-z0-9]{8,80}$/.test(baseline.promotedByThreadId) ||
+    !SHA256_PATTERN.test(baseline.selectedCheckpointSha256) ||
+    !SHA256_PATTERN.test(baseline.selectedSelectionSetSha256) ||
+    (baseline.selectedSelectionChainTailSha256 !== undefined &&
+      !SHA256_PATTERN.test(baseline.selectedSelectionChainTailSha256)) ||
+    !SHA256_PATTERN.test(baseline.selectedSubscriptionSetSha256) ||
+    !SHA256_PATTERN.test(baseline.selectedSourceOriginSetSha256) ||
+    !SHA256_PATTERN.test(baseline.selectedSignerSetSha256) ||
+    (baseline.supersedesBaselineId !== undefined &&
+      !/^trustcpqb_[a-z0-9]{8,80}$/.test(baseline.supersedesBaselineId)) ||
+    !validTimestamp(baseline.createdAt) ||
+    !SHA256_PATTERN.test(baseline.contentSha256) ||
+    envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum" ||
+    quorum.status !== "agreed" ||
+    quorum.selectedCheckpointSha256 !== baseline.selectedCheckpointSha256 ||
+    quorum.selectedSelectionSetSha256 !==
+      baseline.selectedSelectionSetSha256 ||
+    quorum.selectedSelectionChainTailSha256 !==
+      baseline.selectedSelectionChainTailSha256 ||
+    candidate.subscriptionSetSha256 !==
+      baseline.selectedSubscriptionSetSha256 ||
+    candidate.sourceOriginSetSha256 !==
+      baseline.selectedSourceOriginSetSha256 ||
+    candidate.signerSetSha256 !== baseline.selectedSignerSetSha256
+  ) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum baseline is invalid",
+    );
+  }
+  if (anchors) {
+    const verification = verifyTrustedReceiptEnvelope(envelope, anchors);
+    if (!verification.integrityValid || !verification.signatureValid) {
+      throw new Error(
+        `Receipt trust checkpoint registry quorum baseline signature is invalid: ${verification.reason}`,
+      );
+    }
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...baseline,
+    envelope: {
+      ...envelope,
+      receipt: quorum,
+    },
+  };
+  if (
+    hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+      content,
+    ) !== baseline.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum baseline hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...baseline,
+    envelope: {
+      ...envelope,
+      receipt: quorum,
+    },
+  });
 }
 
 export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
@@ -3899,6 +4199,144 @@ function createCheckpointRegistryCandidate(
   };
 }
 
+function validateCheckpointRegistrySources(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Receipt trust checkpoint registry sources are invalid");
+  }
+  return value.map((source) => {
+    if (!isRecord(source)) {
+      throw new Error("Receipt trust checkpoint registry source is invalid");
+    }
+    assertAllowedKeys(source, [
+      "subscriptionId",
+      "subscriptionSha256",
+      "sourceUrlSha256",
+      "sourceOriginSha256",
+      "status",
+      "diagnostics",
+      "revision",
+      "observedAt",
+      "discoverySha256",
+      "envelopeSha256",
+      "checkpointSha256",
+      "signerKeyId",
+      "selectionCount",
+      "selectionSetSha256",
+      "selectionChainTailSha256",
+      "transparencyTailSha256",
+      "contentSha256",
+    ]);
+    const record =
+      source as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource;
+    if (
+      !/^trustcpsub_[a-z0-9]{8,80}$/.test(record.subscriptionId) ||
+      !SHA256_PATTERN.test(record.subscriptionSha256) ||
+      !SHA256_PATTERN.test(record.sourceUrlSha256) ||
+      !SHA256_PATTERN.test(record.sourceOriginSha256) ||
+      !validCheckpointRegistrySourceStatus(record.status) ||
+      !validDiagnostics(record.diagnostics) ||
+      !nonNegativeInteger(record.revision) ||
+      !optionalTimestamp(record.observedAt) ||
+      !optionalSha256(record.discoverySha256) ||
+      !optionalSha256(record.envelopeSha256) ||
+      !optionalSha256(record.checkpointSha256) ||
+      !optionalSha256(record.signerKeyId) ||
+      (record.selectionCount !== undefined &&
+        !nonNegativeInteger(record.selectionCount)) ||
+      !optionalSha256(record.selectionSetSha256) ||
+      !optionalSha256(record.selectionChainTailSha256) ||
+      !optionalSha256(record.transparencyTailSha256) ||
+      !SHA256_PATTERN.test(record.contentSha256)
+    ) {
+      throw new Error("Receipt trust checkpoint registry source is invalid");
+    }
+    const { contentSha256: _contentSha256, ...content } = record;
+    if (sha256(canonicalJson(content)) !== record.contentSha256) {
+      throw new Error(
+        "Receipt trust checkpoint registry source hash mismatch",
+      );
+    }
+    return structuredClone(record);
+  });
+}
+
+function validateCheckpointRegistryCandidates(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate[] {
+  if (!Array.isArray(value)) {
+    throw new Error("Receipt trust checkpoint registry candidates are invalid");
+  }
+  return value.map((candidate) => {
+    if (!isRecord(candidate)) {
+      throw new Error("Receipt trust checkpoint registry candidate is invalid");
+    }
+    assertAllowedKeys(candidate, [
+      "checkpointSha256",
+      "sourceCount",
+      "distinctSourceOriginCount",
+      "signerCount",
+      "subscriptionSetSha256",
+      "sourceOriginSetSha256",
+      "signerSetSha256",
+      "selectionCount",
+      "selectionSetSha256",
+      "selectionChainTailSha256",
+      "contentSha256",
+    ]);
+    const record =
+      candidate as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate;
+    if (
+      !SHA256_PATTERN.test(record.checkpointSha256) ||
+      !nonNegativeInteger(record.sourceCount) ||
+      !nonNegativeInteger(record.distinctSourceOriginCount) ||
+      !nonNegativeInteger(record.signerCount) ||
+      !SHA256_PATTERN.test(record.subscriptionSetSha256) ||
+      !SHA256_PATTERN.test(record.sourceOriginSetSha256) ||
+      !SHA256_PATTERN.test(record.signerSetSha256) ||
+      !nonNegativeInteger(record.selectionCount) ||
+      !SHA256_PATTERN.test(record.selectionSetSha256) ||
+      !optionalSha256(record.selectionChainTailSha256) ||
+      !SHA256_PATTERN.test(record.contentSha256)
+    ) {
+      throw new Error(
+        "Receipt trust checkpoint registry candidate is invalid",
+      );
+    }
+    const { contentSha256: _contentSha256, ...content } = record;
+    if (sha256(canonicalJson(content)) !== record.contentSha256) {
+      throw new Error(
+        "Receipt trust checkpoint registry candidate hash mismatch",
+      );
+    }
+    return structuredClone(record);
+  });
+}
+
+function selectedCheckpointRegistryCandidate(
+  quorum: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate {
+  if (
+    quorum.status !== "agreed" ||
+    !quorum.selectedCheckpointSha256 ||
+    !quorum.selectedSelectionSetSha256
+  ) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum baseline requires an agreed quorum",
+    );
+  }
+  const candidate = quorum.candidates.find(
+    (item) => item.checkpointSha256 === quorum.selectedCheckpointSha256,
+  );
+  if (!candidate) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum selected candidate is missing",
+    );
+  }
+  return candidate;
+}
+
 function createQuorumSource(
   subscription: ReceiptTrustAnchorDirectorySubscription,
   policy: Required<ReceiptTrustAnchorDirectoryQuorumPolicy>,
@@ -5632,6 +6070,25 @@ function validQuorumStatus(value: unknown): boolean {
     value === "insufficient_sources" ||
     value === "split" ||
     value === "policy_failed"
+  );
+}
+
+function validCheckpointRegistryQuorumStatus(value: unknown): boolean {
+  return (
+    value === "agreed" ||
+    value === "insufficient_sources" ||
+    value === "split" ||
+    value === "policy_failed" ||
+    value === "stale"
+  );
+}
+
+function validCheckpointRegistrySourceStatus(value: unknown): boolean {
+  return (
+    value === "eligible" ||
+    value === "paused" ||
+    value === "missing_last_good" ||
+    value === "stale"
   );
 }
 

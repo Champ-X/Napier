@@ -1493,6 +1493,17 @@ checkpoint, selected selection-set, selected chain-tail, agreement, and
 diagnostic evidence. The Receipt Trust Desk adds **Evaluate checkpoint quorum**
 so operators can see independent-registry agreement or stale/split policy
 alerts before trusting a hosted active-selection checkpoint.
+`GET/POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines`
+promotes an `agreed` checkpoint-registry quorum into a signed append-only
+baseline. The baseline envelope uses trusted receipt kind
+`receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum`
+and binds the selected checkpoint, selection-set, optional chain-tail,
+subscription-set, source-origin-set, signer-set, signer key, and supersession
+link. Duplicate promotion is idempotent by the selected registry evidence and
+signer key. The Receipt Trust Desk adds **Promote checkpoint quorum** and
+downloads the signed baseline JSON so independent-source checkpoint agreement
+can be archived for cross-workspace verifier rotation audits.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

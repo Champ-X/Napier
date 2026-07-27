@@ -3558,7 +3558,8 @@ export type TrustedReceipt =
   | ReceiptTrustAnchorDirectoryMetadataReceipt
   | ReceiptTrustAnchorDirectoryQuorumPromotionReceipt
   | ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt
-  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint;
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
 
 export type TrustedReceiptKind =
   | "evaluation_gate"
@@ -3567,7 +3568,8 @@ export type TrustedReceiptKind =
   | "receipt_trust_anchor_directory_metadata"
   | "receipt_trust_anchor_directory_quorum_promotion"
   | "receipt_trust_anchor_directory_quorum_activation_decision"
-  | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint";
+  | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint"
+  | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum";
 
 export type ReceiptTrustAnchorStatus = "trusted" | "revoked";
 
@@ -4621,6 +4623,31 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 
 export interface EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest {
   policy?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy;
+}
+
+export interface PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest extends EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest {
+  threadId: string;
+  trustAnchorId: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline {
+  id: string;
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>;
+  promotedByThreadId: string;
+  selectedCheckpointSha256: string;
+  selectedSelectionSetSha256: string;
+  selectedSelectionChainTailSha256?: string;
+  selectedSubscriptionSetSha256: string;
+  selectedSourceOriginSetSha256: string;
+  selectedSignerSetSha256: string;
+  supersedesBaselineId?: string;
+  createdAt: string;
+  contentSha256: string;
+}
+
+export interface PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult {
+  baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+  created: boolean;
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus =

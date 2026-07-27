@@ -35,6 +35,7 @@ import { validateEvaluationSuiteGateReceipt } from "./evaluation-suites.js";
 import { createId, nowIso } from "./ids.js";
 import {
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
 } from "./receipt-trust-directory-subscriptions.js";
@@ -54,6 +55,7 @@ const TRUSTED_RECEIPT_KINDS: TrustedReceiptKind[] = [
   "receipt_trust_anchor_directory_quorum_promotion",
   "receipt_trust_anchor_directory_quorum_activation_decision",
   "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+  "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
 ];
 const RECEIPT_TRUST_ANCHOR_DIRECTORY_KEYS = [
   "kind",
@@ -1137,6 +1139,14 @@ function validateTrustedReceipt(value: unknown): TrustedReceipt {
       value,
     ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint;
   }
+  if (
+    value["kind"] ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum"
+  ) {
+    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+      value,
+    );
+  }
   throw new Error("Trusted receipt kind is unsupported");
 }
 
@@ -1298,6 +1308,12 @@ function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
     "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint"
   ) {
     return "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint";
+  }
+  if (
+    receipt.kind ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum"
+  ) {
+    return "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum";
   }
   return "policy_retirement_proof_bundle";
 }

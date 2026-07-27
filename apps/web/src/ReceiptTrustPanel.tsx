@@ -28,6 +28,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
@@ -59,8 +60,10 @@ import {
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
+  listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines,
   listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
   listReceiptTrustAnchorDirectorySubscriptions,
+  promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   refreshReceiptTrustAnchorDirectorySubscription,
   refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   revokeReceiptTrustAnchor,
@@ -181,6 +184,11 @@ export default function ReceiptTrustPanel({
   ] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>();
   const [
+    checkpointRegistryQuorumBaseline,
+    setCheckpointRegistryQuorumBaseline,
+  ] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline>();
+  const [
     checkpointSubscriptions,
     setCheckpointSubscriptions,
   ] = useState<
@@ -290,6 +298,16 @@ export default function ReceiptTrustPanel({
     );
   const canSubscribeActivationSelectionCheckpoint =
     Boolean(checkpointSubscriptionRequest) && !busyId;
+  const canPromoteCheckpointRegistryQuorum =
+    checkpointSubscriptions.length > 0 &&
+    Boolean(selectedAnchorId) &&
+    anchors.some(
+      (anchor) =>
+        anchor.id === selectedAnchorId &&
+        anchor.status === "trusted" &&
+        Boolean(anchor.signingSource),
+    ) &&
+    !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -301,6 +319,7 @@ export default function ReceiptTrustPanel({
       getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
       getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(),
       listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions(),
+      listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines(),
     ])
       .then(
         ([
@@ -311,6 +330,7 @@ export default function ReceiptTrustPanel({
           activationSelectionDriftAudit,
           activationSelectionCheckpoint,
           activationSelectionCheckpointSubscriptions,
+          checkpointRegistryQuorumBaselines,
         ]) => {
           if (cancelled) return;
           setDirectorySubscriptions(subscriptions);
@@ -324,6 +344,9 @@ export default function ReceiptTrustPanel({
             activationSelectionCheckpoint,
           );
           setCheckpointSubscriptions(activationSelectionCheckpointSubscriptions);
+          setCheckpointRegistryQuorumBaseline(
+            checkpointRegistryQuorumBaselines.at(-1),
+          );
           const active = subscriptions
             .filter(
               (subscription) =>
@@ -739,6 +762,31 @@ export default function ReceiptTrustPanel({
       );
     } catch (quorumError) {
       setError(toErrorMessage(quorumError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function promoteCheckpointRegistryQuorumBaseline(): Promise<void> {
+    if (!canPromoteCheckpointRegistryQuorum) return;
+    setBusyId("promote-checkpoint-registry-quorum-baseline");
+    setError(undefined);
+    try {
+      const result =
+        await promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          {
+            threadId,
+            trustAnchorId: selectedAnchorId,
+          },
+        );
+      setCheckpointRegistryQuorumBaseline(result.baseline);
+      setCheckpointRegistryQuorum(result.baseline.envelope.receipt);
+      downloadJson(
+        result.baseline,
+        `napier-checkpoint-registry-quorum-baseline-${result.baseline.contentSha256.slice(0, 12)}.json`,
+      );
+    } catch (baselineError) {
+      setError(toErrorMessage(baselineError));
     } finally {
       setBusyId(undefined);
     }
@@ -2128,6 +2176,19 @@ export default function ReceiptTrustPanel({
                     ? copy.lab.trust.evaluatingCheckpointRegistryQuorum
                     : copy.lab.trust.evaluateCheckpointRegistryQuorum}
                 </button>
+                <button
+                  type="button"
+                  disabled={!canPromoteCheckpointRegistryQuorum}
+                  onClick={() =>
+                    void promoteCheckpointRegistryQuorumBaseline()
+                  }
+                >
+                  <ShieldCheck size={10} aria-hidden="true" />
+                  {busyId ===
+                  "promote-checkpoint-registry-quorum-baseline"
+                    ? copy.lab.trust.promotingCheckpointRegistryQuorumBaseline
+                    : copy.lab.trust.promoteCheckpointRegistryQuorumBaseline}
+                </button>
               </span>
               {checkpointSubscriptions.map((subscription) => (
                 <article key={subscription.id}>
@@ -2231,6 +2292,42 @@ export default function ReceiptTrustPanel({
                   )}
                 </code>
               ) : null}
+            </output>
+          ) : null}
+          {checkpointRegistryQuorumBaseline ? (
+            <output className="receipt-baseline-policy" aria-live="polite">
+              <ShieldCheck size={11} aria-hidden="true" />
+              <span>
+                <strong>
+                  {copy.lab.trust.checkpointRegistryQuorumBaseline}
+                </strong>
+                <small>
+                  {checkpointRegistryQuorumBaseline.envelope.receipt.status} ·{" "}
+                  {checkpointRegistryQuorumBaseline.envelope.receipt.agreementCount}{" "}
+                  {copy.lab.trust.quorumAgreement}
+                </small>
+              </span>
+              <code title={checkpointRegistryQuorumBaseline.contentSha256}>
+                {checkpointRegistryQuorumBaseline.contentSha256.slice(0, 12)}
+              </code>
+              <code
+                title={checkpointRegistryQuorumBaseline.envelope.contentSha256}
+              >
+                {checkpointRegistryQuorumBaseline.envelope.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={
+                  checkpointRegistryQuorumBaseline.selectedCheckpointSha256
+                }
+              >
+                {checkpointRegistryQuorumBaseline.selectedCheckpointSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
             </output>
           ) : null}
           {baselineActivationSelectionCheckpointEnvelope ? (

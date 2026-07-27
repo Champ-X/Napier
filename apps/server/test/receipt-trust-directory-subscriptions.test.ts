@@ -16,6 +16,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
@@ -25,6 +26,7 @@ import type {
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+  PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   TrustedReceiptEnvelope,
@@ -1389,6 +1391,122 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-status",
       ),
     ).toBe("agreed");
+    const checkpointRegistryQuorumBaselinePath = `${selectionCheckpointSubscriptionPath}/quorum/baselines`;
+    const emptyCheckpointRegistryQuorumBaselineListResponse =
+      await app.request(checkpointRegistryQuorumBaselinePath);
+    expect(emptyCheckpointRegistryQuorumBaselineListResponse.status).toBe(200);
+    expect(
+      (await emptyCheckpointRegistryQuorumBaselineListResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline[],
+    ).toEqual([]);
+    const checkpointRegistryQuorumBaselineRequest = {
+      threadId: thread.id,
+      trustAnchorId: signingAnchor.id,
+      policy: {
+        expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+        minimumSources: 2,
+        minimumAgreementCount: 2,
+        minimumDistinctSourceOrigins: 2,
+        requiredSourceOriginSha256s: [
+          sha256Text("https://mirror.example.test"),
+          sha256Text("https://trust.example.test"),
+        ],
+        requiredSignerKeyIds: [signingAnchor.keyId],
+      },
+    };
+    const checkpointRegistryQuorumBaselineResponse = await app.request(
+      checkpointRegistryQuorumBaselinePath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(checkpointRegistryQuorumBaselineRequest),
+      },
+    );
+    expect(checkpointRegistryQuorumBaselineResponse.status).toBe(201);
+    const checkpointRegistryQuorumBaselineResult =
+      (await checkpointRegistryQuorumBaselineResponse.json()) as PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult;
+    expect(checkpointRegistryQuorumBaselineResult).toEqual(
+      expect.objectContaining({
+        created: true,
+        baseline: expect.objectContaining({
+          promotedByThreadId: thread.id,
+          selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+          selectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+          selectedSelectionChainTailSha256:
+            selectionCheckpoint.selectionChainTailSha256,
+          selectedSubscriptionSetSha256:
+            checkpointRegistryQuorum.candidates[0]!.subscriptionSetSha256,
+          selectedSourceOriginSetSha256:
+            checkpointRegistryQuorum.candidates[0]!.sourceOriginSetSha256,
+          selectedSignerSetSha256:
+            checkpointRegistryQuorum.candidates[0]!.signerSetSha256,
+          envelope: expect.objectContaining({
+            receiptKind:
+              "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
+            receipt: expect.objectContaining({
+              status: "agreed",
+              selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+              selectedSelectionSetSha256:
+                selectionCheckpoint.selectionSetSha256,
+              selectedSelectionChainTailSha256:
+                selectionCheckpoint.selectionChainTailSha256,
+              candidateCount: 1,
+              agreementCount: 2,
+            }),
+            signature: expect.objectContaining({
+              keyId: signingAnchor.keyId,
+            }),
+          }),
+        }),
+      }),
+    );
+    expect(
+      checkpointRegistryQuorumBaselineResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-baseline-created",
+      ),
+    ).toBe("true");
+    const checkpointRegistryQuorumBaselineVerifyResponse = await app.request(
+      "/api/receipt-trust/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          envelope: checkpointRegistryQuorumBaselineResult.baseline.envelope,
+        }),
+      },
+    );
+    expect(checkpointRegistryQuorumBaselineVerifyResponse.status).toBe(200);
+    expect(
+      (await checkpointRegistryQuorumBaselineVerifyResponse.json()) as TrustedReceiptVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
+        envelopeSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.envelope
+            .contentSha256,
+        keyId: signingAnchor.keyId,
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
+    const duplicateCheckpointRegistryQuorumBaselineResponse = await app.request(
+      checkpointRegistryQuorumBaselinePath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(checkpointRegistryQuorumBaselineRequest),
+      },
+    );
+    expect(duplicateCheckpointRegistryQuorumBaselineResponse.status).toBe(200);
+    expect(
+      (await duplicateCheckpointRegistryQuorumBaselineResponse.json()) as PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
+    ).toEqual(
+      expect.objectContaining({
+        created: false,
+        baseline: checkpointRegistryQuorumBaselineResult.baseline,
+      }),
+    );
     const highSelectionCountCheckpointRegistryQuorumResponse =
       await app.request(`${selectionCheckpointSubscriptionPath}/quorum`, {
         method: "POST",

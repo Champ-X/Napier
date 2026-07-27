@@ -307,6 +307,10 @@ export const copy = {
       checkpointSubscriptions: "Checkpoint subscriptions",
       evaluateCheckpointRegistryQuorum: "Evaluate checkpoint quorum",
       evaluatingCheckpointRegistryQuorum: "Evaluating checkpoint quorum...",
+      promoteCheckpointRegistryQuorumBaseline: "Promote checkpoint quorum",
+      promotingCheckpointRegistryQuorumBaseline:
+        "Promoting checkpoint quorum...",
+      checkpointRegistryQuorumBaseline: "Checkpoint quorum baseline",
       refreshCheckpointSubscription: "Refresh checkpoint",
       refreshingCheckpointSubscription: "Refreshing checkpoint...",
       updatingCheckpointSubscription: "Updating checkpoint...",

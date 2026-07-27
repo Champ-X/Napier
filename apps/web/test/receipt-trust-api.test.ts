@@ -15,6 +15,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
@@ -23,6 +24,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
+  PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   ReceiptTrustAnchorDirectoryVerification,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
@@ -47,8 +49,10 @@ import {
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectorySubscriptions,
+  listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines,
   listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
+  promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   promoteReceiptTrustAnchorDirectoryQuorumBaseline,
   promoteReceiptTrustAnchorDirectoryQuorum,
   refreshReceiptTrustAnchorDirectorySubscription,
@@ -1019,6 +1023,52 @@ describe("receipt trust Web API wrappers", () => {
       ],
       contentSha256: "1".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
+    const activationSelectionCheckpointRegistryQuorumBaselineRequest = {
+      threadId: promotionBaseline.promotedByThreadId,
+      trustAnchorId: activationDecisionRequest.trustAnchorId,
+      policy: activationSelectionCheckpointRegistryQuorumRequest.policy,
+    };
+    const activationSelectionCheckpointRegistryQuorumBaseline = {
+      id: "trustcpqb_1234567890abcdef1234",
+      envelope: {
+        kind: "napier.trusted-receipt-envelope",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
+        receipt: activationSelectionCheckpointRegistryQuorum,
+        signature: {
+          algorithm: "Ed25519",
+          keyId: signedActivationSelectionCheckpoint.signature.keyId,
+          signedAt: "2026-07-27T00:00:10.000Z",
+          receiptArtifactSha256: "2".repeat(64),
+          statementSha256: "3".repeat(64),
+          value: "signature",
+        },
+        contentSha256: "4".repeat(64),
+      },
+      promotedByThreadId: promotionBaseline.promotedByThreadId,
+      selectedCheckpointSha256: activationSelectionCheckpoint.contentSha256,
+      selectedSelectionSetSha256:
+        activationSelectionCheckpoint.selectionSetSha256,
+      selectedSelectionChainTailSha256:
+        activationSelectionCheckpoint.selectionChainTailSha256,
+      selectedSubscriptionSetSha256:
+        activationSelectionCheckpointRegistryQuorum.candidates[0]!
+          .subscriptionSetSha256,
+      selectedSourceOriginSetSha256:
+        activationSelectionCheckpointRegistryQuorum.candidates[0]!
+          .sourceOriginSetSha256,
+      selectedSignerSetSha256:
+        activationSelectionCheckpointRegistryQuorum.candidates[0]!
+          .signerSetSha256,
+      createdAt: "2026-07-27T00:00:10.000Z",
+      contentSha256: "5".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+    const activationSelectionCheckpointRegistryQuorumBaselineResult = {
+      baseline: activationSelectionCheckpointRegistryQuorumBaseline,
+      created: true,
+    } satisfies PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -1167,6 +1217,16 @@ describe("receipt trust Web API wrappers", () => {
         response: activationSelectionCheckpointRegistryQuorum,
       },
       {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
+        response: [activationSelectionCheckpointRegistryQuorumBaseline],
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
+        method: "POST",
+        body: activationSelectionCheckpointRegistryQuorumBaselineRequest,
+        response: activationSelectionCheckpointRegistryQuorumBaselineResult,
+      },
+      {
         path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
         method: "POST",
         body: activationSelectionRotationReviewRequest,
@@ -1306,6 +1366,14 @@ describe("receipt trust Web API wrappers", () => {
       ),
     ).resolves.toEqual(activationSelectionCheckpointRegistryQuorum);
     await expect(
+      listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines(),
+    ).resolves.toEqual([activationSelectionCheckpointRegistryQuorumBaseline]);
+    await expect(
+      promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        activationSelectionCheckpointRegistryQuorumBaselineRequest,
+      ),
+    ).resolves.toEqual(activationSelectionCheckpointRegistryQuorumBaselineResult);
+    await expect(
       reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
         activationSelectionRotationReviewRequest,
       ),
@@ -1315,7 +1383,7 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionRequest,
       ),
     ).resolves.toEqual(activationSelectionResult);
-    expect(fetchMock).toHaveBeenCalledTimes(26);
+    expect(fetchMock).toHaveBeenCalledTimes(28);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

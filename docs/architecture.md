@@ -569,6 +569,17 @@ checkpoint evidence, candidate-set hashes, and response headers for automated
 polling. This gives operators a registry-level alert before trusting a hosted
 active-selection checkpoint while still avoiding raw registry URLs or response
 bodies in portable evidence.
+Signed checkpoint-registry quorum baselines turn that no-store alert into
+durable audit evidence. Promotion requires an `agreed` registry quorum, signs
+the quorum as trusted receipt kind
+`receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum`,
+and appends a bounded local baseline chain keyed by selected checkpoint,
+selection-set, chain-tail, subscription-set, source-origin-set, signer-set,
+and signer key. The baseline stores only the signed envelope and hash
+projections; Ledger events record baseline/envelope/selection/source-set hashes
+without raw registry responses. Re-promoting the same independent-source
+agreement is idempotent, while a different source set for the same checkpoint
+can still produce a new baseline for cross-workspace rotation audits.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2530,9 +2541,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- signed checkpoint-registry quorum baselines that archive independent-source
-  active-selection checkpoint agreement for cross-workspace verifier rotation
-  audits.
+- no-store verification and CAS-gated import for signed checkpoint-registry
+  quorum baselines before automated verifier rotation proposals.
 
 ### Layer 3: Extension fabric
 

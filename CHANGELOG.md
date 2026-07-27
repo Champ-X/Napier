@@ -399,6 +399,17 @@ All notable changes to Napier are recorded here.
   `policy_failed`, or `stale` with hash-only source/candidate/agreement
   evidence and headers. The Receipt Trust Desk adds **Evaluate checkpoint
   quorum**, and Server/Web tests cover the agreed independent-origin path.
+- Signed checkpoint-registry quorum baselines. `GET/POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines`
+  now archives an `agreed` signed-checkpoint registry quorum as a trusted
+  receipt envelope with kind
+  `receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum`.
+  Baselines bind selected checkpoint, selection-set, chain-tail,
+  subscription-set, source-origin-set, signer-set, signer key, and
+  supersession evidence; duplicate promotion is idempotent by selected registry
+  evidence plus signer. The Receipt Trust Desk adds **Promote checkpoint
+  quorum**, downloads the signed baseline JSON, and tests verify generic
+  receipt-trust validation.
 - Rotation review checkpoint-registry gates. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review`
   now accepts an optional `checkpointRegistryQuorumPolicy`. When supplied, the
