@@ -4758,6 +4758,50 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRev
   contentSha256: string;
 }
 
+export interface ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest extends ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest {
+  checkpointRegistryQuorumBaselineId?: string;
+  expectedCheckpointRegistryQuorumBaselineSha256?: string;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalStatus =
+  | "proposed"
+  | "blocked"
+  | "stale_selection"
+  | "missing_decision"
+  | "already_active"
+  | "missing_checkpoint_registry_baseline";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal";
+  schemaVersion: 1;
+  apiVersion: string;
+  proposedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalStatus;
+  diagnostics: string[];
+  activationDecisionRecordId: string;
+  activationDecisionRecordSha256?: string;
+  expectedCurrentSelectionSha256: string;
+  currentSelectionSha256: string;
+  rotationReview: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview;
+  rotationReviewSha256: string;
+  checkpointRegistryQuorumBaselineId?: string;
+  expectedCheckpointRegistryQuorumBaselineSha256?: string;
+  checkpointRegistryQuorumBaselineSha256?: string;
+  checkpointRegistryQuorumBaselineEnvelopeSha256?: string;
+  checkpointRegistryQuorumSha256?: string;
+  selectedCheckpointSha256?: string;
+  selectedSelectionSetSha256?: string;
+  selectedSelectionChainTailSha256?: string;
+  selectedSubscriptionSetSha256?: string;
+  selectedSourceOriginSetSha256?: string;
+  selectedSignerSetSha256?: string;
+  currentCheckpointSha256: string;
+  currentSelectionSetSha256: string;
+  currentSelectionChainTailSha256?: string;
+  checkpointRegistryQuorumBaseline?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+  contentSha256: string;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;

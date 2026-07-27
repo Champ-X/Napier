@@ -1439,6 +1439,20 @@ rotation review with the default checkpoint-registry quorum policy whenever
 checkpoint subscriptions exist, so operators can see whether a verifier-set
 rotation is eligible, already active, stale, missing, split, or blocked before
 mutating trusted state.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal`
+builds on that review to emit an automated no-store rotation proposal receipt.
+The proposal consumes the latest or requested checkpoint-registry quorum
+baseline as a fail-closed prerequisite, optionally CAS-pins the baseline hash,
+and compares its selected checkpoint, selection-set, and chain-tail hashes
+against the current activation-selection transparency checkpoint. Only when
+the rotation review is eligible and the archived checkpoint quorum baseline
+matches current selection transparency does the receipt become `proposed`;
+otherwise it remains a diagnostic receipt such as
+`missing_checkpoint_registry_baseline`, `already_active`, `stale_selection`,
+or `blocked`. The Receipt Trust Desk adds **Propose rotation** beside Review
+rotation so operators can inspect proposal, review, checkpoint-baseline, and
+current-checkpoint hashes before applying a verifier-set change.
 `GET
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint`
 exports the applied verifier-set rotation chain as a compact checkpoint. Each

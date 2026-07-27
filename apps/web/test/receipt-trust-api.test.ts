@@ -11,6 +11,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -58,6 +59,7 @@ import {
   promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   promoteReceiptTrustAnchorDirectoryQuorumBaseline,
   promoteReceiptTrustAnchorDirectoryQuorum,
+  proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   refreshReceiptTrustAnchorDirectorySubscription,
   refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
@@ -1122,6 +1124,66 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionCheckpointRegistryQuorumBaselineVerification,
       expectedCurrentBaselineSha256: "",
     } satisfies ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult;
+    const activationSelectionRotationProposalRequest = {
+      ...activationSelectionRotationReviewRequest,
+      checkpointRegistryQuorumBaselineId:
+        activationSelectionCheckpointRegistryQuorumBaseline.id,
+      expectedCheckpointRegistryQuorumBaselineSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
+    };
+    const activationSelectionRotationProposal = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      proposedAt: "2026-07-27T00:00:12.000Z",
+      status: "already_active",
+      diagnostics: [
+        "selection_already_active",
+        "rotation_review_already_active",
+      ],
+      activationDecisionRecordId:
+        activationSelectionRotationReview.activationDecisionRecordId,
+      activationDecisionRecordSha256:
+        activationSelectionRotationReview.activationDecisionRecordSha256,
+      expectedCurrentSelectionSha256:
+        activationSelectionRotationReview.expectedCurrentSelectionSha256,
+      currentSelectionSha256:
+        activationSelectionRotationReview.currentSelectionSha256,
+      rotationReview: activationSelectionRotationReview,
+      rotationReviewSha256: activationSelectionRotationReview.contentSha256,
+      checkpointRegistryQuorumBaselineId:
+        activationSelectionCheckpointRegistryQuorumBaseline.id,
+      expectedCheckpointRegistryQuorumBaselineSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
+      checkpointRegistryQuorumBaselineSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.contentSha256,
+      checkpointRegistryQuorumBaselineEnvelopeSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.envelope
+          .contentSha256,
+      checkpointRegistryQuorumSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.envelope.receipt
+          .contentSha256,
+      selectedCheckpointSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.selectedCheckpointSha256,
+      selectedSelectionSetSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionSetSha256,
+      selectedSelectionChainTailSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.selectedSelectionChainTailSha256,
+      selectedSubscriptionSetSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.selectedSubscriptionSetSha256,
+      selectedSourceOriginSetSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.selectedSourceOriginSetSha256,
+      selectedSignerSetSha256:
+        activationSelectionCheckpointRegistryQuorumBaseline.selectedSignerSetSha256,
+      currentCheckpointSha256: activationSelectionCheckpoint.contentSha256,
+      currentSelectionSetSha256:
+        activationSelectionCheckpoint.selectionSetSha256,
+      currentSelectionChainTailSha256:
+        activationSelectionCheckpoint.selectionChainTailSha256,
+      checkpointRegistryQuorumBaseline:
+        activationSelectionCheckpointRegistryQuorumBaseline,
+      contentSha256: "7".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -1292,6 +1354,12 @@ describe("receipt trust Web API wrappers", () => {
         response: activationSelectionCheckpointRegistryQuorumBaselineImportResult,
       },
       {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal",
+        method: "POST",
+        body: activationSelectionRotationProposalRequest,
+        response: activationSelectionRotationProposal,
+      },
+      {
         path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
         method: "POST",
         body: activationSelectionRotationReviewRequest,
@@ -1453,6 +1521,11 @@ describe("receipt trust Web API wrappers", () => {
       activationSelectionCheckpointRegistryQuorumBaselineImportResult,
     );
     await expect(
+      proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+        activationSelectionRotationProposalRequest,
+      ),
+    ).resolves.toEqual(activationSelectionRotationProposal);
+    await expect(
       reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
         activationSelectionRotationReviewRequest,
       ),
@@ -1462,7 +1535,7 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionRequest,
       ),
     ).resolves.toEqual(activationSelectionResult);
-    expect(fetchMock).toHaveBeenCalledTimes(30);
+    expect(fetchMock).toHaveBeenCalledTimes(31);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

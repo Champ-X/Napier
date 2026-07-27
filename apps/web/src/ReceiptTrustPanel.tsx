@@ -23,6 +23,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -67,6 +68,7 @@ import {
   listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
   listReceiptTrustAnchorDirectorySubscriptions,
   promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
+  proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   refreshReceiptTrustAnchorDirectorySubscription,
   refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   revokeReceiptTrustAnchor,
@@ -160,6 +162,11 @@ export default function ReceiptTrustPanel({
     baselineActivationRotationReview,
     setBaselineActivationRotationReview,
   ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview>();
+  const [
+    baselineActivationRotationProposal,
+    setBaselineActivationRotationProposal,
+  ] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>();
   const [
     baselineActivationSelectionCheckpoint,
     setBaselineActivationSelectionCheckpoint,
@@ -1054,6 +1061,7 @@ export default function ReceiptTrustPanel({
     setBusyId("review-activation-selection-rotation");
     setError(undefined);
     setBaselineActivationRotationReview(undefined);
+    setBaselineActivationRotationProposal(undefined);
     try {
       const review =
         await reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
@@ -1073,6 +1081,53 @@ export default function ReceiptTrustPanel({
       }
     } catch (reviewError) {
       setError(toErrorMessage(reviewError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function proposeActivationSelectionRotation(): Promise<void> {
+    if (
+      !latestApprovedActivationRecord ||
+      !canReviewActivationSelectionRotation
+    ) {
+      return;
+    }
+    setBusyId("propose-activation-selection-rotation");
+    setError(undefined);
+    setBaselineActivationRotationProposal(undefined);
+    try {
+      const proposal =
+        await proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+          {
+            activationDecisionRecordId: latestApprovedActivationRecord.id,
+            expectedCurrentSelectionSha256:
+              baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+            ...(checkpointRegistryQuorumBaseline
+              ? {
+                  checkpointRegistryQuorumBaselineId:
+                    checkpointRegistryQuorumBaseline.id,
+                  expectedCheckpointRegistryQuorumBaselineSha256:
+                    checkpointRegistryQuorumBaseline.contentSha256,
+                }
+              : {}),
+            ...(checkpointSubscriptions.length > 0
+              ? { checkpointRegistryQuorumPolicy: {} }
+              : {}),
+          },
+        );
+      setBaselineActivationRotationProposal(proposal);
+      setBaselineActivationRotationReview(proposal.rotationReview);
+      setBaselineActivationSelectionDriftAudit(
+        proposal.rotationReview.driftAudit,
+      );
+      if (proposal.rotationReview.checkpointRegistryQuorum) {
+        setCheckpointRegistryQuorum(
+          proposal.rotationReview.checkpointRegistryQuorum,
+        );
+      }
+    } catch (proposalError) {
+      setError(toErrorMessage(proposalError));
     } finally {
       setBusyId(undefined);
     }
@@ -1289,6 +1344,7 @@ export default function ReceiptTrustPanel({
     setBaselineActivationHistoryVerification(undefined);
     setBaselineActivationSelectionDriftAudit(undefined);
     setBaselineActivationRotationReview(undefined);
+    setBaselineActivationRotationProposal(undefined);
     setBaselineActivationSelectionCheckpoint(undefined);
     setBaselineActivationSelectionCheckpointVerification(undefined);
     setBaselineActivationSelectionCheckpointEnvelope(undefined);
@@ -2029,6 +2085,16 @@ export default function ReceiptTrustPanel({
             </button>
             <button
               type="button"
+              disabled={!canReviewActivationSelectionRotation}
+              onClick={() => void proposeActivationSelectionRotation()}
+            >
+              <ShieldCheck size={10} aria-hidden="true" />
+              {busyId === "propose-activation-selection-rotation"
+                ? copy.lab.trust.proposingActivationSelectionRotation
+                : copy.lab.trust.proposeActivationSelectionRotation}
+            </button>
+            <button
+              type="button"
               disabled={Boolean(busyId)}
               onClick={() =>
                 void exportActivationSelectionTransparencyCheckpoint()
@@ -2720,6 +2786,73 @@ export default function ReceiptTrustPanel({
                   )}
                 </code>
               ) : null}
+            </output>
+          ) : null}
+          {baselineActivationRotationProposal ? (
+            <output
+              className={`receipt-baseline-policy policy-${
+                baselineActivationRotationProposal.status === "proposed"
+                  ? "approved"
+                  : "rejected"
+              }`}
+              aria-live="polite"
+            >
+              {baselineActivationRotationProposal.status === "proposed" ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {copy.lab.trust.activationSelectionRotationProposal}
+                </strong>
+                <small>
+                  {
+                    copy.lab.trust.activationSelectionRotationProposalStatuses[
+                      baselineActivationRotationProposal.status
+                    ]
+                  }{" "}
+                  ·{" "}
+                  {baselineActivationRotationProposal.diagnostics.length > 0
+                    ? baselineActivationRotationProposal.diagnostics.join(", ")
+                    : copy.lab.trust.noDiagnostics}
+                </small>
+              </span>
+              <code title={baselineActivationRotationProposal.contentSha256}>
+                {baselineActivationRotationProposal.contentSha256.slice(0, 12)}
+              </code>
+              <code
+                title={
+                  baselineActivationRotationProposal.rotationReviewSha256
+                }
+              >
+                {baselineActivationRotationProposal.rotationReviewSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              {baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256 ? (
+                <code
+                  title={
+                    baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256
+                  }
+                >
+                  {baselineActivationRotationProposal.checkpointRegistryQuorumBaselineSha256.slice(
+                    0,
+                    12,
+                  )}
+                </code>
+              ) : null}
+              <code
+                title={
+                  baselineActivationRotationProposal.currentCheckpointSha256
+                }
+              >
+                {baselineActivationRotationProposal.currentCheckpointSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
             </output>
           ) : null}
           {baselineActivationRotationReview ? (

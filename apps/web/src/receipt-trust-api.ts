@@ -13,6 +13,7 @@ import type {
   ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
+  ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
   PromoteEvaluationQualificationBaselineResult,
   PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
   PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
@@ -27,6 +28,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -379,6 +381,18 @@ export function reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
 ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+  body: ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal",
     {
       method: "POST",
       body: JSON.stringify(body),

@@ -590,6 +590,19 @@ directory, and selected-evidence hashes. Import is CAS-gated by
 record and hash-only Ledger event, while duplicate archives return the current
 baseline without mutating state. This makes cross-workspace rotation evidence
 portable before any automated verifier proposal is accepted.
+Automated verifier rotation proposal receipts consume that archived evidence
+without mutating state. The Store recomputes the ordinary rotation review,
+selects the latest or explicitly requested checkpoint-registry quorum baseline,
+checks an optional baseline hash precondition, and then requires the baseline's
+selected checkpoint, selection-set, and chain-tail hashes to match the current
+activation-selection transparency checkpoint. The proposal is `proposed` only
+when the rotation review is eligible and the checkpoint-registry baseline is
+present, agreed, and aligned; otherwise it returns fail-closed statuses such
+as `missing_checkpoint_registry_baseline`, `already_active`,
+`stale_selection`, or `blocked` with low-cardinality diagnostics. The receipt
+is self-contained enough for external automation to inspect the rotation
+review, baseline envelope hashes, selected source/signer-set hashes, and
+current checkpoint hash before invoking any apply step.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2551,8 +2564,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- automated verifier rotation proposal receipts that consume imported
-  checkpoint-registry quorum baselines as a fail-closed prerequisite.
+- signed proposal verification and an apply gate that requires a fresh
+  automated verifier rotation proposal receipt before mutating active
+  verifier-set selection.
 
 ### Layer 3: Extension fabric
 

@@ -287,6 +287,8 @@ export const copy = {
       refreshingActivationSelectionDrift: "Auditing...",
       reviewActivationSelectionRotation: "Review rotation",
       reviewingActivationSelectionRotation: "Reviewing...",
+      proposeActivationSelectionRotation: "Propose rotation",
+      proposingActivationSelectionRotation: "Proposing...",
       exportActivationSelectionCheckpoint: "Export checkpoint",
       exportingActivationSelectionCheckpoint: "Exporting checkpoint...",
       signActivationSelectionCheckpoint: "Sign checkpoint",
@@ -331,6 +333,7 @@ export const copy = {
       activeBaselineActivationBody: "CAS-bound approval is active",
       activationSelectionDriftAudit: "Selection drift audit",
       activationSelectionRotationReview: "Rotation review",
+      activationSelectionRotationProposal: "Rotation proposal",
       activationSelectionCheckpoint: "Selection checkpoint",
       signedActivationSelectionCheckpoint: "Signed checkpoint",
       activationSelectionCheckpointEntries: "selection entries",
@@ -376,6 +379,15 @@ export const copy = {
         blocked: "Candidate failed rotation gates",
         stale_selection: "Selection CAS precondition failed",
         missing_decision: "Activation decision is missing",
+      },
+      activationSelectionRotationProposalStatuses: {
+        proposed: "Rotation proposal ready",
+        already_active: "Candidate is already active",
+        blocked: "Proposal failed gates",
+        stale_selection: "Selection CAS precondition failed",
+        missing_decision: "Activation decision is missing",
+        missing_checkpoint_registry_baseline:
+          "Checkpoint quorum baseline is missing",
       },
       activationSelectionCheckpointVerificationStatuses: {
         valid: "Checkpoint matches local state",

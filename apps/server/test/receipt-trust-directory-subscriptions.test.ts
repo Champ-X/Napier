@@ -12,6 +12,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -779,6 +780,43 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-review-status",
       ),
     ).toBe("eligible");
+    const rotationProposalPath =
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal";
+    const missingCheckpointBaselineProposalResponse = await app.request(
+      rotationProposalPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256: "",
+        }),
+      },
+    );
+    expect(missingCheckpointBaselineProposalResponse.status).toBe(200);
+    const missingCheckpointBaselineProposal =
+      (await missingCheckpointBaselineProposalResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+    expect(missingCheckpointBaselineProposal).toEqual(
+      expect.objectContaining({
+        status: "missing_checkpoint_registry_baseline",
+        diagnostics: ["checkpoint_registry_quorum_baseline_missing"],
+        activationDecisionRecordId: activationRecord.id,
+        expectedCurrentSelectionSha256: "",
+        currentSelectionSha256: "",
+        rotationReview: expect.objectContaining({
+          status: "eligible",
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256: "",
+        }),
+        currentCheckpointSha256: emptySelectionCheckpoint.contentSha256,
+        currentSelectionSetSha256: emptySelectionCheckpoint.selectionSetSha256,
+      }),
+    );
+    expect(
+      missingCheckpointBaselineProposalResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-proposal-status",
+      ),
+    ).toBe("missing_checkpoint_registry_baseline");
     const gatedRotationReviewResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
       {
@@ -1558,6 +1596,165 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-baseline-sha256",
       ),
     ).toBe(checkpointRegistryQuorumBaselineResult.baseline.contentSha256);
+    const alreadyActiveRotationProposalResponse = await app.request(
+      rotationProposalPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          checkpointRegistryQuorumBaselineId:
+            checkpointRegistryQuorumBaselineResult.baseline.id,
+          expectedCheckpointRegistryQuorumBaselineSha256:
+            checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+          checkpointRegistryQuorumPolicy: {
+            expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+            minimumSources: 2,
+            minimumAgreementCount: 2,
+            minimumDistinctSourceOrigins: 2,
+          },
+        }),
+      },
+    );
+    expect(alreadyActiveRotationProposalResponse.status).toBe(200);
+    expect(
+      (await alreadyActiveRotationProposalResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+    ).toEqual(
+      expect.objectContaining({
+        status: "already_active",
+        diagnostics: expect.arrayContaining([
+          "selection_already_active",
+          "rotation_review_already_active",
+        ]),
+        checkpointRegistryQuorumBaselineSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+        currentCheckpointSha256: selectionCheckpoint.contentSha256,
+        currentSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+        currentSelectionChainTailSha256:
+          selectionCheckpoint.selectionChainTailSha256,
+      }),
+    );
+    const secondActivationResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          baselineId: baselineResult.baseline.id,
+          importPolicy: activationPolicy,
+        }),
+      },
+    );
+    expect(secondActivationResponse.status).toBe(201);
+    const secondActivationRecordId = secondActivationResponse.headers.get(
+      "x-napier-receipt-trust-directory-quorum-activation-decision-record-id",
+    );
+    const secondActivationRecordSha256 = secondActivationResponse.headers.get(
+      "x-napier-receipt-trust-directory-quorum-activation-decision-record-sha256",
+    );
+    expect(secondActivationRecordId).toMatch(/^trustqad_[a-z0-9]{8,80}$/);
+    expect(secondActivationRecordSha256).toMatch(/^[a-f0-9]{64}$/);
+    const proposedRotationResponse = await app.request(rotationProposalPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        activationDecisionRecordId: secondActivationRecordId,
+        expectedCurrentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        checkpointRegistryQuorumBaselineId:
+          checkpointRegistryQuorumBaselineResult.baseline.id,
+        expectedCheckpointRegistryQuorumBaselineSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+        checkpointRegistryQuorumPolicy: {
+          expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+          minimumSources: 2,
+          minimumAgreementCount: 2,
+          minimumDistinctSourceOrigins: 2,
+        },
+      }),
+    });
+    expect(proposedRotationResponse.status).toBe(200);
+    const proposedRotation =
+      (await proposedRotationResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+    expect(proposedRotation).toEqual(
+      expect.objectContaining({
+        status: "proposed",
+        diagnostics: [],
+        activationDecisionRecordId: secondActivationRecordId,
+        activationDecisionRecordSha256: secondActivationRecordSha256,
+        expectedCurrentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        currentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        rotationReview: expect.objectContaining({
+          status: "eligible",
+          activationDecisionRecordId: secondActivationRecordId,
+          checkpointRegistryQuorum: expect.objectContaining({
+            status: "agreed",
+            selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+          }),
+        }),
+        checkpointRegistryQuorumBaseline:
+          checkpointRegistryQuorumBaselineResult.baseline,
+        checkpointRegistryQuorumBaselineSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+        checkpointRegistryQuorumSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.envelope.receipt
+            .contentSha256,
+        selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+        selectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+        selectedSelectionChainTailSha256:
+          selectionCheckpoint.selectionChainTailSha256,
+        currentCheckpointSha256: selectionCheckpoint.contentSha256,
+        currentSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+        currentSelectionChainTailSha256:
+          selectionCheckpoint.selectionChainTailSha256,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      proposedRotationResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-proposal-status",
+      ),
+    ).toBe("proposed");
+    expect(
+      proposedRotationResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-baseline-sha256",
+      ),
+    ).toBe(checkpointRegistryQuorumBaselineResult.baseline.contentSha256);
+    const staleCheckpointBaselineProposalResponse = await app.request(
+      rotationProposalPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          checkpointRegistryQuorumBaselineId:
+            checkpointRegistryQuorumBaselineResult.baseline.id,
+          expectedCheckpointRegistryQuorumBaselineSha256: "0".repeat(64),
+        }),
+      },
+    );
+    expect(staleCheckpointBaselineProposalResponse.status).toBe(200);
+    expect(
+      (await staleCheckpointBaselineProposalResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+    ).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        diagnostics: [
+          "checkpoint_registry_quorum_baseline_precondition_failed",
+        ],
+        expectedCheckpointRegistryQuorumBaselineSha256: "0".repeat(64),
+        checkpointRegistryQuorumBaselineSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+      }),
+    );
     const checkpointRegistryQuorumImportRoot = await mkdtemp(
       path.join(
         tmpdir(),

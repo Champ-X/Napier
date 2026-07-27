@@ -431,6 +431,18 @@ All notable changes to Napier are recorded here.
   default checkpoint-registry quorum gate to Review rotation whenever checkpoint
   subscriptions exist, making split or stale external checkpoint registries
   visible before verifier-set rotation.
+- Automated verifier rotation proposal receipts. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal`
+  now recomputes the ordinary rotation review, consumes the latest or requested
+  checkpoint-registry quorum baseline as a fail-closed prerequisite, and
+  compares the baseline's checkpoint, selection-set, and chain-tail hashes with
+  the current activation-selection transparency checkpoint. The no-store
+  receipt returns `proposed` only when review, baseline precondition, and
+  checkpoint transparency alignment all pass; otherwise it reports
+  `missing_checkpoint_registry_baseline`, `already_active`,
+  `stale_selection`, or `blocked` diagnostics without mutating state. The Web
+  API and Receipt Trust Desk expose **Propose rotation** beside Review
+  rotation.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current
