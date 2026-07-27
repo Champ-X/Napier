@@ -628,6 +628,17 @@ signer key IDs, and maximum envelope age. It returns only source URL/origin
 hashes, response hashes, policy hash, preflight hash, envelope/proposal hashes,
 signer key ID, and diagnostics; the raw hosted URL is never mirrored into the
 receipt body.
+Durable hosted rotation proposal subscriptions layer persistence over that
+same no-store discovery contract. Subscription creation reruns discovery and
+stores the raw source URL only in local workspace state; public subscription
+projections, headers, and Ledger events retain URL/origin evidence as hashes.
+Manual refreshes are revision-CAS guarded and settle to `accepted`,
+`unchanged`, `rollback_rejected`, `rejected`, or `failed`. Only accepted or
+unchanged signed proposals advance last-good discovery, invalid or failed
+refreshes preserve the prior usable proposal, and a bounded transparency
+history records discovery, envelope, proposal, preflight, and predecessor
+hashes for external audit. Pause/resume changes are also CAS guarded, keeping
+operator control explicit until leased unattended refresh is added.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2566,8 +2577,10 @@ The current boundary has twenty-one parts:
     refresh claims, revision CAS, publisher-signed directory metadata, active
     verifier-set selections, transparency checkpoints, hosted signed checkpoint
     discovery, durable checkpoint registries, and checkpoint-registry quorum
-    alerting; fail-closed promotion preserves the active verifier set across
-    rejected, failed, stale, or split rotations.
+    alerting; hosted signed verifier-rotation proposal discovery plus durable
+    manual subscriptions with last-good preservation and hash-only transparency;
+    fail-closed promotion preserves the active verifier set across rejected,
+    failed, stale, or split rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2589,9 +2602,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- durable hosted verifier rotation proposal subscriptions with leased refresh,
-  last-good preservation, and operator approval receipts for unattended trust
-  maintenance.
+- leased refresh for hosted verifier rotation proposal subscriptions plus
+  operator approval receipts for unattended trust maintenance.
 
 ### Layer 3: Extension fabric
 

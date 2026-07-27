@@ -133,6 +133,9 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelection,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -153,8 +156,10 @@ import {
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
   type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   type CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
+  type CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
   type SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   type UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
+  type UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
   type UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
   type ReplanExecutionPlanRequest,
   type ResolveEvaluationConsensusRequest,
@@ -348,9 +353,11 @@ import {
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
   MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES,
   MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS,
+  MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   createReceiptTrustAnchorDirectoryQuorumActivationSelection,
@@ -363,22 +370,27 @@ import {
   createReceiptTrustAnchorDirectorySubscription,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefresh,
+  settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh,
   settleReceiptTrustAnchorDirectorySubscriptionRefresh,
   stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets,
+  stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets,
   stripReceiptTrustAnchorDirectorySubscriptionSecrets,
   updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus,
+  updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus,
   updateReceiptTrustAnchorDirectorySubscriptionStatus,
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelection,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   type PersistedReceiptTrustAnchorDirectorySubscription,
   type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim,
   type ReceiptTrustAnchorDirectorySubscriptionClaim,
 } from "./receipt-trust-directory-subscriptions.js";
@@ -568,6 +580,7 @@ interface PersistedState {
   receiptTrustAnchors: ReceiptTrustAnchor[];
   receiptTrustAnchorDirectorySubscriptions: PersistedReceiptTrustAnchorDirectorySubscription[];
   receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[];
+  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription[];
   receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline[];
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[];
   receiptTrustAnchorDirectoryQuorumActivationDecisions: ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[];
@@ -673,6 +686,8 @@ const EMPTY_STATE: PersistedState = {
   receiptTrustAnchors: [],
   receiptTrustAnchorDirectorySubscriptions: [],
   receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions:
+    [],
+  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions:
     [],
   receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines:
     [],
@@ -2094,6 +2109,205 @@ export class LocalStore {
     return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
       subscription,
     );
+  }
+
+  listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription[] {
+    this.assertInitialized();
+    return this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+      .map(
+        stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets,
+      )
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  }
+
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+    subscriptionId: string,
+  ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+    this.assertInitialized();
+    const subscription =
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
+    if (!subscription) {
+      throw new Error(
+        `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
+      );
+    }
+    return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+      subscription,
+    );
+  }
+
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshSource(
+    subscriptionId: string,
+    threadId: string,
+    expectedRevision: number,
+  ): {
+    subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+    sourceUrl: string;
+  } {
+    this.assertInitialized();
+    this.getThread(threadId);
+    const subscription =
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
+    if (!subscription) {
+      throw new Error(
+        `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
+      );
+    }
+    if (subscription.auditThreadId !== threadId) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed",
+      );
+    }
+    if (subscription.revision !== expectedRevision) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
+      );
+    }
+    return {
+      subscription:
+        stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+          subscription,
+        ),
+      sourceUrl: subscription.sourceUrl,
+    };
+  }
+
+  async createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+    request: CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
+    discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription> {
+    this.assertInitialized();
+    this.getThread(request.threadId);
+    const subscription =
+      createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+        request,
+        discovery,
+      );
+    return this.stateQueue.run(async () => {
+      if (
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+          .length >= MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS
+      ) {
+        throw new Error(
+          `Workspace exceeds ${MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS} receipt trust anchor directory quorum activation selection rotation proposal subscriptions`,
+        );
+      }
+      if (
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.some(
+          (candidate) =>
+            candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
+        )
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription source already exists",
+        );
+      }
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.push(
+        subscription,
+      );
+      await this.persistState();
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+        subscription,
+      );
+    });
+  }
+
+  async updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+    subscriptionId: string,
+    request: UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription> {
+    this.assertInitialized();
+    this.getThread(request.threadId);
+    return this.stateQueue.run(async () => {
+      const index =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      const current =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
+          index
+        ];
+      if (!current) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (current.revision !== request.expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
+        );
+      }
+      const updated =
+        updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus(
+          current,
+          request.status,
+        );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
+        index
+      ] = updated;
+      if (updated.revision !== current.revision) {
+        await this.persistState();
+      }
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+        updated,
+      );
+    });
+  }
+
+  async refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+    subscriptionId: string,
+    threadId: string,
+    expectedRevision: number,
+    outcome:
+      | {
+          discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
+        }
+      | { failureSha256: string },
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult> {
+    this.assertInitialized();
+    this.getThread(threadId);
+    return this.stateQueue.run(async () => {
+      const index =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.findIndex(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      const current =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
+          index
+        ];
+      if (!current) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (current.auditThreadId !== threadId) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription audit thread changed",
+        );
+      }
+      if (current.revision !== expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription revision changed",
+        );
+      }
+      const settled =
+        settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh(
+          current,
+          outcome,
+        );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions[
+        index
+      ] = settled.persisted;
+      await this.persistState();
+      return settled.result;
+    });
   }
 
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
@@ -7817,6 +8031,14 @@ export class LocalStore {
     }
     if (
       !Array.isArray(
+        state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions,
+      )
+    ) {
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions =
+        [];
+    }
+    if (
+      !Array.isArray(
         state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines,
       )
     ) {
@@ -8607,6 +8829,40 @@ export class LocalStore {
       Object.assign(input, subscription);
     }
     if (
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+        .length > MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS
+    ) {
+      throw new Error(
+        "Persisted receipt trust anchor directory quorum activation selection rotation proposal subscription limit is exceeded",
+      );
+    }
+    const trustRotationProposalSubscriptionIds = new Set<string>();
+    const trustRotationProposalSubscriptionSourceHashes = new Set<string>();
+    for (const input of state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions) {
+      const subscription =
+        validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          input,
+        );
+      if (
+        trustRotationProposalSubscriptionIds.has(subscription.id) ||
+        trustRotationProposalSubscriptionSourceHashes.has(
+          subscription.sourceUrlSha256,
+        ) ||
+        !state.threads.some(
+          (thread) => thread.id === subscription.auditThreadId,
+        )
+      ) {
+        throw new Error(
+          `Duplicate persisted receipt trust anchor directory quorum activation selection rotation proposal subscription: ${subscription.id}`,
+        );
+      }
+      trustRotationProposalSubscriptionIds.add(subscription.id);
+      trustRotationProposalSubscriptionSourceHashes.add(
+        subscription.sourceUrlSha256,
+      );
+      Object.assign(input, subscription);
+    }
+    if (
       state
         .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines
         .length > MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
@@ -9230,6 +9486,9 @@ export class LocalStore {
       !Array.isArray(parsed.receiptTrustAnchorDirectorySubscriptions) ||
       !Array.isArray(
         parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
+      ) ||
+      !Array.isArray(
+        parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions,
       ) ||
       !Array.isArray(
         parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines,

@@ -4,6 +4,7 @@ import {
   NAPIER_API_VERSION,
   type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   type CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
+  type CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
   type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectoryMetadataReceipt,
   type ReceiptTrustAnchorDirectoryQuorum,
@@ -19,6 +20,15 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyStatus,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -78,13 +88,17 @@ import {
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const SUBSCRIPTION_ID_PATTERN = /^trustdir_[a-f0-9]{20}$/;
 const CHECKPOINT_SUBSCRIPTION_ID_PATTERN = /^trustcpsub_[a-f0-9]{20}$/;
+const ROTATION_PROPOSAL_SUBSCRIPTION_ID_PATTERN =
+  /^trustpropsub_[a-f0-9]{20}$/;
 const RESOURCE_ID_PATTERN = /^[a-z][a-z0-9_]{2,80}$/;
 
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
 export const MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS = 20;
+export const MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS = 20;
 export const MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES = 20;
 export const MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
+export const MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT = 10;
 export const MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS = 50;
@@ -120,6 +134,10 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
   subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
   sourceUrl: string;
   token: string;
+}
+
+export interface PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription extends ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+  sourceUrl: string;
 }
 
 export function createReceiptTrustAnchorDirectorySubscription(
@@ -392,6 +410,50 @@ export function hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspar
   );
 }
 
+export function normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy = {},
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy {
+  const requiredSignerKeyIds =
+    input.requiredSignerKeyIds === undefined
+      ? undefined
+      : Array.from(new Set(input.requiredSignerKeyIds)).sort();
+  return {
+    ...(input.maxEnvelopeAgeMs !== undefined
+      ? { maxEnvelopeAgeMs: input.maxEnvelopeAgeMs }
+      : {}),
+    ...(input.expectedEnvelopeSha256
+      ? { expectedEnvelopeSha256: input.expectedEnvelopeSha256 }
+      : {}),
+    ...(input.expectedProposalSha256
+      ? { expectedProposalSha256: input.expectedProposalSha256 }
+      : {}),
+    ...(input.expectedActivationDecisionRecordId
+      ? {
+          expectedActivationDecisionRecordId:
+            input.expectedActivationDecisionRecordId,
+        }
+      : {}),
+    ...(input.expectedCurrentSelectionSha256 !== undefined
+      ? { expectedCurrentSelectionSha256: input.expectedCurrentSelectionSha256 }
+      : {}),
+    ...(requiredSignerKeyIds && requiredSignerKeyIds.length > 0
+      ? { requiredSignerKeyIds }
+      : {}),
+  };
+}
+
+export function hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy = {},
+): string {
+  return sha256(
+    canonicalJson(
+      normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+        input,
+      ),
+    ),
+  );
+}
+
 export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
   request: CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   discoveryInput: unknown,
@@ -621,6 +683,252 @@ export function settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
     );
   const resultContent = {
     kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription-refresh" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    status,
+    subscription,
+    ...(discovery ? { discovery } : {}),
+    ...(failureSha256 ? { failureSha256 } : {}),
+  };
+  return {
+    persisted,
+    result: {
+      ...resultContent,
+      contentSha256: sha256(canonicalJson(resultContent)),
+    },
+  };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+  request: CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
+  discoveryInput: unknown,
+  createdAt = new Date().toISOString(),
+): PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+  const sourceUrl = normalizeReceiptTrustAnchorDirectorySubscriptionUrl(
+    request.sourceUrl,
+  );
+  const label = normalizeLabel(request.label);
+  const refreshIntervalMs = normalizeRefreshInterval(request.refreshIntervalMs);
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+      request.policy,
+    );
+  const policySha256 =
+    hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+      policy,
+    );
+  const discovery =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
+      discoveryInput,
+    );
+  assertRotationProposalDiscoveryBinding(discovery, sourceUrl, policySha256);
+  if (
+    discovery.status !== "valid" ||
+    !discovery.envelope ||
+    !discovery.proposalSha256 ||
+    !discovery.preflight
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription requires a valid discovery",
+    );
+  }
+  const now = requireTimestamp(
+    createdAt,
+    "rotation proposal subscription creation time",
+  );
+  const transparencyEntry = createRotationProposalSubscriptionTransparencyEntry({
+    discovery,
+    status: "accepted",
+    observedAt: now,
+  });
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    id: createId("trustpropsub"),
+    auditThreadId: request.threadId,
+    label,
+    status: "active" as const,
+    revision: 1,
+    sourceUrlSha256: sha256(sourceUrl.href),
+    sourceOriginSha256: sha256(sourceUrl.origin),
+    refreshIntervalMs,
+    nextRefreshAt: new Date(Date.parse(now) + refreshIntervalMs).toISOString(),
+    policy,
+    policySha256,
+    lastRefreshAt: now,
+    lastRefreshStatus: "accepted" as const,
+    lastDiscoverySha256: discovery.contentSha256,
+    lastGoodDiscovery: discovery,
+    transparencyEntryCount: transparencyEntry.sequence,
+    transparencyTailSha256: transparencyEntry.contentSha256,
+    transparencyHistory: [transparencyEntry],
+    createdAt: now,
+    updatedAt: now,
+  };
+  return {
+    ...content,
+    contentSha256: hashRotationProposalSubscriptionContent(content),
+    sourceUrl: sourceUrl.href,
+  };
+}
+
+export function updateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus(
+  input: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus,
+  updatedAt = new Date().toISOString(),
+): PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+  const current =
+    validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+      input,
+    );
+  if (status !== "active" && status !== "paused") {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription status is invalid",
+    );
+  }
+  if (current.status === status) return current;
+  const content = {
+    ...rotationProposalSubscriptionContent(current),
+    status,
+    revision: current.revision + 1,
+    updatedAt: requireTimestamp(
+      updatedAt,
+      "rotation proposal subscription update time",
+    ),
+  };
+  return {
+    ...content,
+    contentSha256: hashRotationProposalSubscriptionContent(content),
+    sourceUrl: current.sourceUrl,
+  };
+}
+
+export function settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefresh(
+  input: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  outcome: { discovery: unknown } | { failureSha256: string },
+  refreshedAt = new Date().toISOString(),
+): {
+  persisted: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+  result: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult;
+} {
+  const current =
+    validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+      input,
+    );
+  const refreshTime = requireTimestamp(
+    refreshedAt,
+    "rotation proposal subscription refresh time",
+  );
+  const sourceUrl = normalizeReceiptTrustAnchorDirectorySubscriptionUrl(
+    current.sourceUrl,
+  );
+  let discovery:
+    | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery
+    | undefined;
+  let failureSha256: string | undefined;
+  let status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus;
+  let lastGoodDiscovery = current.lastGoodDiscovery;
+  let transparencyHistory = current.transparencyHistory;
+  let transparencyEntryCount = current.transparencyEntryCount;
+  let transparencyTailSha256 = current.transparencyTailSha256;
+
+  if ("discovery" in outcome) {
+    discovery =
+      validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
+        outcome.discovery,
+      );
+    assertRotationProposalDiscoveryBinding(
+      discovery,
+      sourceUrl,
+      current.policySha256,
+    );
+    if (
+      discovery.status === "valid" &&
+      discovery.envelope &&
+      discovery.proposalSha256 &&
+      discovery.preflight
+    ) {
+      const envelopeSha256 = discovery.envelopeSha256;
+      const currentEnvelopeSha256 = current.lastGoodDiscovery?.envelopeSha256;
+      const isKnownRollback =
+        envelopeSha256 !== currentEnvelopeSha256 &&
+        envelopeSha256 !== undefined &&
+        current.transparencyHistory.some(
+          (entry) => entry.envelopeSha256 === envelopeSha256,
+        );
+      if (isKnownRollback) {
+        status = "rollback_rejected";
+      } else {
+        const transparencyStatus: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyStatus =
+          envelopeSha256 === currentEnvelopeSha256 ? "unchanged" : "accepted";
+        status = transparencyStatus;
+        lastGoodDiscovery = discovery;
+        transparencyHistory = appendRotationProposalSubscriptionTransparencyEntry(
+          current.transparencyHistory,
+          createRotationProposalSubscriptionTransparencyEntry({
+            discovery,
+            status: transparencyStatus,
+            observedAt: refreshTime,
+            previousSequence: current.transparencyEntryCount,
+            ...(current.transparencyTailSha256
+              ? { previousEntrySha256: current.transparencyTailSha256 }
+              : {}),
+          }),
+        );
+        transparencyEntryCount =
+          transparencyHistory.at(-1)?.sequence ??
+          current.transparencyEntryCount;
+        transparencyTailSha256 =
+          transparencyHistory.at(-1)?.contentSha256 ??
+          current.transparencyTailSha256;
+      }
+    } else {
+      status = "rejected";
+    }
+  } else {
+    if (!SHA256_PATTERN.test(outcome.failureSha256)) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription failure hash is invalid",
+      );
+    }
+    status = "failed";
+    failureSha256 = outcome.failureSha256;
+  }
+
+  const {
+    lastDiscoverySha256: _lastDiscoverySha256,
+    lastFailureSha256: _lastFailureSha256,
+    ...currentContent
+  } = rotationProposalSubscriptionContent(current);
+  const content = {
+    ...currentContent,
+    revision: current.revision + 1,
+    nextRefreshAt: new Date(
+      Date.parse(refreshTime) + current.refreshIntervalMs,
+    ).toISOString(),
+    lastRefreshAt: refreshTime,
+    lastRefreshStatus: status,
+    ...(discovery ? { lastDiscoverySha256: discovery.contentSha256 } : {}),
+    ...(failureSha256 ? { lastFailureSha256: failureSha256 } : {}),
+    ...(lastGoodDiscovery ? { lastGoodDiscovery } : {}),
+    transparencyEntryCount,
+    ...(transparencyTailSha256 ? { transparencyTailSha256 } : {}),
+    transparencyHistory,
+    updatedAt: refreshTime,
+  };
+  const persisted: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription =
+    {
+      ...content,
+      contentSha256: hashRotationProposalSubscriptionContent(content),
+      sourceUrl: current.sourceUrl,
+    };
+  const subscription =
+    stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+      persisted,
+    );
+  const resultContent = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-refresh" as const,
     schemaVersion: 1 as const,
     apiVersion: NAPIER_API_VERSION,
     status,
@@ -4149,6 +4457,340 @@ export function stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspa
   );
 }
 
+export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+  value: unknown,
+): PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+  if (!isRecord(value) || typeof value["sourceUrl"] !== "string") {
+    throw new Error(
+      "Persisted receipt trust anchor directory quorum activation selection rotation proposal subscription is invalid",
+    );
+  }
+  const sourceUrl = normalizeReceiptTrustAnchorDirectorySubscriptionUrl(
+    value["sourceUrl"],
+  );
+  const subscription =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+      value,
+    );
+  if (
+    sha256(sourceUrl.href) !== subscription.sourceUrlSha256 ||
+    sha256(sourceUrl.origin) !== subscription.sourceOriginSha256
+  ) {
+    throw new Error(
+      "Persisted receipt trust anchor directory quorum activation selection rotation proposal subscription source hash mismatch",
+    );
+  }
+  return {
+    ...subscription,
+    sourceUrl: sourceUrl.href,
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription is invalid",
+    );
+  }
+  const subscription =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+      subscription.policy,
+    );
+  const lastGoodDiscovery =
+    subscription.lastGoodDiscovery === undefined
+      ? undefined
+      : validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
+          subscription.lastGoodDiscovery,
+        );
+  const transparencyHistory =
+    validateRotationProposalSubscriptionTransparencyHistory(
+      subscription.transparencyHistory,
+    );
+  const transparencyTail = transparencyHistory.at(-1);
+  if (
+    subscription.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription" ||
+    subscription.schemaVersion !== 1 ||
+    subscription.apiVersion !== NAPIER_API_VERSION ||
+    !ROTATION_PROPOSAL_SUBSCRIPTION_ID_PATTERN.test(subscription.id) ||
+    !/^thread_[a-z0-9]{8,80}$/.test(subscription.auditThreadId) ||
+    normalizeLabel(subscription.label) !== subscription.label ||
+    (subscription.status !== "active" && subscription.status !== "paused") ||
+    !Number.isSafeInteger(subscription.revision) ||
+    subscription.revision < 1 ||
+    !SHA256_PATTERN.test(subscription.sourceUrlSha256) ||
+    !SHA256_PATTERN.test(subscription.sourceOriginSha256) ||
+    normalizeRefreshInterval(subscription.refreshIntervalMs) !==
+      subscription.refreshIntervalMs ||
+    hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+      policy,
+    ) !== subscription.policySha256 ||
+    !validTimestamp(subscription.nextRefreshAt) ||
+    !validTimestamp(subscription.createdAt) ||
+    !validTimestamp(subscription.updatedAt) ||
+    !optionalTimestamp(subscription.lastRefreshAt) ||
+    !optionalRotationProposalSubscriptionRefreshStatus(
+      subscription.lastRefreshStatus,
+    ) ||
+    !optionalSha256(subscription.lastDiscoverySha256) ||
+    !optionalSha256(subscription.lastFailureSha256) ||
+    !nonNegativeInteger(subscription.transparencyEntryCount) ||
+    !optionalSha256(subscription.transparencyTailSha256) ||
+    !SHA256_PATTERN.test(subscription.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription is invalid",
+    );
+  }
+  if (
+    (transparencyHistory.length === 0 &&
+      (subscription.transparencyEntryCount !== 0 ||
+        subscription.transparencyTailSha256 !== undefined)) ||
+    (transparencyTail &&
+      (subscription.transparencyEntryCount !== transparencyTail.sequence ||
+        subscription.transparencyTailSha256 !== transparencyTail.contentSha256))
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency tail is invalid",
+    );
+  }
+  if (
+    lastGoodDiscovery &&
+    (lastGoodDiscovery.status !== "valid" ||
+      !lastGoodDiscovery.envelope ||
+      !lastGoodDiscovery.proposalSha256 ||
+      !lastGoodDiscovery.preflight ||
+      lastGoodDiscovery.sourceUrlSha256 !== subscription.sourceUrlSha256 ||
+      lastGoodDiscovery.sourceOriginSha256 !== subscription.sourceOriginSha256 ||
+      lastGoodDiscovery.policySha256 !== subscription.policySha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription last-good discovery is invalid",
+    );
+  }
+  if (lastGoodDiscovery) {
+    const lastGoodPreflight = lastGoodDiscovery.preflight;
+    if (
+      !transparencyTail ||
+      !lastGoodPreflight ||
+      transparencyTail.discoverySha256 !== lastGoodDiscovery.contentSha256 ||
+      transparencyTail.envelopeSha256 !== lastGoodDiscovery.envelopeSha256 ||
+      transparencyTail.proposalSha256 !== lastGoodDiscovery.proposalSha256 ||
+      transparencyTail.preflightSha256 !== lastGoodPreflight.contentSha256
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency history is stale",
+      );
+    }
+  }
+  const content = {
+    ...rotationProposalSubscriptionContent(subscription),
+    policy,
+    ...(lastGoodDiscovery ? { lastGoodDiscovery } : {}),
+    transparencyHistory,
+  };
+  if (
+    hashRotationProposalSubscriptionContent(content) !==
+    subscription.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription content hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...subscription,
+    policy,
+    ...(lastGoodDiscovery ? { lastGoodDiscovery } : {}),
+    transparencyHistory,
+  });
+}
+
+export function stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+  input: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+  const { sourceUrl: _sourceUrl, ...subscription } = input;
+  return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+    subscription,
+  );
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal discovery is invalid",
+    );
+  }
+  const discovery =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+      discovery.policy,
+    );
+  const diagnostics = [...discovery.diagnostics];
+  const preflight =
+    discovery.preflight === undefined
+      ? undefined
+      : validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
+          discovery.preflight,
+        );
+  const envelope =
+    discovery.envelope === undefined
+      ? undefined
+      : (validateTrustedReceiptEnvelope(
+          discovery.envelope,
+        ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>);
+  if (
+    discovery.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-discovery" ||
+    discovery.schemaVersion !== 1 ||
+    discovery.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(discovery.generatedAt) ||
+    (discovery.status !== "valid" && discovery.status !== "invalid") ||
+    !validDiagnostics(diagnostics) ||
+    (discovery.status === "valid" && diagnostics.length !== 0) ||
+    !SHA256_PATTERN.test(discovery.sourceUrlSha256) ||
+    !SHA256_PATTERN.test(discovery.sourceOriginSha256) ||
+    discovery.httpStatus !== 200 ||
+    typeof discovery.responseMediaType !== "string" ||
+    discovery.responseMediaType.length < 1 ||
+    !Number.isSafeInteger(discovery.responseBytes) ||
+    discovery.responseBytes < 1 ||
+    !SHA256_PATTERN.test(discovery.responseBodySha256) ||
+    hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy(
+      policy,
+    ) !== discovery.policySha256 ||
+    !optionalSha256(discovery.envelopeSha256) ||
+    !optionalSha256(discovery.proposalSha256) ||
+    !optionalSha256(discovery.proposalReviewSha256) ||
+    !optionalSha256(discovery.checkpointRegistryQuorumBaselineSha256) ||
+    (discovery.activationDecisionRecordId !== undefined &&
+      !/^trustqad_[a-z0-9]{8,80}$/.test(
+        discovery.activationDecisionRecordId,
+      )) ||
+    (discovery.expectedCurrentSelectionSha256 !== undefined &&
+      discovery.expectedCurrentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(discovery.expectedCurrentSelectionSha256)) ||
+    !optionalSha256(discovery.signerKeyId) ||
+    !optionalTimestamp(discovery.signedAt) ||
+    !SHA256_PATTERN.test(discovery.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal discovery is invalid",
+    );
+  }
+  if (envelope) {
+    if (
+      envelope.receiptKind !==
+        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal" ||
+      discovery.envelopeSha256 !== envelope.contentSha256 ||
+      discovery.proposalSha256 !== envelope.receipt.contentSha256 ||
+      discovery.proposalReviewSha256 !== envelope.receipt.rotationReviewSha256 ||
+      discovery.checkpointRegistryQuorumBaselineSha256 !==
+        envelope.receipt.checkpointRegistryQuorumBaselineSha256 ||
+      discovery.activationDecisionRecordId !==
+        envelope.receipt.activationDecisionRecordId ||
+      discovery.expectedCurrentSelectionSha256 !==
+        envelope.receipt.expectedCurrentSelectionSha256 ||
+      discovery.signerKeyId !== envelope.signature.keyId ||
+      discovery.signedAt !== envelope.signature.signedAt
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal discovery envelope binding is invalid",
+      );
+    }
+  }
+  if (
+    discovery.status === "valid" &&
+    (!envelope || !preflight || preflight.status !== "accepted")
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal discovery status is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...discovery,
+    diagnostics,
+    policy,
+    ...(preflight ? { preflight } : {}),
+    ...(envelope ? { envelope } : {}),
+  };
+  if (sha256(canonicalJson(content)) !== discovery.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal discovery content hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...discovery,
+    diagnostics,
+    policy,
+    ...(preflight ? { preflight } : {}),
+    ...(envelope ? { envelope } : {}),
+  });
+}
+
+function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal preflight is invalid",
+    );
+  }
+  const preflight =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight;
+  const diagnostics = [...preflight.diagnostics];
+  if (
+    preflight.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-preflight" ||
+    preflight.schemaVersion !== 1 ||
+    preflight.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(preflight.checkedAt) ||
+    (preflight.status !== "accepted" &&
+      preflight.status !== "rejected" &&
+      preflight.status !== "not_required") ||
+    !validDiagnostics(diagnostics) ||
+    typeof preflight.activationDecisionRecordId !== "string" ||
+    !/^trustqad_[a-z0-9]{8,80}$/.test(preflight.activationDecisionRecordId) ||
+    (preflight.expectedCurrentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(preflight.expectedCurrentSelectionSha256)) ||
+    (preflight.currentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(preflight.currentSelectionSha256)) ||
+    !optionalSha256(preflight.activeSelectionSha256) ||
+    !optionalSha256(preflight.rotationProposalEnvelopeSha256) ||
+    !optionalSha256(preflight.rotationProposalSha256) ||
+    !optionalSha256(preflight.rotationProposalReviewSha256) ||
+    !optionalSha256(
+      preflight.rotationProposalCheckpointRegistryQuorumBaselineSha256,
+    ) ||
+    !optionalTrustedReceiptStatus(preflight.trustedReceiptVerificationStatus) ||
+    (preflight.trustedReceiptVerificationReason !== undefined &&
+      typeof preflight.trustedReceiptVerificationReason !== "string") ||
+    !optionalSha256(preflight.trustedReceiptVerificationKeyId) ||
+    !optionalSha256(preflight.trustedReceiptVerificationEnvelopeSha256) ||
+    !SHA256_PATTERN.test(preflight.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal preflight is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...preflight,
+    diagnostics,
+  };
+  if (sha256(canonicalJson(content)) !== preflight.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal preflight hash mismatch",
+    );
+  }
+  return structuredClone({ ...preflight, diagnostics });
+}
+
 export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(
   value: unknown,
 ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery {
@@ -4381,6 +5023,22 @@ function assertCheckpointDiscoveryBinding(
   ) {
     throw new Error(
       "Receipt trust anchor directory quorum activation selection checkpoint subscription discovery binding changed",
+    );
+  }
+}
+
+function assertRotationProposalDiscoveryBinding(
+  discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+  sourceUrl: URL,
+  policySha256: string,
+): void {
+  if (
+    discovery.sourceUrlSha256 !== sha256(sourceUrl.href) ||
+    discovery.sourceOriginSha256 !== sha256(sourceUrl.origin) ||
+    discovery.policySha256 !== policySha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription discovery binding changed",
     );
   }
 }
@@ -6333,6 +6991,146 @@ function validateCheckpointSubscriptionTransparencyEntry(
   return structuredClone(entry);
 }
 
+function createRotationProposalSubscriptionTransparencyEntry(input: {
+  discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyStatus;
+  observedAt: string;
+  previousEntrySha256?: string;
+  previousSequence?: number;
+}): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry {
+  if (
+    !input.discovery.envelope ||
+    !input.discovery.proposalSha256 ||
+    !input.discovery.preflight
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal transparency entry requires a signed proposal",
+    );
+  }
+  const observedAt = requireTimestamp(
+    input.observedAt,
+    "rotation proposal subscription transparency observation time",
+  );
+  if (
+    input.previousEntrySha256 !== undefined &&
+    !SHA256_PATTERN.test(input.previousEntrySha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal transparency predecessor is invalid",
+    );
+  }
+  const sequence = (input.previousSequence ?? 0) + 1;
+  if (!Number.isSafeInteger(sequence) || sequence < 1) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal transparency sequence is invalid",
+    );
+  }
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-transparency-entry" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    sequence,
+    status: input.status,
+    observedAt,
+    discoverySha256: input.discovery.contentSha256,
+    envelopeSha256: input.discovery.envelope.contentSha256,
+    proposalSha256: input.discovery.proposalSha256,
+    preflightSha256: input.discovery.preflight.contentSha256,
+    ...(input.previousEntrySha256
+      ? { previousEntrySha256: input.previousEntrySha256 }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function appendRotationProposalSubscriptionTransparencyEntry(
+  history: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry[],
+  entry: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry[] {
+  return [...history, entry].slice(
+    -MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTION_TRANSPARENCY_ENTRIES,
+  );
+}
+
+function validateRotationProposalSubscriptionTransparencyHistory(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry[] {
+  if (
+    !Array.isArray(value) ||
+    value.length >
+      MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTION_TRANSPARENCY_ENTRIES
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency history is invalid",
+    );
+  }
+  const entries = value.map(validateRotationProposalSubscriptionTransparencyEntry);
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index]!;
+    const previous = entries[index - 1];
+    if (previous) {
+      if (
+        entry.sequence !== previous.sequence + 1 ||
+        entry.previousEntrySha256 !== previous.contentSha256
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency chain is invalid",
+        );
+      }
+    } else if (
+      (entry.sequence === 1 && entry.previousEntrySha256 !== undefined) ||
+      (entry.sequence > 1 && !entry.previousEntrySha256)
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency chain is invalid",
+      );
+    }
+  }
+  return entries;
+}
+
+function validateRotationProposalSubscriptionTransparencyEntry(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency entry is invalid",
+    );
+  }
+  const entry =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry;
+  if (
+    entry.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-transparency-entry" ||
+    entry.schemaVersion !== 1 ||
+    entry.apiVersion !== NAPIER_API_VERSION ||
+    !Number.isSafeInteger(entry.sequence) ||
+    entry.sequence < 1 ||
+    (entry.status !== "accepted" && entry.status !== "unchanged") ||
+    !validTimestamp(entry.observedAt) ||
+    !SHA256_PATTERN.test(entry.discoverySha256) ||
+    !SHA256_PATTERN.test(entry.envelopeSha256) ||
+    !SHA256_PATTERN.test(entry.proposalSha256) ||
+    !SHA256_PATTERN.test(entry.preflightSha256) ||
+    !optionalSha256(entry.previousEntrySha256) ||
+    !SHA256_PATTERN.test(entry.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency entry is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = entry;
+  if (sha256(canonicalJson(content)) !== entry.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency entry hash mismatch",
+    );
+  }
+  return structuredClone(entry);
+}
+
 function subscriptionContent(
   input: ReceiptTrustAnchorDirectorySubscription,
 ): Omit<ReceiptTrustAnchorDirectorySubscription, "contentSha256"> {
@@ -6369,6 +7167,25 @@ function checkpointSubscriptionContent(
 }
 
 function hashCheckpointSubscriptionContent(value: object): string {
+  return sha256(canonicalJson(value));
+}
+
+function rotationProposalSubscriptionContent(
+  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+): Omit<
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  "contentSha256"
+> {
+  const {
+    contentSha256: _contentSha256,
+    sourceUrl: _sourceUrl,
+    ...content
+  } = input as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription &
+    Partial<PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription>;
+  return content;
+}
+
+function hashRotationProposalSubscriptionContent(value: object): string {
   return sha256(canonicalJson(value));
 }
 
@@ -6451,6 +7268,21 @@ function optionalCheckpointSubscriptionRefreshStatus(
   );
 }
 
+function optionalRotationProposalSubscriptionRefreshStatus(
+  value: unknown,
+): value is
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus
+  | undefined {
+  return (
+    value === undefined ||
+    value === "accepted" ||
+    value === "unchanged" ||
+    value === "rollback_rejected" ||
+    value === "rejected" ||
+    value === "failed"
+  );
+}
+
 function optionalTimestamp(value: unknown): boolean {
   return value === undefined || validTimestamp(value);
 }
@@ -6481,6 +7313,10 @@ function optionalSha256(value: unknown): boolean {
     value === undefined ||
     (typeof value === "string" && SHA256_PATTERN.test(value))
   );
+}
+
+function optionalTrustedReceiptStatus(value: unknown): boolean {
+  return value === undefined || validTrustedReceiptStatus(value);
 }
 
 function validTrustedReceiptStatus(value: unknown): boolean {

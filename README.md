@@ -1481,6 +1481,20 @@ envelope age. Discovery is `valid` only when the hosted envelope validates,
 the signed-proposal preflight is `accepted`, and all policy pins pass;
 otherwise it returns `invalid` with diagnostics such as
 `proposal_hash_mismatch`, `signer_not_allowed`, or `envelope_expired`.
+Operators can persist the same hosted signed-proposal source through `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions`.
+Creation reruns discovery first, stores the raw URL only in the local workspace
+snapshot, and exposes URL/origin evidence only as SHA-256 values in
+subscriptions, headers, receipts, and Ledger events. `GET` on that collection
+lists durable subscriptions without source locators. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/refresh`
+manually refreshes a source with revision CAS, updates last-good only for
+`accepted` or `unchanged` discoveries, rejects known rollback observations,
+preserves last-good across invalid or failed refreshes, and appends a bounded
+transparency chain over discovery, envelope, proposal, and preflight hashes.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId`
+pauses or resumes a subscription with the same revision guard.
 `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
 runs that same signed-proposal gate without mutating state. The no-store

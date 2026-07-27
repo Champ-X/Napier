@@ -466,6 +466,15 @@ All notable changes to Napier are recorded here.
   signer key IDs, and maximum envelope age. The no-store discovery receipt
   returns hash-only source and policy evidence plus diagnostics without
   mirroring raw hosted URLs.
+- Durable hosted rotation proposal subscriptions. `GET/POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions`
+  now persists allowlisted hosted signed-proposal sources with raw URLs kept
+  local-only, hash-only public evidence, policy-bound last-good discovery, and
+  bounded transparency entries over discovery, envelope, proposal, and
+  preflight hashes. Manual refreshes are revision-CAS guarded and return
+  `accepted`, `unchanged`, `rollback_rejected`, `rejected`, or `failed`,
+  preserving last-good across invalid or failed hosted observations; status
+  updates can pause or resume a subscription without exposing the source URL.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

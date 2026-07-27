@@ -4886,6 +4886,94 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
   contentSha256: string;
 }
 
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus =
+  | "active"
+  | "paused";
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus =
+  | "accepted"
+  | "unchanged"
+  | "rollback_rejected"
+  | "rejected"
+  | "failed";
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyStatus =
+  | "accepted"
+  | "unchanged";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-transparency-entry";
+  schemaVersion: 1;
+  apiVersion: string;
+  sequence: number;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyStatus;
+  observedAt: string;
+  discoverySha256: string;
+  envelopeSha256: string;
+  proposalSha256: string;
+  preflightSha256: string;
+  previousEntrySha256?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription";
+  schemaVersion: 1;
+  apiVersion: string;
+  id: string;
+  auditThreadId: string;
+  label: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus;
+  revision: number;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  refreshIntervalMs: number;
+  nextRefreshAt: string;
+  policy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy;
+  policySha256: string;
+  lastRefreshAt?: string;
+  lastRefreshStatus?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus;
+  lastDiscoverySha256?: string;
+  lastFailureSha256?: string;
+  lastGoodDiscovery?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
+  transparencyEntryCount: number;
+  transparencyTailSha256?: string;
+  transparencyHistory: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry[];
+  createdAt: string;
+  updatedAt: string;
+  contentSha256: string;
+}
+
+export interface CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest {
+  threadId: string;
+  label: string;
+  sourceUrl: string;
+  refreshIntervalMs: number;
+  policy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy;
+}
+
+export interface RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest {
+  threadId: string;
+  expectedRevision: number;
+}
+
+export interface UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest {
+  threadId: string;
+  expectedRevision: number;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-refresh";
+  schemaVersion: 1;
+  apiVersion: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus;
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+  discovery?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
+  failureSha256?: string;
+  contentSha256: string;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;
