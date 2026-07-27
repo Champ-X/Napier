@@ -361,7 +361,13 @@ export function useWorkspaceViewModel() {
         const delta = objectString(event.payload, "delta");
         if (delta) setStreamingText((current) => current + delta);
       }
-      if (event.type === "message.assistant") setStreamingText("");
+      if (
+        event.type === "message.assistant" ||
+        event.type === "model.advisor.blocked" ||
+        event.type === "model.advisor.correction.requested"
+      ) {
+        setStreamingText("");
+      }
       setDetail((current) =>
         current
           ? {

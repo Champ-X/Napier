@@ -76,6 +76,7 @@ describe("Agent profile updates", () => {
       modelAdvisor: {
         mode: "observe",
         enabledRules: ["destructive_command_reference"],
+        maxCorrectionAttempts: 2,
       },
     });
 
@@ -105,6 +106,7 @@ describe("Agent profile updates", () => {
         modelAdvisor: {
           mode: "observe",
           enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 2,
         },
         revision: 2,
       }),
@@ -221,6 +223,15 @@ describe("Agent profile updates", () => {
         },
       }),
     ).toThrow("Unsupported Model Advisor rule");
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        modelAdvisor: {
+          mode: "enforce",
+          enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 4,
+        },
+      }),
+    ).toThrow("Model Advisor policy is invalid");
   });
 
   it("hashes immutable revisions and restores history as a new revision", () => {

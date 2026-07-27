@@ -78,6 +78,7 @@ const DEFAULT_MODEL_ADVISOR_POLICY = {
     "unverified_verification_claim" as const,
     "destructive_command_reference" as const,
   ],
+  maxCorrectionAttempts: 0,
 };
 const MODEL_ADVISOR_RULES: ModelAdvisorRuleId[] = [
   "unverified_verification_claim",
@@ -254,6 +255,11 @@ export default function ContextPanel({
     agent.modelAdvisor?.enabledRules ??
       DEFAULT_MODEL_ADVISOR_POLICY.enabledRules,
   );
+  const [agentAdvisorCorrectionAttempts, setAgentAdvisorCorrectionAttempts] =
+    useState(
+      agent.modelAdvisor?.maxCorrectionAttempts ??
+        DEFAULT_MODEL_ADVISOR_POLICY.maxCorrectionAttempts,
+    );
   const [agentRunMaxTurns, setAgentRunMaxTurns] = useState(
     agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
   );
@@ -357,6 +363,10 @@ export default function ContextPanel({
       agent.modelAdvisor?.enabledRules ??
         DEFAULT_MODEL_ADVISOR_POLICY.enabledRules,
     );
+    setAgentAdvisorCorrectionAttempts(
+      agent.modelAdvisor?.maxCorrectionAttempts ??
+        DEFAULT_MODEL_ADVISOR_POLICY.maxCorrectionAttempts,
+    );
     setAgentRunMaxTurns(
       agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
     );
@@ -455,6 +465,7 @@ export default function ContextPanel({
         modelAdvisor: {
           mode: agentAdvisorMode,
           enabledRules: agentAdvisorRules,
+          maxCorrectionAttempts: agentAdvisorCorrectionAttempts,
         },
         runLimits: {
           maxTurns: agentRunMaxTurns,
@@ -1188,6 +1199,13 @@ export default function ContextPanel({
             selected={agentAdvisorRules}
             disabled={configurationBusy || agentAdvisorMode === "off"}
             onChange={setAgentAdvisorRules}
+          />
+          <NumberField
+            label={copy.context.modelAdvisorCorrectionAttempts}
+            value={agentAdvisorCorrectionAttempts}
+            min={0}
+            max={3}
+            onChange={setAgentAdvisorCorrectionAttempts}
           />
           <p className="guardrail-note">
             <ShieldCheck size={11} aria-hidden="true" />
@@ -2848,12 +2866,21 @@ function agentProfileDelta(
     }
     if (field === "modelAdvisor") {
       return (
-        JSON.stringify(current.modelAdvisor ?? DEFAULT_MODEL_ADVISOR_POLICY) !==
-        JSON.stringify(target.modelAdvisor ?? DEFAULT_MODEL_ADVISOR_POLICY)
+        JSON.stringify(comparableModelAdvisor(current)) !==
+        JSON.stringify(comparableModelAdvisor(target))
       );
     }
     return JSON.stringify(current[field]) !== JSON.stringify(target[field]);
   });
+}
+
+function comparableModelAdvisor(agent: AgentProfile) {
+  const policy = agent.modelAdvisor ?? DEFAULT_MODEL_ADVISOR_POLICY;
+  return {
+    mode: policy.mode,
+    enabledRules: [...policy.enabledRules].sort(),
+    maxCorrectionAttempts: policy.maxCorrectionAttempts ?? 0,
+  };
 }
 
 function formatDate(value: string): string {

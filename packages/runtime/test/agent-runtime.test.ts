@@ -161,7 +161,7 @@ describe("AgentRuntime demo path", () => {
 
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 4,
+        schemaVersion: 5,
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         modelAdvisor: {
           mode: "observe",
@@ -169,6 +169,7 @@ describe("AgentRuntime demo path", () => {
             "destructive_command_reference",
             "unverified_verification_claim",
           ],
+          maxCorrectionAttempts: 0,
         },
       }),
     );
@@ -503,6 +504,7 @@ describe("AgentRuntime demo path", () => {
             "destructive_command_reference",
             "unverified_verification_claim",
           ],
+          maxCorrectionAttempts: 0,
         },
       }),
     );
@@ -555,11 +557,13 @@ describe("AgentRuntime demo path", () => {
         policy: {
           mode: "enforce",
           enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 0,
         },
         diagnosticSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
     expect(JSON.stringify(blocked?.payload)).not.toContain("git reset --hard");
+    expect(JSON.stringify(events)).not.toContain("git reset --hard");
     expect(events.some((event) => event.type === "message.assistant")).toBe(
       false,
     );
@@ -572,6 +576,159 @@ describe("AgentRuntime demo path", () => {
         ),
       }),
     );
+  });
+
+  it("corrects enforced blockers with bounded tool-free retries", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      modelAdvisor: {
+        mode: "enforce",
+        enabledRules: ["destructive_command_reference"],
+        maxCorrectionAttempts: 1,
+      },
+    });
+    const thread = await store.createThread({
+      title: "Advisor corrected blocker",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-advisor-correct" });
+    faux.setResponses([
+      fauxAssistantMessage("Never run git reset --hard here."),
+      fauxAssistantMessage("Use a reversible, reviewed Git workflow."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+    const streamedTypes: string[] = [];
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Report risky command guidance.",
+      model: { provider: "faux-advisor-correct", id: "faux-1" },
+      onEvent: (event) => {
+        streamedTypes.push(event.type);
+      },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(faux.state.callCount).toBe(3);
+    expect(streamedTypes).not.toContain("model.text.delta");
+    expect(streamedTypes).toEqual(
+      expect.arrayContaining([
+        "model.advisor.blocked",
+        "model.advisor.correction.requested",
+        "model.advisor.correction.outcome",
+        "message.assistant",
+      ]),
+    );
+    const events = await store.listEvents(thread.id);
+    expect(
+      events.filter((event) => event.type === "message.user"),
+    ).toHaveLength(1);
+    expect(
+      events.filter((event) => event.type === "message.assistant"),
+    ).toEqual([
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          text: "Use a reversible, reviewed Git workflow.",
+        }),
+      }),
+    ]);
+    const request = events.find(
+      (event) => event.type === "model.advisor.correction.requested",
+    );
+    const outcome = events.find(
+      (event) => event.type === "model.advisor.correction.outcome",
+    );
+    expect(request?.payload).toEqual(
+      expect.objectContaining({
+        attempt: 1,
+        maxAttempts: 1,
+        blockerRuleIds: ["destructive_command_reference"],
+        correctivePromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(outcome?.payload).toEqual(
+      expect.objectContaining({
+        status: "accepted",
+        attempt: 1,
+        responseTextSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    const correctionContext = events.find(
+      (event) =>
+        event.type === "context.prepared" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["advisorCorrection"] === true,
+    );
+    expect(correctionContext?.payload).toEqual(
+      expect.objectContaining({
+        advisorCorrection: true,
+        toolCount: 0,
+        deferredToolCount: 0,
+      }),
+    );
+    expect(JSON.stringify([request?.payload, outcome?.payload])).not.toContain(
+      "git reset --hard",
+    );
+    expect(JSON.stringify(events)).not.toContain("git reset --hard");
+  });
+
+  it("fails closed after exhausting bounded advisor corrections", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      modelAdvisor: {
+        mode: "enforce",
+        enabledRules: ["destructive_command_reference"],
+        maxCorrectionAttempts: 1,
+      },
+    });
+    const thread = await store.createThread({
+      title: "Advisor exhausted correction",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-advisor-exhaust" });
+    faux.setResponses([
+      fauxAssistantMessage("Never run git reset --hard here."),
+      fauxAssistantMessage("Still never run git reset --hard here."),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Report risky command guidance.",
+      model: { provider: "faux-advisor-exhaust", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("failed");
+    expect(faux.state.callCount).toBe(2);
+    const events = await store.listEvents(thread.id);
+    expect(events.some((event) => event.type === "message.assistant")).toBe(
+      false,
+    );
+    expect(
+      events
+        .filter((event) => event.type === "model.advisor.correction.outcome")
+        .at(-1)?.payload,
+    ).toEqual(expect.objectContaining({ status: "exhausted", attempt: 1 }));
+    expect(JSON.stringify(events)).not.toContain("git reset --hard");
   });
 
   it("blocks an active goal when its run fails", async () => {

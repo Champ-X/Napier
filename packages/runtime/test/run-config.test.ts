@@ -39,6 +39,7 @@ const PROFILE: AgentProfile = {
   modelAdvisor: {
     mode: "observe",
     enabledRules: ["destructive_command_reference"],
+    maxCorrectionAttempts: 2,
   },
   revision: 7,
   createdAt: "2026-07-25T00:00:00.000Z",
@@ -140,11 +141,12 @@ describe("Run configuration fingerprints", () => {
 
     expect(fingerprint).toEqual(
       expect.objectContaining({
-        schemaVersion: 4,
+        schemaVersion: 5,
         skillCatalogSha256,
         modelAdvisor: {
           mode: "observe",
           enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 2,
         },
         executionMode: "standard",
       }),
@@ -153,6 +155,7 @@ describe("Run configuration fingerprints", () => {
     expect(fingerprintModelAdvisor(fingerprint)).toEqual({
       mode: "observe",
       enabledRules: ["destructive_command_reference"],
+      maxCorrectionAttempts: 2,
     });
     expect(JSON.stringify(fingerprint)).not.toContain(PROFILE.systemPrompt);
     expect(validateRunConfigurationFingerprint(fingerprint)).toEqual(
@@ -164,6 +167,46 @@ describe("Run configuration fingerprints", () => {
     expect(() => validateRunConfigurationFingerprint(drifted)).toThrow(
       "hash mismatch",
     );
+  });
+
+  it("preserves schema-4 Advisor hashes with zero correction attempts", () => {
+    const current = createRunConfigurationFingerprint(
+      PROFILE,
+      PROFILE.model,
+      "standard",
+      { skillCatalogSha256: "a".repeat(64) },
+    );
+    if (current.schemaVersion !== 5) {
+      throw new Error("Expected a schema-5 fingerprint");
+    }
+    const {
+      schemaVersion: _schemaVersion,
+      contentSha256: _contentSha256,
+      modelAdvisor,
+      ...shared
+    } = current;
+    const {
+      maxCorrectionAttempts: _maxCorrectionAttempts,
+      ...legacyModelAdvisor
+    } = modelAdvisor;
+    const content = {
+      schemaVersion: 4 as const,
+      ...shared,
+      modelAdvisor: legacyModelAdvisor,
+    };
+    const legacy = {
+      ...content,
+      contentSha256: createHash("sha256")
+        .update(canonicalJson(content))
+        .digest("hex"),
+    };
+
+    expect(validateRunConfigurationFingerprint(legacy)).toEqual(legacy);
+    expect(fingerprintModelAdvisor(legacy)).toEqual({
+      mode: "observe",
+      enabledRules: ["destructive_command_reference"],
+      maxCorrectionAttempts: 0,
+    });
   });
 
   it("rejects hash drift, non-canonical sets, and unbound fields", () => {

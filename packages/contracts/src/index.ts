@@ -181,7 +181,7 @@ export interface ModelAdvisorNoticePayload {
   schemaVersion: 1;
   source: "deterministic_stream_lint";
   turnSource: string;
-  policy: ModelAdvisorPolicy;
+  policy: ResolvedModelAdvisorPolicy;
   status: "notice" | "blocked";
   textSha256: string;
   diagnosticCount: number;
@@ -191,9 +191,44 @@ export interface ModelAdvisorNoticePayload {
   contentSha256: string;
 }
 
-export interface ModelAdvisorPolicy {
+export interface LegacyModelAdvisorPolicy {
   mode: ModelAdvisorMode;
   enabledRules: ModelAdvisorRuleId[];
+}
+
+export interface ModelAdvisorPolicy extends LegacyModelAdvisorPolicy {
+  maxCorrectionAttempts?: number;
+}
+
+export interface ResolvedModelAdvisorPolicy extends ModelAdvisorPolicy {
+  maxCorrectionAttempts: number;
+}
+
+export interface ModelAdvisorCorrectionRequestPayload {
+  kind: "napier.model-advisor-correction-request";
+  schemaVersion: 1;
+  source: "deterministic_stream_lint";
+  turnSource: string;
+  attempt: number;
+  maxAttempts: number;
+  predecessorTextSha256: string;
+  diagnosticSetSha256: string;
+  blockerRuleIds: ModelAdvisorRuleId[];
+  correctivePromptSha256: string;
+  contentSha256: string;
+}
+
+export interface ModelAdvisorCorrectionOutcomePayload {
+  kind: "napier.model-advisor-correction-outcome";
+  schemaVersion: 1;
+  source: "deterministic_stream_lint";
+  status: "accepted" | "blocked" | "exhausted";
+  attempt: number;
+  maxAttempts: number;
+  requestContentSha256: string;
+  responseTextSha256: string;
+  diagnosticSetSha256?: string;
+  contentSha256: string;
 }
 
 export interface GoalState {
@@ -2285,14 +2320,23 @@ export interface RunConfigurationFingerprintV4 extends RunConfigurationFingerpri
   automaticRecovery: AutomaticRecoveryPolicy;
   executionMode: RunExecutionMode;
   skillCatalogSha256: string;
-  modelAdvisor: ModelAdvisorPolicy;
+  modelAdvisor: LegacyModelAdvisorPolicy;
+}
+
+export interface RunConfigurationFingerprintV5 extends RunConfigurationFingerprintBase {
+  schemaVersion: 5;
+  automaticRecovery: AutomaticRecoveryPolicy;
+  executionMode: RunExecutionMode;
+  skillCatalogSha256: string;
+  modelAdvisor: ResolvedModelAdvisorPolicy;
 }
 
 export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV1
   | RunConfigurationFingerprintV2
   | RunConfigurationFingerprintV3
-  | RunConfigurationFingerprintV4;
+  | RunConfigurationFingerprintV4
+  | RunConfigurationFingerprintV5;
 
 export type AutomaticRecoveryBlockReason =
   | "configuration_missing"

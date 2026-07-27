@@ -11594,7 +11594,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "a1af0115aae42716d53b1d81d6ce510499e69e5da898248e320f64c89ae2c3e5",
+  "x-napier-source-sha256": "efce79d3af95694354848495db13dbadbb75693977209f1b6770d165812799ef",
   "x-napier-route-count": 219,
   "x-napier-route-set-sha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
 }

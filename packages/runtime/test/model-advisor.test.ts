@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { createModelAdvisorNotice } from "../src/model-advisor.js";
+import {
+  createModelAdvisorCorrectionOutcome,
+  createModelAdvisorCorrectionRequest,
+  createModelAdvisorNotice,
+} from "../src/model-advisor.js";
 
 const DEFAULT_POLICY = {
   mode: "observe" as const,
@@ -8,6 +12,7 @@ const DEFAULT_POLICY = {
     "unverified_verification_claim" as const,
     "destructive_command_reference" as const,
   ],
+  maxCorrectionAttempts: 0,
 };
 
 describe("model advisor stream lint", () => {
@@ -94,6 +99,7 @@ describe("model advisor stream lint", () => {
       policy: {
         mode: "enforce",
         enabledRules: ["destructive_command_reference"],
+        maxCorrectionAttempts: 0,
       },
     });
 
@@ -103,6 +109,7 @@ describe("model advisor stream lint", () => {
         policy: {
           mode: "enforce",
           enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 0,
         },
         diagnostics: [
           expect.objectContaining({
@@ -127,8 +134,59 @@ describe("model advisor stream lint", () => {
             "unverified_verification_claim",
             "destructive_command_reference",
           ],
+          maxCorrectionAttempts: 0,
         },
       }),
     ).toBeUndefined();
+  });
+
+  it("creates hash-only correction requests and outcomes", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "Never run git reset --hard here.",
+      runEvents: [],
+      turnSource: "user",
+      policy: {
+        mode: "enforce",
+        enabledRules: ["destructive_command_reference"],
+        maxCorrectionAttempts: 1,
+      },
+    });
+    if (!notice) throw new Error("Expected a blocked advisor notice");
+
+    const request = createModelAdvisorCorrectionRequest({
+      notice,
+      turnSource: "user",
+      attempt: 1,
+      maxAttempts: 1,
+    });
+    expect(request.payload).toEqual(
+      expect.objectContaining({
+        kind: "napier.model-advisor-correction-request",
+        attempt: 1,
+        maxAttempts: 1,
+        predecessorTextSha256: notice.textSha256,
+        diagnosticSetSha256: notice.diagnosticSetSha256,
+        blockerRuleIds: ["destructive_command_reference"],
+        correctivePromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(JSON.stringify(request.payload)).not.toContain("git reset --hard");
+    expect(request.prompt).not.toContain("git reset --hard");
+
+    const outcome = createModelAdvisorCorrectionOutcome({
+      request: request.payload,
+      status: "accepted",
+      responseTextSha256: "a".repeat(64),
+    });
+    expect(outcome).toEqual(
+      expect.objectContaining({
+        kind: "napier.model-advisor-correction-outcome",
+        status: "accepted",
+        requestContentSha256: request.payload.contentSha256,
+        responseTextSha256: "a".repeat(64),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
   });
 });

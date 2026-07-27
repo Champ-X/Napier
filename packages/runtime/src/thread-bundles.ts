@@ -442,6 +442,19 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         "agent.modelAdvisor.enabledRules",
       );
     }
+    if (modelAdvisor["maxCorrectionAttempts"] !== undefined) {
+      const maxCorrectionAttempts = modelAdvisor["maxCorrectionAttempts"];
+      if (
+        typeof maxCorrectionAttempts !== "number" ||
+        !Number.isSafeInteger(maxCorrectionAttempts) ||
+        maxCorrectionAttempts < 0 ||
+        maxCorrectionAttempts > 3
+      ) {
+        throw new Error(
+          "agent.modelAdvisor.maxCorrectionAttempts must be an integer between 0 and 3",
+        );
+      }
+    }
   }
   if (agentRevisions !== undefined) {
     const revisionNumbers = new Set<number>();

@@ -11,6 +11,7 @@ import type {
   RunConfigurationFingerprintV2,
   RunConfigurationFingerprintV3,
   RunConfigurationFingerprintV4,
+  RunConfigurationFingerprintV5,
   RunExecutionMode,
   SubagentRole,
 } from "@napier/contracts";
@@ -71,6 +72,7 @@ const V3_FINGERPRINT_KEYS = new Set([
   "skillCatalogSha256",
 ]);
 const V4_FINGERPRINT_KEYS = new Set([...V3_FINGERPRINT_KEYS, "modelAdvisor"]);
+const V5_FINGERPRINT_KEYS = new Set(V4_FINGERPRINT_KEYS);
 
 type FingerprintV1Content = Omit<
   RunConfigurationFingerprintV1,
@@ -86,6 +88,10 @@ type FingerprintV3Content = Omit<
 >;
 type FingerprintV4Content = Omit<
   RunConfigurationFingerprintV4,
+  "contentSha256"
+>;
+type FingerprintV5Content = Omit<
+  RunConfigurationFingerprintV5,
   "contentSha256"
 >;
 
@@ -106,7 +112,7 @@ export function createRunConfigurationFingerprint(
   }
   const safeRecovery = executionMode === "safe_read_only_recovery";
   const content = {
-    schemaVersion: options.skillCatalogSha256 ? (4 as const) : (2 as const),
+    schemaVersion: options.skillCatalogSha256 ? (5 as const) : (2 as const),
     agentRevision: profile.revision,
     model: structuredClone(model),
     thinkingLevel: profile.thinkingLevel,
@@ -156,7 +162,9 @@ export function validateRunConfigurationFingerprint(
           ? V3_FINGERPRINT_KEYS
           : schemaVersion === 4
             ? V4_FINGERPRINT_KEYS
-            : undefined;
+            : schemaVersion === 5
+              ? V5_FINGERPRINT_KEYS
+              : undefined;
   if (!keys) {
     throw new Error("Run configuration fingerprint schema is unsupported");
   }
@@ -288,9 +296,22 @@ export function validateRunConfigurationFingerprint(
     }
     return { ...content, contentSha256 };
   }
+  if (schemaVersion === 4) {
+    const modelAdvisor = assertLegacyModelAdvisorPolicy(record["modelAdvisor"]);
+    const content: FingerprintV4Content = {
+      schemaVersion: 4,
+      ...modernShared,
+      skillCatalogSha256,
+      modelAdvisor,
+    };
+    if (sha256(canonicalJson(content)) !== contentSha256) {
+      throw new Error("Run configuration fingerprint hash mismatch");
+    }
+    return { ...content, contentSha256 };
+  }
   const modelAdvisor = assertModelAdvisorPolicy(record["modelAdvisor"]);
-  const content: FingerprintV4Content = {
-    schemaVersion: 4,
+  const content: FingerprintV5Content = {
+    schemaVersion: 5,
     ...modernShared,
     skillCatalogSha256,
     modelAdvisor,
@@ -390,7 +411,8 @@ export function fingerprintAutomaticRecovery(
 ): AutomaticRecoveryPolicy {
   return fingerprint.schemaVersion === 2 ||
     fingerprint.schemaVersion === 3 ||
-    fingerprint.schemaVersion === 4
+    fingerprint.schemaVersion === 4 ||
+    fingerprint.schemaVersion === 5
     ? structuredClone(fingerprint.automaticRecovery)
     : structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY);
 }
@@ -400,7 +422,8 @@ export function fingerprintExecutionMode(
 ): RunExecutionMode {
   return fingerprint.schemaVersion === 2 ||
     fingerprint.schemaVersion === 3 ||
-    fingerprint.schemaVersion === 4
+    fingerprint.schemaVersion === 4 ||
+    fingerprint.schemaVersion === 5
     ? fingerprint.executionMode
     : "standard";
 }
@@ -408,7 +431,9 @@ export function fingerprintExecutionMode(
 export function fingerprintSkillCatalogSha256(
   fingerprint: RunConfigurationFingerprint,
 ): string {
-  return fingerprint.schemaVersion === 3 || fingerprint.schemaVersion === 4
+  return fingerprint.schemaVersion === 3 ||
+    fingerprint.schemaVersion === 4 ||
+    fingerprint.schemaVersion === 5
     ? fingerprint.skillCatalogSha256
     : "";
 }
@@ -416,8 +441,8 @@ export function fingerprintSkillCatalogSha256(
 export function fingerprintModelAdvisor(
   fingerprint: RunConfigurationFingerprint,
 ) {
-  return fingerprint.schemaVersion === 4
-    ? structuredClone(fingerprint.modelAdvisor)
+  return fingerprint.schemaVersion === 4 || fingerprint.schemaVersion === 5
+    ? normalizeModelAdvisorPolicy(fingerprint.modelAdvisor)
     : structuredClone(DEFAULT_MODEL_ADVISOR_POLICY);
 }
 
@@ -511,7 +536,9 @@ function assertRunLimits(
   });
 }
 
-function assertModelAdvisorPolicy(value: unknown) {
+function assertLegacyModelAdvisorPolicy(
+  value: unknown,
+): RunConfigurationFingerprintV4["modelAdvisor"] {
   const policy = assertExactRecord(
     value,
     "Run configuration fingerprint modelAdvisor",
@@ -528,11 +555,41 @@ function assertModelAdvisorPolicy(value: unknown) {
     10,
     /^[a-z][a-z0-9_]{2,80}$/,
   );
-  return normalizeModelAdvisorPolicy({
+  normalizeModelAdvisorPolicy({
     mode,
     enabledRules: enabledRules as Parameters<
       typeof normalizeModelAdvisorPolicy
     >[0]["enabledRules"],
+  });
+  return {
+    mode,
+    enabledRules:
+      enabledRules as RunConfigurationFingerprintV4["modelAdvisor"]["enabledRules"],
+  };
+}
+
+function assertModelAdvisorPolicy(value: unknown) {
+  const policy = assertExactRecord(
+    value,
+    "Run configuration fingerprint modelAdvisor",
+    ["mode", "enabledRules", "maxCorrectionAttempts"],
+  );
+  const maxCorrectionAttempts = policy["maxCorrectionAttempts"];
+  if (
+    !Number.isSafeInteger(maxCorrectionAttempts) ||
+    Number(maxCorrectionAttempts) < 0 ||
+    Number(maxCorrectionAttempts) > 3
+  ) {
+    throw new Error(
+      "Run configuration fingerprint modelAdvisor.maxCorrectionAttempts is invalid",
+    );
+  }
+  return normalizeModelAdvisorPolicy({
+    ...assertLegacyModelAdvisorPolicy({
+      mode: policy["mode"],
+      enabledRules: policy["enabledRules"],
+    }),
+    maxCorrectionAttempts: Number(maxCorrectionAttempts),
   });
 }
 

@@ -8,6 +8,7 @@ import type {
   AutomaticRecoveryPolicy,
   ModelAdvisorPolicy,
   ModelAdvisorRuleId,
+  ResolvedModelAdvisorPolicy,
   RunLimits,
   SubagentLimits,
   UpdateAgentProfileRequest,
@@ -88,13 +89,15 @@ export const DEFAULT_AUTOMATIC_RECOVERY_POLICY: Readonly<AutomaticRecoveryPolicy
     backoffMs: 5_000,
   };
 
-export const DEFAULT_MODEL_ADVISOR_POLICY: Readonly<ModelAdvisorPolicy> = {
-  mode: "observe",
-  enabledRules: [
-    "unverified_verification_claim",
-    "destructive_command_reference",
-  ],
-};
+export const DEFAULT_MODEL_ADVISOR_POLICY: Readonly<ResolvedModelAdvisorPolicy> =
+  {
+    mode: "observe",
+    enabledRules: [
+      "unverified_verification_claim",
+      "destructive_command_reference",
+    ],
+    maxCorrectionAttempts: 0,
+  };
 
 export function updateAgentProfile(
   current: AgentProfile,
@@ -436,7 +439,7 @@ function normalizeTools(values: string[]): string[] {
 
 export function effectiveModelAdvisorPolicy(
   profile: Pick<AgentProfile, "modelAdvisor">,
-): ModelAdvisorPolicy {
+): ResolvedModelAdvisorPolicy {
   return normalizeModelAdvisorPolicy(
     profile.modelAdvisor ?? structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
   );
@@ -444,12 +447,16 @@ export function effectiveModelAdvisorPolicy(
 
 export function normalizeModelAdvisorPolicy(
   input: ModelAdvisorPolicy,
-): ModelAdvisorPolicy {
+): ResolvedModelAdvisorPolicy {
   if (
     !input ||
     typeof input !== "object" ||
     !MODEL_ADVISOR_MODES.has(input.mode) ||
-    !Array.isArray(input.enabledRules)
+    !Array.isArray(input.enabledRules) ||
+    (input.maxCorrectionAttempts !== undefined &&
+      (!Number.isSafeInteger(input.maxCorrectionAttempts) ||
+        input.maxCorrectionAttempts < 0 ||
+        input.maxCorrectionAttempts > 3))
   ) {
     throw new Error("Model Advisor policy is invalid");
   }
@@ -463,6 +470,7 @@ export function normalizeModelAdvisorPolicy(
   return {
     mode: input.mode,
     enabledRules,
+    maxCorrectionAttempts: input.maxCorrectionAttempts ?? 0,
   };
 }
 

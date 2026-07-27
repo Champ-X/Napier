@@ -578,6 +578,14 @@ write:management-openapi-compatibility` now emits
   policy alongside the Skill catalog hash for replay drift detection. Enforce
   mode records `model.advisor.blocked` and fails the Run before
   `message.assistant` when blocker-level diagnostics match.
+- Bounded Model Advisor correction. Enforce policies can allow zero to three
+  tool-free rewrite attempts before failing closed. Each attempt records
+  hash-only request and outcome receipts that bind the predecessor response,
+  diagnostic set, corrective prompt, and corrected response without persisting
+  the corrective prompt. Enforce-mode candidate text, reasoning, and deltas are
+  reduced to hash-and-size debug evidence and withheld from the Web stream until
+  a candidate passes. Schema-5 Run fingerprints bind the correction budget
+  while schema-4 Runs retain a zero-attempt interpretation.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

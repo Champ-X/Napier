@@ -57,8 +57,9 @@ export const contextCopy = {
     unverified_verification_claim: "Unverified checks",
     destructive_command_reference: "Dangerous command",
   },
+  modelAdvisorCorrectionAttempts: "Correction attempts",
   modelAdvisorBody:
-    "Assistant output is linted before the visible message is recorded. Notices store rule IDs and hashes only; they do not rewrite the response.",
+    "Assistant output is linted before the visible message is recorded. Enforced blockers can trigger up to three tool-free rewrites; notices and correction receipts store rule IDs and hashes only.",
   recoveryShort: "Recovery",
   tools: "Workspace tools",
   toolLabels: {

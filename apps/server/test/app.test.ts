@@ -1436,6 +1436,11 @@ describe("Napier HTTP goal flow", () => {
           maxCostUsd: 12.5,
           timeoutMs: 1_200_000,
         },
+        modelAdvisor: {
+          mode: "enforce",
+          enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 2,
+        },
         threadId: created.thread.id,
       }),
     });
@@ -1463,6 +1468,11 @@ describe("Napier HTTP goal flow", () => {
           maxCostUsd: 12.5,
           timeoutMs: 1_200_000,
         },
+        modelAdvisor: {
+          mode: "enforce",
+          enabledRules: ["destructive_command_reference"],
+          maxCorrectionAttempts: 2,
+        },
       }),
     );
     const historyResponse = await app.request(
@@ -1479,6 +1489,7 @@ describe("Napier HTTP goal flow", () => {
           "name",
           "systemPrompt",
           "toolPolicy",
+          "modelAdvisor",
         ]),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
@@ -5866,8 +5877,7 @@ describe("Napier HTTP goal flow", () => {
         distinctRetirementSetCount: 1,
         historySetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         portfolioSetBundleSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
-        currentOverrideSetBundleSha256:
-          expect.stringMatching(/^[a-f0-9]{64}$/),
+        currentOverrideSetBundleSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         retirementSetBundleSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         histories: [
           expect.objectContaining({
@@ -5906,10 +5916,9 @@ describe("Napier HTTP goal flow", () => {
 
     const { privateKey: policyRetirementPrivateKey } =
       generateKeyPairSync("ed25519");
-    process.env[POLICY_RETIREMENT_SIGNING_ENV] =
-      policyRetirementPrivateKey
-        .export({ format: "pem", type: "pkcs8" })
-        .toString();
+    process.env[POLICY_RETIREMENT_SIGNING_ENV] = policyRetirementPrivateKey
+      .export({ format: "pem", type: "pkcs8" })
+      .toString();
     const policyRetirementAnchorResponse = await app.request(
       "/api/receipt-trust/anchors",
       {
@@ -5981,9 +5990,9 @@ describe("Napier HTTP goal flow", () => {
           }),
         },
       );
-    expect(signedPolicyOverrideRetirementHistoryProofBundleResponse.status).toBe(
-      201,
-    );
+    expect(
+      signedPolicyOverrideRetirementHistoryProofBundleResponse.status,
+    ).toBe(201);
     const signedPolicyOverrideRetirementHistoryProofBundle =
       (await signedPolicyOverrideRetirementHistoryProofBundleResponse.json()) as TrustedReceiptEnvelope<ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle>;
     expect(signedPolicyOverrideRetirementHistoryProofBundle).toEqual(
@@ -6110,9 +6119,9 @@ describe("Napier HTTP goal flow", () => {
       ),
     ).toBe(signedPolicyOverrideRetirementHistoryProofBundle.contentSha256);
     expect(
-      (
-        await services.store.listEvents(selectionThread.thread.id)
-      ).filter((event) => event.type === "receipt.signed"),
+      (await services.store.listEvents(selectionThread.thread.id)).filter(
+        (event) => event.type === "receipt.signed",
+      ),
     ).toEqual([
       expect.objectContaining({
         type: "receipt.signed",
@@ -10322,14 +10331,10 @@ function expectExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHisto
     verification.observedContentSha256,
   );
   expect(
-    response.headers.get(
-      "x-napier-declared-blueprint-portfolio-set-sha256",
-    ),
+    response.headers.get("x-napier-declared-blueprint-portfolio-set-sha256"),
   ).toBe(verification.declaredPortfolioSetSha256 ?? null);
   expect(
-    response.headers.get(
-      "x-napier-observed-blueprint-portfolio-set-sha256",
-    ),
+    response.headers.get("x-napier-observed-blueprint-portfolio-set-sha256"),
   ).toBe(verification.observedPortfolioSetSha256);
   expect(
     response.headers.get(

@@ -61,8 +61,12 @@ import {
 } from "./memory.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
+  createModelAdvisorCorrectionOutcome,
+  createModelAdvisorCorrectionRequest,
   createModelAdvisorNotice,
   isModelAdvisorBlocked,
+  ModelAdvisorBlockedError,
+  type ModelAdvisorCorrectionRequest,
 } from "./model-advisor.js";
 import { ModelRegistry } from "./models.js";
 import { createId } from "./ids.js";
@@ -127,7 +131,10 @@ interface ActiveRun {
   abort: () => void;
 }
 
-type TurnSource = RunInvocationSource | "goal_continuation";
+type TurnSource =
+  | RunInvocationSource
+  | "goal_continuation"
+  | "advisor_correction";
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
@@ -319,9 +326,11 @@ export class AgentRuntime {
               ...(options.onEvent ? { onEvent: options.onEvent } : {}),
             })
           : undefined;
-      const runTurn = async (
+      const modelAdvisorPolicy = effectiveModelAdvisorPolicy(agentProfile);
+      const invokeTurn = async (
         text: string,
         source: TurnSource,
+        advisorCorrection: boolean,
       ): Promise<string> => {
         return model
           ? this.runLive(
@@ -333,6 +342,7 @@ export class AgentRuntime {
               subagents,
               safeReadOnlyRecovery,
               skillCatalog,
+              advisorCorrection,
               abortController.signal,
               budget,
               options.onEvent,
@@ -346,6 +356,70 @@ export class AgentRuntime {
               budget,
               options.onEvent,
             );
+      };
+      const runTurn = async (
+        text: string,
+        source: TurnSource,
+      ): Promise<string> => {
+        let currentText = text;
+        let currentSource = source;
+        let correctionAttempt = 0;
+        let correctionRequest: ModelAdvisorCorrectionRequest | undefined;
+        while (true) {
+          try {
+            const response = await invokeTurn(
+              currentText,
+              currentSource,
+              currentSource === "advisor_correction",
+            );
+            if (correctionRequest) {
+              await this.recordModelAdvisorCorrectionOutcome(
+                run,
+                createModelAdvisorCorrectionOutcome({
+                  request: correctionRequest.payload,
+                  status: "accepted",
+                  responseTextSha256: sha256Text(response),
+                }),
+                options.onEvent,
+              );
+            }
+            return response;
+          } catch (error) {
+            if (!(error instanceof ModelAdvisorBlockedError)) throw error;
+            if (correctionRequest) {
+              await this.recordModelAdvisorCorrectionOutcome(
+                run,
+                createModelAdvisorCorrectionOutcome({
+                  request: correctionRequest.payload,
+                  status:
+                    correctionAttempt < modelAdvisorPolicy.maxCorrectionAttempts
+                      ? "blocked"
+                      : "exhausted",
+                  responseTextSha256: error.notice.textSha256,
+                  diagnosticSetSha256: error.notice.diagnosticSetSha256,
+                }),
+                options.onEvent,
+              );
+            }
+            if (correctionAttempt >= modelAdvisorPolicy.maxCorrectionAttempts) {
+              throw error;
+            }
+            correctionAttempt += 1;
+            correctionRequest = createModelAdvisorCorrectionRequest({
+              notice: error.notice,
+              turnSource: source,
+              attempt: correctionAttempt,
+              maxAttempts: modelAdvisorPolicy.maxCorrectionAttempts,
+            });
+            await this.recordModelAdvisorCorrectionRequest(
+              run,
+              correctionRequest,
+              options.onEvent,
+            );
+            currentText = correctionRequest.prompt;
+            currentSource = "advisor_correction";
+          }
+        }
       };
 
       let assistantText = await runTurn(prompt, invocationSource);
@@ -597,7 +671,8 @@ export class AgentRuntime {
     }
     if (
       interrupted.configuration.schemaVersion === 3 ||
-      interrupted.configuration.schemaVersion === 4
+      interrupted.configuration.schemaVersion === 4 ||
+      interrupted.configuration.schemaVersion === 5
     ) {
       const currentSkillCatalog = await loadWorkspaceSkills(
         this.store.workspaceRoot,
@@ -657,18 +732,20 @@ export class AgentRuntime {
     onEvent?: EventSink,
   ): Promise<string> {
     budget.assertCanStartPrimaryTurn();
-    const promptEvent = turnPromptEvent(source);
-    await this.record(
-      {
-        threadId: run.threadId,
-        runId: run.id,
-        type: promptEvent.type,
-        category: promptEvent.category,
-        visibility: promptEvent.visibility,
-        payload: { role: "user", text: prompt },
-      },
-      onEvent,
-    );
+    if (source !== "advisor_correction") {
+      const promptEvent = turnPromptEvent(source);
+      await this.record(
+        {
+          threadId: run.threadId,
+          runId: run.id,
+          type: promptEvent.type,
+          category: promptEvent.category,
+          visibility: promptEvent.visibility,
+          payload: { role: "user", text: prompt },
+        },
+        onEvent,
+      );
+    }
     await this.record(
       {
         threadId: run.threadId,
@@ -708,6 +785,8 @@ export class AgentRuntime {
       { provider: "napier", id: "demo" },
       usage,
     );
+    const modelAdvisorPolicy = effectiveModelAdvisorPolicy(profile);
+    const redactCandidate = modelAdvisorPolicy.mode === "enforce";
 
     const chunks = splitForStreaming(response, 7);
     let accumulated = "";
@@ -721,16 +800,24 @@ export class AgentRuntime {
           type: "model.text.delta",
           category: "model",
           visibility: "hidden",
-          payload: { delta: chunk, text: accumulated },
+          payload: redactCandidate
+            ? {
+                deltaSha256: sha256Text(chunk),
+                deltaBytes: Buffer.byteLength(chunk, "utf8"),
+                textSha256: sha256Text(accumulated),
+                textBytes: Buffer.byteLength(accumulated, "utf8"),
+                redacted: true,
+              }
+            : { delta: chunk, text: accumulated },
         },
-        onEvent,
+        redactCandidate ? undefined : onEvent,
       );
     }
     await this.recordModelAdvisorNotice(
       run,
       response,
       source,
-      effectiveModelAdvisorPolicy(profile),
+      modelAdvisorPolicy,
       onEvent,
     );
     await this.record(
@@ -764,6 +851,7 @@ export class AgentRuntime {
     subagents: SubagentCoordinator | undefined,
     safeReadOnlyRecovery: boolean,
     skillCatalog: LoadedSkillCatalog,
+    advisorCorrection: boolean,
     signal: AbortSignal,
     budget: RunBudgetTracker,
     onEvent?: EventSink,
@@ -829,11 +917,14 @@ export class AgentRuntime {
       },
       onEvent,
     );
-    const tools = createWorkspaceTools(this.store.workspaceRoot, {
-      includeWriteTools: profile.toolPolicy !== "observe",
-      dataRoot: this.store.dataRoot,
-    }).filter((tool) => profile.enabledTools.includes(tool.name));
+    const tools = advisorCorrection
+      ? []
+      : createWorkspaceTools(this.store.workspaceRoot, {
+          includeWriteTools: profile.toolPolicy !== "observe",
+          dataRoot: this.store.dataRoot,
+        }).filter((tool) => profile.enabledTools.includes(tool.name));
     if (
+      !advisorCorrection &&
       profile.toolPolicy !== "observe" &&
       profile.enabledTools.includes("verify_workspace")
     ) {
@@ -844,18 +935,22 @@ export class AgentRuntime {
         }),
       );
     }
-    if (!safeReadOnlyRecovery) {
+    if (!safeReadOnlyRecovery && !advisorCorrection) {
       tools.push(...createPlanTools(this.store, run));
     }
     let deferredExtensionTools: AgentTool[] = [];
-    if (this.extensionManager && !safeReadOnlyRecovery) {
+    if (this.extensionManager && !safeReadOnlyRecovery && !advisorCorrection) {
       const extensionTools = this.extensionManager.createDeferredAgentTools(
         profile.id,
       );
       tools.push(...extensionTools.initialTools);
       deferredExtensionTools = extensionTools.deferredTools;
     }
-    if (!safeReadOnlyRecovery && subagents?.hasEnabledRoles()) {
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      subagents?.hasEnabledRoles()
+    ) {
       tools.push(subagents.createTool());
     }
     const systemPrompt = [
@@ -960,6 +1055,7 @@ export class AgentRuntime {
             : {}),
           skills: profile.enabledSkills,
           policy: profile.toolPolicy,
+          advisorCorrection,
           toolCount: tools.length,
           deferredToolCount: deferredExtensionTools.length,
         },
@@ -1067,6 +1163,7 @@ export class AgentRuntime {
     if (event.type === "message_update") {
       const update = event.assistantMessageEvent;
       if (update.type === "text_delta" || update.type === "thinking_delta") {
+        const redactCandidate = modelAdvisorPolicy.mode === "enforce";
         await this.record(
           {
             threadId: run.threadId,
@@ -1077,15 +1174,21 @@ export class AgentRuntime {
                 : "model.thinking.delta",
             category: "model",
             visibility: "hidden",
-            payload: { delta: update.delta },
+            payload: redactCandidate
+              ? {
+                  deltaSha256: sha256Text(update.delta),
+                  deltaBytes: Buffer.byteLength(update.delta, "utf8"),
+                  redacted: true,
+                }
+              : { delta: update.delta },
           },
-          onEvent,
+          redactCandidate ? undefined : onEvent,
         );
       }
       return undefined;
     }
     if (event.type === "message_end") {
-      if (event.message.role === "user") {
+      if (event.message.role === "user" && source !== "advisor_correction") {
         const promptEvent = turnPromptEvent(source);
         await this.record(
           {
@@ -1114,6 +1217,9 @@ export class AgentRuntime {
             name: block.name,
             arguments: block.arguments,
           }));
+        const redactCandidate =
+          event.message.stopReason !== "toolUse" &&
+          modelAdvisorPolicy.mode === "enforce";
         await this.record(
           {
             threadId: run.threadId,
@@ -1122,8 +1228,15 @@ export class AgentRuntime {
             category: "model",
             visibility: "debug",
             payload: {
-              text,
-              reasoning,
+              ...(redactCandidate
+                ? {
+                    textSha256: sha256Text(text),
+                    textBytes: Buffer.byteLength(text, "utf8"),
+                    reasoningSha256: sha256Text(reasoning),
+                    reasoningBytes: Buffer.byteLength(reasoning, "utf8"),
+                    contentRedacted: true,
+                  }
+                : { text, reasoning }),
               model: `${event.message.provider}/${event.message.model}`,
               stopReason: event.message.stopReason,
               usage,
@@ -1246,10 +1359,44 @@ export class AgentRuntime {
       onEvent,
     );
     if (isModelAdvisorBlocked(notice)) {
-      throw new Error(
-        `Model Advisor blocked assistant response: ${notice.diagnosticSetSha256}`,
-      );
+      throw new ModelAdvisorBlockedError(notice);
     }
+  }
+
+  private async recordModelAdvisorCorrectionRequest(
+    run: RunRecord,
+    request: ModelAdvisorCorrectionRequest,
+    onEvent?: EventSink,
+  ): Promise<void> {
+    await this.record(
+      {
+        threadId: run.threadId,
+        runId: run.id,
+        type: "model.advisor.correction.requested",
+        category: "system",
+        visibility: "debug",
+        payload: toJsonValue(request.payload),
+      },
+      onEvent,
+    );
+  }
+
+  private async recordModelAdvisorCorrectionOutcome(
+    run: RunRecord,
+    outcome: ReturnType<typeof createModelAdvisorCorrectionOutcome>,
+    onEvent?: EventSink,
+  ): Promise<void> {
+    await this.record(
+      {
+        threadId: run.threadId,
+        runId: run.id,
+        type: "model.advisor.correction.outcome",
+        category: "system",
+        visibility: "debug",
+        payload: toJsonValue(outcome),
+      },
+      onEvent,
+    );
   }
 
   private async buildModelHistory(
@@ -2096,6 +2243,11 @@ function effectiveRunProfile(
           automaticRecovery: structuredClone(configuration.automaticRecovery),
         }
       : {}),
+    ...(configuration.schemaVersion === 4 || configuration.schemaVersion === 5
+      ? {
+          modelAdvisor: structuredClone(configuration.modelAdvisor),
+        }
+      : {}),
   };
 }
 
@@ -2103,13 +2255,14 @@ function modernRunConfiguration(
   configuration: RunRecord["configuration"],
 ): configuration is Extract<
   NonNullable<RunRecord["configuration"]>,
-  { schemaVersion: 2 | 3 | 4 }
+  { schemaVersion: 2 | 3 | 4 | 5 }
 > {
   return (
     configuration !== undefined &&
     (configuration.schemaVersion === 2 ||
       configuration.schemaVersion === 3 ||
-      configuration.schemaVersion === 4)
+      configuration.schemaVersion === 4 ||
+      configuration.schemaVersion === 5)
   );
 }
 
@@ -2205,6 +2358,10 @@ function toJsonValue(value: unknown): JsonValue {
   } catch {
     return String(value);
   }
+}
+
+function sha256Text(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function summarize(text: string, limit: number): string {

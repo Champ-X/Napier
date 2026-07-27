@@ -10230,9 +10230,14 @@ function parseUpdateAgentProfileRequest(
 function parseModelAdvisorPolicy(
   input: unknown,
 ): UpdateAgentProfileRequest["modelAdvisor"] | undefined {
-  const record = requestRecord(input, ["mode", "enabledRules"]);
+  const record = requestRecord(input, [
+    "mode",
+    "enabledRules",
+    "maxCorrectionAttempts",
+  ]);
   const mode = record?.["mode"];
   const enabledRules = record?.["enabledRules"];
+  const maxCorrectionAttempts = record?.["maxCorrectionAttempts"];
   if (
     !record ||
     (mode !== "observe" && mode !== "enforce" && mode !== "off") ||
@@ -10242,13 +10247,21 @@ function parseModelAdvisorPolicy(
       (rule) =>
         rule === "unverified_verification_claim" ||
         rule === "destructive_command_reference",
-    )
+    ) ||
+    (maxCorrectionAttempts !== undefined &&
+      (typeof maxCorrectionAttempts !== "number" ||
+        !Number.isSafeInteger(maxCorrectionAttempts) ||
+        maxCorrectionAttempts < 0 ||
+        maxCorrectionAttempts > 3))
   ) {
     return undefined;
   }
   return {
     mode,
     enabledRules,
+    ...(typeof maxCorrectionAttempts === "number"
+      ? { maxCorrectionAttempts }
+      : {}),
   };
 }
 

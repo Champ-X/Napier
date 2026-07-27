@@ -345,17 +345,26 @@ Run evidence. The first rules flag verification claims such as
 tests/build/checks passing without a completed `verify_workspace` tool, and
 destructive command references such as `git reset --hard` or `rm -rf` patterns.
 The Agent profile can switch the advisor `off`, choose the enabled rule set, or
-set `enforce` mode. Schema-4 Run configuration fingerprints bind that effective
-policy so replay comparison can detect advisor drift. In observe mode the
-resulting `model.advisor.notice` event is debug-only and hash-only: it records
-rule IDs, severity, match counts, text SHA-256, diagnostic-set SHA-256, tool
-evidence counts, the effective policy, and a stable content SHA-256, but not the
-matching text. In enforce mode, blocker-level diagnostics record
-`model.advisor.blocked` with the same hash-only payload and fail the Run before
-`message.assistant` is recorded. The failure message contains only the
-diagnostic-set SHA-256, keeping the matched text out of user-facing error
-evidence while establishing the path for future retry-capable stream-rule
-intervention.
+set `enforce` mode with zero to three correction attempts. Schema-5 Run
+configuration fingerprints bind that effective policy so replay comparison can
+detect correction-budget drift while preserving schema-4 verification for
+legacy Runs. In observe mode the resulting `model.advisor.notice` event is
+debug-only and hash-only: it records rule IDs, severity, match counts, text
+SHA-256, diagnostic-set SHA-256, tool evidence counts, the effective policy,
+and a stable content SHA-256, but not the matching text.
+
+Enforce mode replaces candidate text, reasoning, and delta content in model
+debug events with SHA-256 and byte-count evidence, and withholds deltas from the
+Web stream until the final candidate passes the Advisor. A blocker records
+`model.advisor.blocked`; when correction capacity remains, the runtime creates
+a deterministic corrective instruction and records
+`model.advisor.correction.requested` with only predecessor, diagnostic-set,
+prompt, and content hashes. The correction turn exposes no workspace, plan,
+extension, or subagent tools, so it can rewrite the answer without repeating
+side effects. `model.advisor.correction.outcome` binds the request to the
+accepted or blocked response hash. Exhausting the configured attempts fails the
+Run before `message.assistant` is recorded, and the failure message contains
+only the final diagnostic-set SHA-256.
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
 frames must not carry `id:`, and stream-local event sequence values must
@@ -856,8 +865,9 @@ rollback
 Run configuration fingerprints bind the effective profile separately from the
 profile revision ledger. Schema 3 adds `skillCatalogSha256`, computed from a
 canonical manifest of the enabled Skill files loaded for that Run. Schema 4
-also binds the effective Model Advisor policy, including observe/off mode and
-the enabled deterministic rule set. The manifest contains
+also binds the effective Model Advisor mode and deterministic rule set. Schema
+5 adds the bounded correction-attempt policy while retaining schema-4 hash
+verification with an effective legacy budget of zero. The manifest contains
 requested/loaded/missing Skill names, relative `SKILL.md` paths, byte counts,
 diagnostics hash, and file SHA-256 values; it never stores Skill instruction
 text. The Agent records the same manifest as a `context.skills` debug event
