@@ -51,7 +51,8 @@ Version `0.1.0` includes:
   `workspace` policy, without general shell or file deletion;
 - configurable deterministic Model Advisor notices that scan assistant text for
   risky verification claims or destructive command references, then record only
-  hash-bound diagnostics before the assistant message is shown;
+  hash-bound diagnostics before the assistant message is shown, with optional
+  fail-closed enforcement for blocker-level findings;
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;

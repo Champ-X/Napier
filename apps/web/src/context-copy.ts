@@ -49,6 +49,7 @@ export const contextCopy = {
   modelAdvisorMode: "Advisor mode",
   modelAdvisorModes: {
     observe: "Observe and record",
+    enforce: "Fail closed on blockers",
     off: "Off",
   },
   modelAdvisorRules: "Advisor rules",

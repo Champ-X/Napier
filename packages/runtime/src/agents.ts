@@ -37,6 +37,7 @@ const TOOL_POLICIES = new Set<AgentProfile["toolPolicy"]>([
 const SUBAGENT_ROLES = new Set(["researcher", "reviewer", "general"]);
 const MODEL_ADVISOR_MODES = new Set<ModelAdvisorPolicy["mode"]>([
   "observe",
+  "enforce",
   "off",
 ]);
 const MODEL_ADVISOR_RULES = new Set<ModelAdvisorRuleId>([

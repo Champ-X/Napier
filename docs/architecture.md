@@ -344,15 +344,18 @@ deterministic Model Advisor lint pass over the assistant text and the current
 Run evidence. The first rules flag verification claims such as
 tests/build/checks passing without a completed `verify_workspace` tool, and
 destructive command references such as `git reset --hard` or `rm -rf` patterns.
-The Agent profile can switch the advisor `off` or choose the enabled rule set;
-schema-4 Run configuration fingerprints bind that effective policy so replay
-comparison can detect advisor drift. The resulting `model.advisor.notice` event
-is debug-only and hash-only: it records rule IDs, severity, match counts, text
-SHA-256, diagnostic-set SHA-256, tool evidence counts, the effective policy,
-and a stable content SHA-256, but not the matching text. The pass is advisory in
-this release; it does not mutate the assistant response or retry the model
-turn, which keeps the stream contract stable while establishing the evidence
-channel needed for future hard stream-rule intervention.
+The Agent profile can switch the advisor `off`, choose the enabled rule set, or
+set `enforce` mode. Schema-4 Run configuration fingerprints bind that effective
+policy so replay comparison can detect advisor drift. In observe mode the
+resulting `model.advisor.notice` event is debug-only and hash-only: it records
+rule IDs, severity, match counts, text SHA-256, diagnostic-set SHA-256, tool
+evidence counts, the effective policy, and a stable content SHA-256, but not the
+matching text. In enforce mode, blocker-level diagnostics record
+`model.advisor.blocked` with the same hash-only payload and fail the Run before
+`message.assistant` is recorded. The failure message contains only the
+diagnostic-set SHA-256, keeping the matched text out of user-facing error
+evidence while establishing the path for future retry-capable stream-rule
+intervention.
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
 frames must not carry `id:`, and stream-local event sequence values must

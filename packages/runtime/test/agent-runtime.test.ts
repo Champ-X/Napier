@@ -508,6 +508,72 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("fails closed before assistant messages when enforced advisor blockers match", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      modelAdvisor: {
+        mode: "enforce",
+        enabledRules: ["destructive_command_reference"],
+      },
+    });
+    const thread = await store.createThread({
+      title: "Advisor enforced blocker",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-advisor-enforce" });
+    faux.setResponses([
+      fauxAssistantMessage("Never run git reset --hard here."),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Report risky command guidance.",
+      model: { provider: "faux-advisor-enforce", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("failed");
+    expect(faux.state.callCount).toBe(1);
+    const events = await store.listEvents(thread.id);
+    expect(events.map((event) => event.type)).toEqual(
+      expect.arrayContaining(["model.advisor.blocked", "run.failed"]),
+    );
+    const blocked = events.find(
+      (event) => event.type === "model.advisor.blocked",
+    );
+    expect(blocked?.payload).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        policy: {
+          mode: "enforce",
+          enabledRules: ["destructive_command_reference"],
+        },
+        diagnosticSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(JSON.stringify(blocked?.payload)).not.toContain("git reset --hard");
+    expect(events.some((event) => event.type === "message.assistant")).toBe(
+      false,
+    );
+    expect(
+      events.find((event) => event.type === "run.failed")?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        message: expect.stringMatching(
+          /^Model Advisor blocked assistant response: [a-f0-9]{64}$/,
+        ),
+      }),
+    );
+  });
+
   it("blocks an active goal when its run fails", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

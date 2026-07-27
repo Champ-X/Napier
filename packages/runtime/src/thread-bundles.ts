@@ -424,7 +424,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     );
     assertEnum(
       modelAdvisor["mode"],
-      new Set(["observe", "off"]),
+      new Set(["observe", "enforce", "off"]),
       "agent.modelAdvisor.mode",
     );
     const enabledRules = assertTextArray(

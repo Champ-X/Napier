@@ -519,9 +519,9 @@ function assertModelAdvisorPolicy(value: unknown) {
   );
   const mode = assertEnum(
     policy["mode"],
-    new Set(["observe", "off"]),
+    new Set(["observe", "enforce", "off"]),
     "modelAdvisor.mode",
-  ) as "observe" | "off";
+  ) as "observe" | "enforce" | "off";
   const enabledRules = assertCanonicalStringArray(
     policy["enabledRules"],
     "modelAdvisor.enabledRules",

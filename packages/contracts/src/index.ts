@@ -160,7 +160,7 @@ export type ModelAdvisorRuleId =
 
 export type ModelAdvisorSeverity = "warning" | "blocker";
 
-export type ModelAdvisorMode = "observe" | "off";
+export type ModelAdvisorMode = "observe" | "enforce" | "off";
 
 export interface ModelAdvisorDiagnostic {
   ruleId: ModelAdvisorRuleId;
@@ -182,7 +182,7 @@ export interface ModelAdvisorNoticePayload {
   source: "deterministic_stream_lint";
   turnSource: string;
   policy: ModelAdvisorPolicy;
-  status: "notice";
+  status: "notice" | "blocked";
   textSha256: string;
   diagnosticCount: number;
   diagnosticSetSha256: string;

@@ -50,6 +50,9 @@ export function createModelAdvisorNotice(
   );
   if (diagnostics.length === 0) return undefined;
 
+  const blocked =
+    input.policy.mode === "enforce" &&
+    diagnostics.some((diagnostic) => diagnostic.severity === "blocker");
   const diagnosticSetSha256 = sha256(
     canonicalJson(
       diagnostics.map((diagnostic) => ({
@@ -66,7 +69,7 @@ export function createModelAdvisorNotice(
     source: "deterministic_stream_lint" as const,
     turnSource: input.turnSource,
     policy: input.policy,
-    status: "notice" as const,
+    status: blocked ? ("blocked" as const) : ("notice" as const),
     textSha256,
     diagnosticCount: diagnostics.length,
     diagnosticSetSha256,
@@ -77,6 +80,12 @@ export function createModelAdvisorNotice(
     ...content,
     contentSha256: sha256(canonicalJson(content)),
   };
+}
+
+export function isModelAdvisorBlocked(
+  notice: ModelAdvisorNoticePayload,
+): boolean {
+  return notice.status === "blocked";
 }
 
 function createAdvisorEvidence(

@@ -1172,6 +1172,9 @@ export default function ContextPanel({
               <option value="observe">
                 {copy.context.modelAdvisorModes.observe}
               </option>
+              <option value="enforce">
+                {copy.context.modelAdvisorModes.enforce}
+              </option>
               <option value="off">{copy.context.modelAdvisorModes.off}</option>
             </select>
           </label>

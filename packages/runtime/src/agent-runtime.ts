@@ -60,7 +60,10 @@ import {
   parseMemoryProposalResponse,
 } from "./memory.js";
 import { McpExtensionManager } from "./mcp.js";
-import { createModelAdvisorNotice } from "./model-advisor.js";
+import {
+  createModelAdvisorNotice,
+  isModelAdvisorBlocked,
+} from "./model-advisor.js";
 import { ModelRegistry } from "./models.js";
 import { createId } from "./ids.js";
 import { assessToolCall } from "./policy.js";
@@ -1233,13 +1236,20 @@ export class AgentRuntime {
       {
         threadId: run.threadId,
         runId: run.id,
-        type: "model.advisor.notice",
+        type: isModelAdvisorBlocked(notice)
+          ? "model.advisor.blocked"
+          : "model.advisor.notice",
         category: "system",
         visibility: "debug",
         payload: toJsonValue(notice),
       },
       onEvent,
     );
+    if (isModelAdvisorBlocked(notice)) {
+      throw new Error(
+        `Model Advisor blocked assistant response: ${notice.diagnosticSetSha256}`,
+      );
+    }
   }
 
   private async buildModelHistory(

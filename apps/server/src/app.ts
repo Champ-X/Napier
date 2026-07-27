@@ -10235,7 +10235,7 @@ function parseModelAdvisorPolicy(
   const enabledRules = record?.["enabledRules"];
   if (
     !record ||
-    (mode !== "observe" && mode !== "off") ||
+    (mode !== "observe" && mode !== "enforce" && mode !== "off") ||
     !Array.isArray(enabledRules) ||
     enabledRules.length > 10 ||
     !enabledRules.every(

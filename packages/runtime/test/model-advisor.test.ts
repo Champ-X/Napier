@@ -86,6 +86,34 @@ describe("model advisor stream lint", () => {
     expect(JSON.stringify(notice)).not.toContain("git reset --hard");
   });
 
+  it("marks blocker diagnostics as blocked when policy enforces advisor output", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "Never run git reset --hard here.",
+      runEvents: [],
+      turnSource: "user",
+      policy: {
+        mode: "enforce",
+        enabledRules: ["destructive_command_reference"],
+      },
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        policy: {
+          mode: "enforce",
+          enabledRules: ["destructive_command_reference"],
+        },
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "destructive_command_reference",
+            severity: "blocker",
+          }),
+        ],
+      }),
+    );
+  });
+
   it("does not record notices when advisor policy is off", () => {
     expect(
       createModelAdvisorNotice({
