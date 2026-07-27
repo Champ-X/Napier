@@ -543,7 +543,11 @@ write:management-openapi` now scans `apps/server/src/app.ts`, emits
   including signature evidence, trust-directory policy, and binding
   diagnostics. `POST /api/receipt-trust/verify` now promotes a generic trusted
   receipt verification request and response schema, covering uploaded
-  directories or the active verifier selection as trust sources.
+  directories or the active verifier selection as trust sources. `GET/POST
+  /api/receipt-trust/anchors/directory/subscriptions` plus subscription update
+  and refresh routes now promote durable trust-directory subscription schemas,
+  including public transparency history, refresh receipts, CAS revision
+  requests, and hash-only source URL evidence.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published

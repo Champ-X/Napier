@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "1268d24cb3255480b00ccbfec2c2a6b8cdc38e49d587aee81f9b363b3b95150a",
+    "sha256": "e79dae29eb9d59dc913e359e965984a68b150d9f5c6f60b3c7d2389f57a68321",
     "routeCount": 219,
     "routeSetSha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
   },
   "operationCount": 219,
-  "operationSetSha256": "b81af05a44318f22a95a30cee3a2fd0f9d32843f7449df3ef8aef63115a4b076",
+  "operationSetSha256": "8704bc76fe128ce95ef140e0bd6d77c8a66faef86f154e20915687a0bc4a1910",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -762,7 +762,9 @@
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
       "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionList"
+      },
       "responseStatuses": [
         "200",
         "400",
@@ -2871,14 +2873,19 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
-      "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonRequestSchemaRef": "#/components/schemas/CreateReceiptTrustAnchorDirectorySubscriptionRequest",
+      "jsonResponseSchemaRefs": {
+        "201": "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+        "422": "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery"
+      },
       "responseStatuses": [
         "200",
+        "201",
         "400",
         "404",
         "409",
-        "413"
+        "413",
+        "422"
       ]
     },
     {
@@ -2893,8 +2900,10 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
-      "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonRequestSchemaRef": "#/components/schemas/UpdateReceiptTrustAnchorDirectorySubscriptionRequest",
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/ReceiptTrustAnchorDirectorySubscription"
+      },
       "responseStatuses": [
         "200",
         "400",
@@ -2915,8 +2924,10 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
-      "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonRequestSchemaRef": "#/components/schemas/RefreshReceiptTrustAnchorDirectorySubscriptionRequest",
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionRefreshResult"
+      },
       "responseStatuses": [
         "200",
         "400",

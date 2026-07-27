@@ -43,6 +43,34 @@ const PROMOTED_OPERATION_SCHEMAS = {
       201: "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataEnvelope",
     },
   },
+  "GET /api/receipt-trust/anchors/directory/subscriptions": {
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionList",
+    },
+  },
+  "POST /api/receipt-trust/anchors/directory/subscriptions": {
+    request:
+      "#/components/schemas/CreateReceiptTrustAnchorDirectorySubscriptionRequest",
+    responses: {
+      201: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+      422: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+    },
+  },
+  "POST /api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}": {
+    request:
+      "#/components/schemas/UpdateReceiptTrustAnchorDirectorySubscriptionRequest",
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+    },
+  },
+  "POST /api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}/refresh":
+    {
+      request:
+        "#/components/schemas/RefreshReceiptTrustAnchorDirectorySubscriptionRequest",
+      responses: {
+        200: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionRefreshResult",
+      },
+    },
   "POST /api/receipt-trust/anchors/directory/verify": {
     request: "#/components/schemas/VerifyReceiptTrustAnchorDirectoryRequest",
     responses: {
@@ -413,6 +441,171 @@ export async function generateManagementOpenApi(options = {}) {
             contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
           },
         },
+        ReceiptTrustAnchorDirectorySubscriptionStatus: {
+          type: "string",
+          enum: ["active", "paused"],
+        },
+        ReceiptTrustAnchorDirectorySubscriptionRefreshStatus: {
+          type: "string",
+          enum: [
+            "promoted",
+            "unchanged",
+            "rollback_rejected",
+            "rejected",
+            "failed",
+          ],
+        },
+        ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus: {
+          type: "string",
+          enum: ["promoted", "unchanged"],
+        },
+        ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "sequence",
+            "status",
+            "observedAt",
+            "discoverySha256",
+            "directorySha256",
+            "anchorSetSha256",
+            "trustedCount",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: {
+              const:
+                "napier.receipt-trust-anchor-directory-subscription-transparency-entry",
+            },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            sequence: { type: "integer", minimum: 1 },
+            status: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionTransparencyStatus",
+            },
+            observedAt: { type: "string", format: "date-time" },
+            discoverySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            directorySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            anchorSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            trustedCount: { type: "integer", minimum: 0 },
+            previousEntrySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        ReceiptTrustAnchorDirectorySubscription: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "id",
+            "auditThreadId",
+            "label",
+            "status",
+            "revision",
+            "sourceUrlSha256",
+            "sourceOriginSha256",
+            "refreshIntervalMs",
+            "nextRefreshAt",
+            "policy",
+            "policySha256",
+            "transparencyEntryCount",
+            "transparencyHistory",
+            "createdAt",
+            "updatedAt",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: {
+              const: "napier.receipt-trust-anchor-directory-subscription",
+            },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            id: { type: "string", pattern: "^trustdir_[a-z0-9]{8,80}$" },
+            auditThreadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            label: { type: "string", minLength: 1, maxLength: 100 },
+            status: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionStatus",
+            },
+            revision: { type: "integer", minimum: 1 },
+            sourceUrlSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            sourceOriginSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            refreshIntervalMs: {
+              type: "integer",
+              minimum: 300000,
+              maximum: 2592000000,
+            },
+            nextRefreshAt: { type: "string", format: "date-time" },
+            policy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
+            },
+            policySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            lastRefreshAt: { type: "string", format: "date-time" },
+            lastRefreshStatus: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionRefreshStatus",
+            },
+            lastDiscoverySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            lastFailureSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            lastGoodDiscovery: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+            },
+            transparencyEntryCount: { type: "integer", minimum: 0 },
+            transparencyTailSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            transparencyHistory: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionTransparencyEntry",
+              },
+            },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        ReceiptTrustAnchorDirectorySubscriptionList: {
+          type: "array",
+          items: {
+            $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+          },
+        },
+        ReceiptTrustAnchorDirectorySubscriptionRefreshResult: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "status",
+            "subscription",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: {
+              const:
+                "napier.receipt-trust-anchor-directory-subscription-refresh",
+            },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            status: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionRefreshStatus",
+            },
+            subscription: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+            },
+            discovery: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+            },
+            failureSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
         ReceiptTrustAnchorDirectoryMetadataReceipt: {
           type: "object",
           required: [
@@ -725,6 +918,60 @@ export async function generateManagementOpenApi(options = {}) {
             sourceUrl: { type: "string", minLength: 1, maxLength: 2048 },
             policy: {
               $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
+            },
+          },
+        },
+        CreateReceiptTrustAnchorDirectorySubscriptionRequest: {
+          type: "object",
+          required: [
+            "threadId",
+            "label",
+            "sourceUrl",
+            "refreshIntervalMs",
+            "policy",
+          ],
+          additionalProperties: false,
+          properties: {
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            label: { type: "string", minLength: 1, maxLength: 100 },
+            sourceUrl: { type: "string", minLength: 1, maxLength: 2048 },
+            refreshIntervalMs: {
+              type: "integer",
+              minimum: 300000,
+              maximum: 2592000000,
+            },
+            policy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
+            },
+          },
+        },
+        RefreshReceiptTrustAnchorDirectorySubscriptionRequest: {
+          type: "object",
+          required: ["threadId", "expectedRevision"],
+          additionalProperties: false,
+          properties: {
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            expectedRevision: { type: "integer", minimum: 1 },
+          },
+        },
+        UpdateReceiptTrustAnchorDirectorySubscriptionRequest: {
+          type: "object",
+          required: ["threadId", "expectedRevision", "status"],
+          additionalProperties: false,
+          properties: {
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            expectedRevision: { type: "integer", minimum: 1 },
+            status: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionStatus",
             },
           },
         },

@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(11);
+    expect(generated.routeCount).toBe(15);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 11,
+        "x-napier-route-count": 15,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -284,6 +284,153 @@ describe("management OpenAPI generator", () => {
       }),
     );
     expect(
+      generated.artifact.paths[
+        "/api/receipt-trust/anchors/directory/subscriptions"
+      ].get,
+    ).toEqual(
+      expect.objectContaining({
+        operationId: "get-receipt-trust-anchors-directory-subscriptions",
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionList",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionList",
+        },
+      }),
+    );
+    expect(
+      generated.artifact.paths[
+        "/api/receipt-trust/anchors/directory/subscriptions"
+      ].post,
+    ).toEqual(
+      expect.objectContaining({
+        operationId: "post-receipt-trust-anchors-directory-subscriptions",
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/CreateReceiptTrustAnchorDirectorySubscriptionRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          201: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+                },
+              },
+            },
+          }),
+          422: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/CreateReceiptTrustAnchorDirectorySubscriptionRequest",
+        "x-napier-promoted-response-schema-refs": {
+          201: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+          422: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+        },
+      }),
+    );
+    expect(
+      generated.artifact.paths[
+        "/api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}"
+      ].post,
+    ).toEqual(
+      expect.objectContaining({
+        operationId:
+          "post-receipt-trust-anchors-directory-subscriptions-by-subscriptionId",
+        parameters: [
+          expect.objectContaining({
+            name: "subscriptionId",
+            in: "path",
+            required: true,
+          }),
+        ],
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/UpdateReceiptTrustAnchorDirectorySubscriptionRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/UpdateReceiptTrustAnchorDirectorySubscriptionRequest",
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/ReceiptTrustAnchorDirectorySubscription",
+        },
+      }),
+    );
+    expect(
+      generated.artifact.paths[
+        "/api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}/refresh"
+      ].post,
+    ).toEqual(
+      expect.objectContaining({
+        operationId:
+          "post-receipt-trust-anchors-directory-subscriptions-by-subscriptionId-refresh",
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/RefreshReceiptTrustAnchorDirectorySubscriptionRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionRefreshResult",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/RefreshReceiptTrustAnchorDirectorySubscriptionRequest",
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionRefreshResult",
+        },
+      }),
+    );
+    expect(
       generated.artifact.paths["/api/receipt-trust/anchors/directory/verify"]
         .post,
     ).toEqual(
@@ -415,10 +562,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 11 routes",
+      "Wrote docs/artifacts/management-openapi.json: 15 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(11);
+    expect(artifact["x-napier-route-count"]).toBe(15);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -468,6 +615,10 @@ async function createFixture() {
       app.post("/api/receipt-trust/anchors/directory/discover", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/metadata/verify", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/signed-metadata", () => undefined);
+      app.get("/api/receipt-trust/anchors/directory/subscriptions", () => undefined);
+      app.post("/api/receipt-trust/anchors/directory/subscriptions", () => undefined);
+      app.post("/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId", () => undefined);
+      app.post("/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId/refresh", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/verify", () => undefined);
       app.post("/api/receipt-trust/verify", () => undefined);
       app.post(
