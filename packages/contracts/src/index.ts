@@ -3676,6 +3676,11 @@ export interface VerifyReceiptTrustAnchorDirectoryRequest {
   policy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
+export interface DiscoverReceiptTrustAnchorDirectoryRequest {
+  sourceUrl: string;
+  policy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
 export interface ReceiptTrustAnchorDirectoryVerificationPolicy {
   maxAgeMs?: number;
   expectedAnchorSetSha256?: string;
@@ -3705,6 +3710,23 @@ export interface ReceiptTrustAnchorDirectoryVerification {
   anchorCount?: number;
   trustedCount?: number;
   revokedCount?: number;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryDiscovery {
+  kind: "napier.receipt-trust-anchor-directory-discovery";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ReceiptTrustAnchorDirectoryVerificationStatus;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  httpStatus: number;
+  responseMediaType: string;
+  responseBytes: number;
+  responseBodySha256: string;
+  verification: ReceiptTrustAnchorDirectoryVerification;
+  directory?: ReceiptTrustAnchorDirectory;
   contentSha256: string;
 }
 

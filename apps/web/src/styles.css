@@ -2332,6 +2332,120 @@ button:disabled {
   opacity: 0;
 }
 
+.receipt-directory-discovery {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: end;
+  padding: 6px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 14px,
+      rgb(45 85 71 / 5%) 15px
+    ),
+    rgb(247 243 233 / 72%);
+  border-block: 1px dotted #9fb8a8;
+}
+
+.receipt-directory-discovery label {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 240px;
+  gap: 2px;
+}
+
+.receipt-directory-discovery label:nth-child(2) {
+  flex-basis: 190px;
+}
+
+.receipt-directory-discovery label span {
+  font-family: var(--mono);
+  font-size: 5px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.receipt-directory-discovery input {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 6px;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink);
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.receipt-directory-discovery input:focus-visible {
+  outline: 1px solid var(--ledger);
+  outline-offset: 1px;
+}
+
+.receipt-directory-discovery button {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 27px;
+  padding: 5px 8px;
+  font-family: var(--mono);
+  font-size: 5px;
+  color: var(--paper-bright);
+  background: var(--ledger);
+  border: 1px solid var(--ledger);
+  border-radius: 2px;
+}
+
+.receipt-directory-discovery button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.receipt-directory-active {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 6px;
+  color: var(--ledger);
+  background: rgb(45 85 71 / 8%);
+  border-left: 2px solid var(--ledger);
+}
+
+.receipt-directory-active > span {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
+}
+
+.receipt-directory-active strong,
+.receipt-directory-active small,
+.receipt-directory-active code,
+.receipt-directory-active button {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receipt-directory-active small {
+  color: var(--ink-faint);
+}
+
+.receipt-directory-active button {
+  display: inline-flex;
+  padding: 2px;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid var(--rule);
+}
+
 .receipt-verification {
   display: flex;
   grid-column: 1 / -1;

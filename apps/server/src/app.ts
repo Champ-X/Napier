@@ -34,6 +34,7 @@ import type {
   ContextCheckpointCalibrationReport,
   CreateExecutionPlanFromBlueprintRequest,
   CreateExecutionPlanFromBlueprintRecordRequest,
+  DiscoverReceiptTrustAnchorDirectoryRequest,
   ExecutionPlan,
   ExecutionPlanArchive,
   ExecutionPlanArchiveVerification,
@@ -84,6 +85,7 @@ import type {
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   RevokeExtensionPublisherTrustAnchorRequest,
@@ -296,6 +298,12 @@ import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
+import {
+  ReceiptTrustAnchorDirectoryDiscoveryError,
+  ReceiptTrustAnchorDirectoryDiscoveryService,
+  type ReceiptTrustAnchorDirectoryDiscoveryOptions,
+} from "./receipt-trust-directory-discovery.js";
+
 export interface NapierServices {
   store: LocalStore;
   models: ModelRegistry;
@@ -308,6 +316,7 @@ export interface NapierServices {
   automation: AutomationService;
   channels: ChannelService;
   recovery: RecoveryService;
+  receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
 }
 
 const BUNDLED_SKILLS: SkillSummary[] = [
@@ -484,6 +493,7 @@ export async function createServices(options?: {
   workspaceRoot?: string;
   startAutomation?: boolean;
   keychain?: KeychainSecretStore;
+  receiptTrustDirectoryDiscovery?: ReceiptTrustAnchorDirectoryDiscoveryOptions;
 }): Promise<NapierServices> {
   const workspaceRoot = path.resolve(
     options?.workspaceRoot ??
@@ -511,6 +521,10 @@ export async function createServices(options?: {
   const automation = new AutomationService(store, runtime);
   const channels = new ChannelService(store, runtime);
   const recovery = new RecoveryService(store, runtime);
+  const receiptTrustDirectories =
+    new ReceiptTrustAnchorDirectoryDiscoveryService(
+      options?.receiptTrustDirectoryDiscovery,
+    );
   if (options?.startAutomation) {
     automation.start();
     channels.start();
@@ -528,6 +542,7 @@ export async function createServices(options?: {
     automation,
     channels,
     recovery,
+    receiptTrustDirectories,
   };
 }
 
@@ -608,6 +623,51 @@ export function createApp(services: NapierServices): Hono {
     setReceiptTrustAnchorDirectoryVerificationHeaders(context, verification);
     return context.json(verification);
   });
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/discover",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory discovery request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust anchor directory discovery request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body = parseDiscoverReceiptTrustAnchorDirectoryRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory discovery request is invalid",
+          400,
+        );
+      }
+      try {
+        const discovery =
+          await services.receiptTrustDirectories.discover(body);
+        setReceiptTrustAnchorDirectoryDiscoveryHeaders(context, discovery);
+        return context.json(discovery);
+      } catch (error) {
+        if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
+          return jsonError(context, error.message, error.status);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory discovery failed",
+          502,
+        );
+      }
+    },
+  );
 
   app.post("/api/receipt-trust/anchors", async (context) => {
     let input: unknown;
@@ -10212,6 +10272,29 @@ function parseVerifyReceiptTrustAnchorDirectoryRequest(
   };
 }
 
+function parseDiscoverReceiptTrustAnchorDirectoryRequest(
+  input: unknown,
+): DiscoverReceiptTrustAnchorDirectoryRequest | undefined {
+  const record = requestRecord(input, ["sourceUrl", "policy"]);
+  const sourceUrl = record?.["sourceUrl"];
+  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
+    record?.["policy"],
+  );
+  if (
+    !record ||
+    typeof sourceUrl !== "string" ||
+    sourceUrl.length === 0 ||
+    sourceUrl.length > 2_048 ||
+    (record["policy"] !== undefined && !policy)
+  ) {
+    return undefined;
+  }
+  return {
+    sourceUrl,
+    ...(policy ? { policy } : {}),
+  };
+}
+
 function parseReceiptTrustAnchorDirectoryVerificationPolicy(
   input: unknown,
 ): ReceiptTrustAnchorDirectoryVerificationPolicy | undefined {
@@ -14693,6 +14776,77 @@ function setReceiptTrustAnchorDirectoryHeaders(
     "X-Napier-Receipt-Trust-Revoked-Count",
     String(directory.revokedCount),
   );
+}
+
+function setReceiptTrustAnchorDirectoryDiscoveryHeaders(
+  context: Context,
+  discovery: ReceiptTrustAnchorDirectoryDiscovery,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, discovery.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Discovery-SHA256",
+    discovery.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
+    discovery.sourceUrlSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
+    discovery.sourceOriginSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Response-SHA256",
+    discovery.responseBodySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Response-Bytes",
+    String(discovery.responseBytes),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-HTTP-Status",
+    String(discovery.httpStatus),
+  );
+  context.header("X-Napier-Verification-Status", discovery.status);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(discovery.verification.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(discovery.verification.diagnostics),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
+    discovery.verification.contentSha256,
+  );
+  if (discovery.verification.policySha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
+      discovery.verification.policySha256,
+    );
+  }
+  if (discovery.verification.directoryAgeMs !== undefined) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Age-Ms",
+      String(discovery.verification.directoryAgeMs),
+    );
+  }
+  if (discovery.directory) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
+      discovery.directory.contentSha256,
+    );
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
+      discovery.directory.anchorSetSha256,
+    );
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Count",
+      String(discovery.directory.anchorCount),
+    );
+  }
 }
 
 function setReceiptTrustAnchorDirectoryVerificationHeaders(

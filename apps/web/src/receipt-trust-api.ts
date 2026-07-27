@@ -1,9 +1,11 @@
 import type {
   CreateReceiptTrustAnchorRequest,
+  DiscoverReceiptTrustAnchorDirectoryRequest,
   EvaluationQualificationBaseline,
   PromoteEvaluationQualificationBaselineResult,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   TrustedReceiptEnvelope,
@@ -25,6 +27,15 @@ export function verifyReceiptTrustAnchorDirectory(
   body: VerifyReceiptTrustAnchorDirectoryRequest,
 ): Promise<ReceiptTrustAnchorDirectoryVerification> {
   return requestTrustJson("/api/receipt-trust/anchors/directory/verify", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function discoverReceiptTrustAnchorDirectory(
+  body: DiscoverReceiptTrustAnchorDirectoryRequest,
+): Promise<ReceiptTrustAnchorDirectoryDiscovery> {
+  return requestTrustJson("/api/receipt-trust/anchors/directory/discover", {
     method: "POST",
     body: JSON.stringify(body),
   });

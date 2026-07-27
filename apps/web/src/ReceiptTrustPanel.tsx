@@ -13,19 +13,24 @@ import {
 import type {
   CreateReceiptTrustAnchorSource,
   ReceiptTrustAnchor,
+  ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryVerification,
+  ReceiptTrustAnchorDirectoryVerificationPolicy,
   TrustedReceiptVerification,
 } from "@napier/contracts";
 
 import { copy } from "./copy";
 import {
   createReceiptTrustAnchor,
+  discoverReceiptTrustAnchorDirectory,
   getReceiptTrustAnchorDirectory,
   revokeReceiptTrustAnchor,
   verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceipt,
 } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
+import { qualifyReceiptTrustAnchorDirectoryDiscoveryRequest } from "./receipt-trust-view-model";
 
 const MAX_TRUSTED_RECEIPT_FILE_BYTES = 10 * 1024 * 1024 + 64 * 1024;
 const MAX_RECEIPT_TRUST_DIRECTORY_FILE_BYTES = 2 * 1024 * 1024;
@@ -54,6 +59,14 @@ export default function ReceiptTrustPanel({
     useState<TrustedReceiptVerification>();
   const [directoryVerification, setDirectoryVerification] =
     useState<ReceiptTrustAnchorDirectoryVerification>();
+  const [directoryDiscovery, setDirectoryDiscovery] =
+    useState<ReceiptTrustAnchorDirectoryDiscovery>();
+  const [directorySourceUrl, setDirectorySourceUrl] = useState("");
+  const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
+  const [externalDirectory, setExternalDirectory] =
+    useState<ReceiptTrustAnchorDirectory>();
+  const [externalDirectoryPolicy, setExternalDirectoryPolicy] =
+    useState<ReceiptTrustAnchorDirectoryVerificationPolicy>();
   const [error, setError] = useState<string>();
   const canCreate =
     Boolean(label.trim()) &&
@@ -61,6 +74,11 @@ export default function ReceiptTrustPanel({
       ? /^[A-Z_][A-Z0-9_]{1,127}$/.test(environmentVariable.trim())
       : Boolean(publicKeySpki.trim())) &&
     !busyId;
+  const discoveryRequest = qualifyReceiptTrustAnchorDirectoryDiscoveryRequest(
+    directorySourceUrl,
+    expectedAnchorSetSha256,
+  );
+  const canDiscover = Boolean(discoveryRequest) && !busyId;
 
   async function createAnchor(): Promise<void> {
     if (!canCreate) return;
@@ -128,7 +146,13 @@ export default function ReceiptTrustPanel({
         throw new Error(copy.lab.trust.errors.tooLarge);
       }
       const envelope = JSON.parse(await file.text()) as unknown;
-      setVerification(await verifyTrustedReceipt(envelope));
+      setVerification(
+        await verifyTrustedReceipt(
+          envelope,
+          externalDirectory,
+          externalDirectoryPolicy,
+        ),
+      );
     } catch (verifyError) {
       setError(toErrorMessage(verifyError));
     } finally {
@@ -162,14 +186,56 @@ export default function ReceiptTrustPanel({
         throw new Error(copy.lab.trust.errors.directoryTooLarge);
       }
       const directory = JSON.parse(await file.text()) as unknown;
-      setDirectoryVerification(
-        await verifyReceiptTrustAnchorDirectory({ directory }),
+      const nextVerification = await verifyReceiptTrustAnchorDirectory({
+        directory,
+      });
+      setDirectoryDiscovery(undefined);
+      setDirectoryVerification(nextVerification);
+      setExternalDirectory(
+        nextVerification.status === "valid"
+          ? (directory as ReceiptTrustAnchorDirectory)
+          : undefined,
       );
+      setExternalDirectoryPolicy(undefined);
     } catch (verifyError) {
       setError(toErrorMessage(verifyError));
     } finally {
       setBusyId(undefined);
     }
+  }
+
+  async function discoverDirectory(): Promise<void> {
+    if (!discoveryRequest || !canDiscover) return;
+    setBusyId("discover-directory");
+    setError(undefined);
+    setDirectoryDiscovery(undefined);
+    setDirectoryVerification(undefined);
+    try {
+      const discovery =
+        await discoverReceiptTrustAnchorDirectory(discoveryRequest);
+      setDirectoryDiscovery(discovery);
+      setDirectoryVerification(discovery.verification);
+      const acceptedDirectory =
+        discovery.status === "valid" ? discovery.directory : undefined;
+      setExternalDirectory(acceptedDirectory);
+      setExternalDirectoryPolicy(
+        acceptedDirectory ? discoveryRequest.policy : undefined,
+      );
+    } catch (discoveryError) {
+      setExternalDirectory(undefined);
+      setExternalDirectoryPolicy(undefined);
+      setError(toErrorMessage(discoveryError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  function clearExternalDirectory(): void {
+    setExternalDirectory(undefined);
+    setExternalDirectoryPolicy(undefined);
+    setDirectoryDiscovery(undefined);
+    setDirectoryVerification(undefined);
+    setVerification(undefined);
   }
 
   return (
@@ -334,8 +400,73 @@ export default function ReceiptTrustPanel({
       <section className="receipt-verifier">
         <div>
           <strong>{copy.lab.trust.verifier}</strong>
-          <small>{copy.lab.trust.verifierBody}</small>
+          <small>
+            {externalDirectory
+              ? copy.lab.trust.externalDirectoryActive
+              : copy.lab.trust.verifierBody}
+          </small>
         </div>
+        <form
+          className="receipt-directory-discovery"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void discoverDirectory();
+          }}
+        >
+          <label>
+            <span>{copy.lab.trust.directorySource}</span>
+            <input
+              type="url"
+              maxLength={2048}
+              spellCheck="false"
+              value={directorySourceUrl}
+              placeholder={copy.lab.trust.directorySourcePlaceholder}
+              onChange={(event) => setDirectorySourceUrl(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>{copy.lab.trust.expectedAnchorSet}</span>
+            <input
+              type="text"
+              maxLength={64}
+              spellCheck="false"
+              value={expectedAnchorSetSha256}
+              placeholder={copy.lab.trust.expectedAnchorSetPlaceholder}
+              onChange={(event) =>
+                setExpectedAnchorSetSha256(event.target.value)
+              }
+            />
+          </label>
+          <button type="submit" disabled={!canDiscover}>
+            <ShieldCheck size={11} aria-hidden="true" />
+            {busyId === "discover-directory"
+              ? copy.lab.trust.discoveringDirectory
+              : copy.lab.trust.discoverDirectory}
+          </button>
+        </form>
+        {externalDirectory ? (
+          <output className="receipt-directory-active" aria-live="polite">
+            <ShieldCheck size={11} aria-hidden="true" />
+            <span>
+              <strong>{copy.lab.trust.externalDirectoryReady}</strong>
+              <small>
+                {externalDirectory.trustedCount}{" "}
+                {copy.lab.trust.externalTrustedKeys}
+              </small>
+            </span>
+            <code title={externalDirectory.anchorSetSha256}>
+              {externalDirectory.anchorSetSha256.slice(0, 12)}
+            </code>
+            <button
+              type="button"
+              aria-label={copy.lab.trust.clearExternalDirectory}
+              disabled={Boolean(busyId)}
+              onClick={clearExternalDirectory}
+            >
+              <X size={10} aria-hidden="true" />
+            </button>
+          </output>
+        ) : null}
         <label>
           <Upload size={11} aria-hidden="true" />
           <span>
@@ -382,6 +513,34 @@ export default function ReceiptTrustPanel({
             }}
           />
         </label>
+        {directoryDiscovery ? (
+          <output
+            className={`receipt-verification verification-${directoryDiscovery.status}`}
+            aria-live="polite"
+          >
+            {directoryDiscovery.status === "valid" ? (
+              <Check size={11} aria-hidden="true" />
+            ) : (
+              <ShieldCheck size={11} aria-hidden="true" />
+            )}
+            <span>
+              <strong>
+                {
+                  copy.lab.trust.directoryDiscoveryStatuses[
+                    directoryDiscovery.status
+                  ]
+                }
+              </strong>
+              <small>{copy.lab.trust.hashOnlyRemoteSource}</small>
+            </span>
+            <code title={directoryDiscovery.sourceUrlSha256}>
+              {directoryDiscovery.sourceUrlSha256.slice(0, 12)}
+            </code>
+            <code title={directoryDiscovery.responseBodySha256}>
+              {directoryDiscovery.responseBodySha256.slice(0, 12)}
+            </code>
+          </output>
+        ) : null}
         {verification ? (
           <output
             className={`receipt-verification verification-${verification.status}`}

@@ -1300,6 +1300,18 @@ signature if the uploaded directory violates that policy. The Receipt trust
 desk can export and verify these directory JSON files for cross-Ledger
 policy-retirement proof bundle audits.
 
+`POST /api/receipt-trust/anchors/directory/discover` fetches a hosted directory
+without persisting it. Sources must use public HTTPS and match an exact origin
+from the comma-separated `NAPIER_RECEIPT_TRUST_DIRECTORY_ORIGINS` environment
+variable. Discovery rejects redirects, non-JSON responses, non-200 status,
+private/reserved DNS results, responses above 2 MiB, and requests exceeding
+eight seconds. Its no-store receipt exposes only source URL/origin hashes,
+response hash/size, and the nested directory verification; the URL is not
+returned or written to the Ledger. The Receipt trust desk applies a 24-hour,
+minimum-one-trusted-key policy by default, accepts an optional expected
+anchor-set SHA-256, and uses an accepted discovered directory for subsequent
+signed JSON verification until the operator clears it.
+
 A Casebook qualification baseline can be promoted only from a current
 revision's `passed` receipt signed by a currently trusted local signer. It
 freezes the complete signed envelope and exact qualification execution,

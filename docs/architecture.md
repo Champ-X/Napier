@@ -2344,10 +2344,10 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- externally hosted receipt-trust directory discovery and subscription feeds,
-  using freshness/rotation policy receipts to reject stale or unexpected
-  verifier-key sets for signed policy override retirement proof bundles without
-  manual file exchange.
+- durable receipt-trust directory subscriptions with refresh schedules,
+  last-good discovery receipts, and CAS promotion, so verifier-key updates can
+  be adopted automatically without allowing failed or stale refreshes to
+  replace the active signed policy-retirement trust set.
 
 ### Layer 3: Extension fabric
 

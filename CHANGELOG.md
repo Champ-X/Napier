@@ -234,6 +234,18 @@ All notable changes to Napier are recorded here.
   desk expose directory verification hash, policy hash, and directory age so
   cross-Ledger signed policy-retirement proof audits can bind trust freshness
   to receipt validation.
+- Allowlisted hosted receipt trust directory discovery. `POST
+  /api/receipt-trust/anchors/directory/discover` now retrieves a public
+  directory from an exact HTTPS origin configured through
+  `NAPIER_RECEIPT_TRUST_DIRECTORY_ORIGINS`, with public-endpoint validation,
+  manual redirects, an eight-second timeout, a 2 MiB streaming limit, strict
+  JSON media type, and exact HTTP 200 requirement. The no-store
+  `napier.receipt-trust-anchor-directory-discovery` receipt binds URL/origin
+  hashes, raw response hash/size, policy verification, and the accepted public
+  directory without returning the URL or mutating Ledger state. The Receipt
+  trust desk can discover a directory with a 24-hour/minimum-trusted-key policy
+  plus optional anchor-set pin and use it for subsequent signed JSON
+  verification.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

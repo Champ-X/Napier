@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import type {
   ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryVerification,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -9,6 +10,7 @@ import type {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  discoverReceiptTrustAnchorDirectory,
   getReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceipt,
@@ -40,7 +42,8 @@ describe("receipt trust Web API wrappers", () => {
           label: "Release signer",
           algorithm: "Ed25519",
           keyId: "b".repeat(64),
-          publicKeySpki: "MCowBQYDK2VwAyEA000000000000000000000000000000000000000=",
+          publicKeySpki:
+            "MCowBQYDK2VwAyEA000000000000000000000000000000000000000=",
           status: "trusted",
           createdAt: "2026-07-27T00:00:00.000Z",
           updatedAt: "2026-07-27T00:00:00.000Z",
@@ -75,6 +78,23 @@ describe("receipt trust Web API wrappers", () => {
       revokedCount: 0,
       contentSha256: "e".repeat(64),
     };
+    const discovery: ReceiptTrustAnchorDirectoryDiscovery = {
+      kind: "napier.receipt-trust-anchor-directory-discovery",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:02.000Z",
+      status: "valid",
+      sourceUrlSha256: "0".repeat(64),
+      sourceOriginSha256: "1".repeat(64),
+      httpStatus: 200,
+      responseMediaType: "application/json",
+      responseBytes: 1_024,
+      responseBodySha256: "2".repeat(64),
+      verification,
+      directory,
+      contentSha256: "3".repeat(64),
+    };
+    const sourceUrl = "https://trust.example.test/anchors.json";
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory",
@@ -85,6 +105,12 @@ describe("receipt trust Web API wrappers", () => {
         method: "POST",
         body: { directory, policy: directoryPolicy },
         response: verification,
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/discover",
+        method: "POST",
+        body: { sourceUrl, policy: directoryPolicy },
+        response: discovery,
       },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
@@ -104,7 +130,13 @@ describe("receipt trust Web API wrappers", () => {
         policy: directoryPolicy,
       }),
     ).resolves.toEqual(verification);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await expect(
+      discoverReceiptTrustAnchorDirectory({
+        sourceUrl,
+        policy: directoryPolicy,
+      }),
+    ).resolves.toEqual(discovery);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

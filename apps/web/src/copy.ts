@@ -178,6 +178,18 @@ export const copy = {
       exportingDirectory: "Exporting directory...",
       chooseDirectory: "Verify anchor directory",
       verifyingDirectory: "Verifying directory...",
+      directorySource: "Hosted directory URL",
+      directorySourcePlaceholder: "https://trust.example.com/anchors.json",
+      expectedAnchorSet: "Expected anchor-set SHA-256",
+      expectedAnchorSetPlaceholder: "Optional rotation pin",
+      discoverDirectory: "Discover directory",
+      discoveringDirectory: "Discovering directory...",
+      externalDirectoryActive:
+        "Signed JSON verification is using the active external directory.",
+      externalDirectoryReady: "External directory active",
+      externalTrustedKeys: "trusted verifier keys",
+      clearExternalDirectory: "Return to local receipt trust anchors",
+      hashOnlyRemoteSource: "Remote source and response are retained as hashes.",
       noDiagnostics: "No diagnostics",
       directoryAge: "Directory age",
       policyHash: "Policy",
@@ -194,6 +206,10 @@ export const copy = {
       directoryVerificationStatuses: {
         valid: "Directory valid",
         invalid: "Directory invalid",
+      },
+      directoryDiscoveryStatuses: {
+        valid: "Hosted directory accepted",
+        invalid: "Hosted directory rejected",
       },
       safety:
         "Private keys are read only at signing time from the named environment variable. SQLite and Ledger events retain public keys, fingerprints, and evidence hashes only.",
