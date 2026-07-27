@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import type {
+  ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
@@ -17,6 +18,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
@@ -1489,6 +1491,247 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         signatureValid: true,
         integrityValid: true,
       }),
+    );
+    const checkpointRegistryQuorumBaselineNoStoreVerifyResponse =
+      await app.request(`${checkpointRegistryQuorumBaselinePath}/verify`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          baseline: checkpointRegistryQuorumBaselineResult.baseline,
+          trustDirectory: hostedDirectory,
+          trustDirectoryPolicy: {
+            expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+            minimumTrustedCount: 1,
+          },
+        }),
+      });
+    expect(checkpointRegistryQuorumBaselineNoStoreVerifyResponse.status).toBe(
+      200,
+    );
+    const checkpointRegistryQuorumBaselineVerification =
+      (await checkpointRegistryQuorumBaselineNoStoreVerifyResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification;
+    expect(checkpointRegistryQuorumBaselineVerification).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum-baseline-verification",
+        status: "trusted",
+        diagnostics: [],
+        baselineValid: true,
+        signatureValid: true,
+        integrityValid: true,
+        baselineSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+        envelopeSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.envelope
+            .contentSha256,
+        quorumSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.envelope.receipt
+            .contentSha256,
+        receiptArtifactSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.envelope.signature
+            .receiptArtifactSha256,
+        keyId: signingAnchor.keyId,
+        selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+        selectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+        selectedSelectionChainTailSha256:
+          selectionCheckpoint.selectionChainTailSha256,
+        selectedSubscriptionSetSha256:
+          checkpointRegistryQuorumBaselineResult.baseline
+            .selectedSubscriptionSetSha256,
+        selectedSourceOriginSetSha256:
+          checkpointRegistryQuorumBaselineResult.baseline
+            .selectedSourceOriginSetSha256,
+        selectedSignerSetSha256:
+          checkpointRegistryQuorumBaselineResult.baseline.selectedSignerSetSha256,
+        anchorDirectorySha256: hostedDirectory.contentSha256,
+        anchorDirectoryVerificationSha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/),
+        anchorDirectoryPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      checkpointRegistryQuorumBaselineNoStoreVerifyResponse.headers.get(
+        "x-napier-verification-status",
+      ),
+    ).toBe("trusted");
+    expect(
+      checkpointRegistryQuorumBaselineNoStoreVerifyResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-baseline-sha256",
+      ),
+    ).toBe(checkpointRegistryQuorumBaselineResult.baseline.contentSha256);
+    const checkpointRegistryQuorumImportRoot = await mkdtemp(
+      path.join(
+        tmpdir(),
+        "napier-checkpoint-registry-quorum-baseline-import-http-",
+      ),
+    );
+    temporaryRoots.push(checkpointRegistryQuorumImportRoot);
+    const checkpointRegistryQuorumImportServices =
+      await createNapierServices({
+        dataRoot: path.join(checkpointRegistryQuorumImportRoot, "data"),
+        workspaceRoot: path.join(
+          checkpointRegistryQuorumImportRoot,
+          "workspace",
+        ),
+      });
+    openServices.push(checkpointRegistryQuorumImportServices);
+    const checkpointRegistryQuorumImportApp = createApp(
+      checkpointRegistryQuorumImportServices,
+    );
+    const checkpointRegistryQuorumImportThread =
+      checkpointRegistryQuorumImportServices.store.listThreads()[0]!;
+    const checkpointRegistryQuorumBaselineImportRequest = {
+      baseline: checkpointRegistryQuorumBaselineResult.baseline,
+      threadId: checkpointRegistryQuorumImportThread.id,
+      expectedCurrentBaselineSha256: "",
+      trustDirectory: hostedDirectory,
+      trustDirectoryPolicy: {
+        expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+        minimumTrustedCount: 1,
+      },
+    };
+    const checkpointRegistryQuorumBaselineImportResponse =
+      await checkpointRegistryQuorumImportApp.request(
+        `${checkpointRegistryQuorumBaselinePath}/import`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(checkpointRegistryQuorumBaselineImportRequest),
+        },
+      );
+    expect(checkpointRegistryQuorumBaselineImportResponse.status).toBe(201);
+    const checkpointRegistryQuorumBaselineImport =
+      (await checkpointRegistryQuorumBaselineImportResponse.json()) as ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult;
+    expect(checkpointRegistryQuorumBaselineImport).toEqual(
+      expect.objectContaining({
+        imported: true,
+        expectedCurrentBaselineSha256: "",
+        verification: expect.objectContaining({
+          status: "trusted",
+          baselineSha256:
+            checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+        }),
+        baseline: expect.objectContaining({
+          promotedByThreadId: checkpointRegistryQuorumImportThread.id,
+          envelope: checkpointRegistryQuorumBaselineResult.baseline.envelope,
+          selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+          selectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+          selectedSelectionChainTailSha256:
+            selectionCheckpoint.selectionChainTailSha256,
+          selectedSubscriptionSetSha256:
+            checkpointRegistryQuorumBaselineResult.baseline
+              .selectedSubscriptionSetSha256,
+          selectedSourceOriginSetSha256:
+            checkpointRegistryQuorumBaselineResult.baseline
+              .selectedSourceOriginSetSha256,
+          selectedSignerSetSha256:
+            checkpointRegistryQuorumBaselineResult.baseline
+              .selectedSignerSetSha256,
+        }),
+      }),
+    );
+    expect(checkpointRegistryQuorumBaselineImport.baseline.id).not.toBe(
+      checkpointRegistryQuorumBaselineResult.baseline.id,
+    );
+    expect(
+      checkpointRegistryQuorumBaselineImportResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-baseline-imported",
+      ),
+    ).toBe("true");
+    expect(
+      checkpointRegistryQuorumBaselineImportResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-baseline-verification-sha256",
+      ),
+    ).toBe(checkpointRegistryQuorumBaselineImport.verification.contentSha256);
+    const staleCheckpointRegistryQuorumBaselineImportResponse =
+      await checkpointRegistryQuorumImportApp.request(
+        `${checkpointRegistryQuorumBaselinePath}/import`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(checkpointRegistryQuorumBaselineImportRequest),
+        },
+      );
+    expect(staleCheckpointRegistryQuorumBaselineImportResponse.status).toBe(
+      409,
+    );
+    expect(
+      await staleCheckpointRegistryQuorumBaselineImportResponse.json(),
+    ).toEqual(
+      expect.objectContaining({
+        error: expect.stringContaining("precondition failed"),
+      }),
+    );
+    const duplicateCheckpointRegistryQuorumBaselineImportResponse =
+      await checkpointRegistryQuorumImportApp.request(
+        `${checkpointRegistryQuorumBaselinePath}/import`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            ...checkpointRegistryQuorumBaselineImportRequest,
+            expectedCurrentBaselineSha256:
+              checkpointRegistryQuorumBaselineImport.baseline.contentSha256,
+          }),
+        },
+      );
+    expect(duplicateCheckpointRegistryQuorumBaselineImportResponse.status).toBe(
+      200,
+    );
+    expect(
+      (await duplicateCheckpointRegistryQuorumBaselineImportResponse.json()) as ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
+    ).toEqual(
+      expect.objectContaining({
+        imported: false,
+        expectedCurrentBaselineSha256:
+          checkpointRegistryQuorumBaselineImport.baseline.contentSha256,
+        previousBaselineSha256:
+          checkpointRegistryQuorumBaselineImport.baseline.contentSha256,
+        baseline: checkpointRegistryQuorumBaselineImport.baseline,
+      }),
+    );
+    const checkpointRegistryQuorumImportEvents =
+      await checkpointRegistryQuorumImportServices.store.listEvents(
+        checkpointRegistryQuorumImportThread.id,
+      );
+    expect(
+      checkpointRegistryQuorumImportEvents.find(
+        (event) =>
+          event.type ===
+          "receipt_trust.checkpoint_registry_quorum_baseline.imported",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          baselineId: checkpointRegistryQuorumBaselineImport.baseline.id,
+          baselineSha256:
+            checkpointRegistryQuorumBaselineImport.baseline.contentSha256,
+          expectedCurrentBaselineSha256: "",
+          verificationSha256:
+            checkpointRegistryQuorumBaselineImport.verification.contentSha256,
+          envelopeSha256:
+            checkpointRegistryQuorumBaselineImport.baseline.envelope
+              .contentSha256,
+          selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+          selectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+          selectedSelectionChainTailSha256:
+            selectionCheckpoint.selectionChainTailSha256,
+          selectedSubscriptionSetSha256:
+            checkpointRegistryQuorumBaselineImport.baseline
+              .selectedSubscriptionSetSha256,
+          selectedSourceOriginSetSha256:
+            checkpointRegistryQuorumBaselineImport.baseline
+              .selectedSourceOriginSetSha256,
+          selectedSignerSetSha256:
+            checkpointRegistryQuorumBaselineImport.baseline
+              .selectedSignerSetSha256,
+        }),
+      }),
+    );
+    expect(JSON.stringify(checkpointRegistryQuorumImportEvents)).not.toContain(
+      checkpointSourceUrl,
+    );
+    expect(JSON.stringify(checkpointRegistryQuorumImportEvents)).not.toContain(
+      checkpointMirrorSourceUrl,
     );
     const duplicateCheckpointRegistryQuorumBaselineResponse = await app.request(
       checkpointRegistryQuorumBaselinePath,

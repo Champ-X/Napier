@@ -9,6 +9,8 @@ import type {
   EvaluationQualificationBaseline,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+  ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
+  ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   PromoteEvaluationQualificationBaselineResult,
@@ -31,6 +33,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
@@ -51,6 +54,7 @@ import type {
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
   UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
@@ -339,6 +343,30 @@ export function promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTrans
 ): Promise<PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+  body: VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+  body: ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
+): Promise<ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/import",
     {
       method: "POST",
       body: JSON.stringify(body),

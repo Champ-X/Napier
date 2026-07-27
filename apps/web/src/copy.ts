@@ -311,6 +311,17 @@ export const copy = {
       promotingCheckpointRegistryQuorumBaseline:
         "Promoting checkpoint quorum...",
       checkpointRegistryQuorumBaseline: "Checkpoint quorum baseline",
+      verifyCheckpointRegistryQuorumBaseline: "Verify checkpoint baseline",
+      verifyingCheckpointRegistryQuorumBaseline:
+        "Checking checkpoint baseline...",
+      importCheckpointRegistryQuorumBaseline:
+        "Import checkpoint baseline",
+      importingCheckpointRegistryQuorumBaseline:
+        "Importing checkpoint baseline...",
+      checkpointRegistryQuorumBaselineImported:
+        "Checkpoint baseline imported",
+      checkpointRegistryQuorumBaselineAlreadyImported:
+        "Checkpoint baseline already archived",
       refreshCheckpointSubscription: "Refresh checkpoint",
       refreshingCheckpointSubscription: "Refreshing checkpoint...",
       updatingCheckpointSubscription: "Updating checkpoint...",

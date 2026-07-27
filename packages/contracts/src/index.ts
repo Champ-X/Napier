@@ -4650,6 +4650,52 @@ export interface PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
   created: boolean;
 }
 
+export interface VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest {
+  baseline: unknown;
+  trustDirectory?: unknown;
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum-baseline-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  verifiedAt: string;
+  status: TrustedReceiptVerificationStatus;
+  diagnostics: string[];
+  baselineValid: boolean;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  baselineSha256?: string;
+  envelopeSha256?: string;
+  quorumSha256?: string;
+  receiptArtifactSha256?: string;
+  keyId?: string;
+  selectedCheckpointSha256?: string;
+  selectedSelectionSetSha256?: string;
+  selectedSelectionChainTailSha256?: string;
+  selectedSubscriptionSetSha256?: string;
+  selectedSourceOriginSetSha256?: string;
+  selectedSignerSetSha256?: string;
+  anchorDirectorySha256?: string;
+  anchorDirectoryVerificationSha256?: string;
+  anchorDirectoryPolicySha256?: string;
+  contentSha256: string;
+}
+
+export interface ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest extends VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest {
+  threadId: string;
+  expectedCurrentBaselineSha256: string;
+}
+
+export interface ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult {
+  baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+  imported: boolean;
+  verification: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification;
+  expectedCurrentBaselineSha256: string;
+  previousBaselineSha256?: string;
+}
+
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus =
   | "missing_selection"
   | "aligned"

@@ -29,6 +29,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
@@ -36,6 +37,7 @@ import type {
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
+  ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   TrustedReceiptEnvelope,
@@ -58,6 +60,7 @@ import {
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
   listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines,
@@ -75,6 +78,7 @@ import {
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceipt,
@@ -188,6 +192,16 @@ export default function ReceiptTrustPanel({
     setCheckpointRegistryQuorumBaseline,
   ] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline>();
+  const [
+    checkpointRegistryQuorumBaselineVerification,
+    setCheckpointRegistryQuorumBaselineVerification,
+  ] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification>();
+  const [
+    checkpointRegistryQuorumBaselineImportResult,
+    setCheckpointRegistryQuorumBaselineImportResult,
+  ] =
+    useState<ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult>();
   const [
     checkpointSubscriptions,
     setCheckpointSubscriptions,
@@ -771,6 +785,8 @@ export default function ReceiptTrustPanel({
     if (!canPromoteCheckpointRegistryQuorum) return;
     setBusyId("promote-checkpoint-registry-quorum-baseline");
     setError(undefined);
+    setCheckpointRegistryQuorumBaselineVerification(undefined);
+    setCheckpointRegistryQuorumBaselineImportResult(undefined);
     try {
       const result =
         await promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
@@ -787,6 +803,82 @@ export default function ReceiptTrustPanel({
       );
     } catch (baselineError) {
       setError(toErrorMessage(baselineError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function verifyCheckpointRegistryQuorumBaseline(): Promise<void> {
+    if (!checkpointRegistryQuorumBaseline) return;
+    setBusyId("verify-checkpoint-registry-quorum-baseline");
+    setError(undefined);
+    setCheckpointRegistryQuorumBaselineVerification(undefined);
+    try {
+      const verification =
+        await verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          {
+            baseline: checkpointRegistryQuorumBaseline,
+            ...(externalDirectory
+              ? {
+                  trustDirectory: externalDirectory,
+                  ...(externalDirectoryPolicy
+                    ? { trustDirectoryPolicy: externalDirectoryPolicy }
+                    : {}),
+                }
+              : {}),
+          },
+        );
+      setCheckpointRegistryQuorumBaselineVerification(verification);
+    } catch (verifyError) {
+      setError(toErrorMessage(verifyError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function importCheckpointRegistryQuorumBaselineFile(
+    file: File | undefined,
+  ): Promise<void> {
+    if (!file) return;
+    setBusyId("import-checkpoint-registry-quorum-baseline");
+    setError(undefined);
+    setCheckpointRegistryQuorumBaselineImportResult(undefined);
+    setCheckpointRegistryQuorumBaselineVerification(undefined);
+    try {
+      if (file.size > MAX_TRUSTED_RECEIPT_FILE_BYTES) {
+        throw new Error(copy.lab.trust.errors.tooLarge);
+      }
+      const baseline = JSON.parse(await file.text()) as unknown;
+      const result =
+        await importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          {
+            baseline,
+            threadId,
+            expectedCurrentBaselineSha256:
+              checkpointRegistryQuorumBaseline?.contentSha256 ?? "",
+            ...(externalDirectory
+              ? {
+                  trustDirectory: externalDirectory,
+                  ...(externalDirectoryPolicy
+                    ? { trustDirectoryPolicy: externalDirectoryPolicy }
+                    : {}),
+                }
+              : {}),
+          },
+        );
+      setCheckpointRegistryQuorumBaselineImportResult(result);
+      setCheckpointRegistryQuorumBaselineVerification(result.verification);
+      if (
+        result.imported ||
+        !checkpointRegistryQuorumBaseline ||
+        result.baseline.contentSha256 ===
+          checkpointRegistryQuorumBaseline.contentSha256
+      ) {
+        setCheckpointRegistryQuorumBaseline(result.baseline);
+        setCheckpointRegistryQuorum(result.baseline.envelope.receipt);
+      }
+    } catch (importError) {
+      setError(toErrorMessage(importError));
     } finally {
       setBusyId(undefined);
     }
@@ -1201,6 +1293,8 @@ export default function ReceiptTrustPanel({
     setBaselineActivationSelectionCheckpointVerification(undefined);
     setBaselineActivationSelectionCheckpointEnvelope(undefined);
     setBaselineActivationSelectionCheckpointDiscovery(undefined);
+    setCheckpointRegistryQuorumBaselineVerification(undefined);
+    setCheckpointRegistryQuorumBaselineImportResult(undefined);
   }
 
   function clearExternalDirectory(): void {
@@ -2250,6 +2344,36 @@ export default function ReceiptTrustPanel({
               ))}
             </div>
           ) : null}
+          <div className="receipt-baseline-actions">
+            <button
+              type="button"
+              disabled={!checkpointRegistryQuorumBaseline || Boolean(busyId)}
+              onClick={() => void verifyCheckpointRegistryQuorumBaseline()}
+            >
+              <ShieldCheck size={10} aria-hidden="true" />
+              {busyId === "verify-checkpoint-registry-quorum-baseline"
+                ? copy.lab.trust.verifyingCheckpointRegistryQuorumBaseline
+                : copy.lab.trust.verifyCheckpointRegistryQuorumBaseline}
+            </button>
+            <label>
+              <Upload size={10} aria-hidden="true" />
+              <span>
+                {busyId === "import-checkpoint-registry-quorum-baseline"
+                  ? copy.lab.trust.importingCheckpointRegistryQuorumBaseline
+                  : copy.lab.trust.importCheckpointRegistryQuorumBaseline}
+              </span>
+              <input
+                type="file"
+                accept="application/json,.json"
+                disabled={Boolean(busyId)}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  void importCheckpointRegistryQuorumBaselineFile(file);
+                }}
+              />
+            </label>
+          </div>
           {checkpointRegistryQuorum ? (
             <output
               className={`receipt-baseline-policy policy-${
@@ -2324,6 +2448,117 @@ export default function ReceiptTrustPanel({
                 }
               >
                 {checkpointRegistryQuorumBaseline.selectedCheckpointSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+            </output>
+          ) : null}
+          {checkpointRegistryQuorumBaselineVerification ? (
+            <output
+              className={`receipt-baseline-policy policy-${
+                checkpointRegistryQuorumBaselineVerification.status ===
+                "trusted"
+                  ? "approved"
+                  : "rejected"
+              }`}
+              aria-live="polite"
+            >
+              {checkpointRegistryQuorumBaselineVerification.status ===
+              "trusted" ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {
+                    copy.lab.trust.baselineVerificationStatuses[
+                      checkpointRegistryQuorumBaselineVerification.status
+                    ]
+                  }
+                </strong>
+                <small>
+                  {checkpointRegistryQuorumBaselineVerification.diagnostics
+                    .length > 0
+                    ? checkpointRegistryQuorumBaselineVerification.diagnostics.join(
+                        ", ",
+                      )
+                    : copy.lab.trust.noDiagnostics}
+                </small>
+              </span>
+              <code
+                title={checkpointRegistryQuorumBaselineVerification.contentSha256}
+              >
+                {checkpointRegistryQuorumBaselineVerification.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              {checkpointRegistryQuorumBaselineVerification.baselineSha256 ? (
+                <code
+                  title={
+                    checkpointRegistryQuorumBaselineVerification.baselineSha256
+                  }
+                >
+                  {checkpointRegistryQuorumBaselineVerification.baselineSha256.slice(
+                    0,
+                    12,
+                  )}
+                </code>
+              ) : null}
+              {checkpointRegistryQuorumBaselineVerification.keyId ? (
+                <code title={checkpointRegistryQuorumBaselineVerification.keyId}>
+                  {checkpointRegistryQuorumBaselineVerification.keyId.slice(
+                    0,
+                    12,
+                  )}
+                </code>
+              ) : null}
+            </output>
+          ) : null}
+          {checkpointRegistryQuorumBaselineImportResult ? (
+            <output className="receipt-baseline-policy" aria-live="polite">
+              {checkpointRegistryQuorumBaselineImportResult.imported ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {checkpointRegistryQuorumBaselineImportResult.imported
+                    ? copy.lab.trust
+                        .checkpointRegistryQuorumBaselineImported
+                    : copy.lab.trust
+                        .checkpointRegistryQuorumBaselineAlreadyImported}
+                </strong>
+                <small>
+                  {
+                    copy.lab.trust.baselineVerificationStatuses[
+                      checkpointRegistryQuorumBaselineImportResult.verification
+                        .status
+                    ]
+                  }
+                </small>
+              </span>
+              <code
+                title={
+                  checkpointRegistryQuorumBaselineImportResult.baseline
+                    .contentSha256
+                }
+              >
+                {checkpointRegistryQuorumBaselineImportResult.baseline.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={
+                  checkpointRegistryQuorumBaselineImportResult.verification
+                    .contentSha256
+                }
+              >
+                {checkpointRegistryQuorumBaselineImportResult.verification.contentSha256.slice(
                   0,
                   12,
                 )}

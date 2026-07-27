@@ -32,6 +32,7 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus,
@@ -1180,6 +1181,65 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
       ...envelope,
       receipt: quorum,
     },
+  });
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+  value: unknown,
+  anchors: ReceiptTrustAnchor[],
+  options: {
+    trustDirectoryVerification?: ReceiptTrustAnchorDirectoryVerification;
+  } = {},
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification {
+  const verifiedAt = nowIso();
+  let baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+  try {
+    baseline =
+      validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+        value,
+      );
+  } catch {
+    return createCheckpointRegistryQuorumBaselineVerification({
+      verifiedAt,
+      status: "invalid",
+      diagnostics: ["baseline_invalid"],
+      baselineValid: false,
+      signatureValid: false,
+      integrityValid: false,
+      ...(options.trustDirectoryVerification
+        ? { trustDirectoryVerification: options.trustDirectoryVerification }
+        : {}),
+    });
+  }
+  if (options.trustDirectoryVerification?.status === "invalid") {
+    return createCheckpointRegistryQuorumBaselineVerification({
+      verifiedAt,
+      status: "invalid",
+      diagnostics: ["trust_directory_invalid"],
+      baselineValid: true,
+      signatureValid: false,
+      integrityValid: true,
+      baseline,
+      trustDirectoryVerification: options.trustDirectoryVerification,
+    });
+  }
+  const trustedReceiptVerification = verifyTrustedReceiptEnvelope(
+    baseline.envelope,
+    anchors,
+  );
+  return createCheckpointRegistryQuorumBaselineVerification({
+    verifiedAt,
+    status: trustedReceiptVerification.status,
+    diagnostics: diagnosticsForTrustedReceiptVerification(
+      trustedReceiptVerification.status,
+    ),
+    baselineValid: true,
+    signatureValid: trustedReceiptVerification.signatureValid,
+    integrityValid: trustedReceiptVerification.integrityValid,
+    baseline,
+    ...(options.trustDirectoryVerification
+      ? { trustDirectoryVerification: options.trustDirectoryVerification }
+      : {}),
   });
 }
 
@@ -4762,6 +4822,81 @@ function createQuorumPromotionBaselineVerification(input: {
             input.baseline.selectedSubscriptionSetSha256,
           selectedMetadataEnvelopeSetSha256:
             input.baseline.selectedMetadataEnvelopeSetSha256,
+        }
+      : {}),
+    ...(input.trustDirectoryVerification
+      ? {
+          ...(input.trustDirectoryVerification.recomputedContentSha256
+            ? {
+                anchorDirectorySha256:
+                  input.trustDirectoryVerification.recomputedContentSha256,
+              }
+            : input.trustDirectoryVerification.declaredContentSha256
+              ? {
+                  anchorDirectorySha256:
+                    input.trustDirectoryVerification.declaredContentSha256,
+                }
+              : {}),
+          anchorDirectoryVerificationSha256:
+            input.trustDirectoryVerification.contentSha256,
+          ...(input.trustDirectoryVerification.policySha256
+            ? {
+                anchorDirectoryPolicySha256:
+                  input.trustDirectoryVerification.policySha256,
+              }
+            : {}),
+        }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createCheckpointRegistryQuorumBaselineVerification(input: {
+  verifiedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification["status"];
+  diagnostics: string[];
+  baselineValid: boolean;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  baseline?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+  trustDirectoryVerification?: ReceiptTrustAnchorDirectoryVerification;
+}): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification {
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum-baseline-verification" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    verifiedAt: input.verifiedAt,
+    status: input.status,
+    diagnostics: input.diagnostics,
+    baselineValid: input.baselineValid,
+    signatureValid: input.signatureValid,
+    integrityValid: input.integrityValid,
+    ...(input.baseline
+      ? {
+          baselineSha256: input.baseline.contentSha256,
+          envelopeSha256: input.baseline.envelope.contentSha256,
+          quorumSha256: input.baseline.envelope.receipt.contentSha256,
+          receiptArtifactSha256:
+            input.baseline.envelope.signature.receiptArtifactSha256,
+          keyId: input.baseline.envelope.signature.keyId,
+          selectedCheckpointSha256:
+            input.baseline.selectedCheckpointSha256,
+          selectedSelectionSetSha256:
+            input.baseline.selectedSelectionSetSha256,
+          ...(input.baseline.selectedSelectionChainTailSha256
+            ? {
+                selectedSelectionChainTailSha256:
+                  input.baseline.selectedSelectionChainTailSha256,
+              }
+            : {}),
+          selectedSubscriptionSetSha256:
+            input.baseline.selectedSubscriptionSetSha256,
+          selectedSourceOriginSetSha256:
+            input.baseline.selectedSourceOriginSetSha256,
+          selectedSignerSetSha256: input.baseline.selectedSignerSetSha256,
         }
       : {}),
     ...(input.trustDirectoryVerification

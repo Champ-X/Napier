@@ -86,6 +86,8 @@ import type {
   HealthResponse,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+  ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
+  ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   PromoteEvaluationQualificationBaselineRequest,
@@ -111,6 +113,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
@@ -274,6 +277,7 @@ import type {
   VerifyThreadReplayBundleRequest,
   VerifyUsagePriceTableCatalogRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
@@ -341,6 +345,7 @@ import {
   RunEvaluationService,
   signTrustedReceipt,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifySignedExtensionPackageEnvelope,
   verifyReceiptTrustAnchorDirectoryMetadata,
@@ -1495,6 +1500,197 @@ export function createApp(services: NapierServices): Hono {
           context,
           message,
           message.includes("requires an agreed quorum") ||
+            message.includes("not trusted")
+            ? 409
+            : 400,
+        );
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/verify",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust checkpoint registry quorum baseline verification request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust checkpoint registry quorum baseline verification request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body =
+        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust checkpoint registry quorum baseline verification request is invalid",
+          400,
+        );
+      }
+      const trustDirectoryVerification =
+        body.trustDirectory === undefined
+          ? undefined
+          : services.store.verifyReceiptTrustAnchorDirectory(
+              body.trustDirectory,
+              body.trustDirectoryPolicy,
+            );
+      const anchors =
+        body.trustDirectory === undefined
+          ? services.store.listReceiptTrustAnchors()
+          : trustDirectoryVerification?.status === "valid"
+            ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+            : [];
+      const verification =
+        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          body.baseline,
+          anchors,
+          {
+            ...(trustDirectoryVerification
+              ? { trustDirectoryVerification }
+              : {}),
+          },
+        );
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerificationHeaders(
+        context,
+        verification,
+      );
+      return context.json(verification);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/import",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust checkpoint registry quorum baseline import request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust checkpoint registry quorum baseline import request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body =
+        parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust checkpoint registry quorum baseline import request is invalid",
+          400,
+        );
+      }
+      const trustDirectoryVerification =
+        body.trustDirectory === undefined
+          ? undefined
+          : services.store.verifyReceiptTrustAnchorDirectory(
+              body.trustDirectory,
+              body.trustDirectoryPolicy,
+            );
+      const anchors =
+        body.trustDirectory === undefined
+          ? services.store.listReceiptTrustAnchors()
+          : trustDirectoryVerification?.status === "valid"
+            ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+            : [];
+      const verification =
+        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          body.baseline,
+          anchors,
+          {
+            ...(trustDirectoryVerification
+              ? { trustDirectoryVerification }
+              : {}),
+          },
+        );
+      if (
+        verification.status !== "trusted" ||
+        !verification.baselineValid ||
+        !verification.signatureValid ||
+        !verification.integrityValid
+      ) {
+        return jsonError(
+          context,
+          "Receipt trust checkpoint registry quorum baseline import requires trusted verification",
+          409,
+        );
+      }
+      try {
+        const imported =
+          await services.store.importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+            body.threadId,
+            body.baseline,
+            body.expectedCurrentBaselineSha256,
+            anchors,
+          );
+        if (imported.imported) {
+          await appendReceiptTrustEvent(
+            services,
+            body.threadId,
+            "receipt_trust.checkpoint_registry_quorum_baseline.imported",
+            {
+              baselineId: imported.baseline.id,
+              baselineSha256: imported.baseline.contentSha256,
+              expectedCurrentBaselineSha256:
+                body.expectedCurrentBaselineSha256,
+              previousBaselineSha256: imported.previousBaselineSha256 ?? "",
+              verificationSha256: verification.contentSha256,
+              envelopeSha256: imported.baseline.envelope.contentSha256,
+              selectedCheckpointSha256:
+                imported.baseline.selectedCheckpointSha256,
+              selectedSelectionSetSha256:
+                imported.baseline.selectedSelectionSetSha256,
+              selectedSelectionChainTailSha256:
+                imported.baseline.selectedSelectionChainTailSha256 ?? "",
+              selectedSubscriptionSetSha256:
+                imported.baseline.selectedSubscriptionSetSha256,
+              selectedSourceOriginSetSha256:
+                imported.baseline.selectedSourceOriginSetSha256,
+              selectedSignerSetSha256:
+                imported.baseline.selectedSignerSetSha256,
+            },
+          );
+        }
+        const result: ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult =
+          {
+            baseline: imported.baseline,
+            imported: imported.imported,
+            verification,
+            expectedCurrentBaselineSha256: body.expectedCurrentBaselineSha256,
+            ...(imported.previousBaselineSha256
+              ? { previousBaselineSha256: imported.previousBaselineSha256 }
+              : {}),
+          };
+        setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResultHeaders(
+          context,
+          result,
+        );
+        return context.json(result, imported.imported ? 201 : 200);
+      } catch (error) {
+        const message = errorMessage(error);
+        return jsonError(
+          context,
+          message,
+          message.includes("precondition failed") ||
             message.includes("not trusted")
             ? 409
             : 400,
@@ -12525,6 +12721,83 @@ function parsePromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspa
   };
 }
 
+function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
+  input: unknown,
+):
+  | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "baseline",
+    "trustDirectory",
+    "trustDirectoryPolicy",
+  ]);
+  const trustDirectoryPolicy =
+    parseReceiptTrustAnchorDirectoryVerificationPolicy(
+      record?.["trustDirectoryPolicy"],
+    );
+  if (
+    !record ||
+    record["baseline"] === undefined ||
+    (record["trustDirectoryPolicy"] !== undefined &&
+      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
+  ) {
+    return undefined;
+  }
+  return {
+    baseline: record["baseline"],
+    ...(record["trustDirectory"] !== undefined
+      ? { trustDirectory: record["trustDirectory"] }
+      : {}),
+    ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
+  };
+}
+
+function parseImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
+  input: unknown,
+):
+  | ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "baseline",
+    "threadId",
+    "expectedCurrentBaselineSha256",
+    "trustDirectory",
+    "trustDirectoryPolicy",
+  ]);
+  const verifyRequest = record
+    ? parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest(
+        {
+          baseline: record["baseline"],
+          ...(record["trustDirectory"] !== undefined
+            ? { trustDirectory: record["trustDirectory"] }
+            : {}),
+          ...(record["trustDirectoryPolicy"] !== undefined
+            ? { trustDirectoryPolicy: record["trustDirectoryPolicy"] }
+            : {}),
+        },
+      )
+    : undefined;
+  const threadId = record?.["threadId"];
+  const expectedCurrentBaselineSha256 =
+    record?.["expectedCurrentBaselineSha256"];
+  if (
+    !record ||
+    !verifyRequest ||
+    !validThreadId(threadId) ||
+    typeof expectedCurrentBaselineSha256 !== "string" ||
+    (expectedCurrentBaselineSha256 !== "" &&
+      !isSha256Hex(expectedCurrentBaselineSha256))
+  ) {
+    return undefined;
+  }
+  return {
+    ...verifyRequest,
+    threadId,
+    expectedCurrentBaselineSha256,
+  };
+}
+
 function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
   input: unknown,
 ):
@@ -18613,6 +18886,127 @@ function setPromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspare
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Signer-Set-SHA256",
     result.baseline.selectedSignerSetSha256,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerificationHeaders(
+  context: Context,
+  verification: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineVerification,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, verification.contentSha256);
+  context.header("X-Napier-Verification-Status", verification.status);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(verification.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(verification.diagnostics),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Valid",
+    String(verification.baselineValid),
+  );
+  context.header(
+    "X-Napier-Signature-Valid",
+    String(verification.signatureValid),
+  );
+  context.header(
+    "X-Napier-Integrity-Valid",
+    String(verification.integrityValid),
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
+    verification.baselineSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Envelope-SHA256",
+    verification.envelopeSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256",
+    verification.quorumSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Artifact-SHA256",
+    verification.receiptArtifactSha256,
+  );
+  setOptionalHeader(context, "X-Napier-Signature-Key-Id", verification.keyId);
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
+    verification.selectedCheckpointSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
+    verification.selectedSelectionSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
+    verification.selectedSelectionChainTailSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
+    verification.anchorDirectorySha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Anchor-Directory-Verification-SHA256",
+    verification.anchorDirectoryVerificationSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
+    verification.anchorDirectoryPolicySha256,
+  );
+}
+
+function setImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResultHeaders(
+  context: Context,
+  result: ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, result);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Imported",
+    String(result.imported),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Expected-Current-SHA256",
+    result.expectedCurrentBaselineSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Previous-SHA256",
+    result.previousBaselineSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Id",
+    result.baseline.id,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
+    result.baseline.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-Verification-SHA256",
+    result.verification.contentSha256,
+  );
+  context.header(
+    "X-Napier-Envelope-SHA256",
+    result.baseline.envelope.contentSha256,
+  );
+  context.header(
+    "X-Napier-Signature-Key-Id",
+    result.baseline.envelope.signature.keyId,
   );
 }
 

@@ -375,6 +375,7 @@ import {
   validatePersistedReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   type PersistedReceiptTrustAnchorDirectorySubscription,
   type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim,
@@ -2005,6 +2006,85 @@ export class LocalStore {
       return {
         baseline: structuredClone(baseline),
         created: true,
+      };
+    });
+  }
+
+  async importReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+    importedByThreadId: string,
+    baselineInput: unknown,
+    expectedCurrentBaselineSha256: string,
+    trustedAnchors: ReceiptTrustAnchor[],
+  ): Promise<{
+    baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline;
+    imported: boolean;
+    previousBaselineSha256?: string;
+  }> {
+    this.assertInitialized();
+    this.getThread(importedByThreadId);
+    if (
+      expectedCurrentBaselineSha256 !== "" &&
+      !isSha256(expectedCurrentBaselineSha256)
+    ) {
+      throw new Error(
+        "Receipt trust checkpoint registry quorum baseline import precondition is invalid",
+      );
+    }
+    return this.stateQueue.run(async () => {
+      const current =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines
+          .at(-1);
+      const currentSha256 = current?.contentSha256 ?? "";
+      if (currentSha256 !== expectedCurrentBaselineSha256) {
+        throw new Error(
+          "Receipt trust checkpoint registry quorum baseline import precondition failed",
+        );
+      }
+      const importedBaseline =
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          baselineInput,
+          trustedAnchors,
+        );
+      const verification =
+        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          importedBaseline,
+          trustedAnchors,
+        );
+      if (verification.status !== "trusted") {
+        throw new Error(
+          `Receipt trust checkpoint registry quorum baseline import is not trusted: ${verification.diagnostics.join(",")}`,
+        );
+      }
+      const existing =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines
+          .find(
+            (baseline) =>
+              receiptTrustCheckpointRegistryQuorumBaselineKey(
+                baseline.envelope,
+              ) ===
+              receiptTrustCheckpointRegistryQuorumBaselineKey(
+                importedBaseline.envelope,
+              ),
+          );
+      if (existing) {
+        return {
+          baseline: structuredClone(existing),
+          imported: false,
+          ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
+        };
+      }
+      const baseline =
+        this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          importedByThreadId,
+          importedBaseline.envelope,
+        );
+      await this.persistState();
+      return {
+        baseline: structuredClone(baseline),
+        imported: true,
+        ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
       };
     });
   }

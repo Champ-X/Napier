@@ -410,6 +410,18 @@ All notable changes to Napier are recorded here.
   evidence plus signer. The Receipt Trust Desk adds **Promote checkpoint
   quorum**, downloads the signed baseline JSON, and tests verify generic
   receipt-trust validation.
+- Checkpoint-registry quorum baseline verification and import. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/verify`
+  now performs no-store verification of uploaded signed checkpoint-registry
+  quorum baselines against local anchors or an uploaded trust directory,
+  returning baseline/signature/integrity diagnostics plus baseline, envelope,
+  quorum, selected checkpoint, source-set, signer-set, and trust-directory
+  hashes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/import`
+  CAS-imports trusted baselines with `expectedCurrentBaselineSha256`, appends
+  a local supersession record and hash-only Ledger event, and returns
+  idempotent already-archived results for duplicate imports. The Web API and
+  Receipt Trust Desk can verify/import checkpoint quorum baseline archives.
 - Rotation review checkpoint-registry gates. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review`
   now accepts an optional `checkpointRegistryQuorumPolicy`. When supplied, the

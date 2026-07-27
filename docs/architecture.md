@@ -580,6 +580,16 @@ projections; Ledger events record baseline/envelope/selection/source-set hashes
 without raw registry responses. Re-promoting the same independent-source
 agreement is idempotent, while a different source set for the same checkpoint
 can still produce a new baseline for cross-workspace rotation audits.
+Uploaded checkpoint-registry quorum baselines can now be verified without
+storage against local anchors or an uploaded trust directory. The verification
+receipt recomputes the baseline content hash, validates the trusted receipt
+signature, checks integrity bindings for the selected checkpoint/source/signer
+sets, and exposes only diagnostic labels plus baseline, envelope, quorum,
+directory, and selected-evidence hashes. Import is CAS-gated by
+`expectedCurrentBaselineSha256`; trusted imports append a local supersession
+record and hash-only Ledger event, while duplicate archives return the current
+baseline without mutating state. This makes cross-workspace rotation evidence
+portable before any automated verifier proposal is accepted.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2541,8 +2551,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- no-store verification and CAS-gated import for signed checkpoint-registry
-  quorum baselines before automated verifier rotation proposals.
+- automated verifier rotation proposal receipts that consume imported
+  checkpoint-registry quorum baselines as a fail-closed prerequisite.
 
 ### Layer 3: Extension fabric
 

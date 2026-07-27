@@ -1504,6 +1504,17 @@ link. Duplicate promotion is idempotent by the selected registry evidence and
 signer key. The Receipt Trust Desk adds **Promote checkpoint quorum** and
 downloads the signed baseline JSON so independent-source checkpoint agreement
 can be archived for cross-workspace verifier rotation audits.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/verify`
+performs no-store verification of an uploaded baseline against local anchors
+or an uploaded trust directory, returning baseline/signature/integrity
+diagnostics plus baseline, envelope, quorum, selected checkpoint, source-set,
+signer-set, and directory verification hashes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/import`
+then CAS-imports a trusted baseline with `expectedCurrentBaselineSha256`,
+appending a local supersession record and hash-only Ledger event or returning
+an idempotent already-archived result. The Receipt Trust Desk can verify the
+current checkpoint quorum baseline and import signed baseline JSON archives.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST
