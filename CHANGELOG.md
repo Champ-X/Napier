@@ -518,6 +518,13 @@ All notable changes to Napier are recorded here.
   binding hashes. The leased worker claims due queues, reruns the policy review
   and baseline gate, executes the existing CAS apply, and settles success or
   failure as local-only pending state plus hash-only Ledger events.
+- Generated management-plane OpenAPI route artifact. `npm run
+write:management-openapi` now scans `apps/server/src/app.ts`, emits
+  `docs/artifacts/management-openapi-0.1.0.json` with all `/api` routes,
+  OpenAPI path parameters, source SHA-256, and route-set SHA-256 evidence.
+  `npm run check:management-openapi` fails on route drift, and the top-level
+  release artifact receipt now binds the OpenAPI artifact alongside runtime,
+  package-lock, Web dist, and manifest evidence.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

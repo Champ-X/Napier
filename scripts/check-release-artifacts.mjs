@@ -15,6 +15,8 @@ const defaultRuntimeEnvironmentReceiptPath =
   "docs/artifacts/runtime-environment-audit-0.1.0.json";
 const defaultWebDistReceiptPath = "docs/artifacts/web-dist-audit-0.1.0.json";
 const defaultWebDistManifestPath = "docs/artifacts/web-dist-0.1.0.sha256";
+const defaultManagementOpenApiPath =
+  "docs/artifacts/management-openapi-0.1.0.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -28,6 +30,8 @@ export async function auditReleaseArtifacts(options = {}) {
     options.webDistReceiptPath ?? defaultWebDistReceiptPath;
   const webDistManifestPath =
     options.webDistManifestPath ?? defaultWebDistManifestPath;
+  const managementOpenApiPath =
+    options.managementOpenApiPath ?? defaultManagementOpenApiPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -43,6 +47,7 @@ export async function auditReleaseArtifacts(options = {}) {
     runtimeEnvironmentVerification,
     webDistVerification,
     webDistManifest,
+    managementOpenApi,
   ] = await Promise.all([
     verifyPackageLockReceipt({
       repoRoot,
@@ -57,6 +62,7 @@ export async function auditReleaseArtifacts(options = {}) {
       verifyReceiptPath: webDistReceiptPath,
     }),
     readArtifactEvidence(repoRoot, webDistManifestPath, errors),
+    readArtifactEvidence(repoRoot, managementOpenApiPath, errors),
   ]);
 
   if (!packageLockVerification.valid) {
@@ -105,6 +111,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: webDistManifest.path,
       sha256: webDistManifest.sha256,
       valid: webDistManifest.readable,
+    },
+    {
+      kind: "management-openapi",
+      path: managementOpenApi.path,
+      sha256: managementOpenApi.sha256,
+      valid: managementOpenApi.readable,
     },
   ];
   const artifactSetSha256 = sha256(
@@ -309,6 +321,11 @@ function parseCliOptions(args) {
     }
     if (arg === "--web-dist-manifest-path") {
       options.webDistManifestPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--management-openapi-path") {
+      options.managementOpenApiPath = readCliValue(args, index, arg);
       index += 1;
       continue;
     }

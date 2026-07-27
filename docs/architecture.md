@@ -215,11 +215,12 @@ receipt schema, and fails if the stored JSON no longer matches the current
 dist evidence.
 
 The top-level release artifact audit binds the package-lock receipt,
-runtime-environment receipt, Web dist receipt, and Web dist manifest into one
-`napier.release-artifacts-audit` receipt. It stores only artifact kinds,
-repo-relative paths, SHA-256 values, validity booleans, package name/version,
-and a canonical artifact-set digest. Verification re-runs the component receipt
-verifiers and fails if any underlying artifact or the aggregate receipt drifts.
+runtime-environment receipt, management OpenAPI artifact, Web dist receipt, and
+Web dist manifest into one `napier.release-artifacts-audit` receipt. It stores
+only artifact kinds, repo-relative paths, SHA-256 values, validity booleans,
+package name/version, and a canonical artifact-set digest. Verification re-runs
+the component receipt verifiers and fails if any underlying artifact or the
+aggregate receipt drifts.
 
 ## Persistence
 
@@ -297,6 +298,15 @@ code, diagnostic type, and public error-message hash before the body starts;
 per-error diagnostic hashes remain inside the streamed error frame. The Web
 client validates those stream response headers before reading the SSE body and
 requires every successful stream to end with a terminal `done` or `error` frame.
+The management-plane OpenAPI artifact is generated from the server route
+declarations rather than handwritten. `scripts/generate-management-openapi.mjs`
+extracts every `app.get/post/put/delete/patch("/api/...")` route from
+`apps/server/src/app.ts`, normalizes `:param` segments into OpenAPI path
+parameters, emits a conservative OpenAPI 3.1 route catalog, and binds the
+artifact to both the server source SHA-256 and route-set SHA-256. The artifact
+is intentionally route-level until endpoint-specific schemas are promoted, but
+it gives external management clients a stable path/operation surface and a
+check-only guard against route drift.
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
 frames must not carry `id:`, and stream-local event sequence values must
@@ -2649,8 +2659,8 @@ recommended outer boundary for production third-party code.
 ### Layer 1: Reliable local runtime
 
 - a Postgres backend for distributed workers;
-- generated OpenAPI/JSON Schema artifacts and compatibility fixtures for
-  external management-plane clients.
+- endpoint-level JSON Schema promotion and compatibility fixtures for external
+  management-plane clients.
 
 ### Layer 2: Extension fabric
 

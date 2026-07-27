@@ -43,6 +43,7 @@ describe("release artifacts audit", () => {
       "runtime-environment-audit",
       "web-dist-audit",
       "web-dist-manifest",
+      "management-openapi",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -189,6 +190,7 @@ async function createFixture() {
   temporaryRoots.push(root);
   await createPackageLockFixture(root);
   await createWebDistFixture(root);
+  await createManagementOpenApiFixture(root);
   await execFile(process.execPath, [
     packageLockScriptPath,
     "--repo-root",
@@ -297,6 +299,20 @@ async function createWebDistFixture(root) {
       manifestLine("apps/web/dist/assets/index-demo.js", entryContent),
       manifestLine("apps/web/dist/index.html", indexHtml),
     ].join("\n") + "\n",
+  );
+}
+
+async function createManagementOpenApiFixture(root) {
+  await mkdir(path.join(root, "docs/artifacts"), { recursive: true });
+  await writeJson(
+    path.join(root, "docs/artifacts/management-openapi-0.1.0.json"),
+    {
+      openapi: "3.1.0",
+      info: { title: "Napier Management API", version: "0.1.0" },
+      paths: {},
+      "x-napier-artifact-kind": "management-openapi",
+      "x-napier-route-count": 0,
+    },
   );
 }
 

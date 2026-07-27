@@ -1699,6 +1699,7 @@ npm run typecheck
 npm test
 npm run build
 npm run check
+npm run check:management-openapi
 npm run check:package-lock
 npm run check:package-lock-receipt
 npm run check:release-artifacts
@@ -1712,6 +1713,7 @@ npm run verify:package-lock-receipt
 npm run verify:release-artifacts
 npm run verify:runtime-environment-receipt
 npm run verify:web-dist-receipt
+npm run write:management-openapi
 npm run write:package-lock-receipt
 npm run write:release-artifacts
 npm run write:runtime-environment-receipt
@@ -1721,8 +1723,9 @@ npm run write:web-dist-receipt
 `npm run check` first audits the current Node runtime against
 `package.json#engines.node` and required `process.versions` components, verifies
 the stored runtime receipt, audits `package-lock.json` against the root package
-and every workspace package, then builds every workspace, verifies the
-production Web dist against a generated
+and every workspace package, verifies the generated management-plane OpenAPI
+route artifact, then builds every workspace, verifies the production Web dist
+against a generated
 `docs/artifacts/web-dist-0.1.0.sha256`, enforces the `150 KiB` uncompressed
 main-entry budget, verifies the checked-in Web dist receipt, and then runs all
 tests. The runtime gate checks the observed Node version, platform, arch, and
@@ -1735,19 +1738,24 @@ integrity hashes before any build work starts, and
 `npm run check:package-lock-receipt` verifies the stored
 `docs/artifacts/package-lock-audit-0.1.0.json` receipt against the current
 root package and lockfile. Use `npm run write:package-lock-receipt` after
-intentional dependency changes. After a Web build changes chunk names or
+intentional dependency changes. `npm run write:management-openapi` scans
+`apps/server/src/app.ts` and writes
+`docs/artifacts/management-openapi-0.1.0.json`, a stable OpenAPI 3.1 route
+catalog with source and route-set SHA-256 evidence; `npm run
+check:management-openapi` fails when that artifact no longer matches the
+current management API routes. After a Web build changes chunk names or
 hashes, run `npm run update:web-dist-manifest` to write the canonical manifest;
 `npm run check:web-dist-manifest` is the check-only guard that fails when the
 checked-in manifest is stale. `npm run write:release-artifacts` writes a
 top-level `napier.release-artifacts-audit` receipt that binds the package-lock
-receipt, runtime-environment receipt, Web dist receipt, and Web dist manifest
-by SHA-256; `npm run check:release-artifacts` / `npm run
-verify:release-artifacts` verify that aggregate receipt against the current
-component receipts. `npm test` starts with root-level release-gate contract
+receipt, runtime-environment receipt, management OpenAPI artifact, Web dist
+receipt, and Web dist manifest by SHA-256; `npm run check:release-artifacts` /
+`npm run verify:release-artifacts` verify that aggregate receipt against the
+current component receipts. `npm test` starts with root-level release-gate contract
 tests before running workspace suites, so package-lock drift, runtime version
-drift, missing runtime components, manifest drift, extra dist files, malformed
-manifests, stale receipts, aggregate artifact drift, and entry-budget
-regressions are covered without mutating the real build output.
+drift, missing runtime components, OpenAPI route drift, manifest drift, extra
+dist files, malformed manifests, stale receipts, aggregate artifact drift, and
+entry-budget regressions are covered without mutating the real build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,
