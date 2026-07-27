@@ -615,7 +615,10 @@ source/signer-set, and current checkpoint hashes. Stale envelopes are rejected
 with explicit mismatch diagnostics; successful rotations append only hash-only
 proposal evidence to the Work Ledger. Idempotent reapply of the already active
 decision remains outside the gate because it does not mutate the active
-verifier selection.
+verifier selection. A sibling no-store preflight endpoint runs the same gate
+and returns an `accepted`, `rejected`, or `not_required` receipt with stable
+hash evidence before Apply activation is invoked, giving external automation a
+dry-run artifact for rotation-change review.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source

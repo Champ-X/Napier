@@ -291,6 +291,8 @@ export const copy = {
       proposingActivationSelectionRotation: "Proposing...",
       signActivationSelectionRotationProposal: "Sign proposal",
       signingActivationSelectionRotationProposal: "Signing proposal...",
+      preflightActivationSelectionRotationProposal: "Preflight proposal",
+      preflightingActivationSelectionRotationProposal: "Preflighting...",
       exportActivationSelectionCheckpoint: "Export checkpoint",
       exportingActivationSelectionCheckpoint: "Exporting checkpoint...",
       signActivationSelectionCheckpoint: "Sign checkpoint",
@@ -338,6 +340,8 @@ export const copy = {
       activationSelectionRotationProposal: "Rotation proposal",
       signedActivationSelectionRotationProposal:
         "Signed rotation proposal",
+      activationSelectionRotationProposalPreflight:
+        "Proposal preflight",
       activationSelectionCheckpoint: "Selection checkpoint",
       signedActivationSelectionCheckpoint: "Signed checkpoint",
       activationSelectionCheckpointEntries: "selection entries",
@@ -392,6 +396,11 @@ export const copy = {
         missing_decision: "Activation decision is missing",
         missing_checkpoint_registry_baseline:
           "Checkpoint quorum baseline is missing",
+      },
+      activationSelectionRotationProposalPreflightStatuses: {
+        accepted: "Signed proposal is fresh",
+        rejected: "Signed proposal rejected",
+        not_required: "Proposal not required",
       },
       activationSelectionCheckpointVerificationStatuses: {
         valid: "Checkpoint matches local state",

@@ -29,6 +29,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -57,6 +58,7 @@ import type {
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
@@ -406,6 +408,18 @@ export function signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
 ): Promise<TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function preflightReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
+  body: VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight",
     {
       method: "POST",
       body: JSON.stringify(body),

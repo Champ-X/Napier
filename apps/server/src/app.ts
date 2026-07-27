@@ -108,6 +108,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -284,6 +285,7 @@ import type {
   VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
   ApplySkillContentRequest,
   PreviewSkillContentRequest,
@@ -291,6 +293,7 @@ import type {
   VerifySignedExtensionPackageRequest,
   VerifyTrustedReceiptRequest,
 } from "@napier/contracts";
+import { NAPIER_API_VERSION } from "@napier/contracts";
 import {
   AgentRuntime,
   AutomationService,
@@ -314,6 +317,7 @@ import {
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
+  canonicalJson,
   createOpenTelemetryTraceArtifact,
   builtinUsagePriceTableCatalog,
   exportThreadReplayBundle,
@@ -347,6 +351,7 @@ import {
   reviewExecutionPlanReplanDraft,
   RunEvaluationService,
   signTrustedReceipt,
+  sha256,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   validateTrustedReceiptEnvelope,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
@@ -2183,6 +2188,55 @@ export function createApp(services: NapierServices): Hono {
           `napier-signed-quorum-activation-selection-rotation-proposal-${envelope.contentSha256.slice(0, 12)}.json`,
         );
         return context.json(envelope, 201);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal preflight request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal preflight request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal preflight request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const preflight =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
+            services,
+            body,
+          );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightHeaders(
+          context,
+          preflight,
+        );
+        return context.json(preflight, 200);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -12783,6 +12837,18 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
   };
 }
 
+function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
+  input: unknown,
+):
+  | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
+  | undefined {
+  return parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
+    input,
+  ) as
+    | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
+    | undefined;
+}
+
 type RotationProposalGateResult =
   | {
       status: "accepted";
@@ -12793,7 +12859,146 @@ type RotationProposalGateResult =
   | {
       status: "rejected";
       reason: string;
+      diagnostics?: string[];
+      envelope?: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+      proposal?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+      verification?: TrustedReceiptVerification;
     };
+
+function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
+  services: NapierServices,
+  request: VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight {
+  const checkedAt = new Date().toISOString();
+  const selectionState =
+    services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+  const activeSelection = selectionState.selection;
+  const base = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-preflight" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    checkedAt,
+    activationDecisionRecordId: request.activationDecisionRecordId,
+    expectedCurrentSelectionSha256: request.expectedCurrentSelectionSha256,
+    currentSelectionSha256: selectionState.currentSelectionSha256,
+    ...(activeSelection
+      ? { activeSelectionSha256: activeSelection.contentSha256 }
+      : {}),
+  };
+  if (
+    request.expectedCurrentSelectionSha256 !==
+    selectionState.currentSelectionSha256
+  ) {
+    return withRotationProposalPreflightHash({
+      ...base,
+      status: "rejected",
+      diagnostics: ["selection_precondition_failed"],
+      reason:
+        "Receipt trust anchor directory quorum activation selection precondition failed",
+    });
+  }
+  if (!activeSelection) {
+    return withRotationProposalPreflightHash({
+      ...base,
+      status: "not_required",
+      diagnostics: ["active_selection_missing"],
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal is not required before the first selection",
+    });
+  }
+  if (
+    activeSelection.activationDecisionRecordId ===
+    request.activationDecisionRecordId
+  ) {
+    return withRotationProposalPreflightHash({
+      ...base,
+      status: "not_required",
+      diagnostics: ["selection_already_active"],
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal is not required for an idempotent reapply",
+    });
+  }
+  const gate =
+    verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate(
+      services,
+      request,
+    );
+  if (gate.status === "accepted") {
+    return withRotationProposalPreflightHash({
+      ...base,
+      status: "accepted",
+      diagnostics: [],
+      rotationProposalEnvelopeSha256: gate.envelope.contentSha256,
+      rotationProposalSha256: gate.proposal.contentSha256,
+      rotationProposalReviewSha256: gate.proposal.rotationReviewSha256,
+      ...(gate.proposal.checkpointRegistryQuorumBaselineSha256
+        ? {
+            rotationProposalCheckpointRegistryQuorumBaselineSha256:
+              gate.proposal.checkpointRegistryQuorumBaselineSha256,
+          }
+        : {}),
+      trustedReceiptVerificationStatus: gate.verification.status,
+      trustedReceiptVerificationReason: gate.verification.reason,
+      ...(gate.verification.keyId
+        ? { trustedReceiptVerificationKeyId: gate.verification.keyId }
+        : {}),
+      ...(gate.verification.envelopeSha256
+        ? {
+            trustedReceiptVerificationEnvelopeSha256:
+              gate.verification.envelopeSha256,
+          }
+        : {}),
+    });
+  }
+  return withRotationProposalPreflightHash({
+    ...base,
+    status: "rejected",
+    diagnostics: gate.diagnostics ?? ["rotation_proposal_gate_rejected"],
+    reason: gate.reason,
+    ...(gate.envelope
+      ? { rotationProposalEnvelopeSha256: gate.envelope.contentSha256 }
+      : {}),
+    ...(gate.proposal
+      ? {
+          rotationProposalSha256: gate.proposal.contentSha256,
+          rotationProposalReviewSha256: gate.proposal.rotationReviewSha256,
+          ...(gate.proposal.checkpointRegistryQuorumBaselineSha256
+            ? {
+                rotationProposalCheckpointRegistryQuorumBaselineSha256:
+                  gate.proposal.checkpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+        }
+      : {}),
+    ...(gate.verification
+      ? {
+          trustedReceiptVerificationStatus: gate.verification.status,
+          trustedReceiptVerificationReason: gate.verification.reason,
+          ...(gate.verification.keyId
+            ? { trustedReceiptVerificationKeyId: gate.verification.keyId }
+            : {}),
+          ...(gate.verification.envelopeSha256
+            ? {
+                trustedReceiptVerificationEnvelopeSha256:
+                  gate.verification.envelopeSha256,
+              }
+            : {}),
+        }
+      : {}),
+  });
+}
+
+function withRotationProposalPreflightHash(
+  content: Omit<
+    ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+    "contentSha256"
+  >,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight {
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
 
 function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate(
   services: NapierServices,
@@ -12855,6 +13060,10 @@ function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPropo
       status: "rejected",
       reason:
         "Receipt trust anchor directory quorum activation selection rotation proposal is not trusted",
+      diagnostics: [`trusted_receipt_${verification.status}`],
+      envelope,
+      proposal: envelope.receipt,
+      verification,
     };
   }
   const proposal = envelope.receipt;
@@ -12988,6 +13197,10 @@ function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPropo
     return {
       status: "rejected",
       reason: `Receipt trust anchor directory quorum activation selection rotation proposal is stale: ${staleDiagnostics.join(", ")}`,
+      diagnostics: staleDiagnostics,
+      envelope,
+      proposal,
+      verification,
     };
   }
   return {
@@ -19817,6 +20030,73 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
     proposal.currentSelectionChainTailSha256,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightHeaders(
+  context: Context,
+  preflight: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, preflight.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Preflight-Status",
+    preflight.status,
+  );
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(preflight.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(preflight.diagnostics),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
+    preflight.expectedCurrentSelectionSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
+    preflight.currentSelectionSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
+    preflight.activationDecisionRecordId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active-SHA256",
+    preflight.activeSelectionSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Envelope-SHA256",
+    preflight.rotationProposalEnvelopeSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
+    preflight.rotationProposalSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Review-SHA256",
+    preflight.rotationProposalReviewSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Baseline-SHA256",
+    preflight.rotationProposalCheckpointRegistryQuorumBaselineSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Verification-Status",
+    preflight.trustedReceiptVerificationStatus,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Key-Id",
+    preflight.trustedReceiptVerificationKeyId,
   );
 }
 

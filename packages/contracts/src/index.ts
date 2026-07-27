@@ -4809,6 +4809,36 @@ export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
   trustAnchorId: string;
 }
 
+export interface VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest extends ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightStatus =
+  | "accepted"
+  | "rejected"
+  | "not_required";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-preflight";
+  schemaVersion: 1;
+  apiVersion: string;
+  checkedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightStatus;
+  diagnostics: string[];
+  reason?: string;
+  activationDecisionRecordId: string;
+  expectedCurrentSelectionSha256: string;
+  currentSelectionSha256: string;
+  activeSelectionSha256?: string;
+  rotationProposalEnvelopeSha256?: string;
+  rotationProposalSha256?: string;
+  rotationProposalReviewSha256?: string;
+  rotationProposalCheckpointRegistryQuorumBaselineSha256?: string;
+  trustedReceiptVerificationStatus?: TrustedReceiptVerificationStatus;
+  trustedReceiptVerificationReason?: string;
+  trustedReceiptVerificationKeyId?: string;
+  trustedReceiptVerificationEnvelopeSha256?: string;
+  contentSha256: string;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;

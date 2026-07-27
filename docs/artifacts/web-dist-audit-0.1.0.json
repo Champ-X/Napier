@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 42,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CNCO6J8v.js",
-    "sizeBytes": 148801,
+    "path": "apps/web/dist/assets/index-BDk56_Ch.js",
+    "sizeBytes": 149163,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "aa2a7743cec39df7e86826e43e2ea7b491182d6c1c493d29c11f4a441f192014"
+    "sha256": "1e27addd43daeb673484456663340adc687e6136a3a52fc0135b6d6147eaa4a1"
   },
-  "distContentSha256": "aa2a7743cec39df7e86826e43e2ea7b491182d6c1c493d29c11f4a441f192014",
+  "distContentSha256": "1e27addd43daeb673484456663340adc687e6136a3a52fc0135b6d6147eaa4a1",
   "errors": []
 }

@@ -13,6 +13,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -1792,6 +1793,42 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         integrityValid: true,
       }),
     );
+    const signedRotationProposalPreflightResponse = await app.request(
+      `${rotationProposalPath}/preflight`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          rotationProposalEnvelope: signedRotationProposal,
+        }),
+      },
+    );
+    expect(signedRotationProposalPreflightResponse.status).toBe(200);
+    expect(
+      (await signedRotationProposalPreflightResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+    ).toEqual(
+      expect.objectContaining({
+        status: "accepted",
+        diagnostics: [],
+        activationDecisionRecordId: secondActivationRecordId,
+        currentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        activeSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        rotationProposalEnvelopeSha256: signedRotationProposal.contentSha256,
+        rotationProposalSha256: signedRotationProposal.receipt.contentSha256,
+        rotationProposalReviewSha256:
+          signedRotationProposal.receipt.rotationReviewSha256,
+        trustedReceiptVerificationStatus: "trusted",
+        trustedReceiptVerificationEnvelopeSha256:
+          signedRotationProposal.contentSha256,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
     const staleCheckpointBaselineProposalResponse = await app.request(
       rotationProposalPath,
       {
@@ -2391,6 +2428,35 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         error: expect.stringContaining("signed fresh rotation proposal"),
       }),
     );
+    const staleSignedRotationPreflightResponse = await app.request(
+      `${rotationProposalPath}/preflight`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          rotationProposalEnvelope: signedRotationProposal,
+        }),
+      },
+    );
+    expect(staleSignedRotationPreflightResponse.status).toBe(200);
+    expect(
+      (await staleSignedRotationPreflightResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+    ).toEqual(
+      expect.objectContaining({
+        status: "rejected",
+        diagnostics: expect.arrayContaining([
+          "checkpoint_registry_quorum_not_agreed",
+          "rotation_review_blocked",
+        ]),
+        reason: expect.stringContaining("rotation proposal is stale"),
+        rotationProposalEnvelopeSha256: signedRotationProposal.contentSha256,
+        trustedReceiptVerificationStatus: "trusted",
+      }),
+    );
     const staleSignedRotationApplyResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
       {
@@ -2488,6 +2554,34 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
           status: "proposed",
           activationDecisionRecordId: secondActivationRecordId,
         }),
+      }),
+    );
+    const freshSignedRotationPreflightResponse = await app.request(
+      `${rotationProposalPath}/preflight`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          rotationProposalEnvelope: freshSignedRotationProposal,
+        }),
+      },
+    );
+    expect(freshSignedRotationPreflightResponse.status).toBe(200);
+    expect(
+      (await freshSignedRotationPreflightResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+    ).toEqual(
+      expect.objectContaining({
+        status: "accepted",
+        diagnostics: [],
+        rotationProposalEnvelopeSha256:
+          freshSignedRotationProposal.contentSha256,
+        rotationProposalSha256:
+          freshSignedRotationProposal.receipt.contentSha256,
+        trustedReceiptVerificationStatus: "trusted",
       }),
     );
     const signedRotationApplyResponse = await app.request(

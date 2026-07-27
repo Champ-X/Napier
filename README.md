@@ -1469,6 +1469,15 @@ mismatch labels, and records hash-only proposal evidence on successful
 selection rotation. Reapplying the already active decision remains idempotent
 and does not require a rotation proposal because it does not mutate trusted
 state.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
+runs that same signed-proposal gate without mutating state. The no-store
+response returns `accepted`, `rejected`, or `not_required`, includes CAS,
+active-selection, envelope, proposal, review, trusted-verification, and
+checkpoint-baseline hashes when available, and carries a stable
+`contentSha256` so automation can archive the preflight receipt before calling
+Apply activation. The Receipt Trust Desk exposes this as **Preflight
+proposal** after a proposal is signed.
 `GET
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint`
 exports the applied verifier-set rotation chain as a compact checkpoint. Each

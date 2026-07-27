@@ -452,6 +452,12 @@ All notable changes to Napier are recorded here.
   proposal, and rejects stale envelopes with mismatch diagnostics before any
   trusted state mutation. The Receipt Trust Desk adds **Sign proposal** and
   carries the signed envelope into Apply activation.
+- No-store signed rotation proposal preflight. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
+  now runs the same signed-proposal gate without mutating state, returning a
+  hash-bound `accepted`, `rejected`, or `not_required` receipt with proposal,
+  envelope, trusted-verification, CAS, and checkpoint-baseline evidence. The
+  Receipt Trust Desk exposes **Preflight proposal** before Apply activation.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current
