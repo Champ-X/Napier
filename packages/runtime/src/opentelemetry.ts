@@ -515,11 +515,10 @@ function buildOtlpRequest(
       name: "invoke_agent napier",
       kind: 1,
       startAt: run.startedAt,
-      endAt:
-        run.finishedAt ??
-        run.interruptedAt ??
-        runEvents.at(-1)?.createdAt ??
-        run.startedAt,
+      endAt: latestTimestamp([
+        run.finishedAt ?? run.interruptedAt ?? run.startedAt,
+        ...runEvents.map((event) => event.createdAt),
+      ]),
       attributes: attributes({
         "gen_ai.agent.id": run.agentId,
         "gen_ai.agent.version": String(

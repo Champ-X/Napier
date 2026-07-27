@@ -40,6 +40,7 @@ export * from "./receipt-trust.js";
 export * from "./receipt-trust-directory-subscriptions.js";
 export * from "./recovery-service.js";
 export * from "./run-budget.js";
+export * from "./run-control-messages.js";
 export * from "./run-config.js";
 export * from "./sandbox.js";
 export * from "./schedules.js";

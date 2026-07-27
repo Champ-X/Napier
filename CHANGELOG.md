@@ -1041,6 +1041,19 @@ write:management-openapi-compatibility` now emits
   rejects equivalent pending/running/completed role + canonical-prompt intents
   while permitting failed/cancelled/timed-out retries, and restored
   coordinators recover their per-Run total from durable tasks.
+- Durable live Run control inbox. The Pi loop now drains one steering message
+  after a completed turn or one follow-up when it would otherwise stop, while
+  preserving the original Run budget and never aborting in-flight tools.
+  Queue acceptance appends bounded `run.control.queued` evidence; delivery
+  atomically commits `run.control.delivered` plus the exact `message.user`, and
+  completion/failure/cancellation/restart atomically settles undelivered items
+  as `run.control.cancelled`. Public projections expose only mode/status,
+  text SHA-256/size, timestamps, event anchors, reason, and stable content hash.
+  Strict promoted queue/list/cancel APIs add no-store identity/count/hash
+  headers, ThreadDetail includes the ordered projection, and the running
+  Workbench composer now switches between Steering and Follow-up while keeping
+  Stop available. Queue cardinality is bounded, demo runs reject unsupported
+  control, recovery summaries are hash-only, and OTLP remains metadata-only.
 - Shared Agent-profile and Subagent-coordinator limit normalization without a
   second silent runtime clamp.
 - Auditable delegation events and dedicated Trace workcells that preserve

@@ -76,6 +76,7 @@ import type {
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   SetExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   PromptRequest,
+  QueueRunControlMessageRequest,
   ReplanExecutionPlanRequest,
   ResumeRunRequest,
   ReviewExtensionRequest,
@@ -87,6 +88,7 @@ import type {
   ResolveEvaluationConsensusRequest,
   ResolveEvaluationConsensusResult,
   RunComparison,
+  RunControlMessage,
   RunEvaluationRecord,
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
@@ -204,6 +206,7 @@ const THREAD_DETAIL_ARRAY_FIELDS = [
   "automaticRecoveryAssessments",
   "automaticRecoveryAttempts",
   "subagents",
+  "runControlMessages",
 ] as const;
 const SHA256 = /^[a-f0-9]{64}$/;
 const RUN_STREAM_ERROR_MESSAGE = "Run failed while streaming.";
@@ -891,6 +894,31 @@ export function stopRun(threadId: string): Promise<{ stopped: boolean }> {
   return requestJson(`/api/threads/${encodeURIComponent(threadId)}/stop`, {
     method: "POST",
   });
+}
+
+export function queueRunControlMessage(
+  threadId: string,
+  runId: string,
+  body: QueueRunControlMessageRequest,
+): Promise<RunControlMessage> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/control-messages`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function cancelRunControlMessage(
+  threadId: string,
+  runId: string,
+  controlMessageId: string,
+): Promise<RunControlMessage> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/runs/${encodeURIComponent(runId)}/control-messages/${encodeURIComponent(controlMessageId)}/cancel`,
+    { method: "POST" },
+  );
 }
 
 export function proposeMemory(body: CreateMemoryRequest): Promise<MemoryFact> {

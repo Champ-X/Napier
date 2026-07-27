@@ -36,8 +36,8 @@ Version `0.1.0` includes:
 - durable goals with independent evidence evaluation, bounded automatic
   continuation, and no-progress breakers;
 - bounded strict JSON parsing for Thread creation, Branch, Goal, Resume,
-  Prompt, and Trace export requests before runtime state mutation, evidence
-  copying, or model execution;
+  Prompt, live Run control, and Trace export requests before runtime state
+  mutation, evidence copying, or model execution;
 - bounded strict JSON parsing for schedule, inbound-channel, Memory,
   Credential, Receipt Trust, signed receipt, Agent profile, MCP Extension
   management, package signing/rollout governance, Run Evaluation, reviewer
@@ -47,6 +47,9 @@ Version `0.1.0` includes:
 - revisioned parent-Run budgets for model turns, total tokens, reported model
   cost, and wall time, snapshotted onto every Run with fail-closed Ledger
   evidence;
+- a durable in-flight Run control inbox with one-at-a-time steering and
+  follow-up delivery, atomic user-message evidence, bounded queues, terminal
+  settlement, and a live Workbench composer;
 - workspace-confined read, list, and literal search tools with canonical
   realpath checks and complete-file SHA-256 evidence;
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
@@ -633,6 +636,32 @@ Wall time covers the complete leased Run. The first exhausted dimension wins
 and appends `run.budget.exhausted` with limits, observed usage, turns, elapsed
 time, and a stable reason before the Run fails closed. Ordinary operator
 cancellation remains a distinct `run.cancelled` outcome.
+
+## Live Run Control
+
+While a live-model Run is active, the main composer remains available as a
+durable control inbox. **Steering** is delivered one item at a time after the
+current assistant turn and all tool calls finish; it changes the next model
+turn without aborting work already in flight. **Follow-up** waits until the
+Agent would otherwise stop, then starts another bounded turn. Both consume the
+same frozen Run turn/token/cost/time budgets.
+
+`POST /api/threads/:threadId/runs/:runId/control-messages` accepts one strict
+`{ mode, text }` request. Napier first appends `run.control.queued`; delivery
+atomically appends `run.control.delivered` and the exact `message.user`, so a
+process exit cannot acknowledge a direction that disappears from recovery
+history. `GET` on the same path returns the ordered hash-only projection, while
+`POST .../:controlMessageId/cancel` cancels a pending item. Public projections
+contain mode, status, text SHA-256/byte count, timestamps, event sequence
+anchors, and stable content SHA-256, never the text.
+
+Each Run accepts at most 64 control messages with at most 16 simultaneously
+pending. Run completion, failure, cancellation, or restart interruption
+atomically cancels anything not delivered using a low-cardinality reason.
+First terminal state wins. Restart recovery summaries and metadata-only OTLP
+exports retain only control IDs, mode, reason, byte count, and text hash for
+undelivered items. The zero-key demo model rejects live control messages
+because it does not run the Pi queue hooks.
 
 ## Agent Configuration History
 

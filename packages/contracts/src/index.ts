@@ -2637,6 +2637,41 @@ export interface RunRecord {
   lease?: RunLeaseSummary;
 }
 
+export type RunControlMessageMode = "steering" | "follow_up";
+export type RunControlMessageStatus = "queued" | "delivered" | "cancelled";
+export type RunControlMessageCancellationReason =
+  | "operator_cancelled"
+  | "run_completed_before_delivery"
+  | "run_failed_before_delivery"
+  | "run_cancelled_before_delivery"
+  | "run_interrupted_before_delivery";
+
+export interface QueueRunControlMessageRequest {
+  mode: RunControlMessageMode;
+  text: string;
+}
+
+export interface RunControlMessage {
+  kind: "napier.run-control-message";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  mode: RunControlMessageMode;
+  status: RunControlMessageStatus;
+  textSha256: string;
+  textBytes: number;
+  queuedAt: string;
+  queuedEventSeq: number;
+  deliveredAt?: string;
+  deliveredEventSeq?: number;
+  messageEventSeq?: number;
+  cancelledAt?: string;
+  cancellationEventSeq?: number;
+  cancellationReason?: RunControlMessageCancellationReason;
+  contentSha256: string;
+}
+
 export interface RunLeaseSummary {
   ownerId: string;
   acquiredAt: string;
@@ -6095,6 +6130,7 @@ export interface ThreadDetail {
   automaticRecoveryAssessments: AutomaticRecoveryAssessment[];
   automaticRecoveryAttempts: AutomaticRecoveryAttempt[];
   subagents: SubagentTask[];
+  runControlMessages: RunControlMessage[];
   contextCheckpointCalibration: ContextCheckpointCalibrationReport;
   events: RunEvent[];
 }

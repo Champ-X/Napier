@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "a97eea7447cd64046543c282c09a6c3206b8165114ca570e943838d7775fb111",
-    "routeCount": 221,
-    "routeSetSha256": "fd16d8bb48f5583d68e0d6699213b8597d0496bed06b4ac165188f2fa1f60dc5"
+    "sha256": "0c10ad4d088d7032386ffbc2991b8cfe26070b33c5e1ae24ce1aa2efb37e6ad7",
+    "routeCount": 224,
+    "routeSetSha256": "4590023ac57dbdfb2701ca6e5f8d42385210a3b2e6922e085577f870805adb94"
   },
-  "operationCount": 221,
-  "operationSetSha256": "5db6f0e76d934c09b0947440e97912d4601ab27d0ca02f1106b0ee349c7afbc5",
+  "operationCount": 224,
+  "operationSetSha256": "0dcd6aeed57ae44dfe5812516e6bcf8fe9953c70195cd061965a19d4bade2352",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -1342,6 +1342,31 @@
       "acceptsJsonRequestBody": false,
       "jsonRequestSchemaRef": null,
       "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/{runId}/control-messages",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/{runId}/control-messages",
+      "operationId": "get-threads-by-threadId-runs-by-runId-control-messages",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/RunControlMessageList"
+      },
       "responseStatuses": [
         "200",
         "400",
@@ -4375,6 +4400,58 @@
       "acceptsJsonRequestBody": true,
       "jsonRequestSchemaRef": null,
       "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/runs/{runId}/control-messages",
+      "method": "post",
+      "path": "/api/threads/{threadId}/runs/{runId}/control-messages",
+      "operationId": "post-threads-by-threadId-runs-by-runId-control-messages",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": "#/components/schemas/QueueRunControlMessageRequest",
+      "jsonResponseSchemaRefs": {
+        "202": "#/components/schemas/RunControlMessage"
+      },
+      "responseStatuses": [
+        "200",
+        "202",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/runs/{runId}/control-messages/{controlMessageId}/cancel",
+      "method": "post",
+      "path": "/api/threads/{threadId}/runs/{runId}/control-messages/{controlMessageId}/cancel",
+      "operationId": "post-threads-by-threadId-runs-by-runId-control-messages-by-controlMessageId-cancel",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "controlMessageId",
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/RunControlMessage"
+      },
       "responseStatuses": [
         "200",
         "400",

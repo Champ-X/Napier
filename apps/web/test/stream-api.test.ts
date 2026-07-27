@@ -2136,6 +2136,7 @@ function streamSnapshotFrame(
     automaticRecoveryAssessments: [],
     automaticRecoveryAttempts: [],
     subagents: [],
+    runControlMessages: [],
     contextCheckpointCalibration: {},
     events,
   };

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 44,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CQYi2Th_.js",
-    "sizeBytes": 150185,
+    "path": "apps/web/dist/assets/index-DeiOP7_P.js",
+    "sizeBytes": 151685,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "5bb1e3f78ee5674f9e33e8d108399d8df7b6c0dcf706075b5299981146014375"
+    "sha256": "f8a830da3d8125e67f170c37e84de52aca0b515087987fb7b0a0f91e2575cc4f"
   },
-  "distContentSha256": "5bb1e3f78ee5674f9e33e8d108399d8df7b6c0dcf706075b5299981146014375",
+  "distContentSha256": "f8a830da3d8125e67f170c37e84de52aca0b515087987fb7b0a0f91e2575cc4f",
   "errors": []
 }

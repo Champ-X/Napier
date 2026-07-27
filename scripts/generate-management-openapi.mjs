@@ -114,6 +114,24 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/SubagentOutcomeReview",
     },
   },
+  "GET /api/threads/{threadId}/runs/{runId}/control-messages": {
+    responses: {
+      200: "#/components/schemas/RunControlMessageList",
+    },
+  },
+  "POST /api/threads/{threadId}/runs/{runId}/control-messages": {
+    request: "#/components/schemas/QueueRunControlMessageRequest",
+    responses: {
+      202: "#/components/schemas/RunControlMessage",
+    },
+  },
+  "POST /api/threads/{threadId}/runs/{runId}/control-messages/{controlMessageId}/cancel":
+    {
+      request: false,
+      responses: {
+        200: "#/components/schemas/RunControlMessage",
+      },
+    },
 };
 
 export async function generateManagementOpenApi(options = {}) {
@@ -283,6 +301,89 @@ export async function generateManagementOpenApi(options = {}) {
           properties: {
             model: { $ref: "#/components/schemas/ModelRef" },
           },
+        },
+        RunControlMessageMode: {
+          type: "string",
+          enum: ["steering", "follow_up"],
+        },
+        RunControlMessageStatus: {
+          type: "string",
+          enum: ["queued", "delivered", "cancelled"],
+        },
+        RunControlMessageCancellationReason: {
+          type: "string",
+          enum: [
+            "operator_cancelled",
+            "run_completed_before_delivery",
+            "run_failed_before_delivery",
+            "run_cancelled_before_delivery",
+            "run_interrupted_before_delivery",
+          ],
+        },
+        QueueRunControlMessageRequest: {
+          type: "object",
+          required: ["mode", "text"],
+          additionalProperties: false,
+          properties: {
+            mode: { $ref: "#/components/schemas/RunControlMessageMode" },
+            text: { type: "string", minLength: 1, maxLength: 16384 },
+          },
+        },
+        RunControlMessage: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "id",
+            "threadId",
+            "runId",
+            "mode",
+            "status",
+            "textSha256",
+            "textBytes",
+            "queuedAt",
+            "queuedEventSeq",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: { const: "napier.run-control-message" },
+            schemaVersion: { const: 1 },
+            id: {
+              type: "string",
+              pattern: "^control_[a-z0-9]{8,80}$",
+            },
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+            runId: {
+              type: "string",
+              pattern: "^run_[a-z0-9]{8,80}$",
+            },
+            mode: { $ref: "#/components/schemas/RunControlMessageMode" },
+            status: {
+              $ref: "#/components/schemas/RunControlMessageStatus",
+            },
+            textSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            textBytes: { type: "integer", minimum: 1, maximum: 16384 },
+            queuedAt: { type: "string", format: "date-time" },
+            queuedEventSeq: { type: "integer", minimum: 1 },
+            deliveredAt: { type: "string", format: "date-time" },
+            deliveredEventSeq: { type: "integer", minimum: 1 },
+            messageEventSeq: { type: "integer", minimum: 1 },
+            cancelledAt: { type: "string", format: "date-time" },
+            cancellationEventSeq: { type: "integer", minimum: 1 },
+            cancellationReason: {
+              $ref: "#/components/schemas/RunControlMessageCancellationReason",
+            },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        RunControlMessageList: {
+          type: "array",
+          maxItems: 64,
+          items: { $ref: "#/components/schemas/RunControlMessage" },
         },
         SubagentOutcomeReviewVerdict: {
           type: "string",

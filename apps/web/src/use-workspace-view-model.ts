@@ -20,6 +20,7 @@ import type {
   OpenTelemetryTraceArtifactVerification,
   ReviewExtensionRequest,
   ReviewMemoryRequest,
+  RunControlMessageMode,
   RunComparison,
   RunEvent,
   RunReplaySnapshot,
@@ -58,6 +59,7 @@ import {
   previewExtensionPackageRolloutChannel as previewExtensionPackageRolloutChannelApi,
   previewExtensionPackageUpdate as previewExtensionPackageUpdateApi,
   publishExtensionPackageRolloutChannel as publishExtensionPackageRolloutChannelApi,
+  queueRunControlMessage,
   reviewMemory,
   reviewExtension,
   reviewMcpTool,
@@ -171,6 +173,9 @@ export function useWorkspaceViewModel() {
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("trace");
   const [selectedModelKey, setSelectedModelKey] = useState("napier/demo");
   const [composer, setComposer] = useState("");
+  const [activeRunId, setActiveRunId] = useState<string>();
+  const [controlMessageMode, setControlMessageMode] =
+    useState<RunControlMessageMode>("steering");
   const [goalDraft, setGoalDraft] = useState("");
   const [memoryDraft, setMemoryDraft] = useState("");
   const [memoryCategory, setMemoryCategory] =
@@ -357,6 +362,7 @@ export function useWorkspaceViewModel() {
   const handleStreamFrame = useCallback((frame: StreamFrame): void => {
     if (frame.type === "event") {
       const event = frame.event;
+      setActiveRunId(event.runId);
       if (event.type === "model.text.delta") {
         const delta = objectString(event.payload, "delta");
         if (delta) setStreamingText((current) => current + delta);
@@ -402,10 +408,43 @@ export function useWorkspaceViewModel() {
   const submit = useCallback(
     async (override?: string) => {
       const text = (override ?? composer).trim();
-      if (!text || !detail || isRunning) return;
+      if (!text || !detail) return;
+      if (isRunning) {
+        if (!activeRunId) return;
+        setComposer("");
+        setError(undefined);
+        try {
+          const message = await queueRunControlMessage(
+            detail.thread.id,
+            activeRunId,
+            {
+              mode: controlMessageMode,
+              text,
+            },
+          );
+          setDetail((current) =>
+            current
+              ? {
+                  ...current,
+                  runControlMessages: [
+                    ...current.runControlMessages.filter(
+                      (candidate) => candidate.id !== message.id,
+                    ),
+                    message,
+                  ],
+                }
+              : current,
+          );
+        } catch (queueError) {
+          setComposer(text);
+          setError(toErrorMessage(queueError));
+        }
+        return;
+      }
       setComposer("");
       setStreamingText("");
       setIsRunning(true);
+      setActiveRunId(undefined);
       setRunReplayVerificationReceipt(undefined);
       setTraceExportReceipt(undefined);
       setTraceVerificationReceipt(undefined);
@@ -423,16 +462,26 @@ export function useWorkspaceViewModel() {
         setError(toErrorMessage(runError));
       } finally {
         setIsRunning(false);
+        setActiveRunId(undefined);
         setStreamingText("");
       }
     },
-    [composer, detail, handleStreamFrame, isRunning, selectedModelKey],
+    [
+      activeRunId,
+      composer,
+      controlMessageMode,
+      detail,
+      handleStreamFrame,
+      isRunning,
+      selectedModelKey,
+    ],
   );
 
   const resume = useCallback(async () => {
     if (!detail || !resumableRun || isRunning) return;
     setStreamingText("");
     setIsRunning(true);
+    setActiveRunId(undefined);
     setRunReplayVerificationReceipt(undefined);
     setTraceExportReceipt(undefined);
     setTraceVerificationReceipt(undefined);
@@ -453,6 +502,7 @@ export function useWorkspaceViewModel() {
       setError(toErrorMessage(runError));
     } finally {
       setIsRunning(false);
+      setActiveRunId(undefined);
       setStreamingText("");
     }
   }, [detail, handleStreamFrame, isRunning, resumableRun, selectedModelKey]);
@@ -1800,6 +1850,8 @@ export function useWorkspaceViewModel() {
     inspectorTab,
     selectedModelKey,
     composer,
+    activeRunId,
+    controlMessageMode,
     goalDraft,
     memoryDraft,
     memoryCategory,
@@ -1836,6 +1888,7 @@ export function useWorkspaceViewModel() {
     setInspectorTab,
     setSelectedModelKey,
     setComposer,
+    setControlMessageMode,
     setGoalDraft,
     setMemoryDraft,
     setMemoryCategory,

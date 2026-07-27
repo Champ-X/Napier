@@ -226,6 +226,7 @@ import type {
   PreviewInboundDeadLetterRetryRequest,
   PreviewInboundChannelAdapterRequest,
   PublishExtensionPackageRolloutChannelRequest,
+  QueueRunControlMessageRequest,
   QualifyInspectorPackageRequest,
   QualifyPromptPackageRequest,
   QualifySkillPackageRequest,
@@ -236,6 +237,7 @@ import type {
   ReviewExecutionPlanReplanDraftRequest,
   RollbackAgentProfileRequest,
   RunComparison,
+  RunControlMessage,
   RunEvent,
   RunEvaluationRecord,
   RunMetrics,
@@ -367,6 +369,7 @@ import {
   MAX_TRUSTED_RECEIPT_BYTES,
   MAX_EXECUTION_PLAN_ARCHIVE_BYTES,
   MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
+  MAX_RUN_CONTROL_MESSAGE_BYTES,
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
   McpExtensionManager,
   ModelRegistry,
@@ -597,6 +600,9 @@ const MAX_THREAD_CREATE_REQUEST_BYTES = 8 * 1024;
 const MAX_GOAL_REQUEST_BYTES = 8 * 1024;
 const MAX_RESUME_REQUEST_BYTES = 8 * 1024;
 const MAX_PROMPT_REQUEST_BYTES = 64 * 1024;
+// A JSON control-character escape can expand one UTF-8 byte to six bytes.
+const MAX_RUN_CONTROL_MESSAGE_REQUEST_BYTES =
+  MAX_RUN_CONTROL_MESSAGE_BYTES * 6 + 1024;
 const MAX_SCHEDULE_REQUEST_BYTES = 32 * 1024;
 const MAX_CHANNEL_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_CHANNEL_ADAPTER_PREVIEW_REQUEST_BYTES =
@@ -9805,6 +9811,94 @@ export function createApp(services: NapierServices): Hono {
     return context.json(detail, 201);
   });
 
+  app.get(
+    "/api/threads/:threadId/runs/:runId/control-messages",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const runId = context.req.param("runId");
+      const run = services.store
+        .listRuns(threadId)
+        .find((candidate) => candidate.id === runId);
+      if (!run) return jsonError(context, `Run not found: ${runId}`, 404);
+      const messages = await services.store.listRunControlMessages(
+        threadId,
+        runId,
+      );
+      setRunControlMessageListHeaders(context, threadId, runId, messages);
+      return context.json(messages);
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/runs/:runId/control-messages",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const runId = context.req.param("runId");
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_RUN_CONTROL_MESSAGE_REQUEST_BYTES,
+          "Run control message request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body = parseQueueRunControlMessageRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Run control message request is invalid",
+          400,
+        );
+      }
+      try {
+        const message = await services.store.queueRunControlMessage({
+          threadId,
+          runId,
+          mode: body.mode,
+          text: body.text,
+        });
+        setRunControlMessageHeaders(context, message);
+        return context.json(message, 202);
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          runControlMessageErrorStatus(error),
+        );
+      }
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/runs/:runId/control-messages/:controlMessageId/cancel",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const runId = context.req.param("runId");
+      const controlMessageId = context.req.param("controlMessageId");
+      try {
+        const message = await services.store.cancelRunControlMessage(
+          threadId,
+          runId,
+          controlMessageId,
+        );
+        setRunControlMessageHeaders(context, message);
+        return context.json(message);
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          runControlMessageErrorStatus(error),
+        );
+      }
+    },
+  );
+
   app.post("/api/threads/:threadId/stop", (context) => {
     const threadId = context.req.param("threadId");
     const receipt = { stopped: services.runtime.stop(threadId) };
@@ -10186,6 +10280,23 @@ function parsePromptRequest(input: unknown): PromptRequest | undefined {
     text: record["text"],
     ...(model ? { model } : {}),
   };
+}
+
+function parseQueueRunControlMessageRequest(
+  input: unknown,
+): QueueRunControlMessageRequest | undefined {
+  const record = requestRecord(input, ["mode", "text"]);
+  const mode = record?.["mode"];
+  const text =
+    typeof record?.["text"] === "string" ? record["text"].trim() : undefined;
+  if (
+    (mode !== "steering" && mode !== "follow_up") ||
+    !text ||
+    Buffer.byteLength(text, "utf8") > MAX_RUN_CONTROL_MESSAGE_BYTES
+  ) {
+    return undefined;
+  }
+  return { mode, text };
 }
 
 function parseModelRef(input: unknown): PromptRequest["model"] | undefined {
@@ -18995,6 +19106,10 @@ function setThreadDetailProjectionHeaders(
   );
   context.header("X-Napier-Subagent-Count", String(detail.subagents.length));
   context.header(
+    "X-Napier-Run-Control-Message-Count",
+    String(detail.runControlMessages.length),
+  );
+  context.header(
     "X-Napier-Recovery-Assessment-Count",
     String(detail.automaticRecoveryAssessments.length),
   );
@@ -19058,6 +19173,95 @@ function setSubagentOutcomeReviewHeaders(
     "X-Napier-Subagent-Review-Cost-USD",
     String(review.usage.costUsd),
   );
+}
+
+function setRunControlMessageHeaders(
+  context: Context,
+  message: RunControlMessage,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, message.contentSha256);
+  context.header("X-Napier-Thread-Id", message.threadId);
+  context.header("X-Napier-Run-Id", message.runId);
+  context.header("X-Napier-Run-Control-Message-Id", message.id);
+  context.header("X-Napier-Run-Control-Mode", message.mode);
+  context.header("X-Napier-Run-Control-Status", message.status);
+  context.header("X-Napier-Run-Control-Text-SHA256", message.textSha256);
+  context.header("X-Napier-Run-Control-Text-Bytes", String(message.textBytes));
+  context.header(
+    "X-Napier-Run-Control-Queued-Event-Seq",
+    String(message.queuedEventSeq),
+  );
+  if (message.deliveredEventSeq !== undefined) {
+    context.header(
+      "X-Napier-Run-Control-Delivered-Event-Seq",
+      String(message.deliveredEventSeq),
+    );
+  }
+  if (message.messageEventSeq !== undefined) {
+    context.header(
+      "X-Napier-Run-Control-Message-Event-Seq",
+      String(message.messageEventSeq),
+    );
+  }
+  if (message.cancellationEventSeq !== undefined) {
+    context.header(
+      "X-Napier-Run-Control-Cancellation-Event-Seq",
+      String(message.cancellationEventSeq),
+    );
+  }
+  if (message.cancellationReason) {
+    context.header(
+      "X-Napier-Run-Control-Cancellation-Reason",
+      message.cancellationReason,
+    );
+  }
+}
+
+function setRunControlMessageListHeaders(
+  context: Context,
+  threadId: string,
+  runId: string,
+  messages: RunControlMessage[],
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, messages);
+  context.header("X-Napier-Thread-Id", threadId);
+  context.header("X-Napier-Run-Id", runId);
+  context.header("X-Napier-Run-Control-Message-Count", String(messages.length));
+  for (const status of [
+    "queued",
+    "delivered",
+    "cancelled",
+  ] satisfies RunControlMessage["status"][]) {
+    context.header(
+      `X-Napier-Run-Control-${status[0]!.toUpperCase()}${status.slice(1)}-Count`,
+      String(messages.filter((message) => message.status === status).length),
+    );
+  }
+  for (const mode of [
+    "steering",
+    "follow_up",
+  ] satisfies RunControlMessage["mode"][]) {
+    context.header(
+      `X-Napier-Run-Control-${mode === "steering" ? "Steering" : "Follow-Up"}-Count`,
+      String(messages.filter((message) => message.mode === mode).length),
+    );
+  }
+}
+
+function runControlMessageErrorStatus(error: unknown): 400 | 404 | 409 {
+  const message = errorMessage(error).toLowerCase();
+  if (message.includes("not found")) return 404;
+  if (
+    message.includes("active thread run") ||
+    message.includes("cannot be cancelled") ||
+    message.includes("limit reached") ||
+    message.includes("demo model")
+  ) {
+    return 409;
+  }
+  return 400;
 }
 
 function setThreadEventsProjectionHeaders(

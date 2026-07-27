@@ -31,6 +31,7 @@ import type {
   HealthResponse,
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
+  RunControlMessage,
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
   ThreadReplayBundle,
@@ -57,6 +58,8 @@ import {
   getExecutionPlanBlueprintRecordReplays,
   getExecutionPlanBlueprintRecords,
   getHealth,
+  queueRunControlMessage,
+  cancelRunControlMessage,
   previewExecutionPlanFromBlueprintRecord,
   promoteExecutionPlanBlueprintRecordOutcomeBaseline,
   retireExecutionPlanBlueprintRecommendationPolicyOverride,
@@ -129,6 +132,78 @@ describe("Web JSON API wrappers", () => {
 
     await expect(getHealth()).resolves.toEqual(health);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("queues and cancels hash-bound Run control messages", async () => {
+    const queued: RunControlMessage = {
+      kind: "napier.run-control-message",
+      schemaVersion: 1,
+      id: "control_message1234",
+      threadId: "thread_1",
+      runId: "run_1",
+      mode: "steering",
+      status: "queued",
+      textSha256: "a".repeat(64),
+      textBytes: 18,
+      queuedAt: "2026-07-28T00:00:00.000Z",
+      queuedEventSeq: 4,
+      contentSha256: "b".repeat(64),
+    };
+    const cancelled: RunControlMessage = {
+      ...queued,
+      status: "cancelled",
+      cancelledAt: "2026-07-28T00:00:01.000Z",
+      cancellationEventSeq: 5,
+      cancellationReason: "operator_cancelled",
+      contentSha256: "c".repeat(64),
+    };
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(async (path: string, init?: RequestInit) => {
+        expect(path).toBe("/api/threads/thread_1/runs/run_1/control-messages");
+        expect(init?.method).toBe("POST");
+        expect(init?.body).toBe(
+          JSON.stringify({
+            mode: "steering",
+            text: "Use narrower scope.",
+          }),
+        );
+        const text = JSON.stringify(queued);
+        return new Response(text, {
+          status: 202,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Napier-Content-SHA256": sha256Text(text),
+            "X-Napier-Content-SHA256-Mode": "body",
+          },
+        });
+      })
+      .mockImplementationOnce(async (path: string, init?: RequestInit) => {
+        expect(path).toBe(
+          "/api/threads/thread_1/runs/run_1/control-messages/control_message1234/cancel",
+        );
+        expect(init?.method).toBe("POST");
+        const text = JSON.stringify(cancelled);
+        return new Response(text, {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Napier-Content-SHA256": sha256Text(text),
+            "X-Napier-Content-SHA256-Mode": "body",
+          },
+        });
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      queueRunControlMessage("thread_1", "run_1", {
+        mode: "steering",
+        text: "Use narrower scope.",
+      }),
+    ).resolves.toEqual(queued);
+    await expect(
+      cancelRunControlMessage("thread_1", "run_1", "control_message1234"),
+    ).resolves.toEqual(cancelled);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("verifies thread replay bundles through the no-store import preflight", async () => {

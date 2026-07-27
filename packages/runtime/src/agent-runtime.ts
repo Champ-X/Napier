@@ -27,6 +27,7 @@ import {
   type ModelRef,
   type RunEvent,
   type RunInvocationSource,
+  type RunControlMessageMode,
   type RunExecutionMode,
   type RunRecord,
   type ThreadImportProvenance,
@@ -1050,6 +1051,65 @@ export class AgentRuntime {
       }
       return undefined;
     };
+    const preRecordedControlMessages = new Map<string, number>();
+    const hasQueuedControlMessage = async (
+      mode?: RunControlMessageMode,
+    ): Promise<boolean> => {
+      try {
+        return (
+          await this.store.listRunControlMessages(run.threadId, run.id)
+        ).some(
+          (message) =>
+            message.status === "queued" && (!mode || message.mode === mode),
+        );
+      } catch {
+        return false;
+      }
+    };
+    const drainControlMessage = async (
+      mode: RunControlMessageMode,
+    ): Promise<UserMessage[]> => {
+      if (advisorCorrection) return [];
+      try {
+        if (!(await hasQueuedControlMessage(mode))) return [];
+        if (budget.exhaustBeforeNextPrimaryTurn()) return [];
+        const delivery = await this.store.deliverNextRunControlMessage(
+          run.threadId,
+          run.id,
+          mode,
+        );
+        if (!delivery) return [];
+        for (const event of delivery.events) {
+          if (!onEvent) continue;
+          try {
+            await onEvent(event);
+          } catch {
+            // A disconnected stream must not cancel durable message delivery.
+          }
+        }
+        const messageEvent = delivery.events.find(
+          (event) => event.type === "message.user",
+        );
+        const timestamp = messageEvent
+          ? Date.parse(messageEvent.createdAt)
+          : Date.now();
+        const eventKey = controlMessageEventKey(timestamp, delivery.text);
+        preRecordedControlMessages.set(
+          eventKey,
+          (preRecordedControlMessages.get(eventKey) ?? 0) + 1,
+        );
+        return [
+          {
+            role: "user",
+            content: delivery.text,
+            timestamp,
+          },
+        ];
+      } catch {
+        // Queue polling must not interrupt an otherwise valid Agent turn.
+        return [];
+      }
+    };
 
     await this.record(
       {
@@ -1108,6 +1168,8 @@ export class AgentRuntime {
         toolExecution: "parallel",
         convertToLlm: (messages) => messages.filter(isProviderMessage),
         beforeToolCall,
+        getSteeringMessages: () => drainControlMessage("steering"),
+        getFollowUpMessages: () => drainControlMessage("follow_up"),
         prepareNextTurn: async ({ context, toolResults }) => {
           let nextTools = context.tools;
           if (deferredExtensionTools.length > 0) {
@@ -1189,12 +1251,15 @@ export class AgentRuntime {
             },
           };
         },
-        shouldStopAfterTurn: ({ toolResults }) => {
+        shouldStopAfterTurn: async ({ toolResults }) => {
           budget.syncSubagentUsage(
             this.store.listSubagentTasks(run.threadId, run.id),
           );
           if (budget.exhaustion) return true;
-          return toolResults.length > 0
+          const requiresNextTurn =
+            toolResults.length > 0 ||
+            (!advisorCorrection && (await hasQueuedControlMessage()));
+          return requiresNextTurn
             ? Boolean(budget.exhaustBeforeNextPrimaryTurn())
             : false;
         },
@@ -1206,6 +1271,7 @@ export class AgentRuntime {
           source,
           budget,
           effectiveModelAdvisorPolicy(profile),
+          preRecordedControlMessages,
           onEvent,
         );
         if (text !== undefined) finalText = text;
@@ -1226,6 +1292,7 @@ export class AgentRuntime {
     source: TurnSource,
     budget: RunBudgetTracker,
     modelAdvisorPolicy: ReturnType<typeof effectiveModelAdvisorPolicy>,
+    preRecordedControlMessages: Map<string, number>,
     onEvent?: EventSink,
   ): Promise<string | undefined> {
     if (event.type === "turn_start" || event.type === "turn_end") {
@@ -1271,6 +1338,17 @@ export class AgentRuntime {
     }
     if (event.type === "message_end") {
       if (event.message.role === "user" && source !== "advisor_correction") {
+        const text = contentText(event.message.content);
+        const eventKey = controlMessageEventKey(event.message.timestamp, text);
+        const preRecordedCount = preRecordedControlMessages.get(eventKey) ?? 0;
+        if (preRecordedCount > 0) {
+          if (preRecordedCount === 1) {
+            preRecordedControlMessages.delete(eventKey);
+          } else {
+            preRecordedControlMessages.set(eventKey, preRecordedCount - 1);
+          }
+          return undefined;
+        }
         const promptEvent = turnPromptEvent(source);
         await this.record(
           {
@@ -1279,7 +1357,7 @@ export class AgentRuntime {
             type: promptEvent.type,
             category: promptEvent.category,
             visibility: promptEvent.visibility,
-            payload: { role: "user", text: contentText(event.message.content) },
+            payload: { role: "user", text },
           },
           onEvent,
         );
@@ -2274,6 +2352,25 @@ function recoveryEventSummary(event: RunEvent): string {
     return event.category;
   }
   const payload = event.payload;
+  if (event.type.startsWith("run.control.")) {
+    return [
+      typeof payload["controlMessageId"] === "string"
+        ? `controlMessageId=${payload["controlMessageId"]}`
+        : "",
+      typeof payload["mode"] === "string" ? `mode=${payload["mode"]}` : "",
+      typeof payload["reason"] === "string"
+        ? `reason=${payload["reason"]}`
+        : "",
+      typeof payload["textSha256"] === "string"
+        ? `textSha256=${payload["textSha256"]}`
+        : "",
+      typeof payload["textBytes"] === "number"
+        ? `textBytes=${payload["textBytes"]}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("; ");
+  }
   const fields = [
     "toolName",
     "status",
@@ -2444,6 +2541,10 @@ function toJsonValue(value: unknown): JsonValue {
 
 function sha256Text(value: string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function controlMessageEventKey(timestamp: number, text: string): string {
+  return `${timestamp}:${sha256Text(text)}`;
 }
 
 function summarize(text: string, limit: number): string {

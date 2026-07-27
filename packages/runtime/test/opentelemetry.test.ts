@@ -69,6 +69,7 @@ describe("OpenTelemetry trace export", () => {
     const run = await store.createRun({
       threadId: thread.id,
       agentId: agent.id,
+      model: { provider: "faux-secure", id: "faux-1" },
     });
     await store.appendEvent({
       threadId: thread.id,
@@ -195,6 +196,12 @@ describe("OpenTelemetry trace export", () => {
         costUsd: 0.001,
       },
     });
+    await store.queueRunControlMessage({
+      threadId: thread.id,
+      runId: run.id,
+      mode: "steering",
+      text: "TOP_SECRET_RUN_CONTROL_MESSAGE",
+    });
     await store.appendEvent({
       threadId: thread.id,
       runId: run.id,
@@ -204,6 +211,15 @@ describe("OpenTelemetry trace export", () => {
       payload: { status: "completed" },
     });
     await store.finishRun(run.id, "completed", { usage });
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "run.settlement.recorded",
+      category: "lifecycle",
+      visibility: "debug",
+      payload: { status: "completed" },
+    });
     await store.appendEvent({
       threadId: thread.id,
       runId: createId("runctl"),
@@ -279,6 +295,7 @@ describe("OpenTelemetry trace export", () => {
       "TOP_SECRET_DESCRIPTION",
       "TOP_SECRET_SUBAGENT_PROMPT",
       "TOP_SECRET_SUBAGENT_RESULT",
+      "TOP_SECRET_RUN_CONTROL_MESSAGE",
       "TOP_SECRET_CREDENTIAL_LABEL",
       "TOP_SECRET_USER_ID",
     ]) {

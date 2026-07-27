@@ -972,6 +972,23 @@ button:disabled {
   text-transform: uppercase;
 }
 
+.control-mode,
+.composer-run-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.control-mode select {
+  padding: 4px 20px 4px 6px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
 .run-button,
 .primary-wide {
   display: flex;
@@ -11648,6 +11665,16 @@ button:disabled {
   .composer {
     margin-right: 12px;
     margin-left: 41px;
+  }
+
+  .composer-footer,
+  .composer-hints {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .composer-run-actions {
+    margin-left: auto;
   }
 
   .principle-row {

@@ -1101,6 +1101,59 @@ but no next call. The first exhausted dimension is stable, so a later timeout
 cannot overwrite an earlier token or cost reason. Operator cancellation remains
 separate and produces `run.cancelled`, not budget evidence.
 
+## Live Run Control Flow
+
+```text
+operator queues steering or follow-up against the active Thread/Run
+  -> strictly validate mode and <=16 KiB trimmed UTF-8 text
+  -> enforce <=16 pending and <=64 total messages per Run
+  -> append run.control.queued with text plus request/hash metadata
+  -> return only the hash-bound no-store RunControlMessage projection
+
+Pi loop reaches a turn boundary
+  -> finish the current assistant response and every requested tool call
+  -> atomically select the oldest queued steering item
+  -> append run.control.delivered + exact message.user in one SQLite revision
+  -> inject the already-recorded user message without duplicating Ledger text
+  -> run the next model turn under the original Run budget
+
+Pi loop would otherwise stop
+  -> atomically select the oldest queued follow-up item
+  -> use the same delivered + message.user transaction
+  -> continue one bounded turn
+
+Run reaches completed / failed / cancelled / interrupted
+  -> atomically append run.control.cancelled for every undelivered item
+  -> preserve first-terminal-wins projection semantics
+  -> expose only reason, IDs, counts, event anchors, and text hashes to
+     recovery and metadata-only trace projections
+```
+
+The inbox is append-only Ledger state rather than an in-process queue.
+`RunControlMessage` is derived from queued/delivered/cancelled events, so it
+survives process boundaries and portable replay without adding mutable
+workspace state. Queue acceptance is bound to the Thread's current running
+Run; the deterministic demo model is rejected because it does not execute the
+Pi queue hooks. Delivery commits `message.user` before returning it to Pi. A
+crash before the provider request therefore leaves explicit conversation
+evidence for manual recovery instead of silently losing acknowledged
+direction.
+
+Steering does not abort a provider stream or running tools. Pi checks it after
+`turn_end`; follow-up is checked only when there are no remaining tool calls or
+steering items. Both modes are drained one at a time and consume the frozen
+Run turn/token/cost/time envelope. The low-level queue hooks catch polling
+failures and retain the last durable queued state rather than interrupting an
+otherwise valid turn.
+
+The management API promotes strict schemas for queue/list/cancel operations
+and returns no-store content hashes plus Thread, Run, message, mode, status,
+text-hash/size, and event-sequence headers. ThreadDetail includes the hash-only
+ordered projection and count header. The live Workbench composer switches to a
+Steering/Follow-up selector while the SSE Run is active, while Stop remains
+independent. Undelivered text is excluded from OTLP attributes and recovery
+summaries; only a delivered `message.user` becomes conversational context.
+
 ## Workspace Edit Flow
 
 General shell execution and unconstrained file writes are not Agent tools.
@@ -1397,6 +1450,7 @@ process startup
   -> fail other running deliveries because their outcome may be unknown
   -> retain accepted/retrying inbound deliveries for a bounded due-time sweep
   -> cancel pending/running subagent tasks from those runs
+  -> cancel undelivered steering/follow-up items with hash-only reason evidence
   -> append missing run.interrupted / subagent.cancelled evidence once
   -> leave schema-1, missing-policy, manual, demo, and imported Runs waiting
   -> for an opt-in schema-2 Run, hash its complete Run-local event range

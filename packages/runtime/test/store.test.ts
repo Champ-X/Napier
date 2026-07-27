@@ -700,6 +700,157 @@ describe("LocalStore", () => {
     ]);
   });
 
+  it("queues, delivers, cancels, and settles durable Run control messages", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Durable control inbox",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-control", id: "faux-1" },
+    });
+
+    const steering = await store.queueRunControlMessage({
+      threadId: thread.id,
+      runId: run.id,
+      mode: "steering",
+      text: "Inspect the narrower runtime boundary.",
+    });
+    const followUp = await store.queueRunControlMessage({
+      threadId: thread.id,
+      runId: run.id,
+      mode: "follow_up",
+      text: "Summarize only verified evidence.",
+    });
+    const settleWithRun = await store.queueRunControlMessage({
+      threadId: thread.id,
+      runId: run.id,
+      mode: "follow_up",
+      text: "This queued work should settle with the Run.",
+    });
+
+    expect(JSON.stringify([steering, followUp])).not.toContain(
+      "narrower runtime",
+    );
+    expect(store.getThread(thread.id).lastMessage).toBe("");
+    const delivered = await store.deliverNextRunControlMessage(
+      thread.id,
+      run.id,
+      "steering",
+    );
+    expect(delivered).toEqual(
+      expect.objectContaining({
+        text: "Inspect the narrower runtime boundary.",
+        message: expect.objectContaining({
+          id: steering.id,
+          status: "delivered",
+          deliveredEventSeq: expect.any(Number),
+          messageEventSeq: expect.any(Number),
+        }),
+      }),
+    );
+    expect(store.getThread(thread.id).lastMessage).toBe(
+      "Inspect the narrower runtime boundary.",
+    );
+    expect(delivered?.events.map((event) => event.type)).toEqual([
+      "run.control.delivered",
+      "message.user",
+    ]);
+    const cancelled = await store.cancelRunControlMessage(
+      thread.id,
+      run.id,
+      followUp.id,
+    );
+    expect(cancelled).toEqual(
+      expect.objectContaining({
+        status: "cancelled",
+        cancellationReason: "operator_cancelled",
+      }),
+    );
+
+    await store.finishRun(run.id, "completed");
+    const messages = await store.listRunControlMessages(thread.id, run.id);
+    expect(messages).toEqual([
+      expect.objectContaining({ id: steering.id, status: "delivered" }),
+      expect.objectContaining({ id: followUp.id, status: "cancelled" }),
+      expect.objectContaining({
+        id: settleWithRun.id,
+        status: "cancelled",
+        cancellationReason: "run_completed_before_delivery",
+      }),
+    ]);
+    expect((await store.getDetail(thread.id)).runControlMessages).toEqual(
+      messages,
+    );
+    expect(
+      (await store.listEvents(thread.id)).filter(
+        (event) =>
+          event.type === "message.user" &&
+          event.payload &&
+          !Array.isArray(event.payload) &&
+          typeof event.payload === "object" &&
+          event.payload["controlMessageId"] === steering.id,
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("enforces pending and total Run control message bounds", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Bounded control inbox",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-control", id: "faux-1" },
+    });
+    const firstBatch = [];
+    for (let index = 0; index < 16; index += 1) {
+      firstBatch.push(
+        await store.queueRunControlMessage({
+          threadId: thread.id,
+          runId: run.id,
+          mode: "steering",
+          text: `Bounded control message ${index}.`,
+        }),
+      );
+    }
+    await expect(
+      store.queueRunControlMessage({
+        threadId: thread.id,
+        runId: run.id,
+        mode: "steering",
+        text: "This message exceeds the pending limit.",
+      }),
+    ).rejects.toThrow("pending limit reached (16)");
+
+    for (const message of firstBatch) {
+      await store.cancelRunControlMessage(thread.id, run.id, message.id);
+    }
+    for (let index = 16; index < 64; index += 1) {
+      const message = await store.queueRunControlMessage({
+        threadId: thread.id,
+        runId: run.id,
+        mode: "follow_up",
+        text: `Bounded control message ${index}.`,
+      });
+      await store.cancelRunControlMessage(thread.id, run.id, message.id);
+    }
+    await expect(
+      store.queueRunControlMessage({
+        threadId: thread.id,
+        runId: run.id,
+        mode: "follow_up",
+        text: "This message exceeds the total limit.",
+      }),
+    ).rejects.toThrow("total limit reached (64)");
+  });
+
   it("reconciles orphan runs and subagents exactly once after restart", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-store-"));
     temporaryRoots.push(root);
@@ -717,6 +868,7 @@ describe("LocalStore", () => {
     const run = await store.createRun({
       threadId: thread.id,
       agentId: agent.id,
+      model: { provider: "faux-control", id: "faux-1" },
     });
     const plan = await store.createPlan(thread.id, {
       objective: "Recover the interrupted work safely.",
@@ -762,6 +914,12 @@ describe("LocalStore", () => {
       model: { provider: "faux", id: "faux-1" },
     });
     await store.startSubagentTask(task.id);
+    const queuedControl = await store.queueRunControlMessage({
+      threadId: thread.id,
+      runId: run.id,
+      mode: "steering",
+      text: "Verify current state before continuing.",
+    });
 
     const reopened = new LocalStore(options);
     await reopened.initialize();
@@ -785,6 +943,13 @@ describe("LocalStore", () => {
         status: "cancelled",
         stopReason: "cancelled",
         error: "Parent run was interrupted by a runtime restart.",
+      }),
+    ]);
+    expect(detail.runControlMessages).toEqual([
+      expect.objectContaining({
+        id: queuedControl.id,
+        status: "cancelled",
+        cancellationReason: "run_interrupted_before_delivery",
       }),
     ]);
     expect(detail.plans).toEqual([
@@ -824,6 +989,9 @@ describe("LocalStore", () => {
     ).toHaveLength(1);
     expect(
       events.filter((event) => event.type === "plan.step.blocked"),
+    ).toHaveLength(1);
+    expect(
+      events.filter((event) => event.type === "run.control.cancelled"),
     ).toHaveLength(1);
   });
 });

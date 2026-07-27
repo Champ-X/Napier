@@ -175,6 +175,9 @@ import {
   type ReviewMcpToolRequest,
   type RunEvent,
   type RunEvaluationRecord,
+  type RunControlMessage,
+  type RunControlMessageCancellationReason,
+  type RunControlMessageMode,
   type RunRecord,
   type RunInvocationSource,
   type RunLeaseHandle,
@@ -477,6 +480,16 @@ import {
   validateRunConfigurationFingerprint,
 } from "./run-config.js";
 import {
+  createRunControlMessageCancelledPayload,
+  createRunControlMessageDeliveredPayload,
+  createRunControlMessageQueuedPayload,
+  createRunControlMessageUserPayload,
+  MAX_PENDING_RUN_CONTROL_MESSAGES,
+  MAX_TOTAL_RUN_CONTROL_MESSAGES,
+  nextPendingRunControlMessage,
+  projectRunControlMessages,
+} from "./run-control-messages.js";
+import {
   assertSubagentOutcomeBinding,
   rebindSubagentOutcome,
 } from "./subagent-outcomes.js";
@@ -634,6 +647,19 @@ export interface AppendEventInput {
   category: EventCategory;
   visibility?: EventVisibility;
   payload: JsonValue;
+}
+
+export interface QueueRunControlMessageInput {
+  threadId: string;
+  runId: string;
+  mode: RunControlMessageMode;
+  text: string;
+}
+
+export interface RunControlMessageDelivery {
+  message: RunControlMessage;
+  text: string;
+  events: RunEvent[];
 }
 
 export interface CreateRunInput {
@@ -7545,12 +7571,21 @@ export class LocalStore {
         this.listAutomaticRecoveryAssessments(threadId),
       automaticRecoveryAttempts: this.listAutomaticRecoveryAttempts(threadId),
       subagents: this.listSubagentTasks(threadId),
+      runControlMessages: projectRunControlMessages(events),
       contextCheckpointCalibration: createContextCheckpointCalibrationReport(
         threadId,
         events,
       ),
       events,
     };
+  }
+
+  async listRunControlMessages(
+    threadId: string,
+    runId?: string,
+  ): Promise<RunControlMessage[]> {
+    const events = await this.listEvents(threadId);
+    return projectRunControlMessages(events, runId);
   }
 
   async listEvents(threadId: string, afterSeq = 0): Promise<RunEvent[]> {
@@ -8396,6 +8431,207 @@ export class LocalStore {
     });
   }
 
+  async queueRunControlMessage(
+    input: QueueRunControlMessageInput,
+  ): Promise<RunControlMessage> {
+    this.assertInitialized();
+    this.validateResourceId(input.threadId);
+    this.validateResourceId(input.runId);
+    return this.threadQueue(input.threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(input.threadId);
+        const run = this.mutableRun(input.runId);
+        if (
+          run.threadId !== thread.id ||
+          run.status !== "running" ||
+          thread.currentRunId !== run.id
+        ) {
+          throw new Error("Run control message requires the active Thread Run");
+        }
+        if (
+          run.configuration?.model.provider === "napier" &&
+          run.configuration.model.id === "demo"
+        ) {
+          throw new Error(
+            "The demo model does not accept live Run control messages",
+          );
+        }
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const currentMessages = projectRunControlMessages(
+          currentEvents,
+          run.id,
+        );
+        if (currentMessages.length >= MAX_TOTAL_RUN_CONTROL_MESSAGES) {
+          throw new Error(
+            `Run control message total limit reached (${MAX_TOTAL_RUN_CONTROL_MESSAGES})`,
+          );
+        }
+        if (
+          currentMessages.filter((message) => message.status === "queued")
+            .length >= MAX_PENDING_RUN_CONTROL_MESSAGES
+        ) {
+          throw new Error(
+            `Run control message pending limit reached (${MAX_PENDING_RUN_CONTROL_MESSAGES})`,
+          );
+        }
+        const payload = createRunControlMessageQueuedPayload({
+          controlMessageId: createId("control"),
+          mode: input.mode,
+          text: input.text,
+        });
+        const [queuedEvent] = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: run.id,
+            type: "run.control.queued",
+            category: "message",
+            visibility: "user",
+            payload,
+          },
+        ]);
+        if (!queuedEvent) {
+          throw new Error("Run control message queue event was not created");
+        }
+        await this.persistState(queuedEvent);
+        const message = projectRunControlMessages(
+          [...currentEvents, queuedEvent],
+          run.id,
+        ).find((candidate) => candidate.id === payload.controlMessageId);
+        if (!message) {
+          throw new Error("Run control message queue receipt is invalid");
+        }
+        return structuredClone(message);
+      }),
+    );
+  }
+
+  async deliverNextRunControlMessage(
+    threadId: string,
+    runId: string,
+    mode: RunControlMessageMode,
+  ): Promise<RunControlMessageDelivery | undefined> {
+    this.assertInitialized();
+    this.validateResourceId(threadId);
+    this.validateResourceId(runId);
+    return this.threadQueue(threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(threadId);
+        const run = this.mutableRun(runId);
+        if (
+          run.threadId !== thread.id ||
+          run.status !== "running" ||
+          thread.currentRunId !== run.id
+        ) {
+          return undefined;
+        }
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const pending = nextPendingRunControlMessage(
+          currentEvents,
+          run.id,
+          mode,
+        );
+        if (!pending) return undefined;
+        const messageEventSeq = thread.eventCount + 2;
+        const deliveredPayload = createRunControlMessageDeliveredPayload({
+          message: pending.message,
+          messageEventSeq,
+        });
+        const deliveryEvents = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: run.id,
+            type: "run.control.delivered",
+            category: "message",
+            visibility: "user",
+            payload: deliveredPayload,
+          },
+          {
+            threadId: thread.id,
+            runId: run.id,
+            type: "message.user",
+            category: "message",
+            visibility: "user",
+            payload: createRunControlMessageUserPayload(pending),
+          },
+        ]);
+        await this.persistState(deliveryEvents);
+        const message = projectRunControlMessages(
+          [...currentEvents, ...deliveryEvents],
+          run.id,
+        ).find((candidate) => candidate.id === pending.message.id);
+        if (!message || message.status !== "delivered") {
+          throw new Error("Run control message delivery receipt is invalid");
+        }
+        return {
+          message: structuredClone(message),
+          text: pending.text,
+          events: structuredClone(deliveryEvents),
+        };
+      }),
+    );
+  }
+
+  async cancelRunControlMessage(
+    threadId: string,
+    runId: string,
+    controlMessageId: string,
+  ): Promise<RunControlMessage> {
+    this.assertInitialized();
+    this.validateResourceId(threadId);
+    this.validateResourceId(runId);
+    this.validateResourceId(controlMessageId);
+    return this.threadQueue(threadId).run(() =>
+      this.stateQueue.run(async () => {
+        const thread = this.mutableThread(threadId);
+        const run = this.mutableRun(runId);
+        if (run.threadId !== thread.id) {
+          throw new Error(`Run not found in thread: ${runId}`);
+        }
+        const currentEvents = this.requireLedger().listEvents(thread.id);
+        const current = projectRunControlMessages(currentEvents, run.id).find(
+          (message) => message.id === controlMessageId,
+        );
+        if (!current) {
+          throw new Error(`Run control message not found: ${controlMessageId}`);
+        }
+        if (current.status === "cancelled") return structuredClone(current);
+        if (current.status !== "queued") {
+          throw new Error("Delivered Run control message cannot be cancelled");
+        }
+        const payload = createRunControlMessageCancelledPayload({
+          message: current,
+          reason: "operator_cancelled",
+        });
+        const [cancelledEvent] = this.appendEventsToThread(thread, [
+          {
+            threadId: thread.id,
+            runId: run.id,
+            type: "run.control.cancelled",
+            category: "message",
+            visibility: "user",
+            payload,
+          },
+        ]);
+        if (!cancelledEvent) {
+          throw new Error(
+            "Run control message cancellation event was not created",
+          );
+        }
+        await this.persistState(cancelledEvent);
+        const cancelled = projectRunControlMessages(
+          [...currentEvents, cancelledEvent],
+          run.id,
+        ).find((message) => message.id === controlMessageId);
+        if (!cancelled || cancelled.status !== "cancelled") {
+          throw new Error(
+            "Run control message cancellation receipt is invalid",
+          );
+        }
+        return structuredClone(cancelled);
+      }),
+    );
+  }
+
   async finishRun(
     runId: string,
     status: Exclude<RunStatus, "queued" | "running">,
@@ -8428,7 +8664,12 @@ export class LocalStore {
               : "failed";
       delete thread.currentRunId;
       thread.updatedAt = run.finishedAt;
-      await this.persistState();
+      const cancellationEvents = this.cancelPendingRunControlMessages(
+        thread,
+        run.id,
+        runControlMessageCancellationReason(status),
+      );
+      await this.persistState(cancellationEvents);
       return structuredClone(stripRunSecrets(run));
     });
   }
@@ -8464,21 +8705,8 @@ export class LocalStore {
     return this.threadQueue(input.threadId).run(() =>
       this.stateQueue.run(async () => {
         const currentThread = this.mutableThread(input.threadId);
-        const event: RunEvent = {
-          id: createId("event"),
-          threadId: input.threadId,
-          runId: input.runId,
-          seq: currentThread.eventCount + 1,
-          type: input.type,
-          category: input.category,
-          visibility: input.visibility ?? "debug",
-          createdAt: nowIso(),
-          payload: input.payload,
-        };
-        currentThread.eventCount = event.seq;
-        currentThread.updatedAt = event.createdAt;
-        const message = extractMessagePreview(event);
-        if (message) currentThread.lastMessage = message;
+        const [event] = this.appendEventsToThread(currentThread, [input]);
+        if (!event) throw new Error("Ledger event was not created");
         await this.persistState(event);
         return structuredClone(event);
       }),
@@ -8491,6 +8719,7 @@ export class LocalStore {
     const timestamp = nowIso();
     const timestampMs = Date.parse(timestamp);
     const interruptedRunIds = new Set<string>();
+    const runControlCancellationEvents: RunEvent[] = [];
     const interruptedPlanSteps: Array<{
       threadId: string;
       planId: string;
@@ -8555,6 +8784,17 @@ export class LocalStore {
           changed = true;
         }
       }
+      for (const runId of interruptedRunIds) {
+        const run = this.mutableRun(runId);
+        const thread = this.mutableThread(run.threadId);
+        runControlCancellationEvents.push(
+          ...this.cancelPendingRunControlMessages(
+            thread,
+            run.id,
+            "run_interrupted_before_delivery",
+          ),
+        );
+      }
       for (const task of this.state.subagents) {
         if (
           !interruptedRunIds.has(task.runId) ||
@@ -8604,7 +8844,7 @@ export class LocalStore {
         extension.revision += 1;
         changed = true;
       }
-      if (changed) await this.persistState();
+      if (changed) await this.persistState(runControlCancellationEvents);
     });
 
     const interruptedRuns = this.state.runs.filter(
@@ -10200,6 +10440,61 @@ export class LocalStore {
     return record;
   }
 
+  private appendEventsToThread(
+    thread: ThreadRecord,
+    inputs: AppendEventInput[],
+  ): RunEvent[] {
+    const events = inputs.map((input) => {
+      if (input.threadId !== thread.id) {
+        throw new Error(
+          "Ledger event Thread does not match mutable projection",
+        );
+      }
+      const event: RunEvent = {
+        id: createId("event"),
+        threadId: input.threadId,
+        runId: input.runId,
+        seq: thread.eventCount + 1,
+        type: input.type,
+        category: input.category,
+        visibility: input.visibility ?? "debug",
+        createdAt: nowIso(),
+        payload: input.payload,
+      };
+      thread.eventCount = event.seq;
+      thread.updatedAt = event.createdAt;
+      const message = extractMessagePreview(event);
+      if (message) thread.lastMessage = message;
+      return event;
+    });
+    return events;
+  }
+
+  private cancelPendingRunControlMessages(
+    thread: ThreadRecord,
+    runId: string,
+    reason: RunControlMessageCancellationReason,
+  ): RunEvent[] {
+    const currentEvents = this.requireLedger().listEvents(thread.id);
+    const pending = projectRunControlMessages(currentEvents, runId).filter(
+      (message) => message.status === "queued",
+    );
+    return this.appendEventsToThread(
+      thread,
+      pending.map((message) => ({
+        threadId: thread.id,
+        runId,
+        type: "run.control.cancelled",
+        category: "message",
+        visibility: "user",
+        payload: createRunControlMessageCancelledPayload({
+          message,
+          reason,
+        }),
+      })),
+    );
+  }
+
   private createRunRecord(
     input: CreateRunInput,
     lease?: {
@@ -10575,6 +10870,15 @@ function stripRunSecrets(run: PersistedRunRecord): RunRecord {
   const output = structuredClone(run);
   delete output.leaseTokenSha256;
   return output;
+}
+
+function runControlMessageCancellationReason(
+  status: Exclude<RunStatus, "queued" | "running">,
+): RunControlMessageCancellationReason {
+  if (status === "completed") return "run_completed_before_delivery";
+  if (status === "cancelled") return "run_cancelled_before_delivery";
+  if (status === "interrupted") return "run_interrupted_before_delivery";
+  return "run_failed_before_delivery";
 }
 
 function stripAutomaticRecoverySecrets(
@@ -14289,6 +14593,8 @@ function normalizeInboundModel(model: { provider: string; id: string }) {
 
 function extractMessagePreview(event: RunEvent): string | undefined {
   if (
+    (event.type !== "message.user" &&
+      event.type !== "message.assistant") ||
     event.category !== "message" ||
     !event.payload ||
     Array.isArray(event.payload) ||

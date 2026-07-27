@@ -75,6 +75,7 @@ import type {
   MemoryFact,
   ReceiptTrustAnchor,
   RunComparison,
+  RunControlMessage,
   RunEvaluationRecord,
   RunMetrics,
   RunReplaySnapshot,
@@ -553,6 +554,127 @@ describe("Napier HTTP goal flow", () => {
       emptyEvents,
       detail.events.at(-1)!.seq,
     );
+  });
+
+  it("manages a hash-bound durable Run control inbox", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
+    temporaryRoots.push(root);
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    const app = createApp(services);
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Run control API",
+      agentId: agent.id,
+    });
+    const run = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      model: { provider: "faux-control", id: "faux-1" },
+    });
+    const endpointPath = `/api/threads/${thread.id}/runs/${run.id}/control-messages`;
+
+    const invalidResponse = await app.request(endpointPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "steering",
+        text: "Valid text.",
+        unsupported: true,
+      }),
+    });
+    expect(invalidResponse.status).toBe(400);
+
+    const escapedBoundaryText = "\u0001".repeat(16 * 1024);
+    const escapedBoundaryResponse = await app.request(endpointPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "steering",
+        text: escapedBoundaryText,
+      }),
+    });
+    expect(escapedBoundaryResponse.status).toBe(202);
+    const escapedBoundary =
+      (await escapedBoundaryResponse.json()) as RunControlMessage;
+    expect(escapedBoundary).toEqual(
+      expect.objectContaining({
+        mode: "steering",
+        status: "queued",
+        textBytes: 16 * 1024,
+      }),
+    );
+    const escapedBoundaryCancelResponse = await app.request(
+      `${endpointPath}/${escapedBoundary.id}/cancel`,
+      { method: "POST" },
+    );
+    expect(escapedBoundaryCancelResponse.status).toBe(200);
+    const escapedBoundaryCancelled =
+      (await escapedBoundaryCancelResponse.json()) as RunControlMessage;
+
+    const queueResponse = await app.request(endpointPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "follow_up",
+        text: "Summarize the verified Run evidence.",
+      }),
+    });
+    expect(queueResponse.status).toBe(202);
+    const queued = (await queueResponse.json()) as RunControlMessage;
+    expect(queued).toEqual(
+      expect.objectContaining({
+        threadId: thread.id,
+        runId: run.id,
+        mode: "follow_up",
+        status: "queued",
+        textSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(JSON.stringify(queued)).not.toContain("Summarize the verified");
+    expectRunControlMessageHeaders(queueResponse, queued);
+
+    const listResponse = await app.request(endpointPath);
+    expect(listResponse.status).toBe(200);
+    const listed = (await listResponse.json()) as RunControlMessage[];
+    expect(listed).toEqual([escapedBoundaryCancelled, queued]);
+    expectRunControlMessageListHeaders(listResponse, thread.id, run.id, listed);
+
+    const cancelResponse = await app.request(
+      `${endpointPath}/${queued.id}/cancel`,
+      {
+        method: "POST",
+      },
+    );
+    expect(cancelResponse.status).toBe(200);
+    const cancelled = (await cancelResponse.json()) as RunControlMessage;
+    expect(cancelled).toEqual(
+      expect.objectContaining({
+        id: queued.id,
+        status: "cancelled",
+        cancellationReason: "operator_cancelled",
+      }),
+    );
+    expectRunControlMessageHeaders(cancelResponse, cancelled);
+
+    await services.store.finishRun(run.id, "completed");
+    const lateResponse = await app.request(endpointPath, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        mode: "steering",
+        text: "This message is too late.",
+      }),
+    });
+    expect(lateResponse.status).toBe(409);
+
+    const missingResponse = await app.request(
+      `/api/threads/${thread.id}/runs/run_missing0000/control-messages`,
+    );
+    expect(missingResponse.status).toBe(404);
   });
 
   it("redacts post-stream run errors into hash-only SSE diagnostics", async () => {
@@ -9227,6 +9349,9 @@ function expectThreadDetailProjectionHeaders(
   expect(response.headers.get("x-napier-subagent-count")).toBe(
     String(detail.subagents.length),
   );
+  expect(response.headers.get("x-napier-run-control-message-count")).toBe(
+    String(detail.runControlMessages.length),
+  );
   expect(response.headers.get("x-napier-recovery-assessment-count")).toBe(
     String(detail.automaticRecoveryAssessments.length),
   );
@@ -9252,6 +9377,63 @@ function expectThreadEventsProjectionHeaders(
     String(events.length),
   );
   expectEventBoundaryHeaders(response, events);
+}
+
+function expectRunControlMessageHeaders(
+  response: Response,
+  message: RunControlMessage,
+): void {
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(
+    message.contentSha256,
+  );
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+  expect(response.headers.get("x-napier-thread-id")).toBe(message.threadId);
+  expect(response.headers.get("x-napier-run-id")).toBe(message.runId);
+  expect(response.headers.get("x-napier-run-control-message-id")).toBe(
+    message.id,
+  );
+  expect(response.headers.get("x-napier-run-control-mode")).toBe(message.mode);
+  expect(response.headers.get("x-napier-run-control-status")).toBe(
+    message.status,
+  );
+  expect(response.headers.get("x-napier-run-control-text-sha256")).toBe(
+    message.textSha256,
+  );
+  expect(response.headers.get("x-napier-run-control-text-bytes")).toBe(
+    String(message.textBytes),
+  );
+  expect(response.headers.get("x-napier-run-control-queued-event-seq")).toBe(
+    String(message.queuedEventSeq),
+  );
+}
+
+function expectRunControlMessageListHeaders(
+  response: Response,
+  threadId: string,
+  runId: string,
+  messages: RunControlMessage[],
+): void {
+  const contentSha256 = createHash("sha256")
+    .update(JSON.stringify(messages))
+    .digest("hex");
+  expect(response.headers.get("cache-control")).toBe("no-store");
+  expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
+  expect(response.headers.get("x-napier-content-sha256-mode")).toBe("body");
+  expect(response.headers.get("x-napier-thread-id")).toBe(threadId);
+  expect(response.headers.get("x-napier-run-id")).toBe(runId);
+  expect(response.headers.get("x-napier-run-control-message-count")).toBe(
+    String(messages.length),
+  );
+  expect(response.headers.get("x-napier-run-control-queued-count")).toBe(
+    String(messages.filter((message) => message.status === "queued").length),
+  );
+  expect(response.headers.get("x-napier-run-control-delivered-count")).toBe(
+    String(messages.filter((message) => message.status === "delivered").length),
+  );
+  expect(response.headers.get("x-napier-run-control-cancelled-count")).toBe(
+    String(messages.filter((message) => message.status === "cancelled").length),
+  );
 }
 
 function expectThreadStopHeaders(
