@@ -1,5 +1,6 @@
 import type {
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
   ReceiptTrustAnchorDirectory,
@@ -30,6 +31,9 @@ export type QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspa
       DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest["policy"]
     >;
   };
+
+export type QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest =
+  CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest;
 
 export type ReceiptTrustDirectoryBaselineSourceStatus =
   | "aligned"
@@ -164,6 +168,41 @@ export function qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTrans
     },
     ...(trustDirectory ? { trustDirectory } : {}),
     ...(trustDirectory && trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
+  };
+}
+
+export function qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
+  threadId: string,
+  label: string,
+  sourceUrl: string,
+  expectedCheckpointSha256: string,
+  currentCheckpoint:
+    | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint
+    | undefined,
+  signerKeyId?: string,
+): QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest | undefined {
+  const discovery =
+    qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
+      sourceUrl,
+      expectedCheckpointSha256,
+      currentCheckpoint,
+      signerKeyId,
+    );
+  const normalizedLabel = label.trim();
+  if (
+    !discovery ||
+    !/^thread_[a-z0-9]{8,80}$/.test(threadId) ||
+    normalizedLabel.length < 1 ||
+    normalizedLabel.length > 100
+  ) {
+    return undefined;
+  }
+  return {
+    threadId,
+    label: normalizedLabel,
+    sourceUrl: discovery.sourceUrl,
+    refreshIntervalMs: DIRECTORY_SUBSCRIPTION_REFRESH_INTERVAL_MS,
+    policy: discovery.policy,
   };
 }
 

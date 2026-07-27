@@ -1463,6 +1463,18 @@ rejection. Source URL/origin, response body, policy, envelope, and checkpoint
 evidence are returned as hashes only. The Receipt Trust Desk adds **Discover
 checkpoint** with URL and optional checkpoint-hash pin fields, then renders
 accepted or rejected hosted checkpoint receipts beside the signed envelope.
+Operators can promote the same hosted checkpoint source into a durable
+checkpoint registry subscription through `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions`.
+Subscription creation reruns discovery first and stores the raw URL only in the
+local workspace snapshot; list responses, headers, receipts, and Ledger events
+keep URL/origin evidence hash-only. Manual and scheduled refreshes use the same
+signed-envelope discovery path, update last-good only for accepted or unchanged
+checkpoints, preserve last-good across invalid or failed refreshes, and append
+a bounded transparency chain over discovery, envelope, checkpoint, selection
+count, selection-set, and chain-tail hashes. Pause/resume uses revision CAS,
+and the Receipt Trust Desk can create, refresh, and pause checkpoint
+subscriptions beside the discovery receipt.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

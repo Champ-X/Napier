@@ -4445,6 +4445,96 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
   contentSha256: string;
 }
 
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus =
+  | "active"
+  | "paused";
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshStatus =
+  | "accepted"
+  | "unchanged"
+  | "rollback_rejected"
+  | "rejected"
+  | "failed";
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyStatus =
+  | "accepted"
+  | "unchanged";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyEntry {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription-transparency-entry";
+  schemaVersion: 1;
+  apiVersion: string;
+  sequence: number;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyStatus;
+  observedAt: string;
+  discoverySha256: string;
+  envelopeSha256: string;
+  checkpointSha256: string;
+  selectionCount: number;
+  selectionSetSha256: string;
+  selectionChainTailSha256?: string;
+  previousEntrySha256?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription";
+  schemaVersion: 1;
+  apiVersion: string;
+  id: string;
+  auditThreadId: string;
+  label: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus;
+  revision: number;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  refreshIntervalMs: number;
+  nextRefreshAt: string;
+  policy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy;
+  policySha256: string;
+  lastRefreshAt?: string;
+  lastRefreshStatus?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshStatus;
+  lastDiscoverySha256?: string;
+  lastFailureSha256?: string;
+  lastGoodDiscovery?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
+  transparencyEntryCount: number;
+  transparencyTailSha256?: string;
+  transparencyHistory: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyEntry[];
+  createdAt: string;
+  updatedAt: string;
+  contentSha256: string;
+}
+
+export interface CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest {
+  threadId: string;
+  label: string;
+  sourceUrl: string;
+  refreshIntervalMs: number;
+  policy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy;
+}
+
+export interface RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest {
+  threadId: string;
+  expectedRevision: number;
+}
+
+export interface UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest {
+  threadId: string;
+  expectedRevision: number;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription-refresh";
+  schemaVersion: 1;
+  apiVersion: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshStatus;
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+  discovery?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
+  failureSha256?: string;
+  contentSha256: string;
+}
+
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus =
   | "missing_selection"
   | "aligned"

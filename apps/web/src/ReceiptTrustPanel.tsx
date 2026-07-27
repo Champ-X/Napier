@@ -27,6 +27,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -44,6 +45,7 @@ import {
   applyReceiptTrustAnchorDirectoryQuorumActivationSelection,
   createReceiptTrustAnchor,
   createReceiptTrustAnchorDirectorySubscription,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   discoverReceiptTrustAnchorDirectory,
   discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   evaluateReceiptTrustAnchorDirectoryQuorum,
@@ -55,13 +57,16 @@ import {
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
+  listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
+  refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   revokeReceiptTrustAnchor,
   reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   signReceiptTrustAnchorDirectoryQuorumActivationDecision,
   signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   updateReceiptTrustAnchorDirectorySubscription,
+  updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -73,6 +78,7 @@ import { formatApiErrorMessage } from "./api-error";
 import {
   qualifyReceiptTrustAnchorDirectoryDiscoveryRequest,
   qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest,
+  qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   qualifyReceiptTrustAnchorDirectorySubscriptionRequest,
   buildReceiptTrustDirectoryBaselineImportPolicy,
   projectReceiptTrustDirectoryBaselineActivation,
@@ -167,8 +173,16 @@ export default function ReceiptTrustPanel({
     setBaselineActivationSelectionCheckpointDiscovery,
   ] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery>();
+  const [
+    checkpointSubscriptions,
+    setCheckpointSubscriptions,
+  ] = useState<
+    ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[]
+  >([]);
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [checkpointSourceUrl, setCheckpointSourceUrl] = useState("");
+  const [checkpointSubscriptionLabel, setCheckpointSubscriptionLabel] =
+    useState("");
   const [expectedCheckpointSha256, setExpectedCheckpointSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -258,6 +272,17 @@ export default function ReceiptTrustPanel({
     );
   const canDiscoverActivationSelectionCheckpoint =
     Boolean(checkpointDiscoveryRequest) && !busyId;
+  const checkpointSubscriptionRequest =
+    qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
+      threadId,
+      checkpointSubscriptionLabel,
+      checkpointSourceUrl,
+      expectedCheckpointSha256,
+      baselineActivationSelectionCheckpoint,
+      selectedTrustedAnchorKeyId,
+    );
+  const canSubscribeActivationSelectionCheckpoint =
+    Boolean(checkpointSubscriptionRequest) && !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -268,6 +293,7 @@ export default function ReceiptTrustPanel({
       getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
       getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
       getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(),
+      listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions(),
     ])
       .then(
         ([
@@ -277,6 +303,7 @@ export default function ReceiptTrustPanel({
           activationSelectionState,
           activationSelectionDriftAudit,
           activationSelectionCheckpoint,
+          activationSelectionCheckpointSubscriptions,
         ]) => {
           if (cancelled) return;
           setDirectorySubscriptions(subscriptions);
@@ -289,6 +316,7 @@ export default function ReceiptTrustPanel({
           setBaselineActivationSelectionCheckpoint(
             activationSelectionCheckpoint,
           );
+          setCheckpointSubscriptions(activationSelectionCheckpointSubscriptions);
           const active = subscriptions
             .filter(
               (subscription) =>
@@ -596,6 +624,95 @@ export default function ReceiptTrustPanel({
       } else if (externalDirectorySubscriptionId === updated.id) {
         clearExternalDirectory();
       }
+    } catch (updateError) {
+      setError(toErrorMessage(updateError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function createCheckpointSubscription(): Promise<void> {
+    if (!checkpointSubscriptionRequest || !canSubscribeActivationSelectionCheckpoint)
+      return;
+    setBusyId("subscribe-activation-selection-checkpoint");
+    setError(undefined);
+    try {
+      const subscription =
+        await createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+          checkpointSubscriptionRequest,
+        );
+      upsertCheckpointSubscription(subscription);
+      setBaselineActivationSelectionCheckpointDiscovery(
+        subscription.lastGoodDiscovery,
+      );
+      if (subscription.lastGoodDiscovery?.envelope) {
+        setBaselineActivationSelectionCheckpointEnvelope(
+          subscription.lastGoodDiscovery.envelope,
+        );
+        setBaselineActivationSelectionCheckpoint(
+          subscription.lastGoodDiscovery.envelope.receipt,
+        );
+      }
+      setCheckpointSubscriptionLabel("");
+    } catch (subscriptionError) {
+      setError(toErrorMessage(subscriptionError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function refreshCheckpointSubscription(
+    subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  ): Promise<void> {
+    setBusyId(`refresh-checkpoint-subscription:${subscription.id}`);
+    setError(undefined);
+    try {
+      const result =
+        await refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+          subscription.id,
+          subscription.auditThreadId,
+          subscription.revision,
+        );
+      upsertCheckpointSubscription(result.subscription);
+      if (result.discovery) {
+        setBaselineActivationSelectionCheckpointDiscovery(result.discovery);
+        setBaselineActivationSelectionCheckpointVerification(
+          result.discovery.checkpointVerification,
+        );
+        if (result.discovery.envelope) {
+          setBaselineActivationSelectionCheckpointEnvelope(
+            result.discovery.envelope,
+          );
+          if (result.discovery.status === "valid") {
+            setBaselineActivationSelectionCheckpoint(
+              result.discovery.envelope.receipt,
+            );
+          }
+        }
+      }
+    } catch (refreshError) {
+      setError(toErrorMessage(refreshError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function toggleCheckpointSubscription(
+    subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  ): Promise<void> {
+    setBusyId(`toggle-checkpoint-subscription:${subscription.id}`);
+    setError(undefined);
+    try {
+      const updated =
+        await updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+          subscription.id,
+          {
+            threadId: subscription.auditThreadId,
+            expectedRevision: subscription.revision,
+            status: subscription.status === "active" ? "paused" : "active",
+          },
+        );
+      upsertCheckpointSubscription(updated);
     } catch (updateError) {
       setError(toErrorMessage(updateError));
     } finally {
@@ -966,6 +1083,17 @@ export default function ReceiptTrustPanel({
     subscription: ReceiptTrustAnchorDirectorySubscription,
   ): void {
     setDirectorySubscriptions((current) =>
+      [
+        ...current.filter((candidate) => candidate.id !== subscription.id),
+        subscription,
+      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+    );
+  }
+
+  function upsertCheckpointSubscription(
+    subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  ): void {
+    setCheckpointSubscriptions((current) =>
       [
         ...current.filter((candidate) => candidate.id !== subscription.id),
         subscription,
@@ -1633,6 +1761,20 @@ export default function ReceiptTrustPanel({
             }}
           >
             <label>
+              <span>{copy.lab.trust.checkpointSubscriptionLabel}</span>
+              <input
+                type="text"
+                maxLength={100}
+                value={checkpointSubscriptionLabel}
+                placeholder={
+                  copy.lab.trust.checkpointSubscriptionLabelPlaceholder
+                }
+                onChange={(event) =>
+                  setCheckpointSubscriptionLabel(event.target.value)
+                }
+              />
+            </label>
+            <label>
               <span>{copy.lab.trust.activationSelectionCheckpointSource}</span>
               <input
                 type="url"
@@ -1669,6 +1811,16 @@ export default function ReceiptTrustPanel({
                 {busyId === "discover-activation-selection-checkpoint"
                   ? copy.lab.trust.discoveringActivationSelectionCheckpoint
                   : copy.lab.trust.discoverActivationSelectionCheckpoint}
+              </button>
+              <button
+                type="button"
+                disabled={!canSubscribeActivationSelectionCheckpoint}
+                onClick={() => void createCheckpointSubscription()}
+              >
+                <Plus size={10} aria-hidden="true" />
+                {busyId === "subscribe-activation-selection-checkpoint"
+                  ? copy.lab.trust.subscribingActivationSelectionCheckpoint
+                  : copy.lab.trust.subscribeActivationSelectionCheckpoint}
               </button>
             </span>
           </form>
@@ -1931,6 +2083,69 @@ export default function ReceiptTrustPanel({
                 </code>
               ) : null}
             </output>
+          ) : null}
+          {checkpointSubscriptions.length > 0 ? (
+            <div className="receipt-subscriptions">
+              <strong>{copy.lab.trust.checkpointSubscriptions}</strong>
+              {checkpointSubscriptions.map((subscription) => (
+                <article key={subscription.id}>
+                  <span>
+                    <strong>{subscription.label}</strong>
+                    <small>
+                      {
+                        copy.lab.trust.subscriptionStatuses[
+                          subscription.status
+                        ]
+                      }{" "}
+                      · {subscription.lastRefreshStatus ?? "pending"} ·{" "}
+                      {subscription.transparencyEntryCount}{" "}
+                      {copy.lab.trust.transparencyTail}
+                    </small>
+                  </span>
+                  <code title={subscription.sourceUrlSha256}>
+                    {subscription.sourceUrlSha256.slice(0, 12)}
+                  </code>
+                  {subscription.lastGoodDiscovery?.checkpointSha256 ? (
+                    <code
+                      title={subscription.lastGoodDiscovery.checkpointSha256}
+                    >
+                      {subscription.lastGoodDiscovery.checkpointSha256.slice(
+                        0,
+                        12,
+                      )}
+                    </code>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={Boolean(busyId)}
+                    onClick={() => void refreshCheckpointSubscription(subscription)}
+                  >
+                    <RefreshCw size={10} aria-hidden="true" />
+                    {busyId ===
+                    `refresh-checkpoint-subscription:${subscription.id}`
+                      ? copy.lab.trust.refreshingCheckpointSubscription
+                      : copy.lab.trust.refreshCheckpointSubscription}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={Boolean(busyId)}
+                    onClick={() => void toggleCheckpointSubscription(subscription)}
+                  >
+                    {subscription.status === "active" ? (
+                      <Pause size={10} aria-hidden="true" />
+                    ) : (
+                      <Play size={10} aria-hidden="true" />
+                    )}
+                    {busyId ===
+                    `toggle-checkpoint-subscription:${subscription.id}`
+                      ? copy.lab.trust.updatingCheckpointSubscription
+                      : subscription.status === "active"
+                        ? copy.lab.trust.pauseSubscription
+                        : copy.lab.trust.resumeSubscription}
+                  </button>
+                </article>
+              ))}
+            </div>
           ) : null}
           {baselineActivationSelectionCheckpointEnvelope ? (
             <output className="receipt-baseline-policy" aria-live="polite">

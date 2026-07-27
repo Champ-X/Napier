@@ -14,6 +14,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -31,6 +33,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   applyReceiptTrustAnchorDirectoryQuorumActivationSelection,
   createReceiptTrustAnchorDirectorySubscription,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   discoverReceiptTrustAnchorDirectory,
   discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   evaluateReceiptTrustAnchorDirectoryQuorum,
@@ -42,14 +45,17 @@ import {
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectorySubscriptions,
+  listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
   promoteReceiptTrustAnchorDirectoryQuorumBaseline,
   promoteReceiptTrustAnchorDirectoryQuorum,
   refreshReceiptTrustAnchorDirectorySubscription,
+  refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   signReceiptTrustAnchorDirectoryQuorumActivationDecision,
   signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   updateReceiptTrustAnchorDirectorySubscription,
+  updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
@@ -863,6 +869,75 @@ describe("receipt trust Web API wrappers", () => {
       envelope: signedActivationSelectionCheckpoint,
       contentSha256: "4".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
+    const activationSelectionCheckpointSubscriptionRequest = {
+      threadId: promotionBaseline.promotedByThreadId,
+      label: "Activation checkpoint registry",
+      sourceUrl:
+        "https://trust.example.test/activation-selection-checkpoint.json",
+      refreshIntervalMs: 86_400_000,
+      policy: activationSelectionCheckpointDiscoveryRequest.policy,
+    };
+    const activationSelectionCheckpointSubscription = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      id: "trustcpsub_1234567890abcdef1234",
+      auditThreadId: promotionBaseline.promotedByThreadId,
+      label: "Activation checkpoint registry",
+      status: "active",
+      revision: 1,
+      sourceUrlSha256: "5".repeat(64),
+      sourceOriginSha256: "6".repeat(64),
+      refreshIntervalMs: 86_400_000,
+      nextRefreshAt: "2026-07-28T00:00:00.000Z",
+      policy: activationSelectionCheckpointDiscoveryRequest.policy,
+      policySha256: "7".repeat(64),
+      lastRefreshAt: "2026-07-27T00:00:08.000Z",
+      lastRefreshStatus: "accepted",
+      lastDiscoverySha256: activationSelectionCheckpointDiscovery.contentSha256,
+      lastGoodDiscovery: activationSelectionCheckpointDiscovery,
+      transparencyEntryCount: 1,
+      transparencyTailSha256: "8".repeat(64),
+      transparencyHistory: [
+        {
+          kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription-transparency-entry",
+          schemaVersion: 1,
+          apiVersion: "0.1.0",
+          sequence: 1,
+          status: "accepted",
+          observedAt: "2026-07-27T00:00:08.000Z",
+          discoverySha256: activationSelectionCheckpointDiscovery.contentSha256,
+          envelopeSha256: signedActivationSelectionCheckpoint.contentSha256,
+          checkpointSha256: activationSelectionCheckpoint.contentSha256,
+          selectionCount: activationSelectionCheckpoint.selectionCount,
+          selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+          selectionChainTailSha256:
+            activationSelectionCheckpoint.selectionChainTailSha256,
+          contentSha256: "8".repeat(64),
+        },
+      ],
+      createdAt: "2026-07-27T00:00:08.000Z",
+      updatedAt: "2026-07-27T00:00:08.000Z",
+      contentSha256: "9".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    const activationSelectionCheckpointSubscriptionRefresh = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription-refresh",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      status: "unchanged",
+      subscription: {
+        ...activationSelectionCheckpointSubscription,
+        revision: 2,
+        lastRefreshStatus: "unchanged",
+      },
+      discovery: activationSelectionCheckpointDiscovery,
+      contentSha256: "a".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult;
+    const pausedActivationSelectionCheckpointSubscription = {
+      ...activationSelectionCheckpointSubscriptionRefresh.subscription,
+      status: "paused",
+      revision: 3,
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -974,6 +1049,37 @@ describe("receipt trust Web API wrappers", () => {
         response: activationSelectionCheckpointDiscovery,
       },
       {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions",
+        response: [activationSelectionCheckpointSubscription],
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions",
+        method: "POST",
+        body: activationSelectionCheckpointSubscriptionRequest,
+        response: activationSelectionCheckpointSubscription,
+      },
+      {
+        path: `/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/${activationSelectionCheckpointSubscription.id}/refresh`,
+        method: "POST",
+        body: {
+          threadId: activationSelectionCheckpointSubscription.auditThreadId,
+          expectedRevision: activationSelectionCheckpointSubscription.revision,
+        },
+        response: activationSelectionCheckpointSubscriptionRefresh,
+      },
+      {
+        path: `/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/${activationSelectionCheckpointSubscription.id}`,
+        method: "POST",
+        body: {
+          threadId: activationSelectionCheckpointSubscription.auditThreadId,
+          expectedRevision:
+            activationSelectionCheckpointSubscriptionRefresh.subscription
+              .revision,
+          status: "paused",
+        },
+        response: pausedActivationSelectionCheckpointSubscription,
+      },
+      {
         path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
         method: "POST",
         body: activationSelectionRotationReviewRequest,
@@ -1081,6 +1187,33 @@ describe("receipt trust Web API wrappers", () => {
       ),
     ).resolves.toEqual(activationSelectionCheckpointDiscovery);
     await expect(
+      listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions(),
+    ).resolves.toEqual([activationSelectionCheckpointSubscription]);
+    await expect(
+      createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        activationSelectionCheckpointSubscriptionRequest,
+      ),
+    ).resolves.toEqual(activationSelectionCheckpointSubscription);
+    await expect(
+      refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        activationSelectionCheckpointSubscription.id,
+        activationSelectionCheckpointSubscription.auditThreadId,
+        activationSelectionCheckpointSubscription.revision,
+      ),
+    ).resolves.toEqual(activationSelectionCheckpointSubscriptionRefresh);
+    await expect(
+      updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        activationSelectionCheckpointSubscription.id,
+        {
+          threadId: activationSelectionCheckpointSubscription.auditThreadId,
+          expectedRevision:
+            activationSelectionCheckpointSubscriptionRefresh.subscription
+              .revision,
+          status: "paused",
+        },
+      ),
+    ).resolves.toEqual(pausedActivationSelectionCheckpointSubscription);
+    await expect(
       reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
         activationSelectionRotationReviewRequest,
       ),
@@ -1090,7 +1223,7 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionRequest,
       ),
     ).resolves.toEqual(activationSelectionResult);
-    expect(fetchMock).toHaveBeenCalledTimes(21);
+    expect(fetchMock).toHaveBeenCalledTimes(25);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

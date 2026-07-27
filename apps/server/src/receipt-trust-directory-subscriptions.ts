@@ -1,14 +1,31 @@
 import { createHash } from "node:crypto";
 
 import type {
+  DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   JsonValue,
+  ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
+  TrustedReceiptEnvelope,
 } from "@napier/contracts";
-import { LocalStore, createId } from "@napier/runtime";
+import {
+  canonicalJson,
+  createId,
+  hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
+  LocalStore,
+  normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
+  receiptTrustAnchorsFromDirectory,
+  sha256,
+  validateTrustedReceiptEnvelope,
+  verifyTrustedReceiptEnvelope,
+} from "@napier/runtime";
 
 import {
   ReceiptTrustAnchorDirectoryDiscoveryError,
   ReceiptTrustAnchorDirectoryDiscoveryService,
+  type ReceiptTrustAnchorDirectoryHostedJsonSource,
 } from "./receipt-trust-directory-discovery.js";
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
@@ -79,7 +96,7 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
   }
 
   async refreshDue(now = new Date()): Promise<number> {
-    const { claims } =
+    const { claims: directoryClaims } =
       await this.store.claimDueReceiptTrustAnchorDirectorySubscriptions(
         this.workerId,
         {
@@ -87,8 +104,19 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
           leaseMs: this.claimLeaseMs,
         },
       );
-    await Promise.all(claims.map((claim) => this.refreshClaim(claim)));
-    return claims.length;
+    const { claims: checkpointClaims } =
+      await this.store.claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions(
+        this.workerId,
+        {
+          now,
+          leaseMs: this.claimLeaseMs,
+        },
+      );
+    await Promise.all([
+      ...directoryClaims.map((claim) => this.refreshClaim(claim)),
+      ...checkpointClaims.map((claim) => this.refreshCheckpointClaim(claim)),
+    ]);
+    return directoryClaims.length + checkpointClaims.length;
   }
 
   private scheduleTick(): void {
@@ -131,6 +159,69 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
     return result;
   }
 
+  async refreshCheckpoint(
+    subscriptionId: string,
+    threadId: string,
+    expectedRevision: number,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult> {
+    this.store.getThread(threadId);
+    const subscription =
+      this.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        subscriptionId,
+      );
+    if (subscription.auditThreadId !== threadId) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection checkpoint subscription audit thread changed",
+      );
+    }
+    const claim =
+      await this.store.claimReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        subscriptionId,
+        expectedRevision,
+        this.workerId,
+        { leaseMs: this.claimLeaseMs },
+      );
+    return this.refreshCheckpointClaim(claim);
+  }
+
+  private async refreshCheckpointClaim(
+    claim: Awaited<
+      ReturnType<
+        LocalStore["claimReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription"]
+      >
+    >,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult> {
+    let result: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult;
+    try {
+      const source = await this.discovery.fetchJson(claim.sourceUrl);
+      const discovery =
+        createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(
+          this.store,
+          source,
+          {
+            sourceUrl: claim.sourceUrl,
+            policy: claim.subscription.policy,
+          },
+        );
+      result =
+        await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim(
+          claim.subscription.id,
+          claim.token,
+          { discovery },
+        );
+    } catch (error) {
+      const failureSha256 = hashRefreshFailure(error);
+      result =
+        await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim(
+          claim.subscription.id,
+          claim.token,
+          { failureSha256 },
+        );
+    }
+    await this.appendCheckpointRefreshEvent(result);
+    return result;
+  }
+
   private async appendRefreshEvent(
     result: ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ): Promise<void> {
@@ -164,6 +255,218 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
       payload,
     });
   }
+
+  private async appendCheckpointRefreshEvent(
+    result: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
+  ): Promise<void> {
+    const subscription = result.subscription;
+    const payload: Record<string, JsonValue> = {
+      subscriptionId: subscription.id,
+      subscriptionRevision: subscription.revision,
+      subscriptionSha256: subscription.contentSha256,
+      sourceUrlSha256: subscription.sourceUrlSha256,
+      sourceOriginSha256: subscription.sourceOriginSha256,
+      policySha256: subscription.policySha256,
+      refreshStatus: result.status,
+      refreshResultSha256: result.contentSha256,
+      transparencyEntryCount: subscription.transparencyEntryCount,
+      transparencyTailSha256: subscription.transparencyTailSha256 ?? "",
+      activeEnvelopeSha256:
+        subscription.lastGoodDiscovery?.envelopeSha256 ?? "",
+      activeCheckpointSha256:
+        subscription.lastGoodDiscovery?.checkpointSha256 ?? "",
+      activeSelectionCount:
+        subscription.lastGoodDiscovery?.selectionCount ?? 0,
+      activeSelectionChainTailSha256:
+        subscription.lastGoodDiscovery?.selectionChainTailSha256 ?? "",
+      ...(result.discovery
+        ? { discoverySha256: result.discovery.contentSha256 }
+        : {}),
+      ...(result.failureSha256 ? { failureSha256: result.failureSha256 } : {}),
+    };
+    await this.store.appendEvent({
+      threadId: subscription.auditThreadId,
+      runId: createId("runctl"),
+      type: "receipt.trust_checkpoint_subscription.refreshed",
+      category: "evaluation",
+      visibility: "user",
+      payload,
+    });
+  }
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(
+  store: LocalStore,
+  source: ReceiptTrustAnchorDirectoryHostedJsonSource,
+  request: DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery {
+  const generatedAt = new Date().toISOString();
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
+      request.policy,
+    );
+  const currentCheckpoint =
+    store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+  const activeSelectionState =
+    request.trustDirectory === undefined
+      ? store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState()
+      : undefined;
+  const activeSelection = activeSelectionState?.selection;
+  const selectedDirectory =
+    request.trustDirectory !== undefined
+      ? request.trustDirectory
+      : activeSelection?.selectedDirectory;
+  const trustDirectoryVerification =
+    selectedDirectory === undefined
+      ? undefined
+      : store.verifyReceiptTrustAnchorDirectory(
+          selectedDirectory,
+          request.trustDirectoryPolicy,
+        );
+  const anchors =
+    selectedDirectory === undefined
+      ? store.listReceiptTrustAnchors()
+      : trustDirectoryVerification?.status === "valid"
+        ? receiptTrustAnchorsFromDirectory(
+            selectedDirectory as ReceiptTrustAnchorDirectory,
+          )
+        : [];
+  const trustedReceiptVerification = verifyTrustedReceiptEnvelope(
+    source.value,
+    anchors,
+  );
+  let envelope:
+    | TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>
+    | undefined;
+  try {
+    const parsed = validateTrustedReceiptEnvelope(source.value);
+    if (
+      parsed.receiptKind ===
+      "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint"
+    ) {
+      envelope =
+        parsed as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>;
+    }
+  } catch {
+    envelope = undefined;
+  }
+  const checkpointVerification =
+    store.verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+      envelope?.receipt ?? source.value,
+    );
+  const diagnostics: string[] = [];
+  if (trustedReceiptVerification.status !== "trusted") {
+    diagnostics.push("checkpoint_receipt_untrusted");
+  }
+  if (!envelope) diagnostics.push("checkpoint_receipt_kind_mismatch");
+  if (checkpointVerification.status === "invalid") {
+    diagnostics.push("checkpoint_invalid");
+  } else if (checkpointVerification.status === "divergent") {
+    diagnostics.push("checkpoint_divergent");
+  }
+  const checkpoint = envelope?.receipt;
+  const signedAtMs = envelope ? Date.parse(envelope.signature.signedAt) : NaN;
+  if (
+    envelope &&
+    policy.maxEnvelopeAgeMs > 0 &&
+    Number.isFinite(signedAtMs) &&
+    Date.parse(generatedAt) - signedAtMs > policy.maxEnvelopeAgeMs
+  ) {
+    diagnostics.push("checkpoint_signature_stale");
+  }
+  if (
+    policy.requiredSignerKeyIds.length > 0 &&
+    (!envelope || !policy.requiredSignerKeyIds.includes(envelope.signature.keyId))
+  ) {
+    diagnostics.push("required_signer_missing");
+  }
+  if (
+    policy.expectedCheckpointSha256 &&
+    checkpoint?.contentSha256 !== policy.expectedCheckpointSha256
+  ) {
+    diagnostics.push("checkpoint_hash_mismatch");
+  }
+  if (
+    policy.expectedSelectionSetSha256 &&
+    checkpoint?.selectionSetSha256 !== policy.expectedSelectionSetSha256
+  ) {
+    diagnostics.push("selection_set_mismatch");
+  }
+  if (
+    policy.expectedSelectionChainTailSha256 &&
+    checkpoint?.selectionChainTailSha256 !==
+      policy.expectedSelectionChainTailSha256
+  ) {
+    diagnostics.push("selection_chain_tail_mismatch");
+  }
+  if (checkpoint && checkpoint.selectionCount < policy.minimumSelectionCount) {
+    diagnostics.push("selection_count_below_minimum");
+  }
+  if (
+    policy.rejectRollback &&
+    checkpoint &&
+    checkpoint.selectionCount < currentCheckpoint.selectionCount
+  ) {
+    diagnostics.push("selection_count_rollback");
+  }
+  if (
+    policy.rejectRollback &&
+    checkpoint &&
+    checkpoint.selectionCount === currentCheckpoint.selectionCount &&
+    checkpoint.selectionChainTailSha256 !==
+      currentCheckpoint.selectionChainTailSha256
+  ) {
+    diagnostics.push("selection_chain_tail_rollback");
+  }
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-discovery" as const,
+    schemaVersion: 1 as const,
+    apiVersion: "2026-07-25",
+    generatedAt,
+    status: diagnostics.length === 0 ? ("valid" as const) : ("invalid" as const),
+    diagnostics,
+    sourceUrlSha256: source.sourceUrlSha256,
+    sourceOriginSha256: source.sourceOriginSha256,
+    httpStatus: source.httpStatus,
+    responseMediaType: source.responseMediaType,
+    responseBytes: source.responseBytes,
+    responseBodySha256: source.responseBodySha256,
+    policy,
+    policySha256:
+      hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy(
+        policy,
+      ),
+    trustedReceiptVerification,
+    checkpointVerification,
+    ...(envelope
+      ? {
+          envelopeSha256: envelope.contentSha256,
+          checkpointSha256: envelope.receipt.contentSha256,
+          signerKeyId: envelope.signature.keyId,
+          signedAt: envelope.signature.signedAt,
+          selectionCount: envelope.receipt.selectionCount,
+          selectionSetSha256: envelope.receipt.selectionSetSha256,
+          ...(envelope.receipt.selectionChainTailSha256
+            ? {
+                selectionChainTailSha256:
+                  envelope.receipt.selectionChainTailSha256,
+              }
+            : {}),
+          envelope,
+        }
+      : {}),
+    currentSelectionCount: currentCheckpoint.selectionCount,
+    ...(currentCheckpoint.selectionChainTailSha256
+      ? {
+          currentSelectionChainTailSha256:
+            currentCheckpoint.selectionChainTailSha256,
+        }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
 }
 
 function hashRefreshFailure(error: unknown): string {

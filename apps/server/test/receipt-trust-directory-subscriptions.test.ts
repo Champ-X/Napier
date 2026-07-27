@@ -15,6 +15,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -1181,6 +1183,207 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       },
     );
     expect(disallowedCheckpointDiscoveryResponse.status).toBe(403);
+    const selectionCheckpointSubscriptionPath =
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions";
+    hostedCheckpointEnvelope = signedSelectionCheckpoint;
+    const checkpointSubscriptionPolicy = {
+      expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+      expectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+      expectedSelectionChainTailSha256:
+        selectionCheckpoint.selectionChainTailSha256,
+      minimumSelectionCount: 1,
+      requiredSignerKeyIds: [signingAnchor.keyId],
+      rejectRollback: true,
+    };
+    const createCheckpointSubscriptionResponse = await app.request(
+      selectionCheckpointSubscriptionPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          label: "Activation checkpoint registry",
+          sourceUrl: checkpointSourceUrl,
+          refreshIntervalMs: 5 * 60 * 1_000,
+          policy: checkpointSubscriptionPolicy,
+        }),
+      },
+    );
+    expect(createCheckpointSubscriptionResponse.status).toBe(201);
+    const checkpointSubscription =
+      (await createCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    expect(checkpointSubscription).toEqual(
+      expect.objectContaining({
+        auditThreadId: thread.id,
+        label: "Activation checkpoint registry",
+        status: "active",
+        revision: 1,
+        sourceUrlSha256: sha256Text(checkpointSourceUrl),
+        sourceOriginSha256: sha256Text("https://trust.example.test"),
+        lastRefreshStatus: "accepted",
+        lastGoodDiscovery: expect.objectContaining({
+          status: "valid",
+          envelopeSha256: signedSelectionCheckpoint.contentSha256,
+          checkpointSha256: selectionCheckpoint.contentSha256,
+          selectionCount: 1,
+        }),
+        transparencyEntryCount: 1,
+        transparencyHistory: [
+          expect.objectContaining({
+            sequence: 1,
+            status: "accepted",
+            envelopeSha256: signedSelectionCheckpoint.contentSha256,
+            checkpointSha256: selectionCheckpoint.contentSha256,
+          }),
+        ],
+      }),
+    );
+    expect(JSON.stringify(checkpointSubscription)).not.toContain(
+      checkpointSourceUrl,
+    );
+    expect(
+      createCheckpointSubscriptionResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-subscription-refresh-status",
+      ),
+    ).toBeNull();
+    expect(
+      createCheckpointSubscriptionResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-sha256",
+      ),
+    ).toBe(selectionCheckpoint.contentSha256);
+    const listCheckpointSubscriptionsResponse = await app.request(
+      selectionCheckpointSubscriptionPath,
+    );
+    expect(listCheckpointSubscriptionsResponse.status).toBe(200);
+    expect(
+      (await listCheckpointSubscriptionsResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[],
+    ).toEqual([checkpointSubscription]);
+    const unchangedCheckpointSubscriptionRefreshResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${checkpointSubscription.id}/refresh`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: checkpointSubscription.revision,
+        }),
+      },
+    );
+    expect(unchangedCheckpointSubscriptionRefreshResponse.status).toBe(200);
+    const unchangedCheckpointSubscriptionRefresh =
+      (await unchangedCheckpointSubscriptionRefreshResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult;
+    expect(unchangedCheckpointSubscriptionRefresh).toEqual(
+      expect.objectContaining({
+        status: "unchanged",
+        subscription: expect.objectContaining({
+          revision: 2,
+          lastRefreshStatus: "unchanged",
+          lastGoodDiscovery: expect.objectContaining({
+            envelopeSha256: signedSelectionCheckpoint.contentSha256,
+            checkpointSha256: selectionCheckpoint.contentSha256,
+            selectionCount: 1,
+          }),
+          transparencyEntryCount: 2,
+        }),
+        discovery: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          checkpointSha256: selectionCheckpoint.contentSha256,
+        }),
+      }),
+    );
+    hostedCheckpointEnvelope = signTrustedReceipt(
+      emptySelectionCheckpoint,
+      signingAnchor,
+    );
+    const rejectedCheckpointSubscriptionRefreshResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${checkpointSubscription.id}/refresh`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision:
+            unchangedCheckpointSubscriptionRefresh.subscription.revision,
+        }),
+      },
+    );
+    expect(rejectedCheckpointSubscriptionRefreshResponse.status).toBe(200);
+    const rejectedCheckpointSubscriptionRefresh =
+      (await rejectedCheckpointSubscriptionRefreshResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult;
+    expect(rejectedCheckpointSubscriptionRefresh).toEqual(
+      expect.objectContaining({
+        status: "rejected",
+        subscription: expect.objectContaining({
+          revision: 3,
+          lastRefreshStatus: "rejected",
+          lastGoodDiscovery: expect.objectContaining({
+            envelopeSha256: signedSelectionCheckpoint.contentSha256,
+            checkpointSha256: selectionCheckpoint.contentSha256,
+            selectionCount: 1,
+          }),
+        }),
+        discovery: expect.objectContaining({
+          status: "invalid",
+          diagnostics: expect.arrayContaining([
+            "checkpoint_divergent",
+            "checkpoint_hash_mismatch",
+            "selection_count_below_minimum",
+            "selection_count_rollback",
+          ]),
+        }),
+      }),
+    );
+    hostedCheckpointEnvelope = undefined;
+    const failedCheckpointSubscriptionRefreshResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${checkpointSubscription.id}/refresh`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision:
+            rejectedCheckpointSubscriptionRefresh.subscription.revision,
+        }),
+      },
+    );
+    expect(failedCheckpointSubscriptionRefreshResponse.status).toBe(200);
+    const failedCheckpointSubscriptionRefresh =
+      (await failedCheckpointSubscriptionRefreshResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult;
+    expect(failedCheckpointSubscriptionRefresh).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        failureSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        subscription: expect.objectContaining({
+          revision: 4,
+          lastRefreshStatus: "failed",
+          lastGoodDiscovery:
+            rejectedCheckpointSubscriptionRefresh.subscription.lastGoodDiscovery,
+        }),
+      }),
+    );
+    const pauseCheckpointSubscriptionResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${checkpointSubscription.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision:
+            failedCheckpointSubscriptionRefresh.subscription.revision,
+          status: "paused",
+        }),
+      },
+    );
+    expect(pauseCheckpointSubscriptionResponse.status).toBe(200);
+    expect(
+      (await pauseCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+    ).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        revision: 5,
+      }),
+    );
+    hostedCheckpointEnvelope = signedSelectionCheckpoint;
     const divergentSelectionCheckpointResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
       {
@@ -1636,7 +1839,13 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         event.type.startsWith("receipt.trust_directory_subscription."),
       ),
     ).toHaveLength(8);
+    expect(
+      events.filter((event) =>
+        event.type.startsWith("receipt.trust_checkpoint_subscription."),
+      ),
+    ).toHaveLength(5);
     expect(JSON.stringify(events)).not.toContain(sourceUrl);
+    expect(JSON.stringify(events)).not.toContain(checkpointSourceUrl);
     expect(JSON.stringify(events)).not.toContain("private upstream detail");
   });
 });

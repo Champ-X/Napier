@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 42,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-C52NEGeS.js",
-    "sizeBytes": 146603,
+    "path": "apps/web/dist/assets/index-BulIbwPj.js",
+    "sizeBytes": 147084,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "76ebc576b5fd78b17a5bd1d74af5bf734da7a528c7c13f406d53b23ae33809e0"
+    "sha256": "f811185cb4c1701ec649b0f16051c1927dafacca3e6c6c2c74135e826024a076"
   },
-  "distContentSha256": "76ebc576b5fd78b17a5bd1d74af5bf734da7a528c7c13f406d53b23ae33809e0",
+  "distContentSha256": "f811185cb4c1701ec649b0f16051c1927dafacca3e6c6c2c74135e826024a076",
   "errors": []
 }

@@ -135,6 +135,9 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
@@ -145,7 +148,9 @@ import {
   type ReceiptTrustAnchorDirectoryVerification,
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
   type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  type CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   type SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  type UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   type UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
   type ReplanExecutionPlanRequest,
   type ResolveEvaluationConsensusRequest,
@@ -336,6 +341,8 @@ import {
   MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS,
   MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+  MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   createReceiptTrustAnchorDirectoryQuorumActivationSelection,
@@ -347,16 +354,22 @@ import {
   createReceiptTrustAnchorDirectorySubscriptionQuorum,
   createReceiptTrustAnchorDirectorySubscription,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
+  settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefresh,
   settleReceiptTrustAnchorDirectorySubscriptionRefresh,
+  stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets,
   stripReceiptTrustAnchorDirectorySubscriptionSecrets,
+  updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus,
   updateReceiptTrustAnchorDirectorySubscriptionStatus,
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelection,
   validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   type PersistedReceiptTrustAnchorDirectorySubscription,
+  type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim,
   type ReceiptTrustAnchorDirectorySubscriptionClaim,
 } from "./receipt-trust-directory-subscriptions.js";
 import {
@@ -544,6 +557,7 @@ interface PersistedState {
   evaluationCasebookQualificationExecutions: EvaluationCasebookQualificationExecution[];
   receiptTrustAnchors: ReceiptTrustAnchor[];
   receiptTrustAnchorDirectorySubscriptions: PersistedReceiptTrustAnchorDirectorySubscription[];
+  receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[];
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[];
   receiptTrustAnchorDirectoryQuorumActivationDecisions: ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[];
   receiptTrustAnchorDirectoryQuorumActivationSelections: ReceiptTrustAnchorDirectoryQuorumActivationSelection[];
@@ -609,6 +623,10 @@ export interface DueReceiptTrustAnchorDirectorySubscriptionClaims {
   claims: ReceiptTrustAnchorDirectorySubscriptionClaim[];
 }
 
+export interface DueReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaims {
+  claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim[];
+}
+
 export interface AutomaticRecoveryClaims {
   claims: AutomaticRecoveryClaim[];
   skipped: AutomaticRecoveryAssessment[];
@@ -643,6 +661,8 @@ const EMPTY_STATE: PersistedState = {
   evaluationCasebookQualificationExecutions: [],
   receiptTrustAnchors: [],
   receiptTrustAnchorDirectorySubscriptions: [],
+  receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions:
+    [],
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: [],
   receiptTrustAnchorDirectoryQuorumActivationDecisions: [],
   receiptTrustAnchorDirectoryQuorumActivationSelections: [],
@@ -1857,6 +1877,291 @@ export class LocalStore {
       );
       this.state.receiptTrustAnchorDirectorySubscriptions[index] =
         settled.persisted;
+      await this.persistState();
+      return settled.result;
+    });
+  }
+
+  listReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[] {
+    this.assertInitialized();
+    return this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
+      .map(
+        stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets,
+      )
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  }
+
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+    subscriptionId: string,
+  ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription {
+    this.assertInitialized();
+    const subscription =
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
+    if (!subscription) {
+      throw new Error(
+        `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
+      );
+    }
+    return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
+      subscription,
+    );
+  }
+
+  async createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+    request: CreateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
+    discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription> {
+    this.assertInitialized();
+    this.getThread(request.threadId);
+    const subscription =
+      createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+        request,
+        discovery,
+      );
+    return this.stateQueue.run(async () => {
+      if (
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
+          .length >= MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS
+      ) {
+        throw new Error(
+          `Workspace exceeds ${MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS} receipt trust anchor directory quorum activation selection checkpoint subscriptions`,
+        );
+      }
+      if (
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.some(
+          (candidate) =>
+            candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
+        )
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection checkpoint subscription source already exists",
+        );
+      }
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.push(
+        subscription,
+      );
+      await this.persistState();
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
+        subscription,
+      );
+    });
+  }
+
+  async updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+    subscriptionId: string,
+    request: UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription> {
+    this.assertInitialized();
+    this.getThread(request.threadId);
+    return this.stateQueue.run(async () => {
+      const index =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.findIndex(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      const current =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
+          index
+        ];
+      if (!current) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (current.revision !== request.expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection checkpoint subscription revision changed",
+        );
+      }
+      if (current.claim && Date.parse(current.claim.expiresAt) > Date.now()) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection checkpoint subscription refresh is in progress",
+        );
+      }
+      const hadExpiredClaim = current.claim !== undefined;
+      delete current.claim;
+      delete current.claimTokenSha256;
+      const updated =
+        updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus(
+          current,
+          request.status,
+        );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
+        index
+      ] = updated;
+      if (updated.revision !== current.revision || hadExpiredClaim) {
+        await this.persistState();
+      }
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
+        updated,
+      );
+    });
+  }
+
+  async claimReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+    subscriptionId: string,
+    expectedRevision: number,
+    ownerId: string,
+    options: { now?: Date; leaseMs?: number } = {},
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim> {
+    this.assertInitialized();
+    const owner = normalizeLeaseOwner(ownerId);
+    const now = options.now ?? new Date();
+    if (!Number.isFinite(now.getTime())) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection checkpoint claim time is invalid",
+      );
+    }
+    const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
+    return this.stateQueue.run(async () => {
+      const subscription =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.find(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      if (!subscription) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (subscription.revision !== expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection checkpoint subscription revision changed",
+        );
+      }
+      if (
+        subscription.claim &&
+        Date.parse(subscription.claim.expiresAt) > now.getTime()
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection checkpoint subscription refresh is in progress",
+        );
+      }
+      const token = createLeaseToken();
+      subscription.claim = {
+        ownerId: owner,
+        acquiredAt: now.toISOString(),
+        expiresAt: new Date(now.getTime() + leaseMs).toISOString(),
+      };
+      subscription.claimTokenSha256 = sha256(token);
+      await this.persistState();
+      return {
+        subscription:
+          stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
+            subscription,
+          ),
+        sourceUrl: subscription.sourceUrl,
+        token,
+      };
+    });
+  }
+
+  async claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions(
+    ownerId: string,
+    options: {
+      now?: Date;
+      leaseMs?: number;
+      limit?: number;
+    } = {},
+  ): Promise<DueReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaims> {
+    this.assertInitialized();
+    const owner = normalizeLeaseOwner(ownerId);
+    const now = options.now ?? new Date();
+    if (!Number.isFinite(now.getTime())) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection checkpoint claim time is invalid",
+      );
+    }
+    const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
+    const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
+    return this.stateQueue.run(async () => {
+      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim[] =
+        [];
+      const due =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
+          .filter(
+            (subscription) =>
+              subscription.status === "active" &&
+              Date.parse(subscription.nextRefreshAt) <= now.getTime(),
+          )
+          .sort((left, right) =>
+            left.nextRefreshAt.localeCompare(right.nextRefreshAt),
+          );
+      for (const subscription of due) {
+        if (claims.length >= limit) break;
+        if (
+          subscription.claim &&
+          Date.parse(subscription.claim.expiresAt) > now.getTime()
+        ) {
+          continue;
+        }
+        const token = createLeaseToken();
+        subscription.claim = {
+          ownerId: owner,
+          acquiredAt: now.toISOString(),
+          expiresAt: new Date(now.getTime() + leaseMs).toISOString(),
+        };
+        subscription.claimTokenSha256 = sha256(token);
+        claims.push({
+          subscription:
+            stripReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionSecrets(
+              subscription,
+            ),
+          sourceUrl: subscription.sourceUrl,
+          token,
+        });
+      }
+      if (claims.length > 0) await this.persistState();
+      return { claims };
+    });
+  }
+
+  async settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim(
+    subscriptionId: string,
+    token: string,
+    outcome:
+      | {
+          discovery: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
+        }
+      | { failureSha256: string },
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      const index =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions.findIndex(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      const current =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
+          index
+        ];
+      if (!current) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection checkpoint subscription not found: ${subscriptionId}`,
+        );
+      }
+      assertLeaseToken(current.claimTokenSha256, token);
+      if (!current.claim) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection checkpoint subscription claim is not active",
+        );
+      }
+      if (Date.parse(current.claim.expiresAt) <= Date.now()) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection checkpoint subscription claim expired",
+        );
+      }
+      const settled =
+        settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefresh(
+          current,
+          outcome,
+        );
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions[
+        index
+      ] = settled.persisted;
       await this.persistState();
       return settled.result;
     });
@@ -7162,6 +7467,14 @@ export class LocalStore {
       state.receiptTrustAnchorDirectorySubscriptions = [];
     }
     if (
+      !Array.isArray(
+        state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
+      )
+    ) {
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions =
+        [];
+    }
+    if (
       !Array.isArray(state.receiptTrustAnchorDirectoryQuorumPromotionBaselines)
     ) {
       state.receiptTrustAnchorDirectoryQuorumPromotionBaselines = [];
@@ -7911,6 +8224,40 @@ export class LocalStore {
       Object.assign(input, subscription);
     }
     if (
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions
+        .length > MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS
+    ) {
+      throw new Error(
+        "Persisted receipt trust anchor directory quorum activation selection checkpoint subscription limit is exceeded",
+      );
+    }
+    const trustCheckpointSubscriptionIds = new Set<string>();
+    const trustCheckpointSubscriptionSourceHashes = new Set<string>();
+    for (const input of state.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions) {
+      const subscription =
+        validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription(
+          input,
+        );
+      if (
+        trustCheckpointSubscriptionIds.has(subscription.id) ||
+        trustCheckpointSubscriptionSourceHashes.has(
+          subscription.sourceUrlSha256,
+        ) ||
+        !state.threads.some(
+          (thread) => thread.id === subscription.auditThreadId,
+        )
+      ) {
+        throw new Error(
+          `Duplicate persisted receipt trust anchor directory quorum activation selection checkpoint subscription: ${subscription.id}`,
+        );
+      }
+      trustCheckpointSubscriptionIds.add(subscription.id);
+      trustCheckpointSubscriptionSourceHashes.add(
+        subscription.sourceUrlSha256,
+      );
+      Object.assign(input, subscription);
+    }
+    if (
       state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >
       MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES
     ) {
@@ -8461,6 +8808,9 @@ export class LocalStore {
       !Array.isArray(parsed.evaluationCasebookQualificationExecutions) ||
       !Array.isArray(parsed.receiptTrustAnchors) ||
       !Array.isArray(parsed.receiptTrustAnchorDirectorySubscriptions) ||
+      !Array.isArray(
+        parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptions,
+      ) ||
       !Array.isArray(
         parsed.receiptTrustAnchorDirectoryQuorumPromotionBaselines,
       ) ||

@@ -379,6 +379,16 @@ All notable changes to Napier are recorded here.
   Receipt Trust Desk adds **Discover checkpoint** with URL and checkpoint-hash
   pin inputs, and Web ViewModel/API tests cover the generated policy and
   wrapper.
+- Durable checkpoint registry subscriptions. `GET/POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions`
+  now manages hosted signed-checkpoint registries with active/paused status,
+  revision CAS, scheduled refresh leases, last-good preservation, and bounded
+  transparency history over discovery, envelope, checkpoint, selection-count,
+  selection-set, and chain-tail hashes. Manual refresh and pause/resume endpoints
+  mirror the directory subscription model; invalid or failed observations cannot
+  replace last-good checkpoint evidence. The Receipt Trust Desk can subscribe,
+  refresh, and pause checkpoint registries, and Server/Web tests cover the new
+  wrappers and receipts.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

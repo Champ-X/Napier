@@ -14,6 +14,7 @@ import {
   buildReceiptTrustDirectoryBaselineImportPolicy,
   projectReceiptTrustDirectoryBaselineActivation,
   qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest,
+  qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   qualifyReceiptTrustAnchorDirectoryDiscoveryRequest,
   qualifyReceiptTrustAnchorDirectorySubscriptionRequest,
 } from "../src/receipt-trust-view-model";
@@ -155,6 +156,45 @@ describe("receipt trust directory discovery ViewModel", () => {
         "",
         createCheckpoint(),
         "not-a-key",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("qualifies durable hosted checkpoint subscriptions with pinned policy", () => {
+    const checkpoint = createCheckpoint();
+    expect(
+      qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
+        "thread_12345678",
+        "  Activation checkpoint registry  ",
+        "https://trust.example.test/activation-selection-checkpoint.json",
+        checkpoint.contentSha256,
+        checkpoint,
+        "D".repeat(64),
+      ),
+    ).toEqual({
+      threadId: "thread_12345678",
+      label: "Activation checkpoint registry",
+      sourceUrl:
+        "https://trust.example.test/activation-selection-checkpoint.json",
+      refreshIntervalMs: DIRECTORY_SUBSCRIPTION_REFRESH_INTERVAL_MS,
+      policy: {
+        maxEnvelopeAgeMs: DISCOVERED_SELECTION_CHECKPOINT_MAX_AGE_MS,
+        rejectRollback: true,
+        minimumSelectionCount: checkpoint.selectionCount,
+        expectedCheckpointSha256: checkpoint.contentSha256,
+        expectedSelectionSetSha256: checkpoint.selectionSetSha256,
+        expectedSelectionChainTailSha256:
+          checkpoint.selectionChainTailSha256,
+        requiredSignerKeyIds: ["d".repeat(64)],
+      },
+    });
+    expect(
+      qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest(
+        "thread_12345678",
+        " ",
+        "https://trust.example.test/activation-selection-checkpoint.json",
+        "",
+        checkpoint,
       ),
     ).toBeUndefined();
   });

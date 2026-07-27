@@ -287,12 +287,20 @@ export const copy = {
       activationSelectionCheckpointSource: "Hosted checkpoint URL",
       activationSelectionCheckpointSourcePlaceholder:
         "https://trust.example.com/activation-selection-checkpoint.json",
+      checkpointSubscriptionLabel: "Checkpoint subscription label",
+      checkpointSubscriptionLabelPlaceholder: "Activation checkpoint registry",
       expectedActivationSelectionCheckpoint:
         "Expected checkpoint SHA-256",
       expectedActivationSelectionCheckpointPlaceholder:
         "Optional checkpoint pin",
       discoverActivationSelectionCheckpoint: "Discover checkpoint",
       discoveringActivationSelectionCheckpoint: "Discovering checkpoint...",
+      subscribeActivationSelectionCheckpoint: "Subscribe checkpoint",
+      subscribingActivationSelectionCheckpoint: "Subscribing checkpoint...",
+      checkpointSubscriptions: "Checkpoint subscriptions",
+      refreshCheckpointSubscription: "Refresh checkpoint",
+      refreshingCheckpointSubscription: "Refreshing checkpoint...",
+      updatingCheckpointSubscription: "Updating checkpoint...",
       verifyActivationSelectionCheckpoint: "Verify checkpoint",
       verifyingActivationSelectionCheckpoint: "Checking checkpoint...",
       activeBaselineActivation: "Active verifier selection",

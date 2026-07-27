@@ -537,7 +537,17 @@ and rollback-rejection gates before returning `valid` or `invalid`. The result
 keeps source URL/origin, response body, policy, envelope, checkpoint, current
 tail, and diagnostics as hash-bound evidence so operators can publish active
 selection checkpoints from external registries without trusting registry
-transport state.
+transport state. Durable checkpoint-registry subscriptions add the same
+last-good discipline used for anchor directories to signed checkpoint
+envelopes. Creation must begin with a valid discovery receipt; only URL hashes,
+policy hashes, envelope/checkpoint hashes, selection counters, and chain-tail
+evidence leave the local store. Refresh claims are leased and scheduled by the
+existing receipt-trust subscription worker. Accepted or unchanged discoveries
+advance last-good and append a bounded transparency entry; invalid, failed, or
+rollback observations preserve the previous last-good checkpoint while still
+recording status and failure/discovery hashes. The Receipt Trust Desk exposes
+create, refresh, pause, and resume controls so registry monitoring remains
+operator-visible without persisting raw registry responses in Ledger events.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2497,9 +2507,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- durable checkpoint-registry subscriptions for signed active-selection
-  checkpoint envelopes, including scheduled refresh, last-good preservation,
-  and transparency history over hosted checkpoint observations.
+- checkpoint-registry quorum and alerting over multiple signed
+  active-selection checkpoint sources, including independent-origin agreement
+  and stale-registry diagnostics.
 
 ### Layer 3: Extension fabric
 
