@@ -644,6 +644,12 @@ pins, optional discovery/envelope/proposal pins, and the current signed-proposal
 preflight. The approval trusted receipt binds subscription, source, policy,
 discovery, envelope, proposal, current preflight, activation-decision, proposal
 signer, and optional expiry hashes while keeping the hosted URL local-only.
+The approval apply endpoint verifies that envelope with the current active
+verifier directory, rechecks subscription CAS, confirms the approval still
+matches the last-good proposal, reruns the current proposal preflight, and only
+then applies the activation decision. Successful apply events include approval,
+proposal, subscription, and current-preflight hashes without persisting hosted
+source locators.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2607,7 +2613,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- approval-gated unattended verifier rotation apply.
+- unattended verifier rotation policy scheduling over approval-gated apply.
 
 ### Layer 3: Extension fabric
 

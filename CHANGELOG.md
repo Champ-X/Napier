@@ -484,6 +484,13 @@ All notable changes to Napier are recorded here.
   subscription, source, policy, discovery, envelope, proposal, current preflight,
   activation-decision, proposal signer, and optional expiry evidence without
   exposing the hosted source URL.
+- Approval-gated rotation proposal apply. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply`
+  now verifies the signed approval envelope with the current active verifier
+  directory, rechecks subscription CAS and last-good proposal binding, reruns
+  the current proposal preflight, and only then applies the activation decision.
+  Successful apply events carry approval/proposal/subscription/current-preflight
+  hashes only.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

@@ -5013,6 +5013,13 @@ export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
   expiresAt?: string;
 }
 
+export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest {
+  threadId: string;
+  expectedSubscriptionRevision: number;
+  expectedSubscriptionSha256: string;
+  approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;

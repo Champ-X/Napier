@@ -1,5 +1,6 @@
 import type {
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
@@ -36,6 +37,28 @@ type RotationProposalGateResult =
       diagnostics?: string[];
       envelope?: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
       proposal?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+      verification?: TrustedReceiptVerification;
+    };
+
+export type RotationProposalSubscriptionApprovalApplyGateResult =
+  | {
+      status: "accepted";
+      approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+      approval: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval;
+      proposalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+      proposal: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+      preflight: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight;
+      verification: TrustedReceiptVerification;
+    }
+  | {
+      status: "rejected";
+      reason: string;
+      diagnostics?: string[];
+      approvalEnvelope?: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+      approval?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval;
+      proposalEnvelope?: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+      proposal?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+      preflight?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight;
       verification?: TrustedReceiptVerification;
     };
 
@@ -405,6 +428,237 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
   return {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate(
+  store: LocalStore,
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  request: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
+): RotationProposalSubscriptionApprovalApplyGateResult {
+  if (subscription.auditThreadId !== request.threadId) {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval audit thread changed",
+    };
+  }
+  if (subscription.revision !== request.expectedSubscriptionRevision) {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval revision changed",
+    };
+  }
+  if (subscription.contentSha256 !== request.expectedSubscriptionSha256) {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval precondition failed",
+    };
+  }
+  let approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+  try {
+    const envelope = validateTrustedReceiptEnvelope(request.approvalEnvelope);
+    if (
+      envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
+    ) {
+      return {
+        status: "rejected",
+        reason:
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval receipt kind is invalid",
+      };
+    }
+    approvalEnvelope =
+      envelope as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+  } catch {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval envelope is invalid",
+    };
+  }
+  const approval = approvalEnvelope.receipt;
+  const selectionState =
+    store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+  const activeSelection = selectionState.selection;
+  if (!activeSelection) {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval requires an active verifier selection",
+      approvalEnvelope,
+      approval,
+    };
+  }
+  const directoryVerification = store.verifyReceiptTrustAnchorDirectory(
+    activeSelection.selectedDirectory,
+    {
+      expectedAnchorSetSha256: activeSelection.selectedAnchorSetSha256,
+    },
+  );
+  if (directoryVerification.status === "invalid") {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection active verifier directory is invalid",
+      approvalEnvelope,
+      approval,
+    };
+  }
+  const verification = verifyTrustedReceiptEnvelope(
+    approvalEnvelope,
+    receiptTrustAnchorsFromDirectory(activeSelection.selectedDirectory),
+  );
+  if (verification.status !== "trusted") {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval is not trusted",
+      diagnostics: [`trusted_receipt_${verification.status}`],
+      approvalEnvelope,
+      approval,
+      verification,
+    };
+  }
+  if (
+    approval.expiresAt !== undefined &&
+    Date.parse(approval.expiresAt) <= Date.now()
+  ) {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval is expired",
+      diagnostics: ["approval_expired"],
+      approvalEnvelope,
+      approval,
+      verification,
+    };
+  }
+  const discovery = subscription.lastGoodDiscovery;
+  const proposalEnvelope = discovery?.envelope;
+  const proposal = proposalEnvelope?.receipt;
+  if (
+    !discovery ||
+    discovery.status !== "valid" ||
+    !proposalEnvelope ||
+    !proposal
+  ) {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval requires a valid last-good proposal",
+      approvalEnvelope,
+      approval,
+      verification,
+    };
+  }
+  const diagnostics: string[] = [];
+  const requireMatch = (condition: boolean, diagnostic: string): void => {
+    if (!condition) diagnostics.push(diagnostic);
+  };
+  requireMatch(
+    approval.approvedByThreadId === request.threadId,
+    "approval_thread_mismatch",
+  );
+  requireMatch(
+    approval.subscriptionId === subscription.id,
+    "approval_subscription_id_mismatch",
+  );
+  requireMatch(
+    approval.subscriptionRevision === subscription.revision,
+    "approval_subscription_revision_mismatch",
+  );
+  requireMatch(
+    approval.subscriptionSha256 === subscription.contentSha256,
+    "approval_subscription_hash_mismatch",
+  );
+  requireMatch(
+    approval.sourceUrlSha256 === subscription.sourceUrlSha256,
+    "approval_source_url_hash_mismatch",
+  );
+  requireMatch(
+    approval.sourceOriginSha256 === subscription.sourceOriginSha256,
+    "approval_source_origin_hash_mismatch",
+  );
+  requireMatch(
+    approval.policySha256 === subscription.policySha256,
+    "approval_policy_hash_mismatch",
+  );
+  requireMatch(
+    approval.discoverySha256 === discovery.contentSha256,
+    "approval_discovery_hash_mismatch",
+  );
+  requireMatch(
+    approval.envelopeSha256 === proposalEnvelope.contentSha256,
+    "approval_proposal_envelope_hash_mismatch",
+  );
+  requireMatch(
+    approval.proposalSha256 === proposal.contentSha256,
+    "approval_proposal_hash_mismatch",
+  );
+  requireMatch(
+    approval.proposalReviewSha256 === proposal.rotationReviewSha256,
+    "approval_proposal_review_hash_mismatch",
+  );
+  requireMatch(
+    approval.activationDecisionRecordId === proposal.activationDecisionRecordId,
+    "approval_activation_decision_mismatch",
+  );
+  requireMatch(
+    approval.expectedCurrentSelectionSha256 ===
+      proposal.expectedCurrentSelectionSha256,
+    "approval_expected_selection_mismatch",
+  );
+  requireMatch(
+    (approval.checkpointRegistryQuorumBaselineSha256 ?? "") ===
+      (proposal.checkpointRegistryQuorumBaselineSha256 ?? ""),
+    "approval_checkpoint_registry_quorum_baseline_hash_mismatch",
+  );
+  requireMatch(
+    approval.proposalSignerKeyId === proposalEnvelope.signature.keyId,
+    "approval_proposal_signer_mismatch",
+  );
+  requireMatch(
+    approval.proposalSignedAt === proposalEnvelope.signature.signedAt,
+    "approval_proposal_signed_at_mismatch",
+  );
+  const preflight =
+    createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
+      store,
+      {
+        threadId: request.threadId,
+        activationDecisionRecordId: proposal.activationDecisionRecordId,
+        expectedCurrentSelectionSha256: proposal.expectedCurrentSelectionSha256,
+        rotationProposalEnvelope: proposalEnvelope,
+      },
+    );
+  if (preflight.status !== "accepted") {
+    diagnostics.push(`preflight_${preflight.status}`);
+    diagnostics.push(...preflight.diagnostics);
+  }
+  if (diagnostics.length > 0) {
+    return {
+      status: "rejected",
+      reason: `Receipt trust anchor directory quorum activation selection rotation proposal subscription approval is stale: ${Array.from(new Set(diagnostics)).join(", ")}`,
+      diagnostics: Array.from(new Set(diagnostics)),
+      approvalEnvelope,
+      approval,
+      proposalEnvelope,
+      proposal,
+      preflight,
+      verification,
+    };
+  }
+  return {
+    status: "accepted",
+    approvalEnvelope,
+    approval,
+    proposalEnvelope,
+    proposal,
+    preflight,
+    verification,
   };
 }
 

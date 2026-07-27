@@ -1506,6 +1506,14 @@ receipt binds subscription, source, policy, discovery, envelope, proposal,
 current preflight, activation-decision, and proposal-signer hashes without
 exposing the hosted URL.
 `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply`
+uses that signed approval as the unattended apply gate. The server verifies the
+approval envelope with the current active verifier directory, rechecks the
+subscription revision/content hash, confirms the approval still matches the
+last-good proposal, reruns the current proposal preflight, and only then
+CAS-applies the activation decision. Successful Ledger evidence includes
+approval, proposal, subscription, and current-preflight hashes only.
+`POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
 runs that same signed-proposal gate without mutating state. The no-store
 response returns `accepted`, `rejected`, or `not_required`, includes CAS,

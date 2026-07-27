@@ -87,6 +87,7 @@ import type {
   ExportExtensionPackageLockfileRequest,
   HealthResponse,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
   ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
   ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
@@ -115,6 +116,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -389,6 +391,8 @@ import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+  type RotationProposalSubscriptionApprovalApplyGateResult,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate,
 } from "./receipt-trust-rotation-proposals.js";
 import {
@@ -2488,6 +2492,121 @@ export function createApp(services: NapierServices): Hono {
           `napier-signed-quorum-activation-selection-rotation-proposal-subscription-approval-${envelope.contentSha256.slice(0, 12)}.json`,
         );
         return context.json(envelope, 201);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval apply request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const subscription =
+          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+            context.req.param("subscriptionId"),
+          );
+        const approvalGate =
+          verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate(
+            services.store,
+            subscription,
+            body,
+          );
+        if (approvalGate.status === "rejected") {
+          return jsonError(context, approvalGate.reason, 409);
+        }
+        const result =
+          await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+            body.threadId,
+            approvalGate.proposal.activationDecisionRecordId,
+            approvalGate.proposal.expectedCurrentSelectionSha256,
+          );
+        if (result.applied) {
+          await appendReceiptTrustEvent(
+            services,
+            body.threadId,
+            "receipt.trust_directory_quorum_activation_selection.applied",
+            {
+              selectionId: result.selection.id,
+              selectionSha256: result.selection.contentSha256,
+              activationDecisionRecordId:
+                result.selection.activationDecisionRecordId,
+              activationDecisionRecordSha256:
+                result.selection.activationDecisionRecordSha256,
+              activationDecisionEnvelopeSha256:
+                result.selection.activationDecisionEnvelopeSha256,
+              baselineId: result.selection.baselineId,
+              baselineSha256: result.selection.baselineSha256,
+              selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
+              selectedDirectorySha256: result.selection.selectedDirectorySha256,
+              expectedCurrentSelectionSha256:
+                result.expectedCurrentSelectionSha256,
+              ...(result.previousSelectionSha256
+                ? { previousSelectionSha256: result.previousSelectionSha256 }
+                : {}),
+              rotationProposalEnvelopeSha256:
+                approvalGate.proposalEnvelope.contentSha256,
+              rotationProposalSha256: approvalGate.proposal.contentSha256,
+              rotationProposalReviewSha256:
+                approvalGate.proposal.rotationReviewSha256,
+              rotationProposalCheckpointRegistryQuorumBaselineSha256:
+                approvalGate.proposal
+                  .checkpointRegistryQuorumBaselineSha256 ?? "",
+              rotationProposalApprovalEnvelopeSha256:
+                approvalGate.approvalEnvelope.contentSha256,
+              rotationProposalApprovalSha256:
+                approvalGate.approval.contentSha256,
+              rotationProposalApprovalPreflightSha256:
+                approvalGate.approval.approvalPreflightSha256,
+              rotationProposalApprovalCurrentPreflightSha256:
+                approvalGate.preflight.contentSha256,
+              rotationProposalApprovalSignerKeyId:
+                approvalGate.approvalEnvelope.signature.keyId,
+              rotationProposalSubscriptionId: approvalGate.approval.subscriptionId,
+              rotationProposalSubscriptionRevision:
+                approvalGate.approval.subscriptionRevision,
+              rotationProposalSubscriptionSha256:
+                approvalGate.approval.subscriptionSha256,
+              selectionStateSha256: result.selectionState.contentSha256,
+              resultSha256: result.contentSha256,
+            },
+          );
+        }
+        setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalResultHeaders(
+          context,
+          result,
+          approvalGate,
+        );
+        return context.json(result, result.applied ? 201 : 200);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -13040,6 +13159,41 @@ function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
   };
 }
 
+function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
+  input: unknown,
+):
+  | ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "threadId",
+    "expectedSubscriptionRevision",
+    "expectedSubscriptionSha256",
+    "approvalEnvelope",
+  ]);
+  const threadId = record?.["threadId"];
+  const expectedSubscriptionRevision =
+    record?.["expectedSubscriptionRevision"];
+  const expectedSubscriptionSha256 = record?.["expectedSubscriptionSha256"];
+  if (
+    !record ||
+    !validThreadId(threadId) ||
+    !isNonNegativeInteger(expectedSubscriptionRevision) ||
+    expectedSubscriptionRevision < 1 ||
+    typeof expectedSubscriptionSha256 !== "string" ||
+    !isSha256Hex(expectedSubscriptionSha256) ||
+    record["approvalEnvelope"] === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    threadId,
+    expectedSubscriptionRevision,
+    expectedSubscriptionSha256,
+    approvalEnvelope:
+      record["approvalEnvelope"] as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>,
+  };
+}
+
 function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
   input: unknown,
 ):
@@ -20599,6 +20753,60 @@ function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResultHeade
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
     result.selection.baselineSha256,
+  );
+}
+
+function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalResultHeaders(
+  context: Context,
+  result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+  approvalGate: Extract<
+    RotationProposalSubscriptionApprovalApplyGateResult,
+    { status: "accepted" }
+  >,
+): void {
+  setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResultHeaders(
+    context,
+    result,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Envelope-SHA256",
+    approvalGate.approvalEnvelope.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-SHA256",
+    approvalGate.approval.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Preflight-SHA256",
+    approvalGate.approval.approvalPreflightSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Current-Preflight-SHA256",
+    approvalGate.preflight.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id",
+    approvalGate.approval.subscriptionId,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
+    approvalGate.approval.subscriptionSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision",
+    String(approvalGate.approval.subscriptionRevision),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
+    approvalGate.proposal.contentSha256,
+  );
+  context.header(
+    "X-Napier-Envelope-SHA256",
+    approvalGate.proposalEnvelope.contentSha256,
+  );
+  context.header(
+    "X-Napier-Signature-Key-Id",
+    approvalGate.approvalEnvelope.signature.keyId,
   );
 }
 
