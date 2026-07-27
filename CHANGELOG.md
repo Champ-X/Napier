@@ -528,7 +528,11 @@ write:management-openapi` now scans `apps/server/src/app.ts`, emits
   /api/receipt-trust/anchors` and `POST /api/receipt-trust/anchors` now
   promote `ReceiptTrustAnchorList`, `CreateReceiptTrustAnchorRequest`, and
   `ReceiptTrustAnchor` schemas, including a required JSON request body and the
-  real `201` create response for trust-anchor enrollment clients.
+  real `201` create response for trust-anchor enrollment clients. `GET
+  /api/receipt-trust/anchors/directory` and `POST
+  /api/receipt-trust/anchors/:anchorId/revoke` now promote the public anchor
+  directory, revoke request, and returned anchor schemas so external verifier
+  management clients can depend on the full anchor lifecycle contract.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published

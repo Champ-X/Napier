@@ -18,10 +18,21 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/ReceiptTrustAnchorList",
     },
   },
+  "GET /api/receipt-trust/anchors/directory": {
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchorDirectory",
+    },
+  },
   "POST /api/receipt-trust/anchors": {
     request: "#/components/schemas/CreateReceiptTrustAnchorRequest",
     responses: {
       201: "#/components/schemas/ReceiptTrustAnchor",
+    },
+  },
+  "POST /api/receipt-trust/anchors/{anchorId}/revoke": {
+    request: "#/components/schemas/RevokeReceiptTrustAnchorRequest",
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchor",
     },
   },
 };
@@ -191,6 +202,73 @@ export async function generateManagementOpenApi(options = {}) {
           type: "string",
           enum: ["trusted", "revoked"],
         },
+        ReceiptTrustAnchorDirectory: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "generatedAt",
+            "receiptKinds",
+            "anchorCount",
+            "trustedCount",
+            "revokedCount",
+            "anchorSetSha256",
+            "anchors",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: { const: "napier.receipt-trust-anchor-directory" },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            generatedAt: { type: "string", format: "date-time" },
+            receiptKinds: {
+              type: "array",
+              minItems: 11,
+              maxItems: 11,
+              items: { $ref: "#/components/schemas/TrustedReceiptKind" },
+            },
+            anchorCount: { type: "integer", minimum: 0 },
+            trustedCount: { type: "integer", minimum: 0 },
+            revokedCount: { type: "integer", minimum: 0 },
+            anchorSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            anchors: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryEntry",
+              },
+            },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        ReceiptTrustAnchorDirectoryEntry: {
+          type: "object",
+          required: [
+            "id",
+            "label",
+            "algorithm",
+            "keyId",
+            "publicKeySpki",
+            "status",
+            "createdAt",
+            "updatedAt",
+            "anchorSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            id: { type: "string", pattern: "^trustkey_[a-z0-9]{8,80}$" },
+            label: { type: "string", minLength: 1, maxLength: 100 },
+            algorithm: { const: "Ed25519" },
+            keyId: { $ref: "#/components/schemas/Sha256Hex" },
+            publicKeySpki: { type: "string", minLength: 1 },
+            status: { $ref: "#/components/schemas/ReceiptTrustAnchorStatus" },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+            revokedAt: { type: "string", format: "date-time" },
+            anchorSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
         ReceiptTrustAnchorSigningSource: {
           type: "object",
           required: ["type", "variable"],
@@ -243,6 +321,33 @@ export async function generateManagementOpenApi(options = {}) {
               maxLength: 4096,
             },
           },
+        },
+        RevokeReceiptTrustAnchorRequest: {
+          type: "object",
+          required: ["threadId"],
+          additionalProperties: false,
+          properties: {
+            threadId: {
+              type: "string",
+              pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+          },
+        },
+        TrustedReceiptKind: {
+          type: "string",
+          enum: [
+            "evaluation_gate",
+            "casebook_qualification",
+            "policy_retirement_proof_bundle",
+            "receipt_trust_anchor_directory_metadata",
+            "receipt_trust_anchor_directory_quorum_promotion",
+            "receipt_trust_anchor_directory_quorum_activation_decision",
+            "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
+            "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval",
+            "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review",
+            "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+            "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
+          ],
         },
         EnvironmentVariableName: {
           type: "string",
