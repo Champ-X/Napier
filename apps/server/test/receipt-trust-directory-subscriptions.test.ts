@@ -15,6 +15,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
@@ -72,6 +73,8 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     const sourceUrl = "https://trust.example.test/napier/anchors.json";
     const checkpointSourceUrl =
       "https://trust.example.test/napier/activation-selection-checkpoint.json";
+    const checkpointMirrorSourceUrl =
+      "https://mirror.example.test/napier/activation-selection-checkpoint.json";
     let hostedDirectory: ReceiptTrustAnchorDirectory | undefined;
     let hostedCheckpointEnvelope:
       | TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>
@@ -88,7 +91,10 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         ],
         validateEndpoint: async () => undefined,
         fetcher: async (input) => {
-          if (input === checkpointSourceUrl) {
+          if (
+            input === checkpointSourceUrl ||
+            input === checkpointMirrorSourceUrl
+          ) {
             if (!hostedCheckpointEnvelope) {
               throw new Error("Checkpoint envelope is unavailable");
             }
@@ -1258,6 +1264,117 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     expect(
       (await listCheckpointSubscriptionsResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[],
     ).toEqual([checkpointSubscription]);
+    const mirrorCheckpointSubscriptionResponse = await app.request(
+      selectionCheckpointSubscriptionPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          label: "Activation checkpoint mirror",
+          sourceUrl: checkpointMirrorSourceUrl,
+          refreshIntervalMs: 5 * 60 * 1_000,
+          policy: checkpointSubscriptionPolicy,
+        }),
+      },
+    );
+    expect(mirrorCheckpointSubscriptionResponse.status).toBe(201);
+    const mirrorCheckpointSubscription =
+      (await mirrorCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    expect(mirrorCheckpointSubscription).toEqual(
+      expect.objectContaining({
+        label: "Activation checkpoint mirror",
+        sourceOriginSha256: sha256Text("https://mirror.example.test"),
+        lastRefreshStatus: "accepted",
+        lastGoodDiscovery: expect.objectContaining({
+          envelopeSha256: signedSelectionCheckpoint.contentSha256,
+          checkpointSha256: selectionCheckpoint.contentSha256,
+        }),
+      }),
+    );
+    const checkpointRegistryQuorumResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/quorum`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          policy: {
+            expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+            minimumSources: 2,
+            minimumAgreementCount: 2,
+            minimumDistinctSourceOrigins: 2,
+            requiredSourceOriginSha256s: [
+              sha256Text("https://mirror.example.test"),
+              sha256Text("https://trust.example.test"),
+            ],
+            requiredSignerKeyIds: [signingAnchor.keyId],
+          },
+        }),
+      },
+    );
+    expect(checkpointRegistryQuorumResponse.status).toBe(200);
+    const checkpointRegistryQuorum =
+      (await checkpointRegistryQuorumResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
+    expect(checkpointRegistryQuorum).toEqual(
+      expect.objectContaining({
+        status: "agreed",
+        diagnostics: [],
+        sourceCount: 2,
+        eligibleSourceCount: 2,
+        candidateCount: 1,
+        agreementCount: 2,
+        agreementDistinctSourceOriginCount: 2,
+        selectedCheckpointSha256: selectionCheckpoint.contentSha256,
+        selectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+        selectedSelectionChainTailSha256:
+          selectionCheckpoint.selectionChainTailSha256,
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            subscriptionId: checkpointSubscription.id,
+            status: "eligible",
+          }),
+          expect.objectContaining({
+            subscriptionId: mirrorCheckpointSubscription.id,
+            status: "eligible",
+          }),
+        ]),
+        candidates: [
+          expect.objectContaining({
+            checkpointSha256: selectionCheckpoint.contentSha256,
+            sourceCount: 2,
+            distinctSourceOriginCount: 2,
+            signerCount: 1,
+          }),
+        ],
+      }),
+    );
+    expect(
+      checkpointRegistryQuorumResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-status",
+      ),
+    ).toBe("agreed");
+    const highSelectionCountCheckpointRegistryQuorumResponse =
+      await app.request(`${selectionCheckpointSubscriptionPath}/quorum`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          policy: {
+            minimumSources: 1,
+            minimumAgreementCount: 1,
+            minimumDistinctSourceOrigins: 1,
+            minimumSelectionCount: 1_000,
+          },
+        }),
+      });
+    expect(highSelectionCountCheckpointRegistryQuorumResponse.status).toBe(200);
+    expect(
+      (await highSelectionCountCheckpointRegistryQuorumResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+    ).toEqual(
+      expect.objectContaining({
+        status: "policy_failed",
+        diagnostics: ["selection_count_below_minimum"],
+      }),
+    );
     const unchangedCheckpointSubscriptionRefreshResponse = await app.request(
       `${selectionCheckpointSubscriptionPath}/${checkpointSubscription.id}/refresh`,
       {
@@ -1381,6 +1498,27 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       expect.objectContaining({
         status: "paused",
         revision: 5,
+      }),
+    );
+    const pauseMirrorCheckpointSubscriptionResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${mirrorCheckpointSubscription.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: mirrorCheckpointSubscription.revision,
+          status: "paused",
+        }),
+      },
+    );
+    expect(pauseMirrorCheckpointSubscriptionResponse.status).toBe(200);
+    expect(
+      (await pauseMirrorCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+    ).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        revision: 2,
       }),
     );
     hostedCheckpointEnvelope = signedSelectionCheckpoint;
@@ -1843,7 +1981,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       events.filter((event) =>
         event.type.startsWith("receipt.trust_checkpoint_subscription."),
       ),
-    ).toHaveLength(5);
+    ).toHaveLength(7);
     expect(JSON.stringify(events)).not.toContain(sourceUrl);
     expect(JSON.stringify(events)).not.toContain(checkpointSourceUrl);
     expect(JSON.stringify(events)).not.toContain("private upstream detail");

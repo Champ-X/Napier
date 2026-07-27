@@ -14,6 +14,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
@@ -36,6 +37,7 @@ import {
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   discoverReceiptTrustAnchorDirectory,
   discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  evaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   evaluateReceiptTrustAnchorDirectoryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
@@ -938,6 +940,80 @@ describe("receipt trust Web API wrappers", () => {
       status: "paused",
       revision: 3,
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    const activationSelectionCheckpointRegistryQuorumRequest = {
+      policy: {
+        minimumSources: 1,
+        minimumAgreementCount: 1,
+        expectedCheckpointSha256: activationSelectionCheckpoint.contentSha256,
+      },
+    };
+    const activationSelectionCheckpointRegistryQuorum = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:09.000Z",
+      status: "agreed",
+      diagnostics: [],
+      policy: activationSelectionCheckpointRegistryQuorumRequest.policy,
+      policySha256: "b".repeat(64),
+      sourceCount: 1,
+      eligibleSourceCount: 1,
+      staleSourceCount: 0,
+      candidateCount: 1,
+      agreementCount: 1,
+      agreementDistinctSourceOriginCount: 1,
+      agreementSignerCount: 1,
+      selectedCheckpointSha256: activationSelectionCheckpoint.contentSha256,
+      selectedSelectionSetSha256:
+        activationSelectionCheckpoint.selectionSetSha256,
+      selectedSelectionChainTailSha256:
+        activationSelectionCheckpoint.selectionChainTailSha256,
+      sources: [
+        {
+          subscriptionId: activationSelectionCheckpointSubscription.id,
+          subscriptionSha256:
+            activationSelectionCheckpointSubscription.contentSha256,
+          sourceUrlSha256:
+            activationSelectionCheckpointSubscription.sourceUrlSha256,
+          sourceOriginSha256:
+            activationSelectionCheckpointSubscription.sourceOriginSha256,
+          status: "eligible",
+          diagnostics: [],
+          revision: activationSelectionCheckpointSubscription.revision,
+          observedAt:
+            activationSelectionCheckpointSubscription.transparencyHistory[0]!
+              .observedAt,
+          discoverySha256: activationSelectionCheckpointDiscovery.contentSha256,
+          envelopeSha256: signedActivationSelectionCheckpoint.contentSha256,
+          checkpointSha256: activationSelectionCheckpoint.contentSha256,
+          signerKeyId: signedActivationSelectionCheckpoint.signature.keyId,
+          selectionCount: activationSelectionCheckpoint.selectionCount,
+          selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+          selectionChainTailSha256:
+            activationSelectionCheckpoint.selectionChainTailSha256,
+          transparencyTailSha256:
+            activationSelectionCheckpointSubscription.transparencyTailSha256,
+          contentSha256: "c".repeat(64),
+        },
+      ],
+      candidates: [
+        {
+          checkpointSha256: activationSelectionCheckpoint.contentSha256,
+          sourceCount: 1,
+          distinctSourceOriginCount: 1,
+          signerCount: 1,
+          subscriptionSetSha256: "d".repeat(64),
+          sourceOriginSetSha256: "e".repeat(64),
+          signerSetSha256: "f".repeat(64),
+          selectionCount: activationSelectionCheckpoint.selectionCount,
+          selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+          selectionChainTailSha256:
+            activationSelectionCheckpoint.selectionChainTailSha256,
+          contentSha256: "0".repeat(64),
+        },
+      ],
+      contentSha256: "1".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -1080,6 +1156,12 @@ describe("receipt trust Web API wrappers", () => {
         response: pausedActivationSelectionCheckpointSubscription,
       },
       {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum",
+        method: "POST",
+        body: activationSelectionCheckpointRegistryQuorumRequest,
+        response: activationSelectionCheckpointRegistryQuorum,
+      },
+      {
         path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
         method: "POST",
         body: activationSelectionRotationReviewRequest,
@@ -1214,6 +1296,11 @@ describe("receipt trust Web API wrappers", () => {
       ),
     ).resolves.toEqual(pausedActivationSelectionCheckpointSubscription);
     await expect(
+      evaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+        activationSelectionCheckpointRegistryQuorumRequest,
+      ),
+    ).resolves.toEqual(activationSelectionCheckpointRegistryQuorum);
+    await expect(
       reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
         activationSelectionRotationReviewRequest,
       ),
@@ -1223,7 +1310,7 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionRequest,
       ),
     ).resolves.toEqual(activationSelectionResult);
-    expect(fetchMock).toHaveBeenCalledTimes(25);
+    expect(fetchMock).toHaveBeenCalledTimes(26);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

@@ -107,6 +107,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
@@ -124,6 +126,7 @@ import type {
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   RevokeExtensionPublisherTrustAnchorRequest,
   RevokeReceiptTrustAnchorRequest,
+  EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest,
   RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   RefreshReceiptTrustAnchorDirectorySubscriptionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
@@ -381,6 +384,8 @@ export interface NapierServices {
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
 }
+
+const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
 
 const BUNDLED_SKILLS: SkillSummary[] = [
   {
@@ -1349,6 +1354,48 @@ export function createApp(services: NapierServices): Hono {
         subscriptions,
       );
       return context.json(subscriptions);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint registry quorum request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust anchor directory quorum activation selection transparency checkpoint registry quorum request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body =
+        parseEvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint registry quorum request is invalid",
+          400,
+        );
+      }
+      const quorum =
+        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+          body.policy,
+        );
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumHeaders(
+        context,
+        quorum,
+      );
+      return context.json(quorum);
     },
   );
 
@@ -12280,7 +12327,7 @@ function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCh
     (minimumSelectionCount !== undefined &&
       (!isNonNegativeInteger(minimumSelectionCount) ||
         minimumSelectionCount >
-          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+          MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT)) ||
     !validSha256List(
       requiredSignerKeyIds,
       MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
@@ -12309,6 +12356,132 @@ function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCh
         }
       : {}),
     ...(rejectRollback !== undefined ? { rejectRollback } : {}),
+  };
+}
+
+function parseEvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest(
+  input: unknown,
+):
+  | EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest
+  | undefined {
+  const record = requestRecord(input, ["policy"]);
+  const policy =
+    parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+      record?.["policy"],
+    );
+  if (!record || (record["policy"] !== undefined && !policy)) {
+    return undefined;
+  }
+  return {
+    ...(policy ? { policy } : {}),
+  };
+}
+
+function parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+  input: unknown,
+):
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy
+  | undefined {
+  if (input === undefined) return {};
+  const record = requestRecord(input, [
+    "minimumSources",
+    "minimumAgreementCount",
+    "minimumDistinctSourceOrigins",
+    "maxObservationAgeMs",
+    "expectedCheckpointSha256",
+    "expectedSelectionSetSha256",
+    "expectedSelectionChainTailSha256",
+    "minimumSelectionCount",
+    "requiredSourceOriginSha256s",
+    "requiredSignerKeyIds",
+  ]);
+  if (!record) return undefined;
+  const minimumSources = record["minimumSources"];
+  const minimumAgreementCount = record["minimumAgreementCount"];
+  const minimumDistinctSourceOrigins = record["minimumDistinctSourceOrigins"];
+  const maxObservationAgeMs = record["maxObservationAgeMs"];
+  const expectedCheckpointSha256 = record["expectedCheckpointSha256"];
+  const expectedSelectionSetSha256 = record["expectedSelectionSetSha256"];
+  const expectedSelectionChainTailSha256 =
+    record["expectedSelectionChainTailSha256"];
+  const minimumSelectionCount = record["minimumSelectionCount"];
+  const requiredSourceOriginSha256s = record["requiredSourceOriginSha256s"];
+  const requiredSignerKeyIds = record["requiredSignerKeyIds"];
+  if (
+    (minimumSources !== undefined &&
+      (!isNonNegativeInteger(minimumSources) ||
+        minimumSources < 1 ||
+        minimumSources > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumAgreementCount !== undefined &&
+      (!isNonNegativeInteger(minimumAgreementCount) ||
+        minimumAgreementCount < 1 ||
+        minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumDistinctSourceOrigins !== undefined &&
+      (!isNonNegativeInteger(minimumDistinctSourceOrigins) ||
+        minimumDistinctSourceOrigins < 1 ||
+        minimumDistinctSourceOrigins >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (maxObservationAgeMs !== undefined &&
+      (!isNonNegativeInteger(maxObservationAgeMs) ||
+        maxObservationAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
+    (typeof expectedCheckpointSha256 === "string"
+      ? expectedCheckpointSha256 !== "" &&
+        !isSha256Hex(expectedCheckpointSha256)
+      : expectedCheckpointSha256 !== undefined) ||
+    (typeof expectedSelectionSetSha256 === "string"
+      ? expectedSelectionSetSha256 !== "" &&
+        !isSha256Hex(expectedSelectionSetSha256)
+      : expectedSelectionSetSha256 !== undefined) ||
+    (typeof expectedSelectionChainTailSha256 === "string"
+      ? expectedSelectionChainTailSha256 !== "" &&
+        !isSha256Hex(expectedSelectionChainTailSha256)
+      : expectedSelectionChainTailSha256 !== undefined) ||
+    (minimumSelectionCount !== undefined &&
+      (!isNonNegativeInteger(minimumSelectionCount) ||
+        minimumSelectionCount >
+          MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT)) ||
+    !validSha256List(
+      requiredSourceOriginSha256s,
+      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+    ) ||
+    !validSha256List(
+      requiredSignerKeyIds,
+      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+    )
+  ) {
+    return undefined;
+  }
+  return {
+    ...(minimumSources !== undefined ? { minimumSources } : {}),
+    ...(minimumAgreementCount !== undefined ? { minimumAgreementCount } : {}),
+    ...(minimumDistinctSourceOrigins !== undefined
+      ? { minimumDistinctSourceOrigins }
+      : {}),
+    ...(maxObservationAgeMs !== undefined ? { maxObservationAgeMs } : {}),
+    ...(typeof expectedCheckpointSha256 === "string"
+      ? { expectedCheckpointSha256 }
+      : {}),
+    ...(typeof expectedSelectionSetSha256 === "string"
+      ? { expectedSelectionSetSha256 }
+      : {}),
+    ...(typeof expectedSelectionChainTailSha256 === "string"
+      ? { expectedSelectionChainTailSha256 }
+      : {}),
+    ...(minimumSelectionCount !== undefined ? { minimumSelectionCount } : {}),
+    ...(requiredSourceOriginSha256s !== undefined
+      ? {
+          requiredSourceOriginSha256s: Array.from(
+            new Set(requiredSourceOriginSha256s as string[]),
+          ).sort(),
+        }
+      : {}),
+    ...(requiredSignerKeyIds !== undefined
+      ? {
+          requiredSignerKeyIds: Array.from(
+            new Set(requiredSignerKeyIds as string[]),
+          ).sort(),
+        }
+      : {}),
   };
 }
 
@@ -18143,6 +18316,66 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyChec
         .map((subscription) => subscription.contentSha256)
         .sort(),
     ),
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumHeaders(
+  context: Context,
+  quorum: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, quorum.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Status",
+    quorum.status,
+  );
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(quorum.diagnostics.length),
+  );
+  context.header("X-Napier-Diagnostics-SHA256", sha256Json(quorum.diagnostics));
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Policy-SHA256",
+    quorum.policySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Source-Count",
+    String(quorum.sourceCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Eligible-Source-Count",
+    String(quorum.eligibleSourceCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Stale-Source-Count",
+    String(quorum.staleSourceCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Candidate-Count",
+    String(quorum.candidateCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Agreement-Count",
+    String(quorum.agreementCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Agreement-Distinct-Origin-Count",
+    String(quorum.agreementDistinctSourceOriginCount),
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-SHA256",
+    quorum.selectedCheckpointSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
+    quorum.selectedSelectionSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
+    quorum.selectedSelectionChainTailSha256,
   );
 }
 

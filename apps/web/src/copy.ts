@@ -261,6 +261,13 @@ export const copy = {
         split: "Quorum split",
         policy_failed: "Quorum policy failed",
       },
+      checkpointRegistryQuorumStatuses: {
+        agreed: "Checkpoint quorum agreed",
+        insufficient_sources: "Checkpoint quorum lacks sources",
+        split: "Checkpoint registries split",
+        policy_failed: "Checkpoint quorum policy failed",
+        stale: "Checkpoint registries stale",
+      },
       baselineWorkbench: "Baseline activation",
       baselineWorkbenchBody:
         "Review signed quorum baselines against the current last-good directory feeds before activating a verifier set.",
@@ -298,6 +305,8 @@ export const copy = {
       subscribeActivationSelectionCheckpoint: "Subscribe checkpoint",
       subscribingActivationSelectionCheckpoint: "Subscribing checkpoint...",
       checkpointSubscriptions: "Checkpoint subscriptions",
+      evaluateCheckpointRegistryQuorum: "Evaluate checkpoint quorum",
+      evaluatingCheckpointRegistryQuorum: "Evaluating checkpoint quorum...",
       refreshCheckpointSubscription: "Refresh checkpoint",
       refreshingCheckpointSubscription: "Refreshing checkpoint...",
       updatingCheckpointSubscription: "Updating checkpoint...",

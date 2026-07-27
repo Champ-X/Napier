@@ -29,6 +29,11 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyEntry,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyStatus,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyEntry,
   type ReceiptTrustAnchorDirectoryQuorumActivationSource,
   type ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
@@ -624,6 +629,257 @@ export function settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
       ...resultContent,
       contentSha256: sha256(canonicalJson(resultContent)),
     },
+  };
+}
+
+export function normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy = {},
+): Required<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy> {
+  const requiredSourceOriginSha256s = Array.from(
+    new Set(input.requiredSourceOriginSha256s ?? []),
+  ).sort();
+  const requiredSignerKeyIds = Array.from(
+    new Set(input.requiredSignerKeyIds ?? []),
+  ).sort();
+  if (
+    (input.minimumSources !== undefined &&
+      (!Number.isSafeInteger(input.minimumSources) ||
+        input.minimumSources < 1 ||
+        input.minimumSources > MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS)) ||
+    (input.minimumAgreementCount !== undefined &&
+      (!Number.isSafeInteger(input.minimumAgreementCount) ||
+        input.minimumAgreementCount < 1 ||
+        input.minimumAgreementCount >
+          MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS)) ||
+    (input.minimumDistinctSourceOrigins !== undefined &&
+      (!Number.isSafeInteger(input.minimumDistinctSourceOrigins) ||
+        input.minimumDistinctSourceOrigins < 1 ||
+        input.minimumDistinctSourceOrigins >
+          MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS)) ||
+    (input.maxObservationAgeMs !== undefined &&
+      (!Number.isSafeInteger(input.maxObservationAgeMs) ||
+        input.maxObservationAgeMs < 0 ||
+        input.maxObservationAgeMs > 365 * 24 * 60 * 60 * 1_000)) ||
+    (input.expectedCheckpointSha256 !== undefined &&
+      input.expectedCheckpointSha256 !== "" &&
+      !SHA256_PATTERN.test(input.expectedCheckpointSha256)) ||
+    (input.expectedSelectionSetSha256 !== undefined &&
+      input.expectedSelectionSetSha256 !== "" &&
+      !SHA256_PATTERN.test(input.expectedSelectionSetSha256)) ||
+    (input.expectedSelectionChainTailSha256 !== undefined &&
+      input.expectedSelectionChainTailSha256 !== "" &&
+      !SHA256_PATTERN.test(input.expectedSelectionChainTailSha256)) ||
+    (input.minimumSelectionCount !== undefined &&
+      (!Number.isSafeInteger(input.minimumSelectionCount) ||
+        input.minimumSelectionCount < 0 ||
+        input.minimumSelectionCount > 1_000)) ||
+    requiredSourceOriginSha256s.some((origin) => !SHA256_PATTERN.test(origin)) ||
+    requiredSignerKeyIds.some((keyId) => !SHA256_PATTERN.test(keyId))
+  ) {
+    throw new Error(
+      "Receipt trust checkpoint registry quorum policy is invalid",
+    );
+  }
+  return {
+    minimumSources: input.minimumSources ?? 2,
+    minimumAgreementCount: input.minimumAgreementCount ?? 2,
+    minimumDistinctSourceOrigins: input.minimumDistinctSourceOrigins ?? 2,
+    maxObservationAgeMs: input.maxObservationAgeMs ?? 7 * 24 * 60 * 60 * 1_000,
+    expectedCheckpointSha256: input.expectedCheckpointSha256 ?? "",
+    expectedSelectionSetSha256: input.expectedSelectionSetSha256 ?? "",
+    expectedSelectionChainTailSha256:
+      input.expectedSelectionChainTailSha256 ?? "",
+    minimumSelectionCount: input.minimumSelectionCount ?? 0,
+    requiredSourceOriginSha256s,
+    requiredSignerKeyIds,
+  };
+}
+
+export function hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+  input: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy = {},
+): string {
+  return sha256(
+    canonicalJson(
+      normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+        input,
+      ),
+    ),
+  );
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+  subscriptions: readonly ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription[],
+  policyInput?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy,
+  generatedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum {
+  const generatedAt = requireTimestamp(
+    generatedAtInput,
+    "checkpoint registry quorum generation time",
+  );
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+      policyInput,
+    );
+  const generatedAtMs = Date.parse(generatedAt);
+  const sources = subscriptions
+    .map(validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription)
+    .map((subscription) =>
+      createCheckpointRegistrySource(subscription, policy, generatedAtMs),
+    )
+    .sort((left, right) =>
+      left.subscriptionId.localeCompare(right.subscriptionId),
+    );
+  const eligibleSources = sources.filter(
+    (source) => source.status === "eligible" && source.checkpointSha256,
+  );
+  const staleSourceCount = sources.filter(
+    (source) => source.status === "stale",
+  ).length;
+  const sourceGroups = new Map<
+    string,
+    ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource[]
+  >();
+  for (const source of eligibleSources) {
+    const key = source.checkpointSha256!;
+    const group = sourceGroups.get(key) ?? [];
+    group.push(source);
+    sourceGroups.set(key, group);
+  }
+  const candidates = Array.from(sourceGroups.entries())
+    .map(([checkpointSha256, group]) =>
+      createCheckpointRegistryCandidate(checkpointSha256, group),
+    )
+    .sort(
+      (left, right) =>
+        right.sourceCount - left.sourceCount ||
+        right.distinctSourceOriginCount - left.distinctSourceOriginCount ||
+        right.signerCount - left.signerCount ||
+        left.checkpointSha256.localeCompare(right.checkpointSha256),
+    );
+  const winner = candidates.at(0);
+  const winnerSources = winner
+    ? eligibleSources.filter(
+        (source) => source.checkpointSha256 === winner.checkpointSha256,
+      )
+    : [];
+  const winningSourceOrigins = new Set(
+    winnerSources.map((source) => source.sourceOriginSha256),
+  );
+  const winningSignerKeyIds = new Set(
+    winnerSources.flatMap((source) =>
+      source.signerKeyId ? [source.signerKeyId] : [],
+    ),
+  );
+  const requiredSourceOriginMissing =
+    policy.requiredSourceOriginSha256s.some(
+      (origin) => !winningSourceOrigins.has(origin),
+    );
+  const requiredSignerMissing = policy.requiredSignerKeyIds.some(
+    (keyId) => !winningSignerKeyIds.has(keyId),
+  );
+  const diagnostics: string[] = [];
+  if (sources.length < policy.minimumSources) diagnostics.push("insufficient_sources");
+  if (eligibleSources.length < policy.minimumSources) {
+    diagnostics.push("insufficient_eligible_sources");
+  }
+  if (winner && winner.sourceCount < policy.minimumAgreementCount) {
+    diagnostics.push("insufficient_agreement");
+  }
+  if (
+    winner &&
+    winner.distinctSourceOriginCount < policy.minimumDistinctSourceOrigins
+  ) {
+    diagnostics.push("insufficient_distinct_source_origins");
+  }
+  if (staleSourceCount > 0) diagnostics.push("stale_registry_sources");
+  if (sources.some((source) => source.status === "missing_last_good")) {
+    diagnostics.push("missing_last_good_sources");
+  }
+  if (
+    policy.expectedCheckpointSha256 &&
+    winner?.checkpointSha256 !== policy.expectedCheckpointSha256
+  ) {
+    diagnostics.push("checkpoint_unexpected");
+  }
+  if (
+    policy.expectedSelectionSetSha256 &&
+    winner?.selectionSetSha256 !== policy.expectedSelectionSetSha256
+  ) {
+    diagnostics.push("selection_set_unexpected");
+  }
+  if (
+    policy.expectedSelectionChainTailSha256 &&
+    winner?.selectionChainTailSha256 !== policy.expectedSelectionChainTailSha256
+  ) {
+    diagnostics.push("selection_chain_tail_unexpected");
+  }
+  if (winner && winner.selectionCount < policy.minimumSelectionCount) {
+    diagnostics.push("selection_count_below_minimum");
+  }
+  if (requiredSourceOriginMissing) {
+    diagnostics.push("required_source_origin_missing");
+  }
+  if (requiredSignerMissing) diagnostics.push("required_signer_missing");
+
+  const agreementSatisfied = Boolean(
+    winner &&
+      winner.sourceCount >= policy.minimumAgreementCount &&
+      winner.distinctSourceOriginCount >= policy.minimumDistinctSourceOrigins,
+  );
+  const policyFailed = diagnostics.some((diagnostic) =>
+    [
+      "checkpoint_unexpected",
+      "selection_set_unexpected",
+      "selection_chain_tail_unexpected",
+      "selection_count_below_minimum",
+      "required_source_origin_missing",
+      "required_signer_missing",
+    ].includes(diagnostic),
+  );
+  const status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum["status"] =
+    eligibleSources.length < policy.minimumSources && staleSourceCount > 0
+      ? "stale"
+      : eligibleSources.length < policy.minimumSources
+        ? "insufficient_sources"
+        : policyFailed
+          ? "policy_failed"
+          : agreementSatisfied
+            ? "agreed"
+            : "split";
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    generatedAt,
+    status,
+    diagnostics,
+    policy,
+    policySha256:
+      hashReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+        policy,
+      ),
+    sourceCount: sources.length,
+    eligibleSourceCount: eligibleSources.length,
+    staleSourceCount,
+    candidateCount: candidates.length,
+    agreementCount: winner?.sourceCount ?? 0,
+    agreementDistinctSourceOriginCount: winner?.distinctSourceOriginCount ?? 0,
+    agreementSignerCount: winner?.signerCount ?? 0,
+    ...(winner
+      ? {
+          selectedCheckpointSha256: winner.checkpointSha256,
+          selectedSelectionSetSha256: winner.selectionSetSha256,
+          ...(winner.selectionChainTailSha256
+            ? { selectedSelectionChainTailSha256: winner.selectionChainTailSha256 }
+            : {}),
+        }
+      : {}),
+    sources,
+    candidates,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
   };
 }
 
@@ -3546,6 +3802,101 @@ function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
     );
   }
   return structuredClone(verification);
+}
+
+function createCheckpointRegistrySource(
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+  policy: Required<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy>,
+  generatedAtMs: number,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource {
+  const discovery = subscription.lastGoodDiscovery;
+  const tail = subscription.transparencyHistory.at(-1);
+  const diagnostics: string[] = [];
+  let status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus =
+    "eligible";
+  if (subscription.status === "paused") {
+    status = "paused";
+    diagnostics.push("source_paused");
+  } else if (!discovery || !tail || !subscription.transparencyTailSha256) {
+    status = "missing_last_good";
+    diagnostics.push("last_good_missing");
+  } else if (
+    policy.maxObservationAgeMs > 0 &&
+    generatedAtMs - Date.parse(tail.observedAt) > policy.maxObservationAgeMs
+  ) {
+    status = "stale";
+    diagnostics.push("observation_stale");
+  }
+  const content = {
+    subscriptionId: subscription.id,
+    subscriptionSha256: subscription.contentSha256,
+    sourceUrlSha256: subscription.sourceUrlSha256,
+    sourceOriginSha256: subscription.sourceOriginSha256,
+    status,
+    diagnostics,
+    revision: subscription.revision,
+    ...(tail ? { observedAt: tail.observedAt } : {}),
+    ...(discovery ? { discoverySha256: discovery.contentSha256 } : {}),
+    ...(discovery?.envelopeSha256
+      ? { envelopeSha256: discovery.envelopeSha256 }
+      : {}),
+    ...(discovery?.checkpointSha256
+      ? { checkpointSha256: discovery.checkpointSha256 }
+      : {}),
+    ...(discovery?.signerKeyId ? { signerKeyId: discovery.signerKeyId } : {}),
+    ...(discovery?.selectionCount !== undefined
+      ? { selectionCount: discovery.selectionCount }
+      : {}),
+    ...(discovery?.selectionSetSha256
+      ? { selectionSetSha256: discovery.selectionSetSha256 }
+      : {}),
+    ...(discovery?.selectionChainTailSha256
+      ? { selectionChainTailSha256: discovery.selectionChainTailSha256 }
+      : {}),
+    ...(subscription.transparencyTailSha256
+      ? { transparencyTailSha256: subscription.transparencyTailSha256 }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function createCheckpointRegistryCandidate(
+  checkpointSha256: string,
+  sources: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource[],
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate {
+  const sorted = [...sources].sort((left, right) =>
+    left.subscriptionId.localeCompare(right.subscriptionId),
+  );
+  const sourceOrigins = [
+    ...new Set(sorted.map((source) => source.sourceOriginSha256)),
+  ].sort();
+  const signerKeyIds = [
+    ...new Set(sorted.flatMap((source) => (source.signerKeyId ? [source.signerKeyId] : []))),
+  ].sort();
+  const selectionSetSha256 = sorted[0]?.selectionSetSha256 ?? sha256(canonicalJson([]));
+  const selectionChainTailSha256 = sorted[0]?.selectionChainTailSha256;
+  const selectionCount = Math.max(...sorted.map((source) => source.selectionCount ?? 0));
+  const content = {
+    checkpointSha256,
+    sourceCount: sorted.length,
+    distinctSourceOriginCount: sourceOrigins.length,
+    signerCount: signerKeyIds.length,
+    subscriptionSetSha256: sha256(
+      canonicalJson(sorted.map((source) => source.subscriptionId)),
+    ),
+    sourceOriginSetSha256: sha256(canonicalJson(sourceOrigins)),
+    signerSetSha256: sha256(canonicalJson(signerKeyIds)),
+    selectionCount,
+    selectionSetSha256,
+    ...(selectionChainTailSha256 ? { selectionChainTailSha256 } : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
 }
 
 function createQuorumSource(

@@ -548,6 +548,21 @@ rollback observations preserve the previous last-good checkpoint while still
 recording status and failure/discovery hashes. The Receipt Trust Desk exposes
 create, refresh, pause, and resume controls so registry monitoring remains
 operator-visible without persisting raw registry responses in Ledger events.
+Checkpoint-registry quorum is a stateless no-store receipt over those
+last-good signed checkpoint subscriptions. It normalizes a local policy for
+minimum source count, agreement count, distinct source-origin count,
+observation freshness, expected checkpoint/selection-set/chain-tail hashes,
+minimum selection count, required source origins, and required signer key IDs.
+Each source row contains only subscription/content, URL/origin, discovery,
+envelope, checkpoint, signer, selection-count, selection-set, chain-tail, and
+transparency-tail hashes. Eligible rows are grouped by checkpoint SHA-256 and
+ranked by agreement count, distinct origins, signer count, then checkpoint
+hash. The receipt reports `agreed`, `insufficient_sources`, `split`,
+`policy_failed`, or `stale` plus low-cardinality diagnostics, selected
+checkpoint evidence, candidate-set hashes, and response headers for automated
+polling. This gives operators a registry-level alert before trusting a hosted
+active-selection checkpoint while still avoiding raw registry URLs or response
+bodies in portable evidence.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2483,9 +2498,11 @@ The current boundary has twenty-one parts:
     discoveries, bounded transparency histories, rollback detection,
     weighted independent-origin quorum receipts with publisher metadata pins,
     quorum promotion receipts, signed quorum-promotion baselines, expiring
-    refresh claims, revision CAS, and publisher-signed directory metadata;
-    fail-closed promotion preserves the active verifier set across rejected,
-    failed, or stale rotations.
+    refresh claims, revision CAS, publisher-signed directory metadata, active
+    verifier-set selections, transparency checkpoints, hosted signed checkpoint
+    discovery, durable checkpoint registries, and checkpoint-registry quorum
+    alerting; fail-closed promotion preserves the active verifier set across
+    rejected, failed, stale, or split rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2507,9 +2524,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- checkpoint-registry quorum and alerting over multiple signed
-  active-selection checkpoint sources, including independent-origin agreement
-  and stale-registry diagnostics.
+- checkpoint-registry policy promotion that can require an agreed signed
+  active-selection checkpoint quorum before allowing automated verifier-set
+  rotation proposals.
 
 ### Layer 3: Extension fabric
 

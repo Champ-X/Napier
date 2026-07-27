@@ -1475,6 +1475,19 @@ a bounded transparency chain over discovery, envelope, checkpoint, selection
 count, selection-set, and chain-tail hashes. Pause/resume uses revision CAS,
 and the Receipt Trust Desk can create, refresh, and pause checkpoint
 subscriptions beside the discovery receipt.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum`
+evaluates those durable checkpoint registries without mutation. The default
+policy requires at least two eligible signed checkpoint sources, two agreeing
+observations, and two distinct source origins. Callers can add checkpoint,
+selection-set, chain-tail, minimum-selection, source-origin, signer-key, and
+observation-age pins. The no-store quorum receipt groups eligible sources by
+checkpoint SHA-256 and returns `agreed`, `insufficient_sources`, `split`,
+`policy_failed`, or `stale` with hash-only source, candidate, policy, selected
+checkpoint, selected selection-set, selected chain-tail, agreement, and
+diagnostic evidence. The Receipt Trust Desk adds **Evaluate checkpoint quorum**
+so operators can see independent-registry agreement or stale/split policy
+alerts before trusting a hosted active-selection checkpoint.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

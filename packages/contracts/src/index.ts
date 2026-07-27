@@ -4535,6 +4535,94 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
   contentSha256: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy {
+  minimumSources?: number;
+  minimumAgreementCount?: number;
+  minimumDistinctSourceOrigins?: number;
+  maxObservationAgeMs?: number;
+  expectedCheckpointSha256?: string;
+  expectedSelectionSetSha256?: string;
+  expectedSelectionChainTailSha256?: string;
+  minimumSelectionCount?: number;
+  requiredSourceOriginSha256s?: string[];
+  requiredSignerKeyIds?: string[];
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumStatus =
+  | "agreed"
+  | "insufficient_sources"
+  | "split"
+  | "policy_failed"
+  | "stale";
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus =
+  | "eligible"
+  | "paused"
+  | "missing_last_good"
+  | "stale";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource {
+  subscriptionId: string;
+  subscriptionSha256: string;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus;
+  diagnostics: string[];
+  revision: number;
+  observedAt?: string;
+  discoverySha256?: string;
+  envelopeSha256?: string;
+  checkpointSha256?: string;
+  signerKeyId?: string;
+  selectionCount?: number;
+  selectionSetSha256?: string;
+  selectionChainTailSha256?: string;
+  transparencyTailSha256?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate {
+  checkpointSha256: string;
+  sourceCount: number;
+  distinctSourceOriginCount: number;
+  signerCount: number;
+  subscriptionSetSha256: string;
+  sourceOriginSetSha256: string;
+  signerSetSha256: string;
+  selectionCount: number;
+  selectionSetSha256: string;
+  selectionChainTailSha256?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-registry-quorum";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumStatus;
+  diagnostics: string[];
+  policy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy;
+  policySha256: string;
+  sourceCount: number;
+  eligibleSourceCount: number;
+  staleSourceCount: number;
+  candidateCount: number;
+  agreementCount: number;
+  agreementDistinctSourceOriginCount: number;
+  agreementSignerCount: number;
+  selectedCheckpointSha256?: string;
+  selectedSelectionSetSha256?: string;
+  selectedSelectionChainTailSha256?: string;
+  sources: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource[];
+  candidates: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryCandidate[];
+  contentSha256: string;
+}
+
+export interface EvaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumRequest {
+  policy?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy;
+}
+
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus =
   | "missing_selection"
   | "aligned"

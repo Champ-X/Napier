@@ -389,6 +389,16 @@ All notable changes to Napier are recorded here.
   replace last-good checkpoint evidence. The Receipt Trust Desk can subscribe,
   refresh, and pause checkpoint registries, and Server/Web tests cover the new
   wrappers and receipts.
+- Checkpoint registry quorum receipts. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum`
+  now evaluates durable signed-checkpoint registries without mutation,
+  requiring configurable source, agreement, distinct-origin, freshness,
+  checkpoint, selection-set, chain-tail, source-origin, and signer-key policy
+  gates. The receipt groups eligible last-good observations by checkpoint
+  SHA-256 and returns `agreed`, `insufficient_sources`, `split`,
+  `policy_failed`, or `stale` with hash-only source/candidate/agreement
+  evidence and headers. The Receipt Trust Desk adds **Evaluate checkpoint
+  quorum**, and Server/Web tests cover the agreed independent-origin path.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

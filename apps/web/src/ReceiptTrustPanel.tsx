@@ -27,6 +27,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
@@ -49,6 +50,7 @@ import {
   discoverReceiptTrustAnchorDirectory,
   discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   evaluateReceiptTrustAnchorDirectoryQuorum,
+  evaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
   getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
@@ -173,6 +175,11 @@ export default function ReceiptTrustPanel({
     setBaselineActivationSelectionCheckpointDiscovery,
   ] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery>();
+  const [
+    checkpointRegistryQuorum,
+    setCheckpointRegistryQuorum,
+  ] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum>();
   const [
     checkpointSubscriptions,
     setCheckpointSubscriptions,
@@ -642,6 +649,7 @@ export default function ReceiptTrustPanel({
           checkpointSubscriptionRequest,
         );
       upsertCheckpointSubscription(subscription);
+      setCheckpointRegistryQuorum(undefined);
       setBaselineActivationSelectionCheckpointDiscovery(
         subscription.lastGoodDiscovery,
       );
@@ -674,6 +682,7 @@ export default function ReceiptTrustPanel({
           subscription.revision,
         );
       upsertCheckpointSubscription(result.subscription);
+      setCheckpointRegistryQuorum(undefined);
       if (result.discovery) {
         setBaselineActivationSelectionCheckpointDiscovery(result.discovery);
         setBaselineActivationSelectionCheckpointVerification(
@@ -713,8 +722,23 @@ export default function ReceiptTrustPanel({
           },
         );
       upsertCheckpointSubscription(updated);
+      setCheckpointRegistryQuorum(undefined);
     } catch (updateError) {
       setError(toErrorMessage(updateError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function evaluateCheckpointRegistryQuorum(): Promise<void> {
+    setBusyId("evaluate-checkpoint-registry-quorum");
+    setError(undefined);
+    try {
+      setCheckpointRegistryQuorum(
+        await evaluateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(),
+      );
+    } catch (quorumError) {
+      setError(toErrorMessage(quorumError));
     } finally {
       setBusyId(undefined);
     }
@@ -2086,7 +2110,19 @@ export default function ReceiptTrustPanel({
           ) : null}
           {checkpointSubscriptions.length > 0 ? (
             <div className="receipt-subscriptions">
-              <strong>{copy.lab.trust.checkpointSubscriptions}</strong>
+              <span>
+                <strong>{copy.lab.trust.checkpointSubscriptions}</strong>
+                <button
+                  type="button"
+                  disabled={Boolean(busyId)}
+                  onClick={() => void evaluateCheckpointRegistryQuorum()}
+                >
+                  <ShieldCheck size={10} aria-hidden="true" />
+                  {busyId === "evaluate-checkpoint-registry-quorum"
+                    ? copy.lab.trust.evaluatingCheckpointRegistryQuorum
+                    : copy.lab.trust.evaluateCheckpointRegistryQuorum}
+                </button>
+              </span>
               {checkpointSubscriptions.map((subscription) => (
                 <article key={subscription.id}>
                   <span>
@@ -2146,6 +2182,50 @@ export default function ReceiptTrustPanel({
                 </article>
               ))}
             </div>
+          ) : null}
+          {checkpointRegistryQuorum ? (
+            <output
+              className={`receipt-baseline-policy policy-${
+                checkpointRegistryQuorum.status === "agreed"
+                  ? "approved"
+                  : "rejected"
+              }`}
+              aria-live="polite"
+            >
+              {checkpointRegistryQuorum.status === "agreed" ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {
+                    copy.lab.trust.checkpointRegistryQuorumStatuses[
+                      checkpointRegistryQuorum.status
+                    ]
+                  }
+                </strong>
+                <small>
+                  {checkpointRegistryQuorum.diagnostics.length > 0
+                    ? checkpointRegistryQuorum.diagnostics.join(", ")
+                    : `${checkpointRegistryQuorum.agreementCount} ${copy.lab.trust.quorumAgreement}`}
+                </small>
+              </span>
+              <code title={checkpointRegistryQuorum.contentSha256}>
+                {checkpointRegistryQuorum.contentSha256.slice(0, 12)}
+              </code>
+              <code title={checkpointRegistryQuorum.policySha256}>
+                {checkpointRegistryQuorum.policySha256.slice(0, 12)}
+              </code>
+              {checkpointRegistryQuorum.selectedCheckpointSha256 ? (
+                <code title={checkpointRegistryQuorum.selectedCheckpointSha256}>
+                  {checkpointRegistryQuorum.selectedCheckpointSha256.slice(
+                    0,
+                    12,
+                  )}
+                </code>
+              ) : null}
+            </output>
           ) : null}
           {baselineActivationSelectionCheckpointEnvelope ? (
             <output className="receipt-baseline-policy" aria-live="polite">
