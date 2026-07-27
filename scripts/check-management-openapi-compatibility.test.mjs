@@ -37,6 +37,10 @@ describe("management OpenAPI compatibility fixture", () => {
       tags: ["health"],
       pathParameters: [],
       acceptsJsonRequestBody: false,
+      jsonRequestSchemaRef: null,
+      jsonResponseSchemaRefs: {
+        200: "#/components/schemas/HealthResponse",
+      },
       responseStatuses: ["200", "400", "404"],
     });
   });
@@ -64,7 +68,12 @@ describe("management OpenAPI compatibility fixture", () => {
       schemaVersion: 1,
       operationCount: 2,
       operations: [
-        expect.objectContaining({ key: "GET /api/health" }),
+        expect.objectContaining({
+          key: "GET /api/health",
+          jsonResponseSchemaRefs: {
+            200: "#/components/schemas/HealthResponse",
+          },
+        }),
         expect.objectContaining({ key: "POST /api/threads/{threadId}/runs" }),
       ],
     });
@@ -179,7 +188,14 @@ function createOpenApiArtifact(routePaths, options = {}) {
           operationId: options.healthOperationId ?? "get-health",
           tags: ["health"],
           responses: {
-            200: { description: "OK" },
+            200: {
+              description: "OK",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/HealthResponse" },
+                },
+              },
+            },
             400: { description: "Bad request" },
             404: { description: "Not found" },
           },

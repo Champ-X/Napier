@@ -69,6 +69,29 @@ describe("management OpenAPI generator", () => {
         "x-napier-route-count": 2,
       }),
     );
+    expect(generated.artifact.components.schemas.HealthResponse).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: ["status", "service", "time", "runtime", "ledger"],
+      }),
+    );
+    expect(generated.artifact.paths["/api/health"].get).toEqual(
+      expect.objectContaining({
+        operationId: "get-health",
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/HealthResponse" },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/HealthResponse",
+        },
+      }),
+    );
     expect(
       generated.artifact.paths["/api/threads/{threadId}/runs"].post,
     ).toEqual(

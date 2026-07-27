@@ -522,15 +522,17 @@ All notable changes to Napier are recorded here.
 write:management-openapi` now scans `apps/server/src/app.ts`, emits
   `docs/artifacts/management-openapi-0.1.0.json` with all `/api` routes,
   OpenAPI path parameters, source SHA-256, and route-set SHA-256 evidence.
-  `npm run check:management-openapi` fails on route drift.
+  `npm run check:management-openapi` fails on route drift. `GET /api/health`
+  now has the first promoted endpoint response schema, binding its `200`
+  response to `#/components/schemas/HealthResponse`.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published
   operation baseline that allows additive routes but rejects removed operations
-  or drift in operation ids, tags, path parameters, request-body presence, and
-  response status sets. The top-level release artifact receipt now binds both
-  OpenAPI artifacts alongside runtime, package-lock, Web dist, and manifest
-  evidence.
+  or drift in operation ids, tags, path parameters, request-body presence,
+  promoted schema refs, and response status sets. The top-level release
+  artifact receipt now binds both OpenAPI artifacts alongside runtime,
+  package-lock, Web dist, and manifest evidence.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

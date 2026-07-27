@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "2498ccd31a1b98349ef12c8eba6d4bf0489df9ab5b7691acd4f15458865f936c",
+    "sha256": "5e76a79d628dc3d7d030e34d6bdaed56a5da76b1f9e8194b0abde117c4da223d",
     "routeCount": 219,
     "routeSetSha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
   },
   "operationCount": 219,
-  "operationSetSha256": "9c24ba3b04eb5023851a08df3b49e9fee109e096e912d016fbf56f3bd3ac25ac",
+  "operationSetSha256": "b10ea69a9076937a9222307a4a52881f545f94d9443f66ae651ca5785abaa85d",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -22,6 +22,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -42,6 +44,8 @@
         "agentId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -60,6 +64,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -78,6 +84,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -98,6 +106,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -118,6 +128,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -139,6 +151,8 @@
         "deliveryId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -157,6 +171,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -175,6 +191,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -193,6 +211,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -213,6 +233,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -233,6 +255,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -253,6 +277,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -273,6 +299,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -293,6 +321,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -313,6 +343,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -331,6 +363,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -351,6 +385,8 @@
         "lockfileSha256"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -369,6 +405,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -387,6 +425,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -405,6 +445,10 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/HealthResponse"
+      },
       "responseStatuses": [
         "200",
         "400",
@@ -423,6 +467,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -441,6 +487,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -461,6 +509,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -481,6 +531,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -501,6 +553,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -521,6 +575,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -541,6 +597,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -559,6 +617,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -577,6 +637,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -595,6 +657,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -613,6 +677,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -631,6 +697,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -649,6 +717,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -667,6 +737,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -685,6 +757,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -703,6 +777,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -721,6 +797,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -739,6 +817,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -757,6 +837,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -775,6 +857,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -793,6 +877,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -811,6 +897,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -829,6 +917,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -847,6 +937,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -865,6 +957,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -883,6 +977,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -903,6 +999,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -923,6 +1021,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -943,6 +1043,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -963,6 +1065,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -983,6 +1087,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1003,6 +1109,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1024,6 +1132,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1044,6 +1154,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1065,6 +1177,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1086,6 +1200,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1106,6 +1222,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1126,6 +1244,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1146,6 +1266,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1167,6 +1289,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1188,6 +1312,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1208,6 +1334,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1229,6 +1357,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1249,6 +1379,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1267,6 +1399,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1287,6 +1421,8 @@
         "agentId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1305,6 +1441,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1325,6 +1463,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1345,6 +1485,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1365,6 +1507,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1385,6 +1529,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1405,6 +1551,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1425,6 +1573,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1446,6 +1596,8 @@
         "deliveryId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1466,6 +1618,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1486,6 +1640,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1506,6 +1662,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1524,6 +1682,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1544,6 +1704,8 @@
         "referenceId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1564,6 +1726,8 @@
         "referenceId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1582,6 +1746,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1600,6 +1766,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1620,6 +1788,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1641,6 +1811,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1661,6 +1833,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1681,6 +1855,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1701,6 +1877,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1721,6 +1899,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1741,6 +1921,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1761,6 +1943,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1781,6 +1965,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1801,6 +1987,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1821,6 +2009,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1841,6 +2031,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1861,6 +2053,8 @@
         "extensionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1879,6 +2073,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1897,6 +2093,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1915,6 +2113,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1933,6 +2133,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1951,6 +2153,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1969,6 +2173,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -1987,6 +2193,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2005,6 +2213,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2023,6 +2233,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2043,6 +2255,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2063,6 +2277,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2081,6 +2297,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2099,6 +2317,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2119,6 +2339,8 @@
         "anchorId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2137,6 +2359,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2155,6 +2379,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2173,6 +2399,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2191,6 +2419,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2211,6 +2441,8 @@
         "memoryId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2231,6 +2463,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2251,6 +2485,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2271,6 +2507,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2291,6 +2529,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2311,6 +2551,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2331,6 +2573,8 @@
         "recordId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2349,6 +2593,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2367,6 +2613,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2385,6 +2633,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2403,6 +2653,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2421,6 +2673,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2439,6 +2693,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2457,6 +2713,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2475,6 +2733,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2493,6 +2753,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2513,6 +2775,8 @@
         "anchorId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2531,6 +2795,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2549,6 +2815,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2567,6 +2835,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2585,6 +2855,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2605,6 +2877,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2625,6 +2899,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2643,6 +2919,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2661,6 +2939,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2679,6 +2959,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2697,6 +2979,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2715,6 +2999,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2733,6 +3019,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2751,6 +3039,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2769,6 +3059,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2787,6 +3079,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2805,6 +3099,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2823,6 +3119,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2841,6 +3139,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2859,6 +3159,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2879,6 +3181,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2899,6 +3203,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2919,6 +3225,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2939,6 +3247,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2959,6 +3269,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2979,6 +3291,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -2999,6 +3313,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3019,6 +3335,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3039,6 +3357,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3057,6 +3377,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3075,6 +3397,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3093,6 +3417,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3111,6 +3437,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3131,6 +3459,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3151,6 +3481,8 @@
         "subscriptionId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3169,6 +3501,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3187,6 +3521,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3205,6 +3541,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3223,6 +3561,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3241,6 +3581,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3259,6 +3601,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3277,6 +3621,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3295,6 +3641,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3313,6 +3661,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3331,6 +3681,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3349,6 +3701,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3367,6 +3721,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3385,6 +3741,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3403,6 +3761,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3421,6 +3781,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3439,6 +3801,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3457,6 +3821,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3477,6 +3843,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3497,6 +3865,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3518,6 +3888,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3539,6 +3911,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3559,6 +3933,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3580,6 +3956,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3601,6 +3979,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3622,6 +4002,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3643,6 +4025,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3663,6 +4047,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3683,6 +4069,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3703,6 +4091,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3723,6 +4113,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3744,6 +4136,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3766,6 +4160,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3787,6 +4183,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3808,6 +4206,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3830,6 +4230,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3850,6 +4252,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3870,6 +4274,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3890,6 +4296,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3910,6 +4318,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3930,6 +4340,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3951,6 +4363,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3971,6 +4385,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -3991,6 +4407,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4011,6 +4429,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4029,6 +4449,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4047,6 +4469,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4065,6 +4489,8 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4085,6 +4511,8 @@
         "agentId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4105,6 +4533,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4125,6 +4555,8 @@
         "channelId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4145,6 +4577,8 @@
         "casebookId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4165,6 +4599,8 @@
         "scheduleId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4186,6 +4622,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",
@@ -4206,6 +4644,8 @@
         "threadId"
       ],
       "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
       "responseStatuses": [
         "200",
         "400",

@@ -136,6 +136,14 @@ export function extractCompatibleOperations(openApi) {
       const tags = Array.isArray(operation.tags)
         ? operation.tags.filter((tag) => typeof tag === "string").sort()
         : [];
+      const jsonResponseSchemaRefs = {};
+      for (const status of responses) {
+        const response = operation.responses[status];
+        const schemaRef = isRecord(response)
+          ? getJsonSchemaRef(response.content?.["application/json"]?.schema)
+          : undefined;
+        if (schemaRef) jsonResponseSchemaRefs[status] = schemaRef;
+      }
       operations.push({
         key: `${method.toUpperCase()} ${openapiPath}`,
         method,
@@ -151,6 +159,11 @@ export function extractCompatibleOperations(openApi) {
           isRecord(operation.requestBody.content) &&
           operation.requestBody.content["application/json"] !== undefined,
         ),
+        jsonRequestSchemaRef:
+          getJsonSchemaRef(
+            operation.requestBody?.content?.["application/json"]?.schema,
+          ) ?? null,
+        jsonResponseSchemaRefs,
         responseStatuses: responses,
       });
     }
@@ -318,6 +331,14 @@ function validateCompatibilityFixtureShape(fixture, errors) {
       !Array.isArray(operation.tags) ||
       !Array.isArray(operation.pathParameters) ||
       typeof operation.acceptsJsonRequestBody !== "boolean" ||
+      !(
+        operation.jsonRequestSchemaRef === null ||
+        typeof operation.jsonRequestSchemaRef === "string"
+      ) ||
+      !isRecord(operation.jsonResponseSchemaRefs) ||
+      !Object.values(operation.jsonResponseSchemaRefs).every(
+        (value) => typeof value === "string",
+      ) ||
       !Array.isArray(operation.responseStatuses) ||
       keys.has(operation.key)
     ) {
@@ -393,6 +414,12 @@ function parseJson(text, label, errors) {
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getJsonSchemaRef(schema) {
+  return isRecord(schema) && typeof schema.$ref === "string"
+    ? schema.$ref
+    : undefined;
 }
 
 function sha256Text(value) {

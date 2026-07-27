@@ -1745,14 +1745,16 @@ intentional dependency changes. `npm run write:management-openapi` scans
 `docs/artifacts/management-openapi-0.1.0.json`, a stable OpenAPI 3.1 route
 catalog with source and route-set SHA-256 evidence; `npm run
 check:management-openapi` fails when that artifact no longer matches the
-current management API routes. `npm run
+current management API routes. `GET /api/health` is the first endpoint with a
+promoted response schema, referencing `#/components/schemas/HealthResponse` in
+the generated OpenAPI artifact. `npm run
 write:management-openapi-compatibility` writes
 `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published
 operation baseline derived from that OpenAPI artifact; `npm run
 check:management-openapi-compatibility` allows additive routes but rejects
 removed operations or drift in operation ids, path parameters, JSON request-body
-presence, tags, or response status sets. After a Web build changes chunk names
-or hashes, run `npm run update:web-dist-manifest` to write the canonical manifest;
+presence, promoted schema refs, tags, or response status sets. After a Web build
+changes chunk names or hashes, run `npm run update:web-dist-manifest` to write the canonical manifest;
 `npm run check:web-dist-manifest` is the check-only guard that fails when the
 checked-in manifest is stale. `npm run write:release-artifacts` writes a
 top-level `napier.release-artifacts-audit` receipt that binds the package-lock

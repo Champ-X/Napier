@@ -3001,7 +3001,9 @@
             "description": "Successful no-store JSON response",
             "content": {
               "application/json": {
-                "schema": true
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
               }
             }
           },
@@ -3018,7 +3020,10 @@
             "$ref": "#/components/responses/ErrorResponse"
           }
         },
-        "x-napier-source-route": "GET /api/health"
+        "x-napier-source-route": "GET /api/health",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/HealthResponse"
+        }
       }
     },
     "/api/inspectors/packages/qualify": {
@@ -9591,6 +9596,149 @@
         "properties": {
           "error": {
             "type": "string"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "time",
+          "runtime",
+          "ledger"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/HealthStatus"
+          },
+          "service": {
+            "const": "napier"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "runtime": {
+            "$ref": "#/components/schemas/HealthRuntime"
+          },
+          "ledger": {
+            "$ref": "#/components/schemas/HealthLedger"
+          }
+        }
+      },
+      "HealthStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "degraded",
+          "failed"
+        ]
+      },
+      "HealthRuntime": {
+        "type": "object",
+        "required": [
+          "node",
+          "components"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "node": {
+            "$ref": "#/components/schemas/HealthRuntimeNode"
+          },
+          "components": {
+            "$ref": "#/components/schemas/HealthRuntimeComponents"
+          }
+        }
+      },
+      "HealthRuntimeNode": {
+        "type": "object",
+        "required": [
+          "version",
+          "platform",
+          "arch"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "arch": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthRuntimeComponents": {
+        "type": "object",
+        "required": [
+          "sqlite",
+          "openssl",
+          "uv",
+          "v8"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sqlite": {
+            "type": "string"
+          },
+          "openssl": {
+            "type": "string"
+          },
+          "uv": {
+            "type": "string"
+          },
+          "v8": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthLedger": {
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "quickCheck",
+          "migrations"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "quickCheck": {
+            "type": "string"
+          },
+          "migrations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HealthMigration"
+            }
+          }
+        }
+      },
+      "HealthMigration": {
+        "type": "object",
+        "required": [
+          "version",
+          "name",
+          "appliedAt"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "appliedAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       }

@@ -7,6 +7,13 @@ const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const defaultSourcePath = "apps/server/src/app.ts";
 const defaultArtifactPath = "docs/artifacts/management-openapi-0.1.0.json";
+const PROMOTED_OPERATION_SCHEMAS = {
+  "GET /api/health": {
+    responses: {
+      200: "#/components/schemas/HealthResponse",
+    },
+  },
+};
 
 export async function generateManagementOpenApi(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -62,6 +69,77 @@ export async function generateManagementOpenApi(options = {}) {
           additionalProperties: false,
           properties: {
             error: { type: "string" },
+          },
+        },
+        HealthResponse: {
+          type: "object",
+          required: ["status", "service", "time", "runtime", "ledger"],
+          additionalProperties: false,
+          properties: {
+            status: { $ref: "#/components/schemas/HealthStatus" },
+            service: { const: "napier" },
+            time: { type: "string", format: "date-time" },
+            runtime: { $ref: "#/components/schemas/HealthRuntime" },
+            ledger: { $ref: "#/components/schemas/HealthLedger" },
+          },
+        },
+        HealthStatus: {
+          type: "string",
+          enum: ["ok", "degraded", "failed"],
+        },
+        HealthRuntime: {
+          type: "object",
+          required: ["node", "components"],
+          additionalProperties: false,
+          properties: {
+            node: { $ref: "#/components/schemas/HealthRuntimeNode" },
+            components: {
+              $ref: "#/components/schemas/HealthRuntimeComponents",
+            },
+          },
+        },
+        HealthRuntimeNode: {
+          type: "object",
+          required: ["version", "platform", "arch"],
+          additionalProperties: false,
+          properties: {
+            version: { type: "string" },
+            platform: { type: "string" },
+            arch: { type: "string" },
+          },
+        },
+        HealthRuntimeComponents: {
+          type: "object",
+          required: ["sqlite", "openssl", "uv", "v8"],
+          additionalProperties: false,
+          properties: {
+            sqlite: { type: "string" },
+            openssl: { type: "string" },
+            uv: { type: "string" },
+            v8: { type: "string" },
+          },
+        },
+        HealthLedger: {
+          type: "object",
+          required: ["schemaVersion", "quickCheck", "migrations"],
+          additionalProperties: false,
+          properties: {
+            schemaVersion: { type: "integer", minimum: 0 },
+            quickCheck: { type: "string" },
+            migrations: {
+              type: "array",
+              items: { $ref: "#/components/schemas/HealthMigration" },
+            },
+          },
+        },
+        HealthMigration: {
+          type: "object",
+          required: ["version", "name", "appliedAt"],
+          additionalProperties: false,
+          properties: {
+            version: { type: "integer", minimum: 0 },
+            name: { type: "string" },
+            appliedAt: { type: "string", format: "date-time" },
           },
         },
       },
@@ -169,7 +247,7 @@ async function runCli() {
 }
 
 function createOperation(route) {
-  return {
+  const operation = {
     operationId: route.operationId,
     tags: [route.tag],
     summary: `${route.method.toUpperCase()} ${route.openapiPath}`,
@@ -212,6 +290,28 @@ function createOperation(route) {
       413: { $ref: "#/components/responses/ErrorResponse" },
     },
     "x-napier-source-route": `${route.method.toUpperCase()} ${route.rawPath}`,
+  };
+  return applyPromotedOperationSchemas(route, operation);
+}
+
+function applyPromotedOperationSchemas(route, operation) {
+  const overlay =
+    PROMOTED_OPERATION_SCHEMAS[
+      `${route.method.toUpperCase()} ${route.openapiPath}`
+    ];
+  if (!overlay) return operation;
+  const promotedResponseSchemaRefs = {};
+  for (const [status, schemaRef] of Object.entries(overlay.responses ?? {})) {
+    const response = operation.responses[status];
+    if (!isRecord(response)) continue;
+    response.content ??= {};
+    response.content["application/json"] ??= {};
+    response.content["application/json"].schema = { $ref: schemaRef };
+    promotedResponseSchemaRefs[status] = schemaRef;
+  }
+  return {
+    ...operation,
+    "x-napier-promoted-response-schema-refs": promotedResponseSchemaRefs,
   };
 }
 
