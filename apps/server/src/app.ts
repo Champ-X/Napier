@@ -1820,17 +1820,41 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Trusted receipt request is invalid", 400);
     }
-    const directoryVerification =
+    const activeSelectionState =
       body.directory === undefined
+        ? services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState()
+        : undefined;
+    const activeSelection = activeSelectionState?.selection;
+    const directorySource =
+      body.directory !== undefined
+        ? ("uploaded" as const)
+        : activeSelection
+          ? ("active_selection" as const)
+          : undefined;
+    const selectedDirectory =
+      body.directory !== undefined
+        ? body.directory
+        : activeSelection?.selectedDirectory;
+    const directoryPolicy =
+      body.directory !== undefined
+        ? body.directoryPolicy
+        : activeSelection
+          ? {
+              expectedAnchorSetSha256: activeSelection.selectedAnchorSetSha256,
+            }
+          : undefined;
+    const directoryVerification =
+      selectedDirectory === undefined
         ? undefined
         : services.store.verifyReceiptTrustAnchorDirectory(
-            body.directory,
-            body.directoryPolicy,
+            selectedDirectory,
+            directoryPolicy,
           );
     if (directoryVerification?.status === "invalid") {
       const verification: TrustedReceiptVerification = {
         status: "invalid",
         verifiedAt: new Date().toISOString(),
+        ...(directorySource ? { anchorDirectorySource: directorySource } : {}),
         anchorDirectorySha256:
           directoryVerification.declaredContentSha256 ??
           directoryVerification.recomputedContentSha256 ??
@@ -1851,17 +1875,32 @@ export function createApp(services: NapierServices): Hono {
         ...(directoryVerification.anchorCount !== undefined
           ? { anchorDirectoryAnchorCount: directoryVerification.anchorCount }
           : {}),
+        ...(activeSelection
+          ? {
+              anchorDirectorySelectionId: activeSelection.id,
+              anchorDirectorySelectionSha256: activeSelection.contentSha256,
+              ...(activeSelectionState
+                ? {
+                    anchorDirectorySelectionStateSha256:
+                      activeSelectionState.contentSha256,
+                  }
+                : {}),
+            }
+          : {}),
         signatureValid: false,
         integrityValid: false,
-        reason: "Receipt trust anchor directory is invalid",
+        reason:
+          directorySource === "active_selection"
+            ? "Active receipt trust anchor directory selection is invalid"
+            : "Receipt trust anchor directory is invalid",
       };
       setTrustedReceiptVerificationHeaders(context, verification);
       return context.json(verification);
     }
     const directory =
-      body.directory === undefined
+      selectedDirectory === undefined
         ? undefined
-        : receiptTrustAnchorsFromDirectory(body.directory);
+        : receiptTrustAnchorsFromDirectory(selectedDirectory);
     const verification = verifyTrustedReceiptEnvelope(
       body.envelope,
       directory ?? services.store.listReceiptTrustAnchors(),
@@ -1870,6 +1909,9 @@ export function createApp(services: NapierServices): Hono {
       directoryVerification
         ? {
             ...verification,
+            ...(directorySource
+              ? { anchorDirectorySource: directorySource }
+              : {}),
             ...(directoryVerification.declaredContentSha256
               ? {
                   anchorDirectorySha256:
@@ -1896,6 +1938,18 @@ export function createApp(services: NapierServices): Hono {
             ...(directoryVerification.anchorCount !== undefined
               ? {
                   anchorDirectoryAnchorCount: directoryVerification.anchorCount,
+                }
+              : {}),
+            ...(activeSelection
+              ? {
+                  anchorDirectorySelectionId: activeSelection.id,
+                  anchorDirectorySelectionSha256: activeSelection.contentSha256,
+                  ...(activeSelectionState
+                    ? {
+                        anchorDirectorySelectionStateSha256:
+                          activeSelectionState.contentSha256,
+                      }
+                    : {}),
                 }
               : {}),
           }
@@ -17534,6 +17588,30 @@ function setTrustedReceiptVerificationHeaders(
     context.header(
       "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
       verification.anchorDirectorySha256,
+    );
+  }
+  if (verification.anchorDirectorySource) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Source",
+      verification.anchorDirectorySource,
+    );
+  }
+  if (verification.anchorDirectorySelectionId) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id",
+      verification.anchorDirectorySelectionId,
+    );
+  }
+  if (verification.anchorDirectorySelectionSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-SHA256",
+      verification.anchorDirectorySelectionSha256,
+    );
+  }
+  if (verification.anchorDirectorySelectionStateSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
+      verification.anchorDirectorySelectionStateSha256,
     );
   }
   if (verification.anchorDirectoryVerificationSha256) {

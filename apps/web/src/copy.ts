@@ -226,6 +226,10 @@ export const copy = {
         unknown_key: "Unknown signer",
         invalid: "Invalid envelope",
       },
+      verificationDirectorySources: {
+        uploaded: "Uploaded directory",
+        active_selection: "Active verifier selection",
+      },
       directoryVerificationStatuses: {
         valid: "Directory valid",
         invalid: "Directory invalid",

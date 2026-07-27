@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 42,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DO8S19Fu.js",
-    "sizeBytes": 144393,
+    "path": "apps/web/dist/assets/index-7YO-arUN.js",
+    "sizeBytes": 144499,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "6763507252b345c57d4e89feda9d25e0ddc3d6a09d2489dfba60fef82f11cc3c"
+    "sha256": "ee8f1e132e56532d482f8c46c1c05cb2036afeb6b69a91ee35779aaa70e83c89"
   },
-  "distContentSha256": "6763507252b345c57d4e89feda9d25e0ddc3d6a09d2489dfba60fef82f11cc3c",
+  "distContentSha256": "ee8f1e132e56532d482f8c46c1c05cb2036afeb6b69a91ee35779aaa70e83c89",
   "errors": []
 }

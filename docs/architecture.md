@@ -489,7 +489,12 @@ selection. The selection record stores the public selected directory from the
 signed quorum receipt, baseline hash, decision-record hash, previous selection
 hash, and activation Thread, but no private signing source or raw subscription
 URL. Applying the same decision is idempotent; stale expected-selection hashes
-fail before mutation, and Ledger evidence remains hash-only.
+fail before mutation, and Ledger evidence remains hash-only. Receipt
+verification now consumes that active selection directory as the default trust
+source when a request does not upload an explicit directory. Uploaded
+directories retain precedence for portable offline verification, while response
+payloads and headers disclose `uploaded` versus `active_selection` along with
+selection ID/hash evidence.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2449,9 +2454,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- active-selection-backed receipt verification, so the applied verifier-set
-  directory can be used as the default trust source for future receipt checks
-  while still permitting explicit uploaded trust directories.
+- active-selection drift audits and rotation review, so operators can compare
+  the applied verifier-set directory against current subscription quorum before
+  replacing a trusted selection.
 
 ### Layer 3: Extension fabric
 

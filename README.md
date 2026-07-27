@@ -1417,7 +1417,11 @@ CAS-applies an approved activation-decision record into that active selection,
 binding the public selected directory, baseline hash, decision record hash, and
 previous selection hash without importing private signing material. The Web
 workbench exposes this as **Apply activation** and renders the active verifier
-selection receipt.
+selection receipt. Once applied, `POST /api/receipt-trust/verify` uses that
+active selection directory as the default verifier-key source when the request
+does not upload an explicit directory. Verification responses and headers expose
+whether the trust source was `active_selection` or `uploaded`, along with the
+selection ID/hash when active selection was used.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

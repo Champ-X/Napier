@@ -3660,6 +3660,10 @@ export type TrustedReceiptVerificationStatus =
   | "unknown_key"
   | "invalid";
 
+export type TrustedReceiptAnchorDirectorySource =
+  | "uploaded"
+  | "active_selection";
+
 export interface TrustedReceiptVerification {
   status: TrustedReceiptVerificationStatus;
   verifiedAt: string;
@@ -3674,6 +3678,10 @@ export interface TrustedReceiptVerification {
   anchorDirectoryGeneratedAt?: string;
   anchorDirectoryAgeMs?: number;
   anchorDirectoryAnchorCount?: number;
+  anchorDirectorySource?: TrustedReceiptAnchorDirectorySource;
+  anchorDirectorySelectionId?: string;
+  anchorDirectorySelectionSha256?: string;
+  anchorDirectorySelectionStateSha256?: string;
   signatureValid: boolean;
   integrityValid: boolean;
   reason: string;

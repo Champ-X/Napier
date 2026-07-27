@@ -20,6 +20,7 @@ import type {
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   TrustedReceiptEnvelope,
+  TrustedReceiptVerification,
 } from "@napier/contracts";
 import {
   createReceiptTrustAnchor,
@@ -763,6 +764,46 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       },
     );
     expect(staleActivationSelectionResponse.status).toBe(409);
+    const activeSelectionVerifyResponse = await app.request(
+      "/api/receipt-trust/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ envelope: activation.envelope }),
+      },
+    );
+    expect(activeSelectionVerifyResponse.status).toBe(200);
+    const activeSelectionVerification =
+      (await activeSelectionVerifyResponse.json()) as TrustedReceiptVerification;
+    expect(activeSelectionVerification).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        anchorDirectorySource: "active_selection",
+        anchorDirectorySha256: hostedDirectory.contentSha256,
+        anchorDirectoryVerificationSha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/),
+        anchorDirectoryPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        anchorDirectorySelectionId: appliedActivationSelection.selection.id,
+        anchorDirectorySelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        anchorDirectorySelectionStateSha256:
+          appliedActivationSelection.selectionState.contentSha256,
+        keyId: signingAnchor.keyId,
+        envelopeSha256: activation.envelope.contentSha256,
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
+    expect(
+      activeSelectionVerifyResponse.headers.get(
+        "x-napier-receipt-trust-anchor-directory-source",
+      ),
+    ).toBe("active_selection");
+    expect(
+      activeSelectionVerifyResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-sha256",
+      ),
+    ).toBe(appliedActivationSelection.selection.contentSha256);
     const importRoot = await mkdtemp(
       path.join(tmpdir(), "napier-trust-baseline-import-http-"),
     );

@@ -1684,6 +1684,20 @@ export default function ReceiptTrustPanel({
                 {verification.keyId.slice(0, 16)}
               </code>
             ) : null}
+            {verification.anchorDirectorySource ? (
+              <code title={verification.anchorDirectorySource}>
+                {
+                  copy.lab.trust.verificationDirectorySources[
+                    verification.anchorDirectorySource
+                  ]
+                }
+              </code>
+            ) : null}
+            {verification.anchorDirectorySha256 ? (
+              <code title={verification.anchorDirectorySha256}>
+                {verification.anchorDirectorySha256.slice(0, 12)}
+              </code>
+            ) : null}
           </output>
         ) : null}
         {directoryVerification ? (

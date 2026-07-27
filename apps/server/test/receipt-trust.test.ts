@@ -59,8 +59,7 @@ describe("trusted receipt HTTP surface", () => {
       .toString();
     const root = await mkdtemp(path.join(tmpdir(), "napier-server-trust-"));
     temporaryRoots.push(root);
-    const discoverySourceUrl =
-      "https://trust.example.test/napier/anchors.json";
+    const discoverySourceUrl = "https://trust.example.test/napier/anchors.json";
     let hostedDirectory: ReceiptTrustAnchorDirectory | undefined;
     const services = await createNapierServices({
       dataRoot: path.join(root, "data"),
@@ -79,8 +78,7 @@ describe("trusted receipt HTTP surface", () => {
             throw new Error("Hosted directory is not ready");
           }
           const value =
-            input ===
-            "https://trust.example.test/napier/invalid-anchors.json"
+            input === "https://trust.example.test/napier/invalid-anchors.json"
               ? {
                   ...hostedDirectory,
                   anchors: [
@@ -455,8 +453,7 @@ describe("trusted receipt HTTP surface", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          sourceUrl:
-            "https://trust.example.test/napier/invalid-anchors.json",
+          sourceUrl: "https://trust.example.test/napier/invalid-anchors.json",
           policy: directoryPolicy,
         }),
       },
@@ -498,9 +495,7 @@ describe("trusted receipt HTTP surface", () => {
     expect(deniedDiscoveryResponse.headers.get("cache-control")).toBe(
       "no-store",
     );
-    expect(
-      deniedDiscoveryResponse.headers.get("x-napier-content-sha256"),
-    ).toBe(
+    expect(deniedDiscoveryResponse.headers.get("x-napier-content-sha256")).toBe(
       createHash("sha256").update(deniedDiscoveryBody).digest("hex"),
     );
     expect(await services.store.listEvents(thread.id)).toHaveLength(
@@ -665,7 +660,8 @@ describe("trusted receipt HTTP surface", () => {
         status: "trusted",
         keyId: anchor.keyId,
         anchorDirectorySha256: directory.contentSha256,
-        anchorDirectoryVerificationSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        anchorDirectoryVerificationSha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/),
         anchorDirectoryAnchorCount: 1,
         signatureValid: true,
         integrityValid: true,
@@ -695,7 +691,8 @@ describe("trusted receipt HTTP surface", () => {
         status: "trusted",
         keyId: anchor.keyId,
         anchorDirectorySha256: directory.contentSha256,
-        anchorDirectoryVerificationSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        anchorDirectoryVerificationSha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/),
         anchorDirectoryPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         anchorDirectoryGeneratedAt: directory.generatedAt,
         anchorDirectoryAgeMs: expect.any(Number),
@@ -726,7 +723,8 @@ describe("trusted receipt HTTP surface", () => {
       expect.objectContaining({
         status: "invalid",
         anchorDirectorySha256: directory.contentSha256,
-        anchorDirectoryVerificationSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        anchorDirectoryVerificationSha256:
+          expect.stringMatching(/^[a-f0-9]{64}$/),
         anchorDirectoryPolicySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         signatureValid: false,
         integrityValid: false,
@@ -1226,9 +1224,7 @@ function expectReceiptTrustAnchorDirectoryDiscoveryHeaders(
     ),
   ).toBe(String(discovery.responseBytes));
   expect(
-    response.headers.get(
-      "x-napier-receipt-trust-anchor-directory-http-status",
-    ),
+    response.headers.get("x-napier-receipt-trust-anchor-directory-http-status"),
   ).toBe(String(discovery.httpStatus));
   expect(response.headers.get("x-napier-verification-status")).toBe(
     discovery.status,
@@ -1406,6 +1402,24 @@ function expectTrustedReceiptVerificationHeaders(
   expect(
     response.headers.get("x-napier-receipt-trust-anchor-directory-sha256"),
   ).toBe(verification.anchorDirectorySha256 ?? null);
+  expect(
+    response.headers.get("x-napier-receipt-trust-anchor-directory-source"),
+  ).toBe(verification.anchorDirectorySource ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-directory-quorum-activation-selection-id",
+    ),
+  ).toBe(verification.anchorDirectorySelectionId ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-directory-quorum-activation-selection-sha256",
+    ),
+  ).toBe(verification.anchorDirectorySelectionSha256 ?? null);
+  expect(
+    response.headers.get(
+      "x-napier-receipt-trust-directory-quorum-activation-selection-state-sha256",
+    ),
+  ).toBe(verification.anchorDirectorySelectionStateSha256 ?? null);
   expect(
     response.headers.get(
       "x-napier-receipt-trust-anchor-directory-verification-sha256",

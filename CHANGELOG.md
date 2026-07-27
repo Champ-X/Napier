@@ -327,7 +327,13 @@ All notable changes to Napier are recorded here.
   decision record hash, and previous selection hash without importing private
   signing material; stale selection hashes fail closed and duplicate applies
   are idempotent. The Web workbench adds **Apply activation** and renders the
-  active verifier selection receipt.
+  active verifier selection receipt. `POST /api/receipt-trust/verify` now uses
+  the active selection directory as the default verifier-key source when the
+  request does not upload an explicit directory, while uploaded directories
+  retain precedence. Verification responses and headers disclose whether the
+  trust source was `active_selection` or `uploaded`, plus active selection
+  ID/hash evidence when applicable; the Web verifier receipt renders that
+  source beside the signature result.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current
