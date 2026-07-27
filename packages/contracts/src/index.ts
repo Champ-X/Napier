@@ -3872,7 +3872,11 @@ export interface ReceiptTrustAnchorDirectorySubscriptionRefreshResult {
 export interface ReceiptTrustAnchorDirectoryQuorumPolicy {
   minimumSources?: number;
   minimumAgreementCount?: number;
+  minimumDistinctSourceOrigins?: number;
+  minimumAgreementWeight?: number;
   expectedAnchorSetSha256?: string;
+  requiredSourceOriginSha256s?: string[];
+  sourceWeights?: ReceiptTrustAnchorDirectoryQuorumSourceWeight[];
 }
 
 export interface EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
@@ -3885,11 +3889,17 @@ export type ReceiptTrustAnchorDirectoryQuorumStatus =
   | "split"
   | "policy_failed";
 
+export interface ReceiptTrustAnchorDirectoryQuorumSourceWeight {
+  sourceOriginSha256: string;
+  weight: number;
+}
+
 export interface ReceiptTrustAnchorDirectoryQuorumSource {
   subscriptionId: string;
   subscriptionSha256: string;
   sourceUrlSha256: string;
   sourceOriginSha256: string;
+  weight: number;
   revision: number;
   directorySha256: string;
   anchorSetSha256: string;
@@ -3902,6 +3912,8 @@ export interface ReceiptTrustAnchorDirectoryQuorumSource {
 export interface ReceiptTrustAnchorDirectoryQuorumCandidate {
   anchorSetSha256: string;
   sourceCount: number;
+  distinctSourceOriginCount: number;
+  weight: number;
   trustedCount: number;
   subscriptionSetSha256: string;
   directorySetSha256: string;
@@ -3920,6 +3932,8 @@ export interface ReceiptTrustAnchorDirectoryQuorum {
   sourceCount: number;
   candidateCount: number;
   agreementCount: number;
+  agreementWeight: number;
+  agreementDistinctSourceOriginCount: number;
   selectedAnchorSetSha256?: string;
   selectedDirectorySha256?: string;
   selectedDirectory?: ReceiptTrustAnchorDirectory;

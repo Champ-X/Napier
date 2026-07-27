@@ -197,6 +197,7 @@ export const copy = {
       evaluateQuorum: "Evaluate quorum",
       evaluatingQuorum: "Evaluating...",
       quorumAgreement: "source agreement",
+      quorumWeight: "weight",
       nextRefresh: "next",
       transparencyTail: "tail",
       useSubscription: "Use",

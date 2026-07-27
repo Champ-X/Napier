@@ -263,11 +263,14 @@ All notable changes to Napier are recorded here.
 - Receipt trust directory subscription quorum receipts. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum` now evaluates
   active last-good subscriptions without mutation. The default 2-of-2 policy
-  groups sources by anchor-set SHA-256 and returns a stable no-store receipt
-  with source/candidate/agreement counts, policy hash, diagnostics, selected
-  directory hash, selected anchor-set hash, and hash-only source evidence. The
-  Receipt trust desk exposes a quorum action and renders agreement status next
-  to durable directory subscriptions.
+  now also requires two distinct source origins, groups sources by anchor-set
+  SHA-256, and returns a stable no-store receipt with
+  source/candidate/agreement counts, agreement weight, distinct-origin count,
+  policy hash, diagnostics, selected directory hash, selected anchor-set hash,
+  and hash-only source evidence. Policies can now pin required source-origin
+  hashes and assign bounded per-origin weights. The Receipt trust desk exposes a
+  quorum action and renders agreement status next to durable directory
+  subscriptions.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

@@ -401,6 +401,8 @@ describe("receipt trust anchor directory subscriptions", () => {
         sourceCount: 2,
         candidateCount: 1,
         agreementCount: 2,
+        agreementWeight: 2,
+        agreementDistinctSourceOriginCount: 2,
         selectedAnchorSetSha256: directory.anchorSetSha256,
         selectedDirectorySha256: directory.contentSha256,
         selectedDirectory: directory,
@@ -422,7 +424,7 @@ describe("receipt trust anchor directory subscriptions", () => {
     );
 
     const dissentingDirectory = createDirectory(thread.id);
-    await store.createReceiptTrustAnchorDirectorySubscription(
+    const dissenting = await store.createReceiptTrustAnchorDirectorySubscription(
       {
         threadId: thread.id,
         label: "Dissenting trust feed",
@@ -443,10 +445,48 @@ describe("receipt trust anchor directory subscriptions", () => {
     expect(split).toEqual(
       expect.objectContaining({
         status: "split",
-        diagnostics: ["insufficient_agreement"],
+        diagnostics: [
+          "insufficient_agreement",
+          "insufficient_agreement_weight",
+        ],
         sourceCount: 3,
         candidateCount: 2,
         agreementCount: 2,
+        agreementWeight: 2,
+        agreementDistinctSourceOriginCount: 2,
+      }),
+    );
+
+    const weighted = store.getReceiptTrustAnchorDirectorySubscriptionQuorum({
+      minimumSources: 3,
+      minimumAgreementCount: 1,
+      minimumDistinctSourceOrigins: 1,
+      minimumAgreementWeight: 5,
+      sourceWeights: [
+        {
+          sourceOriginSha256: dissenting.sourceOriginSha256,
+          weight: 5,
+        },
+      ],
+    });
+    expect(weighted).toEqual(
+      expect.objectContaining({
+        status: "agreed",
+        diagnostics: [],
+        agreementCount: 1,
+        agreementWeight: 5,
+        agreementDistinctSourceOriginCount: 1,
+        selectedAnchorSetSha256: dissentingDirectory.anchorSetSha256,
+      }),
+    );
+
+    const pinned = store.getReceiptTrustAnchorDirectorySubscriptionQuorum({
+      requiredSourceOriginSha256s: [dissenting.sourceOriginSha256],
+    });
+    expect(pinned).toEqual(
+      expect.objectContaining({
+        status: "policy_failed",
+        diagnostics: ["required_source_origin_missing"],
       }),
     );
   });

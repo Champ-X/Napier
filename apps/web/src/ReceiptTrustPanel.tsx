@@ -837,7 +837,9 @@ export default function ReceiptTrustPanel({
                   <small>
                     {directoryQuorum.agreementCount}/
                     {directoryQuorum.sourceCount}{" "}
-                    {copy.lab.trust.quorumAgreement}
+                    {copy.lab.trust.quorumAgreement} ·{" "}
+                    {directoryQuorum.agreementWeight}{" "}
+                    {copy.lab.trust.quorumWeight}
                   </small>
                 </span>
                 {directoryQuorum.selectedAnchorSetSha256 ? (

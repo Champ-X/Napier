@@ -270,6 +270,7 @@ import {
   LocalStore,
   MAX_RECEIPT_TRUST_ANCHORS,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+  MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT,
   MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS,
   MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS,
   MAX_EXTENSION_PACKAGE_DEPENDENCIES,
@@ -10811,12 +10812,23 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
   const record = requestRecord(input, [
     "minimumSources",
     "minimumAgreementCount",
+    "minimumDistinctSourceOrigins",
+    "minimumAgreementWeight",
     "expectedAnchorSetSha256",
+    "requiredSourceOriginSha256s",
+    "sourceWeights",
   ]);
   if (!record) return undefined;
   const minimumSources = record["minimumSources"];
   const minimumAgreementCount = record["minimumAgreementCount"];
+  const minimumDistinctSourceOrigins = record["minimumDistinctSourceOrigins"];
+  const minimumAgreementWeight = record["minimumAgreementWeight"];
   const expectedAnchorSetSha256 = record["expectedAnchorSetSha256"];
+  const requiredSourceOriginSha256s = record["requiredSourceOriginSha256s"];
+  const sourceWeights = record["sourceWeights"];
+  const effectiveMinimumSources =
+    typeof minimumSources === "number" ? minimumSources : 2;
+  const sourceWeightOrigins = new Set<string>();
   if (
     (minimumSources !== undefined &&
       (!isNonNegativeInteger(minimumSources) ||
@@ -10826,21 +10838,84 @@ function parseReceiptTrustAnchorDirectoryQuorumPolicy(
       (!isNonNegativeInteger(minimumAgreementCount) ||
         minimumAgreementCount < 1 ||
         minimumAgreementCount > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
-    (minimumSources !== undefined &&
-      minimumAgreementCount !== undefined &&
-      minimumAgreementCount > minimumSources) ||
+    (minimumDistinctSourceOrigins !== undefined &&
+      (!isNonNegativeInteger(minimumDistinctSourceOrigins) ||
+        minimumDistinctSourceOrigins < 1 ||
+        minimumDistinctSourceOrigins >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS)) ||
+    (minimumAgreementWeight !== undefined &&
+      (!isNonNegativeInteger(minimumAgreementWeight) ||
+        minimumAgreementWeight < 1 ||
+        minimumAgreementWeight >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS *
+            MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT)) ||
+    (minimumAgreementCount !== undefined &&
+      minimumAgreementCount > effectiveMinimumSources) ||
     (expectedAnchorSetSha256 !== undefined &&
       (typeof expectedAnchorSetSha256 !== "string" ||
         (expectedAnchorSetSha256 !== "" &&
-          !isSha256Hex(expectedAnchorSetSha256))))
+          !isSha256Hex(expectedAnchorSetSha256)))) ||
+    (requiredSourceOriginSha256s !== undefined &&
+      (!Array.isArray(requiredSourceOriginSha256s) ||
+        requiredSourceOriginSha256s.length >
+          MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
+        requiredSourceOriginSha256s.some((origin) => !isSha256Hex(origin)))) ||
+    (sourceWeights !== undefined &&
+      (!Array.isArray(sourceWeights) ||
+        sourceWeights.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS ||
+        !sourceWeights.every((item) => {
+          const recordItem = requestRecord(item, [
+            "sourceOriginSha256",
+            "weight",
+          ]);
+          const sourceOriginSha256 = recordItem?.["sourceOriginSha256"];
+          const weight = recordItem?.["weight"];
+          if (
+            !recordItem ||
+            !isSha256Hex(sourceOriginSha256) ||
+            !isNonNegativeInteger(weight) ||
+            weight < 1 ||
+            weight > MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT ||
+            sourceWeightOrigins.has(sourceOriginSha256)
+          ) {
+            return false;
+          }
+          sourceWeightOrigins.add(sourceOriginSha256);
+          return true;
+        })))
   ) {
     return undefined;
   }
+  const normalizedRequiredSourceOrigins =
+    requiredSourceOriginSha256s === undefined
+      ? undefined
+      : Array.from(new Set(requiredSourceOriginSha256s as string[])).sort();
+  const normalizedSourceWeights =
+    sourceWeights === undefined
+      ? undefined
+      : (sourceWeights as Record<string, unknown>[])
+          .map((item) => ({
+            sourceOriginSha256: item["sourceOriginSha256"] as string,
+            weight: item["weight"] as number,
+          }))
+          .sort((left, right) =>
+            left.sourceOriginSha256.localeCompare(right.sourceOriginSha256),
+          );
   return {
     ...(minimumSources !== undefined ? { minimumSources } : {}),
     ...(minimumAgreementCount !== undefined ? { minimumAgreementCount } : {}),
+    ...(minimumDistinctSourceOrigins !== undefined
+      ? { minimumDistinctSourceOrigins }
+      : {}),
+    ...(minimumAgreementWeight !== undefined ? { minimumAgreementWeight } : {}),
     ...(typeof expectedAnchorSetSha256 === "string"
       ? { expectedAnchorSetSha256 }
+      : {}),
+    ...(normalizedRequiredSourceOrigins !== undefined
+      ? { requiredSourceOriginSha256s: normalizedRequiredSourceOrigins }
+      : {}),
+    ...(normalizedSourceWeights !== undefined
+      ? { sourceWeights: normalizedSourceWeights }
       : {}),
   };
 }
@@ -15395,6 +15470,14 @@ function setReceiptTrustAnchorDirectoryQuorumHeaders(
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Count",
     String(quorum.agreementCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Agreement-Weight",
+    String(quorum.agreementWeight),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Distinct-Origin-Count",
+    String(quorum.agreementDistinctSourceOriginCount),
   );
   context.header(
     "X-Napier-Diagnostic-Count",

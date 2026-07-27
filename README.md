@@ -1336,14 +1336,16 @@ refresh, pause/resume, transparency-tail, and explicit verifier-selection
 controls.
 `POST /api/receipt-trust/anchors/directory/subscriptions/quorum` evaluates the
 active last-good subscription set without mutating Ledger state. The default
-policy requires at least two active sources and two sources agreeing on the
-same anchor-set SHA-256; callers can provide `minimumSources`,
-`minimumAgreementCount`, and an optional expected anchor-set pin. The quorum
-receipt groups sources by anchor set, exposes source/candidate/agreement
-counts, policy hash, diagnostics, selected directory hash, and hash-only source
-evidence. The Receipt trust desk can request this quorum receipt and renders
-its status, agreement count, selected anchor set, and receipt hash beside the
-subscription list.
+policy requires at least two active sources from two distinct source origins
+agreeing on the same anchor-set SHA-256; callers can provide
+`minimumSources`, `minimumAgreementCount`, `minimumDistinctSourceOrigins`,
+`minimumAgreementWeight`, `sourceWeights`, `requiredSourceOriginSha256s`, and
+an optional expected anchor-set pin. The quorum receipt groups sources by
+anchor set, exposes source/candidate/agreement counts, agreement weight,
+distinct-origin count, policy hash, diagnostics, selected directory hash, and
+hash-only source evidence. The Receipt trust desk can request this quorum
+receipt and renders its status, agreement count, agreement weight, selected
+anchor set, and receipt hash beside the subscription list.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

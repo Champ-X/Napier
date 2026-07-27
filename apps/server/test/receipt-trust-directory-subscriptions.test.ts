@@ -51,7 +51,10 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       dataRoot: path.join(root, "data"),
       workspaceRoot: path.join(root, "workspace"),
       receiptTrustDirectoryDiscovery: {
-        allowedOrigins: ["https://trust.example.test"],
+        allowedOrigins: [
+          "https://mirror.example.test",
+          "https://trust.example.test",
+        ],
         validateEndpoint: async () => undefined,
         fetcher: async () => {
           fetchCount += 1;
@@ -135,7 +138,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     );
 
     const mirrorSourceUrl =
-      "https://trust.example.test/napier/anchors-mirror.json";
+      "https://mirror.example.test/napier/anchors-mirror.json";
     const mirrorCreateResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions",
       {
@@ -172,6 +175,8 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         sourceCount: 2,
         candidateCount: 1,
         agreementCount: 2,
+        agreementWeight: 2,
+        agreementDistinctSourceOriginCount: 2,
         selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
       }),
     );
@@ -183,6 +188,16 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-status",
       ),
     ).toBe("agreed");
+    expect(
+      quorumResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-agreement-weight",
+      ),
+    ).toBe("2");
+    expect(
+      quorumResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-distinct-origin-count",
+      ),
+    ).toBe("2");
     expect(JSON.stringify(quorum)).not.toContain(sourceUrl);
     expect(JSON.stringify(quorum)).not.toContain(mirrorSourceUrl);
 
