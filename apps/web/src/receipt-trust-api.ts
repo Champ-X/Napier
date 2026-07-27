@@ -33,6 +33,7 @@ import type {
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
   TrustedReceiptEnvelope,
@@ -224,6 +225,18 @@ export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
 ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+  body: SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+): Promise<TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign",
     {
       method: "POST",
       body: JSON.stringify(body),

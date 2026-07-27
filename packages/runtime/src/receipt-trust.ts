@@ -22,6 +22,7 @@ import {
   type ReceiptTrustAnchorDirectoryMetadataVerification,
   type ReceiptTrustAnchorDirectoryVerification,
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   type SignReceiptTrustAnchorDirectoryMetadataRequest,
   type TrustedReceipt,
   type TrustedReceiptEnvelope,
@@ -34,6 +35,7 @@ import { validateEvaluationSuiteGateReceipt } from "./evaluation-suites.js";
 import { createId, nowIso } from "./ids.js";
 import {
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
 } from "./receipt-trust-directory-subscriptions.js";
 
@@ -51,6 +53,7 @@ const TRUSTED_RECEIPT_KINDS: TrustedReceiptKind[] = [
   "receipt_trust_anchor_directory_metadata",
   "receipt_trust_anchor_directory_quorum_promotion",
   "receipt_trust_anchor_directory_quorum_activation_decision",
+  "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
 ];
 const RECEIPT_TRUST_ANCHOR_DIRECTORY_KEYS = [
   "kind",
@@ -1126,6 +1129,14 @@ function validateTrustedReceipt(value: unknown): TrustedReceipt {
       value,
     );
   }
+  if (
+    value["kind"] ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint"
+  ) {
+    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+      value,
+    ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint;
+  }
   throw new Error("Trusted receipt kind is unsupported");
 }
 
@@ -1281,6 +1292,12 @@ function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
     "napier.receipt-trust-anchor-directory-quorum-activation-decision"
   ) {
     return "receipt_trust_anchor_directory_quorum_activation_decision";
+  }
+  if (
+    receipt.kind ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint"
+  ) {
+    return "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint";
   }
   return "policy_retirement_proof_bundle";
 }

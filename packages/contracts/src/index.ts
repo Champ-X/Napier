@@ -3557,7 +3557,8 @@ export type TrustedReceipt =
   | ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle
   | ReceiptTrustAnchorDirectoryMetadataReceipt
   | ReceiptTrustAnchorDirectoryQuorumPromotionReceipt
-  | ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt;
+  | ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint;
 
 export type TrustedReceiptKind =
   | "evaluation_gate"
@@ -3565,7 +3566,8 @@ export type TrustedReceiptKind =
   | "policy_retirement_proof_bundle"
   | "receipt_trust_anchor_directory_metadata"
   | "receipt_trust_anchor_directory_quorum_promotion"
-  | "receipt_trust_anchor_directory_quorum_activation_decision";
+  | "receipt_trust_anchor_directory_quorum_activation_decision"
+  | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint";
 
 export type ReceiptTrustAnchorStatus = "trusted" | "revoked";
 
@@ -4359,6 +4361,11 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 
 export interface VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest {
   checkpoint: unknown;
+}
+
+export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest extends SignTrustedReceiptRequest {
+  threadId: string;
+  trustAnchorId: string;
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationStatus =

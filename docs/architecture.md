@@ -520,7 +520,13 @@ Checkpoint verification is no-store: uploaded JSON is validated
 self-contained, then compared with the current local selection-chain set, tail,
 count, and current selection hash to return `valid`, `divergent`, or
 `invalid`. The Receipt Trust Desk exports and verifies those checkpoint
-artifacts beside drift and rotation reviews.
+artifacts beside drift and rotation reviews. A signing endpoint wraps the
+current checkpoint in a `TrustedReceiptEnvelope` with receipt kind
+`receipt_trust_anchor_directory_quorum_activation_selection_checkpoint`; the
+generic receipt verifier can then validate the Ed25519 signature with local,
+uploaded, or active-selection trust directories. The signed envelope keeps the
+checkpoint content hash stable while binding the exact checkpoint artifact hash
+and signer key ID for external registries.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2480,9 +2486,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- signed active-selection transparency checkpoint bundles, so external
-  registries can publish and pin rotation history without a trusted local
-  channel.
+- hosted registry discovery for signed active-selection checkpoint envelopes,
+  including source freshness, rollback detection, and local pin policy.
 
 ### Layer 3: Extension fabric
 

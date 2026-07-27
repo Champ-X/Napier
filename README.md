@@ -1445,7 +1445,13 @@ not included. `POST
 validates an uploaded checkpoint against the current local selection history
 without persisting it, returning `valid`, `divergent`, or `invalid`
 diagnostics. The Web workbench can export and verify those checkpoint JSON
-artifacts beside drift and rotation receipts.
+artifacts beside drift and rotation receipts. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign`
+signs the current checkpoint as a
+`receipt_trust_anchor_directory_quorum_activation_selection_checkpoint`
+trusted receipt envelope. The Web workbench adds **Sign checkpoint** and
+downloads the signed envelope so external registries can publish the rotation
+chain without trusting the local transport channel.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

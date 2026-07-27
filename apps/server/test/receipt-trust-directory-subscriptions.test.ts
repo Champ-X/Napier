@@ -891,6 +891,64 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-verification-status",
       ),
     ).toBe("valid");
+    const signedSelectionCheckpointResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+        }),
+      },
+    );
+    expect(signedSelectionCheckpointResponse.status).toBe(201);
+    const signedSelectionCheckpoint =
+      (await signedSelectionCheckpointResponse.json()) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>;
+    expect(signedSelectionCheckpoint).toEqual(
+      expect.objectContaining({
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+        receipt: expect.objectContaining({
+          contentSha256: selectionCheckpoint.contentSha256,
+          selectionCount: 1,
+          selectionSetSha256: selectionCheckpoint.selectionSetSha256,
+        }),
+        signature: expect.objectContaining({
+          keyId: signingAnchor.keyId,
+          receiptArtifactSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      signedSelectionCheckpointResponse.headers.get(
+        "x-napier-signature-key-id",
+      ),
+    ).toBe(signingAnchor.keyId);
+    const signedSelectionCheckpointVerifyResponse = await app.request(
+      "/api/receipt-trust/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ envelope: signedSelectionCheckpoint }),
+      },
+    );
+    expect(signedSelectionCheckpointVerifyResponse.status).toBe(200);
+    expect(
+      (await signedSelectionCheckpointVerifyResponse.json()) as TrustedReceiptVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+        envelopeSha256: signedSelectionCheckpoint.contentSha256,
+        anchorDirectorySource: "active_selection",
+        keyId: signingAnchor.keyId,
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
     const divergentSelectionCheckpointResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
       {

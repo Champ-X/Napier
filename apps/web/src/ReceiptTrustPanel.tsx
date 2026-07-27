@@ -34,6 +34,7 @@ import type {
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  TrustedReceiptEnvelope,
   TrustedReceiptVerification,
 } from "@napier/contracts";
 
@@ -57,6 +58,7 @@ import {
   revokeReceiptTrustAnchor,
   reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   signReceiptTrustAnchorDirectoryQuorumActivationDecision,
+  signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
@@ -150,6 +152,13 @@ export default function ReceiptTrustPanel({
     setBaselineActivationSelectionCheckpointVerification,
   ] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification>();
+  const [
+    baselineActivationSelectionCheckpointEnvelope,
+    setBaselineActivationSelectionCheckpointEnvelope,
+  ] =
+    useState<
+      TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>
+    >();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -216,6 +225,15 @@ export default function ReceiptTrustPanel({
     Boolean(latestApprovedActivationRecord) && !busyId;
   const canReviewActivationSelectionRotation =
     Boolean(latestApprovedActivationRecord) && !busyId;
+  const canSignActivationSelectionCheckpoint =
+    Boolean(selectedAnchorId) &&
+    anchors.some(
+      (anchor) =>
+        anchor.id === selectedAnchorId &&
+        anchor.status === "trusted" &&
+        Boolean(anchor.signingSource),
+    ) &&
+    !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -791,6 +809,34 @@ export default function ReceiptTrustPanel({
     }
   }
 
+  async function signActivationSelectionTransparencyCheckpoint(): Promise<void> {
+    if (!canSignActivationSelectionCheckpoint) return;
+    setBusyId("sign-activation-selection-checkpoint");
+    setError(undefined);
+    setBaselineActivationSelectionCheckpointEnvelope(undefined);
+    try {
+      const envelope =
+        await signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+          {
+            threadId,
+            trustAnchorId: selectedAnchorId,
+          },
+        );
+      setBaselineActivationSelectionCheckpoint(
+        envelope.receipt as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+      );
+      setBaselineActivationSelectionCheckpointEnvelope(envelope);
+      downloadJson(
+        envelope,
+        `napier-signed-quorum-activation-selection-checkpoint-${envelope.contentSha256.slice(0, 12)}.json`,
+      );
+    } catch (checkpointError) {
+      setError(toErrorMessage(checkpointError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
   async function applyBaselineActivationSelection(): Promise<void> {
     if (!latestApprovedActivationRecord || !canApplyActivationSelection) {
       return;
@@ -895,6 +941,7 @@ export default function ReceiptTrustPanel({
     setBaselineActivationRotationReview(undefined);
     setBaselineActivationSelectionCheckpoint(undefined);
     setBaselineActivationSelectionCheckpointVerification(undefined);
+    setBaselineActivationSelectionCheckpointEnvelope(undefined);
   }
 
   function clearExternalDirectory(): void {
@@ -1568,6 +1615,18 @@ export default function ReceiptTrustPanel({
                 ? copy.lab.trust.exportingActivationSelectionCheckpoint
                 : copy.lab.trust.exportActivationSelectionCheckpoint}
             </button>
+            <button
+              type="button"
+              disabled={!canSignActivationSelectionCheckpoint}
+              onClick={() =>
+                void signActivationSelectionTransparencyCheckpoint()
+              }
+            >
+              <ShieldCheck size={10} aria-hidden="true" />
+              {busyId === "sign-activation-selection-checkpoint"
+                ? copy.lab.trust.signingActivationSelectionCheckpoint
+                : copy.lab.trust.signActivationSelectionCheckpoint}
+            </button>
             <label>
               <Upload size={10} aria-hidden="true" />
               <span>
@@ -1691,6 +1750,45 @@ export default function ReceiptTrustPanel({
                 title={baselineActivationSelectionCheckpoint.selectionSetSha256}
               >
                 {baselineActivationSelectionCheckpoint.selectionSetSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+            </output>
+          ) : null}
+          {baselineActivationSelectionCheckpointEnvelope ? (
+            <output className="receipt-baseline-policy" aria-live="polite">
+              <ShieldCheck size={11} aria-hidden="true" />
+              <span>
+                <strong>
+                  {copy.lab.trust.signedActivationSelectionCheckpoint}
+                </strong>
+                <small>
+                  {
+                    baselineActivationSelectionCheckpointEnvelope.receiptKind
+                  }{" "}
+                  ·{" "}
+                  {
+                    baselineActivationSelectionCheckpointEnvelope.signature
+                      .keyId
+                  }
+                </small>
+              </span>
+              <code
+                title={baselineActivationSelectionCheckpointEnvelope.contentSha256}
+              >
+                {baselineActivationSelectionCheckpointEnvelope.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={
+                  baselineActivationSelectionCheckpointEnvelope.signature
+                    .receiptArtifactSha256
+                }
+              >
+                {baselineActivationSelectionCheckpointEnvelope.signature.receiptArtifactSha256.slice(
                   0,
                   12,
                 )}

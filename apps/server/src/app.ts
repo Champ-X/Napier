@@ -121,6 +121,7 @@ import type {
   RefreshReceiptTrustAnchorDirectorySubscriptionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   SignedExtensionPackageEnvelope,
@@ -1265,6 +1266,81 @@ export function createApp(services: NapierServices): Hono {
         verification,
       );
       return context.json(verification);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint signing request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint signing request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint signing request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const checkpoint =
+          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+        const envelope = signTrustedReceipt(
+          checkpoint,
+          services.store.getReceiptTrustAnchor(body.trustAnchorId),
+        );
+        await appendReceiptTrustEvent(
+          services,
+          body.threadId,
+          "receipt.signed",
+          {
+            ...trustedReceiptEventPayload(envelope),
+            checkpointSha256: checkpoint.contentSha256,
+            selectionCount: checkpoint.selectionCount,
+            selectionSetSha256: checkpoint.selectionSetSha256,
+            ...(checkpoint.selectionChainTailSha256
+              ? {
+                  selectionChainTailSha256:
+                    checkpoint.selectionChainTailSha256,
+                }
+              : {}),
+            driftStatus: checkpoint.driftStatus,
+          },
+        );
+        setTrustedReceiptHeaders(
+          context,
+          envelope,
+          `napier-signed-quorum-activation-selection-checkpoint-${envelope.contentSha256.slice(0, 12)}.json`,
+        );
+        return context.json(envelope, 201);
+      } catch (error) {
+        const message = errorMessage(error);
+        const caught = error instanceof Error ? error : new Error(message);
+        return jsonError(
+          context,
+          message,
+          isReceiptTrustConflict(caught) ? 409 : 400,
+        );
+      }
     },
   );
 
@@ -11613,6 +11689,28 @@ function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspar
   if (!record || record["checkpoint"] === undefined) return undefined;
   return {
     checkpoint: record["checkpoint"],
+  };
+}
+
+function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
+  input: unknown,
+):
+  | SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest
+  | undefined {
+  const record = requestRecord(input, ["threadId", "trustAnchorId"]);
+  const threadId = record?.["threadId"];
+  const trustAnchorId = record?.["trustAnchorId"];
+  if (
+    !record ||
+    !validThreadId(threadId) ||
+    typeof trustAnchorId !== "string" ||
+    !/^trustkey_[a-f0-9]{20}$/.test(trustAnchorId)
+  ) {
+    return undefined;
+  }
+  return {
+    threadId,
+    trustAnchorId,
   };
 }
 

@@ -185,6 +185,7 @@ describe("trusted receipt HTTP surface", () => {
           "receipt_trust_anchor_directory_metadata",
           "receipt_trust_anchor_directory_quorum_promotion",
           "receipt_trust_anchor_directory_quorum_activation_decision",
+          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
         ],
         anchorSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         anchors: [

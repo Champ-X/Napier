@@ -359,6 +359,14 @@ All notable changes to Napier are recorded here.
   bounded append-only applied-selection history, migrates legacy current
   selections into the history tail, and the Receipt Trust Desk adds
   **Export checkpoint** and **Verify checkpoint** receipts.
+- Signed active-selection checkpoint envelopes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign`
+  now signs the current checkpoint as
+  `receipt_trust_anchor_directory_quorum_activation_selection_checkpoint`
+  using existing Ed25519 receipt trust anchors. The generic receipt verifier
+  accepts the new receipt kind, including active-selection-backed verifier-key
+  lookup, and the Receipt Trust Desk adds **Sign checkpoint** with signed JSON
+  download.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current
