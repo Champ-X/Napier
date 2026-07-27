@@ -1509,6 +1509,40 @@ export type SubagentStopReason =
   | "timeout"
   | "cancelled"
   | "error";
+export type SubagentOutcomeItemKind = "finding" | "risk" | "recommendation";
+export type SubagentOutcomeSeverity = "info" | "warning" | "blocker";
+
+export interface SubagentOutcomeEvidence {
+  path: string;
+  lineStart?: number;
+  lineEnd?: number;
+}
+
+export interface SubagentOutcomeItem {
+  kind: SubagentOutcomeItemKind;
+  severity: SubagentOutcomeSeverity;
+  title: string;
+  detail: string;
+  evidence: SubagentOutcomeEvidence[];
+}
+
+export interface SubagentOutcome {
+  kind: "napier.subagent-outcome";
+  schemaVersion: 1;
+  taskId: string;
+  role: SubagentRole;
+  model: ModelRef;
+  summary: string;
+  items: SubagentOutcomeItem[];
+  unknowns: string[];
+  itemCount: number;
+  unknownCount: number;
+  promptSha256: string;
+  instructionsSha256: string;
+  resultSha256: string;
+  itemSetSha256: string;
+  contentSha256: string;
+}
 
 export interface SubagentLimits {
   maxConcurrent: number;
@@ -1543,6 +1577,7 @@ export interface SubagentTask {
   prompt: string;
   status: SubagentTaskStatus;
   result?: string;
+  outcome?: SubagentOutcome;
   error?: string;
   stopReason?: SubagentStopReason;
   model: ModelRef;

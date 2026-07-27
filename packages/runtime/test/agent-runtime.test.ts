@@ -1282,7 +1282,27 @@ describe("AgentRuntime demo path", () => {
           "Coordinate a repository review",
         );
         return fauxAssistantMessage(
-          "The subagent has read-only workspace tools and no delegation tool.",
+          JSON.stringify({
+            summary:
+              "The subagent has read-only workspace tools and no delegation tool.",
+            items: [
+              {
+                kind: "finding",
+                severity: "info",
+                title: "Delegation remains isolated",
+                detail:
+                  "The delegated runtime exposes read-only workspace tools and omits delegate_task.",
+                evidence: [
+                  {
+                    path: "packages/runtime/src/subagents.ts",
+                    lineStart: 180,
+                    lineEnd: 190,
+                  },
+                ],
+              },
+            ],
+            unknowns: [],
+          }),
         );
       },
       (context) => {
@@ -1319,7 +1339,13 @@ describe("AgentRuntime demo path", () => {
         status: "completed",
         stopReason: "completed",
         result:
-          "The subagent has read-only workspace tools and no delegation tool.",
+          "The subagent has read-only workspace tools and no delegation tool.\n[info] Delegation remains isolated: The delegated runtime exposes read-only workspace tools and omits delegate_task. (packages/runtime/src/subagents.ts:180-190)",
+        outcome: expect.objectContaining({
+          kind: "napier.subagent-outcome",
+          itemCount: 1,
+          unknownCount: 0,
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
         turnCount: 1,
         stepCount: 1,
       }),
@@ -1332,6 +1358,7 @@ describe("AgentRuntime demo path", () => {
       "subagent.queued",
       "subagent.started",
       "subagent.step",
+      "subagent.outcome.accepted",
       "subagent.completed",
     ]);
     expect(

@@ -17,6 +17,7 @@ import {
 import type { LocalStore } from "./store.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { compareRunConfigurations } from "./run-config.js";
+import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { createThreadReplayBundle as buildThreadReplayBundle } from "./thread-bundles.js";
 
 const METRIC_KEYS: Array<keyof RunMetricDelta> = [
@@ -427,11 +428,26 @@ function assertReplaySubagent(
     typeof record["id"] !== "string" ||
     record["threadId"] !== threadId ||
     record["runId"] !== runId ||
+    typeof record["role"] !== "string" ||
+    typeof record["prompt"] !== "string" ||
     !usage ||
     Array.isArray(usage) ||
     typeof usage !== "object"
   ) {
     throw new Error("Run replay snapshot subagent is invalid");
+  }
+  if (record["outcome"] !== undefined) {
+    if (record["status"] !== "completed") {
+      throw new Error(
+        "Run replay snapshot subagent outcome requires completed status",
+      );
+    }
+    assertSubagentOutcomeBinding(record["outcome"], {
+      id: record["id"],
+      role: record["role"] as SubagentTask["role"],
+      model: recordField(record, "model") as unknown as SubagentTask["model"],
+      prompt: record["prompt"],
+    });
   }
 }
 

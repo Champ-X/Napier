@@ -6430,7 +6430,28 @@ describe("Napier HTTP goal flow", () => {
         ),
         { stopReason: "toolUse" },
       ),
-      fauxAssistantMessage("The delegation result is durable and inspectable."),
+      fauxAssistantMessage(
+        JSON.stringify({
+          summary: "The delegation result is durable and inspectable.",
+          items: [
+            {
+              kind: "finding",
+              severity: "info",
+              title: "Durable API projection",
+              detail:
+                "The thread detail returns the persisted delegation ledger.",
+              evidence: [
+                {
+                  path: "apps/server/src/app.ts",
+                  lineStart: 1,
+                  lineEnd: 1,
+                },
+              ],
+            },
+          ],
+          unknowns: [],
+        }),
+      ),
       fauxAssistantMessage("The reviewer evidence is attached to this run."),
       fauxAssistantMessage('{"facts":[]}'),
     ]);
@@ -6471,6 +6492,13 @@ describe("Napier HTTP goal flow", () => {
     expect(
       frames.some(
         (frame) =>
+          frame.type === "event" &&
+          frame.event.type === "subagent.outcome.accepted",
+      ),
+    ).toBe(true);
+    expect(
+      frames.some(
+        (frame) =>
           frame.type === "event" && frame.event.type === "subagent.completed",
       ),
     ).toBe(true);
@@ -6482,7 +6510,15 @@ describe("Napier HTTP goal flow", () => {
       expect.objectContaining({
         role: "reviewer",
         status: "completed",
-        result: "The delegation result is durable and inspectable.",
+        result: expect.stringContaining(
+          "The delegation result is durable and inspectable.",
+        ),
+        outcome: expect.objectContaining({
+          kind: "napier.subagent-outcome",
+          itemCount: 1,
+          unknownCount: 0,
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
       }),
     ]);
 

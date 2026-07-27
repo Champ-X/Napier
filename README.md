@@ -79,7 +79,8 @@ Version `0.1.0` includes:
   evidence, immutable correction supersession, atomic multi-source
   consolidation, bounded injection, and audit events;
 - isolated researcher, reviewer, and general subagents with read-only tools,
-  bounded run budgets, cancellation, and durable delegation ledgers;
+  bounded run budgets, cancellation, strict typed outcomes, and hash-bound
+  delegation receipts;
 - reviewed Streamable HTTP MCP connections with provenance, capability and
   per-tool effect approval, local routing hints, deferred schema search, Agent
   enablement, no-store extension state headers, and last-moment policy checks;
@@ -767,7 +768,13 @@ create parent directories. Local runtimes serialize each target with a
 recoverable PID lock, write and fsync a same-directory temporary file, recheck
 the precondition, and commit with an atomic link or rename. Trace records the
 operation, path, byte counts, and before/after hashes. Researcher, reviewer,
-and general subagents remain read-only.
+and general subagents remain read-only. New delegations must return a bounded
+JSON outcome containing a summary, typed findings/risks/recommendations,
+workspace-relative line evidence, and explicit unknowns. Napier normalizes that
+result into a receipt bound to the task, role, model, prompt SHA-256, raw result
+SHA-256, immutable role-instructions SHA-256, item-set SHA-256, and stable
+content SHA-256; malformed outcomes fail the delegation without becoming
+parent evidence.
 
 ## Sandboxed Workspace Verification
 
@@ -1012,7 +1019,8 @@ Open **Lab → Portable ledger** to export the current Thread as one versioned
 JSON fixture. The bundle includes its Agent profile, Runs, execution plans,
 Agent revision ledger, evaluations, evaluation adjudications, reviewer ballots,
 consensus resolutions, evaluation suites and executions, automatic-recovery
-assessments and attempts, subagent tasks, and every ordered event.
+assessments and attempts, subagent tasks and typed outcome receipts, and every
+ordered event.
 `generatedAt` is excluded from the canonical content digest, so repeated
 exports of unchanged evidence produce the same content SHA-256.
 The fixture response is no-store and mirrors the bundle content SHA-256,

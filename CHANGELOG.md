@@ -982,6 +982,13 @@ write:management-openapi-compatibility` now emits
 - Isolated researcher, reviewer, and general subagents with read-only tools,
   bounded concurrency, total/turn/time budgets, cancellation, and durable task
   records.
+- Typed Subagent outcomes. New delegated completions must return one strict JSON
+  object with a summary, categorized severity-ranked items,
+  workspace-relative line evidence, and explicit unknowns. The runtime records
+  accepted/rejected outcome evidence and binds successful results to the task,
+  role, model, immutable role instructions, prompt, raw result, canonical item
+  set, and stable receipt SHA-256. Replay verification checks that binding, and
+  fixture import remaps task IDs while recomputing receipt hashes.
 - Shared Agent-profile and Subagent-coordinator limit normalization without a
   second silent runtime clamp.
 - Auditable delegation events and dedicated Trace workcells that preserve

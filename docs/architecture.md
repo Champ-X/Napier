@@ -1929,12 +1929,25 @@ parent tool call
   -> wait on the per-run concurrency semaphore
   -> start an isolated Pi Agent with only the delegated prompt
   -> expose read-only workspace tools, never delegate_task
-  -> persist assistant/tool steps, usage, turns, and terminal outcome
-  -> return bounded evidence to the parent as a tool result
+  -> require one strict typed outcome JSON object
+  -> normalize workspace-relative evidence and reject unknown fields
+  -> bind task/role/model/instructions/prompt/result/item-set hashes into a receipt
+  -> persist assistant/tool steps, usage, turns, and terminal outcome receipt
+  -> return bounded formatted evidence plus receipt metadata to the parent
 ```
 
 Researcher, reviewer, and general roles have separate system prompts. A
 subagent does not inherit the parent transcript, reviewed memory, or skills.
+Typed outcomes contain a summary, categorized and severity-ranked items,
+optional workspace-relative line evidence, and explicit unknowns. Invalid
+JSON, unsafe evidence paths, incomplete line ranges, unsupported fields, and
+hash drift fail closed. Legacy tasks without an outcome remain readable; new
+coordinator completions always carry a `napier.subagent-outcome` receipt.
+Schema-1 role and output instructions are immutable because their exact bytes
+are receipt-bound; instruction changes require a new outcome schema version.
+Replay verification checks the task binding, while cross-workspace import
+remaps the task ID and recomputes the receipt without changing its raw-result
+or item-set hashes.
 Concurrency, total tasks, model turns, and wall time are bounded per parent
 run. Profile validation and the coordinator share the same bounds; runtime
 does not silently clamp a saved value a second time. Cancellation and budget

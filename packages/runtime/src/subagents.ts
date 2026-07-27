@@ -16,6 +16,7 @@ import {
   type RunEvent,
   type RunRecord,
   type SubagentLimits,
+  type SubagentOutcome,
   type SubagentRole,
   type SubagentTask,
   type Usage,
@@ -23,7 +24,13 @@ import {
 import { Type } from "typebox";
 
 import { DEFAULT_SUBAGENT_LIMITS, normalizeSubagentLimits } from "./agents.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
+import {
+  createSubagentOutcome,
+  formatSubagentOutcome,
+  subagentRoleInstructions,
+} from "./subagent-outcomes.js";
 import { createWorkspaceTools } from "./tools.js";
 
 const delegateTaskSchema = Type.Object({
@@ -49,27 +56,6 @@ const DEFAULT_ROLES: SubagentRole[] = ["researcher", "reviewer", "general"];
 const MAX_STEP_CHARS = 8_192;
 const MAX_RESULT_CHARS = 12_000;
 
-const ROLE_PROMPTS: Record<SubagentRole, string> = {
-  researcher: [
-    "You are an isolated research subagent.",
-    "Investigate only the delegated task using read-only workspace tools.",
-    "Return concise findings with file paths and line-level evidence when available.",
-    "Distinguish evidence, inference, and unknowns. Do not modify files.",
-  ].join("\n"),
-  reviewer: [
-    "You are an isolated review subagent.",
-    "Review the delegated scope for correctness, regressions, security, and missing tests.",
-    "Lead with concrete findings ordered by severity and cite file paths.",
-    "Do not modify files and do not claim evidence you did not inspect.",
-  ].join("\n"),
-  general: [
-    "You are an isolated general-purpose subagent.",
-    "Complete the bounded delegated task using read-only workspace tools.",
-    "Your context contains only this task, not the parent conversation.",
-    "Return a self-contained result with evidence and remaining uncertainty.",
-  ].join("\n"),
-};
-
 type EventSink = (event: RunEvent) => Promise<void> | void;
 
 export interface SubagentCoordinatorOptions {
@@ -89,6 +75,8 @@ interface DelegationDetails {
   turnCount: number;
   stepCount: number;
   stopReason?: SubagentTask["stopReason"];
+  outcomeSha256?: string;
+  itemCount?: number;
 }
 
 class Semaphore {
@@ -171,7 +159,7 @@ export class SubagentCoordinator {
           status: task.status,
         });
         return this.semaphore.run(() =>
-          this.executeTask(task, input.task, signal),
+          this.executeTask(task, task.prompt, signal),
         );
       },
     };
@@ -206,7 +194,7 @@ export class SubagentCoordinator {
     let turnCapped = false;
     const agent = new Agent({
       initialState: {
-        systemPrompt: ROLE_PROMPTS[task.role],
+        systemPrompt: subagentRoleInstructions(task.role),
         model: this.options.model,
         thinkingLevel: this.options.model.reasoning ? "medium" : "off",
         tools: createWorkspaceTools(this.options.store.workspaceRoot),
@@ -223,6 +211,7 @@ export class SubagentCoordinator {
     let timedOut = false;
     let usage = emptyUsage();
     let stepIndex = 0;
+    let outcomeRejected = false;
 
     agent.subscribe(async (event) => {
       if (event.type === "message_end" && event.message.role === "assistant") {
@@ -295,15 +284,45 @@ export class SubagentCoordinator {
         );
       }
       if (lastError) throw new Error(lastError);
-      const result = truncate(
-        finalText || "No response generated",
-        MAX_RESULT_CHARS,
-      );
+      let outcome: SubagentOutcome;
+      try {
+        outcome = createSubagentOutcome({
+          taskId: task.id,
+          role: task.role,
+          model: task.model,
+          prompt: task.prompt,
+          resultText: finalText,
+        });
+      } catch (error) {
+        outcomeRejected = true;
+        const message =
+          error instanceof Error ? error.message : "Unknown outcome error";
+        await this.emit("subagent.outcome.rejected", task, {
+          taskId: task.id,
+          role: task.role,
+          status: "rejected",
+          resultSha256: sha256(finalText),
+          diagnosticSha256: sha256(canonicalJson({ message })),
+        });
+        throw error;
+      }
+      const result = truncate(formatSubagentOutcome(outcome), MAX_RESULT_CHARS);
       task = await this.options.store.finishSubagentTask(task.id, {
         status: "completed",
         stopReason: turnCapped ? "turn_capped" : "completed",
         result,
+        outcome,
         usage,
+      });
+      await this.emit("subagent.outcome.accepted", task, {
+        taskId: task.id,
+        role: task.role,
+        status: "accepted",
+        outcomeSha256: outcome.contentSha256,
+        resultSha256: outcome.resultSha256,
+        itemSetSha256: outcome.itemSetSha256,
+        itemCount: outcome.itemCount,
+        unknownCount: outcome.unknownCount,
       });
       await this.emit("subagent.completed", task, taskPayload(task));
       return {
@@ -336,7 +355,9 @@ export class SubagentCoordinator {
       task = await this.options.store.finishSubagentTask(task.id, {
         status,
         stopReason,
-        ...(finalText ? { result: truncate(finalText, MAX_RESULT_CHARS) } : {}),
+        ...(!outcomeRejected && finalText
+          ? { result: truncate(finalText, MAX_RESULT_CHARS) }
+          : {}),
         error: message,
         usage,
       });
@@ -396,6 +417,7 @@ function taskPayload(task: SubagentTask): Record<string, unknown> {
     stepCount: task.stepCount,
     turnCount: task.turnCount,
     usage: task.usage,
+    ...(task.outcome ? { outcome: task.outcome } : {}),
   };
 }
 
@@ -407,6 +429,12 @@ function taskDetails(task: SubagentTask): DelegationDetails {
     turnCount: task.turnCount,
     stepCount: task.stepCount,
     ...(task.stopReason ? { stopReason: task.stopReason } : {}),
+    ...(task.outcome
+      ? {
+          outcomeSha256: task.outcome.contentSha256,
+          itemCount: task.outcome.itemCount,
+        }
+      : {}),
   };
 }
 

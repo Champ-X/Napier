@@ -195,6 +195,7 @@ import {
   type SaveExecutionPlanBlueprintResult,
   type SelectExecutionPlanBlueprintRecordRequest,
   type SetExecutionPlanBlueprintRecordStatusRequest,
+  type SubagentOutcome,
   type SubagentRole,
   type SubagentStopReason,
   type SubagentTask,
@@ -475,6 +476,10 @@ import {
   createRunConfigurationFingerprint,
   validateRunConfigurationFingerprint,
 } from "./run-config.js";
+import {
+  assertSubagentOutcomeBinding,
+  rebindSubagentOutcome,
+} from "./subagent-outcomes.js";
 import { validateThreadReplayBundle } from "./thread-bundles.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
@@ -6473,6 +6478,7 @@ export class LocalStore {
       status: Exclude<SubagentTaskStatus, "pending" | "running">;
       stopReason: SubagentStopReason;
       result?: string;
+      outcome?: SubagentOutcome;
       error?: string;
       usage?: SubagentTask["usage"];
     },
@@ -6483,9 +6489,17 @@ export class LocalStore {
       if (TERMINAL_SUBAGENT_STATUSES.has(task.status)) {
         return structuredClone(task);
       }
+      if (input.outcome !== undefined && input.status !== "completed") {
+        throw new Error("Only completed subagent tasks may carry an outcome");
+      }
+      const outcome =
+        input.outcome === undefined
+          ? undefined
+          : assertSubagentOutcomeBinding(input.outcome, task);
       task.status = input.status;
       task.stopReason = input.stopReason;
       if (input.result !== undefined) task.result = input.result;
+      if (outcome !== undefined) task.outcome = outcome;
       if (input.error !== undefined) task.error = input.error;
       if (input.usage) task.usage = structuredClone(input.usage);
       task.finishedAt = nowIso();
@@ -8082,11 +8096,21 @@ export class LocalStore {
       const subagents: SubagentTask[] = bundle.subagents.map((source) => {
         const active =
           source.status === "pending" || source.status === "running";
+        const { outcome: _outcome, ...sourceTask } = structuredClone(source);
+        const taskId = taskIds.get(source.id)!;
         return {
-          ...structuredClone(source),
-          id: taskIds.get(source.id)!,
+          ...sourceTask,
+          id: taskId,
           threadId,
           runId: runIds.get(source.runId)!,
+          ...(!active && source.outcome
+            ? {
+                outcome: rebindSubagentOutcome(source.outcome, {
+                  taskId,
+                  prompt: source.prompt,
+                }),
+              }
+            : {}),
           ...(active
             ? {
                 status: "cancelled" as const,
@@ -8099,17 +8123,27 @@ export class LocalStore {
             : {}),
         };
       });
-      const events: RunEvent[] = bundle.events.map((source) => ({
-        id: eventIds.get(source.id)!,
-        threadId,
-        runId: runIds.get(source.runId) ?? auxiliaryRunIds.get(source.runId)!,
-        seq: source.seq,
-        type: source.type,
-        category: source.category,
-        visibility: source.visibility,
-        createdAt: source.createdAt,
-        payload: remapJsonValue(source.payload, idMap),
-      }));
+      const subagentsById = new Map(
+        subagents.map((task) => [task.id, task] as const),
+      );
+      const events: RunEvent[] = bundle.events.map((source) => {
+        const payload = rebindImportedSubagentEventPayload(
+          source.type,
+          remapJsonValue(source.payload, idMap),
+          subagentsById,
+        );
+        return {
+          id: eventIds.get(source.id)!,
+          threadId,
+          runId: runIds.get(source.runId) ?? auxiliaryRunIds.get(source.runId)!,
+          seq: source.seq,
+          type: source.type,
+          category: source.category,
+          visibility: source.visibility,
+          createdAt: source.createdAt,
+          payload,
+        };
+      });
       const mappedAssessmentSha256 = new Map<string, string>();
       const automaticRecoveryAssessments: AutomaticRecoveryAssessment[] = (
         bundle.automaticRecoveryAssessments ?? []
@@ -11249,6 +11283,38 @@ function remapJsonValue(
     );
   }
   return value;
+}
+
+function rebindImportedSubagentEventPayload(
+  type: string,
+  payload: JsonValue,
+  tasks: ReadonlyMap<string, SubagentTask>,
+): JsonValue {
+  if (
+    (type !== "subagent.outcome.accepted" && type !== "subagent.completed") ||
+    !payload ||
+    Array.isArray(payload) ||
+    typeof payload !== "object"
+  ) {
+    return payload;
+  }
+  const taskId = payload["taskId"];
+  const task = typeof taskId === "string" ? tasks.get(taskId) : undefined;
+  if (!task?.outcome) return payload;
+  if (type === "subagent.completed") {
+    return {
+      ...payload,
+      outcome: structuredClone(task.outcome) as unknown as JsonValue,
+    };
+  }
+  return {
+    ...payload,
+    outcomeSha256: task.outcome.contentSha256,
+    resultSha256: task.outcome.resultSha256,
+    itemSetSha256: task.outcome.itemSetSha256,
+    itemCount: task.outcome.itemCount,
+    unknownCount: task.outcome.unknownCount,
+  };
 }
 
 function normalizeInboundChannelPolicy(request: CreateInboundChannelRequest): {

@@ -220,12 +220,15 @@ function DelegationLedger({ tasks }: { tasks: SubagentTask[] }) {
           .slice()
           .reverse()
           .map((task) => {
-            const summary = task.error ?? task.result ?? task.prompt;
+            const summary =
+              task.error ?? task.outcome?.summary ?? task.result ?? task.prompt;
             const summaryLabel = task.error
               ? copy.delegation.error
-              : task.result
-                ? copy.delegation.result
-                : copy.delegation.prompt;
+              : task.outcome
+                ? copy.delegation.outcome
+                : task.result
+                  ? copy.delegation.result
+                  : copy.delegation.prompt;
             return (
               <article
                 className={`delegation-card delegation-${task.status}`}
@@ -255,9 +258,24 @@ function DelegationLedger({ tasks }: { tasks: SubagentTask[] }) {
                       <dt>{copy.delegation.steps}</dt>
                       <dd>{task.stepCount}</dd>
                     </div>
+                    {task.outcome ? (
+                      <>
+                        <div>
+                          <dt>{copy.delegation.items}</dt>
+                          <dd>{task.outcome.itemCount}</dd>
+                        </div>
+                        <div>
+                          <dt>{copy.delegation.unknowns}</dt>
+                          <dd>{task.outcome.unknownCount}</dd>
+                        </div>
+                      </>
+                    ) : null}
                   </dl>
-                  <code>
+                  <code title={task.outcome?.contentSha256}>
                     {task.model.provider}/{task.model.id}
+                    {task.outcome
+                      ? ` · ${copy.delegation.receipt} ${task.outcome.contentSha256.slice(0, 10)}`
+                      : ""}
                   </code>
                 </footer>
               </article>

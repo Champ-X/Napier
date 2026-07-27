@@ -1022,9 +1022,13 @@ export const copy = {
     title: "Isolated tasks",
     prompt: "Task brief",
     result: "Returned evidence",
+    outcome: "Typed outcome",
     error: "Failure record",
     turns: "Turns",
     steps: "Steps",
+    items: "Items",
+    unknowns: "Unknowns",
+    receipt: "Receipt",
     statuses: {
       pending: "Queued",
       running: "Working",

@@ -12,6 +12,7 @@ import {
   type EvaluationRubricSnapshot,
   type RunEvent,
   type RunEvaluationRecord,
+  type SubagentTask,
   type ThreadDetail,
   type ThreadReplayBundle,
   type ThreadReplayBundleVerification,
@@ -38,6 +39,7 @@ import {
 } from "./evaluation-suites.js";
 import { normalizeRubric } from "./evaluation.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
+import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 
 export const MAX_THREAD_REPLAY_BUNDLE_BYTES = 10 * 1024 * 1024;
 
@@ -1059,6 +1061,19 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     assertString(task["prompt"], `subagents[${index}].prompt`, 200_000);
     if (task["result"] !== undefined) {
       assertText(task["result"], `subagents[${index}].result`, 200_000);
+    }
+    if (task["outcome"] !== undefined) {
+      if (task["status"] !== "completed") {
+        throw new Error(
+          `Thread replay bundle subagents[${index}].outcome requires completed status`,
+        );
+      }
+      assertSubagentOutcomeBinding(task["outcome"], {
+        id: taskId,
+        role: task["role"] as SubagentTask["role"],
+        model: task["model"] as SubagentTask["model"],
+        prompt: task["prompt"] as string,
+      });
     }
     if (task["error"] !== undefined) {
       assertText(task["error"], `subagents[${index}].error`, 200_000);

@@ -87,6 +87,14 @@ const delegatedTask = {
   task: "Inspect the workspace boundary and return concise evidence.",
 };
 
+function typedResult(summary: string): string {
+  return JSON.stringify({
+    summary,
+    items: [],
+    unknowns: [],
+  });
+}
+
 describe("SubagentCoordinator", () => {
   it("uses the validated profile limits without a second silent clamp", async () => {
     const { coordinator } = await createHarness({
@@ -105,7 +113,9 @@ describe("SubagentCoordinator", () => {
     const { coordinator, faux, store, thread } = await createHarness({
       maxTotal: 1,
     });
-    faux.setResponses([fauxAssistantMessage("Isolation evidence collected.")]);
+    faux.setResponses([
+      fauxAssistantMessage(typedResult("Isolation evidence collected.")),
+    ]);
     const tool = coordinator.createTool();
 
     const result = await tool.execute("delegate-1", delegatedTask);
@@ -114,6 +124,8 @@ describe("SubagentCoordinator", () => {
         role: "researcher",
         status: "completed",
         turnCount: 1,
+        itemCount: 0,
+        outcomeSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
     await expect(
@@ -123,7 +135,47 @@ describe("SubagentCoordinator", () => {
       }),
     ).rejects.toThrow("Subagent total budget exhausted (1)");
     expect(store.listSubagentTasks(thread.id)).toHaveLength(1);
+    expect(store.listSubagentTasks(thread.id)[0]?.outcome).toEqual(
+      expect.objectContaining({
+        summary: "Isolation evidence collected.",
+        itemCount: 0,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
     expect(faux.state.callCount).toBe(1);
+  });
+
+  it("fails closed when a subagent violates its typed outcome contract", async () => {
+    const { coordinator, faux, store, thread } = await createHarness();
+    faux.setResponses([fauxAssistantMessage("Unstructured result.")]);
+
+    await expect(
+      coordinator.createTool().execute("delegate-invalid", delegatedTask),
+    ).rejects.toThrow("must be one valid JSON object");
+
+    const [task] = store.listSubagentTasks(thread.id);
+    expect(task).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        stopReason: "error",
+        error: "Subagent result must be one valid JSON object",
+      }),
+    );
+    expect(task).not.toHaveProperty("result");
+    expect(task).not.toHaveProperty("outcome");
+    const rejected = (await store.listEvents(thread.id)).find(
+      (event) => event.type === "subagent.outcome.rejected",
+    );
+    expect(rejected?.payload).toEqual(
+      expect.objectContaining({
+        status: "rejected",
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        diagnosticSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(JSON.stringify(rejected?.payload)).not.toContain(
+      "Unstructured result.",
+    );
   });
 
   it("closes a queued task as cancelled when its tool signal is already aborted", async () => {

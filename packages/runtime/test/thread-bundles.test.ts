@@ -6,6 +6,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  createSubagentOutcome,
   createThreadReplayBundle,
   exportThreadReplayBundle,
   hashThreadEventStream,
@@ -168,6 +169,63 @@ describe("thread replay bundles", () => {
       type: "message.assistant",
       category: "message",
       payload: { role: "assistant", text: "The second trace is complete." },
+    });
+    const completedTask = await store.createSubagentTask({
+      threadId: thread.id,
+      runId: right.id,
+      role: "reviewer",
+      description: "Review the completed evidence.",
+      prompt: "Check the completed trace against the ledger.",
+      model: { provider: "napier", id: "demo" },
+    });
+    await store.startSubagentTask(completedTask.id);
+    const completedOutcome = createSubagentOutcome({
+      taskId: completedTask.id,
+      role: completedTask.role,
+      model: completedTask.model,
+      prompt: completedTask.prompt,
+      resultText: JSON.stringify({
+        summary: "The completed trace is ledger-backed.",
+        items: [],
+        unknowns: [],
+      }),
+    });
+    const completedTaskRecord = await store.finishSubagentTask(
+      completedTask.id,
+      {
+        status: "completed",
+        stopReason: "completed",
+        result: completedOutcome.summary,
+        outcome: completedOutcome,
+      },
+    );
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: right.id,
+      type: "subagent.outcome.accepted",
+      category: "subagent",
+      payload: {
+        taskId: completedTask.id,
+        role: completedTask.role,
+        status: "accepted",
+        outcomeSha256: completedOutcome.contentSha256,
+        resultSha256: completedOutcome.resultSha256,
+        itemSetSha256: completedOutcome.itemSetSha256,
+        itemCount: completedOutcome.itemCount,
+        unknownCount: completedOutcome.unknownCount,
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: right.id,
+      type: "subagent.completed",
+      category: "subagent",
+      payload: {
+        taskId: completedTask.id,
+        role: completedTask.role,
+        status: "completed",
+        outcome: completedTaskRecord.outcome!,
+      },
     });
     await store.finishRun(right.id, "completed");
     const evaluation = await store.saveRunEvaluation({
@@ -465,15 +523,56 @@ describe("thread replay bundles", () => {
         }),
       }),
     ]);
-    expect(imported.subagents).toEqual([
+    expect(imported.subagents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.not.stringMatching(completedTask.id),
+          threadId: imported.thread.id,
+          runId: imported.runs[1]!.id,
+          status: "completed",
+          outcome: expect.objectContaining({
+            resultSha256: completedOutcome.resultSha256,
+            itemSetSha256: completedOutcome.itemSetSha256,
+            contentSha256: expect.not.stringMatching(
+              completedOutcome.contentSha256,
+            ),
+          }),
+        }),
+        expect.objectContaining({
+          id: expect.not.stringMatching(task.id),
+          threadId: imported.thread.id,
+          runId: importedActive.id,
+          status: "cancelled",
+          stopReason: "cancelled",
+        }),
+      ]),
+    );
+    const importedActiveTask = imported.subagents.find(
+      (candidate) => candidate.runId === importedActive.id,
+    )!;
+    const importedCompletedTask = imported.subagents.find(
+      (candidate) => candidate.status === "completed",
+    )!;
+    const importedOutcomeAccepted = imported.events.find(
+      (event) => event.type === "subagent.outcome.accepted",
+    )!;
+    expect(importedOutcomeAccepted.payload).toEqual(
       expect.objectContaining({
-        id: expect.not.stringMatching(task.id),
-        threadId: imported.thread.id,
-        runId: importedActive.id,
-        status: "cancelled",
-        stopReason: "cancelled",
+        taskId: importedCompletedTask.id,
+        outcomeSha256: importedCompletedTask.outcome!.contentSha256,
+        resultSha256: importedCompletedTask.outcome!.resultSha256,
+        itemSetSha256: importedCompletedTask.outcome!.itemSetSha256,
       }),
-    ]);
+    );
+    const importedSubagentCompleted = imported.events.find(
+      (event) => event.type === "subagent.completed",
+    )!;
+    expect(importedSubagentCompleted.payload).toEqual(
+      expect.objectContaining({
+        taskId: importedCompletedTask.id,
+        outcome: importedCompletedTask.outcome,
+      }),
+    );
     expect(imported.events.map((event) => event.seq)).toEqual(
       bundle.events.map((event) => event.seq),
     );
@@ -491,7 +590,7 @@ describe("thread replay bundles", () => {
         imported.evaluationAdjudications[0]!.id,
         imported.evaluationReviewerBallots[0]!.id,
         imported.evaluationConsensusResolutions[0]!.id,
-        imported.subagents[0]!.id,
+        importedActiveTask.id,
       ],
     });
   });
