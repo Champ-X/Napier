@@ -23,6 +23,18 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/ReceiptTrustAnchorDirectory",
     },
   },
+  "POST /api/receipt-trust/anchors/directory/discover": {
+    request: "#/components/schemas/DiscoverReceiptTrustAnchorDirectoryRequest",
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+    },
+  },
+  "POST /api/receipt-trust/anchors/directory/verify": {
+    request: "#/components/schemas/VerifyReceiptTrustAnchorDirectoryRequest",
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchorDirectoryVerification",
+    },
+  },
   "POST /api/receipt-trust/anchors": {
     request: "#/components/schemas/CreateReceiptTrustAnchorRequest",
     responses: {
@@ -269,6 +281,118 @@ export async function generateManagementOpenApi(options = {}) {
             anchorSha256: { $ref: "#/components/schemas/Sha256Hex" },
           },
         },
+        ReceiptTrustAnchorDirectoryVerificationPolicy: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            maxAgeMs: { type: "integer", minimum: 0 },
+            expectedAnchorSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            minimumTrustedCount: { type: "integer", minimum: 0 },
+            requiredTrustedKeyIds: {
+              type: "array",
+              maxItems: 32,
+              uniqueItems: true,
+              items: { $ref: "#/components/schemas/Sha256Hex" },
+            },
+          },
+        },
+        ReceiptTrustAnchorDirectoryVerificationStatus: {
+          type: "string",
+          enum: ["valid", "invalid"],
+        },
+        ReceiptTrustAnchorDirectoryVerification: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "generatedAt",
+            "status",
+            "diagnostics",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: {
+              const: "napier.receipt-trust-anchor-directory-verification",
+            },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            generatedAt: { type: "string", format: "date-time" },
+            status: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationStatus",
+            },
+            diagnostics: {
+              type: "array",
+              items: { type: "string" },
+            },
+            policy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
+            },
+            policySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            directoryGeneratedAt: { type: "string", format: "date-time" },
+            directoryAgeMs: { type: "integer" },
+            declaredContentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            recomputedContentSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            declaredAnchorSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            recomputedAnchorSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            anchorCount: { type: "integer", minimum: 0 },
+            trustedCount: { type: "integer", minimum: 0 },
+            revokedCount: { type: "integer", minimum: 0 },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        ReceiptTrustAnchorDirectoryDiscovery: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "generatedAt",
+            "status",
+            "sourceUrlSha256",
+            "sourceOriginSha256",
+            "httpStatus",
+            "responseMediaType",
+            "responseBytes",
+            "responseBodySha256",
+            "verification",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: {
+              const: "napier.receipt-trust-anchor-directory-discovery",
+            },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            generatedAt: { type: "string", format: "date-time" },
+            status: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationStatus",
+            },
+            sourceUrlSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            sourceOriginSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            httpStatus: { type: "integer", minimum: 100, maximum: 599 },
+            responseMediaType: { type: "string", minLength: 1 },
+            responseBytes: { type: "integer", minimum: 0 },
+            responseBodySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            verification: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerification",
+            },
+            directory: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectory",
+            },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
         ReceiptTrustAnchorSigningSource: {
           type: "object",
           required: ["type", "variable"],
@@ -330,6 +454,30 @@ export async function generateManagementOpenApi(options = {}) {
             threadId: {
               type: "string",
               pattern: "^thread_[a-z0-9]{8,80}$",
+            },
+          },
+        },
+        VerifyReceiptTrustAnchorDirectoryRequest: {
+          type: "object",
+          required: ["directory"],
+          additionalProperties: false,
+          properties: {
+            directory: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectory",
+            },
+            policy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
+            },
+          },
+        },
+        DiscoverReceiptTrustAnchorDirectoryRequest: {
+          type: "object",
+          required: ["sourceUrl"],
+          additionalProperties: false,
+          properties: {
+            sourceUrl: { type: "string", minLength: 1, maxLength: 2048 },
+            policy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
             },
           },
         },

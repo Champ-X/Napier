@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(6);
+    expect(generated.routeCount).toBe(8);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 6,
+        "x-napier-route-count": 8,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -180,6 +180,74 @@ describe("management OpenAPI generator", () => {
       }),
     );
     expect(
+      generated.artifact.paths["/api/receipt-trust/anchors/directory/discover"]
+        .post,
+    ).toEqual(
+      expect.objectContaining({
+        operationId: "post-receipt-trust-anchors-directory-discover",
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/DiscoverReceiptTrustAnchorDirectoryRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/DiscoverReceiptTrustAnchorDirectoryRequest",
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/ReceiptTrustAnchorDirectoryDiscovery",
+        },
+      }),
+    );
+    expect(
+      generated.artifact.paths["/api/receipt-trust/anchors/directory/verify"]
+        .post,
+    ).toEqual(
+      expect.objectContaining({
+        operationId: "post-receipt-trust-anchors-directory-verify",
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/VerifyReceiptTrustAnchorDirectoryRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerification",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/VerifyReceiptTrustAnchorDirectoryRequest",
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/ReceiptTrustAnchorDirectoryVerification",
+        },
+      }),
+    );
+    expect(
       generated.artifact.paths["/api/receipt-trust/anchors/{anchorId}/revoke"]
         .post,
     ).toEqual(
@@ -246,10 +314,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 6 routes",
+      "Wrote docs/artifacts/management-openapi.json: 8 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(6);
+    expect(artifact["x-napier-route-count"]).toBe(8);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -296,6 +364,8 @@ async function createFixture() {
       app.get("/api/receipt-trust/anchors/directory", () => undefined);
       app.post("/api/receipt-trust/anchors", () => undefined);
       app.post("/api/receipt-trust/anchors/:anchorId/revoke", () => undefined);
+      app.post("/api/receipt-trust/anchors/directory/discover", () => undefined);
+      app.post("/api/receipt-trust/anchors/directory/verify", () => undefined);
       app.post(
         "/api/threads/:threadId/runs",
         () => undefined,

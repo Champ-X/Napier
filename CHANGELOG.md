@@ -532,7 +532,11 @@ write:management-openapi` now scans `apps/server/src/app.ts`, emits
   /api/receipt-trust/anchors/directory` and `POST
   /api/receipt-trust/anchors/:anchorId/revoke` now promote the public anchor
   directory, revoke request, and returned anchor schemas so external verifier
-  management clients can depend on the full anchor lifecycle contract.
+  management clients can depend on the full anchor lifecycle contract. `POST
+  /api/receipt-trust/anchors/directory/verify` and `POST
+  /api/receipt-trust/anchors/directory/discover` now promote no-store
+  directory verification and hosted discovery schemas, including verification
+  policy, hash diagnostics, and discovery response evidence.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published
