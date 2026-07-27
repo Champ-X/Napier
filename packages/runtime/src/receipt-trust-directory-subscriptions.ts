@@ -24,6 +24,7 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryPolicy,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus,
@@ -1769,6 +1770,90 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
       ? { checkpointRegistryQuorumBaseline }
       : {}),
   };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "approvedAt",
+    "approvedByThreadId",
+    "subscriptionId",
+    "subscriptionRevision",
+    "subscriptionSha256",
+    "sourceUrlSha256",
+    "sourceOriginSha256",
+    "policySha256",
+    "discoverySha256",
+    "envelopeSha256",
+    "proposalSha256",
+    "proposalReviewSha256",
+    "approvalPreflightSha256",
+    "activationDecisionRecordId",
+    "expectedCurrentSelectionSha256",
+    "checkpointRegistryQuorumBaselineSha256",
+    "proposalSignerKeyId",
+    "proposalSignedAt",
+    "expiresAt",
+    "contentSha256",
+  ]);
+  const approval =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval;
+  if (
+    approval.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval" ||
+    approval.schemaVersion !== 1 ||
+    approval.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(approval.approvedAt) ||
+    !/^thread_[a-z0-9]{8,80}$/.test(approval.approvedByThreadId) ||
+    !ROTATION_PROPOSAL_SUBSCRIPTION_ID_PATTERN.test(approval.subscriptionId) ||
+    !Number.isSafeInteger(approval.subscriptionRevision) ||
+    approval.subscriptionRevision < 1 ||
+    !SHA256_PATTERN.test(approval.subscriptionSha256) ||
+    !SHA256_PATTERN.test(approval.sourceUrlSha256) ||
+    !SHA256_PATTERN.test(approval.sourceOriginSha256) ||
+    !SHA256_PATTERN.test(approval.policySha256) ||
+    !SHA256_PATTERN.test(approval.discoverySha256) ||
+    !SHA256_PATTERN.test(approval.envelopeSha256) ||
+    !SHA256_PATTERN.test(approval.proposalSha256) ||
+    !SHA256_PATTERN.test(approval.proposalReviewSha256) ||
+    !SHA256_PATTERN.test(approval.approvalPreflightSha256) ||
+    !/^trustqad_[a-z0-9]{8,80}$/.test(approval.activationDecisionRecordId) ||
+    (approval.expectedCurrentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(approval.expectedCurrentSelectionSha256)) ||
+    !optionalSha256(approval.checkpointRegistryQuorumBaselineSha256) ||
+    !SHA256_PATTERN.test(approval.proposalSignerKeyId) ||
+    !validTimestamp(approval.proposalSignedAt) ||
+    !optionalTimestamp(approval.expiresAt) ||
+    !SHA256_PATTERN.test(approval.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval is invalid",
+    );
+  }
+  if (
+    approval.expiresAt !== undefined &&
+    Date.parse(approval.expiresAt) <= Date.parse(approval.approvedAt)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval expiry is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = approval;
+  if (approval.contentSha256 !== sha256(canonicalJson(content))) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval hash mismatch",
+    );
+  }
+  return structuredClone(approval);
 }
 
 function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview(

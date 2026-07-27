@@ -3559,6 +3559,7 @@ export type TrustedReceipt =
   | ReceiptTrustAnchorDirectoryQuorumPromotionReceipt
   | ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
 
@@ -3570,6 +3571,7 @@ export type TrustedReceiptKind =
   | "receipt_trust_anchor_directory_quorum_promotion"
   | "receipt_trust_anchor_directory_quorum_activation_decision"
   | "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal"
+  | "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
   | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint"
   | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum";
 
@@ -4972,6 +4974,43 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
   discovery?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery;
   failureSha256?: string;
   contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval";
+  schemaVersion: 1;
+  apiVersion: string;
+  approvedAt: string;
+  approvedByThreadId: string;
+  subscriptionId: string;
+  subscriptionRevision: number;
+  subscriptionSha256: string;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  policySha256: string;
+  discoverySha256: string;
+  envelopeSha256: string;
+  proposalSha256: string;
+  proposalReviewSha256: string;
+  approvalPreflightSha256: string;
+  activationDecisionRecordId: string;
+  expectedCurrentSelectionSha256: string;
+  checkpointRegistryQuorumBaselineSha256?: string;
+  proposalSignerKeyId: string;
+  proposalSignedAt: string;
+  expiresAt?: string;
+  contentSha256: string;
+}
+
+export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest {
+  threadId: string;
+  trustAnchorId: string;
+  expectedSubscriptionRevision: number;
+  expectedSubscriptionSha256: string;
+  expectedDiscoverySha256?: string;
+  expectedEnvelopeSha256?: string;
+  expectedProposalSha256?: string;
+  expiresAt?: string;
 }
 
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {

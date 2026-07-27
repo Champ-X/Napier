@@ -148,6 +148,7 @@ import type {
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
+  SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
@@ -385,6 +386,7 @@ import {
   type ReceiptTrustAnchorDirectoryDiscoveryOptions,
 } from "./receipt-trust-directory-discovery.js";
 import {
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate,
@@ -2407,6 +2409,88 @@ export function createApp(services: NapierServices): Hono {
         result,
       );
       return context.json(result);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/sign",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval signing request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval signing request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval signing request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const subscription =
+          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+            context.req.param("subscriptionId"),
+          );
+        const approval =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval(
+            services.store,
+            subscription,
+            body,
+          );
+        const envelope = signTrustedReceipt(
+          approval,
+          services.store.getReceiptTrustAnchor(body.trustAnchorId),
+        );
+        await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
+          ...trustedReceiptEventPayload(envelope),
+          subscriptionId: approval.subscriptionId,
+          subscriptionRevision: approval.subscriptionRevision,
+          subscriptionSha256: approval.subscriptionSha256,
+          sourceUrlSha256: approval.sourceUrlSha256,
+          sourceOriginSha256: approval.sourceOriginSha256,
+          policySha256: approval.policySha256,
+          discoverySha256: approval.discoverySha256,
+          envelopeSha256: approval.envelopeSha256,
+          proposalSha256: approval.proposalSha256,
+          approvalPreflightSha256: approval.approvalPreflightSha256,
+          activationDecisionRecordId: approval.activationDecisionRecordId,
+          expectedCurrentSelectionSha256:
+            approval.expectedCurrentSelectionSha256,
+          proposalSignerKeyId: approval.proposalSignerKeyId,
+          ...(approval.checkpointRegistryQuorumBaselineSha256
+            ? {
+                checkpointRegistryQuorumBaselineSha256:
+                  approval.checkpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+        });
+        setTrustedReceiptHeaders(
+          context,
+          envelope,
+          `napier-signed-quorum-activation-selection-rotation-proposal-subscription-approval-${envelope.contentSha256.slice(0, 12)}.json`,
+        );
+        return context.json(envelope, 201);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
     },
   );
 
@@ -13112,6 +13196,71 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
     ...proposalRequest,
     threadId,
     trustAnchorId,
+  };
+}
+
+function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest(
+  input: unknown,
+):
+  | SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "threadId",
+    "trustAnchorId",
+    "expectedSubscriptionRevision",
+    "expectedSubscriptionSha256",
+    "expectedDiscoverySha256",
+    "expectedEnvelopeSha256",
+    "expectedProposalSha256",
+    "expiresAt",
+  ]);
+  const threadId = record?.["threadId"];
+  const trustAnchorId = record?.["trustAnchorId"];
+  const expectedSubscriptionRevision =
+    record?.["expectedSubscriptionRevision"];
+  const expectedSubscriptionSha256 = record?.["expectedSubscriptionSha256"];
+  const expectedDiscoverySha256 = record?.["expectedDiscoverySha256"];
+  const expectedEnvelopeSha256 = record?.["expectedEnvelopeSha256"];
+  const expectedProposalSha256 = record?.["expectedProposalSha256"];
+  const expiresAt = record?.["expiresAt"];
+  if (
+    !record ||
+    !validThreadId(threadId) ||
+    typeof trustAnchorId !== "string" ||
+    !/^trustkey_[a-f0-9]{20}$/.test(trustAnchorId) ||
+    !isNonNegativeInteger(expectedSubscriptionRevision) ||
+    expectedSubscriptionRevision < 1 ||
+    typeof expectedSubscriptionSha256 !== "string" ||
+    !isSha256Hex(expectedSubscriptionSha256) ||
+    (expectedDiscoverySha256 !== undefined &&
+      (typeof expectedDiscoverySha256 !== "string" ||
+        !isSha256Hex(expectedDiscoverySha256))) ||
+    (expectedEnvelopeSha256 !== undefined &&
+      (typeof expectedEnvelopeSha256 !== "string" ||
+        !isSha256Hex(expectedEnvelopeSha256))) ||
+    (expectedProposalSha256 !== undefined &&
+      (typeof expectedProposalSha256 !== "string" ||
+        !isSha256Hex(expectedProposalSha256))) ||
+    (expiresAt !== undefined &&
+      (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
+  ) {
+    return undefined;
+  }
+  return {
+    threadId,
+    trustAnchorId,
+    expectedSubscriptionRevision,
+    expectedSubscriptionSha256,
+    ...(typeof expectedDiscoverySha256 === "string"
+      ? { expectedDiscoverySha256 }
+      : {}),
+    ...(typeof expectedEnvelopeSha256 === "string"
+      ? { expectedEnvelopeSha256 }
+      : {}),
+    ...(typeof expectedProposalSha256 === "string"
+      ? { expectedProposalSha256 }
+      : {}),
+    ...(typeof expiresAt === "string" ? { expiresAt } : {}),
   };
 }
 

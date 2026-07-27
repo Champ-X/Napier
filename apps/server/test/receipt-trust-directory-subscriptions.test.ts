@@ -16,6 +16,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -2041,6 +2042,109 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-proposal-subscription-refresh-status",
       ),
     ).toBe("unchanged");
+    const rotationProposalApprovalResponse = await app.request(
+      `${rotationProposalSubscriptionPath}/${rotationProposalSubscription.id}/approval/sign`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          expectedSubscriptionRevision:
+            unchangedRotationProposalSubscriptionRefresh.subscription.revision,
+          expectedSubscriptionSha256:
+            unchangedRotationProposalSubscriptionRefresh.subscription
+              .contentSha256,
+          expectedDiscoverySha256:
+            unchangedRotationProposalSubscriptionRefresh.subscription
+              .lastGoodDiscovery?.contentSha256,
+          expectedEnvelopeSha256: signedRotationProposal.contentSha256,
+          expectedProposalSha256: signedRotationProposal.receipt.contentSha256,
+          expiresAt: "2030-01-01T00:00:00.000Z",
+        }),
+      },
+    );
+    expect(rotationProposalApprovalResponse.status).toBe(201);
+    const rotationProposalApprovalEnvelope =
+      (await rotationProposalApprovalResponse.json()) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+    expect(rotationProposalApprovalEnvelope).toEqual(
+      expect.objectContaining({
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval",
+        receipt: expect.objectContaining({
+          kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval",
+          approvedByThreadId: thread.id,
+          subscriptionId: rotationProposalSubscription.id,
+          subscriptionRevision:
+            unchangedRotationProposalSubscriptionRefresh.subscription.revision,
+          subscriptionSha256:
+            unchangedRotationProposalSubscriptionRefresh.subscription
+              .contentSha256,
+          discoverySha256:
+            unchangedRotationProposalSubscriptionRefresh.subscription
+              .lastGoodDiscovery?.contentSha256,
+          envelopeSha256: signedRotationProposal.contentSha256,
+          proposalSha256: signedRotationProposal.receipt.contentSha256,
+          approvalPreflightSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          proposalSignerKeyId: signingAnchor.keyId,
+          expiresAt: "2030-01-01T00:00:00.000Z",
+        }),
+        signature: expect.objectContaining({
+          keyId: signingAnchor.keyId,
+        }),
+      }),
+    );
+    expect(
+      rotationProposalApprovalResponse.headers.get("x-napier-signature-key-id"),
+    ).toBe(signingAnchor.keyId);
+    const rotationProposalApprovalVerifyResponse = await app.request(
+      "/api/receipt-trust/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ envelope: rotationProposalApprovalEnvelope }),
+      },
+    );
+    expect(rotationProposalApprovalVerifyResponse.status).toBe(200);
+    expect(
+      (await rotationProposalApprovalVerifyResponse.json()) as TrustedReceiptVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval",
+        envelopeSha256: rotationProposalApprovalEnvelope.contentSha256,
+        keyId: signingAnchor.keyId,
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
+    const staleRotationProposalApprovalResponse = await app.request(
+      `${rotationProposalSubscriptionPath}/${rotationProposalSubscription.id}/approval/sign`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          expectedSubscriptionRevision:
+            unchangedRotationProposalSubscriptionRefresh.subscription.revision,
+          expectedSubscriptionSha256:
+            unchangedRotationProposalSubscriptionRefresh.subscription
+              .contentSha256,
+          expectedProposalSha256: "0".repeat(64),
+        }),
+      },
+    );
+    expect(staleRotationProposalApprovalResponse.status).toBe(400);
+    expect(await staleRotationProposalApprovalResponse.json()).toEqual(
+      expect.objectContaining({
+        error: expect.stringContaining("proposal precondition failed"),
+      }),
+    );
     hostedRotationProposalEnvelope = signTrustedReceipt(
       signedRotationProposal.receipt,
       foreignAnchor,

@@ -638,8 +638,12 @@ path and settle to `accepted`, `unchanged`, `rollback_rejected`, `rejected`, or
 discovery, invalid or failed refreshes preserve the prior usable proposal, and
 a bounded transparency history records discovery, envelope, proposal,
 preflight, and predecessor hashes for external audit. Pause/resume changes are
-also CAS guarded, keeping operator control explicit until approval receipts can
-authorize unattended trust maintenance.
+also CAS guarded. Operator approval receipts sign the subscription's current
+last-good proposal only after the server rechecks subscription revision/content
+pins, optional discovery/envelope/proposal pins, and the current signed-proposal
+preflight. The approval trusted receipt binds subscription, source, policy,
+discovery, envelope, proposal, current preflight, activation-decision, proposal
+signer, and optional expiry hashes while keeping the hosted URL local-only.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2603,7 +2607,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- operator approval receipts for unattended verifier rotation maintenance.
+- approval-gated unattended verifier rotation apply.
 
 ### Layer 3: Extension fabric
 

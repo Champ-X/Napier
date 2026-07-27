@@ -4,6 +4,9 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+  SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
@@ -281,6 +284,123 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
           envelope,
         }
       : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval(
+  store: LocalStore,
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  request: SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval {
+  if (subscription.auditThreadId !== request.threadId) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval audit thread changed",
+    );
+  }
+  if (subscription.revision !== request.expectedSubscriptionRevision) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval revision changed",
+    );
+  }
+  if (subscription.contentSha256 !== request.expectedSubscriptionSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval precondition failed",
+    );
+  }
+  const discovery = subscription.lastGoodDiscovery;
+  const envelope = discovery?.envelope;
+  const proposal = envelope?.receipt;
+  if (
+    !discovery ||
+    discovery.status !== "valid" ||
+    !envelope ||
+    !proposal ||
+    !discovery.proposalSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval requires a valid last-good proposal",
+    );
+  }
+  if (
+    request.expectedDiscoverySha256 &&
+    discovery.contentSha256 !== request.expectedDiscoverySha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval discovery precondition failed",
+    );
+  }
+  if (
+    request.expectedEnvelopeSha256 &&
+    envelope.contentSha256 !== request.expectedEnvelopeSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval envelope precondition failed",
+    );
+  }
+  if (
+    request.expectedProposalSha256 &&
+    proposal.contentSha256 !== request.expectedProposalSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval proposal precondition failed",
+    );
+  }
+  const preflight =
+    createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
+      store,
+      {
+        threadId: request.threadId,
+        activationDecisionRecordId: proposal.activationDecisionRecordId,
+        expectedCurrentSelectionSha256: proposal.expectedCurrentSelectionSha256,
+        rotationProposalEnvelope: envelope,
+      },
+    );
+  if (preflight.status !== "accepted") {
+    throw new Error(
+      `Receipt trust anchor directory quorum activation selection rotation proposal subscription approval preflight rejected: ${preflight.diagnostics.join(", ")}`,
+    );
+  }
+  const approvedAt = new Date().toISOString();
+  if (
+    request.expiresAt !== undefined &&
+    Date.parse(request.expiresAt) <= Date.parse(approvedAt)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval expiry is invalid",
+    );
+  }
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    approvedAt,
+    approvedByThreadId: request.threadId,
+    subscriptionId: subscription.id,
+    subscriptionRevision: subscription.revision,
+    subscriptionSha256: subscription.contentSha256,
+    sourceUrlSha256: subscription.sourceUrlSha256,
+    sourceOriginSha256: subscription.sourceOriginSha256,
+    policySha256: subscription.policySha256,
+    discoverySha256: discovery.contentSha256,
+    envelopeSha256: envelope.contentSha256,
+    proposalSha256: proposal.contentSha256,
+    proposalReviewSha256: proposal.rotationReviewSha256,
+    approvalPreflightSha256: preflight.contentSha256,
+    activationDecisionRecordId: proposal.activationDecisionRecordId,
+    expectedCurrentSelectionSha256: proposal.expectedCurrentSelectionSha256,
+    ...(proposal.checkpointRegistryQuorumBaselineSha256
+      ? {
+          checkpointRegistryQuorumBaselineSha256:
+            proposal.checkpointRegistryQuorumBaselineSha256,
+        }
+      : {}),
+    proposalSignerKeyId: envelope.signature.keyId,
+    proposalSignedAt: envelope.signature.signedAt,
+    ...(request.expiresAt ? { expiresAt: request.expiresAt } : {}),
   };
   return {
     ...content,

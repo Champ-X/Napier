@@ -1497,6 +1497,15 @@ over discovery, envelope, proposal, and preflight hashes.
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId`
 pauses or resumes a subscription with the same revision guard.
 `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/sign`
+signs an operator approval receipt for the subscription's current last-good
+proposal. The server rechecks subscription revision/content pins, optional
+discovery/envelope/proposal hash pins, reruns the signed-proposal preflight,
+and refuses to sign unless the proposal is still `accepted`. The trusted
+receipt binds subscription, source, policy, discovery, envelope, proposal,
+current preflight, activation-decision, and proposal-signer hashes without
+exposing the hosted URL.
+`POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
 runs that same signed-proposal gate without mutating state. The no-store
 response returns `accepted`, `rejected`, or `not_required`, includes CAS,

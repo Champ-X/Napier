@@ -476,6 +476,14 @@ All notable changes to Napier are recorded here.
   `rejected`, or `failed`, preserving last-good across invalid or failed
   hosted observations; status updates can pause or resume a subscription
   without exposing the source URL.
+- Signed rotation proposal subscription approval receipts. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/sign`
+  now signs the subscription's current last-good proposal as a trusted receipt
+  only after revision/content pins, optional discovery/envelope/proposal pins,
+  and the live signed-proposal preflight all pass. The approval receipt binds
+  subscription, source, policy, discovery, envelope, proposal, current preflight,
+  activation-decision, proposal signer, and optional expiry evidence without
+  exposing the hosted source URL.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current
