@@ -497,6 +497,13 @@ All notable changes to Napier are recorded here.
   public subscription hash stable, and lets the leased background worker claim
   due approvals, rerun the approval apply gate, CAS-apply the activation
   decision, and settle success or failure with hash-only events.
+- Multi-approval verifier rotation policy review and apply. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-review`
+  evaluates approval envelopes against `minimumDistinctSignerCount` and
+  optional `requiredSignerKeyIds`, collapsing duplicate signer approvals while
+  requiring every accepted approval to pass the existing apply gate. `POST
+/approval/policy-apply` requires an accepted review before CAS-applying the
+  rotation and returns a policy-bound apply receipt.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

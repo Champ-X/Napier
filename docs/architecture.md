@@ -657,6 +657,15 @@ source locators. The leased background worker claims due queued approvals,
 reruns the same approval apply gate, performs the existing CAS apply, and
 settles either the result hash or a failure hash as local-only state plus
 hash-only Ledger events.
+Multi-approval policy review adds an operator quorum layer before apply.
+Policy review accepts a set of approval envelopes and a policy containing
+`minimumDistinctSignerCount` plus optional `requiredSignerKeyIds`. Each
+approval still passes the same approval apply gate, duplicate approvals by the
+same signer are collapsed, and the review receipt binds the full input
+approval set, accepted approval set, signer set, required signer set,
+subscription, proposal, and current-preflight hashes. Policy apply requires an
+accepted review before invoking the existing CAS apply and returns a wrapper
+receipt that binds the review hash to the apply result hash.
 Post-apply replay receipts close the unattended audit loop without mutating
 state again. A replay request validates the same approval envelope and
 subscription pins, uses the approval-bound previous selection as the verifier
@@ -2627,7 +2636,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- multi-approval verifier rotation policies.
+- signed multi-approval policy baselines and cross-workspace import.
 
 ### Layer 3: Extension fabric
 

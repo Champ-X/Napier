@@ -1520,6 +1520,21 @@ leased subscription worker also claims queued approval applies when
 `applyAfter` is due, reruns the same gate, and settles success or failure with
 hash-only events.
 `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-review`
+reviews a set of signed approvals against an approval policy before apply. The
+policy currently supports `minimumDistinctSignerCount` and optional
+`requiredSignerKeyIds`; duplicate approvals from the same signer collapse to
+one signer, every accepted approval still passes the same approval apply gate,
+and the no-store review receipt records envelope, accepted-envelope, signer,
+required-signer, subscription, proposal, and current-preflight hashes.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-apply`
+requires that policy review to be `accepted`, then uses one accepted approval
+gate to CAS-apply the activation decision and returns a policy-bound apply
+receipt. Failed policy applies return the review receipt with diagnostics such
+as `approval_distinct_signer_count_below_policy` or
+`required_signer_missing`.
+`POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
 emits a no-mutate post-apply replay receipt for a signed approval. The replay
 uses the approval-bound previous selection as the verifier source, checks that

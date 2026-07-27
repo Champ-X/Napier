@@ -5022,6 +5022,75 @@ export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
   approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy {
+  minimumDistinctSignerCount: number;
+  requiredSignerKeyIds?: string[];
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewStatus =
+  | "accepted"
+  | "rejected";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review";
+  schemaVersion: 1;
+  apiVersion: string;
+  reviewedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewStatus;
+  diagnostics: string[];
+  subscriptionId: string;
+  subscriptionRevision: number;
+  subscriptionSha256: string;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  subscriptionPolicySha256: string;
+  expectedSubscriptionRevision: number;
+  expectedSubscriptionSha256: string;
+  approvalPolicy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy;
+  approvalPolicySha256: string;
+  approvalEnvelopeCount: number;
+  acceptedApprovalCount: number;
+  distinctSignerCount: number;
+  requiredSignerCount: number;
+  approvalEnvelopeSetSha256: string;
+  acceptedApprovalEnvelopeSetSha256: string;
+  signerSetSha256: string;
+  requiredSignerSetSha256?: string;
+  approvalEnvelopeSha256s: string[];
+  acceptedApprovalEnvelopeSha256s: string[];
+  acceptedApprovalSignerKeyIds: string[];
+  activationDecisionRecordId?: string;
+  expectedCurrentSelectionSha256?: string;
+  proposalEnvelopeSha256?: string;
+  proposalSha256?: string;
+  proposalReviewSha256?: string;
+  currentPreflightSha256?: string;
+  checkpointRegistryQuorumBaselineSha256?: string;
+  contentSha256: string;
+}
+
+export interface ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest {
+  threadId: string;
+  expectedSubscriptionRevision: number;
+  expectedSubscriptionSha256: string;
+  approvalEnvelopes: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>[];
+  approvalPolicy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy;
+}
+
+export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest extends ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest {}
+
+export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-apply";
+  schemaVersion: 1;
+  apiVersion: string;
+  appliedAt: string;
+  policyReview: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview;
+  policyReviewSha256: string;
+  result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult;
+  resultSha256: string;
+  contentSha256: string;
+}
+
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayStatus =
   | "aligned"
   | "divergent"

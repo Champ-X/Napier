@@ -1,13 +1,17 @@
 import type {
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+  ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -17,8 +21,11 @@ import { NAPIER_API_VERSION } from "@napier/contracts";
 import {
   canonicalJson,
   type LocalStore,
+  normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy,
   receiptTrustAnchorsFromDirectory,
   sha256,
+  validateApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   validateTrustedReceiptEnvelope,
   verifyTrustedReceiptEnvelope,
@@ -63,6 +70,14 @@ export type RotationProposalSubscriptionApprovalApplyGateResult =
       preflight?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight;
       verification?: TrustedReceiptVerification;
     };
+
+export interface RotationProposalSubscriptionApprovalPolicyReviewResult {
+  review: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview;
+  acceptedGates: Extract<
+    RotationProposalSubscriptionApprovalApplyGateResult,
+    { status: "accepted" }
+  >[];
+}
 
 export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
   store: LocalStore,
@@ -662,6 +677,178 @@ export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
     preflight,
     verification,
   };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+  store: LocalStore,
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  request: ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest,
+): RotationProposalSubscriptionApprovalPolicyReviewResult {
+  const reviewedAt = new Date().toISOString();
+  const approvalPolicy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy(
+      request.approvalPolicy,
+    );
+  const approvalEnvelopeSha256s = request.approvalEnvelopes
+    .map((envelope) =>
+      typeof envelope?.contentSha256 === "string"
+        ? envelope.contentSha256
+        : sha256(canonicalJson(envelope)),
+    )
+    .sort();
+  const diagnostics: string[] = [];
+  const acceptedBySigner = new Map<
+    string,
+    Extract<
+      RotationProposalSubscriptionApprovalApplyGateResult,
+      { status: "accepted" }
+    >
+  >();
+
+  request.approvalEnvelopes.forEach((approvalEnvelope, index) => {
+    const gate =
+      verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate(
+        store,
+        subscription,
+        {
+          threadId: request.threadId,
+          expectedSubscriptionRevision: request.expectedSubscriptionRevision,
+          expectedSubscriptionSha256: request.expectedSubscriptionSha256,
+          approvalEnvelope,
+        },
+      );
+    if (gate.status === "accepted") {
+      const signerKeyId = gate.approvalEnvelope.signature.keyId;
+      const previous = acceptedBySigner.get(signerKeyId);
+      if (
+        !previous ||
+        gate.approvalEnvelope.contentSha256 <
+          previous.approvalEnvelope.contentSha256
+      ) {
+        acceptedBySigner.set(signerKeyId, gate);
+      }
+      return;
+    }
+    diagnostics.push(`approval_${index}_rejected`);
+    if (gate.diagnostics) diagnostics.push(...gate.diagnostics);
+  });
+
+  const acceptedGates = Array.from(acceptedBySigner.values()).sort((left, right) => {
+    const signerOrder = left.approvalEnvelope.signature.keyId.localeCompare(
+      right.approvalEnvelope.signature.keyId,
+    );
+    if (signerOrder !== 0) return signerOrder;
+    return left.approvalEnvelope.contentSha256.localeCompare(
+      right.approvalEnvelope.contentSha256,
+    );
+  });
+  const acceptedApprovalEnvelopeSha256s = acceptedGates
+    .map((gate) => gate.approvalEnvelope.contentSha256)
+    .sort();
+  const acceptedApprovalSignerKeyIds = acceptedGates
+    .map((gate) => gate.approvalEnvelope.signature.keyId)
+    .sort();
+  const requiredSignerKeyIds = approvalPolicy.requiredSignerKeyIds ?? [];
+  if (
+    acceptedApprovalSignerKeyIds.length <
+    approvalPolicy.minimumDistinctSignerCount
+  ) {
+    diagnostics.push("approval_distinct_signer_count_below_policy");
+  }
+  const acceptedSignerSet = new Set(acceptedApprovalSignerKeyIds);
+  for (const requiredSignerKeyId of requiredSignerKeyIds) {
+    if (!acceptedSignerSet.has(requiredSignerKeyId)) {
+      diagnostics.push("required_signer_missing");
+      break;
+    }
+  }
+  if (acceptedGates.length === 0) diagnostics.push("approval_quorum_empty");
+
+  const primaryGate = acceptedGates[0];
+  const uniqueDiagnostics = Array.from(new Set(diagnostics));
+  const status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview["status"] =
+    uniqueDiagnostics.length === 0 ? "accepted" : "rejected";
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    reviewedAt,
+    status,
+    diagnostics: uniqueDiagnostics,
+    subscriptionId: subscription.id,
+    subscriptionRevision: subscription.revision,
+    subscriptionSha256: subscription.contentSha256,
+    sourceUrlSha256: subscription.sourceUrlSha256,
+    sourceOriginSha256: subscription.sourceOriginSha256,
+    subscriptionPolicySha256: subscription.policySha256,
+    expectedSubscriptionRevision: request.expectedSubscriptionRevision,
+    expectedSubscriptionSha256: request.expectedSubscriptionSha256,
+    approvalPolicy,
+    approvalPolicySha256: sha256(canonicalJson(approvalPolicy)),
+    approvalEnvelopeCount: request.approvalEnvelopes.length,
+    acceptedApprovalCount: acceptedApprovalEnvelopeSha256s.length,
+    distinctSignerCount: acceptedApprovalSignerKeyIds.length,
+    requiredSignerCount: requiredSignerKeyIds.length,
+    approvalEnvelopeSetSha256: sha256(canonicalJson(approvalEnvelopeSha256s)),
+    acceptedApprovalEnvelopeSetSha256: sha256(
+      canonicalJson(acceptedApprovalEnvelopeSha256s),
+    ),
+    signerSetSha256: sha256(canonicalJson(acceptedApprovalSignerKeyIds)),
+    ...(requiredSignerKeyIds.length > 0
+      ? { requiredSignerSetSha256: sha256(canonicalJson(requiredSignerKeyIds)) }
+      : {}),
+    approvalEnvelopeSha256s,
+    acceptedApprovalEnvelopeSha256s,
+    acceptedApprovalSignerKeyIds,
+    ...(primaryGate
+      ? {
+          activationDecisionRecordId:
+            primaryGate.proposal.activationDecisionRecordId,
+          expectedCurrentSelectionSha256:
+            primaryGate.proposal.expectedCurrentSelectionSha256,
+          proposalEnvelopeSha256: primaryGate.proposalEnvelope.contentSha256,
+          proposalSha256: primaryGate.proposal.contentSha256,
+          proposalReviewSha256: primaryGate.proposal.rotationReviewSha256,
+          currentPreflightSha256: primaryGate.preflight.contentSha256,
+          ...(primaryGate.proposal.checkpointRegistryQuorumBaselineSha256
+            ? {
+                checkpointRegistryQuorumBaselineSha256:
+                  primaryGate.proposal.checkpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+        }
+      : {}),
+  };
+  const review =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+      {
+        ...content,
+        contentSha256: sha256(canonicalJson(content)),
+      },
+    );
+  return { review, acceptedGates };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult(
+  policyReview: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
+  result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+): ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult {
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-apply" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    appliedAt: new Date().toISOString(),
+    policyReview,
+    policyReviewSha256: policyReview.contentSha256,
+    result,
+    resultSha256: result.contentSha256,
+  };
+  return validateApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult(
+    {
+      ...content,
+      contentSha256: sha256(canonicalJson(content)),
+    },
+  );
 }
 
 export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(

@@ -88,6 +88,8 @@ import type {
   HealthResponse,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
   ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineRequest,
   ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
@@ -118,6 +120,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -148,6 +151,7 @@ import type {
   RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   RefreshReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRequest,
   RefreshReceiptTrustAnchorDirectorySubscriptionRequest,
+  ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
@@ -389,6 +393,8 @@ import {
   type ReceiptTrustAnchorDirectoryDiscoveryOptions,
 } from "./receipt-trust-directory-discovery.js";
 import {
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
@@ -2647,6 +2653,186 @@ export function createApp(services: NapierServices): Hono {
           approvalGate,
         );
         return context.json(result, result.applied ? 201 : 200);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-review",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES * 10 + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval policy review request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval policy review request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval policy review request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const subscription =
+          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+            context.req.param("subscriptionId"),
+          );
+        const { review } =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+            services.store,
+            subscription,
+            body,
+          );
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
+          context,
+          review,
+        );
+        return context.json(review);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-apply",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES * 10 + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval policy apply request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval policy apply request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal subscription approval policy apply request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const subscription =
+          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+            context.req.param("subscriptionId"),
+          );
+        const policyReview =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+            services.store,
+            subscription,
+            body,
+          );
+        if (
+          policyReview.review.status !== "accepted" ||
+          policyReview.acceptedGates.length === 0
+        ) {
+          setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
+            context,
+            policyReview.review,
+          );
+          return context.json(policyReview.review, 409);
+        }
+        const approvalGate = policyReview.acceptedGates[0]!;
+        const result =
+          await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+            body.threadId,
+            approvalGate.proposal.activationDecisionRecordId,
+            approvalGate.proposal.expectedCurrentSelectionSha256,
+          );
+        const applyResult =
+          createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult(
+            policyReview.review,
+            result,
+          );
+        if (result.applied) {
+          await appendReceiptTrustEvent(
+            services,
+            body.threadId,
+            "receipt.trust_directory_quorum_activation_selection.policy_applied",
+            {
+              selectionId: result.selection.id,
+              selectionSha256: result.selection.contentSha256,
+              activationDecisionRecordId:
+                result.selection.activationDecisionRecordId,
+              activationDecisionRecordSha256:
+                result.selection.activationDecisionRecordSha256,
+              activationDecisionEnvelopeSha256:
+                result.selection.activationDecisionEnvelopeSha256,
+              baselineId: result.selection.baselineId,
+              baselineSha256: result.selection.baselineSha256,
+              selectedAnchorSetSha256: result.selection.selectedAnchorSetSha256,
+              selectedDirectorySha256: result.selection.selectedDirectorySha256,
+              expectedCurrentSelectionSha256:
+                result.expectedCurrentSelectionSha256,
+              ...(result.previousSelectionSha256
+                ? { previousSelectionSha256: result.previousSelectionSha256 }
+                : {}),
+              rotationProposalEnvelopeSha256:
+                approvalGate.proposalEnvelope.contentSha256,
+              rotationProposalSha256: approvalGate.proposal.contentSha256,
+              rotationProposalReviewSha256:
+                approvalGate.proposal.rotationReviewSha256,
+              rotationProposalApprovalPolicyReviewSha256:
+                policyReview.review.contentSha256,
+              rotationProposalApprovalPolicySha256:
+                policyReview.review.approvalPolicySha256,
+              rotationProposalApprovalPolicyDistinctSignerCount:
+                policyReview.review.distinctSignerCount,
+              rotationProposalApprovalPolicyAcceptedApprovalCount:
+                policyReview.review.acceptedApprovalCount,
+              rotationProposalApprovalPolicySignerSetSha256:
+                policyReview.review.signerSetSha256,
+              rotationProposalSubscriptionId:
+                policyReview.review.subscriptionId,
+              rotationProposalSubscriptionRevision:
+                policyReview.review.subscriptionRevision,
+              rotationProposalSubscriptionSha256:
+                policyReview.review.subscriptionSha256,
+              selectionStateSha256: result.selectionState.contentSha256,
+              resultSha256: result.contentSha256,
+              applyResultSha256: applyResult.contentSha256,
+            },
+          );
+        }
+        setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResultHeaders(
+          context,
+          applyResult,
+        );
+        return context.json(applyResult, result.applied ? 201 : 200);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -13288,6 +13474,80 @@ function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationP
   };
 }
 
+function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
+  input: unknown,
+):
+  | ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "threadId",
+    "expectedSubscriptionRevision",
+    "expectedSubscriptionSha256",
+    "approvalEnvelopes",
+    "approvalPolicy",
+  ]);
+  const threadId = record?.["threadId"];
+  const expectedSubscriptionRevision =
+    record?.["expectedSubscriptionRevision"];
+  const expectedSubscriptionSha256 = record?.["expectedSubscriptionSha256"];
+  const approvalEnvelopes = record?.["approvalEnvelopes"];
+  const approvalPolicyRecord = requestRecord(record?.["approvalPolicy"], [
+    "minimumDistinctSignerCount",
+    "requiredSignerKeyIds",
+  ]);
+  const minimumDistinctSignerCount =
+    approvalPolicyRecord?.["minimumDistinctSignerCount"];
+  const requiredSignerKeyIds = approvalPolicyRecord?.["requiredSignerKeyIds"];
+  if (
+    !record ||
+    !validThreadId(threadId) ||
+    !isNonNegativeInteger(expectedSubscriptionRevision) ||
+    expectedSubscriptionRevision < 1 ||
+    typeof expectedSubscriptionSha256 !== "string" ||
+    !isSha256Hex(expectedSubscriptionSha256) ||
+    !Array.isArray(approvalEnvelopes) ||
+    approvalEnvelopes.length < 1 ||
+    approvalEnvelopes.length > 10 ||
+    !approvalPolicyRecord ||
+    !isNonNegativeInteger(minimumDistinctSignerCount) ||
+    minimumDistinctSignerCount < 1 ||
+    minimumDistinctSignerCount > 10 ||
+    (requiredSignerKeyIds !== undefined &&
+      (!Array.isArray(requiredSignerKeyIds) ||
+        requiredSignerKeyIds.length > 10 ||
+        !requiredSignerKeyIds.every(isSha256Hex)))
+  ) {
+    return undefined;
+  }
+  const uniqueRequiredSignerKeyIds =
+    requiredSignerKeyIds === undefined
+      ? []
+      : Array.from(new Set(requiredSignerKeyIds as string[])).sort();
+  return {
+    threadId,
+    expectedSubscriptionRevision,
+    expectedSubscriptionSha256,
+    approvalEnvelopes:
+      approvalEnvelopes as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>[],
+    approvalPolicy: {
+      minimumDistinctSignerCount,
+      ...(uniqueRequiredSignerKeyIds.length > 0
+        ? { requiredSignerKeyIds: uniqueRequiredSignerKeyIds }
+        : {}),
+    },
+  };
+}
+
+function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
+  input: unknown,
+):
+  | ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest
+  | undefined {
+  return parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest(
+    input,
+  );
+}
+
 function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
   input: unknown,
 ):
@@ -20912,6 +21172,141 @@ function setApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionApprovalRes
   context.header(
     "X-Napier-Signature-Key-Id",
     approvalGate.approvalEnvelope.signature.keyId,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewHeaders(
+  context: Context,
+  review: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, review.contentSha256);
+  context.header("X-Napier-Verification-Status", review.status);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(review.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(review.diagnostics),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Id",
+    review.subscriptionId,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-Revision",
+    String(review.subscriptionRevision),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Subscription-SHA256",
+    review.subscriptionSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-SHA256",
+    review.approvalPolicySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Minimum-Distinct-Signer-Count",
+    String(review.approvalPolicy.minimumDistinctSignerCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Envelope-Count",
+    String(review.approvalEnvelopeCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Accepted-Count",
+    String(review.acceptedApprovalCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Distinct-Signer-Count",
+    String(review.distinctSignerCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Signer-Set-SHA256",
+    review.signerSetSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Envelope-Set-SHA256",
+    review.approvalEnvelopeSetSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Accepted-Envelope-Set-SHA256",
+    review.acceptedApprovalEnvelopeSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Required-Signer-Set-SHA256",
+    review.requiredSignerSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
+    review.activationDecisionRecordId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Expected-Current-SHA256",
+    review.expectedCurrentSelectionSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-SHA256",
+    review.proposalSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Envelope-SHA256",
+    review.proposalEnvelopeSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Current-Preflight-SHA256",
+    review.currentPreflightSha256,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResultHeaders(
+  context: Context,
+  applyResult: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, applyResult.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Applied",
+    String(applyResult.result.applied),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Review-SHA256",
+    applyResult.policyReviewSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Policy-Apply-Result-SHA256",
+    applyResult.resultSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
+    applyResult.result.selection.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-State-SHA256",
+    applyResult.result.selectionState.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Record-Id",
+    applyResult.result.selection.activationDecisionRecordId,
+  );
+  context.header(
+    "X-Napier-Verification-Status",
+    applyResult.policyReview.status,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Distinct-Signer-Count",
+    String(applyResult.policyReview.distinctSignerCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Rotation-Proposal-Approval-Signer-Set-SHA256",
+    applyResult.policyReview.signerSetSha256,
   );
 }
 
