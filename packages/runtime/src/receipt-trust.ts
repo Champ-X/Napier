@@ -24,6 +24,7 @@ import {
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   type SignReceiptTrustAnchorDirectoryMetadataRequest,
   type TrustedReceipt,
@@ -39,6 +40,7 @@ import {
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -60,6 +62,7 @@ const TRUSTED_RECEIPT_KINDS: TrustedReceiptKind[] = [
   "receipt_trust_anchor_directory_quorum_activation_decision",
   "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
   "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval",
+  "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review",
   "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
   "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
 ];
@@ -1155,6 +1158,14 @@ function validateTrustedReceipt(value: unknown): TrustedReceipt {
   }
   if (
     value["kind"] ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review"
+  ) {
+    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+      value,
+    ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview;
+  }
+  if (
+    value["kind"] ===
     "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint"
   ) {
     return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
@@ -1336,6 +1347,12 @@ function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
     "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval"
   ) {
     return "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval";
+  }
+  if (
+    receipt.kind ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review"
+  ) {
+    return "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review";
   }
   if (
     receipt.kind ===

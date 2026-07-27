@@ -136,6 +136,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -356,6 +358,7 @@ import {
   MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES,
   MAX_RECEIPT_TRUST_CHECKPOINT_SUBSCRIPTIONS,
   MAX_RECEIPT_TRUST_ROTATION_PROPOSAL_SUBSCRIPTIONS,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
@@ -382,12 +385,14 @@ import {
   updateReceiptTrustAnchorDirectorySubscriptionStatus,
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   type PersistedReceiptTrustAnchorDirectorySubscription,
@@ -587,6 +592,7 @@ interface PersistedState {
   receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions: PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription[];
   receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline[];
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[];
+  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline[];
   receiptTrustAnchorDirectoryQuorumActivationDecisions: ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord[];
   receiptTrustAnchorDirectoryQuorumActivationSelections: ReceiptTrustAnchorDirectoryQuorumActivationSelection[];
   receiptTrustAnchorDirectoryQuorumActivationSelection?: ReceiptTrustAnchorDirectoryQuorumActivationSelection;
@@ -704,6 +710,8 @@ const EMPTY_STATE: PersistedState = {
   receiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselines:
     [],
   receiptTrustAnchorDirectoryQuorumPromotionBaselines: [],
+  receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines:
+    [],
   receiptTrustAnchorDirectoryQuorumActivationDecisions: [],
   receiptTrustAnchorDirectoryQuorumActivationSelections: [],
   evaluationQualificationBaselines: [],
@@ -2853,6 +2861,151 @@ export class LocalStore {
       }
       const baseline =
         this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          importedByThreadId,
+          importedBaseline.envelope,
+        );
+      await this.persistState();
+      return {
+        baseline: structuredClone(baseline),
+        imported: true,
+        ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
+      };
+    });
+  }
+
+  listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline[] {
+    this.assertInitialized();
+    return structuredClone(
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
+        .slice()
+        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+    );
+  }
+
+  async promoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+    promotedByThreadId: string,
+    envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>,
+  ): Promise<{
+    baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+    created: boolean;
+  }> {
+    this.assertInitialized();
+    this.getThread(promotedByThreadId);
+    return this.stateQueue.run(async () => {
+      const anchor = this.state.receiptTrustAnchors.find(
+        (candidate) => candidate.keyId === envelope.signature.keyId,
+      );
+      if (!anchor) {
+        throw new Error(
+          `Receipt trust anchor not found for key: ${envelope.signature.keyId}`,
+        );
+      }
+      const verification = verifyTrustedReceiptEnvelope(envelope, [anchor]);
+      if (verification.status !== "trusted") {
+        throw new Error(
+          `Receipt trust rotation approval policy baseline receipt is not trusted: ${verification.reason}`,
+        );
+      }
+      if (envelope.receipt.status !== "accepted") {
+        throw new Error(
+          "Receipt trust rotation approval policy baseline requires an accepted review",
+        );
+      }
+      const existing =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
+          .find(
+            (baseline) =>
+              receiptTrustRotationApprovalPolicyBaselineKey(
+                baseline.envelope,
+              ) === receiptTrustRotationApprovalPolicyBaselineKey(envelope),
+          );
+      if (existing) {
+        return {
+          baseline: structuredClone(existing),
+          created: false,
+        };
+      }
+      const baseline =
+        this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+          promotedByThreadId,
+          envelope,
+        );
+      await this.persistState();
+      return {
+        baseline: structuredClone(baseline),
+        created: true,
+      };
+    });
+  }
+
+  async importReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+    importedByThreadId: string,
+    baselineInput: unknown,
+    expectedCurrentBaselineSha256: string,
+    trustedAnchors: ReceiptTrustAnchor[],
+  ): Promise<{
+    baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+    imported: boolean;
+    previousBaselineSha256?: string;
+  }> {
+    this.assertInitialized();
+    this.getThread(importedByThreadId);
+    if (
+      expectedCurrentBaselineSha256 !== "" &&
+      !isSha256(expectedCurrentBaselineSha256)
+    ) {
+      throw new Error(
+        "Receipt trust rotation approval policy baseline import precondition is invalid",
+      );
+    }
+    return this.stateQueue.run(async () => {
+      const current =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
+          .at(-1);
+      const currentSha256 = current?.contentSha256 ?? "";
+      if (currentSha256 !== expectedCurrentBaselineSha256) {
+        throw new Error(
+          "Receipt trust rotation approval policy baseline import precondition failed",
+        );
+      }
+      const importedBaseline =
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+          baselineInput,
+          trustedAnchors,
+        );
+      const verification =
+        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+          importedBaseline,
+          trustedAnchors,
+        );
+      if (verification.status !== "trusted") {
+        throw new Error(
+          `Receipt trust rotation approval policy baseline import is not trusted: ${verification.diagnostics.join(",")}`,
+        );
+      }
+      const existing =
+        this.state
+          .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
+          .find(
+            (baseline) =>
+              receiptTrustRotationApprovalPolicyBaselineKey(
+                baseline.envelope,
+              ) ===
+              receiptTrustRotationApprovalPolicyBaselineKey(
+                importedBaseline.envelope,
+              ),
+          );
+      if (existing) {
+        return {
+          baseline: structuredClone(existing),
+          imported: false,
+          ...(current ? { previousBaselineSha256: current.contentSha256 } : {}),
+        };
+      }
+      const baseline =
+        this.appendReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
           importedByThreadId,
           importedBaseline.envelope,
         );
@@ -8452,6 +8605,14 @@ export class LocalStore {
       state.receiptTrustAnchorDirectoryQuorumPromotionBaselines = [];
     }
     if (
+      !Array.isArray(
+        state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines,
+      )
+    ) {
+      state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines =
+        [];
+    }
+    if (
       !Array.isArray(state.receiptTrustAnchorDirectoryQuorumActivationDecisions)
     ) {
       state.receiptTrustAnchorDirectoryQuorumActivationDecisions = [];
@@ -9346,6 +9507,48 @@ export class LocalStore {
       Object.assign(input, baseline);
     }
     if (
+      state
+        .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
+        .length > MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
+    ) {
+      throw new Error(
+        "Persisted receipt trust rotation approval policy baseline limit is exceeded",
+      );
+    }
+    const rotationApprovalPolicyBaselineIds = new Set<string>();
+    const rotationApprovalPolicyBaselineKeys = new Set<string>();
+    let latestRotationApprovalPolicyBaseline:
+      | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline
+      | undefined;
+    for (const input of state
+      .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines) {
+      const baseline =
+        validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+          input,
+          state.receiptTrustAnchors,
+        );
+      const baselineKey = receiptTrustRotationApprovalPolicyBaselineKey(
+        baseline.envelope,
+      );
+      if (
+        rotationApprovalPolicyBaselineIds.has(baseline.id) ||
+        rotationApprovalPolicyBaselineKeys.has(baselineKey) ||
+        !state.threads.some(
+          (thread) => thread.id === baseline.promotedByThreadId,
+        ) ||
+        baseline.supersedesBaselineId !==
+          latestRotationApprovalPolicyBaseline?.id
+      ) {
+        throw new Error(
+          `Persisted receipt trust rotation approval policy baseline is invalid: ${baseline.id}`,
+        );
+      }
+      rotationApprovalPolicyBaselineIds.add(baseline.id);
+      rotationApprovalPolicyBaselineKeys.add(baselineKey);
+      latestRotationApprovalPolicyBaseline = baseline;
+      Object.assign(input, baseline);
+    }
+    if (
       state.receiptTrustAnchorDirectoryQuorumActivationDecisions.length >
       MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_ACTIVATION_DECISIONS
     ) {
@@ -9626,6 +9829,35 @@ export class LocalStore {
     return baseline;
   }
 
+  private appendReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+    threadId: string,
+    envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>,
+  ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline {
+    if (
+      this.state
+        .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
+        .length >= MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES
+    ) {
+      throw new Error(
+        `Receipt trust rotation approval policy exceeds ${MAX_RECEIPT_TRUST_CHECKPOINT_REGISTRY_QUORUM_BASELINES} baselines`,
+      );
+    }
+    const current =
+      this.state
+        .receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines
+        .at(-1);
+    const baseline =
+      createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+        threadId,
+        envelope,
+        current?.id,
+      );
+    this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines.push(
+      baseline,
+    );
+    return baseline;
+  }
+
   private appendReceiptTrustAnchorDirectoryQuorumActivationDecision(
     threadId: string,
     result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
@@ -9896,6 +10128,9 @@ export class LocalStore {
       ) ||
       !Array.isArray(
         parsed.receiptTrustAnchorDirectoryQuorumPromotionBaselines,
+      ) ||
+      !Array.isArray(
+        parsed.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines,
       ) ||
       !Array.isArray(
         parsed.receiptTrustAnchorDirectoryQuorumActivationDecisions,
@@ -10626,6 +10861,20 @@ function receiptTrustCheckpointRegistryQuorumBaselineKey(
     candidate?.subscriptionSetSha256 ?? "",
     candidate?.sourceOriginSetSha256 ?? "",
     candidate?.signerSetSha256 ?? "",
+    envelope.signature.keyId,
+  ].join(":");
+}
+
+function receiptTrustRotationApprovalPolicyBaselineKey(
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>,
+): string {
+  const receipt = envelope.receipt;
+  return [
+    receipt.approvalPolicySha256,
+    receipt.subscriptionSha256,
+    receipt.acceptedApprovalEnvelopeSetSha256,
+    receipt.signerSetSha256,
+    receipt.requiredSignerSetSha256 ?? "",
     envelope.signature.keyId,
   ].join(":");
 }

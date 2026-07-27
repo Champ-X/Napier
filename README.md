@@ -1534,6 +1534,17 @@ gate to CAS-apply the activation decision and returns a policy-bound apply
 receipt. Failed policy applies return the review receipt with diagnostics such
 as `approval_distinct_signer_count_below_policy` or
 `required_signer_missing`.
+`GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines`
+lists append-only signed approval policy baselines. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-baselines`
+recomputes an accepted policy review, signs it as a trusted receipt, and wraps
+the envelope in a local baseline that binds policy, subscription, accepted
+approval-set, signer-set, and required-signer hashes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines/verify`
+verifies uploaded baselines against local or uploaded trust directories, and
+`POST .../approval-policy-baselines/import` CAS-imports trusted archives into a
+local append-only chain with a fresh baseline ID.
 `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
 emits a no-mutate post-apply replay receipt for a signed approval. The replay

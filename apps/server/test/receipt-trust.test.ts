@@ -187,6 +187,7 @@ describe("trusted receipt HTTP surface", () => {
           "receipt_trust_anchor_directory_quorum_activation_decision",
           "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
           "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval",
+          "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review",
           "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
           "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
         ],

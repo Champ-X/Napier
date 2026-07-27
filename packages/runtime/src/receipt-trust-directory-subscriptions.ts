@@ -26,6 +26,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   type ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
@@ -2121,6 +2123,244 @@ export function validateApplyReceiptTrustAnchorDirectoryQuorumActivationSelectio
     ...applyResult,
     policyReview,
   });
+}
+
+export function hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+  baseline: Omit<
+    ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
+    "contentSha256"
+  >,
+): string {
+  return sha256(canonicalJson(baseline));
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+  promotedByThreadId: string,
+  envelopeInput: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>,
+  supersedesBaselineId?: string,
+  createdAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline {
+  const envelope = validateTrustedReceiptEnvelope(
+    envelopeInput,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>;
+  const policyReview =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+      envelope.receipt,
+    );
+  const createdAt = requireTimestamp(
+    createdAtInput,
+    "anchor directory quorum activation selection rotation proposal approval policy baseline time",
+  );
+  if (
+    envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review" ||
+    policyReview.status !== "accepted" ||
+    !/^thread_[a-z0-9]{8,80}$/.test(promotedByThreadId) ||
+    (supersedesBaselineId !== undefined &&
+      !/^trustapb_[a-z0-9]{8,80}$/.test(supersedesBaselineId))
+  ) {
+    throw new Error(
+      "Receipt trust rotation proposal approval policy baseline is invalid",
+    );
+  }
+  const content = {
+    id: createId("trustapb"),
+    envelope,
+    promotedByThreadId,
+    approvalPolicySha256: policyReview.approvalPolicySha256,
+    subscriptionSha256: policyReview.subscriptionSha256,
+    ...(policyReview.proposalSha256
+      ? { proposalSha256: policyReview.proposalSha256 }
+      : {}),
+    acceptedApprovalEnvelopeSetSha256:
+      policyReview.acceptedApprovalEnvelopeSetSha256,
+    signerSetSha256: policyReview.signerSetSha256,
+    ...(policyReview.requiredSignerSetSha256
+      ? { requiredSignerSetSha256: policyReview.requiredSignerSetSha256 }
+      : {}),
+    ...(supersedesBaselineId ? { supersedesBaselineId } : {}),
+    createdAt,
+  };
+  return {
+    ...content,
+    contentSha256:
+      hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+        content,
+      ),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+  value: unknown,
+  anchors?: ReceiptTrustAnchor[],
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust rotation proposal approval policy baseline is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "id",
+    "envelope",
+    "promotedByThreadId",
+    "approvalPolicySha256",
+    "subscriptionSha256",
+    "proposalSha256",
+    "acceptedApprovalEnvelopeSetSha256",
+    "signerSetSha256",
+    "requiredSignerSetSha256",
+    "supersedesBaselineId",
+    "createdAt",
+    "contentSha256",
+  ]);
+  const baseline =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+  const envelope = validateTrustedReceiptEnvelope(
+    baseline.envelope,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>;
+  const policyReview =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+      envelope.receipt,
+    );
+  if (
+    !/^trustapb_[a-z0-9]{8,80}$/.test(baseline.id) ||
+    envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review" ||
+    policyReview.status !== "accepted" ||
+    !/^thread_[a-z0-9]{8,80}$/.test(baseline.promotedByThreadId) ||
+    baseline.approvalPolicySha256 !== policyReview.approvalPolicySha256 ||
+    baseline.subscriptionSha256 !== policyReview.subscriptionSha256 ||
+    (baseline.proposalSha256 ?? "") !== (policyReview.proposalSha256 ?? "") ||
+    baseline.acceptedApprovalEnvelopeSetSha256 !==
+      policyReview.acceptedApprovalEnvelopeSetSha256 ||
+    baseline.signerSetSha256 !== policyReview.signerSetSha256 ||
+    (baseline.requiredSignerSetSha256 ?? "") !==
+      (policyReview.requiredSignerSetSha256 ?? "") ||
+    (baseline.supersedesBaselineId !== undefined &&
+      !/^trustapb_[a-z0-9]{8,80}$/.test(baseline.supersedesBaselineId)) ||
+    !validTimestamp(baseline.createdAt) ||
+    !SHA256_PATTERN.test(baseline.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust rotation proposal approval policy baseline is invalid",
+    );
+  }
+  if (anchors) {
+    const verification = verifyTrustedReceiptEnvelope(envelope, anchors);
+    if (!verification.integrityValid || !verification.signatureValid) {
+      throw new Error(
+        `Receipt trust rotation proposal approval policy baseline signature is invalid: ${verification.reason}`,
+      );
+    }
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...baseline,
+    envelope,
+  };
+  if (
+    hashReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+      content,
+    ) !== baseline.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust rotation proposal approval policy baseline hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...baseline,
+    envelope,
+  });
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+  value: unknown,
+  anchors: ReceiptTrustAnchor[],
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification {
+  let baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+  try {
+    baseline =
+      validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline(
+        value,
+      );
+  } catch {
+    return createRotationProposalApprovalPolicyBaselineVerification({
+      status: "invalid",
+      diagnostics: ["baseline_invalid"],
+      baselineValid: false,
+      signatureValid: false,
+      integrityValid: false,
+    });
+  }
+  let verification: TrustedReceiptVerification;
+  try {
+    verification = verifyTrustedReceiptEnvelope(baseline.envelope, anchors);
+  } catch {
+    return createRotationProposalApprovalPolicyBaselineVerification({
+      status: "invalid",
+      diagnostics: ["trusted_receipt_invalid"],
+      baseline,
+      baselineValid: true,
+      signatureValid: false,
+      integrityValid: false,
+    });
+  }
+  return createRotationProposalApprovalPolicyBaselineVerification({
+    status: verification.status,
+    diagnostics:
+      verification.status === "trusted"
+        ? []
+        : [`trusted_receipt_${verification.status}`],
+    baseline,
+    baselineValid: true,
+    signatureValid: verification.signatureValid,
+    integrityValid: verification.integrityValid,
+  });
+}
+
+function createRotationProposalApprovalPolicyBaselineVerification(input: {
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification["status"];
+  diagnostics: string[];
+  baselineValid: boolean;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  baseline?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+}): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification {
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-baseline-verification" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    verifiedAt: nowIso(),
+    status: input.status,
+    diagnostics: input.diagnostics,
+    baselineValid: input.baselineValid,
+    signatureValid: input.signatureValid,
+    integrityValid: input.integrityValid,
+    ...(input.baseline
+      ? {
+          baselineSha256: input.baseline.contentSha256,
+          envelopeSha256: input.baseline.envelope.contentSha256,
+          policyReviewSha256: input.baseline.envelope.receipt.contentSha256,
+          receiptArtifactSha256:
+            input.baseline.envelope.signature.receiptArtifactSha256,
+          keyId: input.baseline.envelope.signature.keyId,
+          approvalPolicySha256: input.baseline.approvalPolicySha256,
+          subscriptionSha256: input.baseline.subscriptionSha256,
+          acceptedApprovalEnvelopeSetSha256:
+            input.baseline.acceptedApprovalEnvelopeSetSha256,
+          signerSetSha256: input.baseline.signerSetSha256,
+          ...(input.baseline.requiredSignerSetSha256
+            ? {
+                requiredSignerSetSha256:
+                  input.baseline.requiredSignerSetSha256,
+              }
+            : {}),
+        }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
 }
 
 export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(

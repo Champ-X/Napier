@@ -666,6 +666,14 @@ approval set, accepted approval set, signer set, required signer set,
 subscription, proposal, and current-preflight hashes. Policy apply requires an
 accepted review before invoking the existing CAS apply and returns a wrapper
 receipt that binds the review hash to the apply result hash.
+Signed approval policy baselines make that quorum policy portable. Baseline
+promotion recomputes an accepted policy review, signs the review as a trusted
+receipt, and stores a local append-only wrapper over policy, subscription,
+accepted approval-set, signer-set, required-signer-set, and proposal hashes.
+Verification is no-store and can use either local trust anchors or an uploaded
+trust directory. Import is CAS gated by the current local policy-baseline hash;
+trusted imports keep the archived signed review envelope while assigning a new
+local baseline ID and supersession link.
 Post-apply replay receipts close the unattended audit loop without mutating
 state again. A replay request validates the same approval envelope and
 subscription pins, uses the approval-bound previous selection as the verifier
@@ -2636,7 +2644,7 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- signed multi-approval policy baselines and cross-workspace import.
+- policy-baseline-gated unattended rotation scheduling.
 
 ### Layer 3: Extension fabric
 

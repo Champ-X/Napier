@@ -504,6 +504,13 @@ All notable changes to Napier are recorded here.
   requiring every accepted approval to pass the existing apply gate. `POST
 /approval/policy-apply` requires an accepted review before CAS-applying the
   rotation and returns a policy-bound apply receipt.
+- Signed multi-approval policy baselines. `GET/POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines`
+  now exposes append-only signed policy baselines for verifier rotation
+  approvals. Promotion signs an accepted policy review as a trusted receipt;
+  verification supports local or uploaded trust directories, and CAS import
+  preserves the archived envelope while assigning local baseline identity and
+  supersession.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

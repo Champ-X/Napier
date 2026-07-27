@@ -5,7 +5,9 @@ import path from "node:path";
 
 import type {
   ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaselineResult,
+  ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
+  PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorum,
@@ -18,6 +20,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
@@ -3271,6 +3275,145 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-proposal-approval-distinct-signer-count",
       ),
     ).toBe("2");
+    const approvalPolicyBaselineResponse = await app.request(
+      `${rotationProposalSubscriptionPath}/${freshRotationProposalSubscription.id}/approval/policy-baselines`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          expectedSubscriptionRevision:
+            freshRotationProposalSubscription.revision,
+          expectedSubscriptionSha256:
+            freshRotationProposalSubscription.contentSha256,
+          approvalEnvelopes: [
+            freshRotationApprovalEnvelope,
+            freshRotationCoApprovalEnvelope,
+          ],
+          approvalPolicy,
+        }),
+      },
+    );
+    expect(approvalPolicyBaselineResponse.status).toBe(201);
+    const approvalPolicyBaselineResult =
+      (await approvalPolicyBaselineResponse.json()) as PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult;
+    expect(approvalPolicyBaselineResult).toEqual(
+      expect.objectContaining({
+        created: true,
+        baseline: expect.objectContaining({
+          promotedByThreadId: thread.id,
+          approvalPolicySha256: acceptedPolicyReview.approvalPolicySha256,
+          subscriptionSha256: freshRotationProposalSubscription.contentSha256,
+          acceptedApprovalEnvelopeSetSha256:
+            acceptedPolicyReview.acceptedApprovalEnvelopeSetSha256,
+          signerSetSha256: acceptedPolicyReview.signerSetSha256,
+          envelope: expect.objectContaining({
+            receiptKind:
+              "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review",
+            receipt: expect.objectContaining({
+              status: "accepted",
+              approvalPolicySha256: acceptedPolicyReview.approvalPolicySha256,
+              proposalSha256: acceptedPolicyReview.proposalSha256,
+              signerSetSha256: acceptedPolicyReview.signerSetSha256,
+            }),
+          }),
+        }),
+      }),
+    );
+    expect(
+      approvalPolicyBaselineResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-proposal-approval-policy-baseline-created",
+      ),
+    ).toBe("true");
+    const approvalPolicyBaselineListResponse = await app.request(
+      `${rotationProposalPath}/approval-policy-baselines`,
+    );
+    expect(approvalPolicyBaselineListResponse.status).toBe(200);
+    expect(
+      (await approvalPolicyBaselineListResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline[],
+    ).toEqual([approvalPolicyBaselineResult.baseline]);
+    const approvalPolicyBaselineVerifyResponse = await app.request(
+      `${rotationProposalPath}/approval-policy-baselines/verify`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          baseline: approvalPolicyBaselineResult.baseline,
+          trustDirectory: hostedDirectory,
+          trustDirectoryPolicy: {
+            expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+            minimumTrustedCount: 1,
+          },
+        }),
+      },
+    );
+    expect(approvalPolicyBaselineVerifyResponse.status).toBe(200);
+    const approvalPolicyBaselineVerification =
+      (await approvalPolicyBaselineVerifyResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification;
+    expect(approvalPolicyBaselineVerification).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        diagnostics: [],
+        baselineValid: true,
+        signatureValid: true,
+        integrityValid: true,
+        baselineSha256: approvalPolicyBaselineResult.baseline.contentSha256,
+        policyReviewSha256:
+          approvalPolicyBaselineResult.baseline.envelope.receipt.contentSha256,
+        approvalPolicySha256: acceptedPolicyReview.approvalPolicySha256,
+        signerSetSha256: acceptedPolicyReview.signerSetSha256,
+        keyId: signingAnchor.keyId,
+      }),
+    );
+    const approvalPolicyImportRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-rotation-approval-policy-baseline-import-"),
+    );
+    temporaryRoots.push(approvalPolicyImportRoot);
+    const approvalPolicyImportServices = await createNapierServices({
+      dataRoot: path.join(approvalPolicyImportRoot, "data"),
+      workspaceRoot: path.join(approvalPolicyImportRoot, "workspace"),
+    });
+    openServices.push(approvalPolicyImportServices);
+    const approvalPolicyImportApp = createApp(approvalPolicyImportServices);
+    const approvalPolicyImportThread =
+      approvalPolicyImportServices.store.listThreads()[0]!;
+    const approvalPolicyImportResponse = await approvalPolicyImportApp.request(
+      `${rotationProposalPath}/approval-policy-baselines/import`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          baseline: approvalPolicyBaselineResult.baseline,
+          threadId: approvalPolicyImportThread.id,
+          expectedCurrentBaselineSha256: "",
+          trustDirectory: hostedDirectory,
+          trustDirectoryPolicy: {
+            expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+            minimumTrustedCount: 1,
+          },
+        }),
+      },
+    );
+    expect(approvalPolicyImportResponse.status).toBe(201);
+    const approvalPolicyImport =
+      (await approvalPolicyImportResponse.json()) as ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult;
+    expect(approvalPolicyImport).toEqual(
+      expect.objectContaining({
+        imported: true,
+        expectedCurrentBaselineSha256: "",
+        verification: expect.objectContaining({
+          status: "trusted",
+          baselineSha256: approvalPolicyBaselineResult.baseline.contentSha256,
+        }),
+        baseline: expect.objectContaining({
+          promotedByThreadId: approvalPolicyImportThread.id,
+          envelope: approvalPolicyBaselineResult.baseline.envelope,
+          approvalPolicySha256: acceptedPolicyReview.approvalPolicySha256,
+          signerSetSha256: acceptedPolicyReview.signerSetSha256,
+        }),
+      }),
+    );
     const prePolicyApplySelectionResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
     );

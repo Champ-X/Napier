@@ -3560,6 +3560,7 @@ export type TrustedReceipt =
   | ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
 
@@ -3572,6 +3573,7 @@ export type TrustedReceiptKind =
   | "receipt_trust_anchor_directory_quorum_activation_decision"
   | "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal"
   | "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
+  | "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval_policy_review"
   | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint"
   | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum";
 
@@ -5089,6 +5091,72 @@ export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
   result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult;
   resultSha256: string;
   contentSha256: string;
+}
+
+export interface PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest extends ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest {
+  trustAnchorId: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline {
+  id: string;
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview>;
+  promotedByThreadId: string;
+  approvalPolicySha256: string;
+  subscriptionSha256: string;
+  proposalSha256?: string;
+  acceptedApprovalEnvelopeSetSha256: string;
+  signerSetSha256: string;
+  requiredSignerSetSha256?: string;
+  supersedesBaselineId?: string;
+  createdAt: string;
+  contentSha256: string;
+}
+
+export interface PromoteReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult {
+  baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+  created: boolean;
+}
+
+export interface VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest {
+  baseline: unknown;
+  trustDirectory?: unknown;
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-baseline-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  verifiedAt: string;
+  status: TrustedReceiptVerificationStatus;
+  diagnostics: string[];
+  baselineValid: boolean;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  baselineSha256?: string;
+  envelopeSha256?: string;
+  policyReviewSha256?: string;
+  receiptArtifactSha256?: string;
+  keyId?: string;
+  approvalPolicySha256?: string;
+  subscriptionSha256?: string;
+  acceptedApprovalEnvelopeSetSha256?: string;
+  signerSetSha256?: string;
+  requiredSignerSetSha256?: string;
+  contentSha256: string;
+}
+
+export interface ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest extends VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineRequest {
+  threadId: string;
+  expectedCurrentBaselineSha256: string;
+}
+
+export interface ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineResult {
+  baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+  imported: boolean;
+  expectedCurrentBaselineSha256: string;
+  verification: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineVerification;
+  previousBaselineSha256?: string;
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayStatus =
