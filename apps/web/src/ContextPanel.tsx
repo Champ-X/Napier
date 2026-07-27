@@ -27,6 +27,8 @@ import type {
   CredentialReferenceSource,
   ExtensionPublisherTrustAnchor,
   InstallSkillPackageResult,
+  ModelAdvisorMode,
+  ModelAdvisorRuleId,
   ModelSummary,
   PromptPackageQualification,
   PromptPackageVerification,
@@ -70,6 +72,17 @@ const DEFAULT_RUN_LIMITS = {
   maxCostUsd: 10,
   timeoutMs: 900_000,
 } as const;
+const DEFAULT_MODEL_ADVISOR_POLICY = {
+  mode: "observe" as const,
+  enabledRules: [
+    "unverified_verification_claim" as const,
+    "destructive_command_reference" as const,
+  ],
+};
+const MODEL_ADVISOR_RULES: ModelAdvisorRuleId[] = [
+  "unverified_verification_claim",
+  "destructive_command_reference",
+];
 const MAX_SKILL_CONTENT_FILE_BYTES = 128 * 1024;
 const MAX_PROMPT_PACKAGE_FILE_BYTES = 129 * 1024;
 const MAX_SKILL_PACKAGE_FILE_BYTES = 513 * 1024;
@@ -232,6 +245,15 @@ export default function ContextPanel({
   );
   const [agentRecoveryBackoffSeconds, setAgentRecoveryBackoffSeconds] =
     useState(Math.round((agent.automaticRecovery?.backoffMs ?? 5_000) / 1_000));
+  const [agentAdvisorMode, setAgentAdvisorMode] = useState<ModelAdvisorMode>(
+    agent.modelAdvisor?.mode ?? DEFAULT_MODEL_ADVISOR_POLICY.mode,
+  );
+  const [agentAdvisorRules, setAgentAdvisorRules] = useState<
+    ModelAdvisorRuleId[]
+  >(
+    agent.modelAdvisor?.enabledRules ??
+      DEFAULT_MODEL_ADVISOR_POLICY.enabledRules,
+  );
   const [agentRunMaxTurns, setAgentRunMaxTurns] = useState(
     agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
   );
@@ -328,6 +350,13 @@ export default function ContextPanel({
     setAgentRecoveryBackoffSeconds(
       Math.round((agent.automaticRecovery?.backoffMs ?? 5_000) / 1_000),
     );
+    setAgentAdvisorMode(
+      agent.modelAdvisor?.mode ?? DEFAULT_MODEL_ADVISOR_POLICY.mode,
+    );
+    setAgentAdvisorRules(
+      agent.modelAdvisor?.enabledRules ??
+        DEFAULT_MODEL_ADVISOR_POLICY.enabledRules,
+    );
     setAgentRunMaxTurns(
       agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
     );
@@ -422,6 +451,10 @@ export default function ContextPanel({
           mode: agentRecoveryMode,
           maxAttempts: agentRecoveryMaxAttempts,
           backoffMs: agentRecoveryBackoffSeconds * 1_000,
+        },
+        modelAdvisor: {
+          mode: agentAdvisorMode,
+          enabledRules: agentAdvisorRules,
         },
         runLimits: {
           maxTurns: agentRunMaxTurns,
@@ -1123,6 +1156,39 @@ export default function ContextPanel({
             {agentRecoveryMode === "safe_read_only"
               ? copy.context.recoverySafeBody
               : copy.context.recoveryManualBody}
+          </p>
+        </fieldset>
+
+        <fieldset className="context-budget-grid" disabled={configurationBusy}>
+          <legend>{copy.context.modelAdvisor}</legend>
+          <label className="context-field">
+            <span>{copy.context.modelAdvisorMode}</span>
+            <select
+              value={agentAdvisorMode}
+              onChange={(event) =>
+                setAgentAdvisorMode(event.target.value as ModelAdvisorMode)
+              }
+            >
+              <option value="observe">
+                {copy.context.modelAdvisorModes.observe}
+              </option>
+              <option value="off">{copy.context.modelAdvisorModes.off}</option>
+            </select>
+          </label>
+          <OptionGroup
+            legend={copy.context.modelAdvisorRules}
+            options={MODEL_ADVISOR_RULES.map((rule) => ({
+              value: rule,
+              label: copy.context.modelAdvisorRuleLabels[rule],
+              detail: rule,
+            }))}
+            selected={agentAdvisorRules}
+            disabled={configurationBusy || agentAdvisorMode === "off"}
+            onChange={setAgentAdvisorRules}
+          />
+          <p className="guardrail-note">
+            <ShieldCheck size={11} aria-hidden="true" />
+            {copy.context.modelAdvisorBody}
           </p>
         </fieldset>
 
@@ -2756,6 +2822,7 @@ function agentProfileDelta(
     "subagentLimits",
     "runLimits",
     "automaticRecovery",
+    "modelAdvisor",
   ];
   return fields.filter((field) => {
     if (field === "automaticRecovery") {
@@ -2774,6 +2841,12 @@ function agentProfileDelta(
             backoffMs: 5_000,
           },
         )
+      );
+    }
+    if (field === "modelAdvisor") {
+      return (
+        JSON.stringify(current.modelAdvisor ?? DEFAULT_MODEL_ADVISOR_POLICY) !==
+        JSON.stringify(target.modelAdvisor ?? DEFAULT_MODEL_ADVISOR_POLICY)
       );
     }
     return JSON.stringify(current[field]) !== JSON.stringify(target[field]);

@@ -45,6 +45,19 @@ export const contextCopy = {
     "Only a schema-2 interrupted Run with no unresolved tools, writes, unknown effects, or imported provenance can continue. The child Run uses the frozen Agent revision and exposes only local read tools.",
   recoveryManualBody:
     "Interrupted Runs wait for an operator. Manual Resume remains available and always warns that prior tool outcomes may be unknown.",
+  modelAdvisor: "Model Advisor",
+  modelAdvisorMode: "Advisor mode",
+  modelAdvisorModes: {
+    observe: "Observe and record",
+    off: "Off",
+  },
+  modelAdvisorRules: "Advisor rules",
+  modelAdvisorRuleLabels: {
+    unverified_verification_claim: "Unverified checks",
+    destructive_command_reference: "Dangerous command",
+  },
+  modelAdvisorBody:
+    "Assistant output is linted before the visible message is recorded. Notices store rule IDs and hashes only; they do not rewrite the response.",
   recoveryShort: "Recovery",
   tools: "Workspace tools",
   toolLabels: {
@@ -117,6 +130,7 @@ export const contextCopy = {
     subagentLimits: "Delegation budget",
     runLimits: "Run budget",
     automaticRecovery: "Interruption policy",
+    modelAdvisor: "Model Advisor",
   },
   promptPackageEyebrow: "SIGNED PROMPT BASELINE",
   promptPackage: "Prompt package",

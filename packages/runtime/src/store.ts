@@ -240,6 +240,7 @@ import {
 
 import { createId, nowIso } from "./ids.js";
 import {
+  DEFAULT_MODEL_ADVISOR_POLICY,
   DEFAULT_RUN_LIMITS,
   DEFAULT_SUBAGENT_LIMITS,
   changedAgentFields,
@@ -7674,6 +7675,7 @@ export class LocalStore {
           timeoutMs: 120_000,
         },
         runLimits: structuredClone(DEFAULT_RUN_LIMITS),
+        modelAdvisor: structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
         revision: 1,
         createdAt: importedAt,
         updatedAt: importedAt,
@@ -7697,6 +7699,9 @@ export class LocalStore {
           maxAttempts: 2,
           backoffMs: 5_000,
         },
+        modelAdvisor:
+          bundle.agent.modelAdvisor ??
+          structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
       });
       const fallbackAgent: AgentProfile = {
         ...normalizedAgent,
@@ -8681,6 +8686,7 @@ export class LocalStore {
         timeoutMs: 120_000,
       },
       runLimits: structuredClone(DEFAULT_RUN_LIMITS),
+      modelAdvisor: structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
       revision: 1,
       createdAt: timestamp,
       updatedAt: timestamp,

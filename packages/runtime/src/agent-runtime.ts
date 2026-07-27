@@ -52,7 +52,7 @@ import {
   parseGoalEvaluationResponse,
   shouldContinueGoal,
 } from "./goals.js";
-import { DEFAULT_RUN_LIMITS } from "./agents.js";
+import { DEFAULT_RUN_LIMITS, effectiveModelAdvisorPolicy } from "./agents.js";
 import {
   buildMemoryExtractorMessages,
   formatMemoryContext,
@@ -592,7 +592,10 @@ export class AgentRuntime {
         "Interrupted Run is not eligible for safe automatic recovery",
       );
     }
-    if (interrupted.configuration.schemaVersion === 3) {
+    if (
+      interrupted.configuration.schemaVersion === 3 ||
+      interrupted.configuration.schemaVersion === 4
+    ) {
       const currentSkillCatalog = await loadWorkspaceSkills(
         this.store.workspaceRoot,
         interrupted.configuration.enabledSkills,
@@ -720,7 +723,13 @@ export class AgentRuntime {
         onEvent,
       );
     }
-    await this.recordModelAdvisorNotice(run, response, source, onEvent);
+    await this.recordModelAdvisorNotice(
+      run,
+      response,
+      source,
+      effectiveModelAdvisorPolicy(profile),
+      onEvent,
+    );
     await this.record(
       {
         threadId: run.threadId,
@@ -1015,6 +1024,7 @@ export class AgentRuntime {
           event,
           source,
           budget,
+          effectiveModelAdvisorPolicy(profile),
           onEvent,
         );
         if (text !== undefined) finalText = text;
@@ -1034,6 +1044,7 @@ export class AgentRuntime {
     event: AgentEvent,
     source: TurnSource,
     budget: RunBudgetTracker,
+    modelAdvisorPolicy: ReturnType<typeof effectiveModelAdvisorPolicy>,
     onEvent?: EventSink,
   ): Promise<string | undefined> {
     if (event.type === "turn_start" || event.type === "turn_end") {
@@ -1121,7 +1132,13 @@ export class AgentRuntime {
         );
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
         if (event.message.stopReason === "toolUse") return undefined;
-        await this.recordModelAdvisorNotice(run, text, source, onEvent);
+        await this.recordModelAdvisorNotice(
+          run,
+          text,
+          source,
+          modelAdvisorPolicy,
+          onEvent,
+        );
         await this.record(
           {
             threadId: run.threadId,
@@ -1199,6 +1216,7 @@ export class AgentRuntime {
     run: RunRecord,
     assistantText: string,
     source: TurnSource,
+    modelAdvisorPolicy: ReturnType<typeof effectiveModelAdvisorPolicy>,
     onEvent?: EventSink,
   ): Promise<void> {
     const runEvents = (await this.store.listEvents(run.threadId)).filter(
@@ -1208,6 +1226,7 @@ export class AgentRuntime {
       assistantText,
       runEvents,
       turnSource: source,
+      policy: modelAdvisorPolicy,
     });
     if (!notice) return;
     await this.record(
@@ -2074,11 +2093,13 @@ function modernRunConfiguration(
   configuration: RunRecord["configuration"],
 ): configuration is Extract<
   NonNullable<RunRecord["configuration"]>,
-  { schemaVersion: 2 | 3 }
+  { schemaVersion: 2 | 3 | 4 }
 > {
   return (
     configuration !== undefined &&
-    (configuration.schemaVersion === 2 || configuration.schemaVersion === 3)
+    (configuration.schemaVersion === 2 ||
+      configuration.schemaVersion === 3 ||
+      configuration.schemaVersion === 4)
   );
 }
 

@@ -417,6 +417,32 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       agent["automaticRecovery"] as AgentProfile["automaticRecovery"] & object,
     );
   }
+  if (agent["modelAdvisor"] !== undefined) {
+    const modelAdvisor = assertRecord(
+      agent["modelAdvisor"],
+      "agent.modelAdvisor",
+    );
+    assertEnum(
+      modelAdvisor["mode"],
+      new Set(["observe", "off"]),
+      "agent.modelAdvisor.mode",
+    );
+    const enabledRules = assertTextArray(
+      modelAdvisor["enabledRules"],
+      "agent.modelAdvisor.enabledRules",
+      10,
+    );
+    for (const rule of enabledRules) {
+      assertEnum(
+        rule,
+        new Set([
+          "unverified_verification_claim",
+          "destructive_command_reference",
+        ]),
+        "agent.modelAdvisor.enabledRules",
+      );
+    }
+  }
   if (agentRevisions !== undefined) {
     const revisionNumbers = new Set<number>();
     let currentRevision: AgentProfileRevision | undefined;

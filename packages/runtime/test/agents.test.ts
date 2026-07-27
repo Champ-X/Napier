@@ -73,6 +73,10 @@ describe("Agent profile updates", () => {
         maxAttempts: 3,
         backoffMs: 15_000,
       },
+      modelAdvisor: {
+        mode: "observe",
+        enabledRules: ["destructive_command_reference"],
+      },
     });
 
     expect(updated).toEqual(
@@ -98,6 +102,10 @@ describe("Agent profile updates", () => {
           maxAttempts: 3,
           backoffMs: 15_000,
         },
+        modelAdvisor: {
+          mode: "observe",
+          enabledRules: ["destructive_command_reference"],
+        },
         revision: 2,
       }),
     );
@@ -114,6 +122,7 @@ describe("Agent profile updates", () => {
         "subagentLimits",
         "runLimits",
         "automaticRecovery",
+        "modelAdvisor",
       ]),
     );
   });
@@ -204,6 +213,14 @@ describe("Agent profile updates", () => {
         },
       }),
     ).toThrow("Automatic recovery maxAttempts");
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        modelAdvisor: {
+          mode: "observe",
+          enabledRules: ["unknown_rule" as "unverified_verification_claim"],
+        },
+      }),
+    ).toThrow("Unsupported Model Advisor rule");
   });
 
   it("hashes immutable revisions and restores history as a new revision", () => {

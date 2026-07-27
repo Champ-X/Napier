@@ -48,9 +48,9 @@ removal is a versioned contract change.
 - tool assembly, canonical workspace-path checks, hash-bound atomic editing
   with Hashline-style line anchors, sandboxed structured verification, and
   last-moment policy checks;
-- deterministic Model Advisor notices that inspect assistant output before the
-  user-visible assistant message is recorded, while retaining only hash-bound
-  diagnostics;
+- configurable deterministic Model Advisor notices that inspect assistant output
+  before the user-visible assistant message is recorded, while retaining only
+  hash-bound diagnostics;
 - standard Agent Skills discovery;
 - hash-only signed Skill, Prompt, and Inspector package baselines plus local
   qualification checks;
@@ -339,17 +339,20 @@ Verification allows additive operations while rejecting removed or changed
 published operations, giving external management clients a baseline that is
 stricter than route discovery but still additive-friendly.
 
-Before a final assistant message is recorded, the runtime runs a deterministic
-Model Advisor lint pass over the assistant text and the current Run evidence.
-The first rules flag verification claims such as tests/build/checks passing
-without a completed `verify_workspace` tool, and destructive command
-references such as `git reset --hard` or `rm -rf` patterns. The resulting
-`model.advisor.notice` event is debug-only and hash-only: it records rule IDs,
-severity, match counts, text SHA-256, diagnostic-set SHA-256, tool evidence
-counts, and a stable content SHA-256, but not the matching text. The pass is
-advisory in this release; it does not mutate the assistant response or retry
-the model turn, which keeps the stream contract stable while establishing the
-evidence channel needed for future hard stream-rule intervention.
+Before a final assistant message is recorded, the runtime runs the configured
+deterministic Model Advisor lint pass over the assistant text and the current
+Run evidence. The first rules flag verification claims such as
+tests/build/checks passing without a completed `verify_workspace` tool, and
+destructive command references such as `git reset --hard` or `rm -rf` patterns.
+The Agent profile can switch the advisor `off` or choose the enabled rule set;
+schema-4 Run configuration fingerprints bind that effective policy so replay
+comparison can detect advisor drift. The resulting `model.advisor.notice` event
+is debug-only and hash-only: it records rule IDs, severity, match counts, text
+SHA-256, diagnostic-set SHA-256, tool evidence counts, the effective policy,
+and a stable content SHA-256, but not the matching text. The pass is advisory in
+this release; it does not mutate the assistant response or retry the model
+turn, which keeps the stream contract stable while establishing the evidence
+channel needed for future hard stream-rule intervention.
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
 frames must not carry `id:`, and stream-local event sequence values must
@@ -849,12 +852,14 @@ rollback
 
 Run configuration fingerprints bind the effective profile separately from the
 profile revision ledger. Schema 3 adds `skillCatalogSha256`, computed from a
-canonical manifest of the enabled Skill files loaded for that Run. The manifest
-contains requested/loaded/missing Skill names, relative `SKILL.md` paths,
-byte counts, diagnostics hash, and file SHA-256 values; it never stores Skill
-instruction text. The Agent records the same manifest as a `context.skills`
-debug event before model execution, so replay comparison can detect Skill
-content drift even when the enabled Skill names did not change.
+canonical manifest of the enabled Skill files loaded for that Run. Schema 4
+also binds the effective Model Advisor policy, including observe/off mode and
+the enabled deterministic rule set. The manifest contains
+requested/loaded/missing Skill names, relative `SKILL.md` paths, byte counts,
+diagnostics hash, and file SHA-256 values; it never stores Skill instruction
+text. The Agent records the same manifest as a `context.skills` debug event
+before model execution, so replay comparison can detect Skill content drift
+even when the enabled Skill names did not change.
 
 Signed Skill package baselines reuse the Extension publisher trust domain but
 emit a distinct `napier.signed-skill-package` artifact. The manifest contains

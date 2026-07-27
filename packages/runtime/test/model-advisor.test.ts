@@ -2,12 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import { createModelAdvisorNotice } from "../src/model-advisor.js";
 
+const DEFAULT_POLICY = {
+  mode: "observe" as const,
+  enabledRules: [
+    "unverified_verification_claim" as const,
+    "destructive_command_reference" as const,
+  ],
+};
+
 describe("model advisor stream lint", () => {
   it("records hash-only notice evidence for unverified verification claims", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "The build and tests passed.",
       runEvents: [],
       turnSource: "user",
+      policy: DEFAULT_POLICY,
     });
 
     expect(notice).toEqual(
@@ -37,6 +46,7 @@ describe("model advisor stream lint", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "The build and tests passed.",
       turnSource: "user",
+      policy: DEFAULT_POLICY,
       runEvents: [
         {
           id: "evt_1",
@@ -64,6 +74,7 @@ describe("model advisor stream lint", () => {
       assistantText: "Never run git reset --hard here.",
       runEvents: [],
       turnSource: "user",
+      policy: DEFAULT_POLICY,
     });
 
     expect(notice?.diagnostics).toEqual([
@@ -73,5 +84,23 @@ describe("model advisor stream lint", () => {
       }),
     ]);
     expect(JSON.stringify(notice)).not.toContain("git reset --hard");
+  });
+
+  it("does not record notices when advisor policy is off", () => {
+    expect(
+      createModelAdvisorNotice({
+        assistantText:
+          "The build and tests passed. Never run git reset --hard.",
+        runEvents: [],
+        turnSource: "user",
+        policy: {
+          mode: "off",
+          enabledRules: [
+            "unverified_verification_claim",
+            "destructive_command_reference",
+          ],
+        },
+      }),
+    ).toBeUndefined();
   });
 });

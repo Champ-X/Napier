@@ -405,12 +405,19 @@ describe("safe automatic recovery", () => {
     );
     expect(recovered.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 3,
+        schemaVersion: 4,
         executionMode: "safe_read_only_recovery",
         toolPolicy: "observe",
         enabledTools: ["list_files", "read_file", "search_files"],
         enabledSubagents: [],
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        modelAdvisor: {
+          mode: "observe",
+          enabledRules: [
+            "destructive_command_reference",
+            "unverified_verification_claim",
+          ],
+        },
       }),
     );
     expect(detail.events.map((event) => event.type)).toEqual(

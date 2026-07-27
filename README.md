@@ -49,8 +49,8 @@ Version `0.1.0` includes:
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
   replacement, and Hashline-style line-anchor replacement under the explicit
   `workspace` policy, without general shell or file deletion;
-- deterministic Model Advisor notices that scan assistant text for risky
-  verification claims or destructive command references, then record only
+- configurable deterministic Model Advisor notices that scan assistant text for
+  risky verification claims or destructive command references, then record only
   hash-bound diagnostics before the assistant message is shown;
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and

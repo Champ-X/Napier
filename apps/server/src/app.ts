@@ -10142,6 +10142,7 @@ function parseUpdateAgentProfileRequest(
     "subagentLimits",
     "runLimits",
     "automaticRecovery",
+    "modelAdvisor",
     "threadId",
   ]);
   if (!record) return undefined;
@@ -10185,6 +10186,10 @@ function parseUpdateAgentProfileRequest(
     record["automaticRecovery"] === undefined
       ? undefined
       : parseAutomaticRecoveryPolicy(record["automaticRecovery"]);
+  const modelAdvisor =
+    record["modelAdvisor"] === undefined
+      ? undefined
+      : parseModelAdvisorPolicy(record["modelAdvisor"]);
   const threadId = record["threadId"];
   if (
     (record["name"] !== undefined && !name) ||
@@ -10199,6 +10204,7 @@ function parseUpdateAgentProfileRequest(
     (record["subagentLimits"] !== undefined && !subagentLimits) ||
     (record["runLimits"] !== undefined && !runLimits) ||
     (record["automaticRecovery"] !== undefined && !automaticRecovery) ||
+    (record["modelAdvisor"] !== undefined && !modelAdvisor) ||
     (threadId !== undefined && !validThreadId(threadId))
   ) {
     return undefined;
@@ -10216,7 +10222,33 @@ function parseUpdateAgentProfileRequest(
     ...(subagentLimits ? { subagentLimits } : {}),
     ...(runLimits ? { runLimits } : {}),
     ...(automaticRecovery ? { automaticRecovery } : {}),
+    ...(modelAdvisor ? { modelAdvisor } : {}),
     ...(typeof threadId === "string" ? { threadId } : {}),
+  };
+}
+
+function parseModelAdvisorPolicy(
+  input: unknown,
+): UpdateAgentProfileRequest["modelAdvisor"] | undefined {
+  const record = requestRecord(input, ["mode", "enabledRules"]);
+  const mode = record?.["mode"];
+  const enabledRules = record?.["enabledRules"];
+  if (
+    !record ||
+    (mode !== "observe" && mode !== "off") ||
+    !Array.isArray(enabledRules) ||
+    enabledRules.length > 10 ||
+    !enabledRules.every(
+      (rule) =>
+        rule === "unverified_verification_claim" ||
+        rule === "destructive_command_reference",
+    )
+  ) {
+    return undefined;
+  }
+  return {
+    mode,
+    enabledRules,
   };
 }
 

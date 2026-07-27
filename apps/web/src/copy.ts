@@ -99,6 +99,7 @@ export const copy = {
       subagentLimits: "Delegation limits",
       runLimits: "Run limits",
       automaticRecovery: "Recovery policy",
+      modelAdvisor: "Model Advisor",
       executionMode: "Execution mode",
       skillCatalog: "Skill catalog",
     },
@@ -302,8 +303,7 @@ export const copy = {
         "https://trust.example.com/activation-selection-checkpoint.json",
       checkpointSubscriptionLabel: "Checkpoint subscription label",
       checkpointSubscriptionLabelPlaceholder: "Activation checkpoint registry",
-      expectedActivationSelectionCheckpoint:
-        "Expected checkpoint SHA-256",
+      expectedActivationSelectionCheckpoint: "Expected checkpoint SHA-256",
       expectedActivationSelectionCheckpointPlaceholder:
         "Optional checkpoint pin",
       discoverActivationSelectionCheckpoint: "Discover checkpoint",
@@ -320,12 +320,10 @@ export const copy = {
       verifyCheckpointRegistryQuorumBaseline: "Verify checkpoint baseline",
       verifyingCheckpointRegistryQuorumBaseline:
         "Checking checkpoint baseline...",
-      importCheckpointRegistryQuorumBaseline:
-        "Import checkpoint baseline",
+      importCheckpointRegistryQuorumBaseline: "Import checkpoint baseline",
       importingCheckpointRegistryQuorumBaseline:
         "Importing checkpoint baseline...",
-      checkpointRegistryQuorumBaselineImported:
-        "Checkpoint baseline imported",
+      checkpointRegistryQuorumBaselineImported: "Checkpoint baseline imported",
       checkpointRegistryQuorumBaselineAlreadyImported:
         "Checkpoint baseline already archived",
       refreshCheckpointSubscription: "Refresh checkpoint",
@@ -338,10 +336,8 @@ export const copy = {
       activationSelectionDriftAudit: "Selection drift audit",
       activationSelectionRotationReview: "Rotation review",
       activationSelectionRotationProposal: "Rotation proposal",
-      signedActivationSelectionRotationProposal:
-        "Signed rotation proposal",
-      activationSelectionRotationProposalPreflight:
-        "Proposal preflight",
+      signedActivationSelectionRotationProposal: "Signed rotation proposal",
+      activationSelectionRotationProposalPreflight: "Proposal preflight",
       activationSelectionCheckpoint: "Selection checkpoint",
       signedActivationSelectionCheckpoint: "Signed checkpoint",
       activationSelectionCheckpointEntries: "selection entries",

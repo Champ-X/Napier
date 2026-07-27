@@ -161,8 +161,15 @@ describe("AgentRuntime demo path", () => {
 
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 3,
+        schemaVersion: 4,
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        modelAdvisor: {
+          mode: "observe",
+          enabledRules: [
+            "destructive_command_reference",
+            "unverified_verification_claim",
+          ],
+        },
       }),
     );
     const events = await store.listEvents(thread.id);
@@ -442,6 +449,61 @@ describe("AgentRuntime demo path", () => {
     expect(message?.payload).toEqual(
       expect.objectContaining({
         text: "The build and tests passed.",
+      }),
+    );
+  });
+
+  it("respects Agent Model Advisor policy when recording notices", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      modelAdvisor: {
+        mode: "off",
+        enabledRules: [
+          "unverified_verification_claim",
+          "destructive_command_reference",
+        ],
+      },
+    });
+    const thread = await store.createThread({
+      title: "Advisor policy",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-advisor-policy" });
+    faux.setResponses([
+      fauxAssistantMessage("The build and tests passed."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Report status.",
+      model: { provider: "faux-advisor-policy", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(
+      (await store.listEvents(thread.id)).some(
+        (event) => event.type === "model.advisor.notice",
+      ),
+    ).toBe(false);
+    expect(run.configuration).toEqual(
+      expect.objectContaining({
+        modelAdvisor: {
+          mode: "off",
+          enabledRules: [
+            "destructive_command_reference",
+            "unverified_verification_claim",
+          ],
+        },
       }),
     );
   });

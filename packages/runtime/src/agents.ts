@@ -6,6 +6,8 @@ import type {
   AgentProfileRevision,
   AgentProfileRevisionSource,
   AutomaticRecoveryPolicy,
+  ModelAdvisorPolicy,
+  ModelAdvisorRuleId,
   RunLimits,
   SubagentLimits,
   UpdateAgentProfileRequest,
@@ -33,6 +35,14 @@ const TOOL_POLICIES = new Set<AgentProfile["toolPolicy"]>([
   "unrestricted",
 ]);
 const SUBAGENT_ROLES = new Set(["researcher", "reviewer", "general"]);
+const MODEL_ADVISOR_MODES = new Set<ModelAdvisorPolicy["mode"]>([
+  "observe",
+  "off",
+]);
+const MODEL_ADVISOR_RULES = new Set<ModelAdvisorRuleId>([
+  "unverified_verification_claim",
+  "destructive_command_reference",
+]);
 const AGENT_PROFILE_FIELDS: readonly AgentProfileField[] = [
   "name",
   "description",
@@ -46,6 +56,7 @@ const AGENT_PROFILE_FIELDS: readonly AgentProfileField[] = [
   "subagentLimits",
   "runLimits",
   "automaticRecovery",
+  "modelAdvisor",
 ];
 const AGENT_REVISION_SOURCES = new Set<AgentProfileRevisionSource>([
   "created",
@@ -75,6 +86,14 @@ export const DEFAULT_AUTOMATIC_RECOVERY_POLICY: Readonly<AutomaticRecoveryPolicy
     maxAttempts: 2,
     backoffMs: 5_000,
   };
+
+export const DEFAULT_MODEL_ADVISOR_POLICY: Readonly<ModelAdvisorPolicy> = {
+  mode: "observe",
+  enabledRules: [
+    "unverified_verification_claim",
+    "destructive_command_reference",
+  ],
+};
 
 export function updateAgentProfile(
   current: AgentProfile,
@@ -151,6 +170,9 @@ export function updateAgentProfile(
           request.automaticRecovery,
         )
       : {}),
+    ...(request.modelAdvisor !== undefined
+      ? optionalModelAdvisorUpdate(current.modelAdvisor, request.modelAdvisor)
+      : {}),
   };
   if (configSignature(updated) === configSignature(current)) {
     return structuredClone(current);
@@ -169,6 +191,12 @@ export function changedAgentFields(
       return (
         JSON.stringify(effectiveAutomaticRecoveryPolicy(before)) !==
         JSON.stringify(effectiveAutomaticRecoveryPolicy(after))
+      );
+    }
+    if (field === "modelAdvisor") {
+      return (
+        JSON.stringify(effectiveModelAdvisorPolicy(before)) !==
+        JSON.stringify(effectiveModelAdvisorPolicy(after))
       );
     }
     return JSON.stringify(before[field]) !== JSON.stringify(after[field]);
@@ -285,6 +313,7 @@ export function rollbackAgentProfile(
       profile.subagentLimits ?? structuredClone(DEFAULT_SUBAGENT_LIMITS),
     runLimits: profile.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
     automaticRecovery: effectiveAutomaticRecoveryPolicy(profile),
+    modelAdvisor: effectiveModelAdvisorPolicy(profile),
   });
   if (updated.revision === current.revision) {
     throw new Error("Agent profile already matches the target revision");
@@ -344,6 +373,9 @@ function assertAgentProfileSnapshot(profile: AgentProfile): void {
     profile.automaticRecovery ??
       structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY),
   );
+  normalizeModelAdvisorPolicy(
+    profile.modelAdvisor ?? structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
+  );
 }
 
 function sha256(value: string): string {
@@ -399,6 +431,52 @@ function normalizeTools(values: string[]): string[] {
   const unsupported = normalized.find((tool) => !ALLOWED_TOOLS.has(tool));
   if (unsupported) throw new Error(`Unsupported Agent tool: ${unsupported}`);
   return normalized.sort();
+}
+
+export function effectiveModelAdvisorPolicy(
+  profile: Pick<AgentProfile, "modelAdvisor">,
+): ModelAdvisorPolicy {
+  return normalizeModelAdvisorPolicy(
+    profile.modelAdvisor ?? structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
+  );
+}
+
+export function normalizeModelAdvisorPolicy(
+  input: ModelAdvisorPolicy,
+): ModelAdvisorPolicy {
+  if (
+    !input ||
+    typeof input !== "object" ||
+    !MODEL_ADVISOR_MODES.has(input.mode) ||
+    !Array.isArray(input.enabledRules)
+  ) {
+    throw new Error("Model Advisor policy is invalid");
+  }
+  const enabledRules = [...new Set(input.enabledRules)].sort();
+  const unsupported = enabledRules.find(
+    (rule) => !MODEL_ADVISOR_RULES.has(rule),
+  );
+  if (unsupported) {
+    throw new Error(`Unsupported Model Advisor rule: ${unsupported}`);
+  }
+  return {
+    mode: input.mode,
+    enabledRules,
+  };
+}
+
+function optionalModelAdvisorUpdate(
+  current: AgentProfile["modelAdvisor"],
+  requested: ModelAdvisorPolicy,
+): { modelAdvisor?: ModelAdvisorPolicy } {
+  const normalized = normalizeModelAdvisorPolicy(requested);
+  const effectiveCurrent = normalizeModelAdvisorPolicy(
+    current ?? structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
+  );
+  if (JSON.stringify(effectiveCurrent) === JSON.stringify(normalized)) {
+    return current === undefined ? {} : { modelAdvisor: current };
+  }
+  return { modelAdvisor: normalized };
 }
 
 function normalizeNames(values: string[], label: string): string[] {
@@ -585,5 +663,6 @@ function configSignature(profile: AgentProfile): string {
     subagentLimits: profile.subagentLimits,
     runLimits: profile.runLimits,
     automaticRecovery: effectiveAutomaticRecoveryPolicy(profile),
+    modelAdvisor: effectiveModelAdvisorPolicy(profile),
   });
 }

@@ -8,6 +8,7 @@ import {
   createRunConfigurationFingerprint,
   fingerprintAutomaticRecovery,
   fingerprintExecutionMode,
+  fingerprintModelAdvisor,
   fingerprintSkillCatalogSha256,
   validateRunConfigurationFingerprint,
 } from "../src/run-config.js";
@@ -34,6 +35,10 @@ const PROFILE: AgentProfile = {
     maxTotalTokens: 500_000,
     maxCostUsd: 15,
     timeoutMs: 1_200_000,
+  },
+  modelAdvisor: {
+    mode: "observe",
+    enabledRules: ["destructive_command_reference"],
   },
   revision: 7,
   createdAt: "2026-07-25T00:00:00.000Z",
@@ -135,12 +140,20 @@ describe("Run configuration fingerprints", () => {
 
     expect(fingerprint).toEqual(
       expect.objectContaining({
-        schemaVersion: 3,
+        schemaVersion: 4,
         skillCatalogSha256,
+        modelAdvisor: {
+          mode: "observe",
+          enabledRules: ["destructive_command_reference"],
+        },
         executionMode: "standard",
       }),
     );
     expect(fingerprintSkillCatalogSha256(fingerprint)).toBe(skillCatalogSha256);
+    expect(fingerprintModelAdvisor(fingerprint)).toEqual({
+      mode: "observe",
+      enabledRules: ["destructive_command_reference"],
+    });
     expect(JSON.stringify(fingerprint)).not.toContain(PROFILE.systemPrompt);
     expect(validateRunConfigurationFingerprint(fingerprint)).toEqual(
       fingerprint,
@@ -236,6 +249,23 @@ describe("Run configuration fingerprints", () => {
     ).toEqual(
       expect.objectContaining({
         changedFields: expect.arrayContaining(["skillCatalog"]),
+      }),
+    );
+    const rightAdvisor = createRunConfigurationFingerprint(
+      {
+        ...PROFILE,
+        modelAdvisor: {
+          mode: "off",
+          enabledRules: ["destructive_command_reference"],
+        },
+      },
+      PROFILE.model,
+      "standard",
+      { skillCatalogSha256: "a".repeat(64) },
+    );
+    expect(compareRunConfigurations(leftSkillCatalog, rightAdvisor)).toEqual(
+      expect.objectContaining({
+        changedFields: expect.arrayContaining(["modelAdvisor"]),
       }),
     );
   });

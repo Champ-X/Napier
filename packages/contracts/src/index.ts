@@ -160,6 +160,8 @@ export type ModelAdvisorRuleId =
 
 export type ModelAdvisorSeverity = "warning" | "blocker";
 
+export type ModelAdvisorMode = "observe" | "off";
+
 export interface ModelAdvisorDiagnostic {
   ruleId: ModelAdvisorRuleId;
   severity: ModelAdvisorSeverity;
@@ -179,6 +181,7 @@ export interface ModelAdvisorNoticePayload {
   schemaVersion: 1;
   source: "deterministic_stream_lint";
   turnSource: string;
+  policy: ModelAdvisorPolicy;
   status: "notice";
   textSha256: string;
   diagnosticCount: number;
@@ -186,6 +189,11 @@ export interface ModelAdvisorNoticePayload {
   diagnostics: ModelAdvisorDiagnostic[];
   evidence: ModelAdvisorEvidence;
   contentSha256: string;
+}
+
+export interface ModelAdvisorPolicy {
+  mode: ModelAdvisorMode;
+  enabledRules: ModelAdvisorRuleId[];
 }
 
 export interface GoalState {
@@ -2147,6 +2155,7 @@ export interface AgentProfile {
   subagentLimits?: SubagentLimits;
   runLimits?: RunLimits;
   automaticRecovery?: AutomaticRecoveryPolicy;
+  modelAdvisor?: ModelAdvisorPolicy;
   revision: number;
   createdAt: string;
   updatedAt: string;
@@ -2164,7 +2173,8 @@ export type AgentProfileField =
   | "enabledSubagents"
   | "subagentLimits"
   | "runLimits"
-  | "automaticRecovery";
+  | "automaticRecovery"
+  | "modelAdvisor";
 
 export type AgentProfileRevisionSource =
   | "created"
@@ -2198,6 +2208,7 @@ export interface UpdateAgentProfileRequest {
   subagentLimits?: SubagentLimits;
   runLimits?: RunLimits;
   automaticRecovery?: AutomaticRecoveryPolicy;
+  modelAdvisor?: ModelAdvisorPolicy;
   threadId?: string;
 }
 
@@ -2269,10 +2280,19 @@ export interface RunConfigurationFingerprintV3 extends RunConfigurationFingerpri
   skillCatalogSha256: string;
 }
 
+export interface RunConfigurationFingerprintV4 extends RunConfigurationFingerprintBase {
+  schemaVersion: 4;
+  automaticRecovery: AutomaticRecoveryPolicy;
+  executionMode: RunExecutionMode;
+  skillCatalogSha256: string;
+  modelAdvisor: ModelAdvisorPolicy;
+}
+
 export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV1
   | RunConfigurationFingerprintV2
-  | RunConfigurationFingerprintV3;
+  | RunConfigurationFingerprintV3
+  | RunConfigurationFingerprintV4;
 
 export type AutomaticRecoveryBlockReason =
   | "configuration_missing"
@@ -3062,6 +3082,7 @@ export type RunConfigurationField =
   | "subagentLimits"
   | "runLimits"
   | "automaticRecovery"
+  | "modelAdvisor"
   | "executionMode"
   | "skillCatalog";
 

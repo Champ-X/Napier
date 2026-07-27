@@ -571,6 +571,11 @@ write:management-openapi-compatibility` now emits
   destructive command references, recording rule IDs, severity, counts, text
   SHA-256, diagnostic-set SHA-256, and tool-evidence counts without copying the
   matched text or mutating the assistant response.
+- Configurable Model Advisor policy. Agent profiles now carry a revisioned
+  `modelAdvisor` policy with observe/off mode and an enabled rule set. The
+  Context Workbench exposes the controls, server profile updates validate them,
+  and schema-4 Run configuration fingerprints bind the effective advisor policy
+  alongside the Skill catalog hash for replay drift detection.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

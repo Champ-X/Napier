@@ -10,16 +10,20 @@ import type {
   RunConfigurationFingerprintV1,
   RunConfigurationFingerprintV2,
   RunConfigurationFingerprintV3,
+  RunConfigurationFingerprintV4,
   RunExecutionMode,
   SubagentRole,
 } from "@napier/contracts";
 
 import {
   DEFAULT_AUTOMATIC_RECOVERY_POLICY,
+  DEFAULT_MODEL_ADVISOR_POLICY,
   DEFAULT_RUN_LIMITS,
   DEFAULT_SUBAGENT_LIMITS,
   effectiveAutomaticRecoveryPolicy,
+  effectiveModelAdvisorPolicy,
   normalizeAutomaticRecoveryPolicy,
+  normalizeModelAdvisorPolicy,
   normalizeRunLimits,
   normalizeSubagentLimits,
 } from "./agents.js";
@@ -66,6 +70,7 @@ const V3_FINGERPRINT_KEYS = new Set([
   ...V2_FINGERPRINT_KEYS,
   "skillCatalogSha256",
 ]);
+const V4_FINGERPRINT_KEYS = new Set([...V3_FINGERPRINT_KEYS, "modelAdvisor"]);
 
 type FingerprintV1Content = Omit<
   RunConfigurationFingerprintV1,
@@ -77,6 +82,10 @@ type FingerprintV2Content = Omit<
 >;
 type FingerprintV3Content = Omit<
   RunConfigurationFingerprintV3,
+  "contentSha256"
+>;
+type FingerprintV4Content = Omit<
+  RunConfigurationFingerprintV4,
   "contentSha256"
 >;
 
@@ -97,7 +106,7 @@ export function createRunConfigurationFingerprint(
   }
   const safeRecovery = executionMode === "safe_read_only_recovery";
   const content = {
-    schemaVersion: options.skillCatalogSha256 ? (3 as const) : (2 as const),
+    schemaVersion: options.skillCatalogSha256 ? (4 as const) : (2 as const),
     agentRevision: profile.revision,
     model: structuredClone(model),
     thinkingLevel: profile.thinkingLevel,
@@ -121,7 +130,10 @@ export function createRunConfigurationFingerprint(
     automaticRecovery: effectiveAutomaticRecoveryPolicy(profile),
     executionMode,
     ...(options.skillCatalogSha256
-      ? { skillCatalogSha256: options.skillCatalogSha256 }
+      ? {
+          skillCatalogSha256: options.skillCatalogSha256,
+          modelAdvisor: effectiveModelAdvisorPolicy(profile),
+        }
       : {}),
   };
   return {
@@ -142,7 +154,9 @@ export function validateRunConfigurationFingerprint(
         ? V2_FINGERPRINT_KEYS
         : schemaVersion === 3
           ? V3_FINGERPRINT_KEYS
-          : undefined;
+          : schemaVersion === 4
+            ? V4_FINGERPRINT_KEYS
+            : undefined;
   if (!keys) {
     throw new Error("Run configuration fingerprint schema is unsupported");
   }
@@ -263,10 +277,23 @@ export function validateRunConfigurationFingerprint(
     record["skillCatalogSha256"],
     "skillCatalogSha256",
   );
-  const content: FingerprintV3Content = {
-    schemaVersion: 3,
+  if (schemaVersion === 3) {
+    const content: FingerprintV3Content = {
+      schemaVersion: 3,
+      ...modernShared,
+      skillCatalogSha256,
+    };
+    if (sha256(canonicalJson(content)) !== contentSha256) {
+      throw new Error("Run configuration fingerprint hash mismatch");
+    }
+    return { ...content, contentSha256 };
+  }
+  const modelAdvisor = assertModelAdvisorPolicy(record["modelAdvisor"]);
+  const content: FingerprintV4Content = {
+    schemaVersion: 4,
     ...modernShared,
     skillCatalogSha256,
+    modelAdvisor,
   };
   if (sha256(canonicalJson(content)) !== contentSha256) {
     throw new Error("Run configuration fingerprint hash mismatch");
@@ -335,6 +362,9 @@ export function compareRunConfigurations(
   ) {
     changedFields.push("skillCatalog");
   }
+  if (!same(fingerprintModelAdvisor(left), fingerprintModelAdvisor(right))) {
+    changedFields.push("modelAdvisor");
+  }
   return {
     status: "comparable",
     leftSha256: left.contentSha256,
@@ -358,7 +388,9 @@ export function compareRunConfigurations(
 export function fingerprintAutomaticRecovery(
   fingerprint: RunConfigurationFingerprint,
 ): AutomaticRecoveryPolicy {
-  return fingerprint.schemaVersion === 2 || fingerprint.schemaVersion === 3
+  return fingerprint.schemaVersion === 2 ||
+    fingerprint.schemaVersion === 3 ||
+    fingerprint.schemaVersion === 4
     ? structuredClone(fingerprint.automaticRecovery)
     : structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY);
 }
@@ -366,7 +398,9 @@ export function fingerprintAutomaticRecovery(
 export function fingerprintExecutionMode(
   fingerprint: RunConfigurationFingerprint,
 ): RunExecutionMode {
-  return fingerprint.schemaVersion === 2 || fingerprint.schemaVersion === 3
+  return fingerprint.schemaVersion === 2 ||
+    fingerprint.schemaVersion === 3 ||
+    fingerprint.schemaVersion === 4
     ? fingerprint.executionMode
     : "standard";
 }
@@ -374,7 +408,17 @@ export function fingerprintExecutionMode(
 export function fingerprintSkillCatalogSha256(
   fingerprint: RunConfigurationFingerprint,
 ): string {
-  return fingerprint.schemaVersion === 3 ? fingerprint.skillCatalogSha256 : "";
+  return fingerprint.schemaVersion === 3 || fingerprint.schemaVersion === 4
+    ? fingerprint.skillCatalogSha256
+    : "";
+}
+
+export function fingerprintModelAdvisor(
+  fingerprint: RunConfigurationFingerprint,
+) {
+  return fingerprint.schemaVersion === 4
+    ? structuredClone(fingerprint.modelAdvisor)
+    : structuredClone(DEFAULT_MODEL_ADVISOR_POLICY);
 }
 
 function assertModel(value: unknown): ModelRef {
@@ -464,6 +508,31 @@ function assertRunLimits(
     ),
     maxCostUsd,
     timeoutMs: positiveInteger(limits["timeoutMs"], "runLimits.timeoutMs"),
+  });
+}
+
+function assertModelAdvisorPolicy(value: unknown) {
+  const policy = assertExactRecord(
+    value,
+    "Run configuration fingerprint modelAdvisor",
+    ["mode", "enabledRules"],
+  );
+  const mode = assertEnum(
+    policy["mode"],
+    new Set(["observe", "off"]),
+    "modelAdvisor.mode",
+  ) as "observe" | "off";
+  const enabledRules = assertCanonicalStringArray(
+    policy["enabledRules"],
+    "modelAdvisor.enabledRules",
+    10,
+    /^[a-z][a-z0-9_]{2,80}$/,
+  );
+  return normalizeModelAdvisorPolicy({
+    mode,
+    enabledRules: enabledRules as Parameters<
+      typeof normalizeModelAdvisorPolicy
+    >[0]["enabledRules"],
   });
 }
 

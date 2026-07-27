@@ -1,6 +1,7 @@
 import type {
   ModelAdvisorDiagnostic,
   ModelAdvisorNoticePayload,
+  ModelAdvisorPolicy,
   ModelAdvisorRuleId,
   RunEvent,
 } from "@napier/contracts";
@@ -11,6 +12,7 @@ export interface CreateModelAdvisorNoticeInput {
   assistantText: string;
   runEvents: RunEvent[];
   turnSource: string;
+  policy: ModelAdvisorPolicy;
 }
 
 const VERIFICATION_CLAIM_PATTERNS = [
@@ -31,11 +33,18 @@ const DESTRUCTIVE_COMMAND_PATTERNS = [
 export function createModelAdvisorNotice(
   input: CreateModelAdvisorNoticeInput,
 ): ModelAdvisorNoticePayload | undefined {
+  if (input.policy.mode === "off" || input.policy.enabledRules.length === 0) {
+    return undefined;
+  }
   const textSha256 = sha256(input.assistantText);
   const evidence = createAdvisorEvidence(input.assistantText, input.runEvents);
   const diagnostics = [
-    createVerificationClaimDiagnostic(input.assistantText, evidence),
-    createDestructiveCommandDiagnostic(input.assistantText),
+    input.policy.enabledRules.includes("unverified_verification_claim")
+      ? createVerificationClaimDiagnostic(input.assistantText, evidence)
+      : undefined,
+    input.policy.enabledRules.includes("destructive_command_reference")
+      ? createDestructiveCommandDiagnostic(input.assistantText)
+      : undefined,
   ].filter((diagnostic): diagnostic is ModelAdvisorDiagnostic =>
     Boolean(diagnostic),
   );
@@ -56,6 +65,7 @@ export function createModelAdvisorNotice(
     schemaVersion: 1 as const,
     source: "deterministic_stream_lint" as const,
     turnSource: input.turnSource,
+    policy: input.policy,
     status: "notice" as const,
     textSha256,
     diagnosticCount: diagnostics.length,
