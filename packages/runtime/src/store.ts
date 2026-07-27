@@ -126,6 +126,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   type ReceiptTrustAnchorDirectoryQuorum,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   type ReceiptTrustAnchorDirectorySubscription,
   type ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryVerification,
@@ -182,6 +184,7 @@ import {
   type UpdateInboundSignaturePolicyRequest,
   type WorkspaceSummary,
   type PromoteEvaluationQualificationBaselineResult,
+  type PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   type PreviewExtensionPackageRolloutChannelRequest,
   type PublishExtensionPackageRolloutChannelRequest,
   type QualifyInspectorPackageRequest,
@@ -317,12 +320,15 @@ import {
   verifyTrustedReceiptEnvelope,
 } from "./receipt-trust.js";
 import {
+  MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+  createReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   createReceiptTrustAnchorDirectorySubscriptionQuorum,
   createReceiptTrustAnchorDirectorySubscription,
   settleReceiptTrustAnchorDirectorySubscriptionRefresh,
   stripReceiptTrustAnchorDirectorySubscriptionSecrets,
   updateReceiptTrustAnchorDirectorySubscriptionStatus,
+  validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
   type PersistedReceiptTrustAnchorDirectorySubscription,
   type ReceiptTrustAnchorDirectorySubscriptionClaim,
@@ -512,6 +518,7 @@ interface PersistedState {
   evaluationCasebookQualificationExecutions: EvaluationCasebookQualificationExecution[];
   receiptTrustAnchors: ReceiptTrustAnchor[];
   receiptTrustAnchorDirectorySubscriptions: PersistedReceiptTrustAnchorDirectorySubscription[];
+  receiptTrustAnchorDirectoryQuorumPromotionBaselines: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[];
   evaluationQualificationBaselines: EvaluationQualificationBaseline[];
   evaluationSuites: EvaluationSuite[];
   evaluationSuiteExecutions: EvaluationSuiteExecution[];
@@ -607,6 +614,7 @@ const EMPTY_STATE: PersistedState = {
   evaluationCasebookQualificationExecutions: [],
   receiptTrustAnchors: [],
   receiptTrustAnchorDirectorySubscriptions: [],
+  receiptTrustAnchorDirectoryQuorumPromotionBaselines: [],
   evaluationQualificationBaselines: [],
   evaluationSuites: [],
   evaluationSuiteExecutions: [],
@@ -1154,6 +1162,76 @@ export class LocalStore {
       policy,
       metadataEvidence,
     );
+  }
+
+  listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(): ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[] {
+    this.assertInitialized();
+    return structuredClone(
+      this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines
+        .slice()
+        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+    );
+  }
+
+  async promoteReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+    promotedByThreadId: string,
+    envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>,
+  ): Promise<PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult> {
+    this.assertInitialized();
+    this.getThread(promotedByThreadId);
+    return this.stateQueue.run(async () => {
+      const anchor = this.state.receiptTrustAnchors.find(
+        (candidate) => candidate.keyId === envelope.signature.keyId,
+      );
+      if (!anchor) {
+        throw new Error(
+          `Receipt trust anchor not found for key: ${envelope.signature.keyId}`,
+        );
+      }
+      const verification = verifyTrustedReceiptEnvelope(envelope, [anchor]);
+      if (verification.status !== "trusted") {
+        throw new Error(
+          `Receipt trust anchor directory quorum promotion baseline receipt is not trusted: ${verification.reason}`,
+        );
+      }
+      const existing =
+        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.find(
+          (baseline) =>
+            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
+              baseline.envelope,
+            ) ===
+            receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(envelope),
+        );
+      if (existing) {
+        return {
+          baseline: structuredClone(existing),
+          created: false,
+        };
+      }
+      if (
+        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >=
+        MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES
+      ) {
+        throw new Error(
+          `Receipt trust anchor directory quorum promotion exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES} baselines`,
+        );
+      }
+      const current =
+        this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.at(-1);
+      const baseline = createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        envelope,
+        promotedByThreadId,
+        current?.id,
+      );
+      this.state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.push(
+        baseline,
+      );
+      await this.persistState();
+      return {
+        baseline: structuredClone(baseline),
+        created: true,
+      };
+    });
   }
 
   async createReceiptTrustAnchorDirectorySubscription(
@@ -6682,6 +6760,13 @@ export class LocalStore {
     if (!Array.isArray(state.receiptTrustAnchorDirectorySubscriptions)) {
       state.receiptTrustAnchorDirectorySubscriptions = [];
     }
+    if (
+      !Array.isArray(
+        state.receiptTrustAnchorDirectoryQuorumPromotionBaselines,
+      )
+    ) {
+      state.receiptTrustAnchorDirectoryQuorumPromotionBaselines = [];
+    }
     if (!Array.isArray(state.evaluationQualificationBaselines)) {
       state.evaluationQualificationBaselines = [];
     }
@@ -7413,6 +7498,47 @@ export class LocalStore {
       trustDirectorySubscriptionSourceHashes.add(subscription.sourceUrlSha256);
       Object.assign(input, subscription);
     }
+    if (
+      state.receiptTrustAnchorDirectoryQuorumPromotionBaselines.length >
+      MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES
+    ) {
+      throw new Error(
+        "Persisted receipt trust anchor directory quorum promotion baseline limit is exceeded",
+      );
+    }
+    const trustDirectoryQuorumPromotionBaselineIds = new Set<string>();
+    const trustDirectoryQuorumPromotionBaselineKeys = new Set<string>();
+    let latestTrustDirectoryQuorumPromotionBaseline:
+      | ReceiptTrustAnchorDirectoryQuorumPromotionBaseline
+      | undefined;
+    for (const input of state.receiptTrustAnchorDirectoryQuorumPromotionBaselines) {
+      const baseline =
+        validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+          input,
+          state.receiptTrustAnchors,
+        );
+      const baselineKey =
+        receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
+          baseline.envelope,
+        );
+      if (
+        trustDirectoryQuorumPromotionBaselineIds.has(baseline.id) ||
+        trustDirectoryQuorumPromotionBaselineKeys.has(baselineKey) ||
+        !state.threads.some(
+          (thread) => thread.id === baseline.promotedByThreadId,
+        ) ||
+        baseline.supersedesBaselineId !==
+          latestTrustDirectoryQuorumPromotionBaseline?.id
+      ) {
+        throw new Error(
+          `Persisted receipt trust anchor directory quorum promotion baseline is invalid: ${baseline.id}`,
+        );
+      }
+      trustDirectoryQuorumPromotionBaselineIds.add(baseline.id);
+      trustDirectoryQuorumPromotionBaselineKeys.add(baselineKey);
+      latestTrustDirectoryQuorumPromotionBaseline = baseline;
+      Object.assign(input, baseline);
+    }
     const qualificationBaselineIds = new Set<string>();
     const qualificationBaselineKeys = new Set<string>();
     const latestBaselineByCasebook = new Map<
@@ -7737,6 +7863,9 @@ export class LocalStore {
       !Array.isArray(parsed.evaluationCasebookQualificationExecutions) ||
       !Array.isArray(parsed.receiptTrustAnchors) ||
       !Array.isArray(parsed.receiptTrustAnchorDirectorySubscriptions) ||
+      !Array.isArray(
+        parsed.receiptTrustAnchorDirectoryQuorumPromotionBaselines,
+      ) ||
       !Array.isArray(parsed.extensionPublisherTrustAnchors) ||
       !Array.isArray(parsed.evaluationQualificationBaselines) ||
       !Array.isArray(parsed.executionPlanBlueprintOutcomeBaselines) ||
@@ -8432,6 +8561,18 @@ function stripDeliverySecrets(
 
 function createLeaseToken(): string {
   return randomBytes(32).toString("base64url");
+}
+
+function receiptTrustAnchorDirectoryQuorumPromotionBaselineKey(
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>,
+): string {
+  const receipt = envelope.receipt;
+  return [
+    receipt.selectedAnchorSetSha256,
+    receipt.selectedDirectorySha256,
+    receipt.selectedSubscriptionSetSha256,
+    envelope.signature.keyId,
+  ].join(":");
 }
 
 function sha256(value: string): string {

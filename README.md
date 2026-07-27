@@ -1358,6 +1358,16 @@ the quorum, selected anchor-set/directory hashes, selected subscription-set
 hash, and the selected signed metadata envelopes whose hashes match trusted
 source metadata evidence, so an external verifier can archive the promotion
 without re-querying the hosted directory endpoints.
+`GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines`
+lists the append-only signed promotion baselines. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines`
+recomputes the same quorum promotion, signs it as a
+`receipt_trust_anchor_directory_quorum_promotion` trusted receipt, and promotes
+it into local long-lived trust state. Baseline idempotency is keyed by selected
+anchor set, selected directory, selected subscription set, and signer key, so
+re-running metadata verification cannot create duplicate active verifier pins.
+Responses are no-store and expose baseline, envelope, receipt artifact,
+selected verifier-set, and signer-key hashes.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

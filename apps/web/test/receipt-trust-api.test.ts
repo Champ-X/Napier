@@ -5,9 +5,11 @@ import type {
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
+  PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   ReceiptTrustAnchorDirectoryVerification,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -21,6 +23,8 @@ import {
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
   listReceiptTrustAnchorDirectorySubscriptions,
+  listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
+  promoteReceiptTrustAnchorDirectoryQuorumBaseline,
   promoteReceiptTrustAnchorDirectoryQuorum,
   refreshReceiptTrustAnchorDirectorySubscription,
   updateReceiptTrustAnchorDirectorySubscription,
@@ -331,6 +335,43 @@ describe("receipt trust Web API wrappers", () => {
       selectedMetadata: [],
       contentSha256: "b".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumPromotionReceipt;
+    const promotionEnvelope = {
+      kind: "napier.trusted-receipt-envelope",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      receiptKind: "receipt_trust_anchor_directory_quorum_promotion",
+      receipt: promotion,
+      signature: {
+        algorithm: "Ed25519",
+        keyId: "c".repeat(64),
+        signedAt: "2026-07-27T00:00:00.000Z",
+        receiptArtifactSha256: "d".repeat(64),
+        statementSha256: "e".repeat(64),
+        value: "signature",
+      },
+      contentSha256: "f".repeat(64),
+    } satisfies TrustedReceiptEnvelope;
+    const promotionBaseline = {
+      id: "trustqpb_1234567890abcdef1234",
+      envelope: promotionEnvelope,
+      promotedByThreadId: "thread_1234567890abcdef1234",
+      selectedAnchorSetSha256: promotion.selectedAnchorSetSha256,
+      selectedDirectorySha256: promotion.selectedDirectorySha256,
+      selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
+      selectedMetadataEnvelopeSetSha256:
+        promotion.selectedMetadataEnvelopeSetSha256,
+      createdAt: "2026-07-27T00:00:00.000Z",
+      contentSha256: "1".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+    const promotionBaselineRequest = {
+      threadId: promotionBaseline.promotedByThreadId,
+      trustAnchorId: "trustkey_1234567890abcdef1234",
+      policy: { minimumSources: 2, minimumAgreementCount: 2 },
+    };
+    const promotionBaselineResult = {
+      baseline: promotionBaseline,
+      created: true,
+    } satisfies PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -373,6 +414,16 @@ describe("receipt trust Web API wrappers", () => {
         body: { policy: { minimumSources: 2, minimumAgreementCount: 2 } },
         response: promotion,
       },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+        response: [],
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+        method: "POST",
+        body: promotionBaselineRequest,
+        response: promotionBaselineResult,
+      },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       const call = calls[fetchMock.mock.calls.length - 1]!;
@@ -413,7 +464,15 @@ describe("receipt trust Web API wrappers", () => {
         policy: { minimumSources: 2, minimumAgreementCount: 2 },
       }),
     ).resolves.toEqual(promotion);
-    expect(fetchMock).toHaveBeenCalledTimes(6);
+    await expect(
+      listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
+    ).resolves.toEqual([]);
+    await expect(
+      promoteReceiptTrustAnchorDirectoryQuorumBaseline(
+        promotionBaselineRequest,
+      ),
+    ).resolves.toEqual(promotionBaselineResult);
+    expect(fetchMock).toHaveBeenCalledTimes(8);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

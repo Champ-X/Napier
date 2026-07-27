@@ -3555,13 +3555,15 @@ export type TrustedReceipt =
   | EvaluationSuiteGateReceipt
   | EvaluationCasebookQualificationReceipt
   | ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle
-  | ReceiptTrustAnchorDirectoryMetadataReceipt;
+  | ReceiptTrustAnchorDirectoryMetadataReceipt
+  | ReceiptTrustAnchorDirectoryQuorumPromotionReceipt;
 
 export type TrustedReceiptKind =
   | "evaluation_gate"
   | "casebook_qualification"
   | "policy_retirement_proof_bundle"
-  | "receipt_trust_anchor_directory_metadata";
+  | "receipt_trust_anchor_directory_metadata"
+  | "receipt_trust_anchor_directory_quorum_promotion";
 
 export type ReceiptTrustAnchorStatus = "trusted" | "revoked";
 
@@ -3891,6 +3893,12 @@ export interface EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
 export type PromoteReceiptTrustAnchorDirectoryQuorumRequest =
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest;
 
+export interface PromoteReceiptTrustAnchorDirectoryQuorumBaselineRequest
+  extends EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
+  threadId: string;
+  trustAnchorId: string;
+}
+
 export type ReceiptTrustAnchorDirectoryQuorumStatus =
   | "agreed"
   | "insufficient_sources"
@@ -4002,6 +4010,24 @@ export interface ReceiptTrustAnchorDirectoryQuorumPromotionReceipt {
   selectedMetadataEnvelopeSetSha256: string;
   selectedMetadata: ReceiptTrustAnchorDirectoryQuorumPromotionMetadata[];
   contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumPromotionBaseline {
+  id: string;
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>;
+  promotedByThreadId: string;
+  selectedAnchorSetSha256: string;
+  selectedDirectorySha256: string;
+  selectedSubscriptionSetSha256: string;
+  selectedMetadataEnvelopeSetSha256: string;
+  supersedesBaselineId?: string;
+  createdAt: string;
+  contentSha256: string;
+}
+
+export interface PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult {
+  baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  created: boolean;
 }
 
 export interface EvaluationQualificationBaseline {

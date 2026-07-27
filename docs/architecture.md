@@ -433,6 +433,15 @@ agreed quorum. They embed the quorum, selected subscription-set hash, selected
 directory/anchor-set hashes, and the signed metadata envelopes whose hashes
 match trusted source metadata evidence, so independent verifiers can replay the
 promotion without re-querying hosted directory URLs.
+Signed quorum-promotion baselines promote that archive artifact into local
+long-lived trust state. The server recomputes the promotion from current
+last-good subscriptions, signs it as a
+`receipt_trust_anchor_directory_quorum_promotion` trusted receipt, and stores
+an append-only baseline that binds the envelope, selected anchor set, selected
+directory, selected subscription set, metadata-envelope set, signer key, and
+prior baseline ID. Idempotency is based on the selected verifier set plus
+signer key, not one-time metadata verification timestamps, so rechecking the
+same external sources cannot create duplicate active pins.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2367,9 +2376,10 @@ The current boundary has twenty-one parts:
     source locators, hash-only public evidence, policy-bound last-good
     discoveries, bounded transparency histories, rollback detection,
     weighted independent-origin quorum receipts with publisher metadata pins,
-    quorum promotion receipts, expiring refresh claims, revision CAS, and
-    publisher-signed directory metadata; fail-closed promotion preserves the
-    active verifier set across rejected, failed, or stale rotations.
+    quorum promotion receipts, signed quorum-promotion baselines, expiring
+    refresh claims, revision CAS, and publisher-signed directory metadata;
+    fail-closed promotion preserves the active verifier set across rejected,
+    failed, or stale rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2391,8 +2401,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- signed quorum-promotion baselines, so an agreed verifier-key quorum can be
-  promoted into long-lived trust state with an external archive receipt.
+- baseline import/export verification for quorum-promotion pins, so external
+  archives can be replayed into a new workspace without trusting local state.
 
 ### Layer 3: Extension fabric
 

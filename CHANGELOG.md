@@ -279,6 +279,14 @@ All notable changes to Napier are recorded here.
   returns a self-contained promotion receipt containing the quorum, selected
   subscription-set hash, selected anchor-set/directory hashes, and selected
   signed metadata envelopes whose hashes match trusted source metadata evidence.
+- Signed receipt trust directory quorum promotion baselines. `GET/POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines`
+  now promotes an agreed verifier-key quorum into append-only local trust state
+  by signing the recomputed promotion receipt as
+  `receipt_trust_anchor_directory_quorum_promotion`. Baseline idempotency binds
+  the selected verifier set and signer key rather than one-time metadata
+  verification timestamps, while headers expose baseline, envelope, receipt,
+  selected set, and signer hashes.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

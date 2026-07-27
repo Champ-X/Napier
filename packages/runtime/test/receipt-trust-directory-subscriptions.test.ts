@@ -499,7 +499,7 @@ describe("receipt trust anchor directory subscriptions", () => {
     process.env[SIGNING_ENV] = privateKey
       .export({ format: "pem", type: "pkcs8" })
       .toString();
-    const signingAnchor = createReceiptTrustAnchor({
+    const signingAnchor = await store.createReceiptTrustAnchor({
       threadId: thread.id,
       label: "Quorum metadata signer",
       source: { type: "environment", variable: SIGNING_ENV },
@@ -574,6 +574,43 @@ describe("receipt trust anchor directory subscriptions", () => {
         ],
       }),
     );
+    const promotionEnvelope = signTrustedReceipt(promotion, signingAnchor);
+    expect(promotionEnvelope.receiptKind).toBe(
+      "receipt_trust_anchor_directory_quorum_promotion",
+    );
+    const baselineResult =
+      await store.promoteReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        thread.id,
+        promotionEnvelope,
+      );
+    expect(baselineResult).toEqual(
+      expect.objectContaining({
+        created: true,
+        baseline: expect.objectContaining({
+          promotedByThreadId: thread.id,
+          selectedAnchorSetSha256: directory.anchorSetSha256,
+          selectedDirectorySha256: directory.contentSha256,
+          selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
+          selectedMetadataEnvelopeSetSha256:
+            promotion.selectedMetadataEnvelopeSetSha256,
+          envelope: expect.objectContaining({
+            contentSha256: promotionEnvelope.contentSha256,
+          }),
+        }),
+      }),
+    );
+    expect(
+      store.listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
+    ).toEqual([baselineResult.baseline]);
+    const duplicateBaseline =
+      await store.promoteReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        thread.id,
+        promotionEnvelope,
+      );
+    expect(duplicateBaseline).toEqual({
+      baseline: baselineResult.baseline,
+      created: false,
+    });
     const tamperedMetadataQuorum = structuredClone(metadataPinned);
     const sourceMetadata = tamperedMetadataQuorum.sources.find(
       (source) => source.subscriptionId === left.id,

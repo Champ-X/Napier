@@ -3,12 +3,15 @@ import { createHash } from "node:crypto";
 import {
   NAPIER_API_VERSION,
   type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectoryMetadataReceipt,
   type ReceiptTrustAnchorDirectoryQuorum,
   type ReceiptTrustAnchorDirectoryQuorumCandidate,
   type ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   type ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  type ReceiptTrustAnchorDirectoryQuorumPromotionMetadata,
   type ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   type ReceiptTrustAnchorDirectoryQuorumSource,
   type ReceiptTrustAnchorDirectoryQuorumSourceMetadata,
@@ -24,12 +27,13 @@ import {
 } from "@napier/contracts";
 
 import { canonicalJson } from "./ed25519.js";
-import { createId } from "./ids.js";
+import { createId, nowIso } from "./ids.js";
 import {
   hashReceiptTrustAnchorDirectoryVerificationPolicy,
   normalizeReceiptTrustAnchorDirectoryVerificationPolicy,
   validateReceiptTrustAnchorDirectory,
   validateTrustedReceiptEnvelope,
+  verifyTrustedReceiptEnvelope,
 } from "./receipt-trust.js";
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -38,6 +42,7 @@ const SUBSCRIPTION_ID_PATTERN = /^trustdir_[a-f0-9]{20}$/;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT = 10;
+export const MAX_RECEIPT_TRUST_DIRECTORY_QUORUM_PROMOTION_BASELINES = 20;
 export const MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 export const MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS =
   30 * 24 * 60 * 60 * 1_000;
@@ -549,6 +554,215 @@ export function createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
     generatedAt: new Date().toISOString(),
     contentSha256: sha256(canonicalJson(content)),
   };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumPromotionReceipt {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion receipt is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "quorum",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "selectedSubscriptionCount",
+    "selectedSubscriptionSetSha256",
+    "selectedMetadataCount",
+    "selectedMetadataEnvelopeSetSha256",
+    "selectedMetadata",
+    "contentSha256",
+  ]);
+  const receipt =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumPromotionReceipt;
+  const quorum = validateReceiptTrustAnchorDirectoryQuorum(receipt.quorum);
+  const selectedMetadata = validateQuorumPromotionMetadataList(
+    receipt.selectedMetadata,
+  );
+  const selectedSources = quorum.sources.filter(
+    (source) => source.anchorSetSha256 === quorum.selectedAnchorSetSha256,
+  );
+  const selectedSubscriptionIds = selectedSources
+    .map((source) => source.subscriptionId)
+    .sort();
+  const metadataEnvelopeHashes = Array.from(
+    new Set(selectedMetadata.map((metadata) => metadata.envelopeSha256)),
+  ).sort();
+  if (
+    receipt.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-promotion" ||
+    receipt.schemaVersion !== 1 ||
+    receipt.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(receipt.generatedAt) ||
+    quorum.status !== "agreed" ||
+    receipt.selectedAnchorSetSha256 !== quorum.selectedAnchorSetSha256 ||
+    receipt.selectedDirectorySha256 !== quorum.selectedDirectorySha256 ||
+    receipt.selectedSubscriptionCount !== selectedSubscriptionIds.length ||
+    receipt.selectedSubscriptionSetSha256 !==
+      sha256(canonicalJson(selectedSubscriptionIds)) ||
+    receipt.selectedMetadataCount !== selectedMetadata.length ||
+    receipt.selectedMetadataEnvelopeSetSha256 !==
+      sha256(canonicalJson(metadataEnvelopeHashes)) ||
+    !SHA256_PATTERN.test(receipt.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion receipt is invalid",
+    );
+  }
+  const {
+    generatedAt: _generatedAt,
+    contentSha256: _contentSha256,
+    ...content
+  } = {
+    ...receipt,
+    quorum,
+    selectedMetadata,
+  };
+  if (sha256(canonicalJson(content)) !== receipt.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion receipt hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...receipt,
+    quorum,
+    selectedMetadata,
+  });
+}
+
+export function hashReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+  baseline: Omit<
+    ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+    "contentSha256"
+  >,
+): string {
+  return sha256(canonicalJson(baseline));
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+  envelopeInput: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>,
+  promotedByThreadId: string,
+  supersedesBaselineId?: string,
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaseline {
+  const envelope = validateTrustedReceiptEnvelope(
+    envelopeInput,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>;
+  if (
+    envelope.receiptKind !==
+    "receipt_trust_anchor_directory_quorum_promotion"
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline requires a promotion receipt",
+    );
+  }
+  const receipt = validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
+    envelope.receipt,
+  );
+  const content = {
+    id: createId("trustqpb"),
+    envelope: {
+      ...envelope,
+      receipt,
+    },
+    promotedByThreadId,
+    selectedAnchorSetSha256: receipt.selectedAnchorSetSha256,
+    selectedDirectorySha256: receipt.selectedDirectorySha256,
+    selectedSubscriptionSetSha256: receipt.selectedSubscriptionSetSha256,
+    selectedMetadataEnvelopeSetSha256:
+      receipt.selectedMetadataEnvelopeSetSha256,
+    ...(supersedesBaselineId ? { supersedesBaselineId } : {}),
+    createdAt: nowIso(),
+  };
+  return {
+    ...content,
+    contentSha256: hashReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+      content,
+    ),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+  value: unknown,
+  anchors?: ReceiptTrustAnchor[],
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaseline {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "id",
+    "envelope",
+    "promotedByThreadId",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "selectedSubscriptionSetSha256",
+    "selectedMetadataEnvelopeSetSha256",
+    "supersedesBaselineId",
+    "createdAt",
+    "contentSha256",
+  ]);
+  const baseline =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  const envelope = validateTrustedReceiptEnvelope(
+    baseline.envelope,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumPromotionReceipt>;
+  if (
+    !/^trustqpb_[a-z0-9]{8,80}$/.test(baseline.id) ||
+    !/^thread_[a-z0-9]{8,80}$/.test(baseline.promotedByThreadId) ||
+    !SHA256_PATTERN.test(baseline.selectedAnchorSetSha256) ||
+    !SHA256_PATTERN.test(baseline.selectedDirectorySha256) ||
+    !SHA256_PATTERN.test(baseline.selectedSubscriptionSetSha256) ||
+    !SHA256_PATTERN.test(baseline.selectedMetadataEnvelopeSetSha256) ||
+    (baseline.supersedesBaselineId !== undefined &&
+      !/^trustqpb_[a-z0-9]{8,80}$/.test(baseline.supersedesBaselineId)) ||
+    !validTimestamp(baseline.createdAt) ||
+    !SHA256_PATTERN.test(baseline.contentSha256) ||
+    envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_promotion" ||
+    envelope.receipt.selectedAnchorSetSha256 !==
+      baseline.selectedAnchorSetSha256 ||
+    envelope.receipt.selectedDirectorySha256 !==
+      baseline.selectedDirectorySha256 ||
+    envelope.receipt.selectedSubscriptionSetSha256 !==
+      baseline.selectedSubscriptionSetSha256 ||
+    envelope.receipt.selectedMetadataEnvelopeSetSha256 !==
+      baseline.selectedMetadataEnvelopeSetSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline is invalid",
+    );
+  }
+  if (anchors) {
+    const verification = verifyTrustedReceiptEnvelope(envelope, anchors);
+    if (!verification.integrityValid || !verification.signatureValid) {
+      throw new Error(
+        `Receipt trust anchor directory quorum promotion baseline signature is invalid: ${verification.reason}`,
+      );
+    }
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...baseline,
+    envelope,
+  };
+  if (
+    hashReceiptTrustAnchorDirectoryQuorumPromotionBaseline(content) !==
+    baseline.contentSha256
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...baseline,
+    envelope,
+  });
 }
 
 export function validateReceiptTrustAnchorDirectoryQuorum(
@@ -1199,6 +1413,90 @@ function metadataPublisherSetForSources(
         : [],
     ),
   );
+}
+
+function validateQuorumPromotionMetadataList(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumPromotionMetadata[] {
+  if (
+    !Array.isArray(value) ||
+    value.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion metadata is invalid",
+    );
+  }
+  const seenSubscriptionIds = new Set<string>();
+  return value
+    .map((input) => {
+      const metadata = validateQuorumPromotionMetadata(input);
+      if (seenSubscriptionIds.has(metadata.subscriptionId)) {
+        throw new Error(
+          "Receipt trust anchor directory quorum promotion metadata is invalid",
+        );
+      }
+      seenSubscriptionIds.add(metadata.subscriptionId);
+      return metadata;
+    })
+    .sort((left, right) =>
+      left.subscriptionId.localeCompare(right.subscriptionId),
+    );
+}
+
+function validateQuorumPromotionMetadata(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumPromotionMetadata {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion metadata is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "subscriptionId",
+    "envelope",
+    "envelopeSha256",
+    "verificationSha256",
+    "publisherSha256",
+    "signerKeyId",
+    "contentSha256",
+  ]);
+  const metadata =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumPromotionMetadata;
+  const envelope = validateTrustedReceiptEnvelope(
+    metadata.envelope,
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryMetadataReceipt>;
+  if (
+    !SUBSCRIPTION_ID_PATTERN.test(metadata.subscriptionId) ||
+    envelope.receiptKind !== "receipt_trust_anchor_directory_metadata" ||
+    metadata.envelopeSha256 !== envelope.contentSha256 ||
+    !SHA256_PATTERN.test(metadata.verificationSha256) ||
+    !optionalSha256(metadata.publisherSha256) ||
+    !optionalSha256(metadata.signerKeyId) ||
+    !SHA256_PATTERN.test(metadata.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion metadata is invalid",
+    );
+  }
+  const metadataContent = {
+    subscriptionId: metadata.subscriptionId,
+    envelope,
+    envelopeSha256: envelope.contentSha256,
+    verificationSha256: metadata.verificationSha256,
+    ...(metadata.publisherSha256
+      ? { publisherSha256: metadata.publisherSha256 }
+      : {}),
+    ...(metadata.signerKeyId ? { signerKeyId: metadata.signerKeyId } : {}),
+  };
+  if (sha256(canonicalJson(metadataContent)) !== metadata.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion metadata hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...metadataContent,
+    contentSha256: metadata.contentSha256,
+  });
 }
 
 function validateQuorumSources(

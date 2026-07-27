@@ -7,9 +7,11 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
+  PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   TrustedReceiptEnvelope,
 } from "@napier/contracts";
 import {
@@ -320,6 +322,92 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-promotion-sha256",
       ),
     ).toBe(promotion.contentSha256);
+    const emptyBaselineListResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+    );
+    expect(emptyBaselineListResponse.status).toBe(200);
+    expect(
+      (await emptyBaselineListResponse.json()) as ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[],
+    ).toEqual([]);
+    const baselineRequest = {
+      threadId: thread.id,
+      trustAnchorId: signingAnchor.id,
+      policy: {
+        minimumSources: 2,
+        minimumAgreementCount: 2,
+        minimumMetadataPublisherCount: 1,
+        requiredMetadataPublisherSha256s: [publisherSha256],
+      },
+      metadata: [
+        { subscriptionId: created.id, envelope: metadataEnvelope },
+        { subscriptionId: mirror.id, envelope: metadataEnvelope },
+      ],
+    };
+    const baselineResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(baselineRequest),
+      },
+    );
+    expect(baselineResponse.status).toBe(201);
+    const baselineResult =
+      (await baselineResponse.json()) as PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult;
+    expect(baselineResult).toEqual(
+      expect.objectContaining({
+        created: true,
+        baseline: expect.objectContaining({
+          promotedByThreadId: thread.id,
+          selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+          selectedDirectorySha256: hostedDirectory.contentSha256,
+          selectedSubscriptionSetSha256: promotion.selectedSubscriptionSetSha256,
+          selectedMetadataEnvelopeSetSha256:
+            promotion.selectedMetadataEnvelopeSetSha256,
+          envelope: expect.objectContaining({
+            receiptKind: "receipt_trust_anchor_directory_quorum_promotion",
+            receipt: expect.objectContaining({
+              selectedSubscriptionSetSha256:
+                promotion.selectedSubscriptionSetSha256,
+              selectedMetadataEnvelopeSetSha256:
+                promotion.selectedMetadataEnvelopeSetSha256,
+            }),
+          }),
+        }),
+      }),
+    );
+    expect(
+      baselineResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-baseline-sha256",
+      ),
+    ).toBe(baselineResult.baseline.contentSha256);
+    expect(
+      baselineResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-sha256",
+      ),
+    ).toBe(baselineResult.baseline.envelope.receipt.contentSha256);
+    const baselineListResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+    );
+    expect(baselineListResponse.status).toBe(200);
+    expect(
+      (await baselineListResponse.json()) as ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[],
+    ).toEqual([baselineResult.baseline]);
+    const duplicateBaselineResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(baselineRequest),
+      },
+    );
+    expect(duplicateBaselineResponse.status).toBe(200);
+    const duplicateBaselineResult =
+      (await duplicateBaselineResponse.json()) as PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult;
+    expect(duplicateBaselineResult).toEqual({
+      baseline: baselineResult.baseline,
+      created: false,
+    });
     expect(JSON.stringify(quorum)).not.toContain(sourceUrl);
     expect(JSON.stringify(quorum)).not.toContain(mirrorSourceUrl);
 
