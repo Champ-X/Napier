@@ -1923,8 +1923,16 @@ imported interrupted Run can only continue through explicit operator action.
 ## Delegation Flow
 
 ```text
+before every parent model call
+  -> derive a bounded projection from all durable Thread SubagentTasks
+  -> prioritize active tasks and the newest terminal tasks
+  -> bind the full task set and selected projection with separate SHA-256s
+  -> inject task labels/status/hash metadata as an ephemeral system block
+  -> refresh the block after each tool turn without appending conversation history
+
 parent tool call
   -> validate enabled role and remaining run budget
+  -> reject a reusable pending/running/completed role + canonical-prompt intent
   -> persist pending SubagentTask + subagent.queued
   -> wait on the per-run concurrency semaphore
   -> start an isolated Pi Agent with only the delegated prompt
@@ -1995,6 +2003,22 @@ provider or strict-JSON failures into an `inconclusive` hash-bound artifact.
 Reviews remain operator evidence rather than execution authority: they are not
 persisted, do not alter the task receipt, and cannot block the already settled
 delegation.
+Parent continuity does not depend on the compactor preserving tool prose.
+Before every parent provider request, the runtime independently projects the
+Thread's durable tasks into a `napier.delegation-ledger-projection` system
+block. It exposes bounded sanitized descriptions, task/run/role/status/model
+metadata, turn and step counts, outcome metadata, and prompt/intent hashes, but
+never raw task prompts, results, or errors; legacy results and failures are
+represented only by result/error hashes. Active work is retained before recent
+terminal work; omitted tasks remain covered by the full task-set SHA-256. The
+projection is recomputed after tool turns and on new Runs,
+recovery, and imported Threads, but is never appended to message history.
+`context.prepared` records only counts plus task-set/projection hashes for
+Trace; an in-loop change emits the same hash-only evidence as
+`context.delegation.updated` without persisting projection content. The
+coordinator uses the same role + whitespace-normalized prompt hash to reject
+equivalent pending, running, or completed work and restores its per-Run total
+from durable tasks. Failed, cancelled, and timed-out intents remain retryable.
 Concurrency, total tasks, model turns, and wall time are bounded per parent
 run. Profile validation and the coordinator share the same bounds; runtime
 does not silently clamp a saved value a second time. Cancellation and budget

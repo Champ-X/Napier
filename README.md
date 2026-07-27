@@ -82,8 +82,8 @@ Version `0.1.0` includes:
   evidence, immutable correction supersession, atomic multi-source
   consolidation, bounded injection, and audit events;
 - isolated researcher, reviewer, and general subagents with read-only tools,
-  bounded run budgets, cancellation, strict typed outcomes, and hash-bound
-  delegation receipts;
+  bounded run budgets, cancellation, strict typed outcomes, hash-bound
+  delegation receipts, and a compaction-immune durable task projection;
 - reviewed Streamable HTTP MCP connections with provenance, capability and
   per-tool effect approval, local routing hints, deferred schema search, Agent
   enablement, no-store extension state headers, and last-moment policy checks;
@@ -812,6 +812,20 @@ concerns, usage, and a stable review SHA-256. Reviewer failures become
 inconclusive artifacts and never rewrite the task, append Ledger events, or
 stall the completed delegation. The Trace card uses the globally selected
 model as the reviewer candidate and disables review until it is independent.
+Every parent model request also receives a freshly derived, bounded
+`napier.delegation-ledger-projection` system block. It prioritizes active and
+recent terminal tasks, binds both the selected projection and complete task
+set with SHA-256, and exposes only sanitized labels, state, model, counters,
+and prompt/intent/result/error/outcome hashes. Raw delegated prompts, results,
+and errors remain outside the projection. Because the block is rebuilt from durable
+`SubagentTask` records rather than conversation summaries, it survives
+compaction, child recovery, and replay import without accumulating in message
+history. Equivalent pending, running, or completed role + canonical-prompt
+intents fail closed at `delegate_task`; failed, cancelled, and timed-out work
+may be retried. `context.prepared` exposes projection counts and hashes for
+Trace; in-loop changes add a hash-only `context.delegation.updated` event
+without persisting projection content. Restored coordinators recover their
+per-Run total task budget.
 
 ## Sandboxed Workspace Verification
 

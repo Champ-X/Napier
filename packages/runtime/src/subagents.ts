@@ -24,6 +24,10 @@ import {
 import { Type } from "typebox";
 
 import { DEFAULT_SUBAGENT_LIMITS, normalizeSubagentLimits } from "./agents.js";
+import {
+  delegationIntentSha256,
+  findReusableDelegation,
+} from "./delegation-ledger.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import {
@@ -119,7 +123,8 @@ export class SubagentCoordinator {
   private readonly limits: SubagentLimits;
   private readonly enabledRoles: Set<SubagentRole>;
   private readonly semaphore: Semaphore;
-  private totalDelegations = 0;
+  private readonly reservedIntentSha256 = new Set<string>();
+  private totalDelegations: number;
 
   constructor(private readonly options: SubagentCoordinatorOptions) {
     this.limits = normalizeSubagentLimits(
@@ -130,6 +135,10 @@ export class SubagentCoordinator {
       options.profile.enabledSubagents ?? DEFAULT_ROLES,
     );
     this.semaphore = new Semaphore(this.limits.maxConcurrent);
+    this.totalDelegations = options.store.listSubagentTasks(
+      options.run.threadId,
+      options.run.id,
+    ).length;
   }
 
   hasEnabledRoles(): boolean {
@@ -151,23 +160,49 @@ export class SubagentCoordinator {
         if (!this.enabledRoles.has(input.role)) {
           throw new Error(`Subagent role is disabled: ${input.role}`);
         }
+        const prompt = input.task.trim();
+        const reusable = findReusableDelegation(
+          this.options.store.listSubagentTasks(this.options.run.threadId),
+          input.role,
+          prompt,
+        );
+        if (reusable) {
+          throw new Error(
+            `Delegation intent already has durable ${reusable.status} task ${reusable.id}; reuse it instead of delegating again`,
+          );
+        }
+        const intentSha256 = delegationIntentSha256(input.role, prompt);
+        if (this.reservedIntentSha256.has(intentSha256)) {
+          throw new Error(
+            "Delegation intent is already being created; reuse the durable task instead",
+          );
+        }
         if (this.totalDelegations >= this.limits.maxTotal) {
           throw new Error(
             `Subagent total budget exhausted (${this.limits.maxTotal})`,
           );
         }
         this.totalDelegations += 1;
-        const task = await this.options.store.createSubagentTask({
-          threadId: this.options.run.threadId,
-          runId: this.options.run.id,
-          role: input.role,
-          description: input.description.trim(),
-          prompt: input.task.trim(),
-          model: {
-            provider: this.options.model.provider,
-            id: this.options.model.id,
-          },
-        });
+        this.reservedIntentSha256.add(intentSha256);
+        let task: SubagentTask;
+        try {
+          task = await this.options.store.createSubagentTask({
+            threadId: this.options.run.threadId,
+            runId: this.options.run.id,
+            role: input.role,
+            description: input.description.trim(),
+            prompt,
+            model: {
+              provider: this.options.model.provider,
+              id: this.options.model.id,
+            },
+          });
+        } catch (error) {
+          this.totalDelegations -= 1;
+          throw error;
+        } finally {
+          this.reservedIntentSha256.delete(intentSha256);
+        }
         await this.emit("subagent.queued", task, {
           taskId: task.id,
           role: task.role,

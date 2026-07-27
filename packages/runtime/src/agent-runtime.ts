@@ -45,6 +45,10 @@ import {
   planContextProjection,
 } from "./compaction.js";
 import {
+  createDelegationLedgerProjection,
+  formatDelegationLedgerProjection,
+} from "./delegation-ledger.js";
+import {
   applyGoalEvaluation,
   beginGoalContinuation,
   buildGoalContinuationPrompt,
@@ -953,14 +957,26 @@ export class AgentRuntime {
     ) {
       tools.push(subagents.createTool());
     }
-    const systemPrompt = [
+    const baseSystemPromptSections = [
       skillPrompt,
       importedLedgerBoundary,
       history.checkpoint ? formatContextCheckpoint(history.checkpoint) : "",
       memoryContext.text,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
+    ];
+    let delegationLedgerProjection = createDelegationLedgerProjection(
+      run.threadId,
+      this.store.listSubagentTasks(run.threadId),
+    );
+    const buildSystemPrompt = (
+      projection: typeof delegationLedgerProjection,
+    ): string =>
+      [
+        ...baseSystemPromptSections,
+        formatDelegationLedgerProjection(projection),
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+    const systemPrompt = buildSystemPrompt(delegationLedgerProjection);
     const beforeToolCall = async (
       {
         toolCall,
@@ -1058,6 +1074,12 @@ export class AgentRuntime {
           advisorCorrection,
           toolCount: tools.length,
           deferredToolCount: deferredExtensionTools.length,
+          delegationTaskCount: delegationLedgerProjection.taskCount,
+          delegationActiveTaskCount: delegationLedgerProjection.activeTaskCount,
+          delegationOmittedTaskCount:
+            delegationLedgerProjection.omittedTaskCount,
+          delegationTaskSetSha256: delegationLedgerProjection.taskSetSha256,
+          delegationProjectionSha256: delegationLedgerProjection.contentSha256,
         },
       },
       onEvent,
@@ -1086,24 +1108,84 @@ export class AgentRuntime {
         toolExecution: "parallel",
         convertToLlm: (messages) => messages.filter(isProviderMessage),
         beforeToolCall,
-        prepareNextTurn: ({ context, toolResults }) => {
-          if (deferredExtensionTools.length === 0) return undefined;
-          const requestedNames = new Set(
-            toolResults.flatMap((result) => result.addedToolNames ?? []),
-          );
-          if (requestedNames.size === 0) return undefined;
-          const currentNames = new Set(
-            (context.tools ?? []).map((tool) => tool.name),
-          );
-          const additions = deferredExtensionTools.filter(
-            (tool) =>
-              requestedNames.has(tool.name) && !currentNames.has(tool.name),
-          );
-          if (additions.length === 0) return undefined;
+        prepareNextTurn: async ({ context, toolResults }) => {
+          let nextTools = context.tools;
+          if (deferredExtensionTools.length > 0) {
+            const requestedNames = new Set(
+              toolResults.flatMap((result) => result.addedToolNames ?? []),
+            );
+            const currentNames = new Set(
+              (context.tools ?? []).map((tool) => tool.name),
+            );
+            const additions = deferredExtensionTools.filter(
+              (tool) =>
+                requestedNames.has(tool.name) && !currentNames.has(tool.name),
+            );
+            if (additions.length > 0) {
+              nextTools = [...(context.tools ?? []), ...additions];
+            }
+          }
+          let nextSystemPrompt = context.systemPrompt;
+          let nextDelegationLedgerProjection:
+            | typeof delegationLedgerProjection
+            | undefined;
+          try {
+            nextDelegationLedgerProjection = createDelegationLedgerProjection(
+              run.threadId,
+              this.store.listSubagentTasks(run.threadId),
+            );
+            nextSystemPrompt = buildSystemPrompt(
+              nextDelegationLedgerProjection,
+            );
+          } catch {
+            // Retain the last verified projection if durable state is unreadable.
+          }
+          if (
+            nextDelegationLedgerProjection &&
+            nextDelegationLedgerProjection.contentSha256 !==
+              delegationLedgerProjection.contentSha256
+          ) {
+            const previousProjectionSha256 =
+              delegationLedgerProjection.contentSha256;
+            delegationLedgerProjection = nextDelegationLedgerProjection;
+            try {
+              await this.record(
+                {
+                  threadId: run.threadId,
+                  runId: run.id,
+                  type: "context.delegation.updated",
+                  category: "model",
+                  visibility: "debug",
+                  payload: {
+                    previousProjectionSha256,
+                    delegationTaskCount: delegationLedgerProjection.taskCount,
+                    delegationActiveTaskCount:
+                      delegationLedgerProjection.activeTaskCount,
+                    delegationOmittedTaskCount:
+                      delegationLedgerProjection.omittedTaskCount,
+                    delegationTaskSetSha256:
+                      delegationLedgerProjection.taskSetSha256,
+                    delegationProjectionSha256:
+                      delegationLedgerProjection.contentSha256,
+                  },
+                },
+                onEvent,
+              );
+            } catch {
+              // Projection refresh must not fail an otherwise valid model turn.
+            }
+          }
+          if (
+            nextTools === context.tools &&
+            nextSystemPrompt === context.systemPrompt
+          ) {
+            return undefined;
+          }
           return {
             context: {
               ...context,
-              tools: [...(context.tools ?? []), ...additions],
+              systemPrompt: nextSystemPrompt,
+              ...(nextTools ? { tools: nextTools } : {}),
             },
           };
         },

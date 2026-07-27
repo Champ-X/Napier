@@ -75,7 +75,10 @@ async function createHarness(limits: Partial<SubagentLimits> = {}) {
     store,
     thread,
     run,
+    profile,
     faux,
+    registry,
+    model,
     coordinator,
     parentAbort,
   };
@@ -133,6 +136,7 @@ describe("SubagentCoordinator", () => {
       tool.execute("delegate-2", {
         ...delegatedTask,
         description: "Exceed budget",
+        task: "Inspect a different boundary after the budget is exhausted.",
       }),
     ).rejects.toThrow("Subagent total budget exhausted (1)");
     expect(store.listSubagentTasks(thread.id)).toHaveLength(1);
@@ -143,6 +147,77 @@ describe("SubagentCoordinator", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    expect(faux.state.callCount).toBe(1);
+  });
+
+  it("rejects equivalent durable work while permitting a failed intent retry", async () => {
+    const { coordinator, faux, store, thread } = await createHarness({
+      maxTotal: 3,
+      maxTurns: 1,
+    });
+    faux.setResponses([
+      fauxAssistantMessage(typedResult("Reusable evidence collected.")),
+      fauxAssistantMessage("Malformed failed attempt."),
+      fauxAssistantMessage(typedResult("Retry completed.")),
+    ]);
+    const tool = coordinator.createTool();
+
+    await tool.execute("delegate-reusable", delegatedTask);
+    await expect(
+      tool.execute("delegate-duplicate", {
+        ...delegatedTask,
+        description: "Try the same work again",
+        task: "  Inspect the workspace boundary\nand return concise evidence. ",
+      }),
+    ).rejects.toThrow(/durable completed task task[_-]/);
+
+    const retryTask = {
+      ...delegatedTask,
+      description: "Retryable inspection",
+      task: "Inspect a retryable boundary.",
+    };
+    await expect(tool.execute("delegate-failed", retryTask)).rejects.toThrow(
+      "must be one valid JSON object",
+    );
+    const retried = await tool.execute("delegate-retry", retryTask);
+
+    expect(retried.details.status).toBe("completed");
+    expect(store.listSubagentTasks(thread.id)).toHaveLength(3);
+    expect(faux.state.callCount).toBe(3);
+  });
+
+  it("restores the per-run total budget from durable tasks", async () => {
+    const {
+      store,
+      run,
+      profile,
+      model,
+      registry,
+      coordinator,
+      parentAbort,
+      faux,
+    } = await createHarness({ maxTotal: 1 });
+    faux.setResponses([
+      fauxAssistantMessage(typedResult("Initial delegation completed.")),
+    ]);
+    await coordinator.createTool().execute("delegate-initial", delegatedTask);
+
+    const restored = new SubagentCoordinator({
+      store,
+      models: registry.models,
+      model,
+      run,
+      profile,
+      parentSignal: parentAbort.signal,
+    });
+
+    await expect(
+      restored.createTool().execute("delegate-after-restore", {
+        ...delegatedTask,
+        description: "Different restored task",
+        task: "Inspect a different area after coordinator restoration.",
+      }),
+    ).rejects.toThrow("Subagent total budget exhausted (1)");
     expect(faux.state.callCount).toBe(1);
   });
 

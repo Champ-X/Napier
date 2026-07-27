@@ -1028,6 +1028,19 @@ write:management-openapi-compatibility` now emits
   `inconclusive` without exposing raw errors. The operation is no-store,
   promoted into OpenAPI, and available from Trace using the globally selected
   model; it cannot mutate or stall the settled delegation.
+- Compaction-immune delegation ledger projection. Every parent provider
+  request now receives a freshly derived bounded system block from durable
+  Thread Subagent tasks, including sanitized task labels, state/model/counter
+  metadata, prompt/intent/result/error/outcome hashes, and separate
+  selected-projection and full-task-set SHA-256s without raw prompts, results,
+  or errors. The block
+  refreshes after tool turns and is rebuilt across later Runs, child recovery,
+  and replay import without entering conversation history. `context.prepared`
+  and hash-only `context.delegation.updated` events carry projection counts and
+  hashes for Trace without persisting projection content. `delegate_task` now
+  rejects equivalent pending/running/completed role + canonical-prompt intents
+  while permitting failed/cancelled/timed-out retries, and restored
+  coordinators recover their per-Run total from durable tasks.
 - Shared Agent-profile and Subagent-coordinator limit normalization without a
   second silent runtime clamp.
 - Auditable delegation events and dedicated Trace workcells that preserve

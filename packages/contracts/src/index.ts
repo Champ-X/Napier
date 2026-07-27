@@ -1706,6 +1706,45 @@ export interface SubagentTask {
   revision: number;
 }
 
+export interface DelegationLedgerTaskProjection {
+  taskId: string;
+  runId: string;
+  role: SubagentRole;
+  status: SubagentTaskStatus;
+  description: string;
+  descriptionSha256: string;
+  promptSha256: string;
+  intentSha256: string;
+  model: ModelRef;
+  stepCount: number;
+  turnCount: number;
+  revision: number;
+  createdAt: string;
+  finishedAt?: string;
+  stopReason?: SubagentStopReason;
+  resultSha256?: string;
+  errorSha256?: string;
+  outcomeSha256?: string;
+  itemCount?: number;
+  unknownCount?: number;
+  evidenceCount?: number;
+}
+
+export interface DelegationLedgerProjection {
+  kind: "napier.delegation-ledger-projection";
+  schemaVersion: 1;
+  threadId: string;
+  taskCount: number;
+  selectedTaskCount: number;
+  activeTaskCount: number;
+  terminalTaskCount: number;
+  omittedTaskCount: number;
+  statusCounts: Record<SubagentTaskStatus, number>;
+  tasks: DelegationLedgerTaskProjection[];
+  taskSetSha256: string;
+  contentSha256: string;
+}
+
 export type ExtensionCapability =
   | "network.connect"
   | "secrets.env"

@@ -8,6 +8,7 @@ export * from "./checkpoint-calibration.js";
 export * from "./compaction.js";
 export * from "./credential-references.js";
 export * from "./credentials.js";
+export * from "./delegation-ledger.js";
 export * from "./evaluation.js";
 export * from "./evaluation-calibration.js";
 export * from "./evaluation-casebook-qualification.js";
