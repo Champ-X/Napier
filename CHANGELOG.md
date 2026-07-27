@@ -547,7 +547,11 @@ write:management-openapi` now scans `apps/server/src/app.ts`, emits
   /api/receipt-trust/anchors/directory/subscriptions` plus subscription update
   and refresh routes now promote durable trust-directory subscription schemas,
   including public transparency history, refresh receipts, CAS revision
-  requests, and hash-only source URL evidence.
+  requests, and hash-only source URL evidence. `POST
+  /api/receipt-trust/anchors/directory/subscriptions/quorum` now promotes the
+  multi-source quorum request and response schemas, including source weights,
+  metadata publisher evidence, selected directory hashes, and candidate set
+  diagnostics.
 - Management OpenAPI compatibility fixture. `npm run
 write:management-openapi-compatibility` now emits
   `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published

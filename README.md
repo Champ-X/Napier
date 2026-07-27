@@ -1749,8 +1749,8 @@ current management API routes. `GET /api/health` has a promoted
 `HealthResponse` schema, and the receipt-trust anchor lifecycle now promotes
 list, create, directory, directory metadata signing, metadata verification,
 directory verification, hosted discovery, durable subscription management,
-generic receipt verification, revoke request, and anchor response schemas for
-external verifier management clients.
+multi-source quorum evaluation, generic receipt verification, revoke request,
+and anchor response schemas for external verifier management clients.
 `npm run
 write:management-openapi-compatibility` writes
 `docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published

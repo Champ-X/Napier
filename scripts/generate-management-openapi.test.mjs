@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(15);
+    expect(generated.routeCount).toBe(16);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 15,
+        "x-napier-route-count": 16,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -431,6 +431,42 @@ describe("management OpenAPI generator", () => {
       }),
     );
     expect(
+      generated.artifact.paths[
+        "/api/receipt-trust/anchors/directory/subscriptions/quorum"
+      ].post,
+    ).toEqual(
+      expect.objectContaining({
+        operationId:
+          "post-receipt-trust-anchors-directory-subscriptions-quorum",
+        requestBody: expect.objectContaining({
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/EvaluateReceiptTrustAnchorDirectoryQuorumRequest",
+              },
+            },
+          },
+        }),
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorum",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/EvaluateReceiptTrustAnchorDirectoryQuorumRequest",
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorum",
+        },
+      }),
+    );
+    expect(
       generated.artifact.paths["/api/receipt-trust/anchors/directory/verify"]
         .post,
     ).toEqual(
@@ -562,10 +598,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 15 routes",
+      "Wrote docs/artifacts/management-openapi.json: 16 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(15);
+    expect(artifact["x-napier-route-count"]).toBe(16);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -619,6 +655,7 @@ async function createFixture() {
       app.post("/api/receipt-trust/anchors/directory/subscriptions", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId/refresh", () => undefined);
+      app.post("/api/receipt-trust/anchors/directory/subscriptions/quorum", () => undefined);
       app.post("/api/receipt-trust/anchors/directory/verify", () => undefined);
       app.post("/api/receipt-trust/verify", () => undefined);
       app.post(

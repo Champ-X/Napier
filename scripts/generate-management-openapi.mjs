@@ -71,6 +71,13 @@ const PROMOTED_OPERATION_SCHEMAS = {
         200: "#/components/schemas/ReceiptTrustAnchorDirectorySubscriptionRefreshResult",
       },
     },
+  "POST /api/receipt-trust/anchors/directory/subscriptions/quorum": {
+    request:
+      "#/components/schemas/EvaluateReceiptTrustAnchorDirectoryQuorumRequest",
+    responses: {
+      200: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorum",
+    },
+  },
   "POST /api/receipt-trust/anchors/directory/verify": {
     request: "#/components/schemas/VerifyReceiptTrustAnchorDirectoryRequest",
     responses: {
@@ -606,6 +613,263 @@ export async function generateManagementOpenApi(options = {}) {
             contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
           },
         },
+        ReceiptTrustAnchorDirectoryQuorumSourceWeight: {
+          type: "object",
+          required: ["sourceOriginSha256", "weight"],
+          additionalProperties: false,
+          properties: {
+            sourceOriginSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            weight: { type: "integer", minimum: 1, maximum: 10 },
+          },
+        },
+        ReceiptTrustAnchorDirectoryQuorumPolicy: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            minimumSources: { type: "integer", minimum: 1, maximum: 20 },
+            minimumAgreementCount: { type: "integer", minimum: 1, maximum: 20 },
+            minimumDistinctSourceOrigins: {
+              type: "integer",
+              minimum: 1,
+              maximum: 20,
+            },
+            minimumAgreementWeight: {
+              type: "integer",
+              minimum: 1,
+              maximum: 200,
+            },
+            minimumMetadataPublisherCount: {
+              type: "integer",
+              minimum: 0,
+              maximum: 20,
+            },
+            expectedAnchorSetSha256: {
+              $ref: "#/components/schemas/Sha256HexOrEmpty",
+            },
+            requiredSourceOriginSha256s: {
+              type: "array",
+              maxItems: 20,
+              uniqueItems: true,
+              items: { $ref: "#/components/schemas/Sha256Hex" },
+            },
+            requiredMetadataPublisherSha256s: {
+              type: "array",
+              maxItems: 20,
+              uniqueItems: true,
+              items: { $ref: "#/components/schemas/Sha256Hex" },
+            },
+            sourceWeights: {
+              type: "array",
+              maxItems: 20,
+              items: {
+                $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumSourceWeight",
+              },
+            },
+          },
+        },
+        ReceiptTrustAnchorDirectoryQuorumEffectivePolicy: {
+          allOf: [
+            {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumPolicy",
+            },
+            {
+              type: "object",
+              required: [
+                "minimumSources",
+                "minimumAgreementCount",
+                "minimumDistinctSourceOrigins",
+                "minimumAgreementWeight",
+                "minimumMetadataPublisherCount",
+                "expectedAnchorSetSha256",
+                "requiredSourceOriginSha256s",
+                "requiredMetadataPublisherSha256s",
+                "sourceWeights",
+              ],
+            },
+          ],
+        },
+        ReceiptTrustAnchorDirectoryQuorumMetadataInput: {
+          type: "object",
+          required: ["subscriptionId", "envelope"],
+          additionalProperties: false,
+          properties: {
+            subscriptionId: {
+              type: "string",
+              pattern: "^trustdir_[a-f0-9]{20}$",
+            },
+            envelope: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryMetadataEnvelope",
+            },
+          },
+        },
+        ReceiptTrustAnchorDirectoryQuorumStatus: {
+          type: "string",
+          enum: ["agreed", "insufficient_sources", "split", "policy_failed"],
+        },
+        ReceiptTrustAnchorDirectoryQuorumSourceMetadata: {
+          type: "object",
+          required: [
+            "status",
+            "signatureValid",
+            "integrityValid",
+            "directoryBindingValid",
+            "diagnosticCount",
+            "diagnosticsSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            status: {
+              $ref: "#/components/schemas/TrustedReceiptVerificationStatus",
+            },
+            signatureValid: { type: "boolean" },
+            integrityValid: { type: "boolean" },
+            directoryBindingValid: { type: "boolean" },
+            diagnosticCount: { type: "integer", minimum: 0 },
+            diagnosticsSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            publisherSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            signerKeyId: { $ref: "#/components/schemas/Sha256Hex" },
+            envelopeSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            verificationSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        ReceiptTrustAnchorDirectoryQuorumSource: {
+          type: "object",
+          required: [
+            "subscriptionId",
+            "subscriptionSha256",
+            "sourceUrlSha256",
+            "sourceOriginSha256",
+            "weight",
+            "revision",
+            "directorySha256",
+            "anchorSetSha256",
+            "discoverySha256",
+            "transparencyTailSha256",
+            "trustedCount",
+            "observedAt",
+          ],
+          additionalProperties: false,
+          properties: {
+            subscriptionId: {
+              type: "string",
+              pattern: "^trustdir_[a-z0-9]{8,80}$",
+            },
+            subscriptionSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            sourceUrlSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            sourceOriginSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            weight: { type: "integer", minimum: 1, maximum: 10 },
+            metadata: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumSourceMetadata",
+            },
+            revision: { type: "integer", minimum: 1 },
+            directorySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            anchorSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            discoverySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            transparencyTailSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            trustedCount: { type: "integer", minimum: 0 },
+            observedAt: { type: "string", format: "date-time" },
+          },
+        },
+        ReceiptTrustAnchorDirectoryQuorumCandidate: {
+          type: "object",
+          required: [
+            "anchorSetSha256",
+            "sourceCount",
+            "distinctSourceOriginCount",
+            "weight",
+            "metadataPublisherCount",
+            "metadataPublisherSetSha256",
+            "trustedCount",
+            "subscriptionSetSha256",
+            "directorySetSha256",
+            "discoverySetSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            anchorSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            sourceCount: { type: "integer", minimum: 0 },
+            distinctSourceOriginCount: { type: "integer", minimum: 0 },
+            weight: { type: "integer", minimum: 0 },
+            metadataPublisherCount: { type: "integer", minimum: 0 },
+            metadataPublisherSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            trustedCount: { type: "integer", minimum: 0 },
+            subscriptionSetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            directorySetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+            discoverySetSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
+        ReceiptTrustAnchorDirectoryQuorum: {
+          type: "object",
+          required: [
+            "kind",
+            "schemaVersion",
+            "apiVersion",
+            "generatedAt",
+            "status",
+            "diagnostics",
+            "policy",
+            "policySha256",
+            "sourceCount",
+            "candidateCount",
+            "agreementCount",
+            "agreementWeight",
+            "agreementDistinctSourceOriginCount",
+            "agreementMetadataPublisherCount",
+            "agreementMetadataPublisherSetSha256",
+            "sources",
+            "candidates",
+            "contentSha256",
+          ],
+          additionalProperties: false,
+          properties: {
+            kind: { const: "napier.receipt-trust-anchor-directory-quorum" },
+            schemaVersion: { const: 1 },
+            apiVersion: { type: "string", minLength: 1 },
+            generatedAt: { type: "string", format: "date-time" },
+            status: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumStatus",
+            },
+            diagnostics: {
+              type: "array",
+              items: { type: "string" },
+            },
+            policy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumEffectivePolicy",
+            },
+            policySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            sourceCount: { type: "integer", minimum: 0 },
+            candidateCount: { type: "integer", minimum: 0 },
+            agreementCount: { type: "integer", minimum: 0 },
+            agreementWeight: { type: "integer", minimum: 0 },
+            agreementDistinctSourceOriginCount: { type: "integer", minimum: 0 },
+            agreementMetadataPublisherCount: { type: "integer", minimum: 0 },
+            agreementMetadataPublisherSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            selectedAnchorSetSha256: {
+              $ref: "#/components/schemas/Sha256Hex",
+            },
+            selectedDirectorySha256: { $ref: "#/components/schemas/Sha256Hex" },
+            selectedDirectory: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectory",
+            },
+            sources: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumSource",
+              },
+            },
+            candidates: {
+              type: "array",
+              items: {
+                $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumCandidate",
+              },
+            },
+            contentSha256: { $ref: "#/components/schemas/Sha256Hex" },
+          },
+        },
         ReceiptTrustAnchorDirectoryMetadataReceipt: {
           type: "object",
           required: [
@@ -975,6 +1239,28 @@ export async function generateManagementOpenApi(options = {}) {
             },
           },
         },
+        EvaluateReceiptTrustAnchorDirectoryQuorumRequest: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            policy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumPolicy",
+            },
+            metadata: {
+              type: "array",
+              maxItems: 20,
+              items: {
+                $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryQuorumMetadataInput",
+              },
+            },
+            trustDirectory: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectory",
+            },
+            trustDirectoryPolicy: {
+              $ref: "#/components/schemas/ReceiptTrustAnchorDirectoryVerificationPolicy",
+            },
+          },
+        },
         SignReceiptTrustAnchorDirectoryMetadataRequest: {
           type: "object",
           required: ["trustAnchorId", "threadId", "publisher"],
@@ -1059,6 +1345,10 @@ export async function generateManagementOpenApi(options = {}) {
         Sha256Hex: {
           type: "string",
           pattern: "^[a-f0-9]{64}$",
+        },
+        Sha256HexOrEmpty: {
+          type: "string",
+          pattern: "^$|^[a-f0-9]{64}$",
         },
       },
       responses: {

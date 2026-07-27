@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "e79dae29eb9d59dc913e359e965984a68b150d9f5c6f60b3c7d2389f57a68321",
+    "sha256": "a1aa05a8f52f85e1cd59f44c88ed86dd783849aa7c1fa6ae2da6d6685cfb7205",
     "routeCount": 219,
     "routeSetSha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
   },
   "operationCount": 219,
-  "operationSetSha256": "8704bc76fe128ce95ef140e0bd6d77c8a66faef86f154e20915687a0bc4a1910",
+  "operationSetSha256": "4bf058cd75613d4bf0e2ac78c65ac249aaf71ba6e0d332dcce3eff42cb9e0fb5",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -2946,8 +2946,10 @@
       ],
       "pathParameters": [],
       "acceptsJsonRequestBody": true,
-      "jsonRequestSchemaRef": null,
-      "jsonResponseSchemaRefs": {},
+      "jsonRequestSchemaRef": "#/components/schemas/EvaluateReceiptTrustAnchorDirectoryQuorumRequest",
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/ReceiptTrustAnchorDirectoryQuorum"
+      },
       "responseStatuses": [
         "200",
         "400",
