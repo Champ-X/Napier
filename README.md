@@ -1422,6 +1422,18 @@ active selection directory as the default verifier-key source when the request
 does not upload an explicit directory. Verification responses and headers expose
 whether the trust source was `active_selection` or `uploaded`, along with the
 selection ID/hash when active selection was used.
+`GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit`
+now performs a no-store comparison between the active selection and the current
+subscription quorum, returning `missing_selection`, `aligned`,
+`directory_drift`, `anchor_set_drift`, or `quorum_unavailable` with only
+selection/quorum hashes and low-cardinality diagnostics. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review`
+preflights a candidate activation-decision record against the current
+selection CAS hash and live source alignment before any replacement. The Web
+workbench adds **Audit drift** and **Review rotation** receipts beside Apply
+activation, so operators can see whether a verifier-set rotation is eligible,
+already active, stale, missing, or blocked before mutating trusted state.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

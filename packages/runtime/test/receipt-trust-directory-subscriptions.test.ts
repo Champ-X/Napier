@@ -825,6 +825,36 @@ describe("receipt trust anchor directory subscriptions", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    expect(
+      store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
+    ).toEqual(
+      expect.objectContaining({
+        status: "missing_selection",
+        diagnostics: ["selection_missing"],
+        hasSelection: false,
+        selectionStateSha256: emptyActivationSelectionState.contentSha256,
+        currentQuorumStatus: "agreed",
+        currentDirectorySha256: directory.contentSha256,
+      }),
+    );
+    expect(
+      store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+        activationRecord.id,
+        "",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "eligible",
+        diagnostics: [],
+        expectedCurrentSelectionSha256: "",
+        currentSelectionSha256: "",
+        activationDecisionRecordId: activationRecord.id,
+        activationDecisionRecordSha256: activationRecord.contentSha256,
+        driftAudit: expect.objectContaining({
+          status: "missing_selection",
+        }),
+      }),
+    );
     const appliedSelection =
       await store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
         thread.id,
@@ -863,6 +893,57 @@ describe("receipt trust anchor directory subscriptions", () => {
         contentSha256: appliedSelection.selectionState.contentSha256,
       }),
     );
+    expect(
+      store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
+    ).toEqual(
+      expect.objectContaining({
+        status: "aligned",
+        diagnostics: [],
+        hasSelection: true,
+        selectionId: appliedSelection.selection.id,
+        selectionSha256: appliedSelection.selection.contentSha256,
+        selectedDirectorySha256: directory.contentSha256,
+        currentDirectorySha256: directory.contentSha256,
+      }),
+    );
+    expect(
+      store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+        activationRecord.id,
+        appliedSelection.selection.contentSha256,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "already_active",
+        diagnostics: ["selection_already_active"],
+        currentSelectionSha256: appliedSelection.selection.contentSha256,
+        driftAudit: expect.objectContaining({ status: "aligned" }),
+      }),
+    );
+    expect(
+      store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+        activationRecord.id,
+        "",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "stale_selection",
+        diagnostics: expect.arrayContaining([
+          "selection_precondition_failed",
+          "selection_already_active",
+        ]),
+      }),
+    );
+    expect(
+      store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+        "trustqad_missing1234567890",
+        appliedSelection.selection.contentSha256,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "missing_decision",
+        diagnostics: ["activation_decision_missing"],
+      }),
+    );
     await expect(
       store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
         thread.id,
@@ -882,6 +963,32 @@ describe("receipt trust anchor directory subscriptions", () => {
         "",
       ),
     ).rejects.toThrow("precondition failed");
+    const rotationCandidateReceipt =
+      createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt(
+        {
+          baseline: baselineResult.baseline,
+          verification: baselineVerification,
+          policyReview: importPolicyReview,
+          sourceAlignment,
+        },
+        "2026-07-27T00:00:01.000Z",
+      );
+    const rotationCandidateEnvelope = signTrustedReceipt(
+      rotationCandidateReceipt,
+      signingAnchor,
+    );
+    const rotationCandidateRecord =
+      await store.recordReceiptTrustAnchorDirectoryQuorumActivationDecision(
+        thread.id,
+        {
+          baseline: baselineResult.baseline,
+          verification: baselineVerification,
+          policyReview: importPolicyReview,
+          sourceAlignment,
+          envelope: rotationCandidateEnvelope,
+        },
+      );
+    expect(rotationCandidateRecord.id).not.toBe(activationRecord.id);
     const imported =
       await importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
         importThread.id,
@@ -994,6 +1101,69 @@ describe("receipt trust anchor directory subscriptions", () => {
       expect.objectContaining({
         status: "policy_failed",
         diagnostics: ["required_metadata_publisher_missing"],
+      }),
+    );
+    const driftedDirectory = createDirectory(thread.id);
+    for (const target of [
+      {
+        id: left.id,
+        sourceUrl: "https://left.example.test/anchors.json",
+      },
+      {
+        id: right.id,
+        sourceUrl: "https://right.example.test/anchors.json",
+      },
+    ]) {
+      const currentSubscription =
+        store
+          .listReceiptTrustAnchorDirectorySubscriptions()
+          .find((subscription) => subscription.id === target.id) ??
+        (() => {
+          throw new Error("Expected subscription for drift audit");
+        })();
+      const claim = await store.claimReceiptTrustAnchorDirectorySubscription(
+        currentSubscription.id,
+        currentSubscription.revision,
+        "drift-test-worker",
+      );
+      await store.settleReceiptTrustAnchorDirectorySubscriptionClaim(
+        currentSubscription.id,
+        claim.token,
+        {
+          discovery: createDiscovery(
+            target.sourceUrl,
+            driftedDirectory,
+            policy,
+          ),
+        },
+      );
+    }
+    expect(
+      store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
+    ).toEqual(
+      expect.objectContaining({
+        status: "anchor_set_drift",
+        diagnostics: ["anchor_set_drift"],
+        selectedAnchorSetSha256: directory.anchorSetSha256,
+        currentAnchorSetSha256: driftedDirectory.anchorSetSha256,
+        currentDirectorySha256: driftedDirectory.contentSha256,
+      }),
+    );
+    expect(
+      store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+        rotationCandidateRecord.id,
+        appliedSelection.selection.contentSha256,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        diagnostics: ["source_alignment_drifted"],
+        activationDecisionRecordId: rotationCandidateRecord.id,
+        sourceAlignmentSha256: sourceAlignment.contentSha256,
+        currentSourceAlignmentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        driftAudit: expect.objectContaining({
+          status: "anchor_set_drift",
+        }),
       }),
     );
   });

@@ -22,6 +22,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -43,12 +45,14 @@ import {
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
   getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   getReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
   revokeReceiptTrustAnchor,
+  reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   signReceiptTrustAnchorDirectoryQuorumActivationDecision,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
@@ -124,6 +128,14 @@ export default function ReceiptTrustPanel({
     baselineActivationSelectionState,
     setBaselineActivationSelectionState,
   ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionState>();
+  const [
+    baselineActivationSelectionDriftAudit,
+    setBaselineActivationSelectionDriftAudit,
+  ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit>();
+  const [
+    baselineActivationRotationReview,
+    setBaselineActivationRotationReview,
+  ] = useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview>();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -188,6 +200,8 @@ export default function ReceiptTrustPanel({
   );
   const canApplyActivationSelection =
     Boolean(latestApprovedActivationRecord) && !busyId;
+  const canReviewActivationSelectionRotation =
+    Boolean(latestApprovedActivationRecord) && !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -196,6 +210,7 @@ export default function ReceiptTrustPanel({
       listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
       getReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory(),
       getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
+      getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
     ])
       .then(
         ([
@@ -203,12 +218,16 @@ export default function ReceiptTrustPanel({
           baselines,
           activationHistory,
           activationSelectionState,
+          activationSelectionDriftAudit,
         ]) => {
           if (cancelled) return;
           setDirectorySubscriptions(subscriptions);
           setPromotionBaselines(baselines);
           setBaselineActivationHistory(activationHistory);
           setBaselineActivationSelectionState(activationSelectionState);
+          setBaselineActivationSelectionDriftAudit(
+            activationSelectionDriftAudit,
+          );
           const active = subscriptions
             .filter(
               (subscription) =>
@@ -669,6 +688,48 @@ export default function ReceiptTrustPanel({
     return history;
   }
 
+  async function refreshActivationSelectionDriftAudit(): Promise<void> {
+    setBusyId("refresh-activation-selection-drift");
+    setError(undefined);
+    try {
+      setBaselineActivationSelectionDriftAudit(
+        await getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
+      );
+    } catch (auditError) {
+      setError(toErrorMessage(auditError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function reviewActivationSelectionRotation(): Promise<void> {
+    if (
+      !latestApprovedActivationRecord ||
+      !canReviewActivationSelectionRotation
+    ) {
+      return;
+    }
+    setBusyId("review-activation-selection-rotation");
+    setError(undefined);
+    setBaselineActivationRotationReview(undefined);
+    try {
+      const review =
+        await reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+          {
+            activationDecisionRecordId: latestApprovedActivationRecord.id,
+            expectedCurrentSelectionSha256:
+              baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+          },
+        );
+      setBaselineActivationRotationReview(review);
+      setBaselineActivationSelectionDriftAudit(review.driftAudit);
+    } catch (reviewError) {
+      setError(toErrorMessage(reviewError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
   async function applyBaselineActivationSelection(): Promise<void> {
     if (!latestApprovedActivationRecord || !canApplyActivationSelection) {
       return;
@@ -684,6 +745,14 @@ export default function ReceiptTrustPanel({
             baselineActivationSelectionState?.currentSelectionSha256 ?? "",
         });
       setBaselineActivationSelectionState(result.selectionState);
+      setBaselineActivationRotationReview(undefined);
+      try {
+        setBaselineActivationSelectionDriftAudit(
+          await getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
+        );
+      } catch (auditError) {
+        setError(toErrorMessage(auditError));
+      }
     } catch (applyError) {
       setError(toErrorMessage(applyError));
     } finally {
@@ -758,6 +827,8 @@ export default function ReceiptTrustPanel({
     setBaselineImportResult(undefined);
     setBaselineActivationDecision(undefined);
     setBaselineActivationHistoryVerification(undefined);
+    setBaselineActivationSelectionDriftAudit(undefined);
+    setBaselineActivationRotationReview(undefined);
   }
 
   function clearExternalDirectory(): void {
@@ -1402,6 +1473,26 @@ export default function ReceiptTrustPanel({
             <button
               type="button"
               disabled={Boolean(busyId)}
+              onClick={() => void refreshActivationSelectionDriftAudit()}
+            >
+              <RefreshCw size={10} aria-hidden="true" />
+              {busyId === "refresh-activation-selection-drift"
+                ? copy.lab.trust.refreshingActivationSelectionDrift
+                : copy.lab.trust.refreshActivationSelectionDrift}
+            </button>
+            <button
+              type="button"
+              disabled={!canReviewActivationSelectionRotation}
+              onClick={() => void reviewActivationSelectionRotation()}
+            >
+              <ShieldCheck size={10} aria-hidden="true" />
+              {busyId === "review-activation-selection-rotation"
+                ? copy.lab.trust.reviewingActivationSelectionRotation
+                : copy.lab.trust.reviewActivationSelectionRotation}
+            </button>
+            <button
+              type="button"
+              disabled={Boolean(busyId)}
               onClick={() => void exportBaselineActivationHistory()}
             >
               <Download size={10} aria-hidden="true" />
@@ -1457,6 +1548,111 @@ export default function ReceiptTrustPanel({
                 }
               >
                 {baselineActivationSelectionState.selection.selectedDirectorySha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+            </output>
+          ) : null}
+          {baselineActivationSelectionDriftAudit ? (
+            <output
+              className={`receipt-baseline-policy policy-${
+                baselineActivationSelectionDriftAudit.status === "aligned"
+                  ? "approved"
+                  : "rejected"
+              }`}
+              aria-live="polite"
+            >
+              {baselineActivationSelectionDriftAudit.status === "aligned" ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {copy.lab.trust.activationSelectionDriftAudit}
+                </strong>
+                <small>
+                  {
+                    copy.lab.trust.activationSelectionDriftStatuses[
+                      baselineActivationSelectionDriftAudit.status
+                    ]
+                  }{" "}
+                  ·{" "}
+                  {baselineActivationSelectionDriftAudit.diagnostics.length > 0
+                    ? baselineActivationSelectionDriftAudit.diagnostics.join(
+                        ", ",
+                      )
+                    : copy.lab.trust.noDiagnostics}
+                </small>
+              </span>
+              <code
+                title={baselineActivationSelectionDriftAudit.contentSha256}
+              >
+                {baselineActivationSelectionDriftAudit.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={baselineActivationSelectionDriftAudit.currentQuorumSha256}
+              >
+                {baselineActivationSelectionDriftAudit.currentQuorumSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              {baselineActivationSelectionDriftAudit.currentDirectorySha256 ? (
+                <code
+                  title={
+                    baselineActivationSelectionDriftAudit.currentDirectorySha256
+                  }
+                >
+                  {baselineActivationSelectionDriftAudit.currentDirectorySha256.slice(
+                    0,
+                    12,
+                  )}
+                </code>
+              ) : null}
+            </output>
+          ) : null}
+          {baselineActivationRotationReview ? (
+            <output
+              className={`receipt-baseline-policy policy-${
+                baselineActivationRotationReview.status === "eligible"
+                  ? "approved"
+                  : "rejected"
+              }`}
+              aria-live="polite"
+            >
+              {baselineActivationRotationReview.status === "eligible" ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {copy.lab.trust.activationSelectionRotationReview}
+                </strong>
+                <small>
+                  {
+                    copy.lab.trust.activationSelectionRotationStatuses[
+                      baselineActivationRotationReview.status
+                    ]
+                  }{" "}
+                  ·{" "}
+                  {baselineActivationRotationReview.diagnostics.length > 0
+                    ? baselineActivationRotationReview.diagnostics.join(", ")
+                    : copy.lab.trust.noDiagnostics}
+                </small>
+              </span>
+              <code title={baselineActivationRotationReview.contentSha256}>
+                {baselineActivationRotationReview.contentSha256.slice(0, 12)}
+              </code>
+              <code
+                title={baselineActivationRotationReview.driftAudit.contentSha256}
+              >
+                {baselineActivationRotationReview.driftAudit.contentSha256.slice(
                   0,
                   12,
                 )}

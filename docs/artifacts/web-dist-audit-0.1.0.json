@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 42,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-7YO-arUN.js",
-    "sizeBytes": 144499,
+    "path": "apps/web/dist/assets/index-rFiMz_-B.js",
+    "sizeBytes": 145349,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "ee8f1e132e56532d482f8c46c1c05cb2036afeb6b69a91ee35779aaa70e83c89"
+    "sha256": "627dd44782104108e40345376f25edd7e0b9e40a63b6c44539eb5c5d6699e6ef"
   },
-  "distContentSha256": "ee8f1e132e56532d482f8c46c1c05cb2036afeb6b69a91ee35779aaa70e83c89",
+  "distContentSha256": "627dd44782104108e40345376f25edd7e0b9e40a63b6c44539eb5c5d6699e6ef",
   "errors": []
 }

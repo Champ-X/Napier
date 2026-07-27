@@ -131,6 +131,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
@@ -335,6 +337,7 @@ import {
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   createReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
@@ -1364,6 +1367,103 @@ export class LocalStore {
     return createReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
       this.state.receiptTrustAnchorDirectoryQuorumActivationSelection,
     );
+  }
+
+  getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit {
+    this.assertInitialized();
+    return createReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(
+      {
+        selectionState:
+          this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(),
+        currentQuorum:
+          this.getReceiptTrustAnchorDirectorySubscriptionQuorum(),
+      },
+    );
+  }
+
+  reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+    activationDecisionRecordId: string,
+    expectedCurrentSelectionSha256: string,
+  ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview {
+    this.assertInitialized();
+    const reviewedAt = new Date().toISOString();
+    const currentSelection =
+      this.state.receiptTrustAnchorDirectoryQuorumActivationSelection;
+    const currentSelectionSha256 = currentSelection?.contentSha256 ?? "";
+    const driftAudit =
+      this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit();
+    const record =
+      this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
+        (candidate) => candidate.id === activationDecisionRecordId,
+      );
+    const diagnostics: string[] = [];
+    if (expectedCurrentSelectionSha256 !== currentSelectionSha256) {
+      diagnostics.push("selection_precondition_failed");
+    }
+    if (!record) {
+      diagnostics.push("activation_decision_missing");
+    }
+    if (currentSelection?.activationDecisionRecordId === record?.id) {
+      diagnostics.push("selection_already_active");
+    }
+    let currentSourceAlignmentSha256: string | undefined;
+    if (record) {
+      const currentSourceAlignment =
+        createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+          record.baseline,
+          this.state.receiptTrustAnchorDirectorySubscriptions,
+        );
+      currentSourceAlignmentSha256 = currentSourceAlignment.contentSha256;
+      if (record.envelope.receipt.decision !== "approved") {
+        diagnostics.push("activation_decision_not_approved");
+      }
+      if (
+        currentSourceAlignment.selectedSourceOriginSetSha256 !==
+          record.sourceAlignment.selectedSourceOriginSetSha256 ||
+        currentSourceAlignment.alignedSourceCount !==
+          record.sourceAlignment.alignedSourceCount ||
+        currentSourceAlignment.driftedSourceCount !== 0 ||
+        currentSourceAlignment.missingSourceCount !== 0
+      ) {
+        diagnostics.push("source_alignment_drifted");
+      }
+    }
+    const status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview["status"] =
+      expectedCurrentSelectionSha256 !== currentSelectionSha256
+        ? "stale_selection"
+        : !record
+          ? "missing_decision"
+          : currentSelection?.activationDecisionRecordId === record.id
+            ? "already_active"
+            : diagnostics.length > 0
+              ? "blocked"
+              : "eligible";
+    const content = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-review" as const,
+      schemaVersion: 1 as const,
+      apiVersion: NAPIER_API_VERSION,
+      reviewedAt,
+      status,
+      diagnostics,
+      expectedCurrentSelectionSha256,
+      currentSelectionSha256,
+      activationDecisionRecordId,
+      ...(record
+        ? {
+            activationDecisionRecordSha256: record.contentSha256,
+            baselineSha256: record.baseline.contentSha256,
+            sourceAlignmentSha256: record.sourceAlignment.contentSha256,
+          }
+        : {}),
+      ...(currentSourceAlignmentSha256
+        ? { currentSourceAlignmentSha256 }
+        : {}),
+      driftAudit,
+    };
+    return {
+      ...content,
+      contentSha256: sha256(canonicalJson(content)),
+    };
   }
 
   async applyReceiptTrustAnchorDirectoryQuorumActivationSelection(

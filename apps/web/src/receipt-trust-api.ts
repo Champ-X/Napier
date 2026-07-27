@@ -19,6 +19,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -30,6 +32,7 @@ import type {
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
+  ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
@@ -198,6 +201,24 @@ export function verifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory
 export function getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionState> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
+  );
+}
+
+export function getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit",
+  );
+}
+
+export function reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+  body: ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
   );
 }
 

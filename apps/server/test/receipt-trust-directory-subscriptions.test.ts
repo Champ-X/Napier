@@ -10,6 +10,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorum,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistory,
   ReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryVerification,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -656,6 +658,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         currentDecisionCount: 1,
       }),
     );
+    const activationRecord = activationHistory.records[0]!;
     const emptyActivationSelectionResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
     );
@@ -673,7 +676,58 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-active",
       ),
     ).toBe("false");
-    const activationRecord = activationHistory.records[0]!;
+    const missingSelectionDriftAuditResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit",
+    );
+    expect(missingSelectionDriftAuditResponse.status).toBe(200);
+    const missingSelectionDriftAudit =
+      (await missingSelectionDriftAuditResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit;
+    expect(missingSelectionDriftAudit).toEqual(
+      expect.objectContaining({
+        status: "missing_selection",
+        diagnostics: ["selection_missing"],
+        hasSelection: false,
+        currentQuorumStatus: "agreed",
+        currentDirectorySha256: hostedDirectory.contentSha256,
+      }),
+    );
+    expect(
+      missingSelectionDriftAuditResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-drift-status",
+      ),
+    ).toBe("missing_selection");
+    const eligibleRotationReviewResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256: "",
+        }),
+      },
+    );
+    expect(eligibleRotationReviewResponse.status).toBe(200);
+    const eligibleRotationReview =
+      (await eligibleRotationReviewResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview;
+    expect(eligibleRotationReview).toEqual(
+      expect.objectContaining({
+        status: "eligible",
+        diagnostics: [],
+        expectedCurrentSelectionSha256: "",
+        currentSelectionSha256: "",
+        activationDecisionRecordId: activationRecord.id,
+        activationDecisionRecordSha256: activationRecord.contentSha256,
+        driftAudit: expect.objectContaining({
+          status: "missing_selection",
+        }),
+      }),
+    );
+    expect(
+      eligibleRotationReviewResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-review-status",
+      ),
+    ).toBe("eligible");
     const applyActivationSelectionResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
       {
@@ -727,6 +781,98 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
           appliedActivationSelection.selection.contentSha256,
         selection: appliedActivationSelection.selection,
         contentSha256: appliedActivationSelection.selectionState.contentSha256,
+      }),
+    );
+    const alignedDriftAuditResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit",
+    );
+    expect(alignedDriftAuditResponse.status).toBe(200);
+    const alignedDriftAudit =
+      (await alignedDriftAuditResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit;
+    expect(alignedDriftAudit).toEqual(
+      expect.objectContaining({
+        status: "aligned",
+        diagnostics: [],
+        hasSelection: true,
+        selectionId: appliedActivationSelection.selection.id,
+        selectionSha256: appliedActivationSelection.selection.contentSha256,
+        selectedDirectorySha256: hostedDirectory.contentSha256,
+        currentDirectorySha256: hostedDirectory.contentSha256,
+      }),
+    );
+    expect(
+      alignedDriftAuditResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-drift-status",
+      ),
+    ).toBe("aligned");
+    const alreadyActiveRotationReviewResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+        }),
+      },
+    );
+    expect(alreadyActiveRotationReviewResponse.status).toBe(200);
+    const alreadyActiveRotationReview =
+      (await alreadyActiveRotationReviewResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview;
+    expect(alreadyActiveRotationReview).toEqual(
+      expect.objectContaining({
+        status: "already_active",
+        diagnostics: ["selection_already_active"],
+        currentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        driftAudit: expect.objectContaining({
+          status: "aligned",
+        }),
+      }),
+    );
+    const staleRotationReviewResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256: "",
+        }),
+      },
+    );
+    expect(staleRotationReviewResponse.status).toBe(200);
+    expect(
+      (await staleRotationReviewResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
+    ).toEqual(
+      expect.objectContaining({
+        status: "stale_selection",
+        diagnostics: expect.arrayContaining([
+          "selection_precondition_failed",
+          "selection_already_active",
+        ]),
+      }),
+    );
+    const missingDecisionRotationReviewResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: "trustqad_missing1234567890",
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+        }),
+      },
+    );
+    expect(missingDecisionRotationReviewResponse.status).toBe(200);
+    expect(
+      (await missingDecisionRotationReviewResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
+    ).toEqual(
+      expect.objectContaining({
+        status: "missing_decision",
+        diagnostics: ["activation_decision_missing"],
       }),
     );
     const duplicateActivationSelectionResponse = await app.request(

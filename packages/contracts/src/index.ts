@@ -4310,6 +4310,66 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionState {
   contentSha256: string;
 }
 
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus =
+  | "missing_selection"
+  | "aligned"
+  | "directory_drift"
+  | "anchor_set_drift"
+  | "quorum_unavailable";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-drift-audit";
+  schemaVersion: 1;
+  apiVersion: string;
+  auditedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus;
+  diagnostics: string[];
+  hasSelection: boolean;
+  selectionStateSha256: string;
+  selectionId?: string;
+  selectionSha256?: string;
+  selectedAnchorSetSha256?: string;
+  selectedDirectorySha256?: string;
+  currentQuorumStatus: ReceiptTrustAnchorDirectoryQuorumStatus;
+  currentQuorumSha256: string;
+  currentSourceCount: number;
+  currentAgreementCount: number;
+  currentAgreementWeight: number;
+  currentAnchorSetSha256?: string;
+  currentDirectorySha256?: string;
+  contentSha256: string;
+}
+
+export interface ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest {
+  activationDecisionRecordId: string;
+  expectedCurrentSelectionSha256: string;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewStatus =
+  | "eligible"
+  | "already_active"
+  | "blocked"
+  | "stale_selection"
+  | "missing_decision";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-review";
+  schemaVersion: 1;
+  apiVersion: string;
+  reviewedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewStatus;
+  diagnostics: string[];
+  expectedCurrentSelectionSha256: string;
+  currentSelectionSha256: string;
+  activationDecisionRecordId: string;
+  activationDecisionRecordSha256?: string;
+  baselineSha256?: string;
+  sourceAlignmentSha256?: string;
+  currentSourceAlignmentSha256?: string;
+  driftAudit: ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit;
+  contentSha256: string;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;

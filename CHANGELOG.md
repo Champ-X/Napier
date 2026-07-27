@@ -334,6 +334,19 @@ All notable changes to Napier are recorded here.
   trust source was `active_selection` or `uploaded`, plus active selection
   ID/hash evidence when applicable; the Web verifier receipt renders that
   source beside the signature result.
+- Active verifier selection drift audits and rotation reviews. `GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit`
+  now compares the applied verifier-set selection with the current subscription
+  quorum without mutation, returning `missing_selection`, `aligned`,
+  `directory_drift`, `anchor_set_drift`, or `quorum_unavailable` plus
+  hash-only selection/quorum evidence. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review`
+  preflights a candidate activation-decision record against the current
+  selection CAS hash and live source alignment, returning `eligible`,
+  `already_active`, `blocked`, `stale_selection`, or `missing_decision` before
+  the existing apply endpoint can mutate trust state. The Receipt Trust Desk
+  adds **Audit drift** and **Review rotation** receipts, with runtime, server,
+  and Web API coverage for the new projections.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

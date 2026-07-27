@@ -495,6 +495,19 @@ source when a request does not upload an explicit directory. Uploaded
 directories retain precedence for portable offline verification, while response
 payloads and headers disclose `uploaded` versus `active_selection` along with
 selection ID/hash evidence.
+Active-selection drift audits keep that applied verifier set observable after
+subscription sources move. The no-store drift projection compares the active
+selection's directory and anchor-set hashes against the current subscription
+quorum and reports `missing_selection`, `aligned`, `directory_drift`,
+`anchor_set_drift`, or `quorum_unavailable` with the selection-state hash,
+current quorum hash, agreement counters, and low-cardinality diagnostics only.
+Rotation review is a separate no-mutation preflight: it checks the caller's
+expected current-selection hash, verifies the candidate activation-decision
+record exists and is approved, recomputes source alignment against live
+subscriptions, embeds the drift audit, and returns `eligible`,
+`already_active`, `blocked`, `stale_selection`, or `missing_decision` before
+the existing CAS apply endpoint can mutate trusted state. The Receipt Trust
+Desk exposes both receipts next to Apply activation.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2454,9 +2467,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- active-selection drift audits and rotation review, so operators can compare
-  the applied verifier-set directory against current subscription quorum before
-  replacing a trusted selection.
+- externally publishable active-selection transparency checkpoints, so rotation
+  history can be verified without copying local Store state.
 
 ### Layer 3: Extension fabric
 

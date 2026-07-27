@@ -15,6 +15,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionRecord,
   type ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelection,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumActivationSource,
   type ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
@@ -1811,6 +1813,154 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionStat
     );
   }
   return observed;
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(
+  input: {
+    selectionState: ReceiptTrustAnchorDirectoryQuorumActivationSelectionState;
+    currentQuorum: ReceiptTrustAnchorDirectoryQuorum;
+  },
+  auditedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit {
+  const auditedAt = requireTimestamp(
+    auditedAtInput,
+    "anchor directory quorum activation selection drift audit time",
+  );
+  const selectionState =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionState(
+      input.selectionState,
+    );
+  const currentQuorum = validateReceiptTrustAnchorDirectoryQuorum(
+    input.currentQuorum,
+  );
+  const selection = selectionState.selection;
+  const diagnostics: string[] = [];
+  let status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus;
+  if (!selection) {
+    status = "missing_selection";
+    diagnostics.push("selection_missing");
+  } else if (
+    currentQuorum.status !== "agreed" ||
+    !currentQuorum.selectedAnchorSetSha256 ||
+    !currentQuorum.selectedDirectorySha256
+  ) {
+    status = "quorum_unavailable";
+    diagnostics.push("current_quorum_unavailable");
+  } else if (
+    currentQuorum.selectedAnchorSetSha256 !== selection.selectedAnchorSetSha256
+  ) {
+    status = "anchor_set_drift";
+    diagnostics.push("anchor_set_drift");
+  } else if (
+    currentQuorum.selectedDirectorySha256 !== selection.selectedDirectorySha256
+  ) {
+    status = "directory_drift";
+    diagnostics.push("directory_drift");
+  } else {
+    status = "aligned";
+  }
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-drift-audit" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    auditedAt,
+    status,
+    diagnostics,
+    hasSelection: Boolean(selection),
+    selectionStateSha256: selectionState.contentSha256,
+    ...(selection
+      ? {
+          selectionId: selection.id,
+          selectionSha256: selection.contentSha256,
+          selectedAnchorSetSha256: selection.selectedAnchorSetSha256,
+          selectedDirectorySha256: selection.selectedDirectorySha256,
+        }
+      : {}),
+    currentQuorumStatus: currentQuorum.status,
+    currentQuorumSha256: currentQuorum.contentSha256,
+    currentSourceCount: currentQuorum.sourceCount,
+    currentAgreementCount: currentQuorum.agreementCount,
+    currentAgreementWeight: currentQuorum.agreementWeight,
+    ...(currentQuorum.selectedAnchorSetSha256
+      ? { currentAnchorSetSha256: currentQuorum.selectedAnchorSetSha256 }
+      : {}),
+    ...(currentQuorum.selectedDirectorySha256
+      ? { currentDirectorySha256: currentQuorum.selectedDirectorySha256 }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection drift audit is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "auditedAt",
+    "status",
+    "diagnostics",
+    "hasSelection",
+    "selectionStateSha256",
+    "selectionId",
+    "selectionSha256",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "currentQuorumStatus",
+    "currentQuorumSha256",
+    "currentSourceCount",
+    "currentAgreementCount",
+    "currentAgreementWeight",
+    "currentAnchorSetSha256",
+    "currentDirectorySha256",
+    "contentSha256",
+  ]);
+  const audit =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit;
+  if (
+    audit.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-drift-audit" ||
+    audit.schemaVersion !== 1 ||
+    audit.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(audit.auditedAt) ||
+    !validActivationSelectionDriftStatus(audit.status) ||
+    !validDiagnostics(audit.diagnostics) ||
+    typeof audit.hasSelection !== "boolean" ||
+    !SHA256_PATTERN.test(audit.selectionStateSha256) ||
+    (audit.selectionId !== undefined &&
+      !/^trustqas_[a-z0-9]{8,80}$/.test(audit.selectionId)) ||
+    !optionalSha256(audit.selectionSha256) ||
+    !optionalSha256(audit.selectedAnchorSetSha256) ||
+    !optionalSha256(audit.selectedDirectorySha256) ||
+    !validQuorumStatus(audit.currentQuorumStatus) ||
+    !SHA256_PATTERN.test(audit.currentQuorumSha256) ||
+    !nonNegativeInteger(audit.currentSourceCount) ||
+    !nonNegativeInteger(audit.currentAgreementCount) ||
+    !nonNegativeInteger(audit.currentAgreementWeight) ||
+    !optionalSha256(audit.currentAnchorSetSha256) ||
+    !optionalSha256(audit.currentDirectorySha256) ||
+    !SHA256_PATTERN.test(audit.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection drift audit is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = audit;
+  if (sha256(canonicalJson(content)) !== audit.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection drift audit hash mismatch",
+    );
+  }
+  return structuredClone(audit);
 }
 
 export function validateReceiptTrustAnchorDirectoryQuorum(
@@ -3722,6 +3872,25 @@ function validQuorumActivationSourceStatus(value: unknown): boolean {
     value === "anchor_set_drift" ||
     value === "no_last_good" ||
     value === "missing_subscription"
+  );
+}
+
+function validActivationSelectionDriftStatus(value: unknown): boolean {
+  return (
+    value === "missing_selection" ||
+    value === "aligned" ||
+    value === "directory_drift" ||
+    value === "anchor_set_drift" ||
+    value === "quorum_unavailable"
+  );
+}
+
+function validQuorumStatus(value: unknown): boolean {
+  return (
+    value === "agreed" ||
+    value === "insufficient_sources" ||
+    value === "split" ||
+    value === "policy_failed"
   );
 }
 
