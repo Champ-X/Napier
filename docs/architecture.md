@@ -508,6 +508,19 @@ subscriptions, embeds the drift audit, and returns `eligible`,
 `already_active`, `blocked`, `stale_selection`, or `missing_decision` before
 the existing CAS apply endpoint can mutate trusted state. The Receipt Trust
 Desk exposes both receipts next to Apply activation.
+Active-selection transparency checkpoints make the actual applied rotation
+chain portable. The Store now keeps a bounded append-only history of successful
+selection applications, migrates a legacy current selection into the first
+checkpoint entry, and requires the current selection to match the history tail.
+The checkpoint omits raw subscription URLs, private signing locators, and full
+Store snapshots; each entry carries sequence, selection hash,
+activation-decision hashes, baseline hash, selected directory/anchor-set
+hashes, policy-review hash, source-alignment hash, and predecessor hashes.
+Checkpoint verification is no-store: uploaded JSON is validated
+self-contained, then compared with the current local selection-chain set, tail,
+count, and current selection hash to return `valid`, `divergent`, or
+`invalid`. The Receipt Trust Desk exports and verifies those checkpoint
+artifacts beside drift and rotation reviews.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2467,8 +2480,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- externally publishable active-selection transparency checkpoints, so rotation
-  history can be verified without copying local Store state.
+- signed active-selection transparency checkpoint bundles, so external
+  registries can publish and pin rotation history without a trusted local
+  channel.
 
 ### Layer 3: Extension fabric
 

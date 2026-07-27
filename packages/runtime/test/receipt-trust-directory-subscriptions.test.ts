@@ -855,6 +855,19 @@ describe("receipt trust anchor directory subscriptions", () => {
         }),
       }),
     );
+    const emptySelectionCheckpoint =
+      store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+    expect(emptySelectionCheckpoint).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint",
+        hasSelection: false,
+        selectionCount: 0,
+        currentSelectionSha256: "",
+        driftStatus: "missing_selection",
+        entries: [],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
     const appliedSelection =
       await store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
         thread.id,
@@ -904,6 +917,78 @@ describe("receipt trust anchor directory subscriptions", () => {
         selectionSha256: appliedSelection.selection.contentSha256,
         selectedDirectorySha256: directory.contentSha256,
         currentDirectorySha256: directory.contentSha256,
+      }),
+    );
+    const selectionCheckpoint =
+      store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+    expect(selectionCheckpoint).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint",
+        hasSelection: true,
+        selectionCount: 1,
+        currentSelectionId: appliedSelection.selection.id,
+        currentSelectionSha256: appliedSelection.selection.contentSha256,
+        selectionChainTailSha256:
+          selectionCheckpoint.currentSelectionEntrySha256,
+        activationDecisionCount: 1,
+        driftStatus: "aligned",
+        entries: [
+          expect.objectContaining({
+            sequence: 1,
+            selectionId: appliedSelection.selection.id,
+            selectionSha256: appliedSelection.selection.contentSha256,
+            activationDecisionRecordId: activationRecord.id,
+            selectedDirectorySha256: directory.contentSha256,
+          }),
+        ],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      store.verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+        selectionCheckpoint,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256: selectionCheckpoint.contentSha256,
+        currentContentSha256: selectionCheckpoint.contentSha256,
+        declaredSelectionCount: 1,
+        currentSelectionCount: 1,
+      }),
+    );
+    expect(
+      store.verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+        emptySelectionCheckpoint,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        diagnostics: expect.arrayContaining([
+          "current_checkpoint_mismatch",
+          "selection_set_mismatch",
+          "selection_chain_tail_mismatch",
+          "selection_count_mismatch",
+          "current_selection_mismatch",
+        ]),
+        currentSelectionCount: 1,
+      }),
+    );
+    const tamperedSelectionCheckpoint = structuredClone(selectionCheckpoint);
+    tamperedSelectionCheckpoint.entries[0] = {
+      ...tamperedSelectionCheckpoint.entries[0]!,
+      selectionSha256: "f".repeat(64),
+    };
+    expect(
+      store.verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+        tamperedSelectionCheckpoint,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["checkpoint_invalid"],
+        currentSelectionCount: 1,
       }),
     );
     expect(

@@ -22,6 +22,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -37,6 +39,7 @@ import type {
   TrustedReceiptVerification,
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryRequest,
   UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
@@ -207,6 +210,24 @@ export function getReceiptTrustAnchorDirectoryQuorumActivationSelectionState(): 
 export function getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit",
+  );
+}
+
+export function getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint",
+  );
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+  body: VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
   );
 }
 

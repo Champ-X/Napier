@@ -103,6 +103,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   ReceiptTrustAnchorDirectoryQuorumPolicy,
@@ -259,6 +261,7 @@ import type {
   VerifyReceiptTrustAnchorDirectoryRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest,
   VerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRequest,
+  VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   VerifyReceiptTrustAnchorDirectoryMetadataRequest,
   ApplySkillContentRequest,
   PreviewSkillContentRequest,
@@ -1206,6 +1209,62 @@ export function createApp(services: NapierServices): Hono {
         audit,
       );
       return context.json(audit);
+    },
+  );
+
+  app.get(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint",
+    (context) => {
+      const checkpoint =
+        services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint();
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointHeaders(
+        context,
+        checkpoint,
+      );
+      return context.json(checkpoint);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint verification request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint verification request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection transparency checkpoint verification request is invalid",
+          400,
+        );
+      }
+      const verification =
+        services.store.verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+          body.checkpoint,
+        );
+      setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationHeaders(
+        context,
+        verification,
+      );
+      return context.json(verification);
     },
   );
 
@@ -11545,6 +11604,18 @@ function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationDecisionHistoryRe
   };
 }
 
+function parseVerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest(
+  input: unknown,
+):
+  | VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest
+  | undefined {
+  const record = requestRecord(input, ["checkpoint"]);
+  if (!record || record["checkpoint"] === undefined) return undefined;
+  return {
+    checkpoint: record["checkpoint"],
+  };
+}
+
 function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
   input: unknown,
 ):
@@ -17259,6 +17330,142 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAuditHeader
     context,
     "X-Napier-Receipt-Trust-Directory-Quorum-Current-Directory-SHA256",
     audit.currentDirectorySha256,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointHeaders(
+  context: Context,
+  checkpoint: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, checkpoint.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Active",
+    String(checkpoint.hasSelection),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Count",
+    String(checkpoint.selectionCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Set-SHA256",
+    checkpoint.selectionSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Chain-Tail-SHA256",
+    checkpoint.selectionChainTailSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Current-SHA256",
+    checkpoint.currentSelectionSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Id",
+    checkpoint.currentSelectionId,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Entry-SHA256",
+    checkpoint.currentSelectionEntrySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Count",
+    String(checkpoint.activationDecisionCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-Set-SHA256",
+    checkpoint.activationDecisionSetSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Baseline-Set-SHA256",
+    checkpoint.baselineSetSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Policy-Review-Set-SHA256",
+    checkpoint.policyReviewSetSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-Set-SHA256",
+    checkpoint.sourceAlignmentSetSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Audit-SHA256",
+    checkpoint.driftAuditSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status",
+    checkpoint.driftStatus,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationHeaders(
+  context: Context,
+  verification: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, verification.contentSha256);
+  context.header("X-Napier-Verification-Status", verification.status);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(verification.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(verification.diagnostics),
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Declared-Content-SHA256",
+    verification.declaredContentSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Recomputed-Content-SHA256",
+    verification.recomputedContentSha256,
+  );
+  context.header(
+    "X-Napier-Current-Content-SHA256",
+    verification.currentContentSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Declared-Selection-Set-SHA256",
+    verification.declaredSelectionSetSha256,
+  );
+  context.header(
+    "X-Napier-Current-Selection-Set-SHA256",
+    verification.currentSelectionSetSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Declared-Selection-Chain-Tail-SHA256",
+    verification.declaredSelectionChainTailSha256,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Current-Selection-Chain-Tail-SHA256",
+    verification.currentSelectionChainTailSha256,
+  );
+  if (verification.declaredSelectionCount !== undefined) {
+    context.header(
+      "X-Napier-Declared-Selection-Count",
+      String(verification.declaredSelectionCount),
+    );
+  }
+  context.header(
+    "X-Napier-Current-Selection-Count",
+    String(verification.currentSelectionCount),
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Declared-Selection-Current-SHA256",
+    verification.declaredCurrentSelectionSha256,
+  );
+  context.header(
+    "X-Napier-Current-Selection-SHA256",
+    verification.currentSelectionSha256,
   );
 }
 

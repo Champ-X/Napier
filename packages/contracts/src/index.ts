@@ -4310,6 +4310,83 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionState {
   contentSha256: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyEntry {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-entry";
+  schemaVersion: 1;
+  apiVersion: string;
+  sequence: number;
+  activatedAt: string;
+  activatedByThreadId: string;
+  selectionId: string;
+  selectionSha256: string;
+  activationDecisionRecordId: string;
+  activationDecisionRecordSha256: string;
+  activationDecisionReceiptSha256: string;
+  activationDecisionEnvelopeSha256: string;
+  baselineId: string;
+  baselineSha256: string;
+  selectedAnchorSetSha256: string;
+  selectedDirectorySha256: string;
+  policyReviewSha256: string;
+  sourceAlignmentSha256: string;
+  previousSelectionSha256?: string;
+  previousEntrySha256?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  hasSelection: boolean;
+  selectionCount: number;
+  currentSelectionSha256: string;
+  currentSelectionId?: string;
+  currentSelectionEntrySha256?: string;
+  selectionSetSha256: string;
+  selectionChainTailSha256?: string;
+  activationDecisionCount: number;
+  activationDecisionSetSha256: string;
+  baselineSetSha256: string;
+  policyReviewSetSha256: string;
+  sourceAlignmentSetSha256: string;
+  driftAuditSha256: string;
+  driftStatus: ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus;
+  entries: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyEntry[];
+  contentSha256: string;
+}
+
+export interface VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest {
+  checkpoint: unknown;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationStatus =
+  | "valid"
+  | "divergent"
+  | "invalid";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-verification";
+  schemaVersion: 1;
+  apiVersion: string;
+  verifiedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationStatus;
+  diagnostics: string[];
+  declaredContentSha256?: string;
+  recomputedContentSha256?: string;
+  currentContentSha256: string;
+  declaredSelectionSetSha256?: string;
+  currentSelectionSetSha256: string;
+  declaredSelectionChainTailSha256?: string;
+  currentSelectionChainTailSha256?: string;
+  declaredSelectionCount?: number;
+  currentSelectionCount: number;
+  declaredCurrentSelectionSha256?: string;
+  currentSelectionSha256: string;
+  contentSha256: string;
+}
+
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus =
   | "missing_selection"
   | "aligned"

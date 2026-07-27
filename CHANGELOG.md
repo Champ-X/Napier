@@ -347,6 +347,18 @@ All notable changes to Napier are recorded here.
   the existing apply endpoint can mutate trust state. The Receipt Trust Desk
   adds **Audit drift** and **Review rotation** receipts, with runtime, server,
   and Web API coverage for the new projections.
+- Active verifier selection transparency checkpoints. `GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint`
+  now exports the applied selection rotation chain as a compact hash-only
+  checkpoint over selection entries, activation-decision hashes, baseline
+  hashes, selected directory/anchor-set hashes, policy-review hashes, and
+  source-alignment hashes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify`
+  validates uploaded checkpoints no-store against current local selection
+  history and returns `valid`, `divergent`, or `invalid`. The Store now keeps a
+  bounded append-only applied-selection history, migrates legacy current
+  selections into the history tail, and the Receipt Trust Desk adds
+  **Export checkpoint** and **Verify checkpoint** receipts.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

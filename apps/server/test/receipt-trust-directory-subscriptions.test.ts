@@ -13,6 +13,8 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -696,6 +698,27 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-drift-status",
       ),
     ).toBe("missing_selection");
+    const emptySelectionCheckpointResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint",
+    );
+    expect(emptySelectionCheckpointResponse.status).toBe(200);
+    const emptySelectionCheckpoint =
+      (await emptySelectionCheckpointResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint;
+    expect(emptySelectionCheckpoint).toEqual(
+      expect.objectContaining({
+        hasSelection: false,
+        selectionCount: 0,
+        currentSelectionSha256: "",
+        driftStatus: "missing_selection",
+        entries: [],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(
+      emptySelectionCheckpointResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-count",
+      ),
+    ).toBe("0");
     const eligibleRotationReviewResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
       {
@@ -805,6 +828,114 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-drift-status",
       ),
     ).toBe("aligned");
+    const selectionCheckpointResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint",
+    );
+    expect(selectionCheckpointResponse.status).toBe(200);
+    const selectionCheckpoint =
+      (await selectionCheckpointResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint;
+    expect(selectionCheckpoint).toEqual(
+      expect.objectContaining({
+        hasSelection: true,
+        selectionCount: 1,
+        currentSelectionId: appliedActivationSelection.selection.id,
+        currentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        activationDecisionCount: 1,
+        driftStatus: "aligned",
+        entries: [
+          expect.objectContaining({
+            sequence: 1,
+            selectionId: appliedActivationSelection.selection.id,
+            selectionSha256:
+              appliedActivationSelection.selection.contentSha256,
+            activationDecisionRecordId: activationRecord.id,
+            selectedDirectorySha256: hostedDirectory.contentSha256,
+          }),
+        ],
+      }),
+    );
+    expect(
+      selectionCheckpointResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-count",
+      ),
+    ).toBe("1");
+    expect(
+      selectionCheckpointResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-chain-tail-sha256",
+      ),
+    ).toBe(selectionCheckpoint.selectionChainTailSha256);
+    const selectionCheckpointVerifyResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ checkpoint: selectionCheckpoint }),
+      },
+    );
+    expect(selectionCheckpointVerifyResponse.status).toBe(200);
+    expect(
+      (await selectionCheckpointVerifyResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        declaredContentSha256: selectionCheckpoint.contentSha256,
+        currentContentSha256: selectionCheckpoint.contentSha256,
+        declaredSelectionCount: 1,
+        currentSelectionCount: 1,
+      }),
+    );
+    expect(
+      selectionCheckpointVerifyResponse.headers.get(
+        "x-napier-verification-status",
+      ),
+    ).toBe("valid");
+    const divergentSelectionCheckpointResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ checkpoint: emptySelectionCheckpoint }),
+      },
+    );
+    expect(divergentSelectionCheckpointResponse.status).toBe(200);
+    expect(
+      (await divergentSelectionCheckpointResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "divergent",
+        diagnostics: expect.arrayContaining([
+          "current_checkpoint_mismatch",
+          "selection_count_mismatch",
+          "current_selection_mismatch",
+        ]),
+        currentSelectionCount: 1,
+      }),
+    );
+    const tamperedSelectionCheckpoint = structuredClone(selectionCheckpoint);
+    tamperedSelectionCheckpoint.entries[0] = {
+      ...tamperedSelectionCheckpoint.entries[0]!,
+      selectionSha256: "f".repeat(64),
+    };
+    const invalidSelectionCheckpointResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ checkpoint: tamperedSelectionCheckpoint }),
+      },
+    );
+    expect(invalidSelectionCheckpointResponse.status).toBe(200);
+    expect(
+      (await invalidSelectionCheckpointResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["checkpoint_invalid"],
+        currentSelectionCount: 1,
+      }),
+    );
     const alreadyActiveRotationReviewResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
       {

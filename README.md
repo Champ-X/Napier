@@ -1434,6 +1434,18 @@ selection CAS hash and live source alignment before any replacement. The Web
 workbench adds **Audit drift** and **Review rotation** receipts beside Apply
 activation, so operators can see whether a verifier-set rotation is eligible,
 already active, stale, missing, or blocked before mutating trusted state.
+`GET
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint`
+exports the applied verifier-set rotation chain as a compact checkpoint. Each
+entry binds only sequence, selection hash, activation-decision hashes, baseline
+hash, selected directory/anchor-set hashes, policy-review hash, and
+source-alignment hash; raw subscription URLs and private signer locators are
+not included. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify`
+validates an uploaded checkpoint against the current local selection history
+without persisting it, returning `valid`, `divergent`, or `invalid`
+diagnostics. The Web workbench can export and verify those checkpoint JSON
+artifacts beside drift and rotation receipts.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST
