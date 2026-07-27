@@ -18,6 +18,8 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelection,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftStatus,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
@@ -1241,6 +1243,317 @@ export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
       ? { trustDirectoryVerification: options.trustDirectoryVerification }
       : {}),
   });
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "proposedAt",
+    "status",
+    "diagnostics",
+    "activationDecisionRecordId",
+    "activationDecisionRecordSha256",
+    "expectedCurrentSelectionSha256",
+    "currentSelectionSha256",
+    "rotationReview",
+    "rotationReviewSha256",
+    "checkpointRegistryQuorumBaselineId",
+    "expectedCheckpointRegistryQuorumBaselineSha256",
+    "checkpointRegistryQuorumBaselineSha256",
+    "checkpointRegistryQuorumBaselineEnvelopeSha256",
+    "checkpointRegistryQuorumSha256",
+    "selectedCheckpointSha256",
+    "selectedSelectionSetSha256",
+    "selectedSelectionChainTailSha256",
+    "selectedSubscriptionSetSha256",
+    "selectedSourceOriginSetSha256",
+    "selectedSignerSetSha256",
+    "currentCheckpointSha256",
+    "currentSelectionSetSha256",
+    "currentSelectionChainTailSha256",
+    "checkpointRegistryQuorumBaseline",
+    "contentSha256",
+  ]);
+  const proposal =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+  const rotationReview =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview(
+      proposal.rotationReview,
+    );
+  const checkpointRegistryQuorumBaseline =
+    proposal.checkpointRegistryQuorumBaseline === undefined
+      ? undefined
+      : validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline(
+          proposal.checkpointRegistryQuorumBaseline,
+        );
+  if (
+    proposal.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal" ||
+    proposal.schemaVersion !== 1 ||
+    proposal.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(proposal.proposedAt) ||
+    !validRotationProposalStatus(proposal.status) ||
+    !validDiagnostics(proposal.diagnostics) ||
+    !/^trustqad_[a-z0-9]{8,80}$/.test(proposal.activationDecisionRecordId) ||
+    !optionalSha256(proposal.activationDecisionRecordSha256) ||
+    (proposal.expectedCurrentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(proposal.expectedCurrentSelectionSha256)) ||
+    (proposal.currentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(proposal.currentSelectionSha256)) ||
+    proposal.rotationReviewSha256 !== rotationReview.contentSha256 ||
+    (proposal.checkpointRegistryQuorumBaselineId !== undefined &&
+      !/^trustcpqb_[a-z0-9]{8,80}$/.test(
+        proposal.checkpointRegistryQuorumBaselineId,
+      )) ||
+    !optionalSha256(proposal.expectedCheckpointRegistryQuorumBaselineSha256) ||
+    !optionalSha256(proposal.checkpointRegistryQuorumBaselineSha256) ||
+    !optionalSha256(proposal.checkpointRegistryQuorumBaselineEnvelopeSha256) ||
+    !optionalSha256(proposal.checkpointRegistryQuorumSha256) ||
+    !optionalSha256(proposal.selectedCheckpointSha256) ||
+    !optionalSha256(proposal.selectedSelectionSetSha256) ||
+    !optionalSha256(proposal.selectedSelectionChainTailSha256) ||
+    !optionalSha256(proposal.selectedSubscriptionSetSha256) ||
+    !optionalSha256(proposal.selectedSourceOriginSetSha256) ||
+    !optionalSha256(proposal.selectedSignerSetSha256) ||
+    !SHA256_PATTERN.test(proposal.currentCheckpointSha256) ||
+    !SHA256_PATTERN.test(proposal.currentSelectionSetSha256) ||
+    !optionalSha256(proposal.currentSelectionChainTailSha256) ||
+    !SHA256_PATTERN.test(proposal.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal is invalid",
+    );
+  }
+  if (checkpointRegistryQuorumBaseline) {
+    if (
+      proposal.checkpointRegistryQuorumBaselineId !==
+        checkpointRegistryQuorumBaseline.id ||
+      proposal.checkpointRegistryQuorumBaselineSha256 !==
+        checkpointRegistryQuorumBaseline.contentSha256 ||
+      proposal.checkpointRegistryQuorumBaselineEnvelopeSha256 !==
+        checkpointRegistryQuorumBaseline.envelope.contentSha256 ||
+      proposal.checkpointRegistryQuorumSha256 !==
+        checkpointRegistryQuorumBaseline.envelope.receipt.contentSha256 ||
+      proposal.selectedCheckpointSha256 !==
+        checkpointRegistryQuorumBaseline.selectedCheckpointSha256 ||
+      proposal.selectedSelectionSetSha256 !==
+        checkpointRegistryQuorumBaseline.selectedSelectionSetSha256 ||
+      (proposal.selectedSelectionChainTailSha256 ?? "") !==
+        (checkpointRegistryQuorumBaseline.selectedSelectionChainTailSha256 ??
+          "") ||
+      proposal.selectedSubscriptionSetSha256 !==
+        checkpointRegistryQuorumBaseline.selectedSubscriptionSetSha256 ||
+      proposal.selectedSourceOriginSetSha256 !==
+        checkpointRegistryQuorumBaseline.selectedSourceOriginSetSha256 ||
+      proposal.selectedSignerSetSha256 !==
+        checkpointRegistryQuorumBaseline.selectedSignerSetSha256
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal baseline binding is invalid",
+      );
+    }
+  }
+  const content = {
+    kind: proposal.kind,
+    schemaVersion: proposal.schemaVersion,
+    apiVersion: proposal.apiVersion,
+    proposedAt: proposal.proposedAt,
+    status: proposal.status,
+    diagnostics: proposal.diagnostics,
+    activationDecisionRecordId: proposal.activationDecisionRecordId,
+    ...(proposal.activationDecisionRecordSha256
+      ? {
+          activationDecisionRecordSha256:
+            proposal.activationDecisionRecordSha256,
+        }
+      : {}),
+    expectedCurrentSelectionSha256:
+      proposal.expectedCurrentSelectionSha256,
+    currentSelectionSha256: proposal.currentSelectionSha256,
+    rotationReview,
+    rotationReviewSha256: proposal.rotationReviewSha256,
+    ...(proposal.checkpointRegistryQuorumBaselineId
+      ? {
+          checkpointRegistryQuorumBaselineId:
+            proposal.checkpointRegistryQuorumBaselineId,
+        }
+      : {}),
+    ...(proposal.expectedCheckpointRegistryQuorumBaselineSha256
+      ? {
+          expectedCheckpointRegistryQuorumBaselineSha256:
+            proposal.expectedCheckpointRegistryQuorumBaselineSha256,
+        }
+      : {}),
+    ...(proposal.checkpointRegistryQuorumBaselineSha256
+      ? {
+          checkpointRegistryQuorumBaselineSha256:
+            proposal.checkpointRegistryQuorumBaselineSha256,
+        }
+      : {}),
+    ...(proposal.checkpointRegistryQuorumBaselineEnvelopeSha256
+      ? {
+          checkpointRegistryQuorumBaselineEnvelopeSha256:
+            proposal.checkpointRegistryQuorumBaselineEnvelopeSha256,
+        }
+      : {}),
+    ...(proposal.checkpointRegistryQuorumSha256
+      ? { checkpointRegistryQuorumSha256: proposal.checkpointRegistryQuorumSha256 }
+      : {}),
+    ...(proposal.selectedCheckpointSha256
+      ? { selectedCheckpointSha256: proposal.selectedCheckpointSha256 }
+      : {}),
+    ...(proposal.selectedSelectionSetSha256
+      ? { selectedSelectionSetSha256: proposal.selectedSelectionSetSha256 }
+      : {}),
+    ...(proposal.selectedSelectionChainTailSha256
+      ? {
+          selectedSelectionChainTailSha256:
+            proposal.selectedSelectionChainTailSha256,
+        }
+      : {}),
+    ...(proposal.selectedSubscriptionSetSha256
+      ? { selectedSubscriptionSetSha256: proposal.selectedSubscriptionSetSha256 }
+      : {}),
+    ...(proposal.selectedSourceOriginSetSha256
+      ? { selectedSourceOriginSetSha256: proposal.selectedSourceOriginSetSha256 }
+      : {}),
+    ...(proposal.selectedSignerSetSha256
+      ? { selectedSignerSetSha256: proposal.selectedSignerSetSha256 }
+      : {}),
+    currentCheckpointSha256: proposal.currentCheckpointSha256,
+    currentSelectionSetSha256: proposal.currentSelectionSetSha256,
+    ...(proposal.currentSelectionChainTailSha256
+      ? {
+          currentSelectionChainTailSha256:
+            proposal.currentSelectionChainTailSha256,
+        }
+      : {}),
+    ...(checkpointRegistryQuorumBaseline
+      ? { checkpointRegistryQuorumBaseline }
+      : {}),
+  };
+  if (proposal.contentSha256 !== sha256(canonicalJson(content))) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal hash mismatch",
+    );
+  }
+  return {
+    ...proposal,
+    rotationReview,
+    ...(checkpointRegistryQuorumBaseline
+      ? { checkpointRegistryQuorumBaseline }
+      : {}),
+  };
+}
+
+function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation review is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "reviewedAt",
+    "status",
+    "diagnostics",
+    "expectedCurrentSelectionSha256",
+    "currentSelectionSha256",
+    "activationDecisionRecordId",
+    "activationDecisionRecordSha256",
+    "baselineSha256",
+    "sourceAlignmentSha256",
+    "currentSourceAlignmentSha256",
+    "driftAudit",
+    "checkpointRegistryQuorum",
+    "contentSha256",
+  ]);
+  const review =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview;
+  const driftAudit =
+    validateReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(
+      review.driftAudit,
+    );
+  const checkpointRegistryQuorum =
+    review.checkpointRegistryQuorum === undefined
+      ? undefined
+      : validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+          review.checkpointRegistryQuorum,
+        );
+  if (
+    review.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-review" ||
+    review.schemaVersion !== 1 ||
+    review.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(review.reviewedAt) ||
+    !validRotationReviewStatus(review.status) ||
+    !validDiagnostics(review.diagnostics) ||
+    (review.expectedCurrentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(review.expectedCurrentSelectionSha256)) ||
+    (review.currentSelectionSha256 !== "" &&
+      !SHA256_PATTERN.test(review.currentSelectionSha256)) ||
+    !/^trustqad_[a-z0-9]{8,80}$/.test(review.activationDecisionRecordId) ||
+    !optionalSha256(review.activationDecisionRecordSha256) ||
+    !optionalSha256(review.baselineSha256) ||
+    !optionalSha256(review.sourceAlignmentSha256) ||
+    !optionalSha256(review.currentSourceAlignmentSha256) ||
+    !SHA256_PATTERN.test(review.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation review is invalid",
+    );
+  }
+  const content = {
+    kind: review.kind,
+    schemaVersion: review.schemaVersion,
+    apiVersion: review.apiVersion,
+    reviewedAt: review.reviewedAt,
+    status: review.status,
+    diagnostics: review.diagnostics,
+    expectedCurrentSelectionSha256: review.expectedCurrentSelectionSha256,
+    currentSelectionSha256: review.currentSelectionSha256,
+    activationDecisionRecordId: review.activationDecisionRecordId,
+    ...(review.activationDecisionRecordSha256
+      ? {
+          activationDecisionRecordSha256:
+            review.activationDecisionRecordSha256,
+        }
+      : {}),
+    ...(review.baselineSha256
+      ? { baselineSha256: review.baselineSha256 }
+      : {}),
+    ...(review.sourceAlignmentSha256
+      ? { sourceAlignmentSha256: review.sourceAlignmentSha256 }
+      : {}),
+    ...(review.currentSourceAlignmentSha256
+      ? { currentSourceAlignmentSha256: review.currentSourceAlignmentSha256 }
+      : {}),
+    driftAudit,
+    ...(checkpointRegistryQuorum ? { checkpointRegistryQuorum } : {}),
+  };
+  if (review.contentSha256 !== sha256(canonicalJson(content))) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation review hash mismatch",
+    );
+  }
+  return {
+    ...review,
+    driftAudit,
+    ...(checkpointRegistryQuorum ? { checkpointRegistryQuorum } : {}),
+  };
 }
 
 export function createReceiptTrustAnchorDirectorySubscriptionQuorum(
@@ -6196,6 +6509,27 @@ function validActivationSelectionDriftStatus(value: unknown): boolean {
     value === "directory_drift" ||
     value === "anchor_set_drift" ||
     value === "quorum_unavailable"
+  );
+}
+
+function validRotationReviewStatus(value: unknown): boolean {
+  return (
+    value === "eligible" ||
+    value === "already_active" ||
+    value === "blocked" ||
+    value === "stale_selection" ||
+    value === "missing_decision"
+  );
+}
+
+function validRotationProposalStatus(value: unknown): boolean {
+  return (
+    value === "proposed" ||
+    value === "blocked" ||
+    value === "stale_selection" ||
+    value === "missing_decision" ||
+    value === "already_active" ||
+    value === "missing_checkpoint_registry_baseline"
   );
 }
 

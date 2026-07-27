@@ -74,6 +74,7 @@ import {
   revokeReceiptTrustAnchor,
   reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   signReceiptTrustAnchorDirectoryQuorumActivationDecision,
+  signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   updateReceiptTrustAnchorDirectorySubscription,
   updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
@@ -167,6 +168,13 @@ export default function ReceiptTrustPanel({
     setBaselineActivationRotationProposal,
   ] =
     useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>();
+  const [
+    baselineActivationRotationProposalEnvelope,
+    setBaselineActivationRotationProposalEnvelope,
+  ] =
+    useState<
+      TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>
+    >();
   const [
     baselineActivationSelectionCheckpoint,
     setBaselineActivationSelectionCheckpoint,
@@ -285,6 +293,17 @@ export default function ReceiptTrustPanel({
     Boolean(latestApprovedActivationRecord) && !busyId;
   const canReviewActivationSelectionRotation =
     Boolean(latestApprovedActivationRecord) && !busyId;
+  const canSignActivationSelectionRotationProposal =
+    Boolean(latestApprovedActivationRecord) &&
+    baselineActivationRotationProposal?.status === "proposed" &&
+    Boolean(selectedAnchorId) &&
+    anchors.some(
+      (anchor) =>
+        anchor.id === selectedAnchorId &&
+        anchor.status === "trusted" &&
+        Boolean(anchor.signingSource),
+    ) &&
+    !busyId;
   const selectedTrustedAnchorKeyId = anchors.find(
     (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted",
   )?.keyId;
@@ -1062,6 +1081,7 @@ export default function ReceiptTrustPanel({
     setError(undefined);
     setBaselineActivationRotationReview(undefined);
     setBaselineActivationRotationProposal(undefined);
+    setBaselineActivationRotationProposalEnvelope(undefined);
     try {
       const review =
         await reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
@@ -1096,6 +1116,7 @@ export default function ReceiptTrustPanel({
     setBusyId("propose-activation-selection-rotation");
     setError(undefined);
     setBaselineActivationRotationProposal(undefined);
+    setBaselineActivationRotationProposalEnvelope(undefined);
     try {
       const proposal =
         await proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
@@ -1128,6 +1149,52 @@ export default function ReceiptTrustPanel({
       }
     } catch (proposalError) {
       setError(toErrorMessage(proposalError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function signActivationSelectionRotationProposal(): Promise<void> {
+    if (
+      !latestApprovedActivationRecord ||
+      !canSignActivationSelectionRotationProposal ||
+      baselineActivationRotationProposal?.status !== "proposed"
+    ) {
+      return;
+    }
+    setBusyId("sign-activation-selection-rotation-proposal");
+    setError(undefined);
+    setBaselineActivationRotationProposalEnvelope(undefined);
+    try {
+      const envelope =
+        await signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
+          {
+            threadId,
+            trustAnchorId: selectedAnchorId,
+            activationDecisionRecordId: latestApprovedActivationRecord.id,
+            expectedCurrentSelectionSha256:
+              baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+            ...(checkpointRegistryQuorumBaseline
+              ? {
+                  checkpointRegistryQuorumBaselineId:
+                    checkpointRegistryQuorumBaseline.id,
+                  expectedCheckpointRegistryQuorumBaselineSha256:
+                    checkpointRegistryQuorumBaseline.contentSha256,
+                }
+              : {}),
+            ...(checkpointSubscriptions.length > 0
+              ? { checkpointRegistryQuorumPolicy: {} }
+              : {}),
+          },
+        );
+      setBaselineActivationRotationProposalEnvelope(envelope);
+      setBaselineActivationRotationProposal(envelope.receipt);
+      downloadJson(
+        envelope,
+        `napier-signed-quorum-activation-selection-rotation-proposal-${envelope.contentSha256.slice(0, 12)}.json`,
+      );
+    } catch (signError) {
+      setError(toErrorMessage(signError));
     } finally {
       setBusyId(undefined);
     }
@@ -1244,9 +1311,17 @@ export default function ReceiptTrustPanel({
           activationDecisionRecordId: latestApprovedActivationRecord.id,
           expectedCurrentSelectionSha256:
             baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+          ...(baselineActivationRotationProposalEnvelope
+            ? {
+                rotationProposalEnvelope:
+                  baselineActivationRotationProposalEnvelope,
+              }
+            : {}),
         });
       setBaselineActivationSelectionState(result.selectionState);
       setBaselineActivationRotationReview(undefined);
+      setBaselineActivationRotationProposal(undefined);
+      setBaselineActivationRotationProposalEnvelope(undefined);
       try {
         const [driftAudit, checkpoint] = await Promise.all([
           getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit(),
@@ -1345,6 +1420,7 @@ export default function ReceiptTrustPanel({
     setBaselineActivationSelectionDriftAudit(undefined);
     setBaselineActivationRotationReview(undefined);
     setBaselineActivationRotationProposal(undefined);
+    setBaselineActivationRotationProposalEnvelope(undefined);
     setBaselineActivationSelectionCheckpoint(undefined);
     setBaselineActivationSelectionCheckpointVerification(undefined);
     setBaselineActivationSelectionCheckpointEnvelope(undefined);
@@ -2092,6 +2168,16 @@ export default function ReceiptTrustPanel({
               {busyId === "propose-activation-selection-rotation"
                 ? copy.lab.trust.proposingActivationSelectionRotation
                 : copy.lab.trust.proposeActivationSelectionRotation}
+            </button>
+            <button
+              type="button"
+              disabled={!canSignActivationSelectionRotationProposal}
+              onClick={() => void signActivationSelectionRotationProposal()}
+            >
+              <ShieldCheck size={10} aria-hidden="true" />
+              {busyId === "sign-activation-selection-rotation-proposal"
+                ? copy.lab.trust.signingActivationSelectionRotationProposal
+                : copy.lab.trust.signActivationSelectionRotationProposal}
             </button>
             <button
               type="button"
@@ -2849,6 +2935,39 @@ export default function ReceiptTrustPanel({
                 }
               >
                 {baselineActivationRotationProposal.currentCheckpointSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+            </output>
+          ) : null}
+          {baselineActivationRotationProposalEnvelope ? (
+            <output className="receipt-baseline-policy" aria-live="polite">
+              <ShieldCheck size={11} aria-hidden="true" />
+              <span>
+                <strong>
+                  {copy.lab.trust.signedActivationSelectionRotationProposal}
+                </strong>
+                <small>
+                  {baselineActivationRotationProposalEnvelope.receiptKind} ·{" "}
+                  {baselineActivationRotationProposalEnvelope.signature.keyId}
+                </small>
+              </span>
+              <code
+                title={baselineActivationRotationProposalEnvelope.contentSha256}
+              >
+                {baselineActivationRotationProposalEnvelope.contentSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={
+                  baselineActivationRotationProposalEnvelope.signature
+                    .receiptArtifactSha256
+                }
+              >
+                {baselineActivationRotationProposalEnvelope.signature.receiptArtifactSha256.slice(
                   0,
                   12,
                 )}

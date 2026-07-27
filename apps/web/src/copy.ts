@@ -289,6 +289,8 @@ export const copy = {
       reviewingActivationSelectionRotation: "Reviewing...",
       proposeActivationSelectionRotation: "Propose rotation",
       proposingActivationSelectionRotation: "Proposing...",
+      signActivationSelectionRotationProposal: "Sign proposal",
+      signingActivationSelectionRotationProposal: "Signing proposal...",
       exportActivationSelectionCheckpoint: "Export checkpoint",
       exportingActivationSelectionCheckpoint: "Exporting checkpoint...",
       signActivationSelectionCheckpoint: "Sign checkpoint",
@@ -334,6 +336,8 @@ export const copy = {
       activationSelectionDriftAudit: "Selection drift audit",
       activationSelectionRotationReview: "Rotation review",
       activationSelectionRotationProposal: "Rotation proposal",
+      signedActivationSelectionRotationProposal:
+        "Signed rotation proposal",
       activationSelectionCheckpoint: "Selection checkpoint",
       signedActivationSelectionCheckpoint: "Signed checkpoint",
       activationSelectionCheckpointEntries: "selection entries",

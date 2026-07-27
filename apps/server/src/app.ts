@@ -139,6 +139,7 @@ import type {
   RefreshReceiptTrustAnchorDirectorySubscriptionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   UpdateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRequest,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
@@ -347,6 +348,7 @@ import {
   RunEvaluationService,
   signTrustedReceipt,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
+  validateTrustedReceiptEnvelope,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifySignedExtensionPackageEnvelope,
@@ -2085,13 +2087,116 @@ export function createApp(services: NapierServices): Hono {
   );
 
   app.post(
-    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
     async (context) => {
       let input: unknown;
       try {
         input = await readLimitedJson(
           context.req.raw,
           MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation selection rotation proposal signing request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal signing request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation selection rotation proposal signing request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const proposal =
+          services.store.proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+            body.activationDecisionRecordId,
+            body.expectedCurrentSelectionSha256,
+            {
+              ...(body.checkpointRegistryQuorumBaselineId
+                ? {
+                    checkpointRegistryQuorumBaselineId:
+                      body.checkpointRegistryQuorumBaselineId,
+                  }
+                : {}),
+              ...(body.expectedCheckpointRegistryQuorumBaselineSha256
+                ? {
+                    expectedCheckpointRegistryQuorumBaselineSha256:
+                      body.expectedCheckpointRegistryQuorumBaselineSha256,
+                  }
+                : {}),
+              ...(body.checkpointRegistryQuorumPolicy
+                ? {
+                    checkpointRegistryQuorumPolicy:
+                      body.checkpointRegistryQuorumPolicy,
+                  }
+                : {}),
+            },
+          );
+        if (proposal.status !== "proposed") {
+          return jsonError(
+            context,
+            "Receipt trust anchor directory quorum activation selection rotation proposal is not eligible for signing",
+            409,
+          );
+        }
+        const envelope = signTrustedReceipt(
+          proposal,
+          services.store.getReceiptTrustAnchor(body.trustAnchorId),
+        );
+        await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
+          ...trustedReceiptEventPayload(envelope),
+          proposalSha256: proposal.contentSha256,
+          rotationReviewSha256: proposal.rotationReviewSha256,
+          activationDecisionRecordId: proposal.activationDecisionRecordId,
+          ...(proposal.activationDecisionRecordSha256
+            ? {
+                activationDecisionRecordSha256:
+                  proposal.activationDecisionRecordSha256,
+              }
+            : {}),
+          expectedCurrentSelectionSha256:
+            proposal.expectedCurrentSelectionSha256,
+          currentSelectionSha256: proposal.currentSelectionSha256,
+          ...(proposal.checkpointRegistryQuorumBaselineSha256
+            ? {
+                checkpointRegistryQuorumBaselineSha256:
+                  proposal.checkpointRegistryQuorumBaselineSha256,
+              }
+            : {}),
+          currentCheckpointSha256: proposal.currentCheckpointSha256,
+        });
+        setTrustedReceiptHeaders(
+          context,
+          envelope,
+          `napier-signed-quorum-activation-selection-rotation-proposal-${envelope.contentSha256.slice(0, 12)}.json`,
+        );
+        return context.json(envelope, 201);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
           "Receipt trust anchor directory quorum activation selection request",
         );
       } catch (error) {
@@ -2116,6 +2221,22 @@ export function createApp(services: NapierServices): Hono {
         );
       }
       try {
+        const selectionState =
+          services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+        const activeSelection = selectionState.selection;
+        const willRotateActiveSelection =
+          activeSelection !== undefined &&
+          activeSelection.activationDecisionRecordId !==
+            body.activationDecisionRecordId;
+        const proposalGate = willRotateActiveSelection
+          ? verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate(
+              services,
+              body,
+            )
+          : undefined;
+        if (proposalGate?.status === "rejected") {
+          return jsonError(context, proposalGate.reason, 409);
+        }
         const result =
           await services.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
             body.threadId,
@@ -2144,6 +2265,19 @@ export function createApp(services: NapierServices): Hono {
                 result.expectedCurrentSelectionSha256,
               ...(result.previousSelectionSha256
                 ? { previousSelectionSha256: result.previousSelectionSha256 }
+                : {}),
+              ...(proposalGate?.status === "accepted"
+                ? {
+                    rotationProposalEnvelopeSha256:
+                      proposalGate.envelope.contentSha256,
+                    rotationProposalSha256:
+                      proposalGate.proposal.contentSha256,
+                    rotationProposalReviewSha256:
+                      proposalGate.proposal.rotationReviewSha256,
+                    rotationProposalCheckpointRegistryQuorumBaselineSha256:
+                      proposalGate.proposal
+                        .checkpointRegistryQuorumBaselineSha256 ?? "",
+                  }
                 : {}),
               selectionStateSha256: result.selectionState.contentSha256,
               resultSha256: result.contentSha256,
@@ -12460,6 +12594,7 @@ function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
     "threadId",
     "activationDecisionRecordId",
     "expectedCurrentSelectionSha256",
+    "rotationProposalEnvelope",
   ]);
   const threadId = record?.["threadId"];
   const activationDecisionRecordId = record?.["activationDecisionRecordId"];
@@ -12480,6 +12615,12 @@ function parseApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest(
     threadId,
     activationDecisionRecordId,
     expectedCurrentSelectionSha256,
+    ...(record["rotationProposalEnvelope"] !== undefined
+      ? {
+          rotationProposalEnvelope:
+            record["rotationProposalEnvelope"] as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>,
+        }
+      : {}),
   };
 }
 
@@ -12579,6 +12720,281 @@ function parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
     ...(typeof expectedCheckpointRegistryQuorumBaselineSha256 === "string"
       ? { expectedCheckpointRegistryQuorumBaselineSha256 }
       : {}),
+  };
+}
+
+function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest(
+  input: unknown,
+):
+  | SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "threadId",
+    "trustAnchorId",
+    "activationDecisionRecordId",
+    "expectedCurrentSelectionSha256",
+    "checkpointRegistryQuorumPolicy",
+    "checkpointRegistryQuorumBaselineId",
+    "expectedCheckpointRegistryQuorumBaselineSha256",
+  ]);
+  const proposalRequest = record
+    ? parseProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest(
+        {
+          activationDecisionRecordId: record["activationDecisionRecordId"],
+          expectedCurrentSelectionSha256:
+            record["expectedCurrentSelectionSha256"],
+          ...(record["checkpointRegistryQuorumPolicy"] !== undefined
+            ? {
+                checkpointRegistryQuorumPolicy:
+                  record["checkpointRegistryQuorumPolicy"],
+              }
+            : {}),
+          ...(record["checkpointRegistryQuorumBaselineId"] !== undefined
+            ? {
+                checkpointRegistryQuorumBaselineId:
+                  record["checkpointRegistryQuorumBaselineId"],
+              }
+            : {}),
+          ...(record["expectedCheckpointRegistryQuorumBaselineSha256"] !==
+          undefined
+            ? {
+                expectedCheckpointRegistryQuorumBaselineSha256:
+                  record["expectedCheckpointRegistryQuorumBaselineSha256"],
+              }
+            : {}),
+        },
+      )
+    : undefined;
+  const threadId = record?.["threadId"];
+  const trustAnchorId = record?.["trustAnchorId"];
+  if (
+    !record ||
+    !proposalRequest ||
+    !validThreadId(threadId) ||
+    typeof trustAnchorId !== "string" ||
+    !/^trustkey_[a-f0-9]{20}$/.test(trustAnchorId)
+  ) {
+    return undefined;
+  }
+  return {
+    ...proposalRequest,
+    threadId,
+    trustAnchorId,
+  };
+}
+
+type RotationProposalGateResult =
+  | {
+      status: "accepted";
+      envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+      proposal: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+      verification: TrustedReceiptVerification;
+    }
+  | {
+      status: "rejected";
+      reason: string;
+    };
+
+function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalGate(
+  services: NapierServices,
+  request: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest,
+): RotationProposalGateResult {
+  if (request.rotationProposalEnvelope === undefined) {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection requires a signed fresh rotation proposal",
+    };
+  }
+  let envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+  try {
+    envelope = validateTrustedReceiptEnvelope(
+      request.rotationProposalEnvelope,
+    ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+  } catch {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal envelope is invalid",
+    };
+  }
+  const selectionState =
+    services.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionState();
+  const activeSelection = selectionState.selection;
+  if (!activeSelection) {
+    return {
+      status: "accepted",
+      envelope,
+      proposal: envelope.receipt,
+      verification: verifyTrustedReceiptEnvelope(
+        envelope,
+        services.store.listReceiptTrustAnchors(),
+      ),
+    };
+  }
+  const directoryVerification =
+    services.store.verifyReceiptTrustAnchorDirectory(
+      activeSelection.selectedDirectory,
+      {
+        expectedAnchorSetSha256: activeSelection.selectedAnchorSetSha256,
+      },
+    );
+  if (directoryVerification.status === "invalid") {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection active verifier directory is invalid",
+    };
+  }
+  const verification = verifyTrustedReceiptEnvelope(
+    envelope,
+    receiptTrustAnchorsFromDirectory(activeSelection.selectedDirectory),
+  );
+  if (verification.status !== "trusted") {
+    return {
+      status: "rejected",
+      reason:
+        "Receipt trust anchor directory quorum activation selection rotation proposal is not trusted",
+    };
+  }
+  const proposal = envelope.receipt;
+  const currentProposal =
+    services.store.proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
+      proposal.activationDecisionRecordId,
+      proposal.expectedCurrentSelectionSha256,
+      {
+        ...(proposal.checkpointRegistryQuorumBaselineId
+          ? {
+              checkpointRegistryQuorumBaselineId:
+                proposal.checkpointRegistryQuorumBaselineId,
+            }
+          : {}),
+        ...(proposal.expectedCheckpointRegistryQuorumBaselineSha256
+          ? {
+              expectedCheckpointRegistryQuorumBaselineSha256:
+                proposal.expectedCheckpointRegistryQuorumBaselineSha256,
+            }
+          : {}),
+        ...(proposal.rotationReview.checkpointRegistryQuorum
+          ? {
+              checkpointRegistryQuorumPolicy:
+                proposal.rotationReview.checkpointRegistryQuorum.policy,
+            }
+          : {}),
+      },
+    );
+  const staleDiagnostics: string[] = [];
+  const requireMatch = (condition: boolean, diagnostic: string): void => {
+    if (!condition) staleDiagnostics.push(diagnostic);
+  };
+  requireMatch(proposal.status === "proposed", "proposal_not_proposed");
+  requireMatch(
+    currentProposal.status === "proposed",
+    `current_proposal_${currentProposal.status}`,
+  );
+  if (currentProposal.status !== "proposed") {
+    staleDiagnostics.push(...currentProposal.diagnostics);
+  }
+  requireMatch(
+    proposal.activationDecisionRecordId === request.activationDecisionRecordId,
+    "request_activation_decision_mismatch",
+  );
+  requireMatch(
+    proposal.activationDecisionRecordId ===
+      currentProposal.activationDecisionRecordId,
+    "current_activation_decision_mismatch",
+  );
+  requireMatch(
+    proposal.expectedCurrentSelectionSha256 ===
+      request.expectedCurrentSelectionSha256,
+    "request_expected_selection_mismatch",
+  );
+  requireMatch(
+    proposal.expectedCurrentSelectionSha256 ===
+      currentProposal.expectedCurrentSelectionSha256,
+    "current_expected_selection_mismatch",
+  );
+  requireMatch(
+    proposal.currentSelectionSha256 === selectionState.currentSelectionSha256,
+    "active_selection_mismatch",
+  );
+  requireMatch(
+    proposal.currentSelectionSha256 === currentProposal.currentSelectionSha256,
+    "current_selection_mismatch",
+  );
+  requireMatch(
+    proposal.rotationReview.status === "eligible",
+    `rotation_review_${proposal.rotationReview.status}`,
+  );
+  requireMatch(
+    proposal.checkpointRegistryQuorumBaselineId ===
+      currentProposal.checkpointRegistryQuorumBaselineId,
+    "checkpoint_registry_quorum_baseline_id_mismatch",
+  );
+  requireMatch(
+    proposal.checkpointRegistryQuorumBaselineSha256 ===
+      currentProposal.checkpointRegistryQuorumBaselineSha256,
+    "checkpoint_registry_quorum_baseline_hash_mismatch",
+  );
+  requireMatch(
+    proposal.checkpointRegistryQuorumSha256 ===
+      currentProposal.checkpointRegistryQuorumSha256,
+    "checkpoint_registry_quorum_hash_mismatch",
+  );
+  requireMatch(
+    proposal.selectedCheckpointSha256 ===
+      currentProposal.selectedCheckpointSha256,
+    "selected_checkpoint_mismatch",
+  );
+  requireMatch(
+    proposal.selectedSelectionSetSha256 ===
+      currentProposal.selectedSelectionSetSha256,
+    "selected_selection_set_mismatch",
+  );
+  requireMatch(
+    (proposal.selectedSelectionChainTailSha256 ?? "") ===
+      (currentProposal.selectedSelectionChainTailSha256 ?? ""),
+    "selected_selection_chain_tail_mismatch",
+  );
+  requireMatch(
+    proposal.selectedSubscriptionSetSha256 ===
+      currentProposal.selectedSubscriptionSetSha256,
+    "selected_subscription_set_mismatch",
+  );
+  requireMatch(
+    proposal.selectedSourceOriginSetSha256 ===
+      currentProposal.selectedSourceOriginSetSha256,
+    "selected_source_origin_set_mismatch",
+  );
+  requireMatch(
+    proposal.selectedSignerSetSha256 === currentProposal.selectedSignerSetSha256,
+    "selected_signer_set_mismatch",
+  );
+  requireMatch(
+    proposal.currentCheckpointSha256 === currentProposal.currentCheckpointSha256,
+    "current_checkpoint_mismatch",
+  );
+  requireMatch(
+    proposal.currentSelectionSetSha256 ===
+      currentProposal.currentSelectionSetSha256,
+    "current_selection_set_mismatch",
+  );
+  requireMatch(
+    (proposal.currentSelectionChainTailSha256 ?? "") ===
+      (currentProposal.currentSelectionChainTailSha256 ?? ""),
+    "current_selection_chain_tail_mismatch",
+  );
+  if (staleDiagnostics.length > 0) {
+    return {
+      status: "rejected",
+      reason: `Receipt trust anchor directory quorum activation selection rotation proposal is stale: ${staleDiagnostics.join(", ")}`,
+    };
+  }
+  return {
+    status: "accepted",
+    envelope,
+    proposal,
+    verification,
   };
 }
 

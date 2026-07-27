@@ -1726,6 +1726,72 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-baseline-sha256",
       ),
     ).toBe(checkpointRegistryQuorumBaselineResult.baseline.contentSha256);
+    const signedRotationProposalResponse = await app.request(
+      `${rotationProposalPath}/sign`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          checkpointRegistryQuorumBaselineId:
+            checkpointRegistryQuorumBaselineResult.baseline.id,
+          expectedCheckpointRegistryQuorumBaselineSha256:
+            checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+          checkpointRegistryQuorumPolicy: {
+            expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+            minimumSources: 2,
+            minimumAgreementCount: 2,
+            minimumDistinctSourceOrigins: 2,
+          },
+        }),
+      },
+    );
+    expect(signedRotationProposalResponse.status).toBe(201);
+    const signedRotationProposal =
+      (await signedRotationProposalResponse.json()) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+    expect(signedRotationProposal).toEqual(
+      expect.objectContaining({
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
+        receipt: expect.objectContaining({
+          status: "proposed",
+          activationDecisionRecordId: secondActivationRecordId,
+          checkpointRegistryQuorumBaselineSha256:
+            checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+          currentCheckpointSha256: selectionCheckpoint.contentSha256,
+        }),
+        signature: expect.objectContaining({
+          keyId: signingAnchor.keyId,
+        }),
+      }),
+    );
+    const signedRotationProposalVerifyResponse = await app.request(
+      "/api/receipt-trust/verify",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ envelope: signedRotationProposal }),
+      },
+    );
+    expect(signedRotationProposalVerifyResponse.status).toBe(200);
+    expect(
+      (await signedRotationProposalVerifyResponse.json()) as TrustedReceiptVerification,
+    ).toEqual(
+      expect.objectContaining({
+        status: "trusted",
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
+        envelopeSha256: signedRotationProposal.contentSha256,
+        anchorDirectorySource: "active_selection",
+        keyId: signingAnchor.keyId,
+        signatureValid: true,
+        integrityValid: true,
+      }),
+    );
     const staleCheckpointBaselineProposalResponse = await app.request(
       rotationProposalPath,
       {
@@ -2086,9 +2152,9 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       },
     );
     expect(pauseCheckpointSubscriptionResponse.status).toBe(200);
-    expect(
-      (await pauseCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
-    ).toEqual(
+    const pausedCheckpointSubscription =
+      (await pauseCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    expect(pausedCheckpointSubscription).toEqual(
       expect.objectContaining({
         status: "paused",
         revision: 5,
@@ -2107,9 +2173,9 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       },
     );
     expect(pauseMirrorCheckpointSubscriptionResponse.status).toBe(200);
-    expect(
-      (await pauseMirrorCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
-    ).toEqual(
+    const pausedMirrorCheckpointSubscription =
+      (await pauseMirrorCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    expect(pausedMirrorCheckpointSubscription).toEqual(
       expect.objectContaining({
         status: "paused",
         revision: 2,
@@ -2306,6 +2372,196 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-sha256",
       ),
     ).toBe(appliedActivationSelection.selection.contentSha256);
+    const unsignedRotationApplyResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+        }),
+      },
+    );
+    expect(unsignedRotationApplyResponse.status).toBe(409);
+    expect(await unsignedRotationApplyResponse.json()).toEqual(
+      expect.objectContaining({
+        error: expect.stringContaining("signed fresh rotation proposal"),
+      }),
+    );
+    const staleSignedRotationApplyResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          rotationProposalEnvelope: signedRotationProposal,
+        }),
+      },
+    );
+    expect(staleSignedRotationApplyResponse.status).toBe(409);
+    expect(await staleSignedRotationApplyResponse.json()).toEqual(
+      expect.objectContaining({
+        error: expect.stringContaining("checkpoint_registry_quorum_not_agreed"),
+      }),
+    );
+    const resumeCheckpointSubscriptionResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${checkpointSubscription.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: pausedCheckpointSubscription.revision,
+          status: "active",
+        }),
+      },
+    );
+    expect(resumeCheckpointSubscriptionResponse.status).toBe(200);
+    const resumedCheckpointSubscription =
+      (await resumeCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    expect(resumedCheckpointSubscription).toEqual(
+      expect.objectContaining({
+        status: "active",
+        revision: 6,
+      }),
+    );
+    const resumeMirrorCheckpointSubscriptionResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${mirrorCheckpointSubscription.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: pausedMirrorCheckpointSubscription.revision,
+          status: "active",
+        }),
+      },
+    );
+    expect(resumeMirrorCheckpointSubscriptionResponse.status).toBe(200);
+    const resumedMirrorCheckpointSubscription =
+      (await resumeMirrorCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription;
+    expect(resumedMirrorCheckpointSubscription).toEqual(
+      expect.objectContaining({
+        status: "active",
+        revision: 3,
+      }),
+    );
+    const freshSignedRotationProposalResponse = await app.request(
+      `${rotationProposalPath}/sign`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          checkpointRegistryQuorumBaselineId:
+            checkpointRegistryQuorumBaselineResult.baseline.id,
+          expectedCheckpointRegistryQuorumBaselineSha256:
+            checkpointRegistryQuorumBaselineResult.baseline.contentSha256,
+          checkpointRegistryQuorumPolicy: {
+            expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+            minimumSources: 2,
+            minimumAgreementCount: 2,
+            minimumDistinctSourceOrigins: 2,
+          },
+        }),
+      },
+    );
+    expect(freshSignedRotationProposalResponse.status).toBe(201);
+    const freshSignedRotationProposal =
+      (await freshSignedRotationProposalResponse.json()) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
+    expect(freshSignedRotationProposal).toEqual(
+      expect.objectContaining({
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
+        receipt: expect.objectContaining({
+          status: "proposed",
+          activationDecisionRecordId: secondActivationRecordId,
+        }),
+      }),
+    );
+    const signedRotationApplyResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          activationDecisionRecordId: secondActivationRecordId,
+          expectedCurrentSelectionSha256:
+            appliedActivationSelection.selection.contentSha256,
+          rotationProposalEnvelope: freshSignedRotationProposal,
+        }),
+      },
+    );
+    expect(signedRotationApplyResponse.status).toBe(201);
+    const signedRotationApply =
+      (await signedRotationApplyResponse.json()) as ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult;
+    expect(signedRotationApply).toEqual(
+      expect.objectContaining({
+        applied: true,
+        expectedCurrentSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        previousSelectionSha256:
+          appliedActivationSelection.selection.contentSha256,
+        selection: expect.objectContaining({
+          activationDecisionRecordId: secondActivationRecordId,
+          selectedDirectorySha256: hostedDirectory.contentSha256,
+        }),
+      }),
+    );
+    const pauseResumedCheckpointSubscriptionResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${checkpointSubscription.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: resumedCheckpointSubscription.revision,
+          status: "paused",
+        }),
+      },
+    );
+    expect(pauseResumedCheckpointSubscriptionResponse.status).toBe(200);
+    expect(
+      (await pauseResumedCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+    ).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        revision: 7,
+      }),
+    );
+    const pauseResumedMirrorCheckpointSubscriptionResponse = await app.request(
+      `${selectionCheckpointSubscriptionPath}/${mirrorCheckpointSubscription.id}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          expectedRevision: resumedMirrorCheckpointSubscription.revision,
+          status: "paused",
+        }),
+      },
+    );
+    expect(pauseResumedMirrorCheckpointSubscriptionResponse.status).toBe(200);
+    expect(
+      (await pauseResumedMirrorCheckpointSubscriptionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+    ).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        revision: 4,
+      }),
+    );
     const importRoot = await mkdtemp(
       path.join(tmpdir(), "napier-trust-baseline-import-http-"),
     );
@@ -2575,7 +2831,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       events.filter((event) =>
         event.type.startsWith("receipt.trust_checkpoint_subscription."),
       ),
-    ).toHaveLength(7);
+    ).toHaveLength(11);
     expect(JSON.stringify(events)).not.toContain(sourceUrl);
     expect(JSON.stringify(events)).not.toContain(checkpointSourceUrl);
     expect(JSON.stringify(events)).not.toContain("private upstream detail");

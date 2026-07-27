@@ -64,6 +64,7 @@ import {
   refreshReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation,
   signReceiptTrustAnchorDirectoryQuorumActivationDecision,
+  signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   signReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   updateReceiptTrustAnchorDirectorySubscription,
   updateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
@@ -1184,6 +1185,23 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionCheckpointRegistryQuorumBaseline,
       contentSha256: "7".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+    const signedActivationSelectionRotationProposal = {
+      kind: "napier.trusted-receipt-envelope",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      receiptKind:
+        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
+      receipt: activationSelectionRotationProposal,
+      signature: {
+        algorithm: "Ed25519",
+        keyId: signedActivationSelectionCheckpoint.signature.keyId,
+        signedAt: "2026-07-27T00:00:13.000Z",
+        receiptArtifactSha256: "8".repeat(64),
+        statementSha256: "9".repeat(64),
+        value: "signature",
+      },
+      contentSha256: "a".repeat(64),
+    } satisfies TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -1360,6 +1378,16 @@ describe("receipt trust Web API wrappers", () => {
         response: activationSelectionRotationProposal,
       },
       {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
+        method: "POST",
+        body: {
+          ...activationSelectionRotationProposalRequest,
+          threadId: promotionBaseline.promotedByThreadId,
+          trustAnchorId: activationDecisionRequest.trustAnchorId,
+        },
+        response: signedActivationSelectionRotationProposal,
+      },
+      {
         path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
         method: "POST",
         body: activationSelectionRotationReviewRequest,
@@ -1526,6 +1554,13 @@ describe("receipt trust Web API wrappers", () => {
       ),
     ).resolves.toEqual(activationSelectionRotationProposal);
     await expect(
+      signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal({
+        ...activationSelectionRotationProposalRequest,
+        threadId: promotionBaseline.promotedByThreadId,
+        trustAnchorId: activationDecisionRequest.trustAnchorId,
+      }),
+    ).resolves.toEqual(signedActivationSelectionRotationProposal);
+    await expect(
       reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
         activationSelectionRotationReviewRequest,
       ),
@@ -1535,7 +1570,7 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionRequest,
       ),
     ).resolves.toEqual(activationSelectionResult);
-    expect(fetchMock).toHaveBeenCalledTimes(31);
+    expect(fetchMock).toHaveBeenCalledTimes(32);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

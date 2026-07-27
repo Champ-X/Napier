@@ -3558,6 +3558,7 @@ export type TrustedReceipt =
   | ReceiptTrustAnchorDirectoryMetadataReceipt
   | ReceiptTrustAnchorDirectoryQuorumPromotionReceipt
   | ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint
   | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
 
@@ -3568,6 +3569,7 @@ export type TrustedReceiptKind =
   | "receipt_trust_anchor_directory_metadata"
   | "receipt_trust_anchor_directory_quorum_promotion"
   | "receipt_trust_anchor_directory_quorum_activation_decision"
+  | "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal"
   | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint"
   | "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum";
 
@@ -4802,10 +4804,16 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
   contentSha256: string;
 }
 
+export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest extends ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest {
+  threadId: string;
+  trustAnchorId: string;
+}
+
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {
   threadId: string;
   activationDecisionRecordId: string;
   expectedCurrentSelectionSha256: string;
+  rotationProposalEnvelope?: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>;
 }
 
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult {

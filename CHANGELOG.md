@@ -443,6 +443,15 @@ All notable changes to Napier are recorded here.
   `stale_selection`, or `blocked` diagnostics without mutating state. The Web
   API and Receipt Trust Desk expose **Propose rotation** beside Review
   rotation.
+- Signed verifier rotation proposal receipts and apply gate. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign`
+  now signs only freshly recomputed `proposed` rotation proposals as trusted
+  receipt envelopes. Active verifier-set replacement through the activation
+  selection apply endpoint now requires that signed fresh proposal envelope,
+  verifies it against the current active selection directory, recomputes the
+  proposal, and rejects stale envelopes with mismatch diagnostics before any
+  trusted state mutation. The Receipt Trust Desk adds **Sign proposal** and
+  carries the signed envelope into Apply activation.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

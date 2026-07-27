@@ -1453,6 +1453,22 @@ otherwise it remains a diagnostic receipt such as
 or `blocked`. The Receipt Trust Desk adds **Propose rotation** beside Review
 rotation so operators can inspect proposal, review, checkpoint-baseline, and
 current-checkpoint hashes before applying a verifier-set change.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign`
+turns an eligible proposal into a trusted receipt envelope with kind
+`receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal`.
+The server recomputes the proposal at signing time and refuses to sign unless
+its status is still `proposed`; the Ledger event records only proposal, review,
+decision, baseline, selection, and checkpoint hashes. Once an active verifier
+selection exists, `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply`
+requires a signed fresh proposal envelope before replacing that selection.
+The apply gate verifies the envelope with the active selection directory,
+recomputes the current proposal, rejects stale proposals with diagnostic
+mismatch labels, and records hash-only proposal evidence on successful
+selection rotation. Reapplying the already active decision remains idempotent
+and does not require a rotation proposal because it does not mutate trusted
+state.
 `GET
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint`
 exports the applied verifier-set rotation chain as a compact checkpoint. Each

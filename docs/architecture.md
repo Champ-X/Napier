@@ -603,6 +603,19 @@ as `missing_checkpoint_registry_baseline`, `already_active`,
 is self-contained enough for external automation to inspect the rotation
 review, baseline envelope hashes, selected source/signer-set hashes, and
 current checkpoint hash before invoking any apply step.
+Eligible rotation proposals can be signed as first-class trusted receipts with
+kind
+`receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal`.
+The signing endpoint recomputes the proposal immediately before signing and
+refuses non-`proposed` receipts, while the active-selection apply endpoint uses
+the current active verifier directory to verify the signed envelope before any
+verifier-set replacement. The gate then recomputes the current proposal and
+compares request, selection, review, checkpoint-baseline, quorum, selected
+source/signer-set, and current checkpoint hashes. Stale envelopes are rejected
+with explicit mismatch diagnostics; successful rotations append only hash-only
+proposal evidence to the Work Ledger. Idempotent reapply of the already active
+decision remains outside the gate because it does not mutate the active
+verifier selection.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2564,9 +2577,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- signed proposal verification and an apply gate that requires a fresh
-  automated verifier rotation proposal receipt before mutating active
-  verifier-set selection.
+- hosted verifier rotation proposal discovery with expiry and operator policy
+  receipts for unattended trust maintenance.
 
 ### Layer 3: Extension fabric
 

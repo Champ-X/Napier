@@ -48,6 +48,7 @@ import type {
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+  SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
   SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest,
@@ -393,6 +394,18 @@ export function proposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotat
 ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function signReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
+  body: SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
+): Promise<TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal>> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
     {
       method: "POST",
       body: JSON.stringify(body),

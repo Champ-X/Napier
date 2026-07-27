@@ -22,6 +22,7 @@ import {
   type ReceiptTrustAnchorDirectoryMetadataVerification,
   type ReceiptTrustAnchorDirectoryVerification,
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   type SignReceiptTrustAnchorDirectoryMetadataRequest,
   type TrustedReceipt,
@@ -35,6 +36,7 @@ import { validateEvaluationSuiteGateReceipt } from "./evaluation-suites.js";
 import { createId, nowIso } from "./ids.js";
 import {
   validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum,
   validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
@@ -54,6 +56,7 @@ const TRUSTED_RECEIPT_KINDS: TrustedReceiptKind[] = [
   "receipt_trust_anchor_directory_metadata",
   "receipt_trust_anchor_directory_quorum_promotion",
   "receipt_trust_anchor_directory_quorum_activation_decision",
+  "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal",
   "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
   "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum",
 ];
@@ -1133,6 +1136,14 @@ function validateTrustedReceipt(value: unknown): TrustedReceipt {
   }
   if (
     value["kind"] ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal"
+  ) {
+    return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal(
+      value,
+    ) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal;
+  }
+  if (
+    value["kind"] ===
     "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint"
   ) {
     return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
@@ -1302,6 +1313,12 @@ function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
     "napier.receipt-trust-anchor-directory-quorum-activation-decision"
   ) {
     return "receipt_trust_anchor_directory_quorum_activation_decision";
+  }
+  if (
+    receipt.kind ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal"
+  ) {
+    return "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal";
   }
   if (
     receipt.kind ===

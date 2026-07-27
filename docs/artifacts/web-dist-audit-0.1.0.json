@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 42,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BggUZgIN.js",
-    "sizeBytes": 148611,
+    "path": "apps/web/dist/assets/index-CNCO6J8v.js",
+    "sizeBytes": 148801,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "b1afa0f596c052f8309ac9d2e6ba6eb254b45c3ca853194fab728629128a2b33"
+    "sha256": "aa2a7743cec39df7e86826e43e2ea7b491182d6c1c493d29c11f4a441f192014"
   },
-  "distContentSha256": "b1afa0f596c052f8309ac9d2e6ba6eb254b45c3ca853194fab728629128a2b33",
+  "distContentSha256": "aa2a7743cec39df7e86826e43e2ea7b491182d6c1c493d29c11f4a441f192014",
   "errors": []
 }
