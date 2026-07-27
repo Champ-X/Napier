@@ -1504,7 +1504,10 @@ discovery/envelope/proposal hash pins, reruns the signed-proposal preflight,
 and refuses to sign unless the proposal is still `accepted`. The trusted
 receipt binds subscription, source, policy, discovery, envelope, proposal,
 current preflight, activation-decision, and proposal-signer hashes without
-exposing the hosted URL.
+exposing the hosted URL. Callers may include `queueForApply` and `applyAfter`
+to store that approval envelope as a local-only pending apply on the
+subscription; the public subscription projection and content hash stay
+unchanged.
 `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply`
 uses that signed approval as the unattended apply gate. The server verifies the
@@ -1512,7 +1515,10 @@ approval envelope with the current active verifier directory, rechecks the
 subscription revision/content hash, confirms the approval still matches the
 last-good proposal, reruns the current proposal preflight, and only then
 CAS-applies the activation decision. Successful Ledger evidence includes
-approval, proposal, subscription, and current-preflight hashes only.
+approval, proposal, subscription, and current-preflight hashes only. The
+leased subscription worker also claims queued approval applies when
+`applyAfter` is due, reruns the same gate, and settles success or failure with
+hash-only events.
 `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight`
 runs that same signed-proposal gate without mutating state. The no-store

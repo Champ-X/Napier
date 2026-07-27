@@ -137,15 +137,42 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
   token: string;
 }
 
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyStatus =
+  | "pending"
+  | "applied"
+  | "rejected"
+  | "failed";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyState {
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyStatus;
+  queuedAt: string;
+  applyAfter: string;
+  approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+  approvalEnvelopeSha256: string;
+  approvalSha256: string;
+  claim?: ReceiptTrustAnchorDirectorySubscriptionClaimState;
+  claimTokenSha256?: string;
+  settledAt?: string;
+  resultSha256?: string;
+  failureSha256?: string;
+}
+
 export interface PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription extends ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
   sourceUrl: string;
   claim?: ReceiptTrustAnchorDirectorySubscriptionClaimState;
   claimTokenSha256?: string;
+  pendingApprovalApply?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyState;
 }
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim {
   subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
   sourceUrl: string;
+  token: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim {
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+  approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
   token: string;
 }
 
@@ -4401,6 +4428,9 @@ export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSele
   }
   const claim = validateOptionalClaim(value["claim"]);
   const claimTokenSha256 = value["claimTokenSha256"];
+  const pendingApprovalApply = validateOptionalRotationProposalApprovalApply(
+    value["pendingApprovalApply"],
+  );
   if (
     (claim === undefined) !== (claimTokenSha256 === undefined) ||
     (claimTokenSha256 !== undefined &&
@@ -4416,6 +4446,7 @@ export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSele
     sourceUrl: sourceUrl.href,
     ...(claim ? { claim } : {}),
     ...(typeof claimTokenSha256 === "string" ? { claimTokenSha256 } : {}),
+    ...(pendingApprovalApply ? { pendingApprovalApply } : {}),
   };
 }
 
@@ -4723,6 +4754,7 @@ export function stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
     sourceUrl: _sourceUrl,
     claim: _claim,
     claimTokenSha256: _claimTokenSha256,
+    pendingApprovalApply: _pendingApprovalApply,
     ...subscription
   } = input;
   return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
@@ -7293,6 +7325,7 @@ function rotationProposalSubscriptionContent(
     sourceUrl: _sourceUrl,
     claim: _claim,
     claimTokenSha256: _claimTokenSha256,
+    pendingApprovalApply: _pendingApprovalApply,
     ...content
   } = input as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription &
     Partial<PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription>;
@@ -7351,6 +7384,67 @@ function validateOptionalClaim(
     ownerId: value["ownerId"],
     acquiredAt: value["acquiredAt"],
     expiresAt: value["expiresAt"],
+  };
+}
+
+function validateOptionalRotationProposalApprovalApply(
+  value: unknown,
+):
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyState
+  | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal approval apply state is invalid",
+    );
+  }
+  const status = value["status"];
+  const envelope = validateTrustedReceiptEnvelope(
+    value["approvalEnvelope"],
+  ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+  const claim = validateOptionalClaim(value["claim"]);
+  const claimTokenSha256 = value["claimTokenSha256"];
+  if (
+    (status !== "pending" &&
+      status !== "applied" &&
+      status !== "rejected" &&
+      status !== "failed") ||
+    !validTimestamp(value["queuedAt"]) ||
+    !validTimestamp(value["applyAfter"]) ||
+    envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval" ||
+    value["approvalEnvelopeSha256"] !== envelope.contentSha256 ||
+    value["approvalSha256"] !== envelope.receipt.contentSha256 ||
+    (claim === undefined) !== (claimTokenSha256 === undefined) ||
+    (claimTokenSha256 !== undefined &&
+      (typeof claimTokenSha256 !== "string" ||
+        !SHA256_PATTERN.test(claimTokenSha256))) ||
+    !optionalTimestamp(value["settledAt"]) ||
+    !optionalSha256(value["resultSha256"]) ||
+    !optionalSha256(value["failureSha256"])
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal approval apply state is invalid",
+    );
+  }
+  return {
+    status,
+    queuedAt: value["queuedAt"],
+    applyAfter: value["applyAfter"],
+    approvalEnvelope: envelope,
+    approvalEnvelopeSha256: envelope.contentSha256,
+    approvalSha256: envelope.receipt.contentSha256,
+    ...(claim ? { claim } : {}),
+    ...(typeof claimTokenSha256 === "string" ? { claimTokenSha256 } : {}),
+    ...(typeof value["settledAt"] === "string"
+      ? { settledAt: value["settledAt"] }
+      : {}),
+    ...(typeof value["resultSha256"] === "string"
+      ? { resultSha256: value["resultSha256"] }
+      : {}),
+    ...(typeof value["failureSha256"] === "string"
+      ? { failureSha256: value["failureSha256"] }
+      : {}),
   };
 }
 

@@ -135,6 +135,7 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
@@ -344,6 +345,7 @@ import {
   revokeReceiptTrustAnchor as revokeReceiptTrustAnchorRecord,
   validateEvaluationQualificationBaseline,
   validateReceiptTrustAnchor,
+  validateTrustedReceiptEnvelope,
   verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceiptEnvelope,
 } from "./receipt-trust.js";
@@ -391,6 +393,7 @@ import {
   type PersistedReceiptTrustAnchorDirectorySubscription,
   type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
   type PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionClaim,
   type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim,
   type ReceiptTrustAnchorDirectorySubscriptionClaim,
@@ -654,6 +657,10 @@ export interface DueReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspar
 
 export interface DueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaims {
   claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim[];
+}
+
+export interface DueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaims {
+  claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim[];
 }
 
 export interface AutomaticRecoveryClaims {
@@ -2493,6 +2500,200 @@ export class LocalStore {
       ] = settled.persisted;
       await this.persistState();
       return settled.result;
+    });
+  }
+
+  async queueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApply(
+    subscriptionId: string,
+    threadId: string,
+    expectedRevision: number,
+    expectedSubscriptionSha256: string,
+    approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>,
+    applyAfter = new Date().toISOString(),
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription> {
+    this.assertInitialized();
+    this.getThread(threadId);
+    return this.stateQueue.run(async () => {
+      const subscription =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      if (!subscription) {
+        throw new Error(
+          `Receipt trust anchor directory quorum activation selection rotation proposal subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (subscription.auditThreadId !== threadId) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply audit thread changed",
+        );
+      }
+      if (subscription.revision !== expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply revision changed",
+        );
+      }
+      if (subscription.contentSha256 !== expectedSubscriptionSha256) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply precondition failed",
+        );
+      }
+      if (!Number.isFinite(Date.parse(applyAfter))) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply time is invalid",
+        );
+      }
+      const envelope = validateTrustedReceiptEnvelope(
+        approvalEnvelope,
+      ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+      if (
+        envelope.receiptKind !==
+        "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval receipt kind is invalid",
+        );
+      }
+      subscription.pendingApprovalApply = {
+        status: "pending",
+        queuedAt: new Date().toISOString(),
+        applyAfter,
+        approvalEnvelope: envelope,
+        approvalEnvelopeSha256: envelope.contentSha256,
+        approvalSha256: envelope.receipt.contentSha256,
+      };
+      await this.persistState();
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+        subscription,
+      );
+    });
+  }
+
+  async claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplies(
+    ownerId: string,
+    options: {
+      now?: Date;
+      leaseMs?: number;
+      limit?: number;
+    } = {},
+  ): Promise<DueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaims> {
+    this.assertInitialized();
+    const owner = normalizeLeaseOwner(ownerId);
+    const now = options.now ?? new Date();
+    if (!Number.isFinite(now.getTime())) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim time is invalid",
+      );
+    }
+    const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
+    const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
+    return this.stateQueue.run(async () => {
+      const claims: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim[] =
+        [];
+      const due =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions
+          .filter((subscription) => {
+            const pending = subscription.pendingApprovalApply;
+            return (
+              subscription.status === "active" &&
+              pending?.status === "pending" &&
+              Date.parse(pending.applyAfter) <= now.getTime()
+            );
+          })
+          .sort((left, right) =>
+            (left.pendingApprovalApply?.applyAfter ?? "").localeCompare(
+              right.pendingApprovalApply?.applyAfter ?? "",
+            ),
+          );
+      for (const subscription of due) {
+        if (claims.length >= limit) break;
+        const pending = subscription.pendingApprovalApply;
+        if (!pending) continue;
+        if (
+          pending.claim &&
+          Date.parse(pending.claim.expiresAt) > now.getTime()
+        ) {
+          continue;
+        }
+        const token = createLeaseToken();
+        pending.claim = {
+          ownerId: owner,
+          acquiredAt: now.toISOString(),
+          expiresAt: new Date(now.getTime() + leaseMs).toISOString(),
+        };
+        pending.claimTokenSha256 = sha256(token);
+        claims.push({
+          subscription:
+            stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+              subscription,
+            ),
+          approvalEnvelope: pending.approvalEnvelope,
+          token,
+        });
+      }
+      if (claims.length > 0) await this.persistState();
+      return { claims };
+    });
+  }
+
+  async settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim(
+    subscriptionId: string,
+    token: string,
+    outcome: { resultSha256: string } | { failureSha256: string },
+  ): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      const subscription =
+        this.state.receiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptions.find(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      if (!subscription?.pendingApprovalApply) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim is not active",
+        );
+      }
+      const pending = subscription.pendingApprovalApply;
+      assertLeaseToken(pending.claimTokenSha256, token);
+      if (!pending.claim) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim is not active",
+        );
+      }
+      if (Date.parse(pending.claim.expiresAt) <= Date.now()) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply claim expired",
+        );
+      }
+      if (
+        "resultSha256" in outcome &&
+        !/^[a-f0-9]{64}$/.test(outcome.resultSha256)
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply result hash is invalid",
+        );
+      }
+      if (
+        "failureSha256" in outcome &&
+        !/^[a-f0-9]{64}$/.test(outcome.failureSha256)
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation selection rotation proposal approval apply failure hash is invalid",
+        );
+      }
+      subscription.pendingApprovalApply = {
+        ...pending,
+        status: "resultSha256" in outcome ? "applied" : "failed",
+        settledAt: new Date().toISOString(),
+        ...("resultSha256" in outcome
+          ? { resultSha256: outcome.resultSha256 }
+          : { failureSha256: outcome.failureSha256 }),
+      };
+      delete subscription.pendingApprovalApply.claim;
+      delete subscription.pendingApprovalApply.claimTokenSha256;
+      await this.persistState();
+      return stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionSecrets(
+        subscription,
+      );
     });
   }
 

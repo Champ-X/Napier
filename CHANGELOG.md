@@ -491,6 +491,12 @@ All notable changes to Napier are recorded here.
   the current proposal preflight, and only then applies the activation decision.
   Successful apply events carry approval/proposal/subscription/current-preflight
   hashes only.
+- Unattended approval-gated rotation apply scheduling. Approval signing accepts
+  `queueForApply` plus optional `applyAfter`, stores the approval envelope as
+  local-only pending state on the rotation proposal subscription, keeps the
+  public subscription hash stable, and lets the leased background worker claim
+  due approvals, rerun the approval apply gate, CAS-apply the activation
+  decision, and settle success or failure with hash-only events.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

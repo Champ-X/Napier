@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import type {
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   JsonValue,
+  ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
@@ -28,7 +29,10 @@ import {
   ReceiptTrustAnchorDirectoryDiscoveryService,
   type ReceiptTrustAnchorDirectoryHostedJsonSource,
 } from "./receipt-trust-directory-discovery.js";
-import { createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery } from "./receipt-trust-rotation-proposals.js";
+import {
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate,
+} from "./receipt-trust-rotation-proposals.js";
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
 const DEFAULT_CLAIM_LEASE_MS = 30_000;
@@ -122,17 +126,29 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
           leaseMs: this.claimLeaseMs,
         },
       );
+    const { claims: approvalApplyClaims } =
+      await this.store.claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplies(
+        this.workerId,
+        {
+          now,
+          leaseMs: this.claimLeaseMs,
+        },
+      );
     await Promise.all([
       ...directoryClaims.map((claim) => this.refreshClaim(claim)),
       ...checkpointClaims.map((claim) => this.refreshCheckpointClaim(claim)),
       ...rotationProposalClaims.map((claim) =>
         this.refreshRotationProposalClaim(claim),
       ),
+      ...approvalApplyClaims.map((claim) =>
+        this.applyRotationProposalApprovalClaim(claim),
+      ),
     ]);
     return (
       directoryClaims.length +
       checkpointClaims.length +
-      rotationProposalClaims.length
+      rotationProposalClaims.length +
+      approvalApplyClaims.length
     );
   }
 
@@ -303,6 +319,68 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
     return result;
   }
 
+  private async applyRotationProposalApprovalClaim(
+    claim: Awaited<
+      ReturnType<
+        LocalStore["claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplies"]
+      >
+    >["claims"][number],
+  ): Promise<void> {
+    let result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult;
+    try {
+      const subscription =
+        this.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          claim.subscription.id,
+        );
+      const approvalGate =
+        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate(
+          this.store,
+          subscription,
+          {
+            threadId: subscription.auditThreadId,
+            expectedSubscriptionRevision: subscription.revision,
+            expectedSubscriptionSha256: subscription.contentSha256,
+            approvalEnvelope: claim.approvalEnvelope,
+          },
+        );
+      if (approvalGate.status === "rejected") {
+        throw new Error(approvalGate.reason);
+      }
+      result =
+        await this.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+          subscription.auditThreadId,
+          approvalGate.proposal.activationDecisionRecordId,
+          approvalGate.proposal.expectedCurrentSelectionSha256,
+        );
+      await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim(
+        subscription.id,
+        claim.token,
+        { resultSha256: result.contentSha256 },
+      );
+      await this.appendRotationProposalApprovalApplyEvent(
+        result,
+        approvalGate.approvalEnvelope.contentSha256,
+        approvalGate.approval.contentSha256,
+        approvalGate.proposal.contentSha256,
+        approvalGate.preflight.contentSha256,
+        subscription,
+      );
+    } catch (error) {
+      const failureSha256 = hashRefreshFailure(error);
+      await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim(
+        claim.subscription.id,
+        claim.token,
+        { failureSha256 },
+      );
+      await this.appendRotationProposalApprovalApplyFailureEvent(
+        claim.subscription,
+        claim.approvalEnvelope.contentSha256,
+        claim.approvalEnvelope.receipt.contentSha256,
+        failureSha256,
+      );
+    }
+  }
+
   private async appendRefreshEvent(
     result: ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ): Promise<void> {
@@ -408,6 +486,72 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
       category: "evaluation",
       visibility: "user",
       payload,
+    });
+  }
+
+  private async appendRotationProposalApprovalApplyEvent(
+    result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+    approvalEnvelopeSha256: string,
+    approvalSha256: string,
+    proposalSha256: string,
+    preflightSha256: string,
+    subscription: ReturnType<
+      LocalStore["getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription"]
+    >,
+  ): Promise<void> {
+    const payload: Record<string, JsonValue> = {
+      subscriptionId: subscription.id,
+      subscriptionRevision: subscription.revision,
+      subscriptionSha256: subscription.contentSha256,
+      sourceUrlSha256: subscription.sourceUrlSha256,
+      sourceOriginSha256: subscription.sourceOriginSha256,
+      approvalEnvelopeSha256,
+      approvalSha256,
+      proposalSha256,
+      preflightSha256,
+      resultSha256: result.contentSha256,
+      applied: result.applied,
+      selectionSha256: result.selection.contentSha256,
+      selectionStateSha256: result.selectionState.contentSha256,
+      activationDecisionRecordId: result.selection.activationDecisionRecordId,
+      ...(result.previousSelectionSha256
+        ? { previousSelectionSha256: result.previousSelectionSha256 }
+        : {}),
+    };
+    await this.store.appendEvent({
+      threadId: subscription.auditThreadId,
+      runId: createId("runctl"),
+      type: "receipt.trust_rotation_proposal_approval_apply.applied",
+      category: "evaluation",
+      visibility: "user",
+      payload,
+    });
+  }
+
+  private async appendRotationProposalApprovalApplyFailureEvent(
+    subscription: ReturnType<
+      LocalStore["getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription"]
+    >,
+    approvalEnvelopeSha256: string,
+    approvalSha256: string,
+    failureSha256: string,
+  ): Promise<void> {
+    await this.store.appendEvent({
+      threadId: subscription.auditThreadId,
+      runId: createId("runctl"),
+      type: "receipt.trust_rotation_proposal_approval_apply.failed",
+      category: "evaluation",
+      visibility: "user",
+      payload: {
+        subscriptionId: subscription.id,
+        subscriptionRevision: subscription.revision,
+        subscriptionSha256: subscription.contentSha256,
+        sourceUrlSha256: subscription.sourceUrlSha256,
+        sourceOriginSha256: subscription.sourceOriginSha256,
+        approvalEnvelopeSha256,
+        approvalSha256,
+        failureSha256,
+      },
     });
   }
 }

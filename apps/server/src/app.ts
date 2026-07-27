@@ -2463,6 +2463,19 @@ export function createApp(services: NapierServices): Hono {
           approval,
           services.store.getReceiptTrustAnchor(body.trustAnchorId),
         );
+        const approvalApplyAfter = body.queueForApply
+          ? (body.applyAfter ?? new Date().toISOString())
+          : undefined;
+        const queuedSubscription = body.queueForApply
+          ? await services.store.queueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApply(
+              approval.subscriptionId,
+              body.threadId,
+              approval.subscriptionRevision,
+              approval.subscriptionSha256,
+              envelope,
+              approvalApplyAfter,
+            )
+          : undefined;
         await appendReceiptTrustEvent(services, body.threadId, "receipt.signed", {
           ...trustedReceiptEventPayload(envelope),
           subscriptionId: approval.subscriptionId,
@@ -2485,7 +2498,32 @@ export function createApp(services: NapierServices): Hono {
                   approval.checkpointRegistryQuorumBaselineSha256,
               }
             : {}),
+          ...(queuedSubscription
+            ? {
+                queuedApprovalApply: true,
+                approvalApplyAfter: approvalApplyAfter ?? "",
+              }
+            : {}),
         });
+        if (queuedSubscription) {
+          await appendReceiptTrustEvent(
+            services,
+            body.threadId,
+            "receipt.trust_rotation_proposal_approval_apply.queued",
+            {
+              subscriptionId: queuedSubscription.id,
+              subscriptionRevision: queuedSubscription.revision,
+              subscriptionSha256: queuedSubscription.contentSha256,
+              sourceUrlSha256: queuedSubscription.sourceUrlSha256,
+              sourceOriginSha256: queuedSubscription.sourceOriginSha256,
+              approvalEnvelopeSha256: envelope.contentSha256,
+              approvalSha256: approval.contentSha256,
+              proposalSha256: approval.proposalSha256,
+              approvalPreflightSha256: approval.approvalPreflightSha256,
+              applyAfter: approvalApplyAfter ?? "",
+            },
+          );
+        }
         setTrustedReceiptHeaders(
           context,
           envelope,
@@ -13367,6 +13405,8 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
     "expectedEnvelopeSha256",
     "expectedProposalSha256",
     "expiresAt",
+    "queueForApply",
+    "applyAfter",
   ]);
   const threadId = record?.["threadId"];
   const trustAnchorId = record?.["trustAnchorId"];
@@ -13377,6 +13417,8 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
   const expectedEnvelopeSha256 = record?.["expectedEnvelopeSha256"];
   const expectedProposalSha256 = record?.["expectedProposalSha256"];
   const expiresAt = record?.["expiresAt"];
+  const queueForApply = record?.["queueForApply"];
+  const applyAfter = record?.["applyAfter"];
   if (
     !record ||
     !validThreadId(threadId) ||
@@ -13396,7 +13438,12 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
       (typeof expectedProposalSha256 !== "string" ||
         !isSha256Hex(expectedProposalSha256))) ||
     (expiresAt !== undefined &&
-      (typeof expiresAt !== "string" || !Number.isFinite(Date.parse(expiresAt))))
+      (typeof expiresAt !== "string" ||
+        !Number.isFinite(Date.parse(expiresAt)))) ||
+    (queueForApply !== undefined && typeof queueForApply !== "boolean") ||
+    (applyAfter !== undefined &&
+      (typeof applyAfter !== "string" ||
+        !Number.isFinite(Date.parse(applyAfter))))
   ) {
     return undefined;
   }
@@ -13415,6 +13462,8 @@ function parseSignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPr
       ? { expectedProposalSha256 }
       : {}),
     ...(typeof expiresAt === "string" ? { expiresAt } : {}),
+    ...(typeof queueForApply === "boolean" ? { queueForApply } : {}),
+    ...(typeof applyAfter === "string" ? { applyAfter } : {}),
   };
 }
 

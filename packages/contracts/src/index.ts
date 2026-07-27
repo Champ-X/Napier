@@ -5011,6 +5011,8 @@ export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
   expectedEnvelopeSha256?: string;
   expectedProposalSha256?: string;
   expiresAt?: string;
+  queueForApply?: boolean;
+  applyAfter?: string;
 }
 
 export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalRequest {

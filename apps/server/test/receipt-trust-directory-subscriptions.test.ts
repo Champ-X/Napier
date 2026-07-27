@@ -3116,6 +3116,8 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         }),
       }),
     );
+    const approvalApplyAfterMs = Date.now() + 1_000;
+    const approvalApplyAfter = new Date(approvalApplyAfterMs).toISOString();
     const freshRotationApprovalResponse = await app.request(
       `${rotationProposalSubscriptionPath}/${freshRotationProposalSubscription.id}/approval/sign`,
       {
@@ -3131,6 +3133,8 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
           expectedEnvelopeSha256: freshSignedRotationProposal.contentSha256,
           expectedProposalSha256:
             freshSignedRotationProposal.receipt.contentSha256,
+          queueForApply: true,
+          applyAfter: approvalApplyAfter,
         }),
       },
     );
@@ -3149,42 +3153,49 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         }),
       }),
     );
-    const signedRotationApplyResponse = await app.request(
-      `${rotationProposalSubscriptionPath}/${freshRotationProposalSubscription.id}/approval/apply`,
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          threadId: thread.id,
-          expectedSubscriptionRevision:
-            freshRotationProposalSubscription.revision,
-          expectedSubscriptionSha256:
-            freshRotationProposalSubscription.contentSha256,
-          approvalEnvelope: freshRotationApprovalEnvelope,
-        }),
-      },
+    expect(
+      await services.store.claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplies(
+        "test-worker",
+        {
+          now: new Date(approvalApplyAfterMs - 1),
+        },
+      ),
+    ).toEqual({ claims: [] });
+    const preQueuedApplySelectionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
     );
-    expect(signedRotationApplyResponse.status).toBe(201);
-    const signedRotationApply =
-      (await signedRotationApplyResponse.json()) as ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult;
-    expect(signedRotationApply).toEqual(
+    expect(preQueuedApplySelectionResponse.status).toBe(200);
+    expect(
+      (await preQueuedApplySelectionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
+    ).toEqual(
       expect.objectContaining({
-        applied: true,
-        expectedCurrentSelectionSha256:
-          appliedActivationSelection.selection.contentSha256,
-        previousSelectionSha256:
-          appliedActivationSelection.selection.contentSha256,
+        hasSelection: true,
+        selection: expect.objectContaining({
+          activationDecisionRecordId: activationRecord.id,
+          selectedDirectorySha256: hostedDirectory.contentSha256,
+        }),
+      }),
+    );
+    const signedRotationApplyCount =
+      await services.receiptTrustDirectorySubscriptions.refreshDue(
+        new Date(approvalApplyAfterMs + 1),
+      );
+    expect(signedRotationApplyCount).toBe(1);
+    const postQueuedApplySelectionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
+    );
+    expect(postQueuedApplySelectionResponse.status).toBe(200);
+    expect(
+      (await postQueuedApplySelectionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
+    ).toEqual(
+      expect.objectContaining({
+        hasSelection: true,
         selection: expect.objectContaining({
           activationDecisionRecordId: secondActivationRecordId,
           selectedDirectorySha256: hostedDirectory.contentSha256,
         }),
       }),
     );
-    expect(
-      signedRotationApplyResponse.headers.get(
-        "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-proposal-approval-envelope-sha256",
-      ),
-    ).toBe(freshRotationApprovalEnvelope.contentSha256);
     const pauseFreshRotationProposalSubscriptionResponse = await app.request(
       `${rotationProposalSubscriptionPath}/${freshRotationProposalSubscription.id}`,
       {
@@ -3568,6 +3579,11 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         ),
       ),
     ).toHaveLength(9);
+    expect(
+      events.filter((event) =>
+        event.type.startsWith("receipt.trust_rotation_proposal_approval_apply."),
+      ),
+    ).toHaveLength(2);
     expect(JSON.stringify(events)).not.toContain(sourceUrl);
     expect(JSON.stringify(events)).not.toContain(checkpointSourceUrl);
     expect(JSON.stringify(events)).not.toContain(rotationProposalSourceUrl);
