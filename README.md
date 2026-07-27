@@ -1700,6 +1700,7 @@ npm test
 npm run build
 npm run check
 npm run check:management-openapi
+npm run check:management-openapi-compatibility
 npm run check:package-lock
 npm run check:package-lock-receipt
 npm run check:release-artifacts
@@ -1714,6 +1715,7 @@ npm run verify:release-artifacts
 npm run verify:runtime-environment-receipt
 npm run verify:web-dist-receipt
 npm run write:management-openapi
+npm run write:management-openapi-compatibility
 npm run write:package-lock-receipt
 npm run write:release-artifacts
 npm run write:runtime-environment-receipt
@@ -1724,8 +1726,8 @@ npm run write:web-dist-receipt
 `package.json#engines.node` and required `process.versions` components, verifies
 the stored runtime receipt, audits `package-lock.json` against the root package
 and every workspace package, verifies the generated management-plane OpenAPI
-route artifact, then builds every workspace, verifies the production Web dist
-against a generated
+route artifact, verifies the management OpenAPI compatibility fixture, then
+builds every workspace, verifies the production Web dist against a generated
 `docs/artifacts/web-dist-0.1.0.sha256`, enforces the `150 KiB` uncompressed
 main-entry budget, verifies the checked-in Web dist receipt, and then runs all
 tests. The runtime gate checks the observed Node version, platform, arch, and
@@ -1743,19 +1745,27 @@ intentional dependency changes. `npm run write:management-openapi` scans
 `docs/artifacts/management-openapi-0.1.0.json`, a stable OpenAPI 3.1 route
 catalog with source and route-set SHA-256 evidence; `npm run
 check:management-openapi` fails when that artifact no longer matches the
-current management API routes. After a Web build changes chunk names or
-hashes, run `npm run update:web-dist-manifest` to write the canonical manifest;
+current management API routes. `npm run
+write:management-openapi-compatibility` writes
+`docs/artifacts/management-openapi-compatibility-0.1.0.json`, a published
+operation baseline derived from that OpenAPI artifact; `npm run
+check:management-openapi-compatibility` allows additive routes but rejects
+removed operations or drift in operation ids, path parameters, JSON request-body
+presence, tags, or response status sets. After a Web build changes chunk names
+or hashes, run `npm run update:web-dist-manifest` to write the canonical manifest;
 `npm run check:web-dist-manifest` is the check-only guard that fails when the
 checked-in manifest is stale. `npm run write:release-artifacts` writes a
 top-level `napier.release-artifacts-audit` receipt that binds the package-lock
-receipt, runtime-environment receipt, management OpenAPI artifact, Web dist
-receipt, and Web dist manifest by SHA-256; `npm run check:release-artifacts` /
+receipt, runtime-environment receipt, management OpenAPI artifact, management
+OpenAPI compatibility fixture, Web dist receipt, and Web dist manifest by
+SHA-256; `npm run check:release-artifacts` /
 `npm run verify:release-artifacts` verify that aggregate receipt against the
 current component receipts. `npm test` starts with root-level release-gate contract
 tests before running workspace suites, so package-lock drift, runtime version
 drift, missing runtime components, OpenAPI route drift, manifest drift, extra
-dist files, malformed manifests, stale receipts, aggregate artifact drift, and
-entry-budget regressions are covered without mutating the real build output.
+dist files, malformed manifests, stale receipts, compatibility regressions,
+aggregate artifact drift, and entry-budget regressions are covered without
+mutating the real build output.
 `npm run check:web-dist -- --json` emits a `napier.web-dist-audit` receipt with
 relative paths, file counts, main-entry budget status, the manifest SHA-256,
 the canonical dist-content SHA-256, and any errors for CI capture. Trace, Plan,

@@ -13,8 +13,9 @@
   "scripts": {
     "build": "npm run build:core && npm run build -w @napier/server && npm run build -w @napier/web",
     "build:core": "npm run build -w @napier/contracts && npm run build -w @napier/runtime",
-    "check": "npm run check:runtime-environment && npm run check:runtime-environment-receipt && npm run check:package-lock && npm run check:package-lock-receipt && npm run check:management-openapi && npm run build && npm run check:web-dist-manifest && npm run check:web-dist && npm run check:web-dist-receipt && npm run check:release-artifacts && npm test",
+    "check": "npm run check:runtime-environment && npm run check:runtime-environment-receipt && npm run check:package-lock && npm run check:package-lock-receipt && npm run check:management-openapi && npm run check:management-openapi-compatibility && npm run build && npm run check:web-dist-manifest && npm run check:web-dist && npm run check:web-dist-receipt && npm run check:release-artifacts && npm test",
     "check:management-openapi": "node scripts/generate-management-openapi.mjs --check",
+    "check:management-openapi-compatibility": "node scripts/check-management-openapi-compatibility.mjs --verify-fixture-path docs/artifacts/management-openapi-compatibility-0.1.0.json",
     "check:package-lock": "node scripts/check-package-lock.mjs",
     "check:package-lock-receipt": "node scripts/check-package-lock.mjs --verify-receipt-path docs/artifacts/package-lock-audit-0.1.0.json",
     "check:release-artifacts": "node scripts/check-release-artifacts.mjs --verify-receipt-path docs/artifacts/release-artifacts-audit-0.1.0.json",
@@ -34,6 +35,7 @@
     "verify:runtime-environment-receipt": "npm run check:runtime-environment-receipt",
     "verify:web-dist-receipt": "npm run check:web-dist-receipt",
     "write:management-openapi": "node scripts/generate-management-openapi.mjs",
+    "write:management-openapi-compatibility": "node scripts/check-management-openapi-compatibility.mjs --fixture-path docs/artifacts/management-openapi-compatibility-0.1.0.json",
     "write:package-lock-receipt": "node scripts/check-package-lock.mjs --receipt-path docs/artifacts/package-lock-audit-0.1.0.json",
     "write:release-artifacts": "node scripts/check-release-artifacts.mjs --receipt-path docs/artifacts/release-artifacts-audit-0.1.0.json",
     "write:runtime-environment-receipt": "node scripts/check-runtime-environment.mjs --receipt-path docs/artifacts/runtime-environment-audit-0.1.0.json",

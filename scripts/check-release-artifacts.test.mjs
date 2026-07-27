@@ -44,6 +44,7 @@ describe("release artifacts audit", () => {
       "web-dist-audit",
       "web-dist-manifest",
       "management-openapi",
+      "management-openapi-compatibility",
     ]);
     expect(createReleaseArtifactsReceipt(result)).toMatchObject({
       type: "napier.release-artifacts-audit",
@@ -191,6 +192,7 @@ async function createFixture() {
   await createPackageLockFixture(root);
   await createWebDistFixture(root);
   await createManagementOpenApiFixture(root);
+  await createManagementOpenApiCompatibilityFixture(root);
   await execFile(process.execPath, [
     packageLockScriptPath,
     "--repo-root",
@@ -312,6 +314,29 @@ async function createManagementOpenApiFixture(root) {
       paths: {},
       "x-napier-artifact-kind": "management-openapi",
       "x-napier-route-count": 0,
+    },
+  );
+}
+
+async function createManagementOpenApiCompatibilityFixture(root) {
+  await mkdir(path.join(root, "docs/artifacts"), { recursive: true });
+  await writeJson(
+    path.join(
+      root,
+      "docs/artifacts/management-openapi-compatibility-0.1.0.json",
+    ),
+    {
+      type: "napier.management-openapi-compatibility-fixture",
+      schemaVersion: 1,
+      openapi: {
+        path: "docs/artifacts/management-openapi-0.1.0.json",
+        sha256: "f".repeat(64),
+        routeCount: 0,
+        routeSetSha256: "f".repeat(64),
+      },
+      operationCount: 0,
+      operationSetSha256: sha256(Buffer.from("[]", "utf8")),
+      operations: [],
     },
   );
 }

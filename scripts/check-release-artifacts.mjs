@@ -17,6 +17,8 @@ const defaultWebDistReceiptPath = "docs/artifacts/web-dist-audit-0.1.0.json";
 const defaultWebDistManifestPath = "docs/artifacts/web-dist-0.1.0.sha256";
 const defaultManagementOpenApiPath =
   "docs/artifacts/management-openapi-0.1.0.json";
+const defaultManagementOpenApiCompatibilityPath =
+  "docs/artifacts/management-openapi-compatibility-0.1.0.json";
 
 export async function auditReleaseArtifacts(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
@@ -32,6 +34,9 @@ export async function auditReleaseArtifacts(options = {}) {
     options.webDistManifestPath ?? defaultWebDistManifestPath;
   const managementOpenApiPath =
     options.managementOpenApiPath ?? defaultManagementOpenApiPath;
+  const managementOpenApiCompatibilityPath =
+    options.managementOpenApiCompatibilityPath ??
+    defaultManagementOpenApiCompatibilityPath;
   const rootPackage = parseJson(
     await readTextFile(
       path.join(repoRoot, "package.json"),
@@ -48,6 +53,7 @@ export async function auditReleaseArtifacts(options = {}) {
     webDistVerification,
     webDistManifest,
     managementOpenApi,
+    managementOpenApiCompatibility,
   ] = await Promise.all([
     verifyPackageLockReceipt({
       repoRoot,
@@ -63,6 +69,7 @@ export async function auditReleaseArtifacts(options = {}) {
     }),
     readArtifactEvidence(repoRoot, webDistManifestPath, errors),
     readArtifactEvidence(repoRoot, managementOpenApiPath, errors),
+    readArtifactEvidence(repoRoot, managementOpenApiCompatibilityPath, errors),
   ]);
 
   if (!packageLockVerification.valid) {
@@ -117,6 +124,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: managementOpenApi.path,
       sha256: managementOpenApi.sha256,
       valid: managementOpenApi.readable,
+    },
+    {
+      kind: "management-openapi-compatibility",
+      path: managementOpenApiCompatibility.path,
+      sha256: managementOpenApiCompatibility.sha256,
+      valid: managementOpenApiCompatibility.readable,
     },
   ];
   const artifactSetSha256 = sha256(
@@ -326,6 +339,15 @@ function parseCliOptions(args) {
     }
     if (arg === "--management-openapi-path") {
       options.managementOpenApiPath = readCliValue(args, index, arg);
+      index += 1;
+      continue;
+    }
+    if (arg === "--management-openapi-compatibility-path") {
+      options.managementOpenApiCompatibilityPath = readCliValue(
+        args,
+        index,
+        arg,
+      );
       index += 1;
       continue;
     }

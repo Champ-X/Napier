@@ -1,0 +1,4218 @@
+{
+  "type": "napier.management-openapi-compatibility-fixture",
+  "schemaVersion": 1,
+  "openapi": {
+    "path": "docs/artifacts/management-openapi-0.1.0.json",
+    "sha256": "2498ccd31a1b98349ef12c8eba6d4bf0489df9ab5b7691acd4f15458865f936c",
+    "routeCount": 219,
+    "routeSetSha256": "5161a8f844e73040f943cfcc5dcd06a368df22e2abd5158e7f92832b71c2daf5"
+  },
+  "operationCount": 219,
+  "operationSetSha256": "9c24ba3b04eb5023851a08df3b49e9fee109e096e912d016fbf56f3bd3ac25ac",
+  "operations": [
+    {
+      "key": "DELETE /api/threads/{threadId}/goal",
+      "method": "delete",
+      "path": "/api/threads/{threadId}/goal",
+      "operationId": "delete-threads-by-threadId-goal",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/agents/{agentId}/revisions",
+      "method": "get",
+      "path": "/api/agents/{agentId}/revisions",
+      "operationId": "get-agents-by-agentId-revisions",
+      "tags": [
+        "agents"
+      ],
+      "pathParameters": [
+        "agentId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/bootstrap",
+      "method": "get",
+      "path": "/api/bootstrap",
+      "operationId": "get-bootstrap",
+      "tags": [
+        "bootstrap"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/channels",
+      "method": "get",
+      "path": "/api/channels",
+      "operationId": "get-channels",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/channels/{channelId}/dead-letters/retry-history",
+      "method": "get",
+      "path": "/api/channels/{channelId}/dead-letters/retry-history",
+      "operationId": "get-channels-by-channelId-dead-letters-retry-history",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/channels/{channelId}/deliveries",
+      "method": "get",
+      "path": "/api/channels/{channelId}/deliveries",
+      "operationId": "get-channels-by-channelId-deliveries",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/channels/{channelId}/deliveries/{deliveryId}/qualification",
+      "method": "get",
+      "path": "/api/channels/{channelId}/deliveries/{deliveryId}/qualification",
+      "operationId": "get-channels-by-channelId-deliveries-by-deliveryId-qualification",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId",
+        "deliveryId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/channels/adapters",
+      "method": "get",
+      "path": "/api/channels/adapters",
+      "operationId": "get-channels-adapters",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/credentials",
+      "method": "get",
+      "path": "/api/credentials",
+      "operationId": "get-credentials",
+      "tags": [
+        "credentials"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/evaluation-casebooks",
+      "method": "get",
+      "path": "/api/evaluation-casebooks",
+      "operationId": "get-evaluation-casebooks",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/evaluation-casebooks/{casebookId}",
+      "method": "get",
+      "path": "/api/evaluation-casebooks/{casebookId}",
+      "operationId": "get-evaluation-casebooks-by-casebookId",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/evaluation-casebooks/{casebookId}/calibration",
+      "method": "get",
+      "path": "/api/evaluation-casebooks/{casebookId}/calibration",
+      "operationId": "get-evaluation-casebooks-by-casebookId-calibration",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/evaluation-casebooks/{casebookId}/export",
+      "method": "get",
+      "path": "/api/evaluation-casebooks/{casebookId}/export",
+      "operationId": "get-evaluation-casebooks-by-casebookId-export",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/evaluation-casebooks/{casebookId}/qualification-baselines",
+      "method": "get",
+      "path": "/api/evaluation-casebooks/{casebookId}/qualification-baselines",
+      "operationId": "get-evaluation-casebooks-by-casebookId-qualification-baselines",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/evaluation-casebooks/{casebookId}/qualification-receipt",
+      "method": "get",
+      "path": "/api/evaluation-casebooks/{casebookId}/qualification-receipt",
+      "operationId": "get-evaluation-casebooks-by-casebookId-qualification-receipt",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/evaluation-casebooks/{casebookId}/qualifications",
+      "method": "get",
+      "path": "/api/evaluation-casebooks/{casebookId}/qualifications",
+      "operationId": "get-evaluation-casebooks-by-casebookId-qualifications",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/extensions",
+      "method": "get",
+      "path": "/api/extensions",
+      "operationId": "get-extensions",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/extensions/packages/lockfiles/{lockfileSha256}",
+      "method": "get",
+      "path": "/api/extensions/packages/lockfiles/{lockfileSha256}",
+      "operationId": "get-extensions-packages-lockfiles-by-lockfileSha256",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "lockfileSha256"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/extensions/packages/rollouts",
+      "method": "get",
+      "path": "/api/extensions/packages/rollouts",
+      "operationId": "get-extensions-packages-rollouts",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/extensions/publishers",
+      "method": "get",
+      "path": "/api/extensions/publishers",
+      "operationId": "get-extensions-publishers",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/health",
+      "method": "get",
+      "path": "/api/health",
+      "operationId": "get-health",
+      "tags": [
+        "health"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/memories",
+      "method": "get",
+      "path": "/api/memories",
+      "operationId": "get-memories",
+      "tags": [
+        "memories"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints",
+      "method": "get",
+      "path": "/api/plan-blueprints",
+      "operationId": "get-plan-blueprints",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/{recordId}/qualification",
+      "method": "get",
+      "path": "/api/plan-blueprints/{recordId}/qualification",
+      "operationId": "get-plan-blueprints-by-recordId-qualification",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/{recordId}/replays",
+      "method": "get",
+      "path": "/api/plan-blueprints/{recordId}/replays",
+      "operationId": "get-plan-blueprints-by-recordId-replays",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/{recordId}/replays/outcomes",
+      "method": "get",
+      "path": "/api/plan-blueprints/{recordId}/replays/outcomes",
+      "operationId": "get-plan-blueprints-by-recordId-replays-outcomes",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/{recordId}/replays/outcomes/baselines",
+      "method": "get",
+      "path": "/api/plan-blueprints/{recordId}/replays/outcomes/baselines",
+      "operationId": "get-plan-blueprints-by-recordId-replays-outcomes-baselines",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/{recordId}/replays/outcomes/qualification",
+      "method": "get",
+      "path": "/api/plan-blueprints/{recordId}/replays/outcomes/qualification",
+      "operationId": "get-plan-blueprints-by-recordId-replays-outcomes-qualification",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/portfolio/calibration",
+      "method": "get",
+      "path": "/api/plan-blueprints/portfolio/calibration",
+      "operationId": "get-plan-blueprints-portfolio-calibration",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/portfolio/recommendation-policy-backtest",
+      "method": "get",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-backtest",
+      "operationId": "get-plan-blueprints-portfolio-recommendation-policy-backtest",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/portfolio/recommendation-policy-overrides",
+      "method": "get",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+      "operationId": "get-plan-blueprints-portfolio-recommendation-policy-overrides",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
+      "method": "get",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides/drift-review",
+      "operationId": "get-plan-blueprints-portfolio-recommendation-policy-overrides-drift-review",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
+      "method": "get",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements",
+      "operationId": "get-plan-blueprints-portfolio-recommendation-policy-overrides-retirements",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors",
+      "operationId": "get-receipt-trust-anchors",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory",
+      "operationId": "get-receipt-trust-anchors-directory",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-decisions",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/drift-audit",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-drift-audit",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-approval-policy-baselines",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
+      "method": "get",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
+      "operationId": "get-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions-quorum-baselines",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/schedules",
+      "method": "get",
+      "path": "/api/schedules",
+      "operationId": "get-schedules",
+      "tags": [
+        "schedules"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/skills/packages/installations",
+      "method": "get",
+      "path": "/api/skills/packages/installations",
+      "operationId": "get-skills-packages-installations",
+      "tags": [
+        "skills"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}",
+      "method": "get",
+      "path": "/api/threads/{threadId}",
+      "operationId": "get-threads-by-threadId",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/context-checkpoint-calibration",
+      "method": "get",
+      "path": "/api/threads/{threadId}/context-checkpoint-calibration",
+      "operationId": "get-threads-by-threadId-context-checkpoint-calibration",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluation-adjudications",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluation-adjudications",
+      "operationId": "get-threads-by-threadId-evaluation-adjudications",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluation-calibration",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluation-calibration",
+      "operationId": "get-threads-by-threadId-evaluation-calibration",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluation-suite-executions",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluation-suite-executions",
+      "operationId": "get-threads-by-threadId-evaluation-suite-executions",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluation-suites",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluation-suites",
+      "operationId": "get-threads-by-threadId-evaluation-suites",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluation-suites/{suiteId}/receipt",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluation-suites/{suiteId}/receipt",
+      "operationId": "get-threads-by-threadId-evaluation-suites-by-suiteId-receipt",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "suiteId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluations",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluations",
+      "operationId": "get-threads-by-threadId-evaluations",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluations/{evaluationId}/consensus-resolutions",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluations/{evaluationId}/consensus-resolutions",
+      "operationId": "get-threads-by-threadId-evaluations-by-evaluationId-consensus-resolutions",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "evaluationId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/evaluations/{evaluationId}/reviewer-ballots",
+      "method": "get",
+      "path": "/api/threads/{threadId}/evaluations/{evaluationId}/reviewer-ballots",
+      "operationId": "get-threads-by-threadId-evaluations-by-evaluationId-reviewer-ballots",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "evaluationId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/events",
+      "method": "get",
+      "path": "/api/threads/{threadId}/events",
+      "operationId": "get-threads-by-threadId-events",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/fixture",
+      "method": "get",
+      "path": "/api/threads/{threadId}/fixture",
+      "operationId": "get-threads-by-threadId-fixture",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/plans",
+      "method": "get",
+      "path": "/api/threads/{threadId}/plans",
+      "operationId": "get-threads-by-threadId-plans",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/plans/{planId}/archive",
+      "method": "get",
+      "path": "/api/threads/{threadId}/plans/{planId}/archive",
+      "operationId": "get-threads-by-threadId-plans-by-planId-archive",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/plans/{planId}/blueprint",
+      "method": "get",
+      "path": "/api/threads/{threadId}/plans/{planId}/blueprint",
+      "operationId": "get-threads-by-threadId-plans-by-planId-blueprint",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/recovery",
+      "method": "get",
+      "path": "/api/threads/{threadId}/recovery",
+      "operationId": "get-threads-by-threadId-recovery",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/{runId}/replay",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/{runId}/replay",
+      "operationId": "get-threads-by-threadId-runs-by-runId-replay",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/runs/compare",
+      "method": "get",
+      "path": "/api/threads/{threadId}/runs/compare",
+      "operationId": "get-threads-by-threadId-runs-compare",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/usage-price-tables",
+      "method": "get",
+      "path": "/api/usage-price-tables",
+      "operationId": "get-usage-price-tables",
+      "tags": [
+        "usage-price-tables"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": false,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/agents/{agentId}/rollback",
+      "method": "post",
+      "path": "/api/agents/{agentId}/rollback",
+      "operationId": "post-agents-by-agentId-rollback",
+      "tags": [
+        "agents"
+      ],
+      "pathParameters": [
+        "agentId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels",
+      "method": "post",
+      "path": "/api/channels",
+      "operationId": "post-channels",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/adapter-preview",
+      "method": "post",
+      "path": "/api/channels/{channelId}/adapter-preview",
+      "operationId": "post-channels-by-channelId-adapter-preview",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/dead-letters/export",
+      "method": "post",
+      "path": "/api/channels/{channelId}/dead-letters/export",
+      "operationId": "post-channels-by-channelId-dead-letters-export",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/dead-letters/retry-apply",
+      "method": "post",
+      "path": "/api/channels/{channelId}/dead-letters/retry-apply",
+      "operationId": "post-channels-by-channelId-dead-letters-retry-apply",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/dead-letters/retry-history/verify",
+      "method": "post",
+      "path": "/api/channels/{channelId}/dead-letters/retry-history/verify",
+      "operationId": "post-channels-by-channelId-dead-letters-retry-history-verify",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/dead-letters/retry-preview",
+      "method": "post",
+      "path": "/api/channels/{channelId}/dead-letters/retry-preview",
+      "operationId": "post-channels-by-channelId-dead-letters-retry-preview",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/dead-letters/verify",
+      "method": "post",
+      "path": "/api/channels/{channelId}/dead-letters/verify",
+      "operationId": "post-channels-by-channelId-dead-letters-verify",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/deliveries/{deliveryId}/retry",
+      "method": "post",
+      "path": "/api/channels/{channelId}/deliveries/{deliveryId}/retry",
+      "operationId": "post-channels-by-channelId-deliveries-by-deliveryId-retry",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId",
+        "deliveryId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/inbound",
+      "method": "post",
+      "path": "/api/channels/{channelId}/inbound",
+      "operationId": "post-channels-by-channelId-inbound",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/status",
+      "method": "post",
+      "path": "/api/channels/{channelId}/status",
+      "operationId": "post-channels-by-channelId-status",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/channels/{channelId}/token",
+      "method": "post",
+      "path": "/api/channels/{channelId}/token",
+      "operationId": "post-channels-by-channelId-token",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/credentials",
+      "method": "post",
+      "path": "/api/credentials",
+      "operationId": "post-credentials",
+      "tags": [
+        "credentials"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/credentials/{referenceId}/check",
+      "method": "post",
+      "path": "/api/credentials/{referenceId}/check",
+      "operationId": "post-credentials-by-referenceId-check",
+      "tags": [
+        "credentials"
+      ],
+      "pathParameters": [
+        "referenceId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/credentials/{referenceId}/status",
+      "method": "post",
+      "path": "/api/credentials/{referenceId}/status",
+      "operationId": "post-credentials-by-referenceId-status",
+      "tags": [
+        "credentials"
+      ],
+      "pathParameters": [
+        "referenceId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/credentials/macos-keychain",
+      "method": "post",
+      "path": "/api/credentials/macos-keychain",
+      "operationId": "post-credentials-macos-keychain",
+      "tags": [
+        "credentials"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/evaluation-casebooks",
+      "method": "post",
+      "path": "/api/evaluation-casebooks",
+      "operationId": "post-evaluation-casebooks",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/evaluation-casebooks/{casebookId}/cases",
+      "method": "post",
+      "path": "/api/evaluation-casebooks/{casebookId}/cases",
+      "operationId": "post-evaluation-casebooks-by-casebookId-cases",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/evaluation-casebooks/{casebookId}/cases/{caseId}/remove",
+      "method": "post",
+      "path": "/api/evaluation-casebooks/{casebookId}/cases/{caseId}/remove",
+      "operationId": "post-evaluation-casebooks-by-casebookId-cases-by-caseId-remove",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "caseId",
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/evaluation-casebooks/{casebookId}/qualification-baselines",
+      "method": "post",
+      "path": "/api/evaluation-casebooks/{casebookId}/qualification-baselines",
+      "operationId": "post-evaluation-casebooks-by-casebookId-qualification-baselines",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/evaluation-casebooks/{casebookId}/qualifications",
+      "method": "post",
+      "path": "/api/evaluation-casebooks/{casebookId}/qualifications",
+      "operationId": "post-evaluation-casebooks-by-casebookId-qualifications",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/evaluation-casebooks/{casebookId}/signed-qualification-receipt",
+      "method": "post",
+      "path": "/api/evaluation-casebooks/{casebookId}/signed-qualification-receipt",
+      "operationId": "post-evaluation-casebooks-by-casebookId-signed-qualification-receipt",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/connect",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/connect",
+      "operationId": "post-extensions-by-extensionId-connect",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/disconnect",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/disconnect",
+      "operationId": "post-extensions-by-extensionId-disconnect",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/enabled",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/enabled",
+      "operationId": "post-extensions-by-extensionId-enabled",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/package/sign",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/package/sign",
+      "operationId": "post-extensions-by-extensionId-package-sign",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/package/update",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/package/update",
+      "operationId": "post-extensions-by-extensionId-package-update",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/package/update/preview",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/package/update/preview",
+      "operationId": "post-extensions-by-extensionId-package-update-preview",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/review",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/review",
+      "operationId": "post-extensions-by-extensionId-review",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/{extensionId}/tools/review",
+      "method": "post",
+      "path": "/api/extensions/{extensionId}/tools/review",
+      "operationId": "post-extensions-by-extensionId-tools-review",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "extensionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/mcp",
+      "method": "post",
+      "path": "/api/extensions/mcp",
+      "operationId": "post-extensions-mcp",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/channel-index/sign",
+      "method": "post",
+      "path": "/api/extensions/packages/channel-index/sign",
+      "operationId": "post-extensions-packages-channel-index-sign",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/channel-index/verify",
+      "method": "post",
+      "path": "/api/extensions/packages/channel-index/verify",
+      "operationId": "post-extensions-packages-channel-index-verify",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/deployment",
+      "method": "post",
+      "path": "/api/extensions/packages/deployment",
+      "operationId": "post-extensions-packages-deployment",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/deployment/preview",
+      "method": "post",
+      "path": "/api/extensions/packages/deployment/preview",
+      "operationId": "post-extensions-packages-deployment-preview",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/import",
+      "method": "post",
+      "path": "/api/extensions/packages/import",
+      "operationId": "post-extensions-packages-import",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/lockfile/export",
+      "method": "post",
+      "path": "/api/extensions/packages/lockfile/export",
+      "operationId": "post-extensions-packages-lockfile-export",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/lockfile/verify",
+      "method": "post",
+      "path": "/api/extensions/packages/lockfile/verify",
+      "operationId": "post-extensions-packages-lockfile-verify",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/rollouts",
+      "method": "post",
+      "path": "/api/extensions/packages/rollouts",
+      "operationId": "post-extensions-packages-rollouts",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/rollouts/{channelId}",
+      "method": "post",
+      "path": "/api/extensions/packages/rollouts/{channelId}",
+      "operationId": "post-extensions-packages-rollouts-by-channelId",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/rollouts/{channelId}/preview",
+      "method": "post",
+      "path": "/api/extensions/packages/rollouts/{channelId}/preview",
+      "operationId": "post-extensions-packages-rollouts-by-channelId-preview",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/packages/verify",
+      "method": "post",
+      "path": "/api/extensions/packages/verify",
+      "operationId": "post-extensions-packages-verify",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/publishers",
+      "method": "post",
+      "path": "/api/extensions/publishers",
+      "operationId": "post-extensions-publishers",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/extensions/publishers/{anchorId}/revoke",
+      "method": "post",
+      "path": "/api/extensions/publishers/{anchorId}/revoke",
+      "operationId": "post-extensions-publishers-by-anchorId-revoke",
+      "tags": [
+        "extensions"
+      ],
+      "pathParameters": [
+        "anchorId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/inspectors/packages/qualify",
+      "method": "post",
+      "path": "/api/inspectors/packages/qualify",
+      "operationId": "post-inspectors-packages-qualify",
+      "tags": [
+        "inspectors"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/inspectors/packages/sign",
+      "method": "post",
+      "path": "/api/inspectors/packages/sign",
+      "operationId": "post-inspectors-packages-sign",
+      "tags": [
+        "inspectors"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/inspectors/packages/verify",
+      "method": "post",
+      "path": "/api/inspectors/packages/verify",
+      "operationId": "post-inspectors-packages-verify",
+      "tags": [
+        "inspectors"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/memories",
+      "method": "post",
+      "path": "/api/memories",
+      "operationId": "post-memories",
+      "tags": [
+        "memories"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/memories/{memoryId}/review",
+      "method": "post",
+      "path": "/api/memories/{memoryId}/review",
+      "operationId": "post-memories-by-memoryId-review",
+      "tags": [
+        "memories"
+      ],
+      "pathParameters": [
+        "memoryId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/{recordId}/replays/events/verify",
+      "method": "post",
+      "path": "/api/plan-blueprints/{recordId}/replays/events/verify",
+      "operationId": "post-plan-blueprints-by-recordId-replays-events-verify",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/{recordId}/replays/outcomes/baselines",
+      "method": "post",
+      "path": "/api/plan-blueprints/{recordId}/replays/outcomes/baselines",
+      "operationId": "post-plan-blueprints-by-recordId-replays-outcomes-baselines",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/{recordId}/replays/outcomes/review",
+      "method": "post",
+      "path": "/api/plan-blueprints/{recordId}/replays/outcomes/review",
+      "operationId": "post-plan-blueprints-by-recordId-replays-outcomes-review",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/{recordId}/replays/outcomes/verify",
+      "method": "post",
+      "path": "/api/plan-blueprints/{recordId}/replays/outcomes/verify",
+      "operationId": "post-plan-blueprints-by-recordId-replays-outcomes-verify",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/{recordId}/replays/verify",
+      "method": "post",
+      "path": "/api/plan-blueprints/{recordId}/replays/verify",
+      "operationId": "post-plan-blueprints-by-recordId-replays-verify",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/{recordId}/status",
+      "method": "post",
+      "path": "/api/plan-blueprints/{recordId}/status",
+      "operationId": "post-plan-blueprints-by-recordId-status",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [
+        "recordId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/portfolio/recommendation-policy-overrides",
+      "method": "post",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides",
+      "operationId": "post-plan-blueprints-portfolio-recommendation-policy-overrides",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/portfolio/recommendation-policy-overrides/retire",
+      "method": "post",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retire",
+      "operationId": "post-plan-blueprints-portfolio-recommendation-policy-overrides-retire",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
+      "method": "post",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/sign",
+      "operationId": "post-plan-blueprints-portfolio-recommendation-policy-overrides-retirements-proof-bundle-sign",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify",
+      "method": "post",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/proof-bundle/verify",
+      "operationId": "post-plan-blueprints-portfolio-recommendation-policy-overrides-retirements-proof-bundle-verify",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify",
+      "method": "post",
+      "path": "/api/plan-blueprints/portfolio/recommendation-policy-overrides/retirements/verify",
+      "operationId": "post-plan-blueprints-portfolio-recommendation-policy-overrides-retirements-verify",
+      "tags": [
+        "plan-blueprints"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/prompts/packages/qualify",
+      "method": "post",
+      "path": "/api/prompts/packages/qualify",
+      "operationId": "post-prompts-packages-qualify",
+      "tags": [
+        "prompts"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/prompts/packages/sign",
+      "method": "post",
+      "path": "/api/prompts/packages/sign",
+      "operationId": "post-prompts-packages-sign",
+      "tags": [
+        "prompts"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/prompts/packages/verify",
+      "method": "post",
+      "path": "/api/prompts/packages/verify",
+      "operationId": "post-prompts-packages-verify",
+      "tags": [
+        "prompts"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors",
+      "operationId": "post-receipt-trust-anchors",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/{anchorId}/revoke",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/{anchorId}/revoke",
+      "operationId": "post-receipt-trust-anchors-by-anchorId-revoke",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "anchorId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/discover",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/discover",
+      "operationId": "post-receipt-trust-anchors-directory-discover",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/metadata/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/metadata/verify",
+      "operationId": "post-receipt-trust-anchors-directory-metadata-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/signed-metadata",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/signed-metadata",
+      "operationId": "post-receipt-trust-anchors-directory-signed-metadata",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-by-subscriptionId",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}/refresh",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/{subscriptionId}/refresh",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-by-subscriptionId-refresh",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-decision",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decisions/verify",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-decisions-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-apply",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines/import",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines/import",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-approval-policy-baselines-import",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/approval-policy-baselines/verify",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-approval-policy-baselines-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/discover",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-discover",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/preflight",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-preflight",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/sign",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-sign",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/apply",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/apply",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-approval-apply",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/apply/replay",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/apply/replay",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-approval-apply-replay",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-apply",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-apply",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-approval-policy-apply",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-apply/queue",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-apply/queue",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-approval-policy-apply-queue",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-baselines",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-baselines",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-approval-policy-baselines",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-review",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/policy-review",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-approval-policy-review",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/sign",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/approval/sign",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-approval-sign",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/refresh",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/{subscriptionId}/refresh",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-proposal-subscriptions-by-subscriptionId-refresh",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-rotation-review",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/discover",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/discover",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-discover",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-sign",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/{subscriptionId}",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/{subscriptionId}",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions-by-subscriptionId",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/{subscriptionId}/refresh",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/{subscriptionId}/refresh",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions-by-subscriptionId-refresh",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [
+        "subscriptionId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions-quorum",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions-quorum-baselines",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/import",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/import",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions-quorum-baselines-import",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/subscriptions/quorum/baselines/verify",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-subscriptions-quorum-baselines-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-activation-selection-transparency-checkpoint-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-import",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/verify",
+      "operationId": "post-receipt-trust-anchors-directory-subscriptions-quorum-promotion-baselines-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/anchors/directory/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/anchors/directory/verify",
+      "operationId": "post-receipt-trust-anchors-directory-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/receipt-trust/verify",
+      "method": "post",
+      "path": "/api/receipt-trust/verify",
+      "operationId": "post-receipt-trust-verify",
+      "tags": [
+        "receipt-trust"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/schedules",
+      "method": "post",
+      "path": "/api/schedules",
+      "operationId": "post-schedules",
+      "tags": [
+        "schedules"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/skills/content/apply",
+      "method": "post",
+      "path": "/api/skills/content/apply",
+      "operationId": "post-skills-content-apply",
+      "tags": [
+        "skills"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/skills/content/preview",
+      "method": "post",
+      "path": "/api/skills/content/preview",
+      "operationId": "post-skills-content-preview",
+      "tags": [
+        "skills"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/skills/packages/installations",
+      "method": "post",
+      "path": "/api/skills/packages/installations",
+      "operationId": "post-skills-packages-installations",
+      "tags": [
+        "skills"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/skills/packages/qualify",
+      "method": "post",
+      "path": "/api/skills/packages/qualify",
+      "operationId": "post-skills-packages-qualify",
+      "tags": [
+        "skills"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/skills/packages/sign",
+      "method": "post",
+      "path": "/api/skills/packages/sign",
+      "operationId": "post-skills-packages-sign",
+      "tags": [
+        "skills"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/skills/packages/verify",
+      "method": "post",
+      "path": "/api/skills/packages/verify",
+      "operationId": "post-skills-packages-verify",
+      "tags": [
+        "skills"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads",
+      "method": "post",
+      "path": "/api/threads",
+      "operationId": "post-threads",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/branches",
+      "method": "post",
+      "path": "/api/threads/{threadId}/branches",
+      "operationId": "post-threads-by-threadId-branches",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluation-suites",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluation-suites",
+      "operationId": "post-threads-by-threadId-evaluation-suites",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluation-suites/{suiteId}/executions",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluation-suites/{suiteId}/executions",
+      "operationId": "post-threads-by-threadId-evaluation-suites-by-suiteId-executions",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "suiteId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluation-suites/{suiteId}/signed-receipt",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluation-suites/{suiteId}/signed-receipt",
+      "operationId": "post-threads-by-threadId-evaluation-suites-by-suiteId-signed-receipt",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "suiteId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluations",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluations",
+      "operationId": "post-threads-by-threadId-evaluations",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluations/{evaluationId}/adjudication",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluations/{evaluationId}/adjudication",
+      "operationId": "post-threads-by-threadId-evaluations-by-evaluationId-adjudication",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "evaluationId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluations/{evaluationId}/consensus/preview",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluations/{evaluationId}/consensus/preview",
+      "operationId": "post-threads-by-threadId-evaluations-by-evaluationId-consensus-preview",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "evaluationId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluations/{evaluationId}/consensus/resolve",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluations/{evaluationId}/consensus/resolve",
+      "operationId": "post-threads-by-threadId-evaluations-by-evaluationId-consensus-resolve",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "evaluationId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/evaluations/{evaluationId}/reviewer-ballots",
+      "method": "post",
+      "path": "/api/threads/{threadId}/evaluations/{evaluationId}/reviewer-ballots",
+      "operationId": "post-threads-by-threadId-evaluations-by-evaluationId-reviewer-ballots",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "evaluationId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/messages",
+      "method": "post",
+      "path": "/api/threads/{threadId}/messages",
+      "operationId": "post-threads-by-threadId-messages",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plan-blueprints",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plan-blueprints",
+      "operationId": "post-threads-by-threadId-plan-blueprints",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plan-blueprints/selection",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plan-blueprints/selection",
+      "operationId": "post-threads-by-threadId-plan-blueprints-selection",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans",
+      "operationId": "post-threads-by-threadId-plans",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/{planId}/archive/verify",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/{planId}/archive/verify",
+      "operationId": "post-threads-by-threadId-plans-by-planId-archive-verify",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}",
+      "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "artifactId",
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/{planId}/replan",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/{planId}/replan",
+      "operationId": "post-threads-by-threadId-plans-by-planId-replan",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/{planId}/replan-draft-review",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/{planId}/replan-draft-review",
+      "operationId": "post-threads-by-threadId-plans-by-planId-replan-draft-review",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/{planId}/steps/{stepId}",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/{planId}/steps/{stepId}",
+      "operationId": "post-threads-by-threadId-plans-by-planId-steps-by-stepId",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "planId",
+        "stepId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/blueprints/verify",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/blueprints/verify",
+      "operationId": "post-threads-by-threadId-plans-blueprints-verify",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/from-blueprint",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/from-blueprint",
+      "operationId": "post-threads-by-threadId-plans-from-blueprint",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/from-blueprint-record",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/from-blueprint-record",
+      "operationId": "post-threads-by-threadId-plans-from-blueprint-record",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/from-blueprint-record/preview",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/from-blueprint-record/preview",
+      "operationId": "post-threads-by-threadId-plans-from-blueprint-record-preview",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/resume",
+      "method": "post",
+      "path": "/api/threads/{threadId}/resume",
+      "operationId": "post-threads-by-threadId-resume",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/runs/{runId}/replay/verify",
+      "method": "post",
+      "path": "/api/threads/{threadId}/runs/{runId}/replay/verify",
+      "operationId": "post-threads-by-threadId-runs-by-runId-replay-verify",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "runId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/stop",
+      "method": "post",
+      "path": "/api/threads/{threadId}/stop",
+      "operationId": "post-threads-by-threadId-stop",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/trace/otlp",
+      "method": "post",
+      "path": "/api/threads/{threadId}/trace/otlp",
+      "operationId": "post-threads-by-threadId-trace-otlp",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/trace/otlp/verify",
+      "method": "post",
+      "path": "/api/threads/{threadId}/trace/otlp/verify",
+      "operationId": "post-threads-by-threadId-trace-otlp-verify",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/import",
+      "method": "post",
+      "path": "/api/threads/import",
+      "operationId": "post-threads-import",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/import/verify",
+      "method": "post",
+      "path": "/api/threads/import/verify",
+      "operationId": "post-threads-import-verify",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/usage-price-tables/verify",
+      "method": "post",
+      "path": "/api/usage-price-tables/verify",
+      "operationId": "post-usage-price-tables-verify",
+      "tags": [
+        "usage-price-tables"
+      ],
+      "pathParameters": [],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "PUT /api/agents/{agentId}",
+      "method": "put",
+      "path": "/api/agents/{agentId}",
+      "operationId": "put-agents-by-agentId",
+      "tags": [
+        "agents"
+      ],
+      "pathParameters": [
+        "agentId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "PUT /api/channels/{channelId}/retry-policy",
+      "method": "put",
+      "path": "/api/channels/{channelId}/retry-policy",
+      "operationId": "put-channels-by-channelId-retry-policy",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "PUT /api/channels/{channelId}/signature-policy",
+      "method": "put",
+      "path": "/api/channels/{channelId}/signature-policy",
+      "operationId": "put-channels-by-channelId-signature-policy",
+      "tags": [
+        "channels"
+      ],
+      "pathParameters": [
+        "channelId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "PUT /api/evaluation-casebooks/{casebookId}",
+      "method": "put",
+      "path": "/api/evaluation-casebooks/{casebookId}",
+      "operationId": "put-evaluation-casebooks-by-casebookId",
+      "tags": [
+        "evaluation-casebooks"
+      ],
+      "pathParameters": [
+        "casebookId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "PUT /api/schedules/{scheduleId}",
+      "method": "put",
+      "path": "/api/schedules/{scheduleId}",
+      "operationId": "put-schedules-by-scheduleId",
+      "tags": [
+        "schedules"
+      ],
+      "pathParameters": [
+        "scheduleId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "PUT /api/threads/{threadId}/evaluation-suites/{suiteId}",
+      "method": "put",
+      "path": "/api/threads/{threadId}/evaluation-suites/{suiteId}",
+      "operationId": "put-threads-by-threadId-evaluation-suites-by-suiteId",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "suiteId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "PUT /api/threads/{threadId}/goal",
+      "method": "put",
+      "path": "/api/threads/{threadId}/goal",
+      "operationId": "put-threads-by-threadId-goal",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    }
+  ]
+}
