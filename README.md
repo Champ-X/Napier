@@ -1451,7 +1451,18 @@ signs the current checkpoint as a
 `receipt_trust_anchor_directory_quorum_activation_selection_checkpoint`
 trusted receipt envelope. The Web workbench adds **Sign checkpoint** and
 downloads the signed envelope so external registries can publish the rotation
-chain without trusting the local transport channel.
+chain without trusting the local transport channel. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/discover`
+now fetches one of those signed checkpoint envelopes from the same allowlisted
+hosted-source boundary as public anchor directories. The no-store discovery
+receipt verifies the Ed25519 envelope with an uploaded directory, the current
+active selection directory, or local anchors; compares the checkpoint against
+local selection history; and enforces freshness, required signer keys, expected
+checkpoint/selection-set/tail hashes, minimum selection count, and rollback
+rejection. Source URL/origin, response body, policy, envelope, and checkpoint
+evidence are returned as hashes only. The Receipt Trust Desk adds **Discover
+checkpoint** with URL and optional checkpoint-hash pin fields, then renders
+accepted or rejected hosted checkpoint receipts beside the signed envelope.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

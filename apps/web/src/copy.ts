@@ -284,6 +284,15 @@ export const copy = {
       exportingActivationSelectionCheckpoint: "Exporting checkpoint...",
       signActivationSelectionCheckpoint: "Sign checkpoint",
       signingActivationSelectionCheckpoint: "Signing checkpoint...",
+      activationSelectionCheckpointSource: "Hosted checkpoint URL",
+      activationSelectionCheckpointSourcePlaceholder:
+        "https://trust.example.com/activation-selection-checkpoint.json",
+      expectedActivationSelectionCheckpoint:
+        "Expected checkpoint SHA-256",
+      expectedActivationSelectionCheckpointPlaceholder:
+        "Optional checkpoint pin",
+      discoverActivationSelectionCheckpoint: "Discover checkpoint",
+      discoveringActivationSelectionCheckpoint: "Discovering checkpoint...",
       verifyActivationSelectionCheckpoint: "Verify checkpoint",
       verifyingActivationSelectionCheckpoint: "Checking checkpoint...",
       activeBaselineActivation: "Active verifier selection",
@@ -340,6 +349,10 @@ export const copy = {
         valid: "Checkpoint matches local state",
         divergent: "Checkpoint diverges from local state",
         invalid: "Checkpoint invalid",
+      },
+      activationSelectionCheckpointDiscoveryStatuses: {
+        valid: "Hosted checkpoint accepted",
+        invalid: "Hosted checkpoint rejected",
       },
       baselineActivationHistoryVerificationStatuses: {
         valid: "History matches local state",

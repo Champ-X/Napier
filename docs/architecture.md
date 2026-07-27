@@ -526,7 +526,18 @@ current checkpoint in a `TrustedReceiptEnvelope` with receipt kind
 generic receipt verifier can then validate the Ed25519 signature with local,
 uploaded, or active-selection trust directories. The signed envelope keeps the
 checkpoint content hash stable while binding the exact checkpoint artifact hash
-and signer key ID for external registries.
+and signer key ID for external registries. Hosted checkpoint discovery reuses
+the directory-discovery fetch boundary: sources must be allowlisted public
+HTTPS JSON endpoints, redirects are disabled, responses are bounded, and raw
+URLs are not returned. The discovery receipt verifies the signed envelope,
+checks the receipt kind, compares the embedded checkpoint with the current
+local selection-chain projection, and applies freshness, required signer,
+checkpoint hash, selection-set hash, chain-tail hash, minimum selection count,
+and rollback-rejection gates before returning `valid` or `invalid`. The result
+keeps source URL/origin, response body, policy, envelope, checkpoint, current
+tail, and diagnostics as hash-bound evidence so operators can publish active
+selection checkpoints from external registries without trusting registry
+transport state.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2486,8 +2497,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- hosted registry discovery for signed active-selection checkpoint envelopes,
-  including source freshness, rollback detection, and local pin policy.
+- durable checkpoint-registry subscriptions for signed active-selection
+  checkpoint envelopes, including scheduled refresh, last-good preservation,
+  and transparency history over hosted checkpoint observations.
 
 ### Layer 3: Extension fabric
 

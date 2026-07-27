@@ -4368,6 +4368,23 @@ export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspa
   trustAnchorId: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy {
+  maxEnvelopeAgeMs?: number;
+  expectedCheckpointSha256?: string;
+  expectedSelectionSetSha256?: string;
+  expectedSelectionChainTailSha256?: string;
+  minimumSelectionCount?: number;
+  requiredSignerKeyIds?: string[];
+  rejectRollback?: boolean;
+}
+
+export interface DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest {
+  sourceUrl: string;
+  policy?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy;
+  trustDirectory?: unknown;
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationStatus =
   | "valid"
   | "divergent"
@@ -4391,6 +4408,40 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
   currentSelectionCount: number;
   declaredCurrentSelectionSha256?: string;
   currentSelectionSha256: string;
+  contentSha256: string;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryStatus =
+  | "valid"
+  | "invalid";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-discovery";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryStatus;
+  diagnostics: string[];
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  httpStatus: number;
+  responseMediaType: string;
+  responseBytes: number;
+  responseBodySha256: string;
+  policy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryPolicy;
+  policySha256: string;
+  trustedReceiptVerification: TrustedReceiptVerification;
+  checkpointVerification: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification;
+  envelopeSha256?: string;
+  checkpointSha256?: string;
+  signerKeyId?: string;
+  signedAt?: string;
+  selectionCount?: number;
+  selectionSetSha256?: string;
+  selectionChainTailSha256?: string;
+  currentSelectionCount: number;
+  currentSelectionChainTailSha256?: string;
+  envelope?: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>;
   contentSha256: string;
 }
 

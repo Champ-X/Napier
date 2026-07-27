@@ -1,6 +1,7 @@
 import type {
   CreateReceiptTrustAnchorRequest,
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
   EvaluateReceiptTrustAnchorDirectoryQuorumRequest,
   EvaluationQualificationBaseline,
@@ -23,6 +24,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -237,6 +239,18 @@ export function signReceiptTrustAnchorDirectoryQuorumActivationSelectionTranspar
 ): Promise<TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/sign",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+  body: DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
+): Promise<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/discover",
     {
       method: "POST",
       body: JSON.stringify(body),

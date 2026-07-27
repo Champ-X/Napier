@@ -367,6 +367,18 @@ All notable changes to Napier are recorded here.
   accepts the new receipt kind, including active-selection-backed verifier-key
   lookup, and the Receipt Trust Desk adds **Sign checkpoint** with signed JSON
   download.
+- Hosted signed active-selection checkpoint discovery. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/discover`
+  now fetches a signed checkpoint envelope through the allowlisted hosted JSON
+  boundary, verifies the trusted receipt with uploaded, active-selection, or
+  local verifier keys, compares the checkpoint to local selection history, and
+  enforces freshness, required signer, expected checkpoint/selection-set/tail
+  hashes, minimum selection count, and rollback rejection gates. The response
+  is no-store and hash-bound, exposing source URL/origin, response, policy,
+  envelope, checkpoint, current tail, and diagnostics as evidence hashes. The
+  Receipt Trust Desk adds **Discover checkpoint** with URL and checkpoint-hash
+  pin inputs, and Web ViewModel/API tests cover the generated policy and
+  wrapper.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

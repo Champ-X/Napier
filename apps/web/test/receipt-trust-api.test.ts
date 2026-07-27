@@ -13,6 +13,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -31,6 +32,7 @@ import {
   applyReceiptTrustAnchorDirectoryQuorumActivationSelection,
   createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
+  discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   evaluateReceiptTrustAnchorDirectoryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
@@ -795,6 +797,72 @@ describe("receipt trust Web API wrappers", () => {
       },
       contentSha256: "9".repeat(64),
     } satisfies TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>;
+    const activationSelectionCheckpointDiscoveryRequest = {
+      sourceUrl:
+        "https://trust.example.test/activation-selection-checkpoint.json",
+      policy: {
+        maxEnvelopeAgeMs: 604_800_000,
+        expectedCheckpointSha256: activationSelectionCheckpoint.contentSha256,
+        expectedSelectionSetSha256:
+          activationSelectionCheckpoint.selectionSetSha256,
+        expectedSelectionChainTailSha256:
+          activationSelectionCheckpoint.selectionChainTailSha256,
+        minimumSelectionCount: activationSelectionCheckpoint.selectionCount,
+        requiredSignerKeyIds: [
+          signedActivationSelectionCheckpoint.signature.keyId,
+        ],
+        rejectRollback: true,
+      },
+      trustDirectory: selectedDirectory,
+      trustDirectoryPolicy: {
+        expectedAnchorSetSha256: selectedDirectory.anchorSetSha256,
+        minimumTrustedCount: 1,
+      },
+    };
+    const activationSelectionCheckpointDiscovery = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-discovery",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:08.000Z",
+      status: "valid",
+      diagnostics: [],
+      sourceUrlSha256: "0".repeat(64),
+      sourceOriginSha256: "1".repeat(64),
+      httpStatus: 200,
+      responseMediaType: "application/json",
+      responseBytes: 2048,
+      responseBodySha256: "2".repeat(64),
+      policy: activationSelectionCheckpointDiscoveryRequest.policy,
+      policySha256: "3".repeat(64),
+      trustedReceiptVerification: {
+        status: "trusted",
+        verifiedAt: "2026-07-27T00:00:08.000Z",
+        receiptKind:
+          "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint",
+        receiptContentSha256: activationSelectionCheckpoint.contentSha256,
+        receiptArtifactSha256:
+          signedActivationSelectionCheckpoint.signature.receiptArtifactSha256,
+        keyId: signedActivationSelectionCheckpoint.signature.keyId,
+        envelopeSha256: signedActivationSelectionCheckpoint.contentSha256,
+        signatureValid: true,
+        integrityValid: true,
+        reason: "Receipt signature and evidence are trusted",
+      },
+      checkpointVerification: activationSelectionCheckpointVerification,
+      envelopeSha256: signedActivationSelectionCheckpoint.contentSha256,
+      checkpointSha256: activationSelectionCheckpoint.contentSha256,
+      signerKeyId: signedActivationSelectionCheckpoint.signature.keyId,
+      signedAt: signedActivationSelectionCheckpoint.signature.signedAt,
+      selectionCount: activationSelectionCheckpoint.selectionCount,
+      selectionSetSha256: activationSelectionCheckpoint.selectionSetSha256,
+      selectionChainTailSha256:
+        activationSelectionCheckpoint.selectionChainTailSha256,
+      currentSelectionCount: activationSelectionCheckpoint.selectionCount,
+      currentSelectionChainTailSha256:
+        activationSelectionCheckpoint.selectionChainTailSha256,
+      envelope: signedActivationSelectionCheckpoint,
+      contentSha256: "4".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -900,6 +968,12 @@ describe("receipt trust Web API wrappers", () => {
         response: signedActivationSelectionCheckpoint,
       },
       {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/discover",
+        method: "POST",
+        body: activationSelectionCheckpointDiscoveryRequest,
+        response: activationSelectionCheckpointDiscovery,
+      },
+      {
         path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
         method: "POST",
         body: activationSelectionRotationReviewRequest,
@@ -1002,6 +1076,11 @@ describe("receipt trust Web API wrappers", () => {
       ),
     ).resolves.toEqual(signedActivationSelectionCheckpoint);
     await expect(
+      discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+        activationSelectionCheckpointDiscoveryRequest,
+      ),
+    ).resolves.toEqual(activationSelectionCheckpointDiscovery);
+    await expect(
       reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
         activationSelectionRotationReviewRequest,
       ),
@@ -1011,7 +1090,7 @@ describe("receipt trust Web API wrappers", () => {
         activationSelectionRequest,
       ),
     ).resolves.toEqual(activationSelectionResult);
-    expect(fetchMock).toHaveBeenCalledTimes(20);
+    expect(fetchMock).toHaveBeenCalledTimes(21);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

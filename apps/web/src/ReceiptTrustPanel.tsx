@@ -26,6 +26,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -44,6 +45,7 @@ import {
   createReceiptTrustAnchor,
   createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
+  discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   evaluateReceiptTrustAnchorDirectoryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
@@ -70,6 +72,7 @@ import {
 import { formatApiErrorMessage } from "./api-error";
 import {
   qualifyReceiptTrustAnchorDirectoryDiscoveryRequest,
+  qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest,
   qualifyReceiptTrustAnchorDirectorySubscriptionRequest,
   buildReceiptTrustDirectoryBaselineImportPolicy,
   projectReceiptTrustDirectoryBaselineActivation,
@@ -159,7 +162,14 @@ export default function ReceiptTrustPanel({
     useState<
       TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>
     >();
+  const [
+    baselineActivationSelectionCheckpointDiscovery,
+    setBaselineActivationSelectionCheckpointDiscovery,
+  ] =
+    useState<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery>();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
+  const [checkpointSourceUrl, setCheckpointSourceUrl] = useState("");
+  const [expectedCheckpointSha256, setExpectedCheckpointSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
   const [externalDirectoryPolicy, setExternalDirectoryPolicy] =
@@ -225,6 +235,9 @@ export default function ReceiptTrustPanel({
     Boolean(latestApprovedActivationRecord) && !busyId;
   const canReviewActivationSelectionRotation =
     Boolean(latestApprovedActivationRecord) && !busyId;
+  const selectedTrustedAnchorKeyId = anchors.find(
+    (anchor) => anchor.id === selectedAnchorId && anchor.status === "trusted",
+  )?.keyId;
   const canSignActivationSelectionCheckpoint =
     Boolean(selectedAnchorId) &&
     anchors.some(
@@ -234,6 +247,17 @@ export default function ReceiptTrustPanel({
         Boolean(anchor.signingSource),
     ) &&
     !busyId;
+  const checkpointDiscoveryRequest =
+    qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
+      checkpointSourceUrl,
+      expectedCheckpointSha256,
+      baselineActivationSelectionCheckpoint,
+      selectedTrustedAnchorKeyId,
+      externalDirectory,
+      externalDirectoryPolicy,
+    );
+  const canDiscoverActivationSelectionCheckpoint =
+    Boolean(checkpointDiscoveryRequest) && !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -837,6 +861,34 @@ export default function ReceiptTrustPanel({
     }
   }
 
+  async function discoverActivationSelectionTransparencyCheckpoint(): Promise<void> {
+    if (!checkpointDiscoveryRequest || !canDiscoverActivationSelectionCheckpoint)
+      return;
+    setBusyId("discover-activation-selection-checkpoint");
+    setError(undefined);
+    setBaselineActivationSelectionCheckpointDiscovery(undefined);
+    try {
+      const discovery =
+        await discoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint(
+          checkpointDiscoveryRequest,
+        );
+      setBaselineActivationSelectionCheckpointDiscovery(discovery);
+      setBaselineActivationSelectionCheckpointVerification(
+        discovery.checkpointVerification,
+      );
+      if (discovery.envelope) {
+        setBaselineActivationSelectionCheckpointEnvelope(discovery.envelope);
+      }
+      if (discovery.status === "valid" && discovery.envelope?.receipt) {
+        setBaselineActivationSelectionCheckpoint(discovery.envelope.receipt);
+      }
+    } catch (checkpointError) {
+      setError(toErrorMessage(checkpointError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
   async function applyBaselineActivationSelection(): Promise<void> {
     if (!latestApprovedActivationRecord || !canApplyActivationSelection) {
       return;
@@ -942,6 +994,7 @@ export default function ReceiptTrustPanel({
     setBaselineActivationSelectionCheckpoint(undefined);
     setBaselineActivationSelectionCheckpointVerification(undefined);
     setBaselineActivationSelectionCheckpointEnvelope(undefined);
+    setBaselineActivationSelectionCheckpointDiscovery(undefined);
   }
 
   function clearExternalDirectory(): void {
@@ -1572,6 +1625,53 @@ export default function ReceiptTrustPanel({
               </div>
             </>
           )}
+          <form
+            className="receipt-directory-discovery"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void discoverActivationSelectionTransparencyCheckpoint();
+            }}
+          >
+            <label>
+              <span>{copy.lab.trust.activationSelectionCheckpointSource}</span>
+              <input
+                type="url"
+                maxLength={2048}
+                spellCheck="false"
+                value={checkpointSourceUrl}
+                placeholder={
+                  copy.lab.trust.activationSelectionCheckpointSourcePlaceholder
+                }
+                onChange={(event) => setCheckpointSourceUrl(event.target.value)}
+              />
+            </label>
+            <label>
+              <span>{copy.lab.trust.expectedActivationSelectionCheckpoint}</span>
+              <input
+                type="text"
+                maxLength={64}
+                spellCheck="false"
+                value={expectedCheckpointSha256}
+                placeholder={
+                  copy.lab.trust.expectedActivationSelectionCheckpointPlaceholder
+                }
+                onChange={(event) =>
+                  setExpectedCheckpointSha256(event.target.value)
+                }
+              />
+            </label>
+            <span className="receipt-directory-actions">
+              <button
+                type="submit"
+                disabled={!canDiscoverActivationSelectionCheckpoint}
+              >
+                <ShieldCheck size={10} aria-hidden="true" />
+                {busyId === "discover-activation-selection-checkpoint"
+                  ? copy.lab.trust.discoveringActivationSelectionCheckpoint
+                  : copy.lab.trust.discoverActivationSelectionCheckpoint}
+              </button>
+            </span>
+          </form>
           <div className="receipt-baseline-actions">
             <button
               type="button"
@@ -1754,6 +1854,82 @@ export default function ReceiptTrustPanel({
                   12,
                 )}
               </code>
+            </output>
+          ) : null}
+          {baselineActivationSelectionCheckpointDiscovery ? (
+            <output
+              className={`receipt-baseline-policy policy-${
+                baselineActivationSelectionCheckpointDiscovery.status ===
+                "valid"
+                  ? "approved"
+                  : "rejected"
+              }`}
+              aria-live="polite"
+            >
+              {baselineActivationSelectionCheckpointDiscovery.status ===
+              "valid" ? (
+                <Check size={11} aria-hidden="true" />
+              ) : (
+                <ShieldCheck size={11} aria-hidden="true" />
+              )}
+              <span>
+                <strong>
+                  {
+                    copy.lab.trust
+                      .activationSelectionCheckpointDiscoveryStatuses[
+                      baselineActivationSelectionCheckpointDiscovery.status
+                    ]
+                  }
+                </strong>
+                <small>
+                  {baselineActivationSelectionCheckpointDiscovery.diagnostics
+                    .length > 0
+                    ? baselineActivationSelectionCheckpointDiscovery.diagnostics.join(
+                        ", ",
+                      )
+                    : copy.lab.trust.hashOnlyRemoteSource}
+                </small>
+              </span>
+              <code
+                title={
+                  baselineActivationSelectionCheckpointDiscovery.sourceUrlSha256
+                }
+              >
+                {baselineActivationSelectionCheckpointDiscovery.sourceUrlSha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={
+                  baselineActivationSelectionCheckpointDiscovery.responseBodySha256
+                }
+              >
+                {baselineActivationSelectionCheckpointDiscovery.responseBodySha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              <code
+                title={baselineActivationSelectionCheckpointDiscovery.policySha256}
+              >
+                {baselineActivationSelectionCheckpointDiscovery.policySha256.slice(
+                  0,
+                  12,
+                )}
+              </code>
+              {baselineActivationSelectionCheckpointDiscovery.checkpointSha256 ? (
+                <code
+                  title={
+                    baselineActivationSelectionCheckpointDiscovery.checkpointSha256
+                  }
+                >
+                  {baselineActivationSelectionCheckpointDiscovery.checkpointSha256.slice(
+                    0,
+                    12,
+                  )}
+                </code>
+              ) : null}
             </output>
           ) : null}
           {baselineActivationSelectionCheckpointEnvelope ? (

@@ -2,15 +2,18 @@ import { describe, expect, it } from "vitest";
 
 import type {
   ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectorySubscription,
 } from "@napier/contracts";
 import {
   DIRECTORY_SUBSCRIPTION_REFRESH_INTERVAL_MS,
   DISCOVERED_DIRECTORY_MAX_AGE_MS,
+  DISCOVERED_SELECTION_CHECKPOINT_MAX_AGE_MS,
   QUORUM_BASELINE_ACTIVATION_MAX_AGE_MS,
   buildReceiptTrustDirectoryBaselineImportPolicy,
   projectReceiptTrustDirectoryBaselineActivation,
+  qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest,
   qualifyReceiptTrustAnchorDirectoryDiscoveryRequest,
   qualifyReceiptTrustAnchorDirectorySubscriptionRequest,
 } from "../src/receipt-trust-view-model";
@@ -84,6 +87,74 @@ describe("receipt trust directory discovery ViewModel", () => {
         " ",
         "https://trust.example.test/anchors.json",
         "",
+      ),
+    ).toBeUndefined();
+  });
+
+  it("qualifies hosted signed checkpoint discovery with local pins", () => {
+    const checkpoint = createCheckpoint();
+    const directory = createDirectory("a".repeat(64), "b".repeat(64));
+    expect(
+      qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
+        "  https://trust.example.test/activation-selection-checkpoint.json  ",
+        "C".repeat(64),
+        checkpoint,
+        "D".repeat(64),
+        directory,
+        {
+          expectedAnchorSetSha256: directory.anchorSetSha256,
+          minimumTrustedCount: 1,
+        },
+      ),
+    ).toEqual({
+      sourceUrl:
+        "https://trust.example.test/activation-selection-checkpoint.json",
+      policy: {
+        maxEnvelopeAgeMs: DISCOVERED_SELECTION_CHECKPOINT_MAX_AGE_MS,
+        rejectRollback: true,
+        minimumSelectionCount: checkpoint.selectionCount,
+        expectedCheckpointSha256: "c".repeat(64),
+        expectedSelectionSetSha256: checkpoint.selectionSetSha256,
+        expectedSelectionChainTailSha256:
+          checkpoint.selectionChainTailSha256,
+        requiredSignerKeyIds: ["d".repeat(64)],
+      },
+      trustDirectory: directory,
+      trustDirectoryPolicy: {
+        expectedAnchorSetSha256: directory.anchorSetSha256,
+        minimumTrustedCount: 1,
+      },
+    });
+  });
+
+  it.each([
+    "http://trust.example.test/activation-selection-checkpoint.json",
+    "https://trust.example.test/activation-selection-checkpoint.json?token=secret",
+    "not-a-url",
+  ])("rejects unsafe checkpoint discovery URLs", (sourceUrl) => {
+    expect(
+      qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
+        sourceUrl,
+        "",
+        createCheckpoint(),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("rejects invalid checkpoint and signer pins", () => {
+    expect(
+      qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
+        "https://trust.example.test/activation-selection-checkpoint.json",
+        "abc",
+        createCheckpoint(),
+      ),
+    ).toBeUndefined();
+    expect(
+      qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
+        "https://trust.example.test/activation-selection-checkpoint.json",
+        "",
+        createCheckpoint(),
+        "not-a-key",
       ),
     ).toBeUndefined();
   });
@@ -371,6 +442,31 @@ function createSubscription(
     transparencyEntryCount: 1,
     transparencyHistory: [],
     contentSha256: `${label.length + 5}`.repeat(64).slice(0, 64),
+  };
+}
+
+function createCheckpoint(): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint {
+  return {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint",
+    schemaVersion: 1,
+    apiVersion: "0.1.0",
+    generatedAt: "2026-07-27T00:00:00.000Z",
+    hasSelection: true,
+    selectionCount: 1,
+    currentSelectionSha256: "1".repeat(64),
+    currentSelectionId: "trustqas_1234567890abcdef1234",
+    currentSelectionEntrySha256: "2".repeat(64),
+    selectionSetSha256: "3".repeat(64),
+    selectionChainTailSha256: "4".repeat(64),
+    activationDecisionCount: 1,
+    activationDecisionSetSha256: "5".repeat(64),
+    baselineSetSha256: "6".repeat(64),
+    policyReviewSetSha256: "7".repeat(64),
+    sourceAlignmentSetSha256: "8".repeat(64),
+    driftAuditSha256: "9".repeat(64),
+    driftStatus: "aligned",
+    entries: [],
+    contentSha256: "0".repeat(64),
   };
 }
 

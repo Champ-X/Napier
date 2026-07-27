@@ -1,7 +1,9 @@
 import type {
   CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
   ReceiptTrustAnchorDirectory,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   ReceiptTrustAnchorDirectorySubscription,
@@ -9,6 +11,8 @@ import type {
 } from "@napier/contracts";
 
 export const DISCOVERED_DIRECTORY_MAX_AGE_MS = 24 * 60 * 60 * 1_000;
+export const DISCOVERED_SELECTION_CHECKPOINT_MAX_AGE_MS =
+  7 * 24 * 60 * 60 * 1_000;
 export const DIRECTORY_SUBSCRIPTION_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1_000;
 export const QUORUM_BASELINE_ACTIVATION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
 
@@ -19,6 +23,13 @@ export type QualifiedReceiptTrustAnchorDirectoryDiscoveryRequest =
 
 export type QualifiedReceiptTrustAnchorDirectorySubscriptionRequest =
   CreateReceiptTrustAnchorDirectorySubscriptionRequest;
+
+export type QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest =
+  DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest & {
+    policy: NonNullable<
+      DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRequest["policy"]
+    >;
+  };
 
 export type ReceiptTrustDirectoryBaselineSourceStatus =
   | "aligned"
@@ -100,6 +111,59 @@ export function qualifyReceiptTrustAnchorDirectorySubscriptionRequest(
     sourceUrl: discovery.sourceUrl,
     refreshIntervalMs: DIRECTORY_SUBSCRIPTION_REFRESH_INTERVAL_MS,
     policy: discovery.policy,
+  };
+}
+
+export function qualifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest(
+  sourceUrl: string,
+  expectedCheckpointSha256: string,
+  currentCheckpoint:
+    | ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint
+    | undefined,
+  signerKeyId?: string,
+  trustDirectory?: ReceiptTrustAnchorDirectory,
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy,
+): QualifiedReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryRequest | undefined {
+  const normalizedSourceUrl = normalizeDirectorySourceUrl(sourceUrl);
+  const normalizedCheckpointSha256 = expectedCheckpointSha256
+    .trim()
+    .toLowerCase();
+  const normalizedSignerKeyId = signerKeyId?.trim().toLowerCase();
+  if (
+    !normalizedSourceUrl ||
+    (normalizedCheckpointSha256 &&
+      !/^[a-f0-9]{64}$/.test(normalizedCheckpointSha256)) ||
+    (normalizedSignerKeyId && !/^[a-f0-9]{64}$/.test(normalizedSignerKeyId))
+  ) {
+    return undefined;
+  }
+  return {
+    sourceUrl: normalizedSourceUrl,
+    policy: {
+      maxEnvelopeAgeMs: DISCOVERED_SELECTION_CHECKPOINT_MAX_AGE_MS,
+      rejectRollback: true,
+      minimumSelectionCount: currentCheckpoint?.selectionCount ?? 0,
+      ...(normalizedCheckpointSha256
+        ? { expectedCheckpointSha256: normalizedCheckpointSha256 }
+        : {}),
+      ...(currentCheckpoint?.selectionSetSha256
+        ? {
+            expectedSelectionSetSha256:
+              currentCheckpoint.selectionSetSha256,
+          }
+        : {}),
+      ...(currentCheckpoint?.selectionChainTailSha256
+        ? {
+            expectedSelectionChainTailSha256:
+              currentCheckpoint.selectionChainTailSha256,
+          }
+        : {}),
+      ...(normalizedSignerKeyId
+        ? { requiredSignerKeyIds: [normalizedSignerKeyId] }
+        : {}),
+    },
+    ...(trustDirectory ? { trustDirectory } : {}),
+    ...(trustDirectory && trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
   };
 }
 

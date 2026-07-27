@@ -26,6 +26,18 @@ export interface ReceiptTrustAnchorDirectoryDiscoveryOptions {
   validateEndpoint?: (sourceUrl: string) => Promise<void>;
 }
 
+export interface ReceiptTrustAnchorDirectoryHostedJsonSource {
+  sourceUrl: string;
+  sourceOrigin: string;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  httpStatus: number;
+  responseMediaType: string;
+  responseBytes: number;
+  responseBodySha256: string;
+  value: unknown;
+}
+
 export class ReceiptTrustAnchorDirectoryDiscoveryError extends Error {
   readonly status: 400 | 403 | 502 | 504;
 
@@ -55,9 +67,42 @@ export class ReceiptTrustAnchorDirectoryDiscoveryService {
   async discover(
     request: DiscoverReceiptTrustAnchorDirectoryRequest,
   ): Promise<ReceiptTrustAnchorDirectoryDiscovery> {
-    const sourceUrl = normalizeReceiptTrustAnchorDirectorySourceUrl(
-      request.sourceUrl,
+    const source = await this.fetchJson(request.sourceUrl);
+    const verification = verifyReceiptTrustAnchorDirectory(
+      source.value,
+      request.policy,
     );
+    const directory =
+      verification.status === "valid"
+        ? validateReceiptTrustAnchorDirectory(source.value)
+        : undefined;
+    const generatedAt = new Date().toISOString();
+    const content = {
+      kind: "napier.receipt-trust-anchor-directory-discovery" as const,
+      schemaVersion: 1 as const,
+      apiVersion: NAPIER_API_VERSION,
+      generatedAt,
+      status: verification.status,
+      sourceUrlSha256: source.sourceUrlSha256,
+      sourceOriginSha256: source.sourceOriginSha256,
+      httpStatus: source.httpStatus,
+      responseMediaType: source.responseMediaType,
+      responseBytes: source.responseBytes,
+      responseBodySha256: source.responseBodySha256,
+      verification,
+      ...(directory ? { directory } : {}),
+    };
+    return {
+      ...content,
+      contentSha256: sha256(canonicalJson(content)),
+    };
+  }
+
+  async fetchJson(
+    sourceUrlInput: string,
+  ): Promise<ReceiptTrustAnchorDirectoryHostedJsonSource> {
+    const sourceUrl =
+      normalizeReceiptTrustAnchorDirectorySourceUrl(sourceUrlInput);
     if (!this.allowedOrigins.has(sourceUrl.origin)) {
       throw new ReceiptTrustAnchorDirectoryDiscoveryError(
         "Receipt trust anchor directory source origin is not allowed",
@@ -90,34 +135,16 @@ export class ReceiptTrustAnchorDirectoryDiscoveryService {
         502,
       );
     }
-
-    const verification = verifyReceiptTrustAnchorDirectory(
-      input,
-      request.policy,
-    );
-    const directory =
-      verification.status === "valid"
-        ? validateReceiptTrustAnchorDirectory(input)
-        : undefined;
-    const generatedAt = new Date().toISOString();
-    const content = {
-      kind: "napier.receipt-trust-anchor-directory-discovery" as const,
-      schemaVersion: 1 as const,
-      apiVersion: NAPIER_API_VERSION,
-      generatedAt,
-      status: verification.status,
+    return {
+      sourceUrl: sourceUrl.href,
+      sourceOrigin: sourceUrl.origin,
       sourceUrlSha256: sha256(sourceUrl.href),
       sourceOriginSha256: sha256(sourceUrl.origin),
       httpStatus: response.status,
       responseMediaType,
       responseBytes: responseBody.byteLength,
       responseBodySha256: sha256(responseBody),
-      verification,
-      ...(directory ? { directory } : {}),
-    };
-    return {
-      ...content,
-      contentSha256: sha256(canonicalJson(content)),
+      value: input,
     };
   }
 }

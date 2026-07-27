@@ -14,6 +14,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionState,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
@@ -29,6 +30,7 @@ import type {
 import {
   createReceiptTrustAnchor,
   createReceiptTrustAnchorDirectory,
+  signTrustedReceipt,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -40,9 +42,12 @@ import {
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createNapierServices>>[] = [];
 const SIGNING_ENV = "NAPIER_TEST_QUORUM_METADATA_SIGNING_KEY";
+const FOREIGN_SIGNING_ENV =
+  "NAPIER_TEST_QUORUM_METADATA_FOREIGN_SIGNING_KEY";
 
 afterEach(async () => {
   delete process.env[SIGNING_ENV];
+  delete process.env[FOREIGN_SIGNING_ENV];
   for (const services of openServices.splice(0)) {
     await services.receiptTrustDirectorySubscriptions.stop();
     await services.recovery.stop();
@@ -63,7 +68,12 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-trust-sub-http-"));
     temporaryRoots.push(root);
     const sourceUrl = "https://trust.example.test/napier/anchors.json";
+    const checkpointSourceUrl =
+      "https://trust.example.test/napier/activation-selection-checkpoint.json";
     let hostedDirectory: ReceiptTrustAnchorDirectory | undefined;
+    let hostedCheckpointEnvelope:
+      | TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpoint>
+      | undefined;
     let responseMode: "valid" | "invalid" | "failure" = "valid";
     let fetchCount = 0;
     const services = await createNapierServices({
@@ -75,7 +85,13 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
           "https://trust.example.test",
         ],
         validateEndpoint: async () => undefined,
-        fetcher: async () => {
+        fetcher: async (input) => {
+          if (input === checkpointSourceUrl) {
+            if (!hostedCheckpointEnvelope) {
+              throw new Error("Checkpoint envelope is unavailable");
+            }
+            return Response.json(hostedCheckpointEnvelope);
+          }
           fetchCount += 1;
           if (responseMode === "failure") {
             throw new Error("private upstream detail");
@@ -949,6 +965,222 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         integrityValid: true,
       }),
     );
+    const selectionCheckpointDiscoveryPath =
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/discover";
+    hostedCheckpointEnvelope = signedSelectionCheckpoint;
+    const validCheckpointDiscoveryResponse = await app.request(
+      selectionCheckpointDiscoveryPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sourceUrl: checkpointSourceUrl,
+          policy: {
+            expectedCheckpointSha256: selectionCheckpoint.contentSha256,
+            expectedSelectionSetSha256: selectionCheckpoint.selectionSetSha256,
+            expectedSelectionChainTailSha256:
+              selectionCheckpoint.selectionChainTailSha256,
+            minimumSelectionCount: 1,
+            requiredSignerKeyIds: [signingAnchor.keyId],
+            rejectRollback: true,
+          },
+        }),
+      },
+    );
+    expect(validCheckpointDiscoveryResponse.status).toBe(200);
+    const validCheckpointDiscovery =
+      (await validCheckpointDiscoveryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery;
+    expect(validCheckpointDiscovery).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        sourceUrlSha256: sha256Text(checkpointSourceUrl),
+        sourceOriginSha256: sha256Text("https://trust.example.test"),
+        trustedReceiptVerification: expect.objectContaining({
+          status: "trusted",
+          keyId: signingAnchor.keyId,
+          envelopeSha256: signedSelectionCheckpoint.contentSha256,
+        }),
+        checkpointVerification: expect.objectContaining({
+          status: "valid",
+          declaredContentSha256: selectionCheckpoint.contentSha256,
+          currentContentSha256: selectionCheckpoint.contentSha256,
+        }),
+        envelopeSha256: signedSelectionCheckpoint.contentSha256,
+        checkpointSha256: selectionCheckpoint.contentSha256,
+        signerKeyId: signingAnchor.keyId,
+        selectionCount: 1,
+        selectionSetSha256: selectionCheckpoint.selectionSetSha256,
+        selectionChainTailSha256: selectionCheckpoint.selectionChainTailSha256,
+        currentSelectionCount: 1,
+        currentSelectionChainTailSha256:
+          selectionCheckpoint.selectionChainTailSha256,
+      }),
+    );
+    expect(JSON.stringify(validCheckpointDiscovery)).not.toContain(
+      checkpointSourceUrl,
+    );
+    expect(
+      validCheckpointDiscoveryResponse.headers.get(
+        "x-napier-discovery-status",
+      ),
+    ).toBe("valid");
+    expect(
+      validCheckpointDiscoveryResponse.headers.get(
+        "x-napier-content-sha256",
+      ),
+    ).toBe(validCheckpointDiscovery.contentSha256);
+    expect(
+      validCheckpointDiscoveryResponse.headers.get(
+        "x-napier-content-sha256-mode",
+      ),
+    ).toBe("stable");
+    expect(
+      validCheckpointDiscoveryResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-sha256",
+      ),
+    ).toBe(selectionCheckpoint.contentSha256);
+    const { privateKey: foreignPrivateKey } = generateKeyPairSync("ed25519");
+    process.env[FOREIGN_SIGNING_ENV] = foreignPrivateKey
+      .export({ format: "pem", type: "pkcs8" })
+      .toString();
+    const foreignAnchorResponse = await app.request(
+      "/api/receipt-trust/anchors",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          label: "Foreign checkpoint signer",
+          source: { type: "environment", variable: FOREIGN_SIGNING_ENV },
+        }),
+      },
+    );
+    expect(foreignAnchorResponse.status).toBe(201);
+    const foreignAnchor =
+      (await foreignAnchorResponse.json()) as ReceiptTrustAnchor;
+    hostedCheckpointEnvelope = signTrustedReceipt(
+      selectionCheckpoint,
+      foreignAnchor,
+    );
+    const untrustedCheckpointDiscoveryResponse = await app.request(
+      selectionCheckpointDiscoveryPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sourceUrl: checkpointSourceUrl }),
+      },
+    );
+    expect(untrustedCheckpointDiscoveryResponse.status).toBe(422);
+    expect(
+      (await untrustedCheckpointDiscoveryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["checkpoint_receipt_untrusted"],
+        trustedReceiptVerification: expect.objectContaining({
+          status: "unknown_key",
+          keyId: foreignAnchor.keyId,
+        }),
+        checkpointVerification: expect.objectContaining({
+          status: "valid",
+        }),
+        signerKeyId: foreignAnchor.keyId,
+      }),
+    );
+    hostedCheckpointEnvelope = signTrustedReceipt(
+      emptySelectionCheckpoint,
+      signingAnchor,
+    );
+    const rollbackCheckpointDiscoveryResponse = await app.request(
+      selectionCheckpointDiscoveryPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sourceUrl: checkpointSourceUrl,
+          policy: {
+            requiredSignerKeyIds: [signingAnchor.keyId],
+            minimumSelectionCount: 1,
+            rejectRollback: true,
+          },
+        }),
+      },
+    );
+    expect(rollbackCheckpointDiscoveryResponse.status).toBe(422);
+    expect(
+      (await rollbackCheckpointDiscoveryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining([
+          "checkpoint_divergent",
+          "selection_count_below_minimum",
+          "selection_count_rollback",
+        ]),
+        trustedReceiptVerification: expect.objectContaining({
+          status: "trusted",
+          keyId: signingAnchor.keyId,
+        }),
+        checkpointVerification: expect.objectContaining({
+          status: "divergent",
+        }),
+        selectionCount: 0,
+        currentSelectionCount: 1,
+      }),
+    );
+    hostedCheckpointEnvelope = signedSelectionCheckpoint;
+    const pinnedCheckpointDiscoveryResponse = await app.request(
+      selectionCheckpointDiscoveryPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sourceUrl: checkpointSourceUrl,
+          policy: {
+            expectedCheckpointSha256: "0".repeat(64),
+            expectedSelectionSetSha256: "1".repeat(64),
+            expectedSelectionChainTailSha256: "2".repeat(64),
+            minimumSelectionCount: 2,
+            requiredSignerKeyIds: ["3".repeat(64)],
+            rejectRollback: false,
+          },
+        }),
+      },
+    );
+    expect(pinnedCheckpointDiscoveryResponse.status).toBe(422);
+    expect(
+      (await pinnedCheckpointDiscoveryResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery,
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining([
+          "required_signer_missing",
+          "checkpoint_hash_mismatch",
+          "selection_set_mismatch",
+          "selection_chain_tail_mismatch",
+          "selection_count_below_minimum",
+        ]),
+        trustedReceiptVerification: expect.objectContaining({
+          status: "trusted",
+          keyId: signingAnchor.keyId,
+        }),
+        checkpointVerification: expect.objectContaining({
+          status: "valid",
+        }),
+      }),
+    );
+    const disallowedCheckpointDiscoveryResponse = await app.request(
+      selectionCheckpointDiscoveryPath,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sourceUrl: "https://untrusted.example.test/napier/checkpoint.json",
+        }),
+      },
+    );
+    expect(disallowedCheckpointDiscoveryResponse.status).toBe(403);
     const divergentSelectionCheckpointResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint/verify",
       {
@@ -1408,6 +1640,10 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
     expect(JSON.stringify(events)).not.toContain("private upstream detail");
   });
 });
+
+function sha256Text(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 function createDirectory(
   threadId: string,
