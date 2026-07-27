@@ -32,7 +32,10 @@ import {
 import { validateEvaluationCasebookQualificationReceipt } from "./evaluation-casebook-qualification.js";
 import { validateEvaluationSuiteGateReceipt } from "./evaluation-suites.js";
 import { createId, nowIso } from "./ids.js";
-import { validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt } from "./receipt-trust-directory-subscriptions.js";
+import {
+  validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
+} from "./receipt-trust-directory-subscriptions.js";
 
 export const MAX_RECEIPT_TRUST_ANCHORS = 32;
 export const MAX_QUALIFICATION_BASELINES_PER_CASEBOOK = 20;
@@ -47,6 +50,7 @@ const TRUSTED_RECEIPT_KINDS: TrustedReceiptKind[] = [
   "policy_retirement_proof_bundle",
   "receipt_trust_anchor_directory_metadata",
   "receipt_trust_anchor_directory_quorum_promotion",
+  "receipt_trust_anchor_directory_quorum_activation_decision",
 ];
 const RECEIPT_TRUST_ANCHOR_DIRECTORY_KEYS = [
   "kind",
@@ -1114,6 +1118,14 @@ function validateTrustedReceipt(value: unknown): TrustedReceipt {
   ) {
     return validateReceiptTrustAnchorDirectoryQuorumPromotionReceipt(value);
   }
+  if (
+    value["kind"] ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-decision"
+  ) {
+    return validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt(
+      value,
+    );
+  }
   throw new Error("Trusted receipt kind is unsupported");
 }
 
@@ -1263,6 +1275,12 @@ function receiptKindFor(receipt: TrustedReceipt): TrustedReceiptKind {
     receipt.kind === "napier.receipt-trust-anchor-directory-quorum-promotion"
   ) {
     return "receipt_trust_anchor_directory_quorum_promotion";
+  }
+  if (
+    receipt.kind ===
+    "napier.receipt-trust-anchor-directory-quorum-activation-decision"
+  ) {
+    return "receipt_trust_anchor_directory_quorum_activation_decision";
   }
   return "policy_retirement_proof_bundle";
 }

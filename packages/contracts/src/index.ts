@@ -3556,14 +3556,16 @@ export type TrustedReceipt =
   | EvaluationCasebookQualificationReceipt
   | ExecutionPlanBlueprintRecommendationPolicyOverrideRetirementHistoryProofBundle
   | ReceiptTrustAnchorDirectoryMetadataReceipt
-  | ReceiptTrustAnchorDirectoryQuorumPromotionReceipt;
+  | ReceiptTrustAnchorDirectoryQuorumPromotionReceipt
+  | ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt;
 
 export type TrustedReceiptKind =
   | "evaluation_gate"
   | "casebook_qualification"
   | "policy_retirement_proof_bundle"
   | "receipt_trust_anchor_directory_metadata"
-  | "receipt_trust_anchor_directory_quorum_promotion";
+  | "receipt_trust_anchor_directory_quorum_promotion"
+  | "receipt_trust_anchor_directory_quorum_activation_decision";
 
 export type ReceiptTrustAnchorStatus = "trusted" | "revoked";
 
@@ -4135,6 +4137,93 @@ export interface ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult 
   policyReview?: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
   expectedCurrentBaselineSha256: string;
   previousBaselineSha256?: string;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus =
+  | "aligned"
+  | "directory_drift"
+  | "anchor_set_drift"
+  | "no_last_good"
+  | "missing_subscription";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSource {
+  sourceOriginSha256: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus;
+  subscriptionId?: string;
+  subscriptionSha256?: string;
+  currentAnchorSetSha256?: string;
+  currentDirectorySha256?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-source-alignment";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  baselineSha256: string;
+  selectedAnchorSetSha256: string;
+  selectedDirectorySha256: string;
+  selectedSourceOriginCount: number;
+  selectedSourceOriginSetSha256: string;
+  alignedSourceCount: number;
+  driftedSourceCount: number;
+  missingSourceCount: number;
+  sources: ReceiptTrustAnchorDirectoryQuorumActivationSource[];
+  contentSha256: string;
+}
+
+export type ReceiptTrustAnchorDirectoryQuorumActivationDecisionStatus =
+  | "approved"
+  | "rejected";
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  decision: ReceiptTrustAnchorDirectoryQuorumActivationDecisionStatus;
+  diagnostics: string[];
+  baselineId: string;
+  baselineSha256: string;
+  envelopeSha256: string;
+  receiptSha256: string;
+  receiptArtifactSha256: string;
+  selectedAnchorSetSha256: string;
+  selectedDirectorySha256: string;
+  verificationStatus: TrustedReceiptVerificationStatus;
+  verificationSha256: string;
+  signatureValid: boolean;
+  integrityValid: boolean;
+  policyReviewStatus: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReviewStatus;
+  policySha256: string;
+  policyReviewSha256: string;
+  sourceAlignmentSha256: string;
+  alignedSourceCount: number;
+  driftedSourceCount: number;
+  missingSourceCount: number;
+  selectedSourceOriginSetSha256: string;
+  metadataPublisherSetSha256: string;
+  metadataSignerSetSha256: string;
+  contentSha256: string;
+}
+
+export interface SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest
+  extends SignTrustedReceiptRequest {
+  threadId: string;
+  trustAnchorId: string;
+  baselineId?: string;
+  importPolicy: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy;
+  trustDirectory?: unknown;
+  trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
+export interface SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult {
+  baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+  verification: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+  policyReview: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
+  sourceAlignment: ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment;
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt>;
 }
 
 export interface EvaluationQualificationBaseline {

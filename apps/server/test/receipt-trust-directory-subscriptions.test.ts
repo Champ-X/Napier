@@ -14,6 +14,7 @@ import type {
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
+  SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   TrustedReceiptEnvelope,
 } from "@napier/contracts";
 import {
@@ -454,6 +455,77 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-promotion-baseline-sha256",
       ),
     ).toBe(baselineResult.baseline.contentSha256);
+    const activationPolicy = {
+      maxBaselineAgeMs: 86_400_000,
+      maxReceiptAgeMs: 86_400_000,
+      maxSourceObservedAgeMs: 86_400_000,
+      minimumAgreementCount: 2,
+      minimumAgreementWeight: 2,
+      minimumDistinctSourceOrigins: 2,
+      minimumMetadataPublisherCount: 1,
+      minimumSelectedMetadataCount: 2,
+      expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+      expectedDirectorySha256: hostedDirectory.contentSha256,
+      requiredSourceOriginSha256s: [
+        created.sourceOriginSha256,
+        mirror.sourceOriginSha256,
+      ],
+      requiredMetadataPublisherSha256s: [publisherSha256],
+      requiredMetadataSignerKeyIds: [signingAnchor.keyId],
+    };
+    const activationResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          threadId: thread.id,
+          trustAnchorId: signingAnchor.id,
+          baselineId: baselineResult.baseline.id,
+          importPolicy: activationPolicy,
+        }),
+      },
+    );
+    expect(activationResponse.status).toBe(201);
+    const activation =
+      (await activationResponse.json()) as SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult;
+    expect(activation).toEqual(
+      expect.objectContaining({
+        baseline: baselineResult.baseline,
+        verification: expect.objectContaining({
+          status: "trusted",
+          baselineSha256: baselineResult.baseline.contentSha256,
+        }),
+        policyReview: expect.objectContaining({
+          status: "accepted",
+          policySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+        sourceAlignment: expect.objectContaining({
+          alignedSourceCount: 2,
+          driftedSourceCount: 0,
+          missingSourceCount: 0,
+        }),
+        envelope: expect.objectContaining({
+          receiptKind:
+            "receipt_trust_anchor_directory_quorum_activation_decision",
+          receipt: expect.objectContaining({
+            decision: "approved",
+            diagnostics: [],
+            baselineSha256: baselineResult.baseline.contentSha256,
+          }),
+        }),
+      }),
+    );
+    expect(
+      activationResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-decision",
+      ),
+    ).toBe("approved");
+    expect(
+      activationResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-source-alignment-sha256",
+      ),
+    ).toBe(activation.sourceAlignment.contentSha256);
     const importRoot = await mkdtemp(
       path.join(tmpdir(), "napier-trust-baseline-import-http-"),
     );
@@ -469,24 +541,7 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
       baseline: baselineResult.baseline,
       threadId: importThread.id,
       expectedCurrentBaselineSha256: "",
-      importPolicy: {
-        maxBaselineAgeMs: 86_400_000,
-        maxReceiptAgeMs: 86_400_000,
-        maxSourceObservedAgeMs: 86_400_000,
-        minimumAgreementCount: 2,
-        minimumAgreementWeight: 2,
-        minimumDistinctSourceOrigins: 2,
-        minimumMetadataPublisherCount: 1,
-        minimumSelectedMetadataCount: 2,
-        expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
-        expectedDirectorySha256: hostedDirectory.contentSha256,
-        requiredSourceOriginSha256s: [
-          created.sourceOriginSha256,
-          mirror.sourceOriginSha256,
-        ],
-        requiredMetadataPublisherSha256s: [publisherSha256],
-        requiredMetadataSignerKeyIds: [signingAnchor.keyId],
-      },
+      importPolicy: activationPolicy,
       trustDirectory: hostedDirectory,
       trustDirectoryPolicy: {
         expectedAnchorSetSha256: hostedDirectory.anchorSetSha256,

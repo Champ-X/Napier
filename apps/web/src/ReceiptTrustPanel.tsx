@@ -26,6 +26,7 @@ import type {
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
+  SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   TrustedReceiptVerification,
 } from "@napier/contracts";
 
@@ -42,6 +43,7 @@ import {
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
   revokeReceiptTrustAnchor,
+  signReceiptTrustAnchorDirectoryQuorumActivationDecision,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
@@ -102,6 +104,8 @@ export default function ReceiptTrustPanel({
     useState<ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification>();
   const [baselineImportResult, setBaselineImportResult] =
     useState<ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult>();
+  const [baselineActivationDecision, setBaselineActivationDecision] =
+    useState<SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult>();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -147,6 +151,16 @@ export default function ReceiptTrustPanel({
     [promotionBaselines, directorySubscriptions],
   );
   const latestBaseline = baselineActivation.latestBaseline;
+  const canSignActivationDecision =
+    Boolean(latestBaseline) &&
+    Boolean(selectedAnchorId) &&
+    anchors.some(
+      (anchor) =>
+        anchor.id === selectedAnchorId &&
+        anchor.status === "trusted" &&
+        Boolean(anchor.signingSource),
+    ) &&
+    !busyId;
 
   useEffect(() => {
     let cancelled = false;
@@ -552,10 +566,49 @@ export default function ReceiptTrustPanel({
             : {}),
         });
       setBaselineImportResult(result);
+      setBaselineActivationDecision(undefined);
       setBaselineVerification(result.verification);
       upsertPromotionBaseline(result.baseline);
     } catch (importError) {
       setError(toErrorMessage(importError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function signBaselineActivationDecision(): Promise<void> {
+    if (!latestBaseline || !canSignActivationDecision) return;
+    setBusyId("sign-quorum-baseline-activation");
+    setError(undefined);
+    setBaselineActivationDecision(undefined);
+    try {
+      const result =
+        await signReceiptTrustAnchorDirectoryQuorumActivationDecision({
+          threadId,
+          trustAnchorId: selectedAnchorId,
+          baselineId: latestBaseline.id,
+          importPolicy: buildReceiptTrustDirectoryBaselineImportPolicy(
+            latestBaseline,
+            directorySubscriptions,
+            externalDirectory,
+          ),
+          ...(externalDirectory
+            ? {
+                trustDirectory: externalDirectory,
+                ...(externalDirectoryPolicy
+                  ? { trustDirectoryPolicy: externalDirectoryPolicy }
+                  : {}),
+              }
+            : {}),
+        });
+      setBaselineActivationDecision(result);
+      setBaselineVerification(result.verification);
+      downloadJson(
+        result.envelope,
+        `napier-quorum-baseline-activation-${result.envelope.receipt.contentSha256.slice(0, 12)}.json`,
+      );
+    } catch (signError) {
+      setError(toErrorMessage(signError));
     } finally {
       setBusyId(undefined);
     }
@@ -586,6 +639,7 @@ export default function ReceiptTrustPanel({
   function clearBaselineActivationEvidence(): void {
     setBaselineVerification(undefined);
     setBaselineImportResult(undefined);
+    setBaselineActivationDecision(undefined);
   }
 
   function clearExternalDirectory(): void {
@@ -1034,6 +1088,16 @@ export default function ReceiptTrustPanel({
                     }}
                   />
                 </label>
+                <button
+                  type="button"
+                  disabled={!canSignActivationDecision}
+                  onClick={() => void signBaselineActivationDecision()}
+                >
+                  <ShieldCheck size={10} aria-hidden="true" />
+                  {busyId === "sign-quorum-baseline-activation"
+                    ? copy.lab.trust.signingBaselineActivation
+                    : copy.lab.trust.signBaselineActivation}
+                </button>
               </div>
               {baselineActivation.sourceProjections.length ? (
                 <ol className="receipt-baseline-sources">
@@ -1131,6 +1195,47 @@ export default function ReceiptTrustPanel({
                   </code>
                   <code title={baselineImportResult.policyReview.contentSha256}>
                     {baselineImportResult.policyReview.contentSha256.slice(
+                      0,
+                      12,
+                    )}
+                  </code>
+                </output>
+              ) : null}
+              {baselineActivationDecision ? (
+                <output
+                  className={`receipt-baseline-policy policy-${baselineActivationDecision.envelope.receipt.decision}`}
+                  aria-live="polite"
+                >
+                  <ShieldCheck size={11} aria-hidden="true" />
+                  <span>
+                    <strong>
+                      {
+                        copy.lab.trust.baselineActivationDecisionStatuses[
+                          baselineActivationDecision.envelope.receipt.decision
+                        ]
+                      }
+                    </strong>
+                    <small>
+                      {baselineActivationDecision.envelope.receipt.diagnostics
+                        .length > 0
+                        ? baselineActivationDecision.envelope.receipt.diagnostics.join(
+                            ", ",
+                          )
+                        : copy.lab.trust.noDiagnostics}
+                    </small>
+                  </span>
+                  <code
+                    title={
+                      baselineActivationDecision.envelope.receipt.contentSha256
+                    }
+                  >
+                    {baselineActivationDecision.envelope.receipt.contentSha256.slice(
+                      0,
+                      12,
+                    )}
+                  </code>
+                  <code title={baselineActivationDecision.envelope.contentSha256}>
+                    {baselineActivationDecision.envelope.contentSha256.slice(
                       0,
                       12,
                     )}

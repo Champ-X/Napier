@@ -467,6 +467,15 @@ directory/anchor-set drift before import, verifies the latest baseline against
 local or active external anchors, and imports uploaded archives with a derived
 policy that pins the current directory, source origins, metadata publishers,
 and metadata signer keys where available.
+Signed activation-decision receipts close that loop as a trusted receipt kind.
+The server recomputes the baseline verification, policy review, and current
+source-alignment projection, then signs an
+`receipt_trust_anchor_directory_quorum_activation_decision` envelope that
+records approved/rejected diagnostics plus hashes for the baseline,
+verification, policy review, source alignment, selected origins, metadata
+publishers, and metadata signer keys. Rejected decisions are still signed so
+failed activation attempts remain externally auditable without mutating local
+trust state.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2426,10 +2435,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- signed activation-decision receipts for quorum-promotion baselines, so a
-  human or policy agent can attest to the verified baseline, policy review, and
-  current source-alignment projection before a verifier set is operationally
-  promoted.
+- durable activation-decision history and replay, so signed baseline approvals
+  can be exported, verified, and compared across workspaces before trust-state
+  promotion.
 
 ### Layer 3: Extension fabric
 

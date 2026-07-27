@@ -1393,6 +1393,14 @@ baseline against local or active external trust anchors, and imports uploaded
 baseline archives with an automatically derived `importPolicy`. The result
 surfaces the trusted verification receipt and policy-review hashes next to the
 current source alignment state before the verifier set is treated as active.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision`
+signs that activation evidence as a
+`receipt_trust_anchor_directory_quorum_activation_decision` trusted receipt. The
+receipt binds the local baseline, verification receipt, policy review, source
+alignment projection, metadata publisher set, metadata signer set, and
+approved/rejected diagnostics into one portable envelope; the Web desk can sign
+and download it from the activation workbench.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

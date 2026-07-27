@@ -303,7 +303,12 @@ All notable changes to Napier are recorded here.
   source origins against active last-good directory subscriptions, verifies the
   baseline against local or active external trust anchors, and imports uploaded
   archives with a derived policy while surfacing verification and policy-review
-  hashes.
+  hashes. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision`
+  now signs the recomputed baseline verification, policy review, and
+  source-alignment projection as a
+  `receipt_trust_anchor_directory_quorum_activation_decision` trusted receipt,
+  returning a portable approved/rejected envelope and hash-only Ledger event.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

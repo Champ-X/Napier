@@ -22,6 +22,8 @@ import type {
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
+  SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
+  SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   SignReceiptTrustAnchorDirectoryMetadataRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -150,6 +152,18 @@ export function importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
 ): Promise<ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult> {
   return requestTrustJson(
     "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/import",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function signReceiptTrustAnchorDirectoryQuorumActivationDecision(
+  body: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
+): Promise<SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
     {
       method: "POST",
       body: JSON.stringify(body),

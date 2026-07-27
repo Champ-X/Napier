@@ -13,6 +13,7 @@ import type {
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   PromoteReceiptTrustAnchorDirectoryQuorumBaselineResult,
   ReceiptTrustAnchorDirectoryVerification,
+  SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
 } from "@napier/contracts";
@@ -30,6 +31,7 @@ import {
   promoteReceiptTrustAnchorDirectoryQuorumBaseline,
   promoteReceiptTrustAnchorDirectoryQuorum,
   refreshReceiptTrustAnchorDirectorySubscription,
+  signReceiptTrustAnchorDirectoryQuorumActivationDecision,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyReceiptTrustAnchorDirectoryMetadata,
@@ -454,6 +456,83 @@ describe("receipt trust Web API wrappers", () => {
       policyReview: promotionBaselineImportPolicyReview,
       expectedCurrentBaselineSha256: "",
     } satisfies ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult;
+    const activationDecisionRequest = {
+      threadId: promotionBaseline.promotedByThreadId,
+      trustAnchorId: "trustkey_1234567890abcdef1234",
+      baselineId: promotionBaseline.id,
+      importPolicy: promotionBaselineImportRequest.importPolicy,
+    };
+    const activationSourceAlignment = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-activation-source-alignment",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:00.000Z",
+      baselineSha256: promotionBaseline.contentSha256,
+      selectedAnchorSetSha256: promotionBaseline.selectedAnchorSetSha256,
+      selectedDirectorySha256: promotionBaseline.selectedDirectorySha256,
+      selectedSourceOriginCount: 2,
+      selectedSourceOriginSetSha256: "8".repeat(64),
+      alignedSourceCount: 2,
+      driftedSourceCount: 0,
+      missingSourceCount: 0,
+      sources: [],
+      contentSha256: "9".repeat(64),
+    } satisfies SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult["sourceAlignment"];
+    const activationEnvelope = {
+      kind: "napier.trusted-receipt-envelope",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      receiptKind:
+        "receipt_trust_anchor_directory_quorum_activation_decision",
+      receipt: {
+        kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision",
+        schemaVersion: 1,
+        apiVersion: "0.1.0",
+        generatedAt: "2026-07-27T00:00:00.000Z",
+        decision: "approved",
+        diagnostics: [],
+        baselineId: promotionBaseline.id,
+        baselineSha256: promotionBaseline.contentSha256,
+        envelopeSha256: promotionBaseline.envelope.contentSha256,
+        receiptSha256: promotionBaseline.envelope.receipt.contentSha256,
+        receiptArtifactSha256:
+          promotionBaseline.envelope.signature.receiptArtifactSha256,
+        selectedAnchorSetSha256: promotionBaseline.selectedAnchorSetSha256,
+        selectedDirectorySha256: promotionBaseline.selectedDirectorySha256,
+        verificationStatus: "trusted",
+        verificationSha256: promotionBaselineVerification.contentSha256,
+        signatureValid: true,
+        integrityValid: true,
+        policyReviewStatus: "accepted",
+        policySha256: promotionBaselineImportPolicyReview.policySha256,
+        policyReviewSha256: promotionBaselineImportPolicyReview.contentSha256,
+        sourceAlignmentSha256: activationSourceAlignment.contentSha256,
+        alignedSourceCount: 2,
+        driftedSourceCount: 0,
+        missingSourceCount: 0,
+        selectedSourceOriginSetSha256:
+          activationSourceAlignment.selectedSourceOriginSetSha256,
+        metadataPublisherSetSha256: "a".repeat(64),
+        metadataSignerSetSha256: "b".repeat(64),
+        contentSha256: "c".repeat(64),
+      },
+      signature: {
+        algorithm: "Ed25519",
+        keyId: "c".repeat(64),
+        signedAt: "2026-07-27T00:00:00.000Z",
+        receiptArtifactSha256: "d".repeat(64),
+        statementSha256: "e".repeat(64),
+        value: "signature",
+      },
+      contentSha256: "f".repeat(64),
+    } satisfies TrustedReceiptEnvelope;
+    const activationDecisionResult = {
+      baseline: promotionBaseline,
+      verification: promotionBaselineVerification,
+      policyReview: promotionBaselineImportPolicyReview,
+      sourceAlignment: activationSourceAlignment,
+      envelope: activationEnvelope,
+    } satisfies SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -518,6 +597,12 @@ describe("receipt trust Web API wrappers", () => {
         body: promotionBaselineImportRequest,
         response: promotionBaselineImportResult,
       },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
+        method: "POST",
+        body: activationDecisionRequest,
+        response: activationDecisionResult,
+      },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       const call = calls[fetchMock.mock.calls.length - 1]!;
@@ -576,7 +661,12 @@ describe("receipt trust Web API wrappers", () => {
         promotionBaselineImportRequest,
       ),
     ).resolves.toEqual(promotionBaselineImportResult);
-    expect(fetchMock).toHaveBeenCalledTimes(10);
+    await expect(
+      signReceiptTrustAnchorDirectoryQuorumActivationDecision(
+        activationDecisionRequest,
+      ),
+    ).resolves.toEqual(activationDecisionResult);
+    expect(fetchMock).toHaveBeenCalledTimes(11);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

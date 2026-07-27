@@ -12,9 +12,12 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson } from "../src/ed25519.js";
 import {
+  createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectorySubscription,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
+  verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
 } from "../src/receipt-trust-directory-subscriptions.js";
 import {
@@ -23,6 +26,7 @@ import {
   createReceiptTrustAnchorDirectoryMetadataReceipt,
   signTrustedReceipt,
   verifyReceiptTrustAnchorDirectory,
+  verifyTrustedReceiptEnvelope,
 } from "../src/receipt-trust.js";
 import { LocalStore } from "../src/store.js";
 
@@ -654,6 +658,57 @@ describe("receipt trust anchor directory subscriptions", () => {
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    const sourceAlignment =
+      createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+        baselineResult.baseline,
+        store.listReceiptTrustAnchorDirectorySubscriptions(),
+      );
+    expect(sourceAlignment).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-activation-source-alignment",
+        baselineSha256: baselineResult.baseline.contentSha256,
+        selectedAnchorSetSha256: directory.anchorSetSha256,
+        selectedDirectorySha256: directory.contentSha256,
+        selectedSourceOriginCount: 2,
+        alignedSourceCount: 2,
+        driftedSourceCount: 0,
+        missingSourceCount: 0,
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    const baselineVerification =
+      verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+        baselineResult.baseline,
+        [signingAnchor],
+      );
+    const activationDecision =
+      createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt({
+        baseline: baselineResult.baseline,
+        verification: baselineVerification,
+        policyReview: importPolicyReview,
+        sourceAlignment,
+      });
+    expect(activationDecision).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision",
+        decision: "approved",
+        diagnostics: [],
+        baselineSha256: baselineResult.baseline.contentSha256,
+        verificationSha256: baselineVerification.contentSha256,
+        policyReviewSha256: importPolicyReview.contentSha256,
+        sourceAlignmentSha256: sourceAlignment.contentSha256,
+      }),
+    );
+    const activationEnvelope = signTrustedReceipt(
+      activationDecision,
+      signingAnchor,
+    );
+    expect(activationEnvelope.receiptKind).toBe(
+      "receipt_trust_anchor_directory_quorum_activation_decision",
+    );
+    expect(
+      verifyTrustedReceiptEnvelope(activationEnvelope, [signingAnchor]),
+    ).toEqual(expect.objectContaining({ status: "trusted" }));
     const imported =
       await importStore.importReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
         importThread.id,

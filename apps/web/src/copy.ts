@@ -268,6 +268,8 @@ export const copy = {
       verifyingBaseline: "Reviewing...",
       importBaseline: "Import baseline archive",
       importingBaseline: "Importing...",
+      signBaselineActivation: "Sign activation",
+      signingBaselineActivation: "Signing...",
       baselineUnknownSource: "Archived source",
       baselineSourceStatuses: {
         aligned: "Current last-good directory matches",
@@ -285,6 +287,10 @@ export const copy = {
       baselinePolicyStatuses: {
         accepted: "Activation policy accepted",
         rejected: "Activation policy rejected",
+      },
+      baselineActivationDecisionStatuses: {
+        approved: "Activation approved",
+        rejected: "Activation rejected",
       },
       safety:
         "Private keys are read only at signing time. Subscription URLs stay in the local workspace snapshot for refresh; Ledger events expose only URL fingerprints and evidence hashes.",

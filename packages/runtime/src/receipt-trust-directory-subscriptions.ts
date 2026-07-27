@@ -10,6 +10,10 @@ import {
   type ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   type ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   type ReceiptTrustAnchorDirectoryQuorumPolicy,
+  type ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSource,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
+  type ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   type ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   type ReceiptTrustAnchorDirectoryQuorumPromotionMetadata,
@@ -44,6 +48,7 @@ import {
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const SUBSCRIPTION_ID_PATTERN = /^trustdir_[a-f0-9]{20}$/;
+const RESOURCE_ID_PATTERN = /^[a-z][a-z0-9_]{2,80}$/;
 
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS = 20;
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTION_TRANSPARENCY_ENTRIES = 20;
@@ -976,6 +981,262 @@ export function reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPo
   });
 }
 
+export function createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+  baselineInput: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  subscriptions: readonly ReceiptTrustAnchorDirectorySubscription[],
+  generatedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment {
+  const generatedAt = requireTimestamp(
+    generatedAtInput,
+    "anchor directory quorum activation source alignment time",
+  );
+  const baseline =
+    validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(baselineInput);
+  const selectedSourceOrigins = Array.from(
+    new Set(
+      baseline.envelope.receipt.quorum.sources
+        .filter(
+          (source) =>
+            source.anchorSetSha256 === baseline.selectedAnchorSetSha256,
+        )
+        .map((source) => source.sourceOriginSha256),
+    ),
+  ).sort();
+  const sources = selectedSourceOrigins.map((origin) =>
+    createQuorumActivationSource(
+      origin,
+      baseline,
+      subscriptions.find(
+        (subscription) =>
+          subscription.status === "active" &&
+          subscription.sourceOriginSha256 === origin,
+      ),
+    ),
+  );
+  const driftedSourceCount = sources.filter(
+    (source) =>
+      source.status === "directory_drift" ||
+      source.status === "anchor_set_drift",
+  ).length;
+  const missingSourceCount = sources.filter(
+    (source) =>
+      source.status === "missing_subscription" ||
+      source.status === "no_last_good",
+  ).length;
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-source-alignment" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    generatedAt,
+    baselineSha256: baseline.contentSha256,
+    selectedAnchorSetSha256: baseline.selectedAnchorSetSha256,
+    selectedDirectorySha256: baseline.selectedDirectorySha256,
+    selectedSourceOriginCount: selectedSourceOrigins.length,
+    selectedSourceOriginSetSha256: sha256(canonicalJson(selectedSourceOrigins)),
+    alignedSourceCount: sources.filter((source) => source.status === "aligned")
+      .length,
+    driftedSourceCount,
+    missingSourceCount,
+    sources,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt(
+  input: {
+    baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+    verification: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+    policyReview: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
+    sourceAlignment: ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment;
+  },
+  generatedAtInput = nowIso(),
+): ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt {
+  const generatedAt = requireTimestamp(
+    generatedAtInput,
+    "anchor directory quorum activation decision time",
+  );
+  const baseline = validateReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+    input.baseline,
+  );
+  const verification = validateQuorumPromotionBaselineVerification(
+    input.verification,
+    baseline,
+  );
+  const policyReview = validateQuorumPromotionBaselineImportPolicyReview(
+    input.policyReview,
+    baseline,
+  );
+  const sourceAlignment = validateReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+    input.sourceAlignment,
+    baseline,
+  );
+  const diagnostics: string[] = [];
+  if (
+    verification.status !== "trusted" ||
+    !verification.baselineValid ||
+    !verification.signatureValid ||
+    !verification.integrityValid
+  ) {
+    diagnostics.push("baseline_verification_untrusted");
+  }
+  if (policyReview.status !== "accepted") {
+    diagnostics.push("policy_review_rejected");
+  }
+  if (sourceAlignment.driftedSourceCount > 0) {
+    diagnostics.push("source_alignment_drift");
+  }
+  if (sourceAlignment.missingSourceCount > 0) {
+    diagnostics.push("source_alignment_missing");
+  }
+  if (sourceAlignment.selectedSourceOriginCount === 0) {
+    diagnostics.push("source_alignment_empty");
+  }
+  const metadataPublisherSetSha256 = sha256(
+    canonicalJson(
+      Array.from(
+        new Set(
+          baseline.envelope.receipt.selectedMetadata.flatMap((metadata) =>
+            metadata.publisherSha256 ? [metadata.publisherSha256] : [],
+          ),
+        ),
+      ).sort(),
+    ),
+  );
+  const metadataSignerSetSha256 = sha256(
+    canonicalJson(
+      Array.from(
+        new Set(
+          baseline.envelope.receipt.selectedMetadata.flatMap((metadata) =>
+            metadata.signerKeyId ? [metadata.signerKeyId] : [],
+          ),
+        ),
+      ).sort(),
+    ),
+  );
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-decision" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    generatedAt,
+    decision: diagnostics.length === 0 ? ("approved" as const) : ("rejected" as const),
+    diagnostics,
+    baselineId: baseline.id,
+    baselineSha256: baseline.contentSha256,
+    envelopeSha256: baseline.envelope.contentSha256,
+    receiptSha256: baseline.envelope.receipt.contentSha256,
+    receiptArtifactSha256: baseline.envelope.signature.receiptArtifactSha256,
+    selectedAnchorSetSha256: baseline.selectedAnchorSetSha256,
+    selectedDirectorySha256: baseline.selectedDirectorySha256,
+    verificationStatus: verification.status,
+    verificationSha256: verification.contentSha256,
+    signatureValid: verification.signatureValid,
+    integrityValid: verification.integrityValid,
+    policyReviewStatus: policyReview.status,
+    policySha256: policyReview.policySha256,
+    policyReviewSha256: policyReview.contentSha256,
+    sourceAlignmentSha256: sourceAlignment.contentSha256,
+    alignedSourceCount: sourceAlignment.alignedSourceCount,
+    driftedSourceCount: sourceAlignment.driftedSourceCount,
+    missingSourceCount: sourceAlignment.missingSourceCount,
+    selectedSourceOriginSetSha256:
+      sourceAlignment.selectedSourceOriginSetSha256,
+    metadataPublisherSetSha256,
+    metadataSignerSetSha256,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function validateReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision receipt is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "decision",
+    "diagnostics",
+    "baselineId",
+    "baselineSha256",
+    "envelopeSha256",
+    "receiptSha256",
+    "receiptArtifactSha256",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "verificationStatus",
+    "verificationSha256",
+    "signatureValid",
+    "integrityValid",
+    "policyReviewStatus",
+    "policySha256",
+    "policyReviewSha256",
+    "sourceAlignmentSha256",
+    "alignedSourceCount",
+    "driftedSourceCount",
+    "missingSourceCount",
+    "selectedSourceOriginSetSha256",
+    "metadataPublisherSetSha256",
+    "metadataSignerSetSha256",
+    "contentSha256",
+  ]);
+  const receipt =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt;
+  if (
+    receipt.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-decision" ||
+    receipt.schemaVersion !== 1 ||
+    receipt.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(receipt.generatedAt) ||
+    (receipt.decision !== "approved" && receipt.decision !== "rejected") ||
+    !validDiagnostics(receipt.diagnostics) ||
+    !RESOURCE_ID_PATTERN.test(receipt.baselineId) ||
+    !SHA256_PATTERN.test(receipt.baselineSha256) ||
+    !SHA256_PATTERN.test(receipt.envelopeSha256) ||
+    !SHA256_PATTERN.test(receipt.receiptSha256) ||
+    !SHA256_PATTERN.test(receipt.receiptArtifactSha256) ||
+    !SHA256_PATTERN.test(receipt.selectedAnchorSetSha256) ||
+    !SHA256_PATTERN.test(receipt.selectedDirectorySha256) ||
+    !validTrustedReceiptStatus(receipt.verificationStatus) ||
+    !SHA256_PATTERN.test(receipt.verificationSha256) ||
+    typeof receipt.signatureValid !== "boolean" ||
+    typeof receipt.integrityValid !== "boolean" ||
+    (receipt.policyReviewStatus !== "accepted" &&
+      receipt.policyReviewStatus !== "rejected") ||
+    !SHA256_PATTERN.test(receipt.policySha256) ||
+    !SHA256_PATTERN.test(receipt.policyReviewSha256) ||
+    !SHA256_PATTERN.test(receipt.sourceAlignmentSha256) ||
+    !nonNegativeInteger(receipt.alignedSourceCount) ||
+    !nonNegativeInteger(receipt.driftedSourceCount) ||
+    !nonNegativeInteger(receipt.missingSourceCount) ||
+    !SHA256_PATTERN.test(receipt.selectedSourceOriginSetSha256) ||
+    !SHA256_PATTERN.test(receipt.metadataPublisherSetSha256) ||
+    !SHA256_PATTERN.test(receipt.metadataSignerSetSha256) ||
+    !SHA256_PATTERN.test(receipt.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision receipt is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = receipt;
+  if (sha256(canonicalJson(content)) !== receipt.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation decision receipt hash mismatch",
+    );
+  }
+  return structuredClone(receipt);
+}
+
 export function validateReceiptTrustAnchorDirectoryQuorum(
   value: unknown,
 ): ReceiptTrustAnchorDirectoryQuorum {
@@ -1860,6 +2121,374 @@ function createQuorumPromotionBaselineImportPolicyReview(input: {
   };
 }
 
+function createQuorumActivationSource(
+  sourceOriginSha256: string,
+  baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  subscription: ReceiptTrustAnchorDirectorySubscription | undefined,
+): ReceiptTrustAnchorDirectoryQuorumActivationSource {
+  if (!subscription) {
+    return createQuorumActivationSourceContent({
+      sourceOriginSha256,
+      status: "missing_subscription",
+    });
+  }
+  const currentDirectory = subscription.lastGoodDiscovery?.directory;
+  if (!currentDirectory) {
+    return createQuorumActivationSourceContent({
+      sourceOriginSha256,
+      status: "no_last_good",
+      subscriptionId: subscription.id,
+      subscriptionSha256: subscription.contentSha256,
+    });
+  }
+  const status: ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus =
+    currentDirectory.anchorSetSha256 !== baseline.selectedAnchorSetSha256
+      ? "anchor_set_drift"
+      : currentDirectory.contentSha256 !== baseline.selectedDirectorySha256
+        ? "directory_drift"
+        : "aligned";
+  return createQuorumActivationSourceContent({
+    sourceOriginSha256,
+    status,
+    subscriptionId: subscription.id,
+    subscriptionSha256: subscription.contentSha256,
+    currentAnchorSetSha256: currentDirectory.anchorSetSha256,
+    currentDirectorySha256: currentDirectory.contentSha256,
+  });
+}
+
+function createQuorumActivationSourceContent(input: {
+  sourceOriginSha256: string;
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSourceStatus;
+  subscriptionId?: string;
+  subscriptionSha256?: string;
+  currentAnchorSetSha256?: string;
+  currentDirectorySha256?: string;
+}): ReceiptTrustAnchorDirectoryQuorumActivationSource {
+  const content = {
+    sourceOriginSha256: input.sourceOriginSha256,
+    status: input.status,
+    ...(input.subscriptionId ? { subscriptionId: input.subscriptionId } : {}),
+    ...(input.subscriptionSha256
+      ? { subscriptionSha256: input.subscriptionSha256 }
+      : {}),
+    ...(input.currentAnchorSetSha256
+      ? { currentAnchorSetSha256: input.currentAnchorSetSha256 }
+      : {}),
+    ...(input.currentDirectorySha256
+      ? { currentDirectorySha256: input.currentDirectorySha256 }
+      : {}),
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function validateQuorumPromotionBaselineVerification(
+  value: unknown,
+  baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline verification is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "verifiedAt",
+    "status",
+    "diagnostics",
+    "baselineValid",
+    "signatureValid",
+    "integrityValid",
+    "baselineSha256",
+    "envelopeSha256",
+    "receiptSha256",
+    "receiptArtifactSha256",
+    "keyId",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "selectedSubscriptionSetSha256",
+    "selectedMetadataEnvelopeSetSha256",
+    "anchorDirectorySha256",
+    "anchorDirectoryVerificationSha256",
+    "anchorDirectoryPolicySha256",
+    "contentSha256",
+  ]);
+  const verification =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification;
+  if (
+    verification.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-verification" ||
+    verification.schemaVersion !== 1 ||
+    verification.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(verification.verifiedAt) ||
+    !validTrustedReceiptStatus(verification.status) ||
+    !validDiagnostics(verification.diagnostics) ||
+    typeof verification.baselineValid !== "boolean" ||
+    typeof verification.signatureValid !== "boolean" ||
+    typeof verification.integrityValid !== "boolean" ||
+    verification.baselineSha256 !== baseline.contentSha256 ||
+    verification.envelopeSha256 !== baseline.envelope.contentSha256 ||
+    verification.receiptSha256 !== baseline.envelope.receipt.contentSha256 ||
+    verification.receiptArtifactSha256 !==
+      baseline.envelope.signature.receiptArtifactSha256 ||
+    verification.keyId !== baseline.envelope.signature.keyId ||
+    verification.selectedAnchorSetSha256 !== baseline.selectedAnchorSetSha256 ||
+    verification.selectedDirectorySha256 !== baseline.selectedDirectorySha256 ||
+    verification.selectedSubscriptionSetSha256 !==
+      baseline.selectedSubscriptionSetSha256 ||
+    verification.selectedMetadataEnvelopeSetSha256 !==
+      baseline.selectedMetadataEnvelopeSetSha256 ||
+    !optionalSha256(verification.anchorDirectorySha256) ||
+    !optionalSha256(verification.anchorDirectoryVerificationSha256) ||
+    !optionalSha256(verification.anchorDirectoryPolicySha256) ||
+    !SHA256_PATTERN.test(verification.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline verification is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = verification;
+  if (sha256(canonicalJson(content)) !== verification.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline verification hash mismatch",
+    );
+  }
+  return structuredClone(verification);
+}
+
+function validateQuorumPromotionBaselineImportPolicyReview(
+  value: unknown,
+  baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+): ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline import policy review is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "reviewedAt",
+    "status",
+    "diagnostics",
+    "policy",
+    "policySha256",
+    "baselineSha256",
+    "envelopeSha256",
+    "receiptSha256",
+    "keyId",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "selectedSourceOriginCount",
+    "selectedSourceOriginSetSha256",
+    "selectedMetadataPublisherCount",
+    "selectedMetadataPublisherSetSha256",
+    "selectedMetadataSignerCount",
+    "selectedMetadataSignerSetSha256",
+    "contentSha256",
+  ]);
+  const review =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicyReview;
+  const policy =
+    normalizeReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+      review.policy,
+    );
+  if (
+    review.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-promotion-baseline-import-policy-review" ||
+    review.schemaVersion !== 1 ||
+    review.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(review.reviewedAt) ||
+    (review.status !== "accepted" && review.status !== "rejected") ||
+    !validDiagnostics(review.diagnostics) ||
+    review.policySha256 !== sha256(canonicalJson(policy)) ||
+    review.baselineSha256 !== baseline.contentSha256 ||
+    review.envelopeSha256 !== baseline.envelope.contentSha256 ||
+    review.receiptSha256 !== baseline.envelope.receipt.contentSha256 ||
+    review.keyId !== baseline.envelope.signature.keyId ||
+    review.selectedAnchorSetSha256 !== baseline.selectedAnchorSetSha256 ||
+    review.selectedDirectorySha256 !== baseline.selectedDirectorySha256 ||
+    !nonNegativeInteger(review.selectedSourceOriginCount) ||
+    !SHA256_PATTERN.test(review.selectedSourceOriginSetSha256 ?? "") ||
+    !nonNegativeInteger(review.selectedMetadataPublisherCount) ||
+    !SHA256_PATTERN.test(review.selectedMetadataPublisherSetSha256 ?? "") ||
+    !nonNegativeInteger(review.selectedMetadataSignerCount) ||
+    !SHA256_PATTERN.test(review.selectedMetadataSignerSetSha256 ?? "") ||
+    !SHA256_PATTERN.test(review.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline import policy review is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...review,
+    policy,
+  };
+  if (sha256(canonicalJson(content)) !== review.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum promotion baseline import policy review hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...review,
+    policy,
+  });
+}
+
+function validateReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+  value: unknown,
+  baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+): ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation source alignment is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "kind",
+    "schemaVersion",
+    "apiVersion",
+    "generatedAt",
+    "baselineSha256",
+    "selectedAnchorSetSha256",
+    "selectedDirectorySha256",
+    "selectedSourceOriginCount",
+    "selectedSourceOriginSetSha256",
+    "alignedSourceCount",
+    "driftedSourceCount",
+    "missingSourceCount",
+    "sources",
+    "contentSha256",
+  ]);
+  const alignment =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment;
+  const sources = validateQuorumActivationSources(alignment.sources);
+  const selectedSourceOrigins = sources
+    .map((source) => source.sourceOriginSha256)
+    .sort();
+  if (
+    alignment.kind !==
+      "napier.receipt-trust-anchor-directory-quorum-activation-source-alignment" ||
+    alignment.schemaVersion !== 1 ||
+    alignment.apiVersion !== NAPIER_API_VERSION ||
+    !validTimestamp(alignment.generatedAt) ||
+    alignment.baselineSha256 !== baseline.contentSha256 ||
+    alignment.selectedAnchorSetSha256 !== baseline.selectedAnchorSetSha256 ||
+    alignment.selectedDirectorySha256 !== baseline.selectedDirectorySha256 ||
+    alignment.selectedSourceOriginCount !== sources.length ||
+    alignment.selectedSourceOriginSetSha256 !==
+      sha256(canonicalJson(selectedSourceOrigins)) ||
+    alignment.alignedSourceCount !==
+      sources.filter((source) => source.status === "aligned").length ||
+    alignment.driftedSourceCount !==
+      sources.filter(
+        (source) =>
+          source.status === "directory_drift" ||
+          source.status === "anchor_set_drift",
+      ).length ||
+    alignment.missingSourceCount !==
+      sources.filter(
+        (source) =>
+          source.status === "missing_subscription" ||
+          source.status === "no_last_good",
+      ).length ||
+    !SHA256_PATTERN.test(alignment.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation source alignment is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = {
+    ...alignment,
+    sources,
+  };
+  if (sha256(canonicalJson(content)) !== alignment.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation source alignment hash mismatch",
+    );
+  }
+  return structuredClone({
+    ...alignment,
+    sources,
+  });
+}
+
+function validateQuorumActivationSources(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSource[] {
+  if (
+    !Array.isArray(value) ||
+    value.length > MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation sources are invalid",
+    );
+  }
+  const seen = new Set<string>();
+  return value
+    .map((item) => {
+      const source = validateQuorumActivationSource(item);
+      if (seen.has(source.sourceOriginSha256)) {
+        throw new Error(
+          "Receipt trust anchor directory quorum activation sources are invalid",
+        );
+      }
+      seen.add(source.sourceOriginSha256);
+      return source;
+    })
+    .sort((left, right) =>
+      left.sourceOriginSha256.localeCompare(right.sourceOriginSha256),
+    );
+}
+
+function validateQuorumActivationSource(
+  value: unknown,
+): ReceiptTrustAnchorDirectoryQuorumActivationSource {
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation source is invalid",
+    );
+  }
+  assertAllowedKeys(value, [
+    "sourceOriginSha256",
+    "status",
+    "subscriptionId",
+    "subscriptionSha256",
+    "currentAnchorSetSha256",
+    "currentDirectorySha256",
+    "contentSha256",
+  ]);
+  const source =
+    value as unknown as ReceiptTrustAnchorDirectoryQuorumActivationSource;
+  if (
+    !SHA256_PATTERN.test(source.sourceOriginSha256) ||
+    !validQuorumActivationSourceStatus(source.status) ||
+    (source.subscriptionId !== undefined &&
+      !SUBSCRIPTION_ID_PATTERN.test(source.subscriptionId)) ||
+    !optionalSha256(source.subscriptionSha256) ||
+    !optionalSha256(source.currentAnchorSetSha256) ||
+    !optionalSha256(source.currentDirectorySha256) ||
+    !SHA256_PATTERN.test(source.contentSha256)
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation source is invalid",
+    );
+  }
+  const { contentSha256: _contentSha256, ...content } = source;
+  if (sha256(canonicalJson(content)) !== source.contentSha256) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation source hash mismatch",
+    );
+  }
+  return structuredClone(source);
+}
+
 function diagnosticsForTrustedReceiptVerification(
   status: ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification["status"],
 ): string[] {
@@ -2496,6 +3125,25 @@ function optionalSha256(value: unknown): boolean {
   return (
     value === undefined ||
     (typeof value === "string" && SHA256_PATTERN.test(value))
+  );
+}
+
+function validTrustedReceiptStatus(value: unknown): boolean {
+  return (
+    value === "trusted" ||
+    value === "revoked" ||
+    value === "unknown_key" ||
+    value === "invalid"
+  );
+}
+
+function validQuorumActivationSourceStatus(value: unknown): boolean {
+  return (
+    value === "aligned" ||
+    value === "directory_drift" ||
+    value === "anchor_set_drift" ||
+    value === "no_last_good" ||
+    value === "missing_subscription"
   );
 }
 

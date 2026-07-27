@@ -110,6 +110,8 @@ import type {
   RevokeExtensionPublisherTrustAnchorRequest,
   RevokeReceiptTrustAnchorRequest,
   RefreshReceiptTrustAnchorDirectorySubscriptionRequest,
+  SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest,
+  SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   SignedExtensionPackageEnvelope,
@@ -275,6 +277,8 @@ import {
   createWorkspaceArtifactVerificationRequest,
   createInboundDeadLetterRetryHistory,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
+  createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
+  createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment,
   createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   createOpenTelemetryTraceArtifact,
   builtinUsagePriceTableCatalog,
@@ -309,6 +313,7 @@ import {
   reviewExecutionPlanReplanDraft,
   RunEvaluationService,
   signTrustedReceipt,
+  reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifySignedExtensionPackageEnvelope,
   verifyReceiptTrustAnchorDirectoryMetadata,
@@ -1115,6 +1120,132 @@ export function createApp(services: NapierServices): Hono {
             ? 409
             : 400,
         );
+      }
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-decision",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUSTED_RECEIPT_BYTES + MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum activation decision request",
+        );
+      } catch (error) {
+        if (error instanceof RequestBodyTooLargeError) {
+          return jsonError(context, error.message, 413);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation decision request is invalid",
+          400,
+        );
+      }
+      const body =
+        parseSignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest(
+          input,
+        );
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum activation decision request is invalid",
+          400,
+        );
+      }
+      try {
+        services.store.getThread(body.threadId);
+        const baselines =
+          services.store.listReceiptTrustAnchorDirectoryQuorumPromotionBaselines();
+        const baseline =
+          body.baselineId === undefined
+            ? baselines.at(-1)
+            : baselines.find((candidate) => candidate.id === body.baselineId);
+        if (!baseline) {
+          return jsonError(
+            context,
+            "Receipt trust anchor directory quorum activation decision baseline was not found",
+            404,
+          );
+        }
+        const trustDirectoryVerification =
+          body.trustDirectory === undefined
+            ? undefined
+            : services.store.verifyReceiptTrustAnchorDirectory(
+                body.trustDirectory,
+                body.trustDirectoryPolicy,
+              );
+        const anchors =
+          body.trustDirectory === undefined
+            ? services.store.listReceiptTrustAnchors()
+            : trustDirectoryVerification?.status === "valid"
+              ? receiptTrustAnchorsFromDirectory(body.trustDirectory)
+              : [];
+        const verification =
+          verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline(
+            baseline,
+            anchors,
+            {
+              ...(trustDirectoryVerification
+                ? { trustDirectoryVerification }
+                : {}),
+            },
+          );
+        const policyReview =
+          reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+            baseline,
+            body.importPolicy,
+          );
+        const sourceAlignment =
+          createReceiptTrustAnchorDirectoryQuorumActivationSourceAlignment(
+            baseline,
+            services.store.listReceiptTrustAnchorDirectorySubscriptions(),
+          );
+        const receipt =
+          createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt({
+            baseline,
+            verification,
+            policyReview,
+            sourceAlignment,
+          });
+        const envelope = signTrustedReceipt(
+          receipt,
+          services.store.getReceiptTrustAnchor(body.trustAnchorId),
+        );
+        await appendReceiptTrustEvent(
+          services,
+          body.threadId,
+          "receipt_trust.directory_quorum_activation_decision.signed",
+          {
+            ...trustedReceiptEventPayload(envelope),
+            decision: receipt.decision,
+            baselineId: baseline.id,
+            baselineSha256: baseline.contentSha256,
+            verificationSha256: verification.contentSha256,
+            policyReviewSha256: policyReview.contentSha256,
+            sourceAlignmentSha256: sourceAlignment.contentSha256,
+            alignedSourceCount: sourceAlignment.alignedSourceCount,
+            driftedSourceCount: sourceAlignment.driftedSourceCount,
+            missingSourceCount: sourceAlignment.missingSourceCount,
+          },
+        );
+        const result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult =
+          {
+            baseline,
+            verification,
+            policyReview,
+            sourceAlignment,
+            envelope,
+          };
+        setReceiptTrustAnchorDirectoryQuorumActivationDecisionResultHeaders(
+          context,
+          result,
+        );
+        return context.json(result, 201);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
       }
     },
   );
@@ -11174,6 +11305,56 @@ function parseImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineRequest(
   };
 }
 
+function parseSignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest(
+  input: unknown,
+):
+  | SignReceiptTrustAnchorDirectoryQuorumActivationDecisionRequest
+  | undefined {
+  const record = requestRecord(input, [
+    "threadId",
+    "trustAnchorId",
+    "baselineId",
+    "importPolicy",
+    "trustDirectory",
+    "trustDirectoryPolicy",
+  ]);
+  const threadId = record?.["threadId"];
+  const trustAnchorId = record?.["trustAnchorId"];
+  const baselineId = record?.["baselineId"];
+  const importPolicy =
+    parseReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy(
+      record?.["importPolicy"],
+    );
+  const trustDirectoryPolicy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
+    record?.["trustDirectoryPolicy"],
+  );
+  if (
+    !record ||
+    !validThreadId(threadId) ||
+    typeof trustAnchorId !== "string" ||
+    !/^trustkey_[a-z0-9]{8,80}$/.test(trustAnchorId) ||
+    (baselineId !== undefined &&
+      (typeof baselineId !== "string" ||
+        !/^trustqpb_[a-z0-9]{8,80}$/.test(baselineId))) ||
+    !importPolicy ||
+    (record["trustDirectoryPolicy"] !== undefined &&
+      record["trustDirectory"] === undefined) ||
+    (record["trustDirectoryPolicy"] !== undefined && !trustDirectoryPolicy)
+  ) {
+    return undefined;
+  }
+  return {
+    threadId,
+    trustAnchorId,
+    ...(typeof baselineId === "string" ? { baselineId } : {}),
+    importPolicy,
+    ...(record["trustDirectory"] !== undefined
+      ? { trustDirectory: record["trustDirectory"] }
+      : {}),
+    ...(trustDirectoryPolicy ? { trustDirectoryPolicy } : {}),
+  };
+}
+
 function parseVerifyReceiptTrustAnchorDirectoryRequest(
   input: unknown,
 ): VerifyReceiptTrustAnchorDirectoryRequest | undefined {
@@ -16484,6 +16665,54 @@ function setImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResultHeader
   context.header(
     "X-Napier-Signature-Key-Id",
     result.baseline.envelope.signature.keyId,
+  );
+}
+
+function setReceiptTrustAnchorDirectoryQuorumActivationDecisionResultHeaders(
+  context: Context,
+  result: SignReceiptTrustAnchorDirectoryQuorumActivationDecisionResult,
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, result);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision",
+    result.envelope.receipt.decision,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Decision-SHA256",
+    result.envelope.receipt.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Id",
+    result.baseline.id,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-SHA256",
+    result.baseline.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Verification-SHA256",
+    result.verification.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-SHA256",
+    result.policyReview.policySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-Baseline-Import-Policy-Review-SHA256",
+    result.policyReview.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Source-Alignment-SHA256",
+    result.sourceAlignment.contentSha256,
+  );
+  context.header(
+    "X-Napier-Envelope-SHA256",
+    result.envelope.contentSha256,
+  );
+  context.header(
+    "X-Napier-Signature-Key-Id",
+    result.envelope.signature.keyId,
   );
 }
 
