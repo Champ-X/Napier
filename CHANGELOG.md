@@ -989,6 +989,13 @@ write:management-openapi-compatibility` now emits
   role, model, immutable role instructions, prompt, raw result, canonical item
   set, and stable receipt SHA-256. Replay verification checks that binding, and
   fixture import remaps task IDs while recomputing receipt hashes.
+- Workspace-grounded Subagent evidence. Outcome file and line references now
+  resolve through the same realpath, UTF-8, and size boundary as `read_file`.
+  Successful receipts bind each observed file SHA-256, exact range SHA-256,
+  byte size, line count, and aggregate evidence-set SHA-256; missing,
+  out-of-range, escaping, oversized, or non-text references fail the
+  delegation. Grounded receipts use schema 2 while existing schema-1 receipts
+  remain valid and importable.
 - Shared Agent-profile and Subagent-coordinator limit normalization without a
   second silent runtime clamp.
 - Auditable delegation events and dedicated Trace workcells that preserve

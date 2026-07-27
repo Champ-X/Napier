@@ -27,7 +27,7 @@ import { DEFAULT_SUBAGENT_LIMITS, normalizeSubagentLimits } from "./agents.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import {
-  createSubagentOutcome,
+  createGroundedSubagentOutcome,
   formatSubagentOutcome,
   subagentRoleInstructions,
 } from "./subagent-outcomes.js";
@@ -77,6 +77,7 @@ interface DelegationDetails {
   stopReason?: SubagentTask["stopReason"];
   outcomeSha256?: string;
   itemCount?: number;
+  evidenceCount?: number;
 }
 
 class Semaphore {
@@ -286,12 +287,13 @@ export class SubagentCoordinator {
       if (lastError) throw new Error(lastError);
       let outcome: SubagentOutcome;
       try {
-        outcome = createSubagentOutcome({
+        outcome = await createGroundedSubagentOutcome({
           taskId: task.id,
           role: task.role,
           model: task.model,
           prompt: task.prompt,
           resultText: finalText,
+          workspaceRoot: this.options.store.workspaceRoot,
         });
       } catch (error) {
         outcomeRejected = true;
@@ -323,6 +325,8 @@ export class SubagentCoordinator {
         itemSetSha256: outcome.itemSetSha256,
         itemCount: outcome.itemCount,
         unknownCount: outcome.unknownCount,
+        evidenceSetSha256: outcome.evidenceSetSha256,
+        evidenceCount: outcome.evidenceCount,
       });
       await this.emit("subagent.completed", task, taskPayload(task));
       return {
@@ -433,6 +437,7 @@ function taskDetails(task: SubagentTask): DelegationDetails {
       ? {
           outcomeSha256: task.outcome.contentSha256,
           itemCount: task.outcome.itemCount,
+          evidenceCount: task.outcome.evidenceCount,
         }
       : {}),
   };

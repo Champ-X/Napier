@@ -774,7 +774,13 @@ workspace-relative line evidence, and explicit unknowns. Napier normalizes that
 result into a receipt bound to the task, role, model, prompt SHA-256, raw result
 SHA-256, immutable role-instructions SHA-256, item-set SHA-256, and stable
 content SHA-256; malformed outcomes fail the delegation without becoming
-parent evidence.
+parent evidence. Workspace evidence references are resolved through the same
+realpath and UTF-8 boundary as `read_file`; each receipt records the observed
+file SHA-256, selected-range SHA-256, byte size, line count, and aggregate
+evidence-set SHA-256. Missing, escaping, oversized, non-text, or out-of-range
+references fail closed.
+Grounded receipts use schema 2; existing schema-1 outcomes remain verifiable
+and portable without grounding fields.
 
 ## Sandboxed Workspace Verification
 

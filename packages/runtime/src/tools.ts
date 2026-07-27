@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { constants as fsConstants } from "node:fs";
 import {
   link,
   lstat,
@@ -288,6 +289,84 @@ function decodeUtf8(buffer: Buffer, label: string): string {
 
 function sha256(value: Uint8Array | string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+export interface WorkspaceTextEvidence {
+  path: string;
+  lineStart: number;
+  lineEnd: number;
+  totalLines: number;
+  fileSha256: string;
+  rangeSha256: string;
+  fileSizeBytes: number;
+  observedLineCount: number;
+}
+
+export async function readWorkspaceTextEvidence(
+  workspaceRoot: string,
+  input: {
+    path: string;
+    lineStart?: number;
+    lineEnd?: number;
+  },
+): Promise<WorkspaceTextEvidence> {
+  const hasLineStart = input.lineStart !== undefined;
+  const hasLineEnd = input.lineEnd !== undefined;
+  if (
+    hasLineStart !== hasLineEnd ||
+    (hasLineStart &&
+      (!Number.isSafeInteger(input.lineStart) ||
+        !Number.isSafeInteger(input.lineEnd) ||
+        Number(input.lineStart) < 1 ||
+        Number(input.lineEnd) < Number(input.lineStart)))
+  ) {
+    throw new Error("Workspace evidence line range is invalid");
+  }
+  const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
+  const handle = await open(
+    resolved.target,
+    fsConstants.O_RDONLY | fsConstants.O_NOFOLLOW,
+  );
+  let buffer: Buffer;
+  try {
+    const info = await handle.stat();
+    if (!info.isFile()) {
+      throw new Error("Workspace evidence path must be a file");
+    }
+    if (info.size > MAX_HASHABLE_TEXT_BYTES) {
+      throw new Error(
+        `Workspace evidence supports files up to ${MAX_HASHABLE_TEXT_BYTES} bytes`,
+      );
+    }
+    buffer = await handle.readFile();
+  } finally {
+    await handle.close();
+  }
+  if (buffer.byteLength > MAX_HASHABLE_TEXT_BYTES) {
+    throw new Error(
+      `Workspace evidence supports files up to ${MAX_HASHABLE_TEXT_BYTES} bytes`,
+    );
+  }
+  const source = decodeUtf8(buffer, "Workspace evidence target");
+  const lines = source.split("\n");
+  const lineStart = input.lineStart ?? 1;
+  const lineEnd = input.lineEnd ?? lines.length;
+  if (lineStart > lines.length || lineEnd > lines.length) {
+    throw new Error(
+      `Workspace evidence line range exceeds ${lines.length} lines`,
+    );
+  }
+  const selected = lines.slice(lineStart - 1, lineEnd).join("\n");
+  return {
+    path: path.relative(resolved.root, resolved.target),
+    lineStart,
+    lineEnd,
+    totalLines: lines.length,
+    fileSha256: sha256(buffer),
+    rangeSha256: sha256(selected),
+    fileSizeBytes: buffer.byteLength,
+    observedLineCount: lineEnd - lineStart + 1,
+  };
 }
 
 async function readPatchSource(target: string): Promise<{

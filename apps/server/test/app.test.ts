@@ -6440,13 +6440,7 @@ describe("Napier HTTP goal flow", () => {
               title: "Durable API projection",
               detail:
                 "The thread detail returns the persisted delegation ledger.",
-              evidence: [
-                {
-                  path: "apps/server/src/app.ts",
-                  lineStart: 1,
-                  lineEnd: 1,
-                },
-              ],
+              evidence: [],
             },
           ],
           unknowns: [],
@@ -6517,6 +6511,7 @@ describe("Napier HTTP goal flow", () => {
           kind: "napier.subagent-outcome",
           itemCount: 1,
           unknownCount: 0,
+          evidenceCount: 0,
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         }),
       }),

@@ -125,6 +125,7 @@ describe("SubagentCoordinator", () => {
         status: "completed",
         turnCount: 1,
         itemCount: 0,
+        evidenceCount: 0,
         outcomeSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );

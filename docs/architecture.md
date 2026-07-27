@@ -1931,6 +1931,8 @@ parent tool call
   -> expose read-only workspace tools, never delegate_task
   -> require one strict typed outcome JSON object
   -> normalize workspace-relative evidence and reject unknown fields
+  -> resolve cited files through the read_file realpath/UTF-8 boundary
+  -> hash each observed file and exact cited line range
   -> bind task/role/model/instructions/prompt/result/item-set hashes into a receipt
   -> persist assistant/tool steps, usage, turns, and terminal outcome receipt
   -> return bounded formatted evidence plus receipt metadata to the parent
@@ -1941,7 +1943,11 @@ subagent does not inherit the parent transcript, reviewed memory, or skills.
 Typed outcomes contain a summary, categorized and severity-ranked items,
 optional workspace-relative line evidence, and explicit unknowns. Invalid
 JSON, unsafe evidence paths, incomplete line ranges, unsupported fields, and
-hash drift fail closed. Legacy tasks without an outcome remain readable; new
+hash drift fail closed. Cited evidence must exist at completion time and fit
+the bounded text-file policy; the receipt records file/range hashes, byte and
+line counts, plus an aggregate evidence-set SHA-256. Grounding is additive in
+schema 2; published schema-1 receipts remain verifiable without those fields.
+Legacy tasks without an outcome remain readable; new
 coordinator completions always carry a `napier.subagent-outcome` receipt.
 Schema-1 role and output instructions are immutable because their exact bytes
 are receipt-bound; instruction changes require a new outcome schema version.

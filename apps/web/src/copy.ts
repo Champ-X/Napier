@@ -1027,6 +1027,7 @@ export const copy = {
     turns: "Turns",
     steps: "Steps",
     items: "Items",
+    evidence: "Evidence",
     unknowns: "Unknowns",
     receipt: "Receipt",
     statuses: {

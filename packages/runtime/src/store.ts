@@ -11314,6 +11314,12 @@ function rebindImportedSubagentEventPayload(
     itemSetSha256: task.outcome.itemSetSha256,
     itemCount: task.outcome.itemCount,
     unknownCount: task.outcome.unknownCount,
+    ...(task.outcome.schemaVersion === 2
+      ? {
+          evidenceSetSha256: task.outcome.evidenceSetSha256!,
+          evidenceCount: task.outcome.evidenceCount!,
+        }
+      : {}),
   };
 }
 

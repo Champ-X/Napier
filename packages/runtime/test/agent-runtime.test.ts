@@ -1292,13 +1292,7 @@ describe("AgentRuntime demo path", () => {
                 title: "Delegation remains isolated",
                 detail:
                   "The delegated runtime exposes read-only workspace tools and omits delegate_task.",
-                evidence: [
-                  {
-                    path: "packages/runtime/src/subagents.ts",
-                    lineStart: 180,
-                    lineEnd: 190,
-                  },
-                ],
+                evidence: [],
               },
             ],
             unknowns: [],
@@ -1339,11 +1333,12 @@ describe("AgentRuntime demo path", () => {
         status: "completed",
         stopReason: "completed",
         result:
-          "The subagent has read-only workspace tools and no delegation tool.\n[info] Delegation remains isolated: The delegated runtime exposes read-only workspace tools and omits delegate_task. (packages/runtime/src/subagents.ts:180-190)",
+          "The subagent has read-only workspace tools and no delegation tool.\n[info] Delegation remains isolated: The delegated runtime exposes read-only workspace tools and omits delegate_task.",
         outcome: expect.objectContaining({
           kind: "napier.subagent-outcome",
           itemCount: 1,
           unknownCount: 0,
+          evidenceCount: 0,
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         }),
         turnCount: 1,

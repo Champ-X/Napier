@@ -265,6 +265,10 @@ function DelegationLedger({ tasks }: { tasks: SubagentTask[] }) {
                           <dd>{task.outcome.itemCount}</dd>
                         </div>
                         <div>
+                          <dt>{copy.delegation.evidence}</dt>
+                          <dd>{task.outcome.evidenceCount ?? 0}</dd>
+                        </div>
+                        <div>
                           <dt>{copy.delegation.unknowns}</dt>
                           <dd>{task.outcome.unknownCount}</dd>
                         </div>

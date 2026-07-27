@@ -1516,6 +1516,10 @@ export interface SubagentOutcomeEvidence {
   path: string;
   lineStart?: number;
   lineEnd?: number;
+  fileSha256?: string;
+  rangeSha256?: string;
+  fileSizeBytes?: number;
+  observedLineCount?: number;
 }
 
 export interface SubagentOutcomeItem {
@@ -1528,7 +1532,7 @@ export interface SubagentOutcomeItem {
 
 export interface SubagentOutcome {
   kind: "napier.subagent-outcome";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   taskId: string;
   role: SubagentRole;
   model: ModelRef;
@@ -1537,11 +1541,19 @@ export interface SubagentOutcome {
   unknowns: string[];
   itemCount: number;
   unknownCount: number;
+  evidenceCount?: number;
   promptSha256: string;
   instructionsSha256: string;
   resultSha256: string;
   itemSetSha256: string;
+  evidenceSetSha256?: string;
   contentSha256: string;
+}
+
+export interface GroundedSubagentOutcome extends SubagentOutcome {
+  schemaVersion: 2;
+  evidenceCount: number;
+  evidenceSetSha256: string;
 }
 
 export interface SubagentLimits {
