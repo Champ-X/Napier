@@ -60,6 +60,7 @@ import {
   parseMemoryProposalResponse,
 } from "./memory.js";
 import { McpExtensionManager } from "./mcp.js";
+import { createModelAdvisorNotice } from "./model-advisor.js";
 import { ModelRegistry } from "./models.js";
 import { createId } from "./ids.js";
 import { assessToolCall } from "./policy.js";
@@ -719,6 +720,7 @@ export class AgentRuntime {
         onEvent,
       );
     }
+    await this.recordModelAdvisorNotice(run, response, source, onEvent);
     await this.record(
       {
         threadId: run.threadId,
@@ -1119,6 +1121,7 @@ export class AgentRuntime {
         );
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
         if (event.message.stopReason === "toolUse") return undefined;
+        await this.recordModelAdvisorNotice(run, text, source, onEvent);
         await this.record(
           {
             threadId: run.threadId,
@@ -1190,6 +1193,34 @@ export class AgentRuntime {
       }
     }
     return undefined;
+  }
+
+  private async recordModelAdvisorNotice(
+    run: RunRecord,
+    assistantText: string,
+    source: TurnSource,
+    onEvent?: EventSink,
+  ): Promise<void> {
+    const runEvents = (await this.store.listEvents(run.threadId)).filter(
+      (event) => event.runId === run.id,
+    );
+    const notice = createModelAdvisorNotice({
+      assistantText,
+      runEvents,
+      turnSource: source,
+    });
+    if (!notice) return;
+    await this.record(
+      {
+        threadId: run.threadId,
+        runId: run.id,
+        type: "model.advisor.notice",
+        category: "system",
+        visibility: "debug",
+        payload: toJsonValue(notice),
+      },
+      onEvent,
+    );
   }
 
   private async buildModelHistory(

@@ -386,6 +386,66 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("records deterministic advisor notices before risky assistant claims are shown", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Advisor notice",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-advisor" });
+    faux.setResponses([
+      fauxAssistantMessage("The build and tests passed."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Report status.",
+      model: { provider: "faux-advisor", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const events = await store.listEvents(thread.id);
+    const notice = events.find(
+      (event) => event.type === "model.advisor.notice",
+    );
+    const message = events.find((event) => event.type === "message.assistant");
+    expect(notice?.seq).toBeLessThan(message?.seq ?? Number.POSITIVE_INFINITY);
+    expect(notice?.payload).toEqual(
+      expect.objectContaining({
+        kind: "napier.model-advisor-notice",
+        source: "deterministic_stream_lint",
+        textSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        diagnosticSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            severity: "warning",
+          }),
+        ],
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(JSON.stringify(notice?.payload)).not.toContain(
+      "build and tests passed",
+    );
+    expect(message?.payload).toEqual(
+      expect.objectContaining({
+        text: "The build and tests passed.",
+      }),
+    );
+  });
+
   it("blocks an active goal when its run fails", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

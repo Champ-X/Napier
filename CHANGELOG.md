@@ -565,6 +565,12 @@ write:management-openapi-compatibility` now emits
   can replace anchored lines without retyping old text while still requiring
   the complete-file SHA-256, per-target write lock, atomic commit,
   protected-path checks, and fail-closed duplicate-anchor diagnostics.
+- Deterministic Model Advisor notices. Assistant turns now run a hash-only
+  stream-lint pass before the user-visible message is recorded. The first
+  advisory rules flag unverified tests/build/checks-passed claims and
+  destructive command references, recording rule IDs, severity, counts, text
+  SHA-256, diagnostic-set SHA-256, and tool-evidence counts without copying the
+  matched text or mutating the assistant response.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

@@ -154,6 +154,40 @@ export interface ToolEventPayload {
   policyReason?: string;
 }
 
+export type ModelAdvisorRuleId =
+  | "unverified_verification_claim"
+  | "destructive_command_reference";
+
+export type ModelAdvisorSeverity = "warning" | "blocker";
+
+export interface ModelAdvisorDiagnostic {
+  ruleId: ModelAdvisorRuleId;
+  severity: ModelAdvisorSeverity;
+  matchCount: number;
+  evidenceSha256: string;
+}
+
+export interface ModelAdvisorEvidence {
+  assistantTextBytes: number;
+  assistantLineCount: number;
+  toolCompletedCount: number;
+  verificationToolCompleted: boolean;
+}
+
+export interface ModelAdvisorNoticePayload {
+  kind: "napier.model-advisor-notice";
+  schemaVersion: 1;
+  source: "deterministic_stream_lint";
+  turnSource: string;
+  status: "notice";
+  textSha256: string;
+  diagnosticCount: number;
+  diagnosticSetSha256: string;
+  diagnostics: ModelAdvisorDiagnostic[];
+  evidence: ModelAdvisorEvidence;
+  contentSha256: string;
+}
+
 export interface GoalState {
   objective: string;
   status: GoalStatus;

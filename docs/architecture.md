@@ -48,6 +48,9 @@ removal is a versioned contract change.
 - tool assembly, canonical workspace-path checks, hash-bound atomic editing
   with Hashline-style line anchors, sandboxed structured verification, and
   last-moment policy checks;
+- deterministic Model Advisor notices that inspect assistant output before the
+  user-visible assistant message is recorded, while retaining only hash-bound
+  diagnostics;
 - standard Agent Skills discovery;
 - hash-only signed Skill, Prompt, and Inspector package baselines plus local
   qualification checks;
@@ -335,6 +338,18 @@ request-body presence, promoted schema refs, and response status set.
 Verification allows additive operations while rejecting removed or changed
 published operations, giving external management clients a baseline that is
 stricter than route discovery but still additive-friendly.
+
+Before a final assistant message is recorded, the runtime runs a deterministic
+Model Advisor lint pass over the assistant text and the current Run evidence.
+The first rules flag verification claims such as tests/build/checks passing
+without a completed `verify_workspace` tool, and destructive command
+references such as `git reset --hard` or `rm -rf` patterns. The resulting
+`model.advisor.notice` event is debug-only and hash-only: it records rule IDs,
+severity, match counts, text SHA-256, diagnostic-set SHA-256, tool evidence
+counts, and a stable content SHA-256, but not the matching text. The pass is
+advisory in this release; it does not mutate the assistant response or retry
+the model turn, which keeps the stream contract stable while establishing the
+evidence channel needed for future hard stream-rule intervention.
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
 frames must not carry `id:`, and stream-local event sequence values must

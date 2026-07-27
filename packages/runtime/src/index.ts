@@ -22,6 +22,7 @@ export * from "./ids.js";
 export * from "./inbound-dead-letters.js";
 export * from "./inspector-packages.js";
 export * from "./memory.js";
+export * from "./model-advisor.js";
 export * from "./mcp.js";
 export * from "./mcp-stdio.js";
 export * from "./models.js";
