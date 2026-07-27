@@ -2344,10 +2344,10 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- externally hosted receipt-trust directory discovery, rotation, and freshness
-  policy for signed policy override retirement proof bundles, so independent
-  Napier Ledgers can subscribe to verifier-key updates without manual file
-  exchange.
+- externally hosted receipt-trust directory discovery and subscription feeds,
+  using freshness/rotation policy receipts to reject stale or unexpected
+  verifier-key sets for signed policy override retirement proof bundles without
+  manual file exchange.
 
 ### Layer 3: Extension fabric
 

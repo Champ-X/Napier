@@ -19,6 +19,7 @@ import {
   type ReceiptTrustAnchorDirectory,
   type ReceiptTrustAnchorDirectoryEntry,
   type ReceiptTrustAnchorDirectoryVerification,
+  type ReceiptTrustAnchorDirectoryVerificationPolicy,
   type TrustedReceipt,
   type TrustedReceiptEnvelope,
   type TrustedReceiptKind,
@@ -65,6 +66,12 @@ const RECEIPT_TRUST_ANCHOR_DIRECTORY_ENTRY_KEYS = [
   "updatedAt",
   "revokedAt",
   "anchorSha256",
+];
+const RECEIPT_TRUST_ANCHOR_DIRECTORY_VERIFICATION_POLICY_KEYS = [
+  "maxAgeMs",
+  "expectedAnchorSetSha256",
+  "minimumTrustedCount",
+  "requiredTrustedKeyIds",
 ];
 
 interface ReceiptSignatureStatement {
@@ -288,8 +295,22 @@ export function validateReceiptTrustAnchorDirectory(
 
 export function verifyReceiptTrustAnchorDirectory(
   input: unknown,
+  policy?: ReceiptTrustAnchorDirectoryVerificationPolicy,
 ): ReceiptTrustAnchorDirectoryVerification {
+  const verifiedAtMs = Date.now();
   const diagnostics: string[] = [];
+  let normalizedPolicy: ReceiptTrustAnchorDirectoryVerificationPolicy | undefined;
+  let policySha256: string | undefined;
+  try {
+    normalizedPolicy = normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
+      policy,
+    );
+    policySha256 = normalizedPolicy
+      ? sha256(canonicalJson(normalizedPolicy))
+      : undefined;
+  } catch {
+    diagnostics.push("policy_invalid");
+  }
   const record = isRecord(input) ? input : undefined;
   if (!record) diagnostics.push("directory_not_object");
   const contentSha256Value = record?.["contentSha256"];
@@ -299,6 +320,12 @@ export function verifyReceiptTrustAnchorDirectory(
     : undefined;
   const declaredAnchorSetSha256 = isSha256(anchorSetSha256Value)
     ? anchorSetSha256Value
+    : undefined;
+  const directoryGeneratedAt = validTimestamp(record?.["generatedAt"])
+    ? record["generatedAt"]
+    : undefined;
+  const directoryAgeMs = directoryGeneratedAt
+    ? verifiedAtMs - Date.parse(directoryGeneratedAt)
     : undefined;
   const recomputedContentSha256 = record
     ? sha256(canonicalJson(receiptTrustAnchorDirectoryHashContent(record)))
@@ -388,6 +415,48 @@ export function verifyReceiptTrustAnchorDirectory(
   ) {
     diagnostics.push("revoked_count_mismatch");
   }
+  if (normalizedPolicy) {
+    if (directoryAgeMs !== undefined && directoryAgeMs < 0) {
+      diagnostics.push("generated_at_in_future");
+    }
+    if (
+      normalizedPolicy.maxAgeMs !== undefined &&
+      directoryAgeMs !== undefined &&
+      directoryAgeMs > normalizedPolicy.maxAgeMs
+    ) {
+      diagnostics.push("directory_expired");
+    }
+    const observedAnchorSetSha256 =
+      recomputedAnchorSetSha256 ?? declaredAnchorSetSha256;
+    if (
+      normalizedPolicy.expectedAnchorSetSha256 &&
+      observedAnchorSetSha256 &&
+      normalizedPolicy.expectedAnchorSetSha256 !== observedAnchorSetSha256
+    ) {
+      diagnostics.push("anchor_set_unexpected");
+    }
+    if (
+      normalizedPolicy.minimumTrustedCount !== undefined &&
+      trustedCount !== undefined &&
+      trustedCount < normalizedPolicy.minimumTrustedCount
+    ) {
+      diagnostics.push("trusted_count_below_minimum");
+    }
+    if (normalizedPolicy.requiredTrustedKeyIds && anchors) {
+      const trustedKeyIds = new Set(
+        anchors
+          .filter((anchor) => anchor.status === "trusted")
+          .map((anchor) => anchor.keyId),
+      );
+      if (
+        normalizedPolicy.requiredTrustedKeyIds.some(
+          (keyId) => !trustedKeyIds.has(keyId),
+        )
+      ) {
+        diagnostics.push("required_trusted_key_missing");
+      }
+    }
+  }
   const status: ReceiptTrustAnchorDirectoryVerification["status"] =
     diagnostics.length === 0 ? "valid" : "invalid";
   const content = {
@@ -396,6 +465,10 @@ export function verifyReceiptTrustAnchorDirectory(
     apiVersion: NAPIER_API_VERSION,
     status,
     diagnostics,
+    ...(normalizedPolicy ? { policy: normalizedPolicy } : {}),
+    ...(policySha256 ? { policySha256 } : {}),
+    ...(directoryGeneratedAt ? { directoryGeneratedAt } : {}),
+    ...(directoryAgeMs !== undefined ? { directoryAgeMs } : {}),
     ...(declaredContentSha256 ? { declaredContentSha256 } : {}),
     ...(recomputedContentSha256 ? { recomputedContentSha256 } : {}),
     ...(declaredAnchorSetSha256 ? { declaredAnchorSetSha256 } : {}),
@@ -406,7 +479,7 @@ export function verifyReceiptTrustAnchorDirectory(
   };
   return {
     ...content,
-    generatedAt: nowIso(),
+    generatedAt: new Date(verifiedAtMs).toISOString(),
     contentSha256: sha256(canonicalJson(content)),
   };
 }
@@ -1079,6 +1152,51 @@ function optionalSha256(value: unknown): boolean {
 
 function isSha256(value: unknown): value is string {
   return typeof value === "string" && SHA256_PATTERN.test(value);
+}
+
+function normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
+  policy: ReceiptTrustAnchorDirectoryVerificationPolicy | undefined,
+): ReceiptTrustAnchorDirectoryVerificationPolicy | undefined {
+  if (policy === undefined) return undefined;
+  if (!isRecord(policy)) {
+    throw new Error("Receipt trust anchor directory policy is invalid");
+  }
+  assertAllowedKeys(
+    policy,
+    RECEIPT_TRUST_ANCHOR_DIRECTORY_VERIFICATION_POLICY_KEYS,
+  );
+  const normalized: ReceiptTrustAnchorDirectoryVerificationPolicy = {};
+  if (policy.maxAgeMs !== undefined) {
+    if (!nonNegativeInteger(policy.maxAgeMs)) {
+      throw new Error("Receipt trust anchor directory policy age is invalid");
+    }
+    normalized.maxAgeMs = policy.maxAgeMs;
+  }
+  if (policy.expectedAnchorSetSha256 !== undefined) {
+    if (!isSha256(policy.expectedAnchorSetSha256)) {
+      throw new Error("Receipt trust anchor directory policy hash is invalid");
+    }
+    normalized.expectedAnchorSetSha256 = policy.expectedAnchorSetSha256;
+  }
+  if (policy.minimumTrustedCount !== undefined) {
+    if (!nonNegativeInteger(policy.minimumTrustedCount)) {
+      throw new Error("Receipt trust anchor directory policy count is invalid");
+    }
+    normalized.minimumTrustedCount = policy.minimumTrustedCount;
+  }
+  if (policy.requiredTrustedKeyIds !== undefined) {
+    if (
+      !Array.isArray(policy.requiredTrustedKeyIds) ||
+      policy.requiredTrustedKeyIds.length > MAX_RECEIPT_TRUST_ANCHORS ||
+      policy.requiredTrustedKeyIds.some((keyId) => !isSha256(keyId))
+    ) {
+      throw new Error("Receipt trust anchor directory policy keys are invalid");
+    }
+    normalized.requiredTrustedKeyIds = Array.from(
+      new Set(policy.requiredTrustedKeyIds),
+    ).sort();
+  }
+  return normalized;
 }
 
 function createReceiptTrustAnchorDirectoryEntry(

@@ -3650,6 +3650,10 @@ export interface TrustedReceiptVerification {
   keyId?: string;
   envelopeSha256?: string;
   anchorDirectorySha256?: string;
+  anchorDirectoryVerificationSha256?: string;
+  anchorDirectoryPolicySha256?: string;
+  anchorDirectoryGeneratedAt?: string;
+  anchorDirectoryAgeMs?: number;
   anchorDirectoryAnchorCount?: number;
   signatureValid: boolean;
   integrityValid: boolean;
@@ -3664,10 +3668,19 @@ export interface SignTrustedReceiptRequest {
 export interface VerifyTrustedReceiptRequest {
   envelope: unknown;
   directory?: unknown;
+  directoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
 export interface VerifyReceiptTrustAnchorDirectoryRequest {
   directory: unknown;
+  policy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
+export interface ReceiptTrustAnchorDirectoryVerificationPolicy {
+  maxAgeMs?: number;
+  expectedAnchorSetSha256?: string;
+  minimumTrustedCount?: number;
+  requiredTrustedKeyIds?: string[];
 }
 
 export type ReceiptTrustAnchorDirectoryVerificationStatus =
@@ -3681,6 +3694,10 @@ export interface ReceiptTrustAnchorDirectoryVerification {
   generatedAt: string;
   status: ReceiptTrustAnchorDirectoryVerificationStatus;
   diagnostics: string[];
+  policy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
+  policySha256?: string;
+  directoryGeneratedAt?: string;
+  directoryAgeMs?: number;
   declaredContentSha256?: string;
   recomputedContentSha256?: string;
   declaredAnchorSetSha256?: string;

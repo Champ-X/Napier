@@ -5,6 +5,7 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryVerification,
+  ReceiptTrustAnchorDirectoryVerificationPolicy,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   VerifyReceiptTrustAnchorDirectoryRequest,
@@ -54,12 +55,14 @@ export function revokeReceiptTrustAnchor(
 export function verifyTrustedReceipt(
   envelope: unknown,
   directory?: unknown,
+  directoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy,
 ): Promise<TrustedReceiptVerification> {
   return requestTrustJson("/api/receipt-trust/verify", {
     method: "POST",
     body: JSON.stringify({
       envelope,
       ...(directory !== undefined ? { directory } : {}),
+      ...(directoryPolicy !== undefined ? { directoryPolicy } : {}),
     }),
   });
 }

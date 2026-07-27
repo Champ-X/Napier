@@ -1290,9 +1290,15 @@ without `signingSource` or environment-variable locators. `POST
 /api/receipt-trust/anchors/directory/verify` validates an uploaded directory
 without mutating Ledger state, and `POST /api/receipt-trust/verify` can accept
 that directory alongside a signed envelope to verify external receipts without
-copying the local workspace trust table. The Receipt trust desk can export and
-verify these directory JSON files for cross-Ledger policy-retirement proof
-bundle audits.
+copying the local workspace trust table. Both directory verification endpoints
+accept an optional freshness/rotation policy with `maxAgeMs`,
+`expectedAnchorSetSha256`, `minimumTrustedCount`, and
+`requiredTrustedKeyIds`. Policy violations produce an `invalid` directory
+verification receipt with policy hash, directory age, and low-cardinality
+diagnostics, and signed receipt verification fails closed before trusting a
+signature if the uploaded directory violates that policy. The Receipt trust
+desk can export and verify these directory JSON files for cross-Ledger
+policy-retirement proof bundle audits.
 
 A Casebook qualification baseline can be promoted only from a current
 revision's `passed` receipt signed by a currently trusted local signer. It

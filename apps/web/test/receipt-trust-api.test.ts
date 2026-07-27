@@ -49,6 +49,12 @@ describe("receipt trust Web API wrappers", () => {
       ],
       contentSha256: "d".repeat(64),
     };
+    const directoryPolicy = {
+      maxAgeMs: 60_000,
+      expectedAnchorSetSha256: directory.anchorSetSha256,
+      minimumTrustedCount: 1,
+      requiredTrustedKeyIds: [directory.anchors[0]!.keyId],
+    };
     const verification: ReceiptTrustAnchorDirectoryVerification = {
       kind: "napier.receipt-trust-anchor-directory-verification",
       schemaVersion: 1,
@@ -56,6 +62,10 @@ describe("receipt trust Web API wrappers", () => {
       generatedAt: "2026-07-27T00:00:01.000Z",
       status: "valid",
       diagnostics: [],
+      policy: directoryPolicy,
+      policySha256: "f".repeat(64),
+      directoryGeneratedAt: directory.generatedAt,
+      directoryAgeMs: 1_000,
       declaredContentSha256: directory.contentSha256,
       recomputedContentSha256: directory.contentSha256,
       declaredAnchorSetSha256: directory.anchorSetSha256,
@@ -73,7 +83,7 @@ describe("receipt trust Web API wrappers", () => {
       {
         path: "/api/receipt-trust/anchors/directory/verify",
         method: "POST",
-        body: { directory },
+        body: { directory, policy: directoryPolicy },
         response: verification,
       },
     ];
@@ -89,7 +99,10 @@ describe("receipt trust Web API wrappers", () => {
 
     await expect(getReceiptTrustAnchorDirectory()).resolves.toEqual(directory);
     await expect(
-      verifyReceiptTrustAnchorDirectory({ directory }),
+      verifyReceiptTrustAnchorDirectory({
+        directory,
+        policy: directoryPolicy,
+      }),
     ).resolves.toEqual(verification);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -103,6 +116,9 @@ describe("receipt trust Web API wrappers", () => {
       kind: "napier.trusted-receipt-envelope",
       contentSha256: "b".repeat(64),
     } as TrustedReceiptEnvelope;
+    const directoryPolicy = {
+      requiredTrustedKeyIds: ["e".repeat(64)],
+    };
     const verification: TrustedReceiptVerification = {
       status: "trusted",
       verifiedAt: "2026-07-27T00:00:02.000Z",
@@ -112,6 +128,9 @@ describe("receipt trust Web API wrappers", () => {
       keyId: "e".repeat(64),
       envelopeSha256: envelope.contentSha256,
       anchorDirectorySha256: "a".repeat(64),
+      anchorDirectoryVerificationSha256: "f".repeat(64),
+      anchorDirectoryPolicySha256: "0".repeat(64),
+      anchorDirectoryAgeMs: 1_000,
       anchorDirectoryAnchorCount: 1,
       signatureValid: true,
       integrityValid: true,
@@ -121,14 +140,16 @@ describe("receipt trust Web API wrappers", () => {
       expect(path).toBe("/api/receipt-trust/verify");
       expect(init?.method).toBe("POST");
       expect(init?.headers).toEqual({ "Content-Type": "application/json" });
-      expect(init?.body).toBe(JSON.stringify({ envelope, directory }));
+      expect(init?.body).toBe(
+        JSON.stringify({ envelope, directory, directoryPolicy }),
+      );
       return jsonResponse(verification);
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(verifyTrustedReceipt(envelope, directory)).resolves.toEqual(
-      verification,
-    );
+    await expect(
+      verifyTrustedReceipt(envelope, directory, directoryPolicy),
+    ).resolves.toEqual(verification);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

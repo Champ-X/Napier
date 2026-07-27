@@ -175,6 +175,49 @@ describe("trusted receipt provenance", () => {
         revokedCount: 0,
       }),
     );
+    const directoryPolicy = {
+      maxAgeMs: 60_000,
+      expectedAnchorSetSha256: directory.anchorSetSha256,
+      minimumTrustedCount: 1,
+      requiredTrustedKeyIds: [anchor.keyId],
+    };
+    expect(verifyReceiptTrustAnchorDirectory(directory, directoryPolicy)).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        policy: directoryPolicy,
+        policySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        directoryGeneratedAt: directory.generatedAt,
+        directoryAgeMs: expect.any(Number),
+      }),
+    );
+    expect(
+      verifyReceiptTrustAnchorDirectory(
+        { ...directory, generatedAt: "2000-01-01T00:00:00.000Z" },
+        { maxAgeMs: 1 },
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining(["directory_expired"]),
+      }),
+    );
+    expect(
+      verifyReceiptTrustAnchorDirectory(directory, {
+        expectedAnchorSetSha256: "f".repeat(64),
+        minimumTrustedCount: 2,
+        requiredTrustedKeyIds: ["e".repeat(64)],
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: expect.arrayContaining([
+          "anchor_set_unexpected",
+          "trusted_count_below_minimum",
+          "required_trusted_key_missing",
+        ]),
+      }),
+    );
     expect(JSON.stringify(directory)).not.toContain(SIGNING_ENV);
     expect(JSON.stringify(directory)).not.toContain("BEGIN PRIVATE KEY");
     const directoryAnchors = receiptTrustAnchorsFromDirectory(directory);

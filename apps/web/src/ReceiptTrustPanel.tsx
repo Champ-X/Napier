@@ -432,6 +432,23 @@ export default function ReceiptTrustPanel({
             <code title={directoryVerification.contentSha256}>
               {directoryVerification.contentSha256.slice(0, 16)}
             </code>
+            {directoryVerification.directoryAgeMs !== undefined ? (
+              <code
+                title={
+                  copy.lab.trust.directoryAge +
+                  ": " +
+                  directoryVerification.directoryAgeMs.toString()
+                }
+              >
+                {formatDirectoryAge(directoryVerification.directoryAgeMs)}
+              </code>
+            ) : null}
+            {directoryVerification.policySha256 ? (
+              <code title={directoryVerification.policySha256}>
+                {copy.lab.trust.policyHash}{" "}
+                {directoryVerification.policySha256.slice(0, 8)}
+              </code>
+            ) : null}
           </output>
         ) : null}
       </section>
@@ -451,6 +468,14 @@ export default function ReceiptTrustPanel({
 
 function toErrorMessage(error: unknown): string {
   return formatApiErrorMessage(error);
+}
+
+function formatDirectoryAge(milliseconds: number): string {
+  const seconds = Math.max(0, Math.floor(milliseconds / 1_000));
+  if (seconds < 60) return seconds.toString() + "s";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes.toString() + "m";
+  return Math.floor(minutes / 60).toString() + "h";
 }
 
 function downloadJson(value: unknown, filename: string): void {

@@ -179,6 +179,8 @@ export const copy = {
       chooseDirectory: "Verify anchor directory",
       verifyingDirectory: "Verifying directory...",
       noDiagnostics: "No diagnostics",
+      directoryAge: "Directory age",
+      policyHash: "Policy",
       statuses: {
         trusted: "Trusted",
         revoked: "Revoked",

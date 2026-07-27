@@ -123,6 +123,7 @@ import {
   type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectory,
   type ReceiptTrustAnchorDirectoryVerification,
+  type ReceiptTrustAnchorDirectoryVerificationPolicy,
   type ReplanExecutionPlanRequest,
   type ResolveEvaluationConsensusRequest,
   type ResolveEvaluationConsensusResult,
@@ -1020,9 +1021,10 @@ export class LocalStore {
 
   verifyReceiptTrustAnchorDirectory(
     input: unknown,
+    policy?: ReceiptTrustAnchorDirectoryVerificationPolicy,
   ): ReceiptTrustAnchorDirectoryVerification {
     this.assertInitialized();
-    return verifyReceiptTrustAnchorDirectory(input);
+    return verifyReceiptTrustAnchorDirectory(input, policy);
   }
 
   getReceiptTrustAnchor(anchorId: string): ReceiptTrustAnchor {

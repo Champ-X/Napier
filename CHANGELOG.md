@@ -222,6 +222,18 @@ All notable changes to Napier are recorded here.
   signed envelope against an uploaded directory instead of local workspace
   anchors. The Receipt trust desk can download and verify directory JSON files
   for cross-Ledger signed policy-retirement proof audits.
+- Receipt trust anchor directory freshness and rotation policies. Directory
+  verification requests can now include `maxAgeMs`,
+  `expectedAnchorSetSha256`, `minimumTrustedCount`, and
+  `requiredTrustedKeyIds`; policy violations make the uploaded directory
+  verification `invalid` with policy hash, directory age, and bounded
+  diagnostics. `POST /api/receipt-trust/verify` accepts the same
+  `directoryPolicy` and fails closed before signature trust evaluation when an
+  external directory is stale, from an unexpected anchor set, under-populated,
+  or missing a required trusted signer. Server headers and the Receipt trust
+  desk expose directory verification hash, policy hash, and directory age so
+  cross-Ledger signed policy-retirement proof audits can bind trust freshness
+  to receipt validation.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact
