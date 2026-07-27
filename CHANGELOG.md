@@ -298,7 +298,12 @@ All notable changes to Napier are recorded here.
   return a hash-bound `policyReview`, expose policy/review SHA-256 headers, and
   reject activation before persistence when local freshness, quorum strength,
   source-origin, publisher, signer, anchor-set, or directory pins are not
-  satisfied.
+  satisfied. The Web Receipt Trust Desk now includes a baseline activation
+  workbench that lists the latest signed quorum baseline, compares selected
+  source origins against active last-good directory subscriptions, verifies the
+  baseline against local or active external trust anchors, and imports uploaded
+  archives with a derived policy while surfacing verification and policy-review
+  hashes.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

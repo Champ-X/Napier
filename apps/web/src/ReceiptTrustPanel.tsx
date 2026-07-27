@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Ban,
   Check,
@@ -20,9 +20,12 @@ import type {
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
+  ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult,
   TrustedReceiptVerification,
 } from "@napier/contracts";
 
@@ -34,11 +37,14 @@ import {
   evaluateReceiptTrustAnchorDirectoryQuorum,
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
+  importReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  listReceiptTrustAnchorDirectoryQuorumPromotionBaselines,
   listReceiptTrustAnchorDirectorySubscriptions,
   refreshReceiptTrustAnchorDirectorySubscription,
   revokeReceiptTrustAnchor,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
+  verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
   verifyReceiptTrustAnchorDirectoryMetadata,
   verifyTrustedReceipt,
 } from "./receipt-trust-api";
@@ -46,6 +52,8 @@ import { formatApiErrorMessage } from "./api-error";
 import {
   qualifyReceiptTrustAnchorDirectoryDiscoveryRequest,
   qualifyReceiptTrustAnchorDirectorySubscriptionRequest,
+  buildReceiptTrustDirectoryBaselineImportPolicy,
+  projectReceiptTrustDirectoryBaselineActivation,
 } from "./receipt-trust-view-model";
 
 const MAX_TRUSTED_RECEIPT_FILE_BYTES = 10 * 1024 * 1024 + 64 * 1024;
@@ -87,6 +95,13 @@ export default function ReceiptTrustPanel({
   >([]);
   const [directoryQuorum, setDirectoryQuorum] =
     useState<ReceiptTrustAnchorDirectoryQuorum>();
+  const [promotionBaselines, setPromotionBaselines] = useState<
+    ReceiptTrustAnchorDirectoryQuorumPromotionBaseline[]
+  >([]);
+  const [baselineVerification, setBaselineVerification] =
+    useState<ReceiptTrustAnchorDirectoryQuorumPromotionBaselineVerification>();
+  const [baselineImportResult, setBaselineImportResult] =
+    useState<ImportReceiptTrustAnchorDirectoryQuorumPromotionBaselineResult>();
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
@@ -123,13 +138,26 @@ export default function ReceiptTrustPanel({
         Boolean(anchor.signingSource),
     ) &&
     !busyId;
+  const baselineActivation = useMemo(
+    () =>
+      projectReceiptTrustDirectoryBaselineActivation(
+        promotionBaselines,
+        directorySubscriptions,
+      ),
+    [promotionBaselines, directorySubscriptions],
+  );
+  const latestBaseline = baselineActivation.latestBaseline;
 
   useEffect(() => {
     let cancelled = false;
-    void listReceiptTrustAnchorDirectorySubscriptions()
-      .then((subscriptions) => {
+    void Promise.all([
+      listReceiptTrustAnchorDirectorySubscriptions(),
+      listReceiptTrustAnchorDirectoryQuorumPromotionBaselines(),
+    ])
+      .then(([subscriptions, baselines]) => {
         if (cancelled) return;
         setDirectorySubscriptions(subscriptions);
+        setPromotionBaselines(baselines);
         const active = subscriptions
           .filter(
             (subscription) =>
@@ -371,6 +399,7 @@ export default function ReceiptTrustPanel({
         );
       upsertDirectorySubscription(subscription);
       setDirectoryQuorum(undefined);
+      clearBaselineActivationEvidence();
       setDirectorySubscriptionLabel("");
       activateSubscription(subscription);
     } catch (subscriptionError) {
@@ -393,6 +422,7 @@ export default function ReceiptTrustPanel({
       );
       upsertDirectorySubscription(result.subscription);
       setDirectoryQuorum(undefined);
+      clearBaselineActivationEvidence();
       if (result.discovery) {
         setDirectoryDiscovery(result.discovery);
         setDirectoryVerification(result.discovery.verification);
@@ -426,6 +456,7 @@ export default function ReceiptTrustPanel({
       );
       upsertDirectorySubscription(updated);
       setDirectoryQuorum(undefined);
+      clearBaselineActivationEvidence();
       if (updated.status === "active" && updated.lastGoodDiscovery?.directory) {
         activateSubscription(updated);
       } else if (externalDirectorySubscriptionId === updated.id) {
@@ -462,6 +493,74 @@ export default function ReceiptTrustPanel({
     }
   }
 
+  async function verifyLatestBaseline(): Promise<void> {
+    if (!latestBaseline) return;
+    setBusyId("verify-quorum-baseline");
+    setError(undefined);
+    setBaselineVerification(undefined);
+    try {
+      const verification =
+        await verifyReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
+          baseline: latestBaseline,
+          ...(externalDirectory
+            ? {
+                trustDirectory: externalDirectory,
+                ...(externalDirectoryPolicy
+                  ? { trustDirectoryPolicy: externalDirectoryPolicy }
+                  : {}),
+              }
+            : {}),
+        });
+      setBaselineVerification(verification);
+    } catch (verifyError) {
+      setError(toErrorMessage(verifyError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function importQuorumBaselineFile(file: File | undefined): Promise<void> {
+    if (!file) return;
+    setBusyId("import-quorum-baseline");
+    setError(undefined);
+    setBaselineImportResult(undefined);
+    setBaselineVerification(undefined);
+    try {
+      if (file.size > MAX_TRUSTED_RECEIPT_FILE_BYTES) {
+        throw new Error(copy.lab.trust.errors.tooLarge);
+      }
+      const baseline = JSON.parse(
+        await file.text(),
+      ) as ReceiptTrustAnchorDirectoryQuorumPromotionBaseline;
+      const result =
+        await importReceiptTrustAnchorDirectoryQuorumPromotionBaseline({
+          baseline,
+          threadId,
+          expectedCurrentBaselineSha256: latestBaseline?.contentSha256 ?? "",
+          importPolicy: buildReceiptTrustDirectoryBaselineImportPolicy(
+            baseline,
+            directorySubscriptions,
+            externalDirectory,
+          ),
+          ...(externalDirectory
+            ? {
+                trustDirectory: externalDirectory,
+                ...(externalDirectoryPolicy
+                  ? { trustDirectoryPolicy: externalDirectoryPolicy }
+                  : {}),
+              }
+            : {}),
+        });
+      setBaselineImportResult(result);
+      setBaselineVerification(result.verification);
+      upsertPromotionBaseline(result.baseline);
+    } catch (importError) {
+      setError(toErrorMessage(importError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
   function upsertDirectorySubscription(
     subscription: ReceiptTrustAnchorDirectorySubscription,
   ): void {
@@ -471,6 +570,22 @@ export default function ReceiptTrustPanel({
         subscription,
       ].sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
     );
+  }
+
+  function upsertPromotionBaseline(
+    baseline: ReceiptTrustAnchorDirectoryQuorumPromotionBaseline,
+  ): void {
+    setPromotionBaselines((current) =>
+      [
+        ...current.filter((candidate) => candidate.id !== baseline.id),
+        baseline,
+      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+    );
+  }
+
+  function clearBaselineActivationEvidence(): void {
+    setBaselineVerification(undefined);
+    setBaselineImportResult(undefined);
   }
 
   function clearExternalDirectory(): void {
@@ -856,6 +971,201 @@ export default function ReceiptTrustPanel({
             ) : null}
           </section>
         ) : null}
+        <section
+          className="receipt-baseline-workbench"
+          aria-labelledby="receipt-baseline-workbench-title"
+        >
+          <header>
+            <span>
+              <strong id="receipt-baseline-workbench-title">
+                {copy.lab.trust.baselineWorkbench}
+              </strong>
+              <small>{copy.lab.trust.baselineWorkbenchBody}</small>
+            </span>
+            <code>{baselineActivation.baselineCount.toString().padStart(2, "0")}</code>
+          </header>
+          {latestBaseline ? (
+            <>
+              <output className="receipt-baseline-latest" aria-live="polite">
+                <ShieldCheck size={11} aria-hidden="true" />
+                <span>
+                  <strong>{copy.lab.trust.latestBaseline}</strong>
+                  <small>
+                    {baselineActivation.alignedSourceCount}/
+                    {baselineActivation.selectedSourceOriginSha256s.length}{" "}
+                    {copy.lab.trust.baselineSourcesAligned} ·{" "}
+                    {baselineActivation.metadataPublisherSha256s.length}{" "}
+                    {copy.lab.trust.quorumPublishers}
+                  </small>
+                </span>
+                <code title={latestBaseline.contentSha256}>
+                  {latestBaseline.contentSha256.slice(0, 12)}
+                </code>
+                <code title={latestBaseline.selectedDirectorySha256}>
+                  {latestBaseline.selectedDirectorySha256.slice(0, 12)}
+                </code>
+              </output>
+              <div className="receipt-baseline-actions">
+                <button
+                  type="button"
+                  disabled={Boolean(busyId)}
+                  onClick={() => void verifyLatestBaseline()}
+                >
+                  <ShieldCheck size={10} aria-hidden="true" />
+                  {busyId === "verify-quorum-baseline"
+                    ? copy.lab.trust.verifyingBaseline
+                    : copy.lab.trust.verifyBaseline}
+                </button>
+                <label>
+                  <Upload size={10} aria-hidden="true" />
+                  <span>
+                    {busyId === "import-quorum-baseline"
+                      ? copy.lab.trust.importingBaseline
+                      : copy.lab.trust.importBaseline}
+                  </span>
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    disabled={Boolean(busyId)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      void importQuorumBaselineFile(file);
+                    }}
+                  />
+                </label>
+              </div>
+              {baselineActivation.sourceProjections.length ? (
+                <ol className="receipt-baseline-sources">
+                  {baselineActivation.sourceProjections.map((source) => (
+                    <li
+                      key={source.sourceOriginSha256}
+                      className={`baseline-source source-${source.status}`}
+                    >
+                      <span>
+                        <strong>
+                          {source.subscriptionLabel ??
+                            copy.lab.trust.baselineUnknownSource}
+                        </strong>
+                        <small>
+                          {
+                            copy.lab.trust.baselineSourceStatuses[
+                              source.status
+                            ]
+                          }
+                        </small>
+                      </span>
+                      <code title={source.sourceOriginSha256}>
+                        {source.sourceOriginSha256.slice(0, 12)}
+                      </code>
+                      {source.currentDirectorySha256 ? (
+                        <code title={source.currentDirectorySha256}>
+                          {source.currentDirectorySha256.slice(0, 8)}
+                        </code>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+              {baselineVerification ? (
+                <output
+                  className={`receipt-verification verification-${baselineVerification.status}`}
+                  aria-live="polite"
+                >
+                  {baselineVerification.status === "trusted" ? (
+                    <Check size={11} aria-hidden="true" />
+                  ) : (
+                    <ShieldCheck size={11} aria-hidden="true" />
+                  )}
+                  <span>
+                    <strong>
+                      {
+                        copy.lab.trust.baselineVerificationStatuses[
+                          baselineVerification.status
+                        ]
+                      }
+                    </strong>
+                    <small>
+                      {baselineVerification.diagnostics.length > 0
+                        ? baselineVerification.diagnostics.join(", ")
+                        : copy.lab.trust.noDiagnostics}
+                    </small>
+                  </span>
+                  <code title={baselineVerification.contentSha256}>
+                    {baselineVerification.contentSha256.slice(0, 12)}
+                  </code>
+                  {baselineVerification.keyId ? (
+                    <code title={baselineVerification.keyId}>
+                      {baselineVerification.keyId.slice(0, 12)}
+                    </code>
+                  ) : null}
+                </output>
+              ) : null}
+              {baselineImportResult?.policyReview ? (
+                <output
+                  className={`receipt-baseline-policy policy-${baselineImportResult.policyReview.status}`}
+                  aria-live="polite"
+                >
+                  <ShieldCheck size={11} aria-hidden="true" />
+                  <span>
+                    <strong>
+                      {
+                        copy.lab.trust.baselinePolicyStatuses[
+                          baselineImportResult.policyReview.status
+                        ]
+                      }
+                    </strong>
+                    <small>
+                      {baselineImportResult.policyReview.diagnostics.length > 0
+                        ? baselineImportResult.policyReview.diagnostics.join(
+                            ", ",
+                          )
+                        : copy.lab.trust.noDiagnostics}
+                    </small>
+                  </span>
+                  <code title={baselineImportResult.policyReview.policySha256}>
+                    {baselineImportResult.policyReview.policySha256.slice(
+                      0,
+                      12,
+                    )}
+                  </code>
+                  <code title={baselineImportResult.policyReview.contentSha256}>
+                    {baselineImportResult.policyReview.contentSha256.slice(
+                      0,
+                      12,
+                    )}
+                  </code>
+                </output>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <p className="receipt-trust-empty">
+                {copy.lab.trust.baselineWorkbenchEmpty}
+              </p>
+              <div className="receipt-baseline-actions">
+                <label>
+                  <Upload size={10} aria-hidden="true" />
+                  <span>
+                    {busyId === "import-quorum-baseline"
+                      ? copy.lab.trust.importingBaseline
+                      : copy.lab.trust.importBaseline}
+                  </span>
+                  <input
+                    type="file"
+                    accept="application/json,.json"
+                    disabled={Boolean(busyId)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      void importQuorumBaselineFile(file);
+                    }}
+                  />
+                </label>
+              </div>
+            </>
+          )}
+        </section>
         {externalDirectory ? (
           <output className="receipt-directory-active" aria-live="polite">
             <ShieldCheck size={11} aria-hidden="true" />

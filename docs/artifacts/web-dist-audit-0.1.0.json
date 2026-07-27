@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 42,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DWcT5v-N.js",
-    "sizeBytes": 142467,
+    "path": "apps/web/dist/assets/index-Dz34diLB.js",
+    "sizeBytes": 143477,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "895db02153febd64ad1fd17283748124d9c96808cf1d99d581a2a47f4ab5976b"
+    "sha256": "e38a4888acedeae0fdcc958a97b1c7253de184bb5de438c8907aa683be4bc91e"
   },
-  "distContentSha256": "895db02153febd64ad1fd17283748124d9c96808cf1d99d581a2a47f4ab5976b",
+  "distContentSha256": "e38a4888acedeae0fdcc958a97b1c7253de184bb5de438c8907aa683be4bc91e",
   "errors": []
 }

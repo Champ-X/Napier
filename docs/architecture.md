@@ -460,6 +460,13 @@ freshness limits, minimum agreement and metadata counts, selected
 anchor/directory pins, required source-origin hashes, and required signed
 metadata publisher or signer hashes. Successful imports carry the policy-review
 hash in the response and in hash-only Ledger event evidence.
+The Receipt Trust Desk projects those same records into an activation
+workbench. It loads local signed quorum baselines, compares each selected
+source origin against current active last-good directory subscriptions, shows
+directory/anchor-set drift before import, verifies the latest baseline against
+local or active external anchors, and imports uploaded archives with a derived
+policy that pins the current directory, source origins, metadata publishers,
+and metadata signer keys where available.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2419,9 +2426,10 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- activation workbench affordances for imported quorum-promotion baselines, so
-  operators can compare the trusted verification receipt, policy review, and
-  current last-good directory subscriptions before enabling a new verifier set.
+- signed activation-decision receipts for quorum-promotion baselines, so a
+  human or policy agent can attest to the verified baseline, policy review, and
+  current source-alignment projection before a verifier set is operationally
+  promoted.
 
 ### Layer 3: Extension fabric
 

@@ -257,6 +257,35 @@ export const copy = {
         split: "Quorum split",
         policy_failed: "Quorum policy failed",
       },
+      baselineWorkbench: "Baseline activation",
+      baselineWorkbenchBody:
+        "Review signed quorum baselines against the current last-good directory feeds before activating a verifier set.",
+      baselineWorkbenchEmpty:
+        "No quorum-promotion baseline has been imported or promoted yet.",
+      latestBaseline: "Latest quorum baseline",
+      baselineSourcesAligned: "sources aligned",
+      verifyBaseline: "Review baseline",
+      verifyingBaseline: "Reviewing...",
+      importBaseline: "Import baseline archive",
+      importingBaseline: "Importing...",
+      baselineUnknownSource: "Archived source",
+      baselineSourceStatuses: {
+        aligned: "Current last-good directory matches",
+        directory_drift: "Directory hash drift",
+        anchor_set_drift: "Anchor-set drift",
+        no_last_good: "No last-good directory",
+        missing_subscription: "No active subscription",
+      },
+      baselineVerificationStatuses: {
+        trusted: "Baseline trusted",
+        revoked: "Baseline key revoked",
+        unknown_key: "Unknown baseline signer",
+        invalid: "Baseline invalid",
+      },
+      baselinePolicyStatuses: {
+        accepted: "Activation policy accepted",
+        rejected: "Activation policy rejected",
+      },
       safety:
         "Private keys are read only at signing time. Subscription URLs stay in the local workspace snapshot for refresh; Ledger events expose only URL fingerprints and evidence hashes.",
       errors: {

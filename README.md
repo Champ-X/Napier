@@ -1386,6 +1386,13 @@ strength, selected anchor/directory pins, required source-origin hashes, and
 required signed-metadata publisher or signer hashes. Successful responses expose
 the import policy hash and policy-review hash in headers and in the result
 body.
+The Web Receipt Trust Desk now includes a baseline activation workbench. It
+loads the latest quorum-promotion baseline, compares its selected source-origin
+set against current active last-good directory subscriptions, verifies the
+baseline against local or active external trust anchors, and imports uploaded
+baseline archives with an automatically derived `importPolicy`. The result
+surfaces the trusted verification receipt and policy-review hashes next to the
+current source alignment state before the verifier set is treated as active.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST
