@@ -921,10 +921,16 @@ export default function ReceiptTrustPanel({
             activationDecisionRecordId: latestApprovedActivationRecord.id,
             expectedCurrentSelectionSha256:
               baselineActivationSelectionState?.currentSelectionSha256 ?? "",
+            ...(checkpointSubscriptions.length > 0
+              ? { checkpointRegistryQuorumPolicy: {} }
+              : {}),
           },
         );
       setBaselineActivationRotationReview(review);
       setBaselineActivationSelectionDriftAudit(review.driftAudit);
+      if (review.checkpointRegistryQuorum) {
+        setCheckpointRegistryQuorum(review.checkpointRegistryQuorum);
+      }
     } catch (reviewError) {
       setError(toErrorMessage(reviewError));
     } finally {

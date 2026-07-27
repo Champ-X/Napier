@@ -1430,10 +1430,15 @@ subscription quorum, returning `missing_selection`, `aligned`,
 selection/quorum hashes and low-cardinality diagnostics. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review`
 preflights a candidate activation-decision record against the current
-selection CAS hash and live source alignment before any replacement. The Web
-workbench adds **Audit drift** and **Review rotation** receipts beside Apply
-activation, so operators can see whether a verifier-set rotation is eligible,
-already active, stale, missing, or blocked before mutating trusted state.
+selection CAS hash and live source alignment before any replacement. Requests
+can also include `checkpointRegistryQuorumPolicy`; when present, the review
+embeds the current checkpoint-registry quorum receipt and blocks the rotation
+unless that quorum is `agreed`. The Web workbench adds **Audit drift** and
+**Review rotation** receipts beside Apply activation, and automatically gates
+rotation review with the default checkpoint-registry quorum policy whenever
+checkpoint subscriptions exist, so operators can see whether a verifier-set
+rotation is eligible, already active, stale, missing, split, or blocked before
+mutating trusted state.
 `GET
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/transparency-checkpoint`
 exports the applied verifier-set rotation chain as a compact checkpoint. Each

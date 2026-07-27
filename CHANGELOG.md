@@ -399,6 +399,15 @@ All notable changes to Napier are recorded here.
   `policy_failed`, or `stale` with hash-only source/candidate/agreement
   evidence and headers. The Receipt Trust Desk adds **Evaluate checkpoint
   quorum**, and Server/Web tests cover the agreed independent-origin path.
+- Rotation review checkpoint-registry gates. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review`
+  now accepts an optional `checkpointRegistryQuorumPolicy`. When supplied, the
+  no-store rotation review embeds the current checkpoint-registry quorum
+  receipt and blocks with `checkpoint_registry_quorum_not_agreed` unless the
+  quorum status is `agreed`. The Receipt Trust Desk automatically applies the
+  default checkpoint-registry quorum gate to Review rotation whenever checkpoint
+  subscriptions exist, making split or stale external checkpoint registries
+  visible before verifier-set rotation.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current

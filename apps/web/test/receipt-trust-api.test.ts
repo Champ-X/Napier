@@ -691,6 +691,11 @@ describe("receipt trust Web API wrappers", () => {
     const activationSelectionRotationReviewRequest = {
       activationDecisionRecordId: activationDecisionHistory.records[0]!.id,
       expectedCurrentSelectionSha256: activationSelection.contentSha256,
+      checkpointRegistryQuorumPolicy: {
+        minimumSources: 1,
+        minimumAgreementCount: 1,
+        minimumDistinctSourceOrigins: 1,
+      },
     };
     const activationSelectionRotationReview = {
       kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-review",

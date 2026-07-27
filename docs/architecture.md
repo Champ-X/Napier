@@ -506,8 +506,14 @@ expected current-selection hash, verifies the candidate activation-decision
 record exists and is approved, recomputes source alignment against live
 subscriptions, embeds the drift audit, and returns `eligible`,
 `already_active`, `blocked`, `stale_selection`, or `missing_decision` before
-the existing CAS apply endpoint can mutate trusted state. The Receipt Trust
-Desk exposes both receipts next to Apply activation.
+the existing CAS apply endpoint can mutate trusted state. A caller may attach a
+checkpoint-registry quorum policy to the same review. In that mode the Store
+computes the current signed-checkpoint registry quorum, embeds the full
+quorum receipt in the review, and adds `checkpoint_registry_quorum_not_agreed`
+unless the registry status is `agreed`. The Receipt Trust Desk exposes both
+receipts next to Apply activation and automatically attaches the default
+checkpoint-registry policy when checkpoint subscriptions exist, turning split
+or stale external checkpoint registries into visible rotation blockers.
 Active-selection transparency checkpoints make the actual applied rotation
 chain portable. The Store now keeps a bounded append-only history of successful
 selection applications, migrates a legacy current selection into the first
@@ -2524,9 +2530,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- checkpoint-registry policy promotion that can require an agreed signed
-  active-selection checkpoint quorum before allowing automated verifier-set
-  rotation proposals.
+- signed checkpoint-registry quorum baselines that archive independent-source
+  active-selection checkpoint agreement for cross-workspace verifier rotation
+  audits.
 
 ### Layer 3: Extension fabric
 

@@ -1431,6 +1431,7 @@ export class LocalStore {
   reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
     activationDecisionRecordId: string,
     expectedCurrentSelectionSha256: string,
+    checkpointRegistryQuorumPolicy?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy,
   ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview {
     this.assertInitialized();
     const reviewedAt = new Date().toISOString();
@@ -1439,6 +1440,12 @@ export class LocalStore {
     const currentSelectionSha256 = currentSelection?.contentSha256 ?? "";
     const driftAudit =
       this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit();
+    const checkpointRegistryQuorum =
+      checkpointRegistryQuorumPolicy !== undefined
+        ? this.getReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum(
+            checkpointRegistryQuorumPolicy,
+          )
+        : undefined;
     const record =
       this.state.receiptTrustAnchorDirectoryQuorumActivationDecisions.find(
         (candidate) => candidate.id === activationDecisionRecordId,
@@ -1449,6 +1456,12 @@ export class LocalStore {
     }
     if (!record) {
       diagnostics.push("activation_decision_missing");
+    }
+    if (
+      checkpointRegistryQuorum &&
+      checkpointRegistryQuorum.status !== "agreed"
+    ) {
+      diagnostics.push("checkpoint_registry_quorum_not_agreed");
     }
     if (currentSelection?.activationDecisionRecordId === record?.id) {
       diagnostics.push("selection_already_active");
@@ -1506,6 +1519,7 @@ export class LocalStore {
         ? { currentSourceAlignmentSha256 }
         : {}),
       driftAudit,
+      ...(checkpointRegistryQuorum ? { checkpointRegistryQuorum } : {}),
     };
     return {
       ...content,

@@ -775,6 +775,42 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-activation-selection-rotation-review-status",
       ),
     ).toBe("eligible");
+    const gatedRotationReviewResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-review",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          activationDecisionRecordId: activationRecord.id,
+          expectedCurrentSelectionSha256: "",
+          checkpointRegistryQuorumPolicy: {
+            minimumSources: 1,
+            minimumAgreementCount: 1,
+            minimumDistinctSourceOrigins: 1,
+            expectedCheckpointSha256: emptySelectionCheckpoint.contentSha256,
+          },
+        }),
+      },
+    );
+    expect(gatedRotationReviewResponse.status).toBe(200);
+    const gatedRotationReview =
+      (await gatedRotationReviewResponse.json()) as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview;
+    expect(gatedRotationReview).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        diagnostics: ["checkpoint_registry_quorum_not_agreed"],
+        checkpointRegistryQuorum: expect.objectContaining({
+          status: "insufficient_sources",
+          sourceCount: 0,
+          eligibleSourceCount: 0,
+        }),
+      }),
+    );
+    expect(
+      gatedRotationReviewResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-activation-selection-checkpoint-registry-quorum-status",
+      ),
+    ).toBe("insufficient_sources");
     const applyActivationSelectionResponse = await app.request(
       "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/apply",
       {

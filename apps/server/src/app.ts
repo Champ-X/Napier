@@ -1708,6 +1708,7 @@ export function createApp(services: NapierServices): Hono {
         services.store.reviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation(
           body.activationDecisionRecordId,
           body.expectedCurrentSelectionSha256,
+          body.checkpointRegistryQuorumPolicy,
         );
       setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewHeaders(
         context,
@@ -12124,12 +12125,23 @@ function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
   const record = requestRecord(input, [
     "activationDecisionRecordId",
     "expectedCurrentSelectionSha256",
+    "checkpointRegistryQuorumPolicy",
   ]);
   const activationDecisionRecordId = record?.["activationDecisionRecordId"];
   const expectedCurrentSelectionSha256 =
     record?.["expectedCurrentSelectionSha256"];
+  const checkpointRegistryQuorumPolicyInput =
+    record?.["checkpointRegistryQuorumPolicy"];
+  const checkpointRegistryQuorumPolicy =
+    checkpointRegistryQuorumPolicyInput === undefined
+      ? undefined
+      : parseReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy(
+          checkpointRegistryQuorumPolicyInput,
+        );
   if (
     !record ||
+    (checkpointRegistryQuorumPolicyInput !== undefined &&
+      !checkpointRegistryQuorumPolicy) ||
     typeof activationDecisionRecordId !== "string" ||
     !/^trustqad_[a-z0-9]{8,80}$/.test(activationDecisionRecordId) ||
     typeof expectedCurrentSelectionSha256 !== "string" ||
@@ -12141,6 +12153,10 @@ function parseReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotation
   return {
     activationDecisionRecordId,
     expectedCurrentSelectionSha256,
+    ...(checkpointRegistryQuorumPolicyInput !== undefined &&
+    checkpointRegistryQuorumPolicy
+      ? { checkpointRegistryQuorumPolicy }
+      : {}),
   };
 }
 
@@ -18559,6 +18575,16 @@ function setReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewHe
   context.header(
     "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Drift-Status",
     review.driftAudit.status,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-Status",
+    review.checkpointRegistryQuorum?.status,
+  );
+  setOptionalHeader(
+    context,
+    "X-Napier-Receipt-Trust-Directory-Quorum-Activation-Selection-Checkpoint-Registry-Quorum-SHA256",
+    review.checkpointRegistryQuorum?.contentSha256,
   );
 }
 

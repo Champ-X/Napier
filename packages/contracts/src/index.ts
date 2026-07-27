@@ -4656,6 +4656,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit 
 export interface ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRequest {
   activationDecisionRecordId: string;
   expectedCurrentSelectionSha256: string;
+  checkpointRegistryQuorumPolicy?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumPolicy;
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewStatus =
@@ -4680,6 +4681,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRev
   sourceAlignmentSha256?: string;
   currentSourceAlignmentSha256?: string;
   driftAudit: ReceiptTrustAnchorDirectoryQuorumActivationSelectionDriftAudit;
+  checkpointRegistryQuorum?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum;
   contentSha256: string;
 }
 
