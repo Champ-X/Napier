@@ -122,8 +122,13 @@ import {
   type ReviewRunEvaluationRequest,
   type ReceiptTrustAnchor,
   type ReceiptTrustAnchorDirectory,
+  type ReceiptTrustAnchorDirectoryDiscovery,
+  type ReceiptTrustAnchorDirectorySubscription,
+  type ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   type ReceiptTrustAnchorDirectoryVerification,
   type ReceiptTrustAnchorDirectoryVerificationPolicy,
+  type CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+  type UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
   type ReplanExecutionPlanRequest,
   type ResolveEvaluationConsensusRequest,
   type ResolveEvaluationConsensusResult,
@@ -309,6 +314,16 @@ import {
   verifyTrustedReceiptEnvelope,
 } from "./receipt-trust.js";
 import {
+  MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
+  createReceiptTrustAnchorDirectorySubscription,
+  settleReceiptTrustAnchorDirectorySubscriptionRefresh,
+  stripReceiptTrustAnchorDirectorySubscriptionSecrets,
+  updateReceiptTrustAnchorDirectorySubscriptionStatus,
+  validatePersistedReceiptTrustAnchorDirectorySubscription,
+  type PersistedReceiptTrustAnchorDirectorySubscription,
+  type ReceiptTrustAnchorDirectorySubscriptionClaim,
+} from "./receipt-trust-directory-subscriptions.js";
+import {
   signWorkspaceSkillPackage,
   createSkillPackageInstallation,
   markSkillPackageInstallationReplaced,
@@ -492,6 +507,7 @@ interface PersistedState {
   evaluationCasebooks: EvaluationCasebook[];
   evaluationCasebookQualificationExecutions: EvaluationCasebookQualificationExecution[];
   receiptTrustAnchors: ReceiptTrustAnchor[];
+  receiptTrustAnchorDirectorySubscriptions: PersistedReceiptTrustAnchorDirectorySubscription[];
   evaluationQualificationBaselines: EvaluationQualificationBaseline[];
   evaluationSuites: EvaluationSuite[];
   evaluationSuiteExecutions: EvaluationSuiteExecution[];
@@ -549,6 +565,10 @@ export interface DueScheduleClaims {
   }>;
 }
 
+export interface DueReceiptTrustAnchorDirectorySubscriptionClaims {
+  claims: ReceiptTrustAnchorDirectorySubscriptionClaim[];
+}
+
 export interface AutomaticRecoveryClaims {
   claims: AutomaticRecoveryClaim[];
   skipped: AutomaticRecoveryAssessment[];
@@ -582,6 +602,7 @@ const EMPTY_STATE: PersistedState = {
   evaluationCasebooks: [],
   evaluationCasebookQualificationExecutions: [],
   receiptTrustAnchors: [],
+  receiptTrustAnchorDirectorySubscriptions: [],
   evaluationQualificationBaselines: [],
   evaluationSuites: [],
   evaluationSuiteExecutions: [],
@@ -1093,6 +1114,260 @@ export class LocalStore {
       this.state.receiptTrustAnchors[index] = updated;
       if (updated.status !== current.status) await this.persistState();
       return structuredClone(updated);
+    });
+  }
+
+  listReceiptTrustAnchorDirectorySubscriptions(): ReceiptTrustAnchorDirectorySubscription[] {
+    this.assertInitialized();
+    return this.state.receiptTrustAnchorDirectorySubscriptions
+      .map(stripReceiptTrustAnchorDirectorySubscriptionSecrets)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  }
+
+  getReceiptTrustAnchorDirectorySubscription(
+    subscriptionId: string,
+  ): ReceiptTrustAnchorDirectorySubscription {
+    this.assertInitialized();
+    const subscription =
+      this.state.receiptTrustAnchorDirectorySubscriptions.find(
+        (candidate) => candidate.id === subscriptionId,
+      );
+    if (!subscription) {
+      throw new Error(
+        `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
+      );
+    }
+    return stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription);
+  }
+
+  async createReceiptTrustAnchorDirectorySubscription(
+    request: CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+    discovery: ReceiptTrustAnchorDirectoryDiscovery,
+  ): Promise<ReceiptTrustAnchorDirectorySubscription> {
+    this.assertInitialized();
+    this.getThread(request.threadId);
+    const subscription = createReceiptTrustAnchorDirectorySubscription(
+      request,
+      discovery,
+    );
+    return this.stateQueue.run(async () => {
+      if (
+        this.state.receiptTrustAnchorDirectorySubscriptions.length >=
+        MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
+      ) {
+        throw new Error(
+          `Workspace exceeds ${MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS} receipt trust anchor directory subscriptions`,
+        );
+      }
+      if (
+        this.state.receiptTrustAnchorDirectorySubscriptions.some(
+          (candidate) =>
+            candidate.sourceUrlSha256 === subscription.sourceUrlSha256,
+        )
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory subscription source already exists",
+        );
+      }
+      this.state.receiptTrustAnchorDirectorySubscriptions.push(subscription);
+      await this.persistState();
+      return stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription);
+    });
+  }
+
+  async updateReceiptTrustAnchorDirectorySubscription(
+    subscriptionId: string,
+    request: UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
+  ): Promise<ReceiptTrustAnchorDirectorySubscription> {
+    this.assertInitialized();
+    this.getThread(request.threadId);
+    return this.stateQueue.run(async () => {
+      const index =
+        this.state.receiptTrustAnchorDirectorySubscriptions.findIndex(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      const current =
+        this.state.receiptTrustAnchorDirectorySubscriptions[index];
+      if (!current) {
+        throw new Error(
+          `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (current.revision !== request.expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory subscription revision changed",
+        );
+      }
+      if (
+        current.claim &&
+        Date.parse(current.claim.expiresAt) > Date.now()
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory subscription refresh is in progress",
+        );
+      }
+      const hadExpiredClaim = current.claim !== undefined;
+      delete current.claim;
+      delete current.claimTokenSha256;
+      const updated = updateReceiptTrustAnchorDirectorySubscriptionStatus(
+        current,
+        request.status,
+      );
+      this.state.receiptTrustAnchorDirectorySubscriptions[index] = updated;
+      if (
+        updated.revision !== current.revision ||
+        hadExpiredClaim
+      ) {
+        await this.persistState();
+      }
+      return stripReceiptTrustAnchorDirectorySubscriptionSecrets(updated);
+    });
+  }
+
+  async claimReceiptTrustAnchorDirectorySubscription(
+    subscriptionId: string,
+    expectedRevision: number,
+    ownerId: string,
+    options: { now?: Date; leaseMs?: number } = {},
+  ): Promise<ReceiptTrustAnchorDirectorySubscriptionClaim> {
+    this.assertInitialized();
+    const owner = normalizeLeaseOwner(ownerId);
+    const now = options.now ?? new Date();
+    if (!Number.isFinite(now.getTime())) {
+      throw new Error("Receipt trust anchor directory claim time is invalid");
+    }
+    const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
+    return this.stateQueue.run(async () => {
+      const subscription =
+        this.state.receiptTrustAnchorDirectorySubscriptions.find(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      if (!subscription) {
+        throw new Error(
+          `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
+        );
+      }
+      if (subscription.revision !== expectedRevision) {
+        throw new Error(
+          "Receipt trust anchor directory subscription revision changed",
+        );
+      }
+      if (
+        subscription.claim &&
+        Date.parse(subscription.claim.expiresAt) > now.getTime()
+      ) {
+        throw new Error(
+          "Receipt trust anchor directory subscription refresh is in progress",
+        );
+      }
+      const token = createLeaseToken();
+      subscription.claim = {
+        ownerId: owner,
+        acquiredAt: now.toISOString(),
+        expiresAt: new Date(now.getTime() + leaseMs).toISOString(),
+      };
+      subscription.claimTokenSha256 = sha256(token);
+      await this.persistState();
+      return {
+        subscription:
+          stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription),
+        sourceUrl: subscription.sourceUrl,
+        token,
+      };
+    });
+  }
+
+  async claimDueReceiptTrustAnchorDirectorySubscriptions(
+    ownerId: string,
+    options: {
+      now?: Date;
+      leaseMs?: number;
+      limit?: number;
+    } = {},
+  ): Promise<DueReceiptTrustAnchorDirectorySubscriptionClaims> {
+    this.assertInitialized();
+    const owner = normalizeLeaseOwner(ownerId);
+    const now = options.now ?? new Date();
+    if (!Number.isFinite(now.getTime())) {
+      throw new Error("Receipt trust anchor directory claim time is invalid");
+    }
+    const leaseMs = validateLeaseTtl(options.leaseMs ?? 30_000);
+    const limit = Math.min(Math.max(options.limit ?? 5, 1), 20);
+    return this.stateQueue.run(async () => {
+      const claims: ReceiptTrustAnchorDirectorySubscriptionClaim[] = [];
+      const due = this.state.receiptTrustAnchorDirectorySubscriptions
+        .filter(
+          (subscription) =>
+            subscription.status === "active" &&
+            Date.parse(subscription.nextRefreshAt) <= now.getTime(),
+        )
+        .sort((left, right) =>
+          left.nextRefreshAt.localeCompare(right.nextRefreshAt),
+        );
+      for (const subscription of due) {
+        if (claims.length >= limit) break;
+        if (
+          subscription.claim &&
+          Date.parse(subscription.claim.expiresAt) > now.getTime()
+        ) {
+          continue;
+        }
+        const token = createLeaseToken();
+        subscription.claim = {
+          ownerId: owner,
+          acquiredAt: now.toISOString(),
+          expiresAt: new Date(now.getTime() + leaseMs).toISOString(),
+        };
+        subscription.claimTokenSha256 = sha256(token);
+        claims.push({
+          subscription:
+            stripReceiptTrustAnchorDirectorySubscriptionSecrets(subscription),
+          sourceUrl: subscription.sourceUrl,
+          token,
+        });
+      }
+      if (claims.length > 0) await this.persistState();
+      return { claims };
+    });
+  }
+
+  async settleReceiptTrustAnchorDirectorySubscriptionClaim(
+    subscriptionId: string,
+    token: string,
+    outcome:
+      | { discovery: ReceiptTrustAnchorDirectoryDiscovery }
+      | { failureSha256: string },
+  ): Promise<ReceiptTrustAnchorDirectorySubscriptionRefreshResult> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      const index =
+        this.state.receiptTrustAnchorDirectorySubscriptions.findIndex(
+          (candidate) => candidate.id === subscriptionId,
+        );
+      const current =
+        this.state.receiptTrustAnchorDirectorySubscriptions[index];
+      if (!current) {
+        throw new Error(
+          `Receipt trust anchor directory subscription not found: ${subscriptionId}`,
+        );
+      }
+      assertLeaseToken(current.claimTokenSha256, token);
+      if (!current.claim) {
+        throw new Error(
+          "Receipt trust anchor directory subscription claim is not active",
+        );
+      }
+      if (Date.parse(current.claim.expiresAt) <= Date.now()) {
+        throw new Error(
+          "Receipt trust anchor directory subscription claim expired",
+        );
+      }
+      const settled =
+        settleReceiptTrustAnchorDirectorySubscriptionRefresh(current, outcome);
+      this.state.receiptTrustAnchorDirectorySubscriptions[index] =
+        settled.persisted;
+      await this.persistState();
+      return settled.result;
     });
   }
 
@@ -6392,6 +6667,9 @@ export class LocalStore {
     if (!Array.isArray(state.receiptTrustAnchors)) {
       state.receiptTrustAnchors = [];
     }
+    if (!Array.isArray(state.receiptTrustAnchorDirectorySubscriptions)) {
+      state.receiptTrustAnchorDirectorySubscriptions = [];
+    }
     if (!Array.isArray(state.evaluationQualificationBaselines)) {
       state.evaluationQualificationBaselines = [];
     }
@@ -7093,6 +7371,38 @@ export class LocalStore {
       trustAnchorKeyIds.add(anchor.keyId);
       if (signingSource) trustAnchorSigningSources.add(signingSource);
     }
+    if (
+      state.receiptTrustAnchorDirectorySubscriptions.length >
+      MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS
+    ) {
+      throw new Error(
+        "Persisted receipt trust anchor directory subscription limit is exceeded",
+      );
+    }
+    const trustDirectorySubscriptionIds = new Set<string>();
+    const trustDirectorySubscriptionSourceHashes = new Set<string>();
+    for (const input of state.receiptTrustAnchorDirectorySubscriptions) {
+      const subscription =
+        validatePersistedReceiptTrustAnchorDirectorySubscription(input);
+      if (
+        trustDirectorySubscriptionIds.has(subscription.id) ||
+        trustDirectorySubscriptionSourceHashes.has(
+          subscription.sourceUrlSha256,
+        ) ||
+        !state.threads.some(
+          (thread) => thread.id === subscription.auditThreadId,
+        )
+      ) {
+        throw new Error(
+          `Duplicate persisted receipt trust anchor directory subscription: ${subscription.id}`,
+        );
+      }
+      trustDirectorySubscriptionIds.add(subscription.id);
+      trustDirectorySubscriptionSourceHashes.add(
+        subscription.sourceUrlSha256,
+      );
+      Object.assign(input, subscription);
+    }
     const qualificationBaselineIds = new Set<string>();
     const qualificationBaselineKeys = new Set<string>();
     const latestBaselineByCasebook = new Map<
@@ -7416,6 +7726,7 @@ export class LocalStore {
       !Array.isArray(parsed.evaluationCasebooks) ||
       !Array.isArray(parsed.evaluationCasebookQualificationExecutions) ||
       !Array.isArray(parsed.receiptTrustAnchors) ||
+      !Array.isArray(parsed.receiptTrustAnchorDirectorySubscriptions) ||
       !Array.isArray(parsed.extensionPublisherTrustAnchors) ||
       !Array.isArray(parsed.evaluationQualificationBaselines) ||
       !Array.isArray(parsed.executionPlanBlueprintOutcomeBaselines) ||

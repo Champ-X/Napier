@@ -1154,7 +1154,7 @@ function isSha256(value: unknown): value is string {
   return typeof value === "string" && SHA256_PATTERN.test(value);
 }
 
-function normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
+export function normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
   policy: ReceiptTrustAnchorDirectoryVerificationPolicy | undefined,
 ): ReceiptTrustAnchorDirectoryVerificationPolicy | undefined {
   if (policy === undefined) return undefined;
@@ -1197,6 +1197,18 @@ function normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
     ).sort();
   }
   return normalized;
+}
+
+export function hashReceiptTrustAnchorDirectoryVerificationPolicy(
+  policy: ReceiptTrustAnchorDirectoryVerificationPolicy,
+): string {
+  const normalized = normalizeReceiptTrustAnchorDirectoryVerificationPolicy(
+    policy,
+  );
+  if (!normalized) {
+    throw new Error("Receipt trust anchor directory policy is required");
+  }
+  return sha256(canonicalJson(normalized));
 }
 
 function createReceiptTrustAnchorDirectoryEntry(

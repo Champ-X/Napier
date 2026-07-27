@@ -401,6 +401,16 @@ anchor table. They strip signing-source locators, retain public SPKI bytes,
 key IDs, trust/revocation state, per-entry hashes, and an anchor-set SHA-256,
 and can be uploaded with a signed receipt so verification uses the external
 directory rather than the local workspace trust state.
+Durable directory subscriptions are explicit local configuration. Their raw
+HTTPS locator is retained only inside the workspace snapshot so refresh can
+resume after restart; API projections and Ledger events carry URL/origin
+SHA-256 values instead. The public subscription binds policy, schedule,
+revision, and last-good discovery under one content hash. Refresh workers first
+claim a due subscription with an expiring token, run the same bounded
+allowlisted discovery path, and settle through that token. Only a policy-valid
+discovery can replace last-good trust. Invalid directories, transport
+failures, stale revisions, and concurrent claims retain the previous verifier
+set and record bounded hash evidence.
 
 Extension publisher anchors are a separate workspace-owned trust domain with
 the same private-key boundary: durable state contains only normalized Ed25519
@@ -2323,6 +2333,11 @@ The current boundary has twenty-one parts:
     call-time dependency-closure enforcement, and self-contained lockfile
     replay plus policy-bound rollout channels and signed channel indices that
     never inherit local approval.
+22. allowlisted receipt-trust directory subscriptions with private local
+    source locators, hash-only public evidence, policy-bound last-good
+    discoveries, expiring refresh claims, revision CAS, and fail-closed
+    promotion that preserves the active verifier set across rejected or failed
+    rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2344,10 +2359,9 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- durable receipt-trust directory subscriptions with refresh schedules,
-  last-good discovery receipts, and CAS promotion, so verifier-key updates can
-  be adopted automatically without allowing failed or stale refreshes to
-  replace the active signed policy-retirement trust set.
+- receipt-trust directory transparency histories and multi-source quorum
+  policies, including rollback detection and publisher-signed metadata, so an
+  allowlisted host compromise cannot silently rewrite verifier-key history.
 
 ### Layer 3: Extension fabric
 

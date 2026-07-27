@@ -1312,6 +1312,24 @@ minimum-one-trusted-key policy by default, accepts an optional expected
 anchor-set SHA-256, and uses an accepted discovered directory for subsequent
 signed JSON verification until the operator clears it.
 
+Operators can explicitly promote a hosted source into a durable subscription
+through `POST /api/receipt-trust/anchors/directory/subscriptions`. Subscription
+creation reruns bounded discovery before storing anything, then retains the
+source URL only in the local workspace snapshot so refresh survives restart;
+list responses, receipts, headers, and Ledger events expose URL/origin hashes
+only. Each subscription binds its policy hash, refresh interval, next refresh
+time, revision, and last-good discovery. Production services claim due
+subscriptions with expiring tokens and refresh them in the background.
+`POST
+/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId/refresh`
+uses the same path for an immediate refresh, while the subscription update
+endpoint pauses or resumes polling through an expected-revision CAS. Invalid,
+failed, concurrent, or stale refreshes cannot replace `lastGoodDiscovery`;
+they record only bounded status/discovery/failure hashes and advance the
+schedule. The Receipt trust desk restores the newest active last-good
+directory after reload and exposes refresh, pause/resume, and explicit
+verifier-selection controls.
+
 A Casebook qualification baseline can be promoted only from a current
 revision's `passed` receipt signed by a currently trusted local signer. It
 freezes the complete signed envelope and exact qualification execution,

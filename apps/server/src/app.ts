@@ -17,6 +17,7 @@ import type {
   BootstrapResponse,
   CreateExtensionPublisherTrustAnchorRequest,
   CreateReceiptTrustAnchorRequest,
+  CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   CreateInboundChannelRequest,
   ApplyInboundDeadLetterRetryRequest,
   CreateMacOsKeychainCredentialRequest,
@@ -86,10 +87,13 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectorySubscription,
+  ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   RevokeExtensionPublisherTrustAnchorRequest,
   RevokeReceiptTrustAnchorRequest,
+  RefreshReceiptTrustAnchorDirectorySubscriptionRequest,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideRequest,
   RetireExecutionPlanBlueprintRecommendationPolicyOverrideResult,
   SignedExtensionPackageEnvelope,
@@ -208,6 +212,7 @@ import type {
   UpdateInboundSignaturePolicyRequest,
   UpdateEvaluationSuiteRequest,
   UpdateEvaluationCasebookRequest,
+  UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
   UsagePriceTableCatalog,
   UsagePriceTableVerification,
   VerifyExtensionPackageLockfileRequest,
@@ -257,6 +262,8 @@ import {
   hashEventStream,
   LocalStore,
   MAX_RECEIPT_TRUST_ANCHORS,
+  MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS,
+  MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS,
   MAX_EXTENSION_PACKAGE_DEPENDENCIES,
   MAX_EXTENSION_PACKAGE_DEPLOYMENT_BYTES,
   MAX_EXTENSION_PACKAGE_DEPLOYMENT_CANDIDATES,
@@ -303,6 +310,10 @@ import {
   ReceiptTrustAnchorDirectoryDiscoveryService,
   type ReceiptTrustAnchorDirectoryDiscoveryOptions,
 } from "./receipt-trust-directory-discovery.js";
+import {
+  ReceiptTrustAnchorDirectorySubscriptionService,
+  type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
+} from "./receipt-trust-directory-subscriptions.js";
 
 export interface NapierServices {
   store: LocalStore;
@@ -317,6 +328,7 @@ export interface NapierServices {
   channels: ChannelService;
   recovery: RecoveryService;
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
+  receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
 }
 
 const BUNDLED_SKILLS: SkillSummary[] = [
@@ -494,6 +506,7 @@ export async function createServices(options?: {
   startAutomation?: boolean;
   keychain?: KeychainSecretStore;
   receiptTrustDirectoryDiscovery?: ReceiptTrustAnchorDirectoryDiscoveryOptions;
+  receiptTrustDirectorySubscriptions?: ReceiptTrustAnchorDirectorySubscriptionServiceOptions;
 }): Promise<NapierServices> {
   const workspaceRoot = path.resolve(
     options?.workspaceRoot ??
@@ -525,10 +538,17 @@ export async function createServices(options?: {
     new ReceiptTrustAnchorDirectoryDiscoveryService(
       options?.receiptTrustDirectoryDiscovery,
     );
+  const receiptTrustDirectorySubscriptions =
+    new ReceiptTrustAnchorDirectorySubscriptionService(
+      store,
+      receiptTrustDirectories,
+      options?.receiptTrustDirectorySubscriptions,
+    );
   if (options?.startAutomation) {
     automation.start();
     channels.start();
     recovery.start();
+    receiptTrustDirectorySubscriptions.start();
   }
   return {
     store,
@@ -543,6 +563,7 @@ export async function createServices(options?: {
     channels,
     recovery,
     receiptTrustDirectories,
+    receiptTrustDirectorySubscriptions,
   };
 }
 
@@ -589,6 +610,199 @@ export function createApp(services: NapierServices): Hono {
     setReceiptTrustAnchorDirectoryHeaders(context, directory);
     return context.json(directory);
   });
+
+  app.get(
+    "/api/receipt-trust/anchors/directory/subscriptions",
+    (context) => {
+      const subscriptions =
+        services.store.listReceiptTrustAnchorDirectorySubscriptions();
+      setReceiptTrustAnchorDirectorySubscriptionListHeaders(
+        context,
+        subscriptions,
+      );
+      return context.json(subscriptions);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory subscription request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust anchor directory subscription request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body =
+        parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory subscription request is invalid",
+          400,
+        );
+      }
+      let discovery: ReceiptTrustAnchorDirectoryDiscovery;
+      try {
+        discovery = await services.receiptTrustDirectories.discover({
+          sourceUrl: body.sourceUrl,
+          policy: body.policy,
+        });
+      } catch (error) {
+        if (error instanceof ReceiptTrustAnchorDirectoryDiscoveryError) {
+          return jsonError(context, error.message, error.status);
+        }
+        return jsonError(
+          context,
+          "Receipt trust anchor directory subscription discovery failed",
+          502,
+        );
+      }
+      if (discovery.status !== "valid") {
+        setReceiptTrustAnchorDirectoryDiscoveryHeaders(context, discovery);
+        return context.json(discovery, 422);
+      }
+      const subscription =
+        await services.store.createReceiptTrustAnchorDirectorySubscription(
+          body,
+          discovery,
+        );
+      await appendReceiptTrustEvent(
+        services,
+        subscription.auditThreadId,
+        "receipt.trust_directory_subscription.created",
+        {
+          subscriptionId: subscription.id,
+          subscriptionRevision: subscription.revision,
+          subscriptionSha256: subscription.contentSha256,
+          sourceUrlSha256: subscription.sourceUrlSha256,
+          sourceOriginSha256: subscription.sourceOriginSha256,
+          policySha256: subscription.policySha256,
+          directorySha256:
+            subscription.lastGoodDiscovery?.directory?.contentSha256 ?? "",
+          anchorSetSha256:
+            subscription.lastGoodDiscovery?.directory?.anchorSetSha256 ?? "",
+        },
+      );
+      setReceiptTrustAnchorDirectorySubscriptionHeaders(
+        context,
+        subscription,
+      );
+      return context.json(subscription, 201);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId/refresh",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory subscription refresh request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust anchor directory subscription refresh request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body =
+        parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory subscription refresh request is invalid",
+          400,
+        );
+      }
+      const result =
+        await services.receiptTrustDirectorySubscriptions.refresh(
+          context.req.param("subscriptionId"),
+          body.threadId,
+          body.expectedRevision,
+        );
+      setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(
+        context,
+        result,
+      );
+      return context.json(result);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/:subscriptionId",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory subscription update request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust anchor directory subscription update request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body =
+        parseUpdateReceiptTrustAnchorDirectorySubscriptionRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory subscription update request is invalid",
+          400,
+        );
+      }
+      const before =
+        services.store.getReceiptTrustAnchorDirectorySubscription(
+          context.req.param("subscriptionId"),
+        );
+      const subscription =
+        await services.store.updateReceiptTrustAnchorDirectorySubscription(
+          before.id,
+          body,
+        );
+      if (before.revision !== subscription.revision) {
+        await appendReceiptTrustEvent(
+          services,
+          subscription.auditThreadId,
+          "receipt.trust_directory_subscription.updated",
+          {
+            subscriptionId: subscription.id,
+            subscriptionRevision: subscription.revision,
+            subscriptionSha256: subscription.contentSha256,
+            sourceUrlSha256: subscription.sourceUrlSha256,
+            sourceOriginSha256: subscription.sourceOriginSha256,
+            status: subscription.status,
+          },
+        );
+      }
+      setReceiptTrustAnchorDirectorySubscriptionHeaders(
+        context,
+        subscription,
+      );
+      return context.json(subscription);
+    },
+  );
 
   app.post("/api/receipt-trust/anchors/directory/verify", async (context) => {
     let input: unknown;
@@ -10295,6 +10509,82 @@ function parseDiscoverReceiptTrustAnchorDirectoryRequest(
   };
 }
 
+function parseCreateReceiptTrustAnchorDirectorySubscriptionRequest(
+  input: unknown,
+): CreateReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
+  const record = requestRecord(input, [
+    "threadId",
+    "label",
+    "sourceUrl",
+    "refreshIntervalMs",
+    "policy",
+  ]);
+  const threadId = record?.["threadId"];
+  const label = record?.["label"];
+  const sourceUrl = record?.["sourceUrl"];
+  const refreshIntervalMs = record?.["refreshIntervalMs"];
+  const policy = parseReceiptTrustAnchorDirectoryVerificationPolicy(
+    record?.["policy"],
+  );
+  if (
+    !record ||
+    !validThreadId(threadId) ||
+    typeof label !== "string" ||
+    label.trim().length < 1 ||
+    label.trim().length > 100 ||
+    typeof sourceUrl !== "string" ||
+    sourceUrl.length < 1 ||
+    sourceUrl.length > 2_048 ||
+    !isNonNegativeInteger(refreshIntervalMs) ||
+    refreshIntervalMs < MIN_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS ||
+    refreshIntervalMs > MAX_RECEIPT_TRUST_DIRECTORY_REFRESH_INTERVAL_MS ||
+    !policy
+  ) {
+    return undefined;
+  }
+  return {
+    threadId,
+    label,
+    sourceUrl,
+    refreshIntervalMs,
+    policy,
+  };
+}
+
+function parseRefreshReceiptTrustAnchorDirectorySubscriptionRequest(
+  input: unknown,
+): RefreshReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
+  const record = requestRecord(input, ["threadId", "expectedRevision"]);
+  const threadId = record?.["threadId"];
+  const expectedRevision = record?.["expectedRevision"];
+  return record &&
+    validThreadId(threadId) &&
+    isNonNegativeInteger(expectedRevision) &&
+    expectedRevision >= 1
+    ? { threadId, expectedRevision }
+    : undefined;
+}
+
+function parseUpdateReceiptTrustAnchorDirectorySubscriptionRequest(
+  input: unknown,
+): UpdateReceiptTrustAnchorDirectorySubscriptionRequest | undefined {
+  const record = requestRecord(input, [
+    "threadId",
+    "expectedRevision",
+    "status",
+  ]);
+  const threadId = record?.["threadId"];
+  const expectedRevision = record?.["expectedRevision"];
+  const status = record?.["status"];
+  return record &&
+    validThreadId(threadId) &&
+    isNonNegativeInteger(expectedRevision) &&
+    expectedRevision >= 1 &&
+    (status === "active" || status === "paused")
+    ? { threadId, expectedRevision, status }
+    : undefined;
+}
+
 function parseReceiptTrustAnchorDirectoryVerificationPolicy(
   input: unknown,
 ): ReceiptTrustAnchorDirectoryVerificationPolicy | undefined {
@@ -11195,6 +11485,10 @@ function isReceiptTrustConflict(error: Error): boolean {
     "trust anchor is verify-only",
     "does not match the trust anchor",
     "qualification baseline receipt is not trusted",
+    "directory subscription revision changed",
+    "directory subscription refresh is in progress",
+    "directory subscription claim expired",
+    "directory subscription source already exists",
   ].some((message) => error.message.toLowerCase().includes(message));
 }
 
@@ -14776,6 +15070,123 @@ function setReceiptTrustAnchorDirectoryHeaders(
     "X-Napier-Receipt-Trust-Revoked-Count",
     String(directory.revokedCount),
   );
+}
+
+function setReceiptTrustAnchorDirectorySubscriptionListHeaders(
+  context: Context,
+  subscriptions: ReceiptTrustAnchorDirectorySubscription[],
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, subscriptions);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Count",
+    String(subscriptions.length),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Active-Count",
+    String(
+      subscriptions.filter((subscription) => subscription.status === "active")
+        .length,
+    ),
+  );
+}
+
+function setReceiptTrustAnchorDirectorySubscriptionHeaders(
+  context: Context,
+  subscription: ReceiptTrustAnchorDirectorySubscription,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, subscription.contentSha256);
+  setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(
+    context,
+    subscription,
+  );
+}
+
+function setReceiptTrustAnchorDirectorySubscriptionRefreshHeaders(
+  context: Context,
+  result: ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, result.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Refresh-SHA256",
+    result.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Refresh-Status",
+    result.status,
+  );
+  if (result.discovery) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Discovery-SHA256",
+      result.discovery.contentSha256,
+    );
+  }
+  if (result.failureSha256) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Subscription-Failure-SHA256",
+      result.failureSha256,
+    );
+  }
+  setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(
+    context,
+    result.subscription,
+  );
+}
+
+function setReceiptTrustAnchorDirectorySubscriptionEvidenceHeaders(
+  context: Context,
+  subscription: ReceiptTrustAnchorDirectorySubscription,
+): void {
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Id",
+    subscription.id,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-SHA256",
+    subscription.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Revision",
+    String(subscription.revision),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Status",
+    subscription.status,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-URL-SHA256",
+    subscription.sourceUrlSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Source-Origin-SHA256",
+    subscription.sourceOriginSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Policy-SHA256",
+    subscription.policySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Subscription-Next-Refresh-At",
+    subscription.nextRefreshAt,
+  );
+  if (subscription.lastRefreshStatus) {
+    context.header(
+      "X-Napier-Receipt-Trust-Directory-Subscription-Last-Refresh-Status",
+      subscription.lastRefreshStatus,
+    );
+  }
+  if (subscription.lastGoodDiscovery?.directory) {
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
+      subscription.lastGoodDiscovery.directory.contentSha256,
+    );
+    context.header(
+      "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
+      subscription.lastGoodDiscovery.directory.anchorSetSha256,
+    );
+  }
 }
 
 function setReceiptTrustAnchorDirectoryDiscoveryHeaders(

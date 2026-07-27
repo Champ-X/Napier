@@ -2356,7 +2356,7 @@ button:disabled {
   gap: 2px;
 }
 
-.receipt-directory-discovery label:nth-child(2) {
+.receipt-directory-discovery label:nth-child(3) {
   flex-basis: 190px;
 }
 
@@ -2385,7 +2385,8 @@ button:disabled {
   outline-offset: 1px;
 }
 
-.receipt-directory-discovery button {
+.receipt-directory-discovery button,
+.receipt-directory-actions button {
   display: inline-flex;
   gap: 4px;
   align-items: center;
@@ -2400,9 +2401,90 @@ button:disabled {
   border-radius: 2px;
 }
 
-.receipt-directory-discovery button:disabled {
+.receipt-directory-discovery button:disabled,
+.receipt-directory-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.receipt-directory-actions {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.receipt-directory-subscriptions {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 4px;
+  padding: 6px;
+  background: rgb(255 255 255 / 34%);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.receipt-directory-subscriptions > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.receipt-directory-subscriptions ol {
+  display: grid;
+  gap: 3px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.directory-subscription {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  padding: 5px 6px;
+  background: var(--paper-bright);
+  border-left: 2px solid var(--ledger);
+}
+
+.directory-subscription.state-paused {
+  color: var(--ink-faint);
+  border-left-color: var(--rule-strong);
+}
+
+.directory-subscription > span:first-child {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 1px;
+}
+
+.directory-subscription strong,
+.directory-subscription small,
+.directory-subscription code {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.directory-subscription small {
+  color: var(--ink-faint);
+}
+
+.directory-subscription .receipt-directory-actions button {
+  min-height: 21px;
+  padding: 3px 5px;
+  color: var(--ledger);
+  cursor: pointer;
+  background: var(--ledger-soft);
+  border: 1px solid #9fb8a8;
 }
 
 .receipt-directory-active {

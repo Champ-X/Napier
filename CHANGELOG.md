@@ -235,7 +235,7 @@ All notable changes to Napier are recorded here.
   cross-Ledger signed policy-retirement proof audits can bind trust freshness
   to receipt validation.
 - Allowlisted hosted receipt trust directory discovery. `POST
-  /api/receipt-trust/anchors/directory/discover` now retrieves a public
+/api/receipt-trust/anchors/directory/discover` now retrieves a public
   directory from an exact HTTPS origin configured through
   `NAPIER_RECEIPT_TRUST_DIRECTORY_ORIGINS`, with public-endpoint validation,
   manual redirects, an eight-second timeout, a 2 MiB streaming limit, strict
@@ -246,6 +246,18 @@ All notable changes to Napier are recorded here.
   trust desk can discover a directory with a 24-hour/minimum-trusted-key policy
   plus optional anchor-set pin and use it for subsequent signed JSON
   verification.
+- Durable receipt trust directory subscriptions. Hosted verifier sources can
+  now be promoted only after a valid bounded discovery, with their raw URL
+  retained exclusively in the local workspace snapshot and URL/origin hashes
+  used in public projections and Ledger events. Each subscription carries a
+  policy hash, refresh interval, next refresh time, revision, and last-good
+  discovery. Expiring Store claims drive production background refreshes;
+  immediate refresh and pause/resume APIs use revision CAS. Valid rotations
+  atomically promote the new directory, while invalid, failed, concurrent, or
+  stale refreshes preserve the prior last-good trust set and record bounded
+  rejection/failure evidence. The Receipt trust desk restores active
+  last-good trust after reload and exposes subscribe, refresh, pause/resume,
+  and explicit verifier-selection controls.
 - Reusable workflow blueprints for Durable Plans. `GET
 /api/threads/:threadId/plans/:planId/blueprint` distills a Plan archive into
   `napier.execution-plan-blueprint`: objective, step DAG, artifact

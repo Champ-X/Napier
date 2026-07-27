@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Ban,
   Check,
   Download,
   KeyRound,
+  Pause,
+  Play,
   Plus,
+  RefreshCw,
   ShieldCheck,
   Upload,
   X,
@@ -15,6 +18,7 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   TrustedReceiptVerification,
@@ -23,14 +27,21 @@ import type {
 import { copy } from "./copy";
 import {
   createReceiptTrustAnchor,
+  createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
   getReceiptTrustAnchorDirectory,
+  listReceiptTrustAnchorDirectorySubscriptions,
+  refreshReceiptTrustAnchorDirectorySubscription,
   revokeReceiptTrustAnchor,
+  updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceipt,
 } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
-import { qualifyReceiptTrustAnchorDirectoryDiscoveryRequest } from "./receipt-trust-view-model";
+import {
+  qualifyReceiptTrustAnchorDirectoryDiscoveryRequest,
+  qualifyReceiptTrustAnchorDirectorySubscriptionRequest,
+} from "./receipt-trust-view-model";
 
 const MAX_TRUSTED_RECEIPT_FILE_BYTES = 10 * 1024 * 1024 + 64 * 1024;
 const MAX_RECEIPT_TRUST_DIRECTORY_FILE_BYTES = 2 * 1024 * 1024;
@@ -62,11 +73,18 @@ export default function ReceiptTrustPanel({
   const [directoryDiscovery, setDirectoryDiscovery] =
     useState<ReceiptTrustAnchorDirectoryDiscovery>();
   const [directorySourceUrl, setDirectorySourceUrl] = useState("");
+  const [directorySubscriptionLabel, setDirectorySubscriptionLabel] =
+    useState("");
+  const [directorySubscriptions, setDirectorySubscriptions] = useState<
+    ReceiptTrustAnchorDirectorySubscription[]
+  >([]);
   const [expectedAnchorSetSha256, setExpectedAnchorSetSha256] = useState("");
   const [externalDirectory, setExternalDirectory] =
     useState<ReceiptTrustAnchorDirectory>();
   const [externalDirectoryPolicy, setExternalDirectoryPolicy] =
     useState<ReceiptTrustAnchorDirectoryVerificationPolicy>();
+  const [externalDirectorySubscriptionId, setExternalDirectorySubscriptionId] =
+    useState<string>();
   const [error, setError] = useState<string>();
   const canCreate =
     Boolean(label.trim()) &&
@@ -78,7 +96,39 @@ export default function ReceiptTrustPanel({
     directorySourceUrl,
     expectedAnchorSetSha256,
   );
+  const subscriptionRequest =
+    qualifyReceiptTrustAnchorDirectorySubscriptionRequest(
+      threadId,
+      directorySubscriptionLabel,
+      directorySourceUrl,
+      expectedAnchorSetSha256,
+    );
   const canDiscover = Boolean(discoveryRequest) && !busyId;
+  const canSubscribe = Boolean(subscriptionRequest) && !busyId;
+
+  useEffect(() => {
+    let cancelled = false;
+    void listReceiptTrustAnchorDirectorySubscriptions()
+      .then((subscriptions) => {
+        if (cancelled) return;
+        setDirectorySubscriptions(subscriptions);
+        const active = subscriptions
+          .filter(
+            (subscription) =>
+              subscription.status === "active" &&
+              Boolean(subscription.lastGoodDiscovery?.directory),
+          )
+          .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+          .at(0);
+        if (active) activateSubscription(active);
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(toErrorMessage(loadError));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [threadId]);
 
   async function createAnchor(): Promise<void> {
     if (!canCreate) return;
@@ -197,6 +247,7 @@ export default function ReceiptTrustPanel({
           : undefined,
       );
       setExternalDirectoryPolicy(undefined);
+      setExternalDirectorySubscriptionId(undefined);
     } catch (verifyError) {
       setError(toErrorMessage(verifyError));
     } finally {
@@ -221,6 +272,7 @@ export default function ReceiptTrustPanel({
       setExternalDirectoryPolicy(
         acceptedDirectory ? discoveryRequest.policy : undefined,
       );
+      setExternalDirectorySubscriptionId(undefined);
     } catch (discoveryError) {
       setExternalDirectory(undefined);
       setExternalDirectoryPolicy(undefined);
@@ -230,9 +282,108 @@ export default function ReceiptTrustPanel({
     }
   }
 
+  async function createDirectorySubscription(): Promise<void> {
+    if (!subscriptionRequest || !canSubscribe) return;
+    setBusyId("subscribe-directory");
+    setError(undefined);
+    try {
+      const subscription =
+        await createReceiptTrustAnchorDirectorySubscription(
+          subscriptionRequest,
+        );
+      upsertDirectorySubscription(subscription);
+      setDirectorySubscriptionLabel("");
+      activateSubscription(subscription);
+    } catch (subscriptionError) {
+      setError(toErrorMessage(subscriptionError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function refreshDirectorySubscription(
+    subscription: ReceiptTrustAnchorDirectorySubscription,
+  ): Promise<void> {
+    setBusyId(`refresh-subscription:${subscription.id}`);
+    setError(undefined);
+    try {
+      const result = await refreshReceiptTrustAnchorDirectorySubscription(
+        subscription.id,
+        subscription.auditThreadId,
+        subscription.revision,
+      );
+      upsertDirectorySubscription(result.subscription);
+      if (result.discovery) {
+        setDirectoryDiscovery(result.discovery);
+        setDirectoryVerification(result.discovery.verification);
+      }
+      if (
+        result.subscription.status === "active" &&
+        result.subscription.lastGoodDiscovery?.directory
+      ) {
+        activateSubscription(result.subscription);
+      }
+    } catch (refreshError) {
+      setError(toErrorMessage(refreshError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  async function toggleDirectorySubscription(
+    subscription: ReceiptTrustAnchorDirectorySubscription,
+  ): Promise<void> {
+    setBusyId(`toggle-subscription:${subscription.id}`);
+    setError(undefined);
+    try {
+      const updated = await updateReceiptTrustAnchorDirectorySubscription(
+        subscription.id,
+        {
+          threadId: subscription.auditThreadId,
+          expectedRevision: subscription.revision,
+          status: subscription.status === "active" ? "paused" : "active",
+        },
+      );
+      upsertDirectorySubscription(updated);
+      if (updated.status === "active" && updated.lastGoodDiscovery?.directory) {
+        activateSubscription(updated);
+      } else if (externalDirectorySubscriptionId === updated.id) {
+        clearExternalDirectory();
+      }
+    } catch (updateError) {
+      setError(toErrorMessage(updateError));
+    } finally {
+      setBusyId(undefined);
+    }
+  }
+
+  function activateSubscription(
+    subscription: ReceiptTrustAnchorDirectorySubscription,
+  ): void {
+    const discovery = subscription.lastGoodDiscovery;
+    if (!discovery?.directory) return;
+    setExternalDirectory(discovery.directory);
+    setExternalDirectoryPolicy(subscription.policy);
+    setExternalDirectorySubscriptionId(subscription.id);
+    setDirectoryDiscovery(discovery);
+    setDirectoryVerification(discovery.verification);
+  }
+
+  function upsertDirectorySubscription(
+    subscription: ReceiptTrustAnchorDirectorySubscription,
+  ): void {
+    setDirectorySubscriptions((current) =>
+      [
+        ...current.filter((candidate) => candidate.id !== subscription.id),
+        subscription,
+      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
+    );
+  }
+
   function clearExternalDirectory(): void {
     setExternalDirectory(undefined);
     setExternalDirectoryPolicy(undefined);
+    setExternalDirectorySubscriptionId(undefined);
     setDirectoryDiscovery(undefined);
     setDirectoryVerification(undefined);
     setVerification(undefined);
@@ -414,6 +565,18 @@ export default function ReceiptTrustPanel({
           }}
         >
           <label>
+            <span>{copy.lab.trust.subscriptionLabel}</span>
+            <input
+              type="text"
+              maxLength={100}
+              value={directorySubscriptionLabel}
+              placeholder={copy.lab.trust.subscriptionLabelPlaceholder}
+              onChange={(event) =>
+                setDirectorySubscriptionLabel(event.target.value)
+              }
+            />
+          </label>
+          <label>
             <span>{copy.lab.trust.directorySource}</span>
             <input
               type="url"
@@ -437,13 +600,122 @@ export default function ReceiptTrustPanel({
               }
             />
           </label>
-          <button type="submit" disabled={!canDiscover}>
-            <ShieldCheck size={11} aria-hidden="true" />
-            {busyId === "discover-directory"
-              ? copy.lab.trust.discoveringDirectory
-              : copy.lab.trust.discoverDirectory}
-          </button>
+          <span className="receipt-directory-actions">
+            <button type="submit" disabled={!canDiscover}>
+              <ShieldCheck size={11} aria-hidden="true" />
+              {busyId === "discover-directory"
+                ? copy.lab.trust.discoveringDirectory
+                : copy.lab.trust.discoverDirectory}
+            </button>
+            <button
+              type="button"
+              disabled={!canSubscribe}
+              onClick={() => void createDirectorySubscription()}
+            >
+              <Plus size={11} aria-hidden="true" />
+              {busyId === "subscribe-directory"
+                ? copy.lab.trust.subscribingDirectory
+                : copy.lab.trust.subscribeDirectory}
+            </button>
+          </span>
         </form>
+        {directorySubscriptions.length ? (
+          <section
+            className="receipt-directory-subscriptions"
+            aria-labelledby="receipt-directory-subscriptions-title"
+          >
+            <header>
+              <strong id="receipt-directory-subscriptions-title">
+                {copy.lab.trust.directorySubscriptions}
+              </strong>
+              <code>
+                {directorySubscriptions.length.toString().padStart(2, "0")}
+              </code>
+            </header>
+            <ol>
+              {directorySubscriptions.map((subscription) => {
+                const selected =
+                  externalDirectorySubscriptionId === subscription.id;
+                return (
+                  <li
+                    key={subscription.id}
+                    className={`directory-subscription state-${subscription.status}`}
+                  >
+                    <span>
+                      <strong>{subscription.label}</strong>
+                      <small>
+                        {
+                          copy.lab.trust.subscriptionStatuses[
+                            subscription.status
+                          ]
+                        }{" "}
+                        {subscription.lastRefreshStatus
+                          ? `· ${
+                              copy.lab.trust.subscriptionRefreshStatuses[
+                                subscription.lastRefreshStatus
+                              ]
+                            } `
+                          : ""}
+                        · {copy.lab.trust.nextRefresh}{" "}
+                        {subscription.nextRefreshAt
+                          .slice(0, 16)
+                          .replace("T", " ")}
+                      </small>
+                    </span>
+                    <code title={subscription.sourceUrlSha256}>
+                      {subscription.sourceUrlSha256.slice(0, 12)}
+                    </code>
+                    <span className="receipt-directory-actions">
+                      <button
+                        type="button"
+                        disabled={
+                          Boolean(busyId) ||
+                          selected ||
+                          !subscription.lastGoodDiscovery?.directory
+                        }
+                        aria-pressed={selected}
+                        onClick={() => activateSubscription(subscription)}
+                      >
+                        <ShieldCheck size={10} aria-hidden="true" />
+                        {selected
+                          ? copy.lab.trust.subscriptionInUse
+                          : copy.lab.trust.useSubscription}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={copy.lab.trust.refreshSubscription}
+                        disabled={Boolean(busyId)}
+                        onClick={() =>
+                          void refreshDirectorySubscription(subscription)
+                        }
+                      >
+                        <RefreshCw size={10} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={
+                          subscription.status === "active"
+                            ? copy.lab.trust.pauseSubscription
+                            : copy.lab.trust.resumeSubscription
+                        }
+                        disabled={Boolean(busyId)}
+                        onClick={() =>
+                          void toggleDirectorySubscription(subscription)
+                        }
+                      >
+                        {subscription.status === "active" ? (
+                          <Pause size={10} aria-hidden="true" />
+                        ) : (
+                          <Play size={10} aria-hidden="true" />
+                        )}
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ) : null}
         {externalDirectory ? (
           <output className="receipt-directory-active" aria-live="polite">
             <ShieldCheck size={11} aria-hidden="true" />

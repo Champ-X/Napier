@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DIRECTORY_SUBSCRIPTION_REFRESH_INTERVAL_MS,
   DISCOVERED_DIRECTORY_MAX_AGE_MS,
   qualifyReceiptTrustAnchorDirectoryDiscoveryRequest,
+  qualifyReceiptTrustAnchorDirectorySubscriptionRequest,
 } from "../src/receipt-trust-view-model";
 
 describe("receipt trust directory discovery ViewModel", () => {
@@ -47,6 +49,34 @@ describe("receipt trust directory discovery ViewModel", () => {
   ])("rejects an unsafe or incomplete discovery form", (sourceUrl, pin) => {
     expect(
       qualifyReceiptTrustAnchorDirectoryDiscoveryRequest(sourceUrl, pin),
+    ).toBeUndefined();
+  });
+
+  it("qualifies a durable subscription with a bounded refresh schedule", () => {
+    expect(
+      qualifyReceiptTrustAnchorDirectorySubscriptionRequest(
+        "thread_12345678",
+        "  Release trust feed  ",
+        "https://trust.example.test/anchors.json",
+        "",
+      ),
+    ).toEqual({
+      threadId: "thread_12345678",
+      label: "Release trust feed",
+      sourceUrl: "https://trust.example.test/anchors.json",
+      refreshIntervalMs: DIRECTORY_SUBSCRIPTION_REFRESH_INTERVAL_MS,
+      policy: {
+        maxAgeMs: DISCOVERED_DIRECTORY_MAX_AGE_MS,
+        minimumTrustedCount: 1,
+      },
+    });
+    expect(
+      qualifyReceiptTrustAnchorDirectorySubscriptionRequest(
+        "thread_12345678",
+        " ",
+        "https://trust.example.test/anchors.json",
+        "",
+      ),
     ).toBeUndefined();
   });
 });

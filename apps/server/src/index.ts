@@ -47,6 +47,7 @@ let shuttingDown = false;
 const shutdown = async (): Promise<void> => {
   if (shuttingDown) return;
   shuttingDown = true;
+  await services.receiptTrustDirectorySubscriptions.stop();
   await services.recovery.stop();
   await services.automation.stop();
   await services.channels.stop();

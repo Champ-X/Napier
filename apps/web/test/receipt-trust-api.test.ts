@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import type {
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectorySubscription,
+  ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -10,8 +12,12 @@ import type {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  createReceiptTrustAnchorDirectorySubscription,
   discoverReceiptTrustAnchorDirectory,
   getReceiptTrustAnchorDirectory,
+  listReceiptTrustAnchorDirectorySubscriptions,
+  refreshReceiptTrustAnchorDirectorySubscription,
+  updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
   verifyTrustedReceipt,
 } from "../src/receipt-trust-api";
@@ -137,6 +143,109 @@ describe("receipt trust Web API wrappers", () => {
       }),
     ).resolves.toEqual(discovery);
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("creates, refreshes, and pauses durable directory subscriptions", async () => {
+    const subscription = {
+      kind: "napier.receipt-trust-anchor-directory-subscription",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      id: "trustdir_1234567890abcdef1234",
+      auditThreadId: "thread_12345678",
+      label: "Release trust feed",
+      status: "active",
+      revision: 1,
+      sourceUrlSha256: "a".repeat(64),
+      sourceOriginSha256: "b".repeat(64),
+      refreshIntervalMs: 86_400_000,
+      nextRefreshAt: "2026-07-28T00:00:00.000Z",
+      policy: { maxAgeMs: 86_400_000, minimumTrustedCount: 1 },
+      policySha256: "c".repeat(64),
+      createdAt: "2026-07-27T00:00:00.000Z",
+      updatedAt: "2026-07-27T00:00:00.000Z",
+      contentSha256: "d".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectorySubscription;
+    const createRequest = {
+      threadId: subscription.auditThreadId,
+      label: subscription.label,
+      sourceUrl: "https://trust.example.test/anchors.json",
+      refreshIntervalMs: subscription.refreshIntervalMs,
+      policy: subscription.policy,
+    };
+    const refreshResult = {
+      kind: "napier.receipt-trust-anchor-directory-subscription-refresh",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      status: "unchanged",
+      subscription: { ...subscription, revision: 2 },
+      contentSha256: "e".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectorySubscriptionRefreshResult;
+    const paused = {
+      ...refreshResult.subscription,
+      status: "paused",
+      revision: 3,
+    } satisfies ReceiptTrustAnchorDirectorySubscription;
+    const calls = [
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions",
+        response: [subscription],
+      },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions",
+        method: "POST",
+        body: createRequest,
+        response: subscription,
+      },
+      {
+        path: `/api/receipt-trust/anchors/directory/subscriptions/${subscription.id}/refresh`,
+        method: "POST",
+        body: {
+          threadId: subscription.auditThreadId,
+          expectedRevision: subscription.revision,
+        },
+        response: refreshResult,
+      },
+      {
+        path: `/api/receipt-trust/anchors/directory/subscriptions/${subscription.id}`,
+        method: "POST",
+        body: {
+          threadId: subscription.auditThreadId,
+          expectedRevision: refreshResult.subscription.revision,
+          status: "paused",
+        },
+        response: paused,
+      },
+    ];
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      const call = calls[fetchMock.mock.calls.length - 1]!;
+      expect(path).toBe(call.path);
+      expect(init?.method).toBe(call.method);
+      if (call.body) expect(init?.body).toBe(JSON.stringify(call.body));
+      return jsonResponse(call.response);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      listReceiptTrustAnchorDirectorySubscriptions(),
+    ).resolves.toEqual([subscription]);
+    await expect(
+      createReceiptTrustAnchorDirectorySubscription(createRequest),
+    ).resolves.toEqual(subscription);
+    await expect(
+      refreshReceiptTrustAnchorDirectorySubscription(
+        subscription.id,
+        subscription.auditThreadId,
+        subscription.revision,
+      ),
+    ).resolves.toEqual(refreshResult);
+    await expect(
+      updateReceiptTrustAnchorDirectorySubscription(subscription.id, {
+        threadId: subscription.auditThreadId,
+        expectedRevision: refreshResult.subscription.revision,
+        status: "paused",
+      }),
+    ).resolves.toEqual(paused);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

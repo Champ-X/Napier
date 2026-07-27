@@ -1,16 +1,20 @@
 import type {
   CreateReceiptTrustAnchorRequest,
+  CreateReceiptTrustAnchorDirectorySubscriptionRequest,
   DiscoverReceiptTrustAnchorDirectoryRequest,
   EvaluationQualificationBaseline,
   PromoteEvaluationQualificationBaselineResult,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
+  ReceiptTrustAnchorDirectorySubscription,
+  ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
   ReceiptTrustAnchorDirectoryVerificationPolicy,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
   VerifyReceiptTrustAnchorDirectoryRequest,
+  UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
 } from "@napier/contracts";
 
 import { requestJson as requestTrustJson } from "./api-client";
@@ -39,6 +43,51 @@ export function discoverReceiptTrustAnchorDirectory(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+export function listReceiptTrustAnchorDirectorySubscriptions(): Promise<
+  ReceiptTrustAnchorDirectorySubscription[]
+> {
+  return requestTrustJson("/api/receipt-trust/anchors/directory/subscriptions");
+}
+
+export function createReceiptTrustAnchorDirectorySubscription(
+  body: CreateReceiptTrustAnchorDirectorySubscriptionRequest,
+): Promise<ReceiptTrustAnchorDirectorySubscription> {
+  return requestTrustJson(
+    "/api/receipt-trust/anchors/directory/subscriptions",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function refreshReceiptTrustAnchorDirectorySubscription(
+  subscriptionId: string,
+  threadId: string,
+  expectedRevision: number,
+): Promise<ReceiptTrustAnchorDirectorySubscriptionRefreshResult> {
+  return requestTrustJson(
+    `/api/receipt-trust/anchors/directory/subscriptions/${encodeURIComponent(subscriptionId)}/refresh`,
+    {
+      method: "POST",
+      body: JSON.stringify({ threadId, expectedRevision }),
+    },
+  );
+}
+
+export function updateReceiptTrustAnchorDirectorySubscription(
+  subscriptionId: string,
+  body: UpdateReceiptTrustAnchorDirectorySubscriptionRequest,
+): Promise<ReceiptTrustAnchorDirectorySubscription> {
+  return requestTrustJson(
+    `/api/receipt-trust/anchors/directory/subscriptions/${encodeURIComponent(subscriptionId)}`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 export function createReceiptTrustAnchor(

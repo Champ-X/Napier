@@ -3730,6 +3730,71 @@ export interface ReceiptTrustAnchorDirectoryDiscovery {
   contentSha256: string;
 }
 
+export type ReceiptTrustAnchorDirectorySubscriptionStatus =
+  | "active"
+  | "paused";
+
+export type ReceiptTrustAnchorDirectorySubscriptionRefreshStatus =
+  | "promoted"
+  | "unchanged"
+  | "rejected"
+  | "failed";
+
+export interface ReceiptTrustAnchorDirectorySubscription {
+  kind: "napier.receipt-trust-anchor-directory-subscription";
+  schemaVersion: 1;
+  apiVersion: string;
+  id: string;
+  auditThreadId: string;
+  label: string;
+  status: ReceiptTrustAnchorDirectorySubscriptionStatus;
+  revision: number;
+  sourceUrlSha256: string;
+  sourceOriginSha256: string;
+  refreshIntervalMs: number;
+  nextRefreshAt: string;
+  policy: ReceiptTrustAnchorDirectoryVerificationPolicy;
+  policySha256: string;
+  lastRefreshAt?: string;
+  lastRefreshStatus?: ReceiptTrustAnchorDirectorySubscriptionRefreshStatus;
+  lastDiscoverySha256?: string;
+  lastFailureSha256?: string;
+  lastGoodDiscovery?: ReceiptTrustAnchorDirectoryDiscovery;
+  createdAt: string;
+  updatedAt: string;
+  contentSha256: string;
+}
+
+export interface CreateReceiptTrustAnchorDirectorySubscriptionRequest {
+  threadId: string;
+  label: string;
+  sourceUrl: string;
+  refreshIntervalMs: number;
+  policy: ReceiptTrustAnchorDirectoryVerificationPolicy;
+}
+
+export interface RefreshReceiptTrustAnchorDirectorySubscriptionRequest {
+  threadId: string;
+  expectedRevision: number;
+}
+
+export interface UpdateReceiptTrustAnchorDirectorySubscriptionRequest {
+  threadId: string;
+  expectedRevision: number;
+  status: ReceiptTrustAnchorDirectorySubscriptionStatus;
+}
+
+export interface ReceiptTrustAnchorDirectorySubscriptionRefreshResult {
+  kind: "napier.receipt-trust-anchor-directory-subscription-refresh";
+  schemaVersion: 1;
+  apiVersion: string;
+  status: ReceiptTrustAnchorDirectorySubscriptionRefreshStatus;
+  subscription: ReceiptTrustAnchorDirectorySubscription;
+  discovery?: ReceiptTrustAnchorDirectoryDiscovery;
+  failureSha256?: string;
+  contentSha256: string;
+}
+
 export interface EvaluationQualificationBaseline {
   id: string;
   casebookId: string;
