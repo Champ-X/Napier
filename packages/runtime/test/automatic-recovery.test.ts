@@ -405,12 +405,15 @@ describe("safe automatic recovery", () => {
     );
     expect(recovered.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 5,
+        schemaVersion: 7,
         executionMode: "safe_read_only_recovery",
         toolPolicy: "observe",
         enabledTools: ["list_files", "read_file", "search_files"],
         enabledSubagents: [],
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        promptVariableSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        resolvedSystemPromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         modelAdvisor: {
           mode: "observe",
           enabledRules: [

@@ -236,6 +236,7 @@ import type {
   PromptRequest,
   PromptPackageQualification,
   PromptPackageVerification,
+  PromptVariableDefinition,
   ReplanExecutionPlanRequest,
   ReviewExecutionPlanReplanDraftRequest,
   RollbackAgentProfileRequest,
@@ -376,6 +377,7 @@ import {
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
   McpExtensionManager,
   ModelRegistry,
+  normalizePromptVariableDefinitions,
   normalizeScheduleTrigger,
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
@@ -10504,6 +10506,7 @@ function parseUpdateAgentProfileRequest(
     "runLimits",
     "automaticRecovery",
     "modelAdvisor",
+    "promptVariables",
     "threadId",
   ]);
   if (!record) return undefined;
@@ -10551,6 +10554,10 @@ function parseUpdateAgentProfileRequest(
     record["modelAdvisor"] === undefined
       ? undefined
       : parseModelAdvisorPolicy(record["modelAdvisor"]);
+  const promptVariables =
+    record["promptVariables"] === undefined
+      ? undefined
+      : parsePromptVariableDefinitions(record["promptVariables"]);
   const threadId = record["threadId"];
   if (
     (record["name"] !== undefined && !name) ||
@@ -10566,6 +10573,8 @@ function parseUpdateAgentProfileRequest(
     (record["runLimits"] !== undefined && !runLimits) ||
     (record["automaticRecovery"] !== undefined && !automaticRecovery) ||
     (record["modelAdvisor"] !== undefined && !modelAdvisor) ||
+    (record["promptVariables"] !== undefined &&
+      promptVariables === undefined) ||
     (threadId !== undefined && !validThreadId(threadId))
   ) {
     return undefined;
@@ -10584,8 +10593,22 @@ function parseUpdateAgentProfileRequest(
     ...(runLimits ? { runLimits } : {}),
     ...(automaticRecovery ? { automaticRecovery } : {}),
     ...(modelAdvisor ? { modelAdvisor } : {}),
+    ...(promptVariables !== undefined ? { promptVariables } : {}),
     ...(typeof threadId === "string" ? { threadId } : {}),
   };
+}
+
+function parsePromptVariableDefinitions(
+  input: unknown,
+): PromptVariableDefinition[] | undefined {
+  if (!Array.isArray(input)) return undefined;
+  try {
+    return normalizePromptVariableDefinitions(
+      input as PromptVariableDefinition[],
+    );
+  } catch {
+    return undefined;
+  }
 }
 
 function parseModelAdvisorPolicy(

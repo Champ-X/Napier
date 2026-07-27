@@ -144,6 +144,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "continuation",
   "costUsd",
   "currentRevision",
+  "definitionCount",
   "durationMs",
   "editCount",
   "eventCount",
@@ -178,6 +179,9 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "turnCount",
   "unverifiedCount",
   "predecessorEventSeq",
+  "referenceCount",
+  "referencedVariableCount",
+  "unresolvedReferenceCount",
 ]);
 
 const SAFE_BOOLEAN_PAYLOAD_KEYS = new Set([
@@ -190,6 +194,7 @@ const SAFE_BOOLEAN_PAYLOAD_KEYS = new Set([
   "enabled",
   "networkAllowed",
   "outputCapped",
+  "skillCatalogInjected",
   "milestoneTextRedacted",
   "truncated",
   "verified",

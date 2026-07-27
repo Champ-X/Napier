@@ -10845,6 +10845,215 @@ button:disabled {
   color: var(--ledger);
 }
 
+.context-prompt-variables {
+  min-width: 0;
+  padding: 10px;
+  margin: 4px 0 12px;
+  background:
+    linear-gradient(90deg, rgb(170 119 42 / 10%) 0 3px, transparent 3px),
+    rgb(255 255 255 / 30%);
+  border: 1px solid var(--rule-strong);
+}
+
+.context-prompt-variables > legend {
+  padding: 0 5px;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.context-prompt-variables > header,
+.context-prompt-variables > header > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.context-prompt-variables > header {
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.context-prompt-variables > header > div {
+  gap: 7px;
+}
+
+.context-prompt-variables > header svg {
+  flex: 0 0 auto;
+  color: var(--ochre);
+}
+
+.context-prompt-variables > header span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.context-prompt-variables > header strong {
+  font-family: var(--serif);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.context-prompt-variables > header small {
+  font-family: var(--mono);
+  font-size: 5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+}
+
+.prompt-variable-add,
+.prompt-variable-token,
+.prompt-variable-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.prompt-variable-add {
+  flex: 0 0 auto;
+  gap: 4px;
+  padding: 5px 6px;
+  font-size: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.prompt-variable-add:hover:not(:disabled),
+.prompt-variable-token:hover:not(:disabled),
+.prompt-variable-remove:hover:not(:disabled) {
+  color: var(--ledger);
+  border-color: var(--ledger);
+}
+
+.prompt-variable-add:disabled,
+.prompt-variable-token:disabled,
+.prompt-variable-remove:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.context-prompt-variables > p,
+.prompt-variable-skill-note,
+.prompt-variable-error {
+  margin: 8px 0 0;
+  font-size: 6px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.prompt-variable-empty {
+  padding: 9px;
+  margin-top: 9px;
+  font-family: var(--mono);
+  font-size: 6px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  text-align: center;
+  background: rgb(255 255 255 / 28%);
+  border: 1px dashed var(--rule);
+}
+
+.prompt-variable-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.prompt-variable-row {
+  min-width: 0;
+  padding: 7px;
+  background: rgb(255 255 255 / 38%);
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--ochre);
+}
+
+.prompt-variable-row[aria-invalid="true"] {
+  background: var(--vermilion-soft);
+  border-color: #dfc1b8;
+  border-left-color: var(--vermilion);
+}
+
+.prompt-variable-row > header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  padding-bottom: 6px;
+  margin-bottom: 7px;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.prompt-variable-row > header > span {
+  font-family: var(--mono);
+  font-size: 5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.08em;
+}
+
+.prompt-variable-token {
+  min-width: 0;
+  padding: 3px 5px;
+  overflow: hidden;
+}
+
+.prompt-variable-token code {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-variable-remove {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--vermilion);
+}
+
+.prompt-variable-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.prompt-variable-grid .context-field {
+  margin: 0;
+}
+
+.prompt-variable-grid .prompt-variable-value,
+.prompt-variable-skill-note {
+  grid-column: 1 / -1;
+}
+
+.prompt-variable-grid textarea {
+  min-height: 54px;
+}
+
+.prompt-variable-skill-note {
+  padding: 6px 7px;
+  background: var(--ledger-soft);
+  border-left: 2px solid var(--ledger);
+}
+
+.prompt-variable-error {
+  color: #843c2d;
+}
+
 .context-option-group legend,
 .context-budget-grid legend {
   padding-right: 6px;

@@ -260,6 +260,30 @@ describe("OpenTelemetry trace export", () => {
         contentSha256: sha256(canonicalJson(advisorReviewContent)),
       },
     });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "context.prompt_variables",
+      category: "system",
+      visibility: "debug",
+      payload: {
+        kind: "napier.prompt-variable-snapshot",
+        definitionCount: 2,
+        referencedVariableCount: 2,
+        referenceCount: 3,
+        unresolvedReferenceCount: 1,
+        skillCatalogInjected: true,
+        catalogSha256: "4".repeat(64),
+        renderedSystemPromptSha256: "5".repeat(64),
+        contentSha256: "6".repeat(64),
+        entries: [
+          {
+            name: "private_context",
+            value: "TOP_SECRET_PROMPT_VARIABLE_VALUE",
+          },
+        ],
+      },
+    });
     await store.requestOperatorDecision({
       threadId: thread.id,
       runId: run.id,
@@ -377,6 +401,33 @@ describe("OpenTelemetry trace export", () => {
     expect(
       attributeValue(advisorEvent.attributes, "napier.event.payload.score"),
     ).toBe(61);
+    const promptVariableEvent = traceSpans
+      .flatMap((span) => span.events)
+      .find((event) => event.name === "context.prompt_variables")!;
+    expect(
+      attributeValue(
+        promptVariableEvent.attributes,
+        "napier.event.payload.definition_count",
+      ),
+    ).toBe(2);
+    expect(
+      attributeValue(
+        promptVariableEvent.attributes,
+        "napier.event.payload.unresolved_reference_count",
+      ),
+    ).toBe(1);
+    expect(
+      attributeValue(
+        promptVariableEvent.attributes,
+        "napier.event.payload.skill_catalog_injected",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        promptVariableEvent.attributes,
+        "napier.event.payload.catalog_sha256",
+      ),
+    ).toBe("4".repeat(64));
 
     const serialized = JSON.stringify(first);
     for (const secret of [
@@ -396,6 +447,7 @@ describe("OpenTelemetry trace export", () => {
       "TOP_SECRET_OPERATOR_QUESTION",
       "TOP_SECRET_OPERATOR_OPTION_A",
       "TOP_SECRET_OPERATOR_OPTION_B",
+      "TOP_SECRET_PROMPT_VARIABLE_VALUE",
       "TOP_SECRET_CREDENTIAL_LABEL",
       "TOP_SECRET_USER_ID",
     ]) {

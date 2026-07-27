@@ -6,6 +6,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  AgentRuntime,
+  canonicalJson,
   createSubagentOutcome,
   createSubagentOutcomeRepairOutcome,
   createSubagentOutcomeRepairRequest,
@@ -16,6 +18,7 @@ import {
   LocalStore,
   ModelRegistry,
   reviewIndependentModelAdvisorCandidate,
+  sha256,
   validateSubagentOutcomeRepairOutcome,
   validateSubagentOutcomeRepairRequest,
   validateThreadReplayBundle,
@@ -263,6 +266,164 @@ describe("thread replay bundles", () => {
     )!;
     expect(importedEvent.runId).not.toBe(run.id);
     expect(importedEvent.payload).toEqual(result.review);
+  });
+
+  it("binds frozen Prompt Variable snapshots through portable replay", async () => {
+    const { store } = await createStore();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      systemPrompt: "Project {{project}}.",
+      promptVariables: [
+        { name: "project", type: "literal", value: "Portable Napier" },
+      ],
+    });
+    const thread = await store.createThread({
+      title: "Portable Prompt Variables",
+      agentId: agent.id,
+    });
+    const runtime = new AgentRuntime(store, new ModelRegistry());
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Freeze the prompt context.",
+    });
+    if (run.configuration?.schemaVersion !== 7) {
+      throw new Error("Expected schema-7 Prompt Variable evidence");
+    }
+
+    const invalidDetail = structuredClone(await store.getDetail(thread.id));
+    const invalidPromptVariableEvent = invalidDetail.events.find(
+      (event) => event.type === "context.prompt_variables",
+    )!;
+    invalidPromptVariableEvent.payload = {
+      ...invalidPromptVariableEvent.payload,
+      contentSha256: "0".repeat(64),
+    };
+    expect(() => createThreadReplayBundle(invalidDetail)).toThrow(
+      "Prompt Variable snapshot is invalid",
+    );
+
+    const forgedDetail = structuredClone(await store.getDetail(thread.id));
+    const forgedRun = forgedDetail.runs.find(
+      (candidate) => candidate.id === run.id,
+    )!;
+    const forgedEvent = forgedDetail.events.find(
+      (event) => event.type === "context.prompt_variables",
+    )!;
+    if (
+      forgedRun.configuration?.schemaVersion !== 7 ||
+      !forgedEvent.payload ||
+      Array.isArray(forgedEvent.payload) ||
+      typeof forgedEvent.payload !== "object"
+    ) {
+      throw new Error("Prompt Variable forgery fixture is invalid");
+    }
+    const forgedCatalogSha256 = "f".repeat(64);
+    const { contentSha256: _snapshotSha256, ...sourceSnapshotContent } =
+      forgedEvent.payload;
+    const forgedSnapshotContent = {
+      ...sourceSnapshotContent,
+      catalogSha256: forgedCatalogSha256,
+    };
+    forgedEvent.payload = {
+      ...forgedSnapshotContent,
+      contentSha256: sha256(canonicalJson(forgedSnapshotContent)),
+    };
+    forgedRun.configuration.promptVariableCatalogSha256 = forgedCatalogSha256;
+    forgedRun.configuration.promptVariableSnapshotSha256 = String(
+      forgedEvent.payload["contentSha256"],
+    );
+    const {
+      contentSha256: _configurationSha256,
+      ...forgedConfigurationContent
+    } = forgedRun.configuration;
+    forgedRun.configuration.contentSha256 = sha256(
+      canonicalJson(forgedConfigurationContent),
+    );
+    expect(() => createThreadReplayBundle(forgedDetail)).toThrow(
+      "schema-7 configuration does not match Agent revision",
+    );
+
+    const mismatchedEntryDetail = structuredClone(
+      await store.getDetail(thread.id),
+    );
+    const mismatchedEntryRun = mismatchedEntryDetail.runs.find(
+      (candidate) => candidate.id === run.id,
+    )!;
+    const mismatchedEntryEvent = mismatchedEntryDetail.events.find(
+      (event) => event.type === "context.prompt_variables",
+    )!;
+    if (
+      mismatchedEntryRun.configuration?.schemaVersion !== 7 ||
+      !mismatchedEntryEvent.payload ||
+      Array.isArray(mismatchedEntryEvent.payload) ||
+      typeof mismatchedEntryEvent.payload !== "object" ||
+      !Array.isArray(mismatchedEntryEvent.payload["entries"])
+    ) {
+      throw new Error("Prompt Variable entry forgery fixture is invalid");
+    }
+    const [sourceEntry, ...remainingEntries] =
+      mismatchedEntryEvent.payload["entries"];
+    if (
+      !sourceEntry ||
+      Array.isArray(sourceEntry) ||
+      typeof sourceEntry !== "object"
+    ) {
+      throw new Error("Prompt Variable source entry is invalid");
+    }
+    const {
+      contentSha256: _entrySnapshotSha256,
+      ...sourceEntrySnapshotContent
+    } = mismatchedEntryEvent.payload;
+    const mismatchedEntrySnapshotContent = {
+      ...sourceEntrySnapshotContent,
+      entries: [
+        { ...sourceEntry, name: "forged_project" },
+        ...remainingEntries,
+      ],
+    };
+    mismatchedEntryEvent.payload = {
+      ...mismatchedEntrySnapshotContent,
+      contentSha256: sha256(canonicalJson(mismatchedEntrySnapshotContent)),
+    };
+    mismatchedEntryRun.configuration.promptVariableSnapshotSha256 = String(
+      mismatchedEntryEvent.payload["contentSha256"],
+    );
+    const {
+      contentSha256: _entryConfigurationSha256,
+      ...mismatchedEntryConfigurationContent
+    } = mismatchedEntryRun.configuration;
+    mismatchedEntryRun.configuration.contentSha256 = sha256(
+      canonicalJson(mismatchedEntryConfigurationContent),
+    );
+    expect(() => createThreadReplayBundle(mismatchedEntryDetail)).toThrow(
+      "Prompt Variable snapshot is not bound to Run",
+    );
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    const sourceEvent = bundle.events.find(
+      (event) => event.type === "context.prompt_variables",
+    )!;
+    expect(sourceEvent.payload).toEqual(
+      expect.objectContaining({
+        contentSha256: run.configuration.promptVariableSnapshotSha256,
+        catalogSha256: run.configuration.promptVariableCatalogSha256,
+        renderedSystemPromptSha256:
+          run.configuration.resolvedSystemPromptSha256,
+      }),
+    );
+    expect(JSON.stringify(sourceEvent.payload)).not.toContain(
+      "Portable Napier",
+    );
+
+    const imported = await store.importThreadReplayBundle(bundle);
+    const importedRun = imported.runs.find(
+      (candidate) => candidate.startedAt === run.startedAt,
+    )!;
+    const importedEvent = (await store.listEvents(imported.thread.id)).find(
+      (event) => event.type === "context.prompt_variables",
+    )!;
+    expect(importedEvent.runId).toBe(importedRun.id);
+    expect(importedEvent.payload).toEqual(sourceEvent.payload);
+    expect(importedRun.configuration).toEqual(run.configuration);
   });
 
   it("reconstructs a continued operator decision after Run ID remapping", async () => {

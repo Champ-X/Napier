@@ -15,6 +15,38 @@ export const contextCopy = {
   systemPrompt: "System prompt",
   systemPromptHint:
     "Stored as profile configuration. Prompt content is never copied into audit-event payloads.",
+  promptVariables: "Prompt variables",
+  promptVariablesTitle: "Frozen run variables",
+  promptVariablesKicker: "SINGLE PASS · HASH-BOUND",
+  promptVariablesBody:
+    "Declared tokens resolve once when a Run starts. Values never recurse, and the Ledger stores only value hashes, counts, and the rendered System Prompt SHA-256.",
+  promptVariablesEmpty:
+    "No declarations. Unknown {{tokens}} remain unchanged and are still counted in the frozen Run receipt.",
+  promptVariablesInvalid:
+    "Resolve duplicate or invalid names and literal capacity limits before saving.",
+  promptVariableAdd: "Add variable",
+  promptVariableIndex: "VAR",
+  promptVariableInsert: "Insert token into System Prompt",
+  promptVariableRemove: "Remove variable",
+  promptVariableName: "Token name",
+  promptVariableNamePlaceholder: "project_context",
+  promptVariableFallbackName: "variable",
+  promptVariableType: "Source",
+  promptVariableTypes: {
+    literal: "Literal value",
+    current_date: "Current date",
+    skill_catalog: "Skill catalog",
+  },
+  promptVariableValue: "Frozen value",
+  promptVariableLiteralDefault: "value",
+  promptVariableDateFormat: "Date format",
+  promptVariableDateFormats: {
+    "readable-date": "YYYY-MM-DD, weekday",
+    "iso-date": "YYYY-MM-DD",
+    "local-date-time": "Local date, time, and zone",
+  },
+  promptVariableSkillCatalogBody:
+    "Injects the exact Pi-compatible catalog loaded for this Run. The catalog is not appended a second time.",
   thinking: "Thinking level",
   thinkingLevels: {
     off: "Off",
@@ -136,6 +168,7 @@ export const contextCopy = {
     runLimits: "Run budget",
     automaticRecovery: "Interruption policy",
     modelAdvisor: "Model Advisor",
+    promptVariables: "Prompt variables",
   },
   promptPackageEyebrow: "SIGNED PROMPT BASELINE",
   promptPackage: "Prompt package",

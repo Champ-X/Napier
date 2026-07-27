@@ -67,8 +67,12 @@ export function appendSkillCatalog(
   systemPrompt: string,
   skills: readonly Skill[],
 ): string {
-  const catalog = formatSkillsForSystemPrompt([...skills]);
+  const catalog = formatSkillCatalog(skills);
   return catalog ? `${systemPrompt}\n\n${catalog}` : systemPrompt;
+}
+
+export function formatSkillCatalog(skills: readonly Skill[]): string {
+  return formatSkillsForSystemPrompt([...skills]);
 }
 
 export async function createSkillCatalogFingerprint(

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-acSvOr2n.js",
-    "sizeBytes": 153591,
+    "path": "apps/web/dist/assets/index-CotC17mG.js",
+    "sizeBytes": 153173,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "37911acb6aa324be29efab89b988f634780744f7f24d1007d92111fd6116439c"
+    "sha256": "da738854a47895597166c2d64a4367ca971dc2a602e3138c6c4f4590a9b501f9"
   },
-  "distContentSha256": "37911acb6aa324be29efab89b988f634780744f7f24d1007d92111fd6116439c",
+  "distContentSha256": "da738854a47895597166c2d64a4367ca971dc2a602e3138c6c4f4590a9b501f9",
   "errors": []
 }

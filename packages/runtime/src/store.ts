@@ -483,6 +483,7 @@ import {
 } from "./sqlite-ledger.js";
 import {
   createRunConfigurationFingerprint,
+  type PromptVariableFingerprintInput,
   validateRunConfigurationFingerprint,
 } from "./run-config.js";
 import {
@@ -709,6 +710,7 @@ export interface CreateRunInput {
   agentRevision?: number;
   executionMode?: RunExecutionMode;
   skillCatalogSha256?: string;
+  promptVariables?: PromptVariableFingerprintInput;
   parentRunId?: string;
   operatorDecisionId?: string;
   branchFromSeq?: number;
@@ -11078,9 +11080,14 @@ export class LocalStore {
         runAgent,
         input.model ?? runAgent.model,
         executionMode,
-        input.skillCatalogSha256
-          ? { skillCatalogSha256: input.skillCatalogSha256 }
-          : {},
+        {
+          ...(input.skillCatalogSha256
+            ? { skillCatalogSha256: input.skillCatalogSha256 }
+            : {}),
+          ...(input.promptVariables
+            ? { promptVariables: input.promptVariables }
+            : {}),
+        },
       ),
       ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
       ...(input.branchFromSeq !== undefined

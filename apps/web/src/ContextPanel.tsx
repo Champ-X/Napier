@@ -32,6 +32,7 @@ import type {
   ModelSummary,
   PromptPackageQualification,
   PromptPackageVerification,
+  PromptVariableDefinition,
   SignedPromptPackageEnvelope,
   SignedSkillPackageEnvelope,
   SkillContentReview,
@@ -230,6 +231,9 @@ export default function ContextPanel({
   const [agentSystemPrompt, setAgentSystemPrompt] = useState(
     agent.systemPrompt,
   );
+  const [agentPromptVariables, setAgentPromptVariables] = useState<
+    PromptVariableDefinition[]
+  >(() => structuredClone(agent.promptVariables ?? []));
   const [agentThinkingLevel, setAgentThinkingLevel] = useState(
     agent.thinkingLevel,
   );
@@ -351,6 +355,7 @@ export default function ContextPanel({
     setAgentName(agent.name);
     setAgentDescription(agent.description);
     setAgentSystemPrompt(agent.systemPrompt);
+    setAgentPromptVariables(structuredClone(agent.promptVariables ?? []));
     setAgentThinkingLevel(agent.thinkingLevel);
     setAgentToolPolicy(agent.toolPolicy);
     setAgentTools(agent.enabledTools);
@@ -458,6 +463,47 @@ export default function ContextPanel({
     onBootstrapUpdated(await getContextBootstrap(threadId));
   };
 
+  const addPromptVariable = (): void => {
+    setAgentPromptVariables((current) => {
+      const names = new Set(current.map((definition) => definition.name));
+      let suffix = 1;
+      let name = "current_date";
+      while (names.has(name)) {
+        suffix += 1;
+        name = `current_date_${suffix}`;
+      }
+      return [
+        ...current,
+        { name, type: "current_date", format: "readable-date" },
+      ];
+    });
+  };
+
+  const replacePromptVariable = (
+    index: number,
+    definition: PromptVariableDefinition,
+  ): void => {
+    setAgentPromptVariables((current) =>
+      current.map((candidate, candidateIndex) =>
+        candidateIndex === index ? definition : candidate,
+      ),
+    );
+  };
+
+  const removePromptVariable = (index: number): void => {
+    setAgentPromptVariables((current) =>
+      current.filter((_, candidateIndex) => candidateIndex !== index),
+    );
+  };
+
+  const insertPromptVariable = (name: string): void => {
+    if (!validPromptVariableName(name)) return;
+    const token = `{{${name}}}`;
+    setAgentSystemPrompt((current) =>
+      current.includes(token) ? current : `${current.trimEnd()}\n\n${token}`,
+    );
+  };
+
   const saveAgent = async (): Promise<void> => {
     if (configurationBusy) return;
     setConfigurationBusy(true);
@@ -473,6 +519,7 @@ export default function ContextPanel({
         enabledTools: agentTools,
         enabledSkills: agentSkills,
         enabledSubagents: agentSubagents,
+        promptVariables: agentPromptVariables,
         automaticRecovery: {
           mode: agentRecoveryMode,
           maxAttempts: agentRecoveryMaxAttempts,
@@ -962,7 +1009,8 @@ export default function ContextPanel({
   const canSaveAgent =
     agentName.trim().length > 0 &&
     agentDescription.trim().length > 0 &&
-    agentSystemPrompt.trim().length > 0;
+    agentSystemPrompt.trim().length > 0 &&
+    validPromptVariables(agentPromptVariables);
   const canAddCredential =
     credentialLabel.trim().length > 0 &&
     (credentialSourceType === "environment"
@@ -1114,6 +1162,204 @@ export default function ContextPanel({
           />
           <small>{copy.context.systemPromptHint}</small>
         </label>
+
+        <fieldset
+          className="context-prompt-variables"
+          disabled={configurationBusy}
+        >
+          <legend>{copy.context.promptVariables}</legend>
+          <header>
+            <div>
+              <Sparkles size={13} aria-hidden="true" />
+              <span>
+                <strong>{copy.context.promptVariablesTitle}</strong>
+                <small>{copy.context.promptVariablesKicker}</small>
+              </span>
+            </div>
+            <button
+              type="button"
+              className="prompt-variable-add"
+              disabled={agentPromptVariables.length >= 32}
+              onClick={addPromptVariable}
+            >
+              <Plus size={11} aria-hidden="true" />
+              {copy.context.promptVariableAdd}
+            </button>
+          </header>
+          <p>{copy.context.promptVariablesBody}</p>
+          {agentPromptVariables.length === 0 ? (
+            <div className="prompt-variable-empty">
+              {copy.context.promptVariablesEmpty}
+            </div>
+          ) : (
+            <div className="prompt-variable-list" role="list">
+              {agentPromptVariables.map((definition, index) => {
+                const definitionValid = validPromptVariableDefinition(
+                  definition,
+                  agentPromptVariables,
+                );
+                return (
+                  <article
+                    className={`prompt-variable-row type-${definition.type}`}
+                    key={index}
+                    role="listitem"
+                    aria-invalid={!definitionValid}
+                  >
+                    <header>
+                      <span>
+                        {copy.context.promptVariableIndex}{" "}
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <button
+                        type="button"
+                        className="prompt-variable-token"
+                        disabled={!validPromptVariableName(definition.name)}
+                        title={copy.context.promptVariableInsert}
+                        onClick={() => insertPromptVariable(definition.name)}
+                      >
+                        <code>{`{{${definition.name || copy.context.promptVariableFallbackName}}}`}</code>
+                      </button>
+                      <button
+                        type="button"
+                        className="prompt-variable-remove"
+                        aria-label={`${copy.context.promptVariableRemove}: ${definition.name}`}
+                        title={copy.context.promptVariableRemove}
+                        onClick={() => removePromptVariable(index)}
+                      >
+                        <X size={11} aria-hidden="true" />
+                      </button>
+                    </header>
+                    <div className="prompt-variable-grid">
+                      <label className="context-field">
+                        <span>{copy.context.promptVariableName}</span>
+                        <input
+                          maxLength={64}
+                          value={definition.name}
+                          aria-invalid={
+                            !validPromptVariableName(definition.name) ||
+                            agentPromptVariables.filter(
+                              (candidate) => candidate.name === definition.name,
+                            ).length > 1
+                          }
+                          placeholder={
+                            copy.context.promptVariableNamePlaceholder
+                          }
+                          onChange={(event) =>
+                            replacePromptVariable(index, {
+                              ...definition,
+                              name: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="context-field">
+                        <span>{copy.context.promptVariableType}</span>
+                        <select
+                          value={definition.type}
+                          onChange={(event) => {
+                            const type = event.target
+                              .value as PromptVariableDefinition["type"];
+                            replacePromptVariable(
+                              index,
+                              type === "literal"
+                                ? {
+                                    name: definition.name,
+                                    type,
+                                    value:
+                                      copy.context.promptVariableLiteralDefault,
+                                  }
+                                : type === "current_date"
+                                  ? {
+                                      name: definition.name,
+                                      type,
+                                      format: "readable-date",
+                                    }
+                                  : { name: definition.name, type },
+                            );
+                          }}
+                        >
+                          <option value="literal">
+                            {copy.context.promptVariableTypes.literal}
+                          </option>
+                          <option value="current_date">
+                            {copy.context.promptVariableTypes.current_date}
+                          </option>
+                          <option value="skill_catalog">
+                            {copy.context.promptVariableTypes.skill_catalog}
+                          </option>
+                        </select>
+                      </label>
+                      {definition.type === "literal" ? (
+                        <label className="context-field prompt-variable-value">
+                          <span>{copy.context.promptVariableValue}</span>
+                          <textarea
+                            rows={2}
+                            maxLength={2_000}
+                            value={definition.value}
+                            aria-invalid={
+                              !validPromptVariableLiteral(definition.value)
+                            }
+                            onChange={(event) =>
+                              replacePromptVariable(index, {
+                                ...definition,
+                                value: event.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                      ) : definition.type === "current_date" ? (
+                        <label className="context-field prompt-variable-value">
+                          <span>{copy.context.promptVariableDateFormat}</span>
+                          <select
+                            value={definition.format}
+                            onChange={(event) =>
+                              replacePromptVariable(index, {
+                                ...definition,
+                                format: event.target
+                                  .value as typeof definition.format,
+                              })
+                            }
+                          >
+                            <option value="readable-date">
+                              {
+                                copy.context.promptVariableDateFormats[
+                                  "readable-date"
+                                ]
+                              }
+                            </option>
+                            <option value="iso-date">
+                              {
+                                copy.context.promptVariableDateFormats[
+                                  "iso-date"
+                                ]
+                              }
+                            </option>
+                            <option value="local-date-time">
+                              {
+                                copy.context.promptVariableDateFormats[
+                                  "local-date-time"
+                                ]
+                              }
+                            </option>
+                          </select>
+                        </label>
+                      ) : (
+                        <p className="prompt-variable-skill-note">
+                          {copy.context.promptVariableSkillCatalogBody}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+          {!validPromptVariables(agentPromptVariables) ? (
+            <p className="prompt-variable-error" role="alert">
+              {copy.context.promptVariablesInvalid}
+            </p>
+          ) : null}
+        </fieldset>
 
         <label className="context-field">
           <span>{copy.context.policy}</span>
@@ -2898,6 +3144,7 @@ function agentProfileDelta(
     "runLimits",
     "automaticRecovery",
     "modelAdvisor",
+    "promptVariables",
   ];
   return fields.filter((field) => {
     if (field === "automaticRecovery") {
@@ -2936,6 +3183,68 @@ function comparableModelAdvisor(agent: AgentProfile) {
     maxCorrectionAttempts: policy.maxCorrectionAttempts ?? 0,
     reviewModel: agent.modelAdvisor?.reviewModel,
   };
+}
+
+function validPromptVariables(
+  definitions: readonly PromptVariableDefinition[],
+): boolean {
+  if (definitions.length > 32) return false;
+  const names = definitions.map((definition) => definition.name);
+  if (new Set(names).size !== names.length) return false;
+  const literalBytes = definitions.reduce(
+    (total, definition) =>
+      total +
+      (definition.type === "literal"
+        ? new TextEncoder().encode(
+            definition.value.replace(/\r\n?/gu, "\n").trim(),
+          ).length
+        : 0),
+    0,
+  );
+  return (
+    literalBytes <= 16 * 1024 &&
+    definitions.every((definition) =>
+      validPromptVariableDefinition(definition, definitions),
+    )
+  );
+}
+
+function validPromptVariableDefinition(
+  definition: PromptVariableDefinition,
+  definitions: readonly PromptVariableDefinition[],
+): boolean {
+  if (
+    !validPromptVariableName(definition.name) ||
+    definitions.filter((candidate) => candidate.name === definition.name)
+      .length !== 1
+  ) {
+    return false;
+  }
+  if (definition.type === "literal") {
+    return validPromptVariableLiteral(definition.value);
+  }
+  if (definition.type === "current_date") {
+    return (
+      definition.format === "readable-date" ||
+      definition.format === "iso-date" ||
+      definition.format === "local-date-time"
+    );
+  }
+  return definition.type === "skill_catalog";
+}
+
+function validPromptVariableName(value: string): boolean {
+  return /^[A-Za-z_][A-Za-z0-9_]{0,63}$/u.test(value);
+}
+
+function validPromptVariableLiteral(value: string): boolean {
+  const normalized = value.replace(/\r\n?/gu, "\n").trim();
+  return (
+    normalized.length > 0 &&
+    !normalized.includes("\u0000") &&
+    [...normalized].length <= 2_000 &&
+    new TextEncoder().encode(normalized).length <= 4 * 1024
+  );
 }
 
 function formatDate(value: string): string {

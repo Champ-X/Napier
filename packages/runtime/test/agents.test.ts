@@ -169,6 +169,30 @@ describe("Agent profile updates", () => {
     expect(changedAgentFields(legacy, updated)).toEqual(["description"]);
   });
 
+  it("revisions canonical Prompt Variable catalogs without order churn", () => {
+    const updated = updateAgentProfile(PROFILE, {
+      promptVariables: [
+        { name: "today", type: "current_date", format: "iso-date" },
+        { name: "context", type: "literal", value: "  Napier\r\nledger  " },
+      ],
+    });
+
+    expect(updated.promptVariables).toEqual([
+      { name: "context", type: "literal", value: "Napier\nledger" },
+      { name: "today", type: "current_date", format: "iso-date" },
+    ]);
+    expect(changedAgentFields(PROFILE, updated)).toContain("promptVariables");
+    expect(
+      updateAgentProfile(updated, {
+        promptVariables: [...updated.promptVariables!].reverse(),
+      }),
+    ).toEqual(updated);
+
+    const cleared = updateAgentProfile(updated, { promptVariables: [] });
+    expect(cleared.promptVariables).toEqual([]);
+    expect(cleared.revision).toBe(updated.revision + 1);
+  });
+
   it("rejects unsupported tools, malformed models, and unsafe budgets", () => {
     expect(() =>
       updateAgentProfile(PROFILE, { enabledTools: ["bash"] }),

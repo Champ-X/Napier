@@ -36,6 +36,7 @@ export * from "./plan-tools.js";
 export * from "./plans.js";
 export * from "./policy.js";
 export * from "./prompt-packages.js";
+export * from "./prompt-variables.js";
 export * from "./replan-policies.js";
 export * from "./replan-review.js";
 export * from "./replay.js";

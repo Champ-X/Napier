@@ -1727,6 +1727,29 @@ describe("Napier HTTP goal flow", () => {
       }),
     );
 
+    const invalidPromptVariableResponse = await app.request(
+      `/api/agents/${created.agent.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          promptVariables: [
+            {
+              name: "release",
+              type: "literal",
+              value: "candidate",
+              unexpected: true,
+            },
+          ],
+          threadId: created.thread.id,
+        }),
+      },
+    );
+    expect(invalidPromptVariableResponse.status).toBe(400);
+    expect(await invalidPromptVariableResponse.json()).toEqual(
+      expect.objectContaining({ error: "Agent profile request is invalid" }),
+    );
+
     const agentResponse = await app.request(`/api/agents/${created.agent.id}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -1766,6 +1789,10 @@ describe("Napier HTTP goal flow", () => {
             id: "anthropic/claude-sonnet",
           },
         },
+        promptVariables: [
+          { name: "skills", type: "skill_catalog" },
+          { name: "release", type: "literal", value: "release-candidate" },
+        ],
         threadId: created.thread.id,
       }),
     });
@@ -1802,6 +1829,10 @@ describe("Napier HTTP goal flow", () => {
             id: "anthropic/claude-sonnet",
           },
         },
+        promptVariables: [
+          { name: "release", type: "literal", value: "release-candidate" },
+          { name: "skills", type: "skill_catalog" },
+        ],
       }),
     );
     const historyResponse = await app.request(
@@ -1819,6 +1850,7 @@ describe("Napier HTTP goal flow", () => {
           "systemPrompt",
           "toolPolicy",
           "modelAdvisor",
+          "promptVariables",
         ]),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
@@ -1866,6 +1898,9 @@ describe("Napier HTTP goal flow", () => {
     expect(JSON.stringify(agentEvent?.payload)).toContain("systemPrompt");
     expect(JSON.stringify(agentEvent?.payload)).not.toContain(
       "Never claim unverified side effects",
+    );
+    expect(JSON.stringify(agentEvent?.payload)).not.toContain(
+      "release-candidate",
     );
     expect(agentEvent?.payload).toEqual(
       expect.objectContaining({

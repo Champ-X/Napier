@@ -47,6 +47,12 @@ import {
   projectIndependentModelAdvisorReviews,
 } from "./independent-model-advisor.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
+import {
+  createPromptVariableCatalog,
+  normalizePromptVariableDefinitions,
+  PROMPT_VARIABLES_RESOLVED_EVENT,
+  projectPromptVariableSnapshots,
+} from "./prompt-variables.js";
 import { validateRunConfigurationFingerprint } from "./run-config.js";
 import {
   assertSubagentOutcomeBinding,
@@ -475,6 +481,20 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       }
     }
   }
+  if (agent["promptVariables"] !== undefined) {
+    const promptVariables = normalizePromptVariableDefinitions(
+      agent["promptVariables"] as NonNullable<AgentProfile["promptVariables"]>,
+    );
+    if (
+      JSON.stringify(promptVariables) !==
+      JSON.stringify(agent["promptVariables"])
+    ) {
+      throw new Error("agent.promptVariables must be canonical");
+    }
+  }
+  const agentProfilesByRevision = new Map<number, AgentProfile>([
+    [Number(agent["revision"]), record["agent"] as AgentProfile],
+  ]);
   if (agentRevisions !== undefined) {
     const revisionNumbers = new Set<number>();
     let currentRevision: AgentProfileRevision | undefined;
@@ -490,6 +510,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         );
       }
       revisionNumbers.add(revision.revision);
+      agentProfilesByRevision.set(revision.revision, revision.profile);
       if (revision.revision === agent["revision"]) currentRevision = revision;
     }
     if (
@@ -549,6 +570,23 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         throw new Error(
           `Thread replay bundle run configuration conflicts with run: ${runId}`,
         );
+      }
+      if (configuration.schemaVersion === 7) {
+        const runAgentProfile = agentProfilesByRevision.get(
+          configuration.agentRevision,
+        );
+        if (
+          !runAgentProfile ||
+          configuration.systemPromptSha256 !==
+            sha256(runAgentProfile.systemPrompt) ||
+          configuration.promptVariableCatalogSha256 !==
+            createPromptVariableCatalog(runAgentProfile.promptVariables)
+              .contentSha256
+        ) {
+          throw new Error(
+            `Thread replay bundle schema-7 configuration does not match Agent revision: ${runId}`,
+          );
+        }
       }
     }
   }
@@ -641,6 +679,65 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     throw new Error(
       "Thread replay bundle independent Model Advisor review is invalid",
     );
+  }
+  const promptVariableEvents = typedEvents.filter(
+    (event) => event.type === PROMPT_VARIABLES_RESOLVED_EVENT,
+  );
+  const promptVariableSnapshots =
+    projectPromptVariableSnapshots(promptVariableEvents);
+  if (promptVariableSnapshots.length !== promptVariableEvents.length) {
+    throw new Error("Thread replay bundle Prompt Variable snapshot is invalid");
+  }
+  const promptVariableEventsByRun = new Map<string, number>();
+  for (const [index, event] of promptVariableEvents.entries()) {
+    const snapshot = promptVariableSnapshots[index]!;
+    const run = runsById.get(event.runId);
+    const configuration = run?.["configuration"]
+      ? validateRunConfigurationFingerprint(run["configuration"])
+      : undefined;
+    const runAgentProfile =
+      configuration?.schemaVersion === 7
+        ? agentProfilesByRevision.get(configuration.agentRevision)
+        : undefined;
+    const definitions = runAgentProfile
+      ? normalizePromptVariableDefinitions(runAgentProfile.promptVariables)
+      : [];
+    promptVariableEventsByRun.set(
+      event.runId,
+      (promptVariableEventsByRun.get(event.runId) ?? 0) + 1,
+    );
+    if (
+      configuration?.schemaVersion !== 7 ||
+      configuration.promptVariableCatalogSha256 !== snapshot.catalogSha256 ||
+      configuration.promptVariableSnapshotSha256 !== snapshot.contentSha256 ||
+      configuration.resolvedSystemPromptSha256 !==
+        snapshot.renderedSystemPromptSha256 ||
+      !runAgentProfile ||
+      snapshot.entries.length !== definitions.length ||
+      snapshot.entries.some(
+        (entry, entryIndex) =>
+          entry.name !== definitions[entryIndex]?.name ||
+          entry.type !== definitions[entryIndex]?.type,
+      )
+    ) {
+      throw new Error(
+        `Thread replay bundle Prompt Variable snapshot is not bound to Run: ${event.runId}`,
+      );
+    }
+  }
+  for (const run of runRecords) {
+    const configuration = run["configuration"]
+      ? validateRunConfigurationFingerprint(run["configuration"])
+      : undefined;
+    const eventCount = promptVariableEventsByRun.get(String(run["id"])) ?? 0;
+    if (
+      (configuration?.schemaVersion === 7 && eventCount !== 1) ||
+      (configuration?.schemaVersion !== 7 && eventCount !== 0)
+    ) {
+      throw new Error(
+        `Thread replay bundle Prompt Variable event count is invalid: ${String(run["id"])}`,
+      );
+    }
   }
   for (const decision of projectOperatorDecisions(typedEvents)) {
     if (!runIds.has(decision.runId)) {

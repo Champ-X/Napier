@@ -161,8 +161,11 @@ describe("AgentRuntime demo path", () => {
 
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 5,
+        schemaVersion: 7,
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        promptVariableSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        resolvedSystemPromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         modelAdvisor: {
           mode: "observe",
           enabledRules: [
@@ -197,6 +200,112 @@ describe("AgentRuntime demo path", () => {
     expect(JSON.stringify(skillsEvent?.payload)).not.toContain(
       "This instruction must not be copied",
     );
+    const promptVariablesEvent = events.find(
+      (event) => event.type === "context.prompt_variables",
+    );
+    expect(promptVariablesEvent?.payload).toEqual(
+      expect.objectContaining({
+        definitionCount: 0,
+        contentSha256: run.configuration?.promptVariableSnapshotSha256,
+        renderedSystemPromptSha256:
+          run.configuration?.resolvedSystemPromptSha256,
+      }),
+    );
+  });
+
+  it("freezes Prompt Variables once and avoids duplicate Skill injection", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "skills/runtime-skill"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(workspaceRoot, "skills/runtime-skill/SKILL.md"),
+      [
+        "---",
+        "name: runtime-skill",
+        "description: Frozen catalog fixture.",
+        "---",
+        "",
+        "# Runtime Skill",
+      ].join("\n"),
+      "utf8",
+    );
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      systemPrompt:
+        "Project {{project}}.\n{{skills}}\nNested {{nested}}.\nKeep {{missing}}.",
+      enabledSkills: ["runtime-skill"],
+      promptVariables: [
+        { name: "project", type: "literal", value: "Napier" },
+        { name: "skills", type: "skill_catalog" },
+        { name: "nested", type: "literal", value: "{{project}}" },
+      ],
+    });
+    const thread = await store.createThread({
+      title: "Frozen Prompt Variables",
+      agentId: agent.id,
+    });
+    let observedSystemPrompt = "";
+    const faux = fauxProvider({ provider: "faux-prompt-variables" });
+    faux.setResponses([
+      (context) => {
+        observedSystemPrompt = context.systemPrompt ?? "";
+        return fauxAssistantMessage("The frozen context is active.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Inspect the frozen context.",
+      model: { provider: "faux-prompt-variables", id: "faux-1" },
+    });
+
+    expect(run.configuration).toEqual(
+      expect.objectContaining({
+        schemaVersion: 7,
+        promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        promptVariableSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        resolvedSystemPromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(observedSystemPrompt).toContain("Project Napier.");
+    expect(observedSystemPrompt).toContain("Nested {{project}}.");
+    expect(observedSystemPrompt).toContain("Keep {{missing}}.");
+    expect(
+      observedSystemPrompt.match(/Frozen catalog fixture\./gu),
+    ).toHaveLength(1);
+    const events = await store.listEvents(thread.id);
+    const promptVariableEvents = events.filter(
+      (event) => event.type === "context.prompt_variables",
+    );
+    expect(promptVariableEvents).toHaveLength(1);
+    expect(promptVariableEvents[0]?.payload).toEqual(
+      expect.objectContaining({
+        definitionCount: 3,
+        referencedVariableCount: 3,
+        referenceCount: 4,
+        unresolvedReferenceCount: 1,
+        skillCatalogInjected: true,
+        catalogSha256: run.configuration?.promptVariableCatalogSha256,
+        contentSha256: run.configuration?.promptVariableSnapshotSha256,
+        renderedSystemPromptSha256:
+          run.configuration?.resolvedSystemPromptSha256,
+      }),
+    );
+    const receipt = JSON.stringify(promptVariableEvents[0]?.payload);
+    expect(receipt).not.toContain("Napier");
+    expect(receipt).not.toContain("Frozen catalog fixture");
+    expect(receipt).not.toContain("{{missing}}");
   });
 
   it("fails goal evaluation closed when only the demo model is available", async () => {
@@ -768,7 +877,7 @@ describe("AgentRuntime demo path", () => {
     expect(run.status).toBe("completed");
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 6,
+        schemaVersion: 7,
         modelAdvisor: expect.objectContaining({
           reviewModel: { provider: "faux-turn-reviewer", id: "faux-1" },
         }),

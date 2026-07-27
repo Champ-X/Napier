@@ -2424,6 +2424,57 @@ export interface ReviewMcpToolRequest {
   threadId?: string;
 }
 
+export type PromptVariableDateFormat =
+  | "readable-date"
+  | "iso-date"
+  | "local-date-time";
+
+export interface LiteralPromptVariableDefinition {
+  name: string;
+  type: "literal";
+  value: string;
+}
+
+export interface CurrentDatePromptVariableDefinition {
+  name: string;
+  type: "current_date";
+  format: PromptVariableDateFormat;
+}
+
+export interface SkillCatalogPromptVariableDefinition {
+  name: string;
+  type: "skill_catalog";
+}
+
+export type PromptVariableDefinition =
+  | LiteralPromptVariableDefinition
+  | CurrentDatePromptVariableDefinition
+  | SkillCatalogPromptVariableDefinition;
+
+export interface PromptVariableSnapshotEntry {
+  name: string;
+  type: PromptVariableDefinition["type"];
+  valueBytes: number;
+  valueSha256: string;
+  referenceCount: number;
+}
+
+export interface PromptVariableSnapshot {
+  kind: "napier.prompt-variable-snapshot";
+  schemaVersion: 1;
+  resolvedAt: string;
+  definitionCount: number;
+  referencedVariableCount: number;
+  referenceCount: number;
+  unresolvedReferenceCount: number;
+  unresolvedNameSetSha256: string;
+  catalogSha256: string;
+  renderedSystemPromptSha256: string;
+  skillCatalogInjected: boolean;
+  entries: PromptVariableSnapshotEntry[];
+  contentSha256: string;
+}
+
 export interface AgentProfile {
   id: string;
   name: string;
@@ -2439,6 +2490,7 @@ export interface AgentProfile {
   runLimits?: RunLimits;
   automaticRecovery?: AutomaticRecoveryPolicy;
   modelAdvisor?: ModelAdvisorPolicy;
+  promptVariables?: PromptVariableDefinition[];
   revision: number;
   createdAt: string;
   updatedAt: string;
@@ -2457,7 +2509,8 @@ export type AgentProfileField =
   | "subagentLimits"
   | "runLimits"
   | "automaticRecovery"
-  | "modelAdvisor";
+  | "modelAdvisor"
+  | "promptVariables";
 
 export type AgentProfileRevisionSource =
   | "created"
@@ -2492,6 +2545,7 @@ export interface UpdateAgentProfileRequest {
   runLimits?: RunLimits;
   automaticRecovery?: AutomaticRecoveryPolicy;
   modelAdvisor?: ModelAdvisorPolicy;
+  promptVariables?: PromptVariableDefinition[];
   threadId?: string;
 }
 
@@ -2587,13 +2641,25 @@ export interface RunConfigurationFingerprintV6 extends RunConfigurationFingerpri
   modelAdvisor: ResolvedModelAdvisorPolicy;
 }
 
+export interface RunConfigurationFingerprintV7 extends RunConfigurationFingerprintBase {
+  schemaVersion: 7;
+  automaticRecovery: AutomaticRecoveryPolicy;
+  executionMode: RunExecutionMode;
+  skillCatalogSha256: string;
+  modelAdvisor: ResolvedModelAdvisorPolicy;
+  promptVariableCatalogSha256: string;
+  promptVariableSnapshotSha256: string;
+  resolvedSystemPromptSha256: string;
+}
+
 export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV1
   | RunConfigurationFingerprintV2
   | RunConfigurationFingerprintV3
   | RunConfigurationFingerprintV4
   | RunConfigurationFingerprintV5
-  | RunConfigurationFingerprintV6;
+  | RunConfigurationFingerprintV6
+  | RunConfigurationFingerprintV7;
 
 export type AutomaticRecoveryBlockReason =
   | "configuration_missing"
@@ -3525,7 +3591,8 @@ export type RunConfigurationField =
   | "automaticRecovery"
   | "modelAdvisor"
   | "executionMode"
-  | "skillCatalog";
+  | "skillCatalog"
+  | "promptVariables";
 
 export interface RunConfigurationDelta {
   status: "comparable" | "unavailable";

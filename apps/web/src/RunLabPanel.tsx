@@ -17,6 +17,7 @@ import type {
 } from "@napier/contracts";
 
 import { copy } from "./copy";
+import { runConfigurationFieldCopy } from "./run-configuration-copy";
 import type {
   FixtureTransferReceipt,
   RunReplayVerificationReceipt,
@@ -242,9 +243,7 @@ export default function RunLabPanel({
                   <ul>
                     {comparison.configurationDelta.changedFields.map(
                       (field) => (
-                        <li key={field}>
-                          {copy.lab.configurationFields[field]}
-                        </li>
+                        <li key={field}>{runConfigurationFieldCopy[field]}</li>
                       ),
                     )}
                   </ul>

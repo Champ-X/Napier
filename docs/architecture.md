@@ -53,6 +53,8 @@ removal is a versioned contract change.
   assistant message is recorded, while retaining only hash-bound candidate and
   guidance evidence;
 - standard Agent Skills discovery;
+- strict Agent Prompt Variable catalogs, single-pass System Prompt resolution,
+  and schema-7 hash-only Run snapshots;
 - hash-only signed Skill, Prompt, and Inspector package baselines plus local
   qualification checks;
 - reviewed memory proposals, expiry, usage evidence, immutable supersession,
@@ -402,6 +404,46 @@ budget and is included exactly once in final settlement. Portable fixtures
 recompute every known review receipt and fail closed on malformed payloads;
 OTLP admits reviewer/candidate model identities, verdict, score, risk, usage,
 and hashes while dropping nested issue data and all content prose.
+
+### Frozen Prompt Variables
+
+Prompt Variables are versioned Agent configuration, not mutable Run state. Each
+definition is an exact tagged object: a bounded `literal`, a `current_date`
+with `readable-date`, `iso-date`, or `local-date-time` formatting, or the
+Pi-compatible `skill_catalog`. Names use
+`[A-Za-z_][A-Za-z0-9_]{0,63}`, catalogs contain at most 32 definitions, each
+literal is bounded to 2,000 code points and 4 KiB, and all literals together
+are bounded to 16 KiB. Canonical name sorting makes definition reordering a
+profile no-op; duplicate names, unknown fields, unknown variants, NUL bytes,
+and over-capacity values fail closed.
+
+`AgentRuntime.runPrompt` loads the enabled Skills and resolves the profile
+System Prompt exactly once before creating the leased Run. Only declared
+`{{name}}` tokens are replaced. Unknown tokens stay byte-for-byte in the
+rendered Prompt but contribute count and name-set hash evidence. Replacement is
+one pass, so a literal value containing `{{another_name}}` is not expanded. A
+referenced `skill_catalog` injects the same catalog Pi would append and
+suppresses the ordinary append path; an unreferenced catalog definition has no
+effect on Prompt assembly.
+
+The resulting `napier.prompt-variable-snapshot` contains resolution time,
+definition/reference/unresolved counts, variable type, resolved byte count and
+value SHA-256, catalog SHA-256, rendered System Prompt SHA-256, and one complete
+content SHA-256. It contains no values, rendered Prompt, or unresolved names.
+Schema 7 binds the catalog, snapshot, and rendered Prompt hashes in the Run
+configuration. One `context.prompt_variables` event records the same snapshot
+before model execution, and every normal turn, Goal continuation, and Advisor
+correction reuses the in-memory rendered Prompt.
+
+Portable replay requires exactly one valid snapshot event per schema-7 Run and
+checks all three fingerprint bindings, the raw Prompt hash, and the canonical
+catalog plus entry names/types recomputed from that Run's exact Agent revision;
+legacy Runs must not claim the event. OTLP allowlists only scalar counts, the
+Skill-injected flag, and SHA-256 values, dropping the entry array. Run
+comparison treats catalog or rendered Prompt movement as Prompt Variable drift
+while ignoring a receipt-only timestamp change. The editor lives entirely in
+the lazy Context panel, preserving the main entry budget.
+
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
 frames must not carry `id:`, and stream-local event sequence values must
@@ -907,6 +949,8 @@ also binds the effective Model Advisor mode and deterministic rule set. Schema
 verification with an effective legacy budget of zero. Schema 6 adds the
 optional independent review model; schema-6 validation requires that identity
 to be present, while profiles reject a reviewer equal to their primary model.
+Schema 7 adds the frozen Prompt Variable catalog, complete snapshot, and
+rendered System Prompt hashes while retaining the effective Advisor policy.
 The manifest contains requested/loaded/missing Skill names, relative
 `SKILL.md` paths, byte counts, diagnostics hash, and file SHA-256 values; it
 never stores Skill instruction text. The Agent records the same manifest as a
@@ -1674,8 +1718,9 @@ covers every fingerprint field, while the duplicate Run-level revision and
 limits must agree with it. Schema 1 keeps its original exact key set and hash;
 schema 2 adds recovery policy and execution mode, schema 3 binds the Skill
 catalog, schemas 4-5 bind deterministic Advisor policy and correction limits,
-and schema 6 binds an independent reviewer identity. A schema-1 Run compares
-normally but is never automatically recovered.
+schema 6 binds an independent reviewer identity, and schema 7 binds frozen
+Prompt Variable catalog, snapshot, and rendered Prompt hashes. A schema-1 Run
+compares normally but is never automatically recovered.
 
 Run comparison reports changed configuration fields plus added/removed tools,
 skills, and subagent roles. If either side predates fingerprints, drift is
@@ -2987,6 +3032,10 @@ The current boundary has twenty-five parts:
     guidance receipts, shared bounded correction, frozen-budget accounting,
     fail-closed inconclusive enforcement, metadata-only OTLP, lazy inspection,
     and portable receipt revalidation.
+26. frozen Prompt Variables with strict revisioned definitions, single-pass
+    non-recursive resolution, exact Skill catalog injection, schema-7 Run
+    fingerprints, hash-only Ledger/OTLP evidence, lazy Context editing, and
+    portable snapshot-to-Run binding.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.

@@ -13,6 +13,7 @@ import type {
   RunConfigurationFingerprintV4,
   RunConfigurationFingerprintV5,
   RunConfigurationFingerprintV6,
+  RunConfigurationFingerprintV7,
   RunExecutionMode,
   SubagentRole,
 } from "@napier/contracts";
@@ -29,6 +30,7 @@ import {
   normalizeRunLimits,
   normalizeSubagentLimits,
 } from "./agents.js";
+import { createPromptVariableCatalog } from "./prompt-variables.js";
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/;
@@ -75,6 +77,12 @@ const V3_FINGERPRINT_KEYS = new Set([
 const V4_FINGERPRINT_KEYS = new Set([...V3_FINGERPRINT_KEYS, "modelAdvisor"]);
 const V5_FINGERPRINT_KEYS = new Set(V4_FINGERPRINT_KEYS);
 const V6_FINGERPRINT_KEYS = new Set(V5_FINGERPRINT_KEYS);
+const V7_FINGERPRINT_KEYS = new Set([
+  ...V6_FINGERPRINT_KEYS,
+  "promptVariableCatalogSha256",
+  "promptVariableSnapshotSha256",
+  "resolvedSystemPromptSha256",
+]);
 
 type FingerprintV1Content = Omit<
   RunConfigurationFingerprintV1,
@@ -100,12 +108,27 @@ type FingerprintV6Content = Omit<
   RunConfigurationFingerprintV6,
   "contentSha256"
 >;
+type FingerprintV7Content = Omit<
+  RunConfigurationFingerprintV7,
+  "contentSha256"
+>;
+
+export interface PromptVariableFingerprintInput {
+  catalogSha256: string;
+  snapshotSha256: string;
+  renderedSystemPromptSha256: string;
+}
+
+export interface RunConfigurationFingerprintOptions {
+  skillCatalogSha256?: string;
+  promptVariables?: PromptVariableFingerprintInput;
+}
 
 export function createRunConfigurationFingerprint(
   profile: AgentProfile,
   model: ModelRef = profile.model,
   executionMode: RunExecutionMode = "standard",
-  options: { skillCatalogSha256?: string } = {},
+  options: RunConfigurationFingerprintOptions = {},
 ): RunConfigurationFingerprint {
   if (!EXECUTION_MODES.has(executionMode)) {
     throw new Error("Run execution mode is invalid");
@@ -116,14 +139,37 @@ export function createRunConfigurationFingerprint(
   ) {
     throw new Error("Run configuration skill catalog hash is invalid");
   }
+  if (options.promptVariables && !options.skillCatalogSha256) {
+    throw new Error(
+      "Run configuration prompt variables require a Skill catalog hash",
+    );
+  }
+  for (const [label, value] of Object.entries(options.promptVariables ?? {})) {
+    if (!SHA256.test(value)) {
+      throw new Error(
+        `Run configuration prompt variable ${label} hash is invalid`,
+      );
+    }
+  }
+  if (
+    options.promptVariables &&
+    options.promptVariables.catalogSha256 !==
+      createPromptVariableCatalog(profile.promptVariables).contentSha256
+  ) {
+    throw new Error(
+      "Run configuration Prompt Variable catalog does not match the Agent profile",
+    );
+  }
   const safeRecovery = executionMode === "safe_read_only_recovery";
   const modelAdvisor = effectiveModelAdvisorPolicy(profile);
   const content = {
-    schemaVersion: options.skillCatalogSha256
-      ? modelAdvisor.reviewModel
-        ? (6 as const)
-        : (5 as const)
-      : (2 as const),
+    schemaVersion: options.promptVariables
+      ? (7 as const)
+      : options.skillCatalogSha256
+        ? modelAdvisor.reviewModel
+          ? (6 as const)
+          : (5 as const)
+        : (2 as const),
     agentRevision: profile.revision,
     model: structuredClone(model),
     thinkingLevel: profile.thinkingLevel,
@@ -152,6 +198,14 @@ export function createRunConfigurationFingerprint(
           modelAdvisor,
         }
       : {}),
+    ...(options.promptVariables
+      ? {
+          promptVariableCatalogSha256: options.promptVariables.catalogSha256,
+          promptVariableSnapshotSha256: options.promptVariables.snapshotSha256,
+          resolvedSystemPromptSha256:
+            options.promptVariables.renderedSystemPromptSha256,
+        }
+      : {}),
   };
   return {
     ...content,
@@ -177,7 +231,9 @@ export function validateRunConfigurationFingerprint(
               ? V5_FINGERPRINT_KEYS
               : schemaVersion === 6
                 ? V6_FINGERPRINT_KEYS
-                : undefined;
+                : schemaVersion === 7
+                  ? V7_FINGERPRINT_KEYS
+                  : undefined;
   if (!keys) {
     throw new Error("Run configuration fingerprint schema is unsupported");
   }
@@ -331,6 +387,30 @@ export function validateRunConfigurationFingerprint(
       "Run configuration fingerprint schema 6 requires a review model",
     );
   }
+  if (schemaVersion === 7) {
+    const content: FingerprintV7Content = {
+      schemaVersion: 7,
+      ...modernShared,
+      skillCatalogSha256,
+      modelAdvisor,
+      promptVariableCatalogSha256: assertSha256(
+        record["promptVariableCatalogSha256"],
+        "promptVariableCatalogSha256",
+      ),
+      promptVariableSnapshotSha256: assertSha256(
+        record["promptVariableSnapshotSha256"],
+        "promptVariableSnapshotSha256",
+      ),
+      resolvedSystemPromptSha256: assertSha256(
+        record["resolvedSystemPromptSha256"],
+        "resolvedSystemPromptSha256",
+      ),
+    };
+    if (sha256(canonicalJson(content)) !== contentSha256) {
+      throw new Error("Run configuration fingerprint hash mismatch");
+    }
+    return { ...content, contentSha256 };
+  }
   const content: FingerprintV5Content | FingerprintV6Content =
     schemaVersion === 5
       ? {
@@ -415,6 +495,14 @@ export function compareRunConfigurations(
   if (!same(fingerprintModelAdvisor(left), fingerprintModelAdvisor(right))) {
     changedFields.push("modelAdvisor");
   }
+  if (
+    !same(
+      fingerprintPromptVariableHashes(left),
+      fingerprintPromptVariableHashes(right),
+    )
+  ) {
+    changedFields.push("promptVariables");
+  }
   return {
     status: "comparable",
     leftSha256: left.contentSha256,
@@ -442,7 +530,8 @@ export function fingerprintAutomaticRecovery(
     fingerprint.schemaVersion === 3 ||
     fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
-    fingerprint.schemaVersion === 6
+    fingerprint.schemaVersion === 6 ||
+    fingerprint.schemaVersion === 7
     ? structuredClone(fingerprint.automaticRecovery)
     : structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY);
 }
@@ -454,7 +543,8 @@ export function fingerprintExecutionMode(
     fingerprint.schemaVersion === 3 ||
     fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
-    fingerprint.schemaVersion === 6
+    fingerprint.schemaVersion === 6 ||
+    fingerprint.schemaVersion === 7
     ? fingerprint.executionMode
     : "standard";
 }
@@ -465,7 +555,8 @@ export function fingerprintSkillCatalogSha256(
   return fingerprint.schemaVersion === 3 ||
     fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
-    fingerprint.schemaVersion === 6
+    fingerprint.schemaVersion === 6 ||
+    fingerprint.schemaVersion === 7
     ? fingerprint.skillCatalogSha256
     : "";
 }
@@ -475,9 +566,24 @@ export function fingerprintModelAdvisor(
 ) {
   return fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
-    fingerprint.schemaVersion === 6
+    fingerprint.schemaVersion === 6 ||
+    fingerprint.schemaVersion === 7
     ? normalizeModelAdvisorPolicy(fingerprint.modelAdvisor)
     : structuredClone(DEFAULT_MODEL_ADVISOR_POLICY);
+}
+
+function fingerprintPromptVariableHashes(
+  fingerprint: RunConfigurationFingerprint,
+): Pick<
+  RunConfigurationFingerprintV7,
+  "promptVariableCatalogSha256" | "resolvedSystemPromptSha256"
+> | null {
+  return fingerprint.schemaVersion === 7
+    ? {
+        promptVariableCatalogSha256: fingerprint.promptVariableCatalogSha256,
+        resolvedSystemPromptSha256: fingerprint.resolvedSystemPromptSha256,
+      }
+    : null;
 }
 
 function assertModel(value: unknown): ModelRef {

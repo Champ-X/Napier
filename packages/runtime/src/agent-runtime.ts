@@ -90,6 +90,10 @@ import { createOperatorDecisionTool } from "./operator-decision-tool.js";
 import { formatOperatorDecisionContinuation } from "./operator-decisions.js";
 import { assessToolCall } from "./policy.js";
 import { createPlanTools } from "./plan-tools.js";
+import {
+  PROMPT_VARIABLES_RESOLVED_EVENT,
+  resolvePromptVariables,
+} from "./prompt-variables.js";
 import { aggregateRunUsage } from "./replay.js";
 import { RunBudgetExceededError, RunBudgetTracker } from "./run-budget.js";
 import {
@@ -98,6 +102,7 @@ import {
 } from "./sandbox.js";
 import {
   appendSkillCatalog,
+  formatSkillCatalog,
   loadWorkspaceSkills,
   type LoadedSkillCatalog,
 } from "./skills.js";
@@ -204,6 +209,11 @@ export class AgentRuntime {
       this.store.workspaceRoot,
       agentSnapshot.enabledSkills,
     );
+    const promptVariables = resolvePromptVariables({
+      systemPrompt: agentSnapshot.systemPrompt,
+      definitions: agentSnapshot.promptVariables,
+      skillCatalogText: formatSkillCatalog(skillCatalog.skills),
+    });
     const leasedRun = await this.store.createLeasedRun(
       {
         threadId: thread.id,
@@ -211,6 +221,12 @@ export class AgentRuntime {
         model: modelRef,
         source: invocationSource,
         skillCatalogSha256: skillCatalog.fingerprint.contentSha256,
+        promptVariables: {
+          catalogSha256: promptVariables.snapshot.catalogSha256,
+          snapshotSha256: promptVariables.snapshot.contentSha256,
+          renderedSystemPromptSha256:
+            promptVariables.snapshot.renderedSystemPromptSha256,
+        },
         ...(options.agentRevision !== undefined
           ? { agentRevision: options.agentRevision }
           : {}),
@@ -317,6 +333,17 @@ export class AgentRuntime {
         },
         options.onEvent,
       );
+      await this.record(
+        {
+          threadId: thread.id,
+          runId: run.id,
+          type: PROMPT_VARIABLES_RESOLVED_EVENT,
+          category: "system",
+          visibility: "debug",
+          payload: toJsonValue(promptVariables.snapshot),
+        },
+        options.onEvent,
+      );
       if (invocationSource === "recovery" && options.parentRunId) {
         await this.record(
           {
@@ -380,6 +407,8 @@ export class AgentRuntime {
               subagents,
               safeReadOnlyRecovery,
               skillCatalog,
+              promptVariables.renderedSystemPrompt,
+              promptVariables.snapshot.skillCatalogInjected,
               advisorCorrection,
               advisorReviewPrompt,
               abortController.signal,
@@ -788,7 +817,8 @@ export class AgentRuntime {
       interrupted.configuration.schemaVersion === 3 ||
       interrupted.configuration.schemaVersion === 4 ||
       interrupted.configuration.schemaVersion === 5 ||
-      interrupted.configuration.schemaVersion === 6
+      interrupted.configuration.schemaVersion === 6 ||
+      interrupted.configuration.schemaVersion === 7
     ) {
       const currentSkillCatalog = await loadWorkspaceSkills(
         this.store.workspaceRoot,
@@ -972,6 +1002,8 @@ export class AgentRuntime {
     subagents: SubagentCoordinator | undefined,
     safeReadOnlyRecovery: boolean,
     skillCatalog: LoadedSkillCatalog,
+    resolvedSystemPrompt: string,
+    skillCatalogInjected: boolean,
     advisorCorrection: boolean,
     advisorReviewPrompt: string,
     signal: AbortSignal,
@@ -1014,10 +1046,9 @@ export class AgentRuntime {
       profile.id,
     );
     await this.store.recordMemoryUsage(memoryContext.factIds, run.id);
-    const skillPrompt = appendSkillCatalog(
-      profile.systemPrompt,
-      skillCatalog.skills,
-    );
+    const skillPrompt = skillCatalogInjected
+      ? resolvedSystemPrompt
+      : appendSkillCatalog(resolvedSystemPrompt, skillCatalog.skills);
     const threadRecord = this.store.getThread(run.threadId);
     const importedLedgerBoundary = formatImportedLedgerBoundary(
       threadRecord.importProvenance,
@@ -2728,7 +2759,8 @@ function effectiveRunProfile(
       : {}),
     ...(configuration.schemaVersion === 4 ||
     configuration.schemaVersion === 5 ||
-    configuration.schemaVersion === 6
+    configuration.schemaVersion === 6 ||
+    configuration.schemaVersion === 7
       ? {
           modelAdvisor: structuredClone(configuration.modelAdvisor),
         }
@@ -2740,7 +2772,7 @@ function modernRunConfiguration(
   configuration: RunRecord["configuration"],
 ): configuration is Extract<
   NonNullable<RunRecord["configuration"]>,
-  { schemaVersion: 2 | 3 | 4 | 5 | 6 }
+  { schemaVersion: 2 | 3 | 4 | 5 | 6 | 7 }
 > {
   return (
     configuration !== undefined &&
@@ -2748,7 +2780,8 @@ function modernRunConfiguration(
       configuration.schemaVersion === 3 ||
       configuration.schemaVersion === 4 ||
       configuration.schemaVersion === 5 ||
-      configuration.schemaVersion === 6)
+      configuration.schemaVersion === 6 ||
+      configuration.schemaVersion === 7)
   );
 }
 

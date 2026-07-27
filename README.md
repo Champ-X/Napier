@@ -72,6 +72,9 @@ Version `0.1.0` includes:
   fixed local CLI entrypoints;
 - a fail-closed tool policy that blocks host escape and destructive commands;
 - Agent Skills discovery through standard `SKILL.md` packages;
+- frozen Agent Prompt Variables with strict `literal`, `current_date`, and
+  `skill_catalog` definitions, single-pass non-recursive System Prompt
+  rendering, schema-7 Run fingerprints, and hash-only replay receipts;
 - Ed25519-signed Skill package baselines that bind enabled `SKILL.md` file
   paths, sizes, diagnostics, and SHA-256 values without copying Skill
   instructions;
@@ -165,9 +168,10 @@ Version `0.1.0` includes:
   evaluations, append-only human adjudications, reviewer ballots, consensus
   resolutions, evaluation suites and executions, automatic-recovery
   assessments and attempts, subagents, Operator Decisions, Agent Milestones,
-  and the complete ordered event stream to independent content/event SHA-256
-  digests, with atomic import, collision-free resource-ID remapping, and
-  milestone evidence-range rehashing;
+  frozen Prompt Variable snapshots, and the complete ordered event stream to
+  independent content/event SHA-256 digests, with atomic import,
+  collision-free resource-ID remapping, and milestone evidence-range
+  rehashing;
 - OpenTelemetry-compatible OTLP/JSON trace export for complete Threads or
   individual Runs, with deterministic trace/span identities, GenAI semantic
   attributes, metadata-only redaction, stable artifact hashes, no-store
@@ -756,6 +760,33 @@ model identities, usage, and hashes but no candidate or guidance prose. The
 lazy Trace register renders the same receipt metadata outside the
 size-constrained main Workbench bundle.
 
+## Frozen Prompt Variables
+
+Agent profiles can declare up to 32 strict Prompt Variables and reference them
+as `{{name}}` inside the System Prompt. A definition can provide a bounded
+literal, one of three local current-date formats, or the exact Pi-compatible
+Skill catalog loaded for the Run. Definitions are normalized by name and
+revisioned with the Agent. Unknown tokens remain unchanged, while replacement
+runs once only: a literal containing another token cannot recursively expand
+or introduce a second template pass.
+
+Before Run creation, Napier resolves the variables at one timestamp and freezes
+the canonical catalog SHA-256, each resolved value SHA-256 and byte count, the
+unresolved-name-set SHA-256, reference counts, and rendered System Prompt
+SHA-256. The schema-7 Run fingerprint binds the catalog, complete snapshot, and
+rendered Prompt hashes beside the Skill catalog and Advisor policy. The
+`context.prompt_variables` event carries that hash-only snapshot; it never
+contains literal values, rendered Prompt text, or unresolved names. If a
+`skill_catalog` token was used, the catalog is not appended a second time.
+
+Every turn, Goal continuation, and Advisor correction inside the Run reuses the
+same rendered Prompt. Portable replay requires exactly one valid snapshot event
+for each schema-7 Run, verifies all three fingerprint bindings, and recomputes
+the catalog plus entry names/types from the exact Agent revision. Metadata-only
+OTLP exports only counts, booleans, and hashes. The lazy Context editor
+provides typed definitions and token insertion without increasing the main
+Workbench entry bundle.
+
 ## Agent Configuration History
 
 Context treats Agent configuration as an append-only revision ledger. Every
@@ -781,12 +812,13 @@ or operator scripts can audit configuration movement without scraping events.
 changed fields, provenance revisions, and snapshot hashes. Run configuration
 fingerprints remain separate and continue to prove the effective configuration
 used by each execution. Schema 3 Run fingerprints additionally bind the
-enabled Skill catalog SHA-256; schema 6 additionally binds an optional
-independent Model Advisor identity. The corresponding `context.skills` Ledger
-event records only Skill names, relative `SKILL.md` paths, byte counts,
-diagnostics hashes, and file SHA-256 values, never Skill instructions. Portable
-full-thread fixtures optionally carry the complete Agent revision ledger, remap
-the Agent ID, and recompute every revision hash during atomic import; legacy
+enabled Skill catalog SHA-256; schema 6 additionally binds an independent Model
+Advisor identity; schema 7 binds frozen Prompt Variable catalog, snapshot, and
+rendered System Prompt hashes. The corresponding `context.skills` Ledger event
+records only Skill names, relative `SKILL.md` paths, byte counts, diagnostics
+hashes, and file SHA-256 values, never Skill instructions. Portable full-thread
+fixtures optionally carry the complete Agent revision ledger, remap the Agent
+ID, and recompute every revision hash during atomic import; legacy
 schema-version-1 fixtures remain valid.
 
 `POST /api/skills/packages/sign` issues a `napier.signed-skill-package`
@@ -1230,12 +1262,14 @@ Agent revision, thinking and tool policies, canonical tool/skill/subagent sets,
 effective limits, interruption policy, execution mode, and a SHA-256 of the
 system prompt. The prompt text is not copied into the fingerprint. Schema 3
 also binds the enabled Skill catalog SHA-256, schemas 4-5 bind deterministic
-Advisor policy and correction limits, and schema 6 binds an independent review
-model. Schema 1 remains hash-compatible and is interpreted as manual recovery;
-schemas 2-5 remain valid for Runs created before later bindings. **Lab →
-Compare** reports the exact fields that drifted and shows both fingerprint
-hashes; a legacy Run without this evidence is labeled unavailable rather than
-reconstructed from the current Agent.
+Advisor policy and correction limits, schema 6 binds an independent review
+model, and schema 7 binds the frozen Prompt Variable catalog, snapshot receipt,
+and rendered System Prompt. Schema 1 remains hash-compatible and is interpreted
+as manual recovery; schemas 2-6 remain valid for Runs created before later
+bindings. **Lab → Compare** reports the exact fields that drifted and shows both
+fingerprint hashes; receipt timestamp changes alone do not count as Prompt
+drift, and a legacy Run without this evidence is labeled unavailable rather
+than reconstructed from the current Agent.
 
 Import accepts at most 10 MiB and verifies both the complete content digest and
 the event-stream digest before mutation. Napier remaps every resource ID,

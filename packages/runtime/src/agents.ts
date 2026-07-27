@@ -16,6 +16,7 @@ import type {
 } from "@napier/contracts";
 
 import { nowIso } from "./ids.js";
+import { normalizePromptVariableDefinitions } from "./prompt-variables.js";
 
 const ALLOWED_TOOLS = new Set([
   "list_files",
@@ -60,6 +61,7 @@ const AGENT_PROFILE_FIELDS: readonly AgentProfileField[] = [
   "runLimits",
   "automaticRecovery",
   "modelAdvisor",
+  "promptVariables",
 ];
 const AGENT_REVISION_SOURCES = new Set<AgentProfileRevisionSource>([
   "created",
@@ -177,6 +179,12 @@ export function updateAgentProfile(
       : {}),
     ...(request.modelAdvisor !== undefined
       ? optionalModelAdvisorUpdate(current.modelAdvisor, request.modelAdvisor)
+      : {}),
+    ...(request.promptVariables !== undefined
+      ? optionalPromptVariableUpdate(
+          current.promptVariables,
+          request.promptVariables,
+        )
       : {}),
   };
   assertIndependentAdvisorModel(updated);
@@ -320,6 +328,9 @@ export function rollbackAgentProfile(
     runLimits: profile.runLimits ?? structuredClone(DEFAULT_RUN_LIMITS),
     automaticRecovery: effectiveAutomaticRecoveryPolicy(profile),
     modelAdvisor: effectiveModelAdvisorPolicy(profile),
+    promptVariables: normalizePromptVariableDefinitions(
+      profile.promptVariables,
+    ),
   });
   if (updated.revision === current.revision) {
     throw new Error("Agent profile already matches the target revision");
@@ -382,6 +393,15 @@ function assertAgentProfileSnapshot(profile: AgentProfile): void {
   normalizeModelAdvisorPolicy(
     profile.modelAdvisor ?? structuredClone(DEFAULT_MODEL_ADVISOR_POLICY),
   );
+  const promptVariables = normalizePromptVariableDefinitions(
+    profile.promptVariables,
+  );
+  if (
+    profile.promptVariables !== undefined &&
+    JSON.stringify(profile.promptVariables) !== JSON.stringify(promptVariables)
+  ) {
+    throw new Error("Agent profile prompt variables are not canonical");
+  }
   assertIndependentAdvisorModel(profile);
 }
 
@@ -522,6 +542,19 @@ function optionalModelAdvisorUpdate(
     return current === undefined ? {} : { modelAdvisor: current };
   }
   return { modelAdvisor: normalized };
+}
+
+function optionalPromptVariableUpdate(
+  current: AgentProfile["promptVariables"],
+  requested: NonNullable<AgentProfile["promptVariables"]>,
+): Pick<AgentProfile, "promptVariables"> | Record<string, never> {
+  const normalized = normalizePromptVariableDefinitions(requested);
+  const effectiveCurrent = normalizePromptVariableDefinitions(current);
+  if (JSON.stringify(effectiveCurrent) === JSON.stringify(normalized)) {
+    return current === undefined ? {} : { promptVariables: current };
+  }
+  if (current === undefined && normalized.length === 0) return {};
+  return { promptVariables: normalized };
 }
 
 function normalizeNames(values: string[], label: string): string[] {
@@ -709,5 +742,8 @@ function configSignature(profile: AgentProfile): string {
     runLimits: profile.runLimits,
     automaticRecovery: effectiveAutomaticRecoveryPolicy(profile),
     modelAdvisor: effectiveModelAdvisorPolicy(profile),
+    promptVariables: normalizePromptVariableDefinitions(
+      profile.promptVariables,
+    ),
   });
 }
