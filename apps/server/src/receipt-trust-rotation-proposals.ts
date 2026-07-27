@@ -4,11 +4,13 @@ import type {
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyResult,
   ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
   DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest,
+  QueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay,
+  ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval,
   ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest,
@@ -78,6 +80,17 @@ export interface RotationProposalSubscriptionApprovalPolicyReviewResult {
     { status: "accepted" }
   >[];
 }
+
+export type RotationProposalSubscriptionApprovalPolicyBaselineGateResult =
+  | {
+      status: "accepted";
+      baseline: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline;
+      diagnostics: string[];
+    }
+  | {
+      status: "rejected";
+      diagnostics: string[];
+    };
 
 export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight(
   store: LocalStore,
@@ -285,7 +298,9 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
   }
   const uniqueDiagnostics = Array.from(new Set(diagnostics));
   const status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery["status"] =
-    envelope && preflight?.status === "accepted" && uniqueDiagnostics.length === 0
+    envelope &&
+    preflight?.status === "accepted" &&
+    uniqueDiagnostics.length === 0
       ? "valid"
       : "invalid";
   const content = {
@@ -733,15 +748,17 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
     if (gate.diagnostics) diagnostics.push(...gate.diagnostics);
   });
 
-  const acceptedGates = Array.from(acceptedBySigner.values()).sort((left, right) => {
-    const signerOrder = left.approvalEnvelope.signature.keyId.localeCompare(
-      right.approvalEnvelope.signature.keyId,
-    );
-    if (signerOrder !== 0) return signerOrder;
-    return left.approvalEnvelope.contentSha256.localeCompare(
-      right.approvalEnvelope.contentSha256,
-    );
-  });
+  const acceptedGates = Array.from(acceptedBySigner.values()).sort(
+    (left, right) => {
+      const signerOrder = left.approvalEnvelope.signature.keyId.localeCompare(
+        right.approvalEnvelope.signature.keyId,
+      );
+      if (signerOrder !== 0) return signerOrder;
+      return left.approvalEnvelope.contentSha256.localeCompare(
+        right.approvalEnvelope.contentSha256,
+      );
+    },
+  );
   const acceptedApprovalEnvelopeSha256s = acceptedGates
     .map((gate) => gate.approvalEnvelope.contentSha256)
     .sort();
@@ -849,6 +866,93 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
       contentSha256: sha256(canonicalJson(content)),
     },
   );
+}
+
+export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineGate(
+  store: LocalStore,
+  policyReview: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
+  approvalPolicyBaselineSha256: string,
+): RotationProposalSubscriptionApprovalPolicyBaselineGateResult {
+  const diagnostics: string[] = [];
+  if (!/^[a-f0-9]{64}$/.test(approvalPolicyBaselineSha256)) {
+    diagnostics.push("approval_policy_baseline_hash_invalid");
+  }
+  const baseline = store
+    .listReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselines()
+    .find(
+      (candidate) => candidate.contentSha256 === approvalPolicyBaselineSha256,
+    );
+  if (!baseline) {
+    diagnostics.push("approval_policy_baseline_missing");
+  }
+  if (policyReview.status !== "accepted") {
+    diagnostics.push("approval_policy_review_not_accepted");
+  }
+  if (baseline) {
+    if (baseline.envelope.receipt.status !== "accepted") {
+      diagnostics.push("approval_policy_baseline_review_not_accepted");
+    }
+    if (baseline.approvalPolicySha256 !== policyReview.approvalPolicySha256) {
+      diagnostics.push("approval_policy_baseline_policy_mismatch");
+    }
+    if (baseline.subscriptionSha256 !== policyReview.subscriptionSha256) {
+      diagnostics.push("approval_policy_baseline_subscription_mismatch");
+    }
+    if (
+      (baseline.proposalSha256 ?? "") !== (policyReview.proposalSha256 ?? "")
+    ) {
+      diagnostics.push("approval_policy_baseline_proposal_mismatch");
+    }
+    if (
+      baseline.acceptedApprovalEnvelopeSetSha256 !==
+      policyReview.acceptedApprovalEnvelopeSetSha256
+    ) {
+      diagnostics.push("approval_policy_baseline_approval_set_mismatch");
+    }
+    if (baseline.signerSetSha256 !== policyReview.signerSetSha256) {
+      diagnostics.push("approval_policy_baseline_signer_set_mismatch");
+    }
+    if (
+      (baseline.requiredSignerSetSha256 ?? "") !==
+      (policyReview.requiredSignerSetSha256 ?? "")
+    ) {
+      diagnostics.push("approval_policy_baseline_required_signer_set_mismatch");
+    }
+  }
+  const uniqueDiagnostics = Array.from(new Set(diagnostics));
+  if (!baseline || uniqueDiagnostics.length > 0) {
+    return { status: "rejected", diagnostics: uniqueDiagnostics };
+  }
+  return { status: "accepted", baseline, diagnostics: [] };
+}
+
+export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyQueueResult(
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription,
+  policyReview: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
+  approvalPolicyBaselineSha256: string,
+  applyAfter: string,
+): QueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult {
+  const content = {
+    kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-apply-queue" as const,
+    schemaVersion: 1 as const,
+    apiVersion: NAPIER_API_VERSION,
+    queuedAt: new Date().toISOString(),
+    applyAfter,
+    subscription,
+    subscriptionSha256: subscription.contentSha256,
+    policyReview,
+    policyReviewSha256: policyReview.contentSha256,
+    approvalPolicyBaselineSha256,
+    approvalPolicySha256: policyReview.approvalPolicySha256,
+    approvalEnvelopeSetSha256: policyReview.approvalEnvelopeSetSha256,
+    acceptedApprovalEnvelopeSetSha256:
+      policyReview.acceptedApprovalEnvelopeSetSha256,
+    signerSetSha256: policyReview.signerSetSha256,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
 }
 
 export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay(
@@ -1310,11 +1414,13 @@ export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
     "selected_source_origin_set_mismatch",
   );
   requireMatch(
-    proposal.selectedSignerSetSha256 === currentProposal.selectedSignerSetSha256,
+    proposal.selectedSignerSetSha256 ===
+      currentProposal.selectedSignerSetSha256,
     "selected_signer_set_mismatch",
   );
   requireMatch(
-    proposal.currentCheckpointSha256 === currentProposal.currentCheckpointSha256,
+    proposal.currentCheckpointSha256 ===
+      currentProposal.currentCheckpointSha256,
     "current_checkpoint_mismatch",
   );
   requireMatch(

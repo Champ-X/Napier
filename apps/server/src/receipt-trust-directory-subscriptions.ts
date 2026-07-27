@@ -30,7 +30,10 @@ import {
   type ReceiptTrustAnchorDirectoryHostedJsonSource,
 } from "./receipt-trust-directory-discovery.js";
 import {
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult,
+  createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview,
   createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery,
+  verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineGate,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyGate,
 } from "./receipt-trust-rotation-proposals.js";
 
@@ -134,6 +137,14 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
           leaseMs: this.claimLeaseMs,
         },
       );
+    const { claims: approvalPolicyApplyClaims } =
+      await this.store.claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplies(
+        this.workerId,
+        {
+          now,
+          leaseMs: this.claimLeaseMs,
+        },
+      );
     await Promise.all([
       ...directoryClaims.map((claim) => this.refreshClaim(claim)),
       ...checkpointClaims.map((claim) => this.refreshCheckpointClaim(claim)),
@@ -143,12 +154,16 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
       ...approvalApplyClaims.map((claim) =>
         this.applyRotationProposalApprovalClaim(claim),
       ),
+      ...approvalPolicyApplyClaims.map((claim) =>
+        this.applyRotationProposalApprovalPolicyClaim(claim),
+      ),
     ]);
     return (
       directoryClaims.length +
       checkpointClaims.length +
       rotationProposalClaims.length +
-      approvalApplyClaims.length
+      approvalApplyClaims.length +
+      approvalPolicyApplyClaims.length
     );
   }
 
@@ -381,6 +396,96 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
     }
   }
 
+  private async applyRotationProposalApprovalPolicyClaim(
+    claim: Awaited<
+      ReturnType<
+        LocalStore["claimDueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplies"]
+      >
+    >["claims"][number],
+  ): Promise<void> {
+    try {
+      const subscription =
+        this.store.getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
+          claim.subscription.id,
+        );
+      const policyReview =
+        createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview(
+          this.store,
+          subscription,
+          {
+            threadId: subscription.auditThreadId,
+            expectedSubscriptionRevision: subscription.revision,
+            expectedSubscriptionSha256: subscription.contentSha256,
+            approvalEnvelopes: claim.approvalEnvelopes,
+            approvalPolicy: claim.approvalPolicy,
+          },
+        );
+      if (
+        policyReview.review.status !== "accepted" ||
+        policyReview.acceptedGates.length === 0
+      ) {
+        throw new Error(
+          `approval policy review rejected: ${policyReview.review.diagnostics.join(",")}`,
+        );
+      }
+      const baselineGate =
+        verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaselineGate(
+          this.store,
+          policyReview.review,
+          claim.approvalPolicyBaselineSha256,
+        );
+      if (baselineGate.status === "rejected") {
+        throw new Error(
+          `approval policy baseline rejected: ${baselineGate.diagnostics.join(",")}`,
+        );
+      }
+      const approvalGate = policyReview.acceptedGates[0]!;
+      const result =
+        await this.store.applyReceiptTrustAnchorDirectoryQuorumActivationSelection(
+          subscription.auditThreadId,
+          approvalGate.proposal.activationDecisionRecordId,
+          approvalGate.proposal.expectedCurrentSelectionSha256,
+        );
+      const applyResult =
+        createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult(
+          policyReview.review,
+          result,
+        );
+      await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyClaim(
+        subscription.id,
+        claim.token,
+        { resultSha256: applyResult.contentSha256 },
+      );
+      await this.appendRotationProposalApprovalPolicyApplyEvent(
+        result,
+        applyResult.contentSha256,
+        policyReview.review.contentSha256,
+        claim.approvalPolicyBaselineSha256,
+        subscription,
+      );
+    } catch (error) {
+      const failureSha256 = hashRefreshFailure(error);
+      await this.store.settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyClaim(
+        claim.subscription.id,
+        claim.token,
+        { failureSha256 },
+      );
+      await this.appendRotationProposalApprovalPolicyApplyFailureEvent(
+        claim.subscription,
+        claim.approvalPolicyBaselineSha256,
+        sha256(
+          canonicalJson(
+            claim.approvalEnvelopes
+              .map((envelope) => envelope.contentSha256)
+              .sort(),
+          ),
+        ),
+        sha256(canonicalJson(claim.approvalPolicy)),
+        failureSha256,
+      );
+    }
+  }
+
   private async appendRefreshEvent(
     result: ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ): Promise<void> {
@@ -434,8 +539,7 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
         subscription.lastGoodDiscovery?.envelopeSha256 ?? "",
       activeCheckpointSha256:
         subscription.lastGoodDiscovery?.checkpointSha256 ?? "",
-      activeSelectionCount:
-        subscription.lastGoodDiscovery?.selectionCount ?? 0,
+      activeSelectionCount: subscription.lastGoodDiscovery?.selectionCount ?? 0,
       activeSelectionChainTailSha256:
         subscription.lastGoodDiscovery?.selectionChainTailSha256 ?? "",
       ...(result.discovery
@@ -554,6 +658,71 @@ export class ReceiptTrustAnchorDirectorySubscriptionService {
       },
     });
   }
+
+  private async appendRotationProposalApprovalPolicyApplyEvent(
+    result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult,
+    applyResultSha256: string,
+    policyReviewSha256: string,
+    approvalPolicyBaselineSha256: string,
+    subscription: ReturnType<
+      LocalStore["getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription"]
+    >,
+  ): Promise<void> {
+    await this.store.appendEvent({
+      threadId: subscription.auditThreadId,
+      runId: createId("runctl"),
+      type: "receipt.trust_rotation_proposal_approval_policy_apply.applied",
+      category: "evaluation",
+      visibility: "user",
+      payload: {
+        subscriptionId: subscription.id,
+        subscriptionRevision: subscription.revision,
+        subscriptionSha256: subscription.contentSha256,
+        sourceUrlSha256: subscription.sourceUrlSha256,
+        sourceOriginSha256: subscription.sourceOriginSha256,
+        policyReviewSha256,
+        approvalPolicyBaselineSha256,
+        resultSha256: result.contentSha256,
+        applyResultSha256,
+        applied: result.applied,
+        selectionSha256: result.selection.contentSha256,
+        selectionStateSha256: result.selectionState.contentSha256,
+        activationDecisionRecordId: result.selection.activationDecisionRecordId,
+        ...(result.previousSelectionSha256
+          ? { previousSelectionSha256: result.previousSelectionSha256 }
+          : {}),
+      },
+    });
+  }
+
+  private async appendRotationProposalApprovalPolicyApplyFailureEvent(
+    subscription: ReturnType<
+      LocalStore["getReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription"]
+    >,
+    approvalPolicyBaselineSha256: string,
+    approvalEnvelopeSetSha256: string,
+    approvalPolicySha256: string,
+    failureSha256: string,
+  ): Promise<void> {
+    await this.store.appendEvent({
+      threadId: subscription.auditThreadId,
+      runId: createId("runctl"),
+      type: "receipt.trust_rotation_proposal_approval_policy_apply.failed",
+      category: "evaluation",
+      visibility: "user",
+      payload: {
+        subscriptionId: subscription.id,
+        subscriptionRevision: subscription.revision,
+        subscriptionSha256: subscription.contentSha256,
+        sourceUrlSha256: subscription.sourceUrlSha256,
+        sourceOriginSha256: subscription.sourceOriginSha256,
+        approvalPolicyBaselineSha256,
+        approvalEnvelopeSetSha256,
+        approvalPolicySha256,
+        failureSha256,
+      },
+    });
+  }
 }
 
 export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(
@@ -637,7 +806,8 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
   }
   if (
     policy.requiredSignerKeyIds.length > 0 &&
-    (!envelope || !policy.requiredSignerKeyIds.includes(envelope.signature.keyId))
+    (!envelope ||
+      !policy.requiredSignerKeyIds.includes(envelope.signature.keyId))
   ) {
     diagnostics.push("required_signer_missing");
   }
@@ -684,7 +854,8 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
     schemaVersion: 1 as const,
     apiVersion: "2026-07-25",
     generatedAt,
-    status: diagnostics.length === 0 ? ("valid" as const) : ("invalid" as const),
+    status:
+      diagnostics.length === 0 ? ("valid" as const) : ("invalid" as const),
     diagnostics,
     sourceUrlSha256: source.sourceUrlSha256,
     sourceOriginSha256: source.sourceOriginSha256,

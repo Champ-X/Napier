@@ -674,6 +674,16 @@ Verification is no-store and can use either local trust anchors or an uploaded
 trust directory. Import is CAS gated by the current local policy-baseline hash;
 trusted imports keep the archived signed review envelope while assigning a new
 local baseline ID and supersession link.
+Policy-baseline-gated unattended scheduling uses those signed baselines as a
+second approval boundary. The queue endpoint reruns policy review, verifies the
+requested baseline hash against the accepted review's policy, subscription,
+proposal, accepted approval-set, signer-set, and required-signer hashes, then
+stores the approval envelopes, policy, baseline hash, and `applyAfter` as
+local-only pending subscription state. That pending state is excluded from
+public subscription projections and content hashes. The leased worker claims due
+policy queues, reruns policy review and the baseline gate, performs the
+existing CAS apply, and settles an apply-result hash or failure hash through
+hash-only Ledger events.
 Post-apply replay receipts close the unattended audit loop without mutating
 state again. A replay request validates the same approval envelope and
 subscription pins, uses the approval-bound previous selection as the verifier
@@ -2642,16 +2652,12 @@ recommended outer boundary for production third-party code.
 - generated OpenAPI/JSON Schema artifacts and compatibility fixtures for
   external management-plane clients.
 
-### Layer 2: Long-horizon work
-
-- policy-baseline-gated unattended rotation scheduling.
-
-### Layer 3: Extension fabric
+### Layer 2: Extension fabric
 
 - a Windows sandbox adapter with Job Object/AppContainer enforcement;
 - Linux Secret Service and Windows Credential Manager write adapters.
 
-### Layer 4: Operations and evaluation
+### Layer 3: Operations and evaluation
 
 - resumable distributed run workers and cross-host delivery claims;
 - additional authenticated SaaS channel adapters beyond GitHub/Slack/Linear and

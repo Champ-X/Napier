@@ -4394,9 +4394,7 @@ export interface DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionTra
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerificationStatus =
-  | "valid"
-  | "divergent"
-  | "invalid";
+  "valid" | "divergent" | "invalid";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointVerification {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-verification";
@@ -4420,8 +4418,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscoveryStatus =
-  | "valid"
-  | "invalid";
+  "valid" | "invalid";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-discovery";
@@ -4454,19 +4451,13 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionStatus =
-  | "active"
-  | "paused";
+  "active" | "paused";
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionRefreshStatus =
-  | "accepted"
-  | "unchanged"
-  | "rollback_rejected"
-  | "rejected"
-  | "failed";
+  "accepted" | "unchanged" | "rollback_rejected" | "rejected" | "failed";
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyStatus =
-  | "accepted"
-  | "unchanged";
+  "accepted" | "unchanged";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscriptionTransparencyEntry {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-transparency-checkpoint-subscription-transparency-entry";
@@ -4557,17 +4548,10 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumStatus =
-  | "agreed"
-  | "insufficient_sources"
-  | "split"
-  | "policy_failed"
-  | "stale";
+  "agreed" | "insufficient_sources" | "split" | "policy_failed" | "stale";
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySourceStatus =
-  | "eligible"
-  | "paused"
-  | "missing_last_good"
-  | "stale";
+  "eligible" | "paused" | "missing_last_good" | "stale";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistrySource {
   subscriptionId: string;
@@ -4739,11 +4723,12 @@ export interface ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotat
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReviewStatus =
-  | "eligible"
-  | "already_active"
-  | "blocked"
-  | "stale_selection"
-  | "missing_decision";
+
+    | "eligible"
+    | "already_active"
+    | "blocked"
+    | "stale_selection"
+    | "missing_decision";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationReview {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-review";
@@ -4770,12 +4755,13 @@ export interface ProposeReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalStatus =
-  | "proposed"
-  | "blocked"
-  | "stale_selection"
-  | "missing_decision"
-  | "already_active"
-  | "missing_checkpoint_registry_baseline";
+
+    | "proposed"
+    | "blocked"
+    | "stale_selection"
+    | "missing_decision"
+    | "already_active"
+    | "missing_checkpoint_registry_baseline";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposal {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal";
@@ -4816,9 +4802,7 @@ export interface SignReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
 export interface VerifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalRequest extends ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRequest {}
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflightStatus =
-  | "accepted"
-  | "rejected"
-  | "not_required";
+  "accepted" | "rejected" | "not_required";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalPreflight {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-preflight";
@@ -4859,8 +4843,7 @@ export interface DiscoverReceiptTrustAnchorDirectoryQuorumActivationSelectionRot
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscoveryStatus =
-  | "valid"
-  | "invalid";
+  "valid" | "invalid";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalDiscovery {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-discovery";
@@ -4891,19 +4874,13 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionStatus =
-  | "active"
-  | "paused";
+  "active" | "paused";
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionRefreshStatus =
-  | "accepted"
-  | "unchanged"
-  | "rollback_rejected"
-  | "rejected"
-  | "failed";
+  "accepted" | "unchanged" | "rollback_rejected" | "rejected" | "failed";
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyStatus =
-  | "accepted"
-  | "unchanged";
+  "accepted" | "unchanged";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionTransparencyEntry {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-transparency-entry";
@@ -5030,8 +5007,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReviewStatus =
-  | "accepted"
-  | "rejected";
+  "accepted" | "rejected";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-review";
@@ -5090,6 +5066,29 @@ export interface ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
   policyReviewSha256: string;
   result: ApplyReceiptTrustAnchorDirectoryQuorumActivationSelectionResult;
   resultSha256: string;
+  contentSha256: string;
+}
+
+export interface QueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyRequest extends ReviewReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyRequest {
+  approvalPolicyBaselineSha256: string;
+  applyAfter?: string;
+}
+
+export interface QueueReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyApplyResult {
+  kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-policy-apply-queue";
+  schemaVersion: 1;
+  apiVersion: string;
+  queuedAt: string;
+  applyAfter: string;
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+  subscriptionSha256: string;
+  policyReview: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyReview;
+  policyReviewSha256: string;
+  approvalPolicyBaselineSha256: string;
+  approvalPolicySha256: string;
+  approvalEnvelopeSetSha256: string;
+  acceptedApprovalEnvelopeSetSha256: string;
+  signerSetSha256: string;
   contentSha256: string;
 }
 
@@ -5160,9 +5159,7 @@ export interface ImportReceiptTrustAnchorDirectoryQuorumActivationSelectionRotat
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplayStatus =
-  | "aligned"
-  | "divergent"
-  | "invalid";
+  "aligned" | "divergent" | "invalid";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalApplyReplay {
   kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription-approval-apply-replay";

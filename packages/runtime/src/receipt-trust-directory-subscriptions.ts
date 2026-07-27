@@ -95,8 +95,7 @@ import {
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const SUBSCRIPTION_ID_PATTERN = /^trustdir_[a-f0-9]{20}$/;
 const CHECKPOINT_SUBSCRIPTION_ID_PATTERN = /^trustcpsub_[a-f0-9]{20}$/;
-const ROTATION_PROPOSAL_SUBSCRIPTION_ID_PATTERN =
-  /^trustpropsub_[a-f0-9]{20}$/;
+const ROTATION_PROPOSAL_SUBSCRIPTION_ID_PATTERN = /^trustpropsub_[a-f0-9]{20}$/;
 const RESOURCE_ID_PATTERN = /^[a-z][a-z0-9_]{2,80}$/;
 
 export const MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS = 20;
@@ -144,10 +143,7 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparenc
 }
 
 export type ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyStatus =
-  | "pending"
-  | "applied"
-  | "rejected"
-  | "failed";
+  "pending" | "applied" | "rejected" | "failed";
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyState {
   status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyStatus;
@@ -163,11 +159,28 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
   failureSha256?: string;
 }
 
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyState {
+  status: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyStatus;
+  queuedAt: string;
+  applyAfter: string;
+  approvalEnvelopes: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>[];
+  approvalEnvelopeSha256s: string[];
+  approvalPolicy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy;
+  approvalPolicySha256: string;
+  approvalPolicyBaselineSha256: string;
+  claim?: ReceiptTrustAnchorDirectorySubscriptionClaimState;
+  claimTokenSha256?: string;
+  settledAt?: string;
+  resultSha256?: string;
+  failureSha256?: string;
+}
+
 export interface PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription extends ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription {
   sourceUrl: string;
   claim?: ReceiptTrustAnchorDirectorySubscriptionClaimState;
   claimTokenSha256?: string;
   pendingApprovalApply?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyState;
+  pendingApprovalPolicyApply?: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyState;
 }
 
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionClaim {
@@ -179,6 +192,14 @@ export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationPro
 export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalApplyClaim {
   subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
   approvalEnvelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+  token: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyClaim {
+  subscription: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription;
+  approvalEnvelopes: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>[];
+  approvalPolicy: ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy;
+  approvalPolicyBaselineSha256: string;
   token: string;
 }
 
@@ -634,14 +655,19 @@ export function settleReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
       validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointDiscovery(
         outcome.discovery,
       );
-    assertCheckpointDiscoveryBinding(discovery, sourceUrl, current.policySha256);
+    assertCheckpointDiscoveryBinding(
+      discovery,
+      sourceUrl,
+      current.policySha256,
+    );
     if (
       discovery.status === "valid" &&
       discovery.envelope &&
       discovery.checkpointSha256
     ) {
       const checkpointSha256 = discovery.checkpointSha256;
-      const currentCheckpointSha256 = current.lastGoodDiscovery?.checkpointSha256;
+      const currentCheckpointSha256 =
+        current.lastGoodDiscovery?.checkpointSha256;
       const currentSelectionCount = current.lastGoodDiscovery?.selectionCount;
       const isKnownRollback =
         checkpointSha256 !== currentCheckpointSha256 &&
@@ -778,11 +804,13 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
     createdAt,
     "rotation proposal subscription creation time",
   );
-  const transparencyEntry = createRotationProposalSubscriptionTransparencyEntry({
-    discovery,
-    status: "accepted",
-    observedAt: now,
-  });
+  const transparencyEntry = createRotationProposalSubscriptionTransparencyEntry(
+    {
+      discovery,
+      status: "accepted",
+      observedAt: now,
+    },
+  );
   const content = {
     kind: "napier.receipt-trust-anchor-directory-quorum-activation-selection-rotation-proposal-subscription" as const,
     schemaVersion: 1 as const,
@@ -906,18 +934,19 @@ export function settleReceiptTrustAnchorDirectoryQuorumActivationSelectionRotati
           envelopeSha256 === currentEnvelopeSha256 ? "unchanged" : "accepted";
         status = transparencyStatus;
         lastGoodDiscovery = discovery;
-        transparencyHistory = appendRotationProposalSubscriptionTransparencyEntry(
-          current.transparencyHistory,
-          createRotationProposalSubscriptionTransparencyEntry({
-            discovery,
-            status: transparencyStatus,
-            observedAt: refreshTime,
-            previousSequence: current.transparencyEntryCount,
-            ...(current.transparencyTailSha256
-              ? { previousEntrySha256: current.transparencyTailSha256 }
-              : {}),
-          }),
-        );
+        transparencyHistory =
+          appendRotationProposalSubscriptionTransparencyEntry(
+            current.transparencyHistory,
+            createRotationProposalSubscriptionTransparencyEntry({
+              discovery,
+              status: transparencyStatus,
+              observedAt: refreshTime,
+              previousSequence: current.transparencyEntryCount,
+              ...(current.transparencyTailSha256
+                ? { previousEntrySha256: current.transparencyTailSha256 }
+                : {}),
+            }),
+          );
         transparencyEntryCount =
           transparencyHistory.at(-1)?.sequence ??
           current.transparencyEntryCount;
@@ -1028,7 +1057,9 @@ export function normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionTra
       (!Number.isSafeInteger(input.minimumSelectionCount) ||
         input.minimumSelectionCount < 0 ||
         input.minimumSelectionCount > 1_000)) ||
-    requiredSourceOriginSha256s.some((origin) => !SHA256_PATTERN.test(origin)) ||
+    requiredSourceOriginSha256s.some(
+      (origin) => !SHA256_PATTERN.test(origin),
+    ) ||
     requiredSignerKeyIds.some((keyId) => !SHA256_PATTERN.test(keyId))
   ) {
     throw new Error(
@@ -1077,7 +1108,9 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
     );
   const generatedAtMs = Date.parse(generatedAt);
   const sources = subscriptions
-    .map(validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription)
+    .map(
+      validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointSubscription,
+    )
     .map((subscription) =>
       createCheckpointRegistrySource(subscription, policy, generatedAtMs),
     )
@@ -1125,15 +1158,15 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
       source.signerKeyId ? [source.signerKeyId] : [],
     ),
   );
-  const requiredSourceOriginMissing =
-    policy.requiredSourceOriginSha256s.some(
-      (origin) => !winningSourceOrigins.has(origin),
-    );
+  const requiredSourceOriginMissing = policy.requiredSourceOriginSha256s.some(
+    (origin) => !winningSourceOrigins.has(origin),
+  );
   const requiredSignerMissing = policy.requiredSignerKeyIds.some(
     (keyId) => !winningSignerKeyIds.has(keyId),
   );
   const diagnostics: string[] = [];
-  if (sources.length < policy.minimumSources) diagnostics.push("insufficient_sources");
+  if (sources.length < policy.minimumSources)
+    diagnostics.push("insufficient_sources");
   if (eligibleSources.length < policy.minimumSources) {
     diagnostics.push("insufficient_eligible_sources");
   }
@@ -1178,8 +1211,8 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
 
   const agreementSatisfied = Boolean(
     winner &&
-      winner.sourceCount >= policy.minimumAgreementCount &&
-      winner.distinctSourceOriginCount >= policy.minimumDistinctSourceOrigins,
+    winner.sourceCount >= policy.minimumAgreementCount &&
+    winner.distinctSourceOriginCount >= policy.minimumDistinctSourceOrigins,
   );
   const policyFailed = diagnostics.some((diagnostic) =>
     [
@@ -1225,7 +1258,10 @@ export function createReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
           selectedCheckpointSha256: winner.checkpointSha256,
           selectedSelectionSetSha256: winner.selectionSetSha256,
           ...(winner.selectionChainTailSha256
-            ? { selectedSelectionChainTailSha256: winner.selectionChainTailSha256 }
+            ? {
+                selectedSelectionChainTailSha256:
+                  winner.selectionChainTailSha256,
+              }
             : {}),
         }
       : {}),
@@ -1242,9 +1278,7 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
   value: unknown,
 ): ReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorum {
   if (!isRecord(value)) {
-    throw new Error(
-      "Receipt trust checkpoint registry quorum is invalid",
-    );
+    throw new Error("Receipt trust checkpoint registry quorum is invalid");
   }
   assertAllowedKeys(value, [
     "kind",
@@ -1329,9 +1363,7 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
       selectedCandidate?.selectionChainTailSha256 ||
     (quorum.status === "agreed" && !selectedCandidate)
   ) {
-    throw new Error(
-      "Receipt trust checkpoint registry quorum is invalid",
-    );
+    throw new Error("Receipt trust checkpoint registry quorum is invalid");
   }
   const content = {
     kind: quorum.kind,
@@ -1366,9 +1398,7 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
     candidates,
   };
   if (sha256(canonicalJson(content)) !== quorum.contentSha256) {
-    throw new Error(
-      "Receipt trust checkpoint registry quorum hash mismatch",
-    );
+    throw new Error("Receipt trust checkpoint registry quorum hash mismatch");
   }
   return structuredClone({
     ...quorum,
@@ -1489,8 +1519,7 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
       "receipt_trust_anchor_directory_quorum_activation_selection_checkpoint_registry_quorum" ||
     quorum.status !== "agreed" ||
     quorum.selectedCheckpointSha256 !== baseline.selectedCheckpointSha256 ||
-    quorum.selectedSelectionSetSha256 !==
-      baseline.selectedSelectionSetSha256 ||
+    quorum.selectedSelectionSetSha256 !== baseline.selectedSelectionSetSha256 ||
     quorum.selectedSelectionChainTailSha256 !==
       baseline.selectedSelectionChainTailSha256 ||
     candidate.subscriptionSetSha256 !==
@@ -1726,8 +1755,7 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
             proposal.activationDecisionRecordSha256,
         }
       : {}),
-    expectedCurrentSelectionSha256:
-      proposal.expectedCurrentSelectionSha256,
+    expectedCurrentSelectionSha256: proposal.expectedCurrentSelectionSha256,
     currentSelectionSha256: proposal.currentSelectionSha256,
     rotationReview,
     rotationReviewSha256: proposal.rotationReviewSha256,
@@ -1756,7 +1784,10 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
         }
       : {}),
     ...(proposal.checkpointRegistryQuorumSha256
-      ? { checkpointRegistryQuorumSha256: proposal.checkpointRegistryQuorumSha256 }
+      ? {
+          checkpointRegistryQuorumSha256:
+            proposal.checkpointRegistryQuorumSha256,
+        }
       : {}),
     ...(proposal.selectedCheckpointSha256
       ? { selectedCheckpointSha256: proposal.selectedCheckpointSha256 }
@@ -1771,10 +1802,14 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
         }
       : {}),
     ...(proposal.selectedSubscriptionSetSha256
-      ? { selectedSubscriptionSetSha256: proposal.selectedSubscriptionSetSha256 }
+      ? {
+          selectedSubscriptionSetSha256: proposal.selectedSubscriptionSetSha256,
+        }
       : {}),
     ...(proposal.selectedSourceOriginSetSha256
-      ? { selectedSourceOriginSetSha256: proposal.selectedSourceOriginSetSha256 }
+      ? {
+          selectedSourceOriginSetSha256: proposal.selectedSourceOriginSetSha256,
+        }
       : {}),
     ...(proposal.selectedSignerSetSha256
       ? { selectedSignerSetSha256: proposal.selectedSignerSetSha256 }
@@ -2025,7 +2060,8 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
       sha256(canonicalJson(approvalEnvelopeSha256s)) ||
     review.acceptedApprovalEnvelopeSetSha256 !==
       sha256(canonicalJson(acceptedApprovalEnvelopeSha256s)) ||
-    review.signerSetSha256 !== sha256(canonicalJson(acceptedApprovalSignerKeyIds)) ||
+    review.signerSetSha256 !==
+      sha256(canonicalJson(acceptedApprovalSignerKeyIds)) ||
     (requiredSignerKeyIds.length > 0
       ? review.requiredSignerSetSha256 !==
         sha256(canonicalJson(requiredSignerKeyIds))
@@ -2350,8 +2386,7 @@ function createRotationProposalApprovalPolicyBaselineVerification(input: {
           signerSetSha256: input.baseline.signerSetSha256,
           ...(input.baseline.requiredSignerSetSha256
             ? {
-                requiredSignerSetSha256:
-                  input.baseline.requiredSignerSetSha256,
+                requiredSignerSetSha256: input.baseline.requiredSignerSetSha256,
               }
             : {}),
         }
@@ -2551,13 +2586,10 @@ function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationRev
     activationDecisionRecordId: review.activationDecisionRecordId,
     ...(review.activationDecisionRecordSha256
       ? {
-          activationDecisionRecordSha256:
-            review.activationDecisionRecordSha256,
+          activationDecisionRecordSha256: review.activationDecisionRecordSha256,
         }
       : {}),
-    ...(review.baselineSha256
-      ? { baselineSha256: review.baselineSha256 }
-      : {}),
+    ...(review.baselineSha256 ? { baselineSha256: review.baselineSha256 } : {}),
     ...(review.sourceAlignmentSha256
       ? { sourceAlignmentSha256: review.sourceAlignmentSha256 }
       : {}),
@@ -4210,9 +4242,7 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
   );
   const activationDecisionSetSha256 = sha256(
     canonicalJson(
-      entries
-        .map((entry) => entry.activationDecisionReceiptSha256)
-        .sort(),
+      entries.map((entry) => entry.activationDecisionReceiptSha256).sort(),
     ),
   );
   const baselineSetSha256 = sha256(
@@ -4302,9 +4332,7 @@ export function verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransp
   if (declared.selectionSetSha256 !== current.selectionSetSha256) {
     diagnostics.push("selection_set_mismatch");
   }
-  if (
-    declared.selectionChainTailSha256 !== current.selectionChainTailSha256
-  ) {
+  if (declared.selectionChainTailSha256 !== current.selectionChainTailSha256) {
     diagnostics.push("selection_chain_tail_mismatch");
   }
   if (declared.selectionCount !== current.selectionCount) {
@@ -4355,8 +4383,7 @@ function createActivationSelectionTransparencyEntry(input: {
     selectionSha256: selection.contentSha256,
     activationDecisionRecordId: selection.activationDecisionRecordId,
     activationDecisionRecordSha256: selection.activationDecisionRecordSha256,
-    activationDecisionReceiptSha256:
-      selection.activationDecisionReceiptSha256,
+    activationDecisionReceiptSha256: selection.activationDecisionReceiptSha256,
     activationDecisionEnvelopeSha256:
       selection.activationDecisionEnvelopeSha256,
     baselineId: selection.baselineId,
@@ -4578,8 +4605,7 @@ function createActivationSelectionTransparencyCheckpointVerification(input: {
               }
             : {}),
           declaredSelectionCount: input.declared.selectionCount,
-          declaredCurrentSelectionSha256:
-            input.declared.currentSelectionSha256,
+          declaredCurrentSelectionSha256: input.declared.currentSelectionSha256,
         }
       : {}),
     currentContentSha256: input.current.contentSha256,
@@ -5023,9 +5049,6 @@ export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSele
   }
   const claim = validateOptionalClaim(value["claim"]);
   const claimTokenSha256 = value["claimTokenSha256"];
-  const pendingApprovalApply = validateOptionalRotationProposalApprovalApply(
-    value["pendingApprovalApply"],
-  );
   if (
     (claim === undefined) !== (claimTokenSha256 === undefined) ||
     (claimTokenSha256 !== undefined &&
@@ -5041,7 +5064,6 @@ export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSele
     sourceUrl: sourceUrl.href,
     ...(claim ? { claim } : {}),
     ...(typeof claimTokenSha256 === "string" ? { claimTokenSha256 } : {}),
-    ...(pendingApprovalApply ? { pendingApprovalApply } : {}),
   };
 }
 
@@ -5122,7 +5144,8 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionTran
       !lastGoodDiscovery.envelope ||
       !lastGoodDiscovery.checkpointSha256 ||
       lastGoodDiscovery.sourceUrlSha256 !== subscription.sourceUrlSha256 ||
-      lastGoodDiscovery.sourceOriginSha256 !== subscription.sourceOriginSha256 ||
+      lastGoodDiscovery.sourceOriginSha256 !==
+        subscription.sourceOriginSha256 ||
       lastGoodDiscovery.policySha256 !== subscription.policySha256)
   ) {
     throw new Error(
@@ -5201,6 +5224,13 @@ export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSele
   }
   const claim = validateOptionalClaim(value["claim"]);
   const claimTokenSha256 = value["claimTokenSha256"];
+  const pendingApprovalApply = validateOptionalRotationProposalApprovalApply(
+    value["pendingApprovalApply"],
+  );
+  const pendingApprovalPolicyApply =
+    validateOptionalRotationProposalApprovalPolicyApply(
+      value["pendingApprovalPolicyApply"],
+    );
   if (
     (claim === undefined) !== (claimTokenSha256 === undefined) ||
     (claimTokenSha256 !== undefined &&
@@ -5216,6 +5246,8 @@ export function validatePersistedReceiptTrustAnchorDirectoryQuorumActivationSele
     sourceUrl: sourceUrl.href,
     ...(claim ? { claim } : {}),
     ...(typeof claimTokenSha256 === "string" ? { claimTokenSha256 } : {}),
+    ...(pendingApprovalApply ? { pendingApprovalApply } : {}),
+    ...(pendingApprovalPolicyApply ? { pendingApprovalPolicyApply } : {}),
   };
 }
 
@@ -5298,7 +5330,8 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
       !lastGoodDiscovery.proposalSha256 ||
       !lastGoodDiscovery.preflight ||
       lastGoodDiscovery.sourceUrlSha256 !== subscription.sourceUrlSha256 ||
-      lastGoodDiscovery.sourceOriginSha256 !== subscription.sourceOriginSha256 ||
+      lastGoodDiscovery.sourceOriginSha256 !==
+        subscription.sourceOriginSha256 ||
       lastGoodDiscovery.policySha256 !== subscription.policySha256)
   ) {
     throw new Error(
@@ -5350,6 +5383,7 @@ export function stripReceiptTrustAnchorDirectoryQuorumActivationSelectionRotatio
     claim: _claim,
     claimTokenSha256: _claimTokenSha256,
     pendingApprovalApply: _pendingApprovalApply,
+    pendingApprovalPolicyApply: _pendingApprovalPolicyApply,
     ...subscription
   } = input;
   return validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription(
@@ -5429,7 +5463,8 @@ export function validateReceiptTrustAnchorDirectoryQuorumActivationSelectionRota
         "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal" ||
       discovery.envelopeSha256 !== envelope.contentSha256 ||
       discovery.proposalSha256 !== envelope.receipt.contentSha256 ||
-      discovery.proposalReviewSha256 !== envelope.receipt.rotationReviewSha256 ||
+      discovery.proposalReviewSha256 !==
+        envelope.receipt.rotationReviewSha256 ||
       discovery.checkpointRegistryQuorumBaselineSha256 !==
         envelope.receipt.checkpointRegistryQuorumBaselineSha256 ||
       discovery.activationDecisionRecordId !==
@@ -5944,11 +5979,18 @@ function createCheckpointRegistryCandidate(
     ...new Set(sorted.map((source) => source.sourceOriginSha256)),
   ].sort();
   const signerKeyIds = [
-    ...new Set(sorted.flatMap((source) => (source.signerKeyId ? [source.signerKeyId] : []))),
+    ...new Set(
+      sorted.flatMap((source) =>
+        source.signerKeyId ? [source.signerKeyId] : [],
+      ),
+    ),
   ].sort();
-  const selectionSetSha256 = sorted[0]?.selectionSetSha256 ?? sha256(canonicalJson([]));
+  const selectionSetSha256 =
+    sorted[0]?.selectionSetSha256 ?? sha256(canonicalJson([]));
   const selectionChainTailSha256 = sorted[0]?.selectionChainTailSha256;
-  const selectionCount = Math.max(...sorted.map((source) => source.selectionCount ?? 0));
+  const selectionCount = Math.max(
+    ...sorted.map((source) => source.selectionCount ?? 0),
+  );
   const content = {
     checkpointSha256,
     sourceCount: sorted.length,
@@ -6024,9 +6066,7 @@ function validateCheckpointRegistrySources(
     }
     const { contentSha256: _contentSha256, ...content } = record;
     if (sha256(canonicalJson(content)) !== record.contentSha256) {
-      throw new Error(
-        "Receipt trust checkpoint registry source hash mismatch",
-      );
+      throw new Error("Receipt trust checkpoint registry source hash mismatch");
     }
     return structuredClone(record);
   });
@@ -6070,9 +6110,7 @@ function validateCheckpointRegistryCandidates(
       !optionalSha256(record.selectionChainTailSha256) ||
       !SHA256_PATTERN.test(record.contentSha256)
     ) {
-      throw new Error(
-        "Receipt trust checkpoint registry candidate is invalid",
-      );
+      throw new Error("Receipt trust checkpoint registry candidate is invalid");
     }
     const { contentSha256: _contentSha256, ...content } = record;
     if (sha256(canonicalJson(content)) !== record.contentSha256) {
@@ -6592,10 +6630,8 @@ function createCheckpointRegistryQuorumBaselineVerification(input: {
           receiptArtifactSha256:
             input.baseline.envelope.signature.receiptArtifactSha256,
           keyId: input.baseline.envelope.signature.keyId,
-          selectedCheckpointSha256:
-            input.baseline.selectedCheckpointSha256,
-          selectedSelectionSetSha256:
-            input.baseline.selectedSelectionSetSha256,
+          selectedCheckpointSha256: input.baseline.selectedCheckpointSha256,
+          selectedSelectionSetSha256: input.baseline.selectedSelectionSetSha256,
           ...(input.baseline.selectedSelectionChainTailSha256
             ? {
                 selectedSelectionChainTailSha256:
@@ -7806,7 +7842,9 @@ function validateRotationProposalSubscriptionTransparencyHistory(
       "Receipt trust anchor directory quorum activation selection rotation proposal subscription transparency history is invalid",
     );
   }
-  const entries = value.map(validateRotationProposalSubscriptionTransparencyEntry);
+  const entries = value.map(
+    validateRotationProposalSubscriptionTransparencyEntry,
+  );
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index]!;
     const previous = entries[index - 1];
@@ -7921,6 +7959,7 @@ function rotationProposalSubscriptionContent(
     claim: _claim,
     claimTokenSha256: _claimTokenSha256,
     pendingApprovalApply: _pendingApprovalApply,
+    pendingApprovalPolicyApply: _pendingApprovalPolicyApply,
     ...content
   } = input as ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription &
     Partial<PersistedReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscription>;
@@ -8043,6 +8082,113 @@ function validateOptionalRotationProposalApprovalApply(
   };
 }
 
+function validateOptionalRotationProposalApprovalPolicyApply(
+  value: unknown,
+):
+  | ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalApprovalPolicyApplyState
+  | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply state is invalid",
+    );
+  }
+  const status = value["status"];
+  const approvalEnvelopesInput = value["approvalEnvelopes"];
+  if (!Array.isArray(approvalEnvelopesInput)) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply state is invalid",
+    );
+  }
+  const approvalEnvelopes = approvalEnvelopesInput.map((envelopeInput) => {
+    const envelope = validateTrustedReceiptEnvelope(
+      envelopeInput,
+    ) as TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApproval>;
+    if (
+      envelope.receiptKind !==
+      "receipt_trust_anchor_directory_quorum_activation_selection_rotation_proposal_subscription_approval"
+    ) {
+      throw new Error(
+        "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply state is invalid",
+      );
+    }
+    return envelope;
+  });
+  const declaredApprovalEnvelopeSha256s = value["approvalEnvelopeSha256s"];
+  const approvalEnvelopeSha256s = approvalEnvelopes
+    .map((envelope) => envelope.contentSha256)
+    .sort();
+  const declaredApprovalEnvelopeSha256Set = Array.isArray(
+    declaredApprovalEnvelopeSha256s,
+  )
+    ? [...declaredApprovalEnvelopeSha256s].sort()
+    : [];
+  const approvalPolicy =
+    normalizeReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicy(
+      value["approvalPolicy"],
+    );
+  const approvalPolicySha256 = value["approvalPolicySha256"];
+  const approvalPolicyBaselineSha256 = value["approvalPolicyBaselineSha256"];
+  const claim = validateOptionalClaim(value["claim"]);
+  const claimTokenSha256 = value["claimTokenSha256"];
+  if (
+    (status !== "pending" &&
+      status !== "applied" &&
+      status !== "rejected" &&
+      status !== "failed") ||
+    !validTimestamp(value["queuedAt"]) ||
+    !validTimestamp(value["applyAfter"]) ||
+    approvalEnvelopes.length === 0 ||
+    approvalEnvelopes.length > 20 ||
+    !Array.isArray(declaredApprovalEnvelopeSha256s) ||
+    declaredApprovalEnvelopeSha256s.length !== approvalEnvelopes.length ||
+    declaredApprovalEnvelopeSha256s.some(
+      (item) => typeof item !== "string" || !SHA256_PATTERN.test(item),
+    ) ||
+    declaredApprovalEnvelopeSha256s.length !==
+      new Set(declaredApprovalEnvelopeSha256s).size ||
+    declaredApprovalEnvelopeSha256Set.some(
+      (approvalEnvelopeSha256, index) =>
+        approvalEnvelopeSha256 !== approvalEnvelopeSha256s[index],
+    ) ||
+    approvalPolicySha256 !== sha256(canonicalJson(approvalPolicy)) ||
+    typeof approvalPolicyBaselineSha256 !== "string" ||
+    !SHA256_PATTERN.test(approvalPolicyBaselineSha256) ||
+    (claim === undefined) !== (claimTokenSha256 === undefined) ||
+    (claimTokenSha256 !== undefined &&
+      (typeof claimTokenSha256 !== "string" ||
+        !SHA256_PATTERN.test(claimTokenSha256))) ||
+    !optionalTimestamp(value["settledAt"]) ||
+    !optionalSha256(value["resultSha256"]) ||
+    !optionalSha256(value["failureSha256"])
+  ) {
+    throw new Error(
+      "Receipt trust anchor directory quorum activation selection rotation proposal approval policy apply state is invalid",
+    );
+  }
+  return {
+    status,
+    queuedAt: value["queuedAt"],
+    applyAfter: value["applyAfter"],
+    approvalEnvelopes,
+    approvalEnvelopeSha256s,
+    approvalPolicy,
+    approvalPolicySha256,
+    approvalPolicyBaselineSha256,
+    ...(claim ? { claim } : {}),
+    ...(typeof claimTokenSha256 === "string" ? { claimTokenSha256 } : {}),
+    ...(typeof value["settledAt"] === "string"
+      ? { settledAt: value["settledAt"] }
+      : {}),
+    ...(typeof value["resultSha256"] === "string"
+      ? { resultSha256: value["resultSha256"] }
+      : {}),
+    ...(typeof value["failureSha256"] === "string"
+      ? { failureSha256: value["failureSha256"] }
+      : {}),
+  };
+}
+
 function optionalRefreshStatus(
   value: unknown,
 ): value is ReceiptTrustAnchorDirectorySubscriptionRefreshStatus | undefined {
@@ -8122,7 +8268,9 @@ function validateSha256List(value: unknown, label: string): string[] {
   if (
     !Array.isArray(value) ||
     value.length > 50 ||
-    !value.every((item) => typeof item === "string" && SHA256_PATTERN.test(item))
+    !value.every(
+      (item) => typeof item === "string" && SHA256_PATTERN.test(item),
+    )
   ) {
     throw new Error(`${label} is invalid`);
   }

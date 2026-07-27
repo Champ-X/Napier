@@ -511,6 +511,13 @@ All notable changes to Napier are recorded here.
   verification supports local or uploaded trust directories, and CAS import
   preserves the archived envelope while assigning local baseline identity and
   supersession.
+- Policy-baseline-gated unattended verifier rotation scheduling. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-apply/queue`
+  now queues policy apply only when the current multi-approval review is
+  accepted and the supplied signed approval policy baseline matches the review
+  binding hashes. The leased worker claims due queues, reruns the policy review
+  and baseline gate, executes the existing CAS apply, and settles success or
+  failure as local-only pending state plus hash-only Ledger events.
 - Post-apply replay receipts for unattended verifier rotation. `POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
   now emits a no-mutate receipt that verifies the approval against the

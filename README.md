@@ -1546,6 +1546,15 @@ verifies uploaded baselines against local or uploaded trust directories, and
 `POST .../approval-policy-baselines/import` CAS-imports trusted archives into a
 local append-only chain with a fresh baseline ID.
 `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/policy-apply/queue`
+queues unattended policy apply only after the current policy review is
+`accepted` and the supplied approval policy baseline hash matches that review's
+policy, subscription, proposal, accepted-approval-set, signer-set, and
+required-signer hashes. The queued state remains local-only on the subscription
+and is excluded from public subscription content hashes; the leased worker
+claims due queues, reruns policy review and the baseline gate, CAS-applies the
+activation decision, and settles success or failure with hash-only events.
+`POST
 /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion/baselines/activation-selection/rotation-proposal/subscriptions/:subscriptionId/approval/apply/replay`
 emits a no-mutate post-apply replay receipt for a signed approval. The replay
 uses the approval-bound previous selection as the verifier source, checks that
