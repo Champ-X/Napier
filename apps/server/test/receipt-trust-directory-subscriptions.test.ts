@@ -7,6 +7,7 @@ import type {
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   TrustedReceiptEnvelope,
@@ -273,6 +274,52 @@ describe("receipt trust anchor directory subscription HTTP surface", () => {
         "x-napier-receipt-trust-directory-quorum-metadata-publisher-count",
       ),
     ).toBe("1");
+    const promotionResponse = await app.request(
+      "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          policy: {
+            minimumSources: 2,
+            minimumAgreementCount: 2,
+            minimumMetadataPublisherCount: 1,
+            requiredMetadataPublisherSha256s: [publisherSha256],
+          },
+          metadata: [
+            { subscriptionId: created.id, envelope: metadataEnvelope },
+            { subscriptionId: mirror.id, envelope: metadataEnvelope },
+          ],
+        }),
+      },
+    );
+    expect(promotionResponse.status).toBe(201);
+    const promotion =
+      (await promotionResponse.json()) as ReceiptTrustAnchorDirectoryQuorumPromotionReceipt;
+    expect(promotion).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-promotion",
+        selectedAnchorSetSha256: hostedDirectory.anchorSetSha256,
+        selectedDirectorySha256: hostedDirectory.contentSha256,
+        selectedSubscriptionCount: 2,
+        selectedMetadataCount: 2,
+        selectedMetadata: expect.arrayContaining([
+          expect.objectContaining({
+            subscriptionId: created.id,
+            envelopeSha256: metadataEnvelope.contentSha256,
+          }),
+          expect.objectContaining({
+            subscriptionId: mirror.id,
+            envelopeSha256: metadataEnvelope.contentSha256,
+          }),
+        ]),
+      }),
+    );
+    expect(
+      promotionResponse.headers.get(
+        "x-napier-receipt-trust-directory-quorum-promotion-sha256",
+      ),
+    ).toBe(promotion.contentSha256);
     expect(JSON.stringify(quorum)).not.toContain(sourceUrl);
     expect(JSON.stringify(quorum)).not.toContain(mirrorSourceUrl);
 

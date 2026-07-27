@@ -1351,6 +1351,13 @@ diagnostics, selected directory hash, and hash-only source evidence. The Receipt
 trust desk can request this quorum receipt and renders its status, agreement
 count, agreement weight, metadata publisher count, selected anchor set, and
 receipt hash beside the subscription list.
+`POST /api/receipt-trust/anchors/directory/subscriptions/quorum/promotion`
+uses the same no-store request shape, requires the evaluated quorum to be
+`agreed`, and returns a self-contained promotion receipt. That receipt embeds
+the quorum, selected anchor-set/directory hashes, selected subscription-set
+hash, and the selected signed metadata envelopes whose hashes match trusted
+source metadata evidence, so an external verifier can archive the promotion
+without re-querying the hosted directory endpoints.
 
 Publisher-signed directory metadata adds a signed statement around a public
 anchor directory without changing the directory format. `POST

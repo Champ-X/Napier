@@ -13,19 +13,24 @@ import { afterEach, describe, expect, it } from "vitest";
 import { canonicalJson } from "../src/ed25519.js";
 import {
   createReceiptTrustAnchorDirectorySubscription,
+  createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   validatePersistedReceiptTrustAnchorDirectorySubscription,
 } from "../src/receipt-trust-directory-subscriptions.js";
 import {
   createReceiptTrustAnchor,
   createReceiptTrustAnchorDirectory,
+  createReceiptTrustAnchorDirectoryMetadataReceipt,
+  signTrustedReceipt,
   verifyReceiptTrustAnchorDirectory,
 } from "../src/receipt-trust.js";
 import { LocalStore } from "../src/store.js";
 
+const SIGNING_ENV = "NAPIER_TEST_QUORUM_PROMOTION_KEY";
 const temporaryRoots: string[] = [];
 const openStores: LocalStore[] = [];
 
 afterEach(async () => {
+  delete process.env[SIGNING_ENV];
   for (const store of openStores.splice(0)) store.close();
   await Promise.all(
     temporaryRoots
@@ -490,6 +495,21 @@ describe("receipt trust anchor directory subscriptions", () => {
       }),
     );
 
+    const { privateKey } = generateKeyPairSync("ed25519");
+    process.env[SIGNING_ENV] = privateKey
+      .export({ format: "pem", type: "pkcs8" })
+      .toString();
+    const signingAnchor = createReceiptTrustAnchor({
+      threadId: thread.id,
+      label: "Quorum metadata signer",
+      source: { type: "environment", variable: SIGNING_ENV },
+    });
+    const metadataEnvelope = signTrustedReceipt(
+      createReceiptTrustAnchorDirectoryMetadataReceipt(directory, {
+        publisher: "Napier Trust Registry",
+      }),
+      signingAnchor,
+    );
     const publisherSha256 = sha256("Napier Trust Registry");
     const metadataPinned = store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
       {
@@ -506,8 +526,8 @@ describe("receipt trust anchor directory subscriptions", () => {
           diagnosticCount: 0,
           diagnosticsSha256: sha256("[]"),
           publisherSha256,
-          signerKeyId: "d".repeat(64),
-          envelopeSha256: "e".repeat(64),
+          signerKeyId: signingAnchor.keyId,
+          envelopeSha256: metadataEnvelope.contentSha256,
           verificationSha256: "f".repeat(64),
         },
       ],
@@ -533,6 +553,46 @@ describe("receipt trust anchor directory subscriptions", () => {
         }),
       }),
     );
+    const promotion = createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
+      metadataPinned,
+      [{ subscriptionId: left.id, envelope: metadataEnvelope }],
+    );
+    expect(promotion).toEqual(
+      expect.objectContaining({
+        kind: "napier.receipt-trust-anchor-directory-quorum-promotion",
+        selectedAnchorSetSha256: directory.anchorSetSha256,
+        selectedDirectorySha256: directory.contentSha256,
+        selectedSubscriptionCount: 2,
+        selectedMetadataCount: 1,
+        selectedMetadata: [
+          expect.objectContaining({
+            subscriptionId: left.id,
+            envelopeSha256: metadataEnvelope.contentSha256,
+            publisherSha256,
+            signerKeyId: signingAnchor.keyId,
+          }),
+        ],
+      }),
+    );
+    const tamperedMetadataQuorum = structuredClone(metadataPinned);
+    const sourceMetadata = tamperedMetadataQuorum.sources.find(
+      (source) => source.subscriptionId === left.id,
+    )?.metadata;
+    if (!sourceMetadata) throw new Error("Expected quorum source metadata");
+    const sourceMetadataRecord = sourceMetadata as unknown as Record<
+      string,
+      unknown
+    >;
+    sourceMetadataRecord["subscriptionId"] = left.id;
+    expect(() =>
+      createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
+        tamperedMetadataQuorum,
+        [{ subscriptionId: left.id, envelope: metadataEnvelope }],
+      ),
+    ).toThrow("unsupported fields");
+    expect(() =>
+      createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(split, []),
+    ).toThrow("requires an agreed quorum");
 
     const missingPublisher = store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
       {

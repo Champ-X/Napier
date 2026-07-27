@@ -5,6 +5,7 @@ import type {
   ReceiptTrustAnchorDirectoryDiscovery,
   ReceiptTrustAnchorDirectoryMetadataVerification,
   ReceiptTrustAnchorDirectoryQuorum,
+  ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
@@ -20,6 +21,7 @@ import {
   getSignedReceiptTrustAnchorDirectoryMetadata,
   getReceiptTrustAnchorDirectory,
   listReceiptTrustAnchorDirectorySubscriptions,
+  promoteReceiptTrustAnchorDirectoryQuorum,
   refreshReceiptTrustAnchorDirectorySubscription,
   updateReceiptTrustAnchorDirectorySubscription,
   verifyReceiptTrustAnchorDirectory,
@@ -314,6 +316,21 @@ describe("receipt trust Web API wrappers", () => {
       candidates: [],
       contentSha256: "7".repeat(64),
     } satisfies ReceiptTrustAnchorDirectoryQuorum;
+    const promotion = {
+      kind: "napier.receipt-trust-anchor-directory-quorum-promotion",
+      schemaVersion: 1,
+      apiVersion: "0.1.0",
+      generatedAt: "2026-07-27T00:00:00.000Z",
+      quorum,
+      selectedAnchorSetSha256: quorum.selectedAnchorSetSha256,
+      selectedDirectorySha256: quorum.selectedDirectorySha256,
+      selectedSubscriptionCount: 2,
+      selectedSubscriptionSetSha256: "9".repeat(64),
+      selectedMetadataCount: 0,
+      selectedMetadataEnvelopeSetSha256: "a".repeat(64),
+      selectedMetadata: [],
+      contentSha256: "b".repeat(64),
+    } satisfies ReceiptTrustAnchorDirectoryQuorumPromotionReceipt;
     const calls = [
       {
         path: "/api/receipt-trust/anchors/directory/subscriptions",
@@ -350,6 +367,12 @@ describe("receipt trust Web API wrappers", () => {
         body: { policy: { minimumSources: 2, minimumAgreementCount: 2 } },
         response: quorum,
       },
+      {
+        path: "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion",
+        method: "POST",
+        body: { policy: { minimumSources: 2, minimumAgreementCount: 2 } },
+        response: promotion,
+      },
     ];
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       const call = calls[fetchMock.mock.calls.length - 1]!;
@@ -385,7 +408,12 @@ describe("receipt trust Web API wrappers", () => {
         policy: { minimumSources: 2, minimumAgreementCount: 2 },
       }),
     ).resolves.toEqual(quorum);
-    expect(fetchMock).toHaveBeenCalledTimes(5);
+    await expect(
+      promoteReceiptTrustAnchorDirectoryQuorum({
+        policy: { minimumSources: 2, minimumAgreementCount: 2 },
+      }),
+    ).resolves.toEqual(promotion);
+    expect(fetchMock).toHaveBeenCalledTimes(6);
   });
 
   it("verifies signed receipts against an uploaded anchor directory", async () => {

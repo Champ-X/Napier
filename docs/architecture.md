@@ -428,6 +428,11 @@ reduced to publisher SHA-256 pins before source selection. Source rows carry
 subscription/content, URL/origin, source weight, metadata status/hash evidence,
 discovery, directory, transparency-tail, and trusted-count hashes; no raw
 locator or private key material leaves the workspace.
+Quorum promotion receipts are self-contained archive artifacts over an already
+agreed quorum. They embed the quorum, selected subscription-set hash, selected
+directory/anchor-set hashes, and the signed metadata envelopes whose hashes
+match trusted source metadata evidence, so independent verifiers can replay the
+promotion without re-querying hosted directory URLs.
 Publisher-signed directory metadata reuses `TrustedReceiptEnvelope` rather than
 introducing another signature format. The metadata receipt binds publisher,
 directory SHA-256, anchor-set SHA-256, public key counts, optional source
@@ -2362,9 +2367,9 @@ The current boundary has twenty-one parts:
     source locators, hash-only public evidence, policy-bound last-good
     discoveries, bounded transparency histories, rollback detection,
     weighted independent-origin quorum receipts with publisher metadata pins,
-    expiring refresh claims, revision CAS, and publisher-signed directory
-    metadata; fail-closed promotion preserves the active verifier set across
-    rejected, failed, or stale rotations.
+    quorum promotion receipts, expiring refresh claims, revision CAS, and
+    publisher-signed directory metadata; fail-closed promotion preserves the
+    active verifier set across rejected, failed, or stale rotations.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.
@@ -2386,8 +2391,8 @@ recommended outer boundary for production third-party code.
 
 ### Layer 2: Long-horizon work
 
-- quorum promotion receipts that can bundle the selected signed metadata
-  envelopes for external archiving without re-querying hosted sources.
+- signed quorum-promotion baselines, so an agreed verifier-key quorum can be
+  promoted into long-lived trust state with an external archive receipt.
 
 ### Layer 3: Extension fabric
 

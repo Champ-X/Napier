@@ -3888,6 +3888,9 @@ export interface EvaluateReceiptTrustAnchorDirectoryQuorumRequest {
   trustDirectoryPolicy?: ReceiptTrustAnchorDirectoryVerificationPolicy;
 }
 
+export type PromoteReceiptTrustAnchorDirectoryQuorumRequest =
+  EvaluateReceiptTrustAnchorDirectoryQuorumRequest;
+
 export type ReceiptTrustAnchorDirectoryQuorumStatus =
   | "agreed"
   | "insufficient_sources"
@@ -3972,6 +3975,32 @@ export interface ReceiptTrustAnchorDirectoryQuorum {
   selectedDirectory?: ReceiptTrustAnchorDirectory;
   sources: ReceiptTrustAnchorDirectoryQuorumSource[];
   candidates: ReceiptTrustAnchorDirectoryQuorumCandidate[];
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumPromotionMetadata {
+  subscriptionId: string;
+  envelope: TrustedReceiptEnvelope<ReceiptTrustAnchorDirectoryMetadataReceipt>;
+  envelopeSha256: string;
+  verificationSha256: string;
+  publisherSha256?: string;
+  signerKeyId?: string;
+  contentSha256: string;
+}
+
+export interface ReceiptTrustAnchorDirectoryQuorumPromotionReceipt {
+  kind: "napier.receipt-trust-anchor-directory-quorum-promotion";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  quorum: ReceiptTrustAnchorDirectoryQuorum;
+  selectedAnchorSetSha256: string;
+  selectedDirectorySha256: string;
+  selectedSubscriptionCount: number;
+  selectedSubscriptionSetSha256: string;
+  selectedMetadataCount: number;
+  selectedMetadataEnvelopeSetSha256: string;
+  selectedMetadata: ReceiptTrustAnchorDirectoryQuorumPromotionMetadata[];
   contentSha256: string;
 }
 

@@ -86,6 +86,7 @@ import type {
   PromoteEvaluationQualificationBaselineResult,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineRequest,
   PromoteExecutionPlanBlueprintRecordOutcomeBaselineResult,
+  PromoteReceiptTrustAnchorDirectoryQuorumRequest,
   ReceiptTrustAnchor,
   ReceiptTrustAnchorDirectory,
   ReceiptTrustAnchorDirectoryDiscovery,
@@ -94,6 +95,7 @@ import type {
   ReceiptTrustAnchorDirectoryQuorumMetadataEvidence,
   ReceiptTrustAnchorDirectoryQuorumMetadataInput,
   ReceiptTrustAnchorDirectoryQuorumPolicy,
+  ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   ReceiptTrustAnchorDirectorySubscription,
   ReceiptTrustAnchorDirectorySubscriptionRefreshResult,
   ReceiptTrustAnchorDirectoryVerification,
@@ -265,6 +267,7 @@ import {
   createWorkspaceArtifactVerificationRequest,
   createInboundDeadLetterRetryHistory,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
+  createReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
   createOpenTelemetryTraceArtifact,
   builtinUsagePriceTableCatalog,
   exportThreadReplayBundle,
@@ -723,14 +726,12 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      let metadataEvidence: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[] =
-        [];
+      let metadataEvidence: ReceiptTrustAnchorDirectoryQuorumMetadataEvidence[];
       try {
-        metadataEvidence =
-          createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
-            services,
-            body,
-          );
+        metadataEvidence = createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
+          services,
+          body,
+        );
       } catch (error) {
         return jsonError(
           context,
@@ -745,6 +746,64 @@ export function createApp(services: NapierServices): Hono {
         );
       setReceiptTrustAnchorDirectoryQuorumHeaders(context, quorum);
       return context.json(quorum);
+    },
+  );
+
+  app.post(
+    "/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion",
+    async (context) => {
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_TRUST_ADMIN_REQUEST_BYTES,
+          "Receipt trust anchor directory quorum promotion request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Receipt trust anchor directory quorum promotion request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const body = parsePromoteReceiptTrustAnchorDirectoryQuorumRequest(input);
+      if (!body) {
+        return jsonError(
+          context,
+          "Receipt trust anchor directory quorum promotion request is invalid",
+          400,
+        );
+      }
+      try {
+        const metadataEvidence =
+          createReceiptTrustAnchorDirectoryQuorumMetadataEvidence(
+            services,
+            body,
+          );
+        const quorum =
+          services.store.getReceiptTrustAnchorDirectorySubscriptionQuorum(
+            body.policy,
+            metadataEvidence,
+          );
+        const promotion = createReceiptTrustAnchorDirectoryQuorumPromotionReceipt(
+          quorum,
+          body.metadata ?? [],
+        );
+        setReceiptTrustAnchorDirectoryQuorumPromotionHeaders(
+          context,
+          promotion,
+        );
+        return context.json(promotion, 201);
+      } catch (error) {
+        const message = errorMessage(error);
+        return jsonError(
+          context,
+          message,
+          message.includes("requires an agreed quorum") ? 409 : 400,
+        );
+      }
     },
   );
 
@@ -10846,6 +10905,12 @@ function parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(
   };
 }
 
+function parsePromoteReceiptTrustAnchorDirectoryQuorumRequest(
+  input: unknown,
+): PromoteReceiptTrustAnchorDirectoryQuorumRequest | undefined {
+  return parseEvaluateReceiptTrustAnchorDirectoryQuorumRequest(input);
+}
+
 function parseReceiptTrustAnchorDirectoryQuorumMetadataInputs(
   input: unknown,
 ): ReceiptTrustAnchorDirectoryQuorumMetadataInput[] | undefined {
@@ -15665,6 +15730,42 @@ function setReceiptTrustAnchorDirectoryQuorumHeaders(
       quorum.selectedDirectorySha256,
     );
   }
+}
+
+function setReceiptTrustAnchorDirectoryQuorumPromotionHeaders(
+  context: Context,
+  promotion: ReceiptTrustAnchorDirectoryQuorumPromotionReceipt,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, promotion.contentSha256);
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Promotion-SHA256",
+    promotion.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-SHA256",
+    promotion.quorum.contentSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-Anchor-Set-SHA256",
+    promotion.selectedAnchorSetSha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Anchor-Directory-SHA256",
+    promotion.selectedDirectorySha256,
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Subscription-Count",
+    String(promotion.selectedSubscriptionCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Count",
+    String(promotion.selectedMetadataCount),
+  );
+  context.header(
+    "X-Napier-Receipt-Trust-Directory-Quorum-Selected-Metadata-Envelope-Set-SHA256",
+    promotion.selectedMetadataEnvelopeSetSha256,
+  );
 }
 
 function setReceiptTrustAnchorDirectorySubscriptionListHeaders(

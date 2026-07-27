@@ -273,6 +273,12 @@ All notable changes to Napier are recorded here.
   from signed directory metadata envelopes supplied with the no-store quorum
   request. The Receipt trust desk exposes a quorum action and renders agreement
   status next to durable directory subscriptions.
+- Receipt trust directory quorum promotion receipts. `POST
+/api/receipt-trust/anchors/directory/subscriptions/quorum/promotion` now
+  evaluates the same no-store quorum request, requires an `agreed` result, and
+  returns a self-contained promotion receipt containing the quorum, selected
+  subscription-set hash, selected anchor-set/directory hashes, and selected
+  signed metadata envelopes whose hashes match trusted source metadata evidence.
 - Publisher-signed receipt trust directory metadata. `POST
 /api/receipt-trust/anchors/directory/signed-metadata` now emits a
   `receipt_trust_anchor_directory_metadata` trusted receipt over the current
