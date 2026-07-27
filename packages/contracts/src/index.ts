@@ -1590,6 +1590,45 @@ export interface SubagentOutcomeRepairOutcomePayload {
   contentSha256: string;
 }
 
+export interface ReviewSubagentOutcomeRequest {
+  model: ModelRef;
+}
+
+export type SubagentOutcomeReviewVerdict =
+  | "accept"
+  | "revise"
+  | "reject"
+  | "inconclusive";
+export type SubagentOutcomeReviewRisk = "low" | "medium" | "high";
+
+export interface SubagentOutcomeReview {
+  kind: "napier.subagent-outcome-review";
+  schemaVersion: 1;
+  policyId: "napier.subagent-outcome-review.v1";
+  taskId: string;
+  role: SubagentRole;
+  outcomeSha256: string;
+  workerModel: ModelRef;
+  reviewerModel: ModelRef;
+  verdict: SubagentOutcomeReviewVerdict;
+  score: number;
+  risk: SubagentOutcomeReviewRisk;
+  reason: string;
+  concerns: string[];
+  criteria: string[];
+  itemCount: number;
+  unknownCount: number;
+  evidenceCount: number;
+  usage: Usage;
+  criteriaSha256: string;
+  inputSha256: string;
+  promptSha256: string;
+  responseSha256: string;
+  reviewSchemaSha256: string;
+  createdAt: string;
+  reviewSha256: string;
+}
+
 export type SubagentOutcomeEvidenceVerificationItemStatus =
   | "aligned"
   | "divergent"

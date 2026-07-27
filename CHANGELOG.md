@@ -1017,6 +1017,17 @@ write:management-openapi-compatibility` now emits
   SHA-256 and byte counts, preventing rejected raw output from leaking through
   `subagent.step`; cross-workspace fixture import validates and rebinds the
   repair receipt chain.
+- Independent Subagent outcome review. `POST
+/api/threads/:threadId/subagents/:taskId/outcome/review` requires an explicit
+  reviewer model different from the worker and invokes it with no tools,
+  bounded retries, and a fixed timeout. The strict review scores task
+  alignment, evidence grounding, uncertainty honesty, and actionability,
+  returning accept/revise/reject/inconclusive, score, risk, reason, concerns,
+  usage, and hashes binding both models, the outcome receipt, criteria, input,
+  prompt, response, and schema. Provider or parse failures become
+  `inconclusive` without exposing raw errors. The operation is no-store,
+  promoted into OpenAPI, and available from Trace using the globally selected
+  model; it cannot mutate or stall the settled delegation.
 - Shared Agent-profile and Subagent-coordinator limit normalization without a
   second silent runtime clamp.
 - Auditable delegation events and dedicated Trace workcells that preserve

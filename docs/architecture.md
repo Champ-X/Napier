@@ -1947,6 +1947,13 @@ operator verifies stored outcome
   -> reread schema-2 files and ranges through the same bounded no-follow boundary
   -> classify current references as aligned, divergent, or missing
   -> return a no-store stable-hash report without appending Ledger evidence
+
+operator requests independent review
+  -> require a reviewer model different from the Subagent worker
+  -> send the task + typed outcome to one zero-tool passive reviewer
+  -> strictly parse accept / revise / reject / inconclusive
+  -> bind criteria, input, prompt, response, usage, models, and outcome hashes
+  -> return a no-store review artifact; never mutate or stall the delegation
 ```
 
 Researcher, reviewer, and general roles have separate system prompts. A
@@ -1980,6 +1987,14 @@ historical claim from current workspace state. It returns expected and observed
 file/range hashes, aggregate counts, and stable hash-only diagnostics; it does
 not return file content, persist the report, or reinterpret schema-1 receipts
 as grounded. The Trace delegation card loads this verifier on demand.
+The same card can request an independent passive review with the globally
+selected model. The fixed review policy scores task alignment, evidence
+grounding, uncertainty honesty, and actionability. It rejects the worker model
+as reviewer, exposes no tools, bounds provider retries and timeout, and turns
+provider or strict-JSON failures into an `inconclusive` hash-bound artifact.
+Reviews remain operator evidence rather than execution authority: they are not
+persisted, do not alter the task receipt, and cannot block the already settled
+delegation.
 Concurrency, total tasks, model turns, and wall time are bounded per parent
 run. Profile validation and the coordinator share the same bounds; runtime
 does not silently clamp a saved value a second time. Cancellation and budget

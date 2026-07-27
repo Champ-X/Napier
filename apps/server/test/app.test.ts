@@ -82,6 +82,7 @@ import type {
   SaveExecutionPlanBlueprintResult,
   StreamFrame,
   SubagentOutcomeEvidenceVerification,
+  SubagentOutcomeReview,
   ThreadDetail,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
@@ -93,6 +94,7 @@ import type {
 import {
   createUsagePriceTableCatalog,
   createContextCheckpoint,
+  createSubagentOutcome,
   LEDGER_SCHEMA_VERSION,
   McpExtensionManager,
   planContextProjection,
@@ -6608,6 +6610,125 @@ describe("Napier HTTP goal flow", () => {
     expect(missingTaskResponse.status).toBe(404);
     expect(missingTaskResponse.headers.get("cache-control")).toBe("no-store");
     expect(faux.state.callCount).toBe(4);
+  });
+
+  it("reviews a stored Subagent outcome with an independent no-store model", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
+    temporaryRoots.push(root);
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    const worker = fauxProvider({ provider: "faux-subagent-worker" });
+    const reviewer = fauxProvider({ provider: "faux-subagent-reviewer" });
+    reviewer.setResponses([
+      (context) => {
+        expect(context.tools).toEqual([]);
+        expect(context.systemPrompt).toContain("independent passive reviewer");
+        return fauxAssistantMessage(
+          JSON.stringify({
+            verdict: "accept",
+            score: 94,
+            risk: "low",
+            reason: "The outcome is scoped and evidence-aware.",
+            concerns: [],
+          }),
+        );
+      },
+    ]);
+    services.models.registerProvider(worker.provider);
+    services.models.registerProvider(reviewer.provider);
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Subagent outcome review API",
+      agentId: agent.id,
+    });
+    const run = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const task = await services.store.createSubagentTask({
+      threadId: thread.id,
+      runId: run.id,
+      role: "reviewer",
+      description: "Review the API boundary.",
+      prompt: "Inspect the API boundary and report unsupported claims.",
+      model: { provider: worker.provider.id, id: "faux-1" },
+    });
+    await services.store.startSubagentTask(task.id);
+    const outcome = createSubagentOutcome({
+      taskId: task.id,
+      role: task.role,
+      model: task.model,
+      prompt: task.prompt,
+      resultText: JSON.stringify({
+        summary: "The API boundary is explicit.",
+        items: [],
+        unknowns: ["External transport was not exercised."],
+      }),
+    });
+    await services.store.finishSubagentTask(task.id, {
+      status: "completed",
+      stopReason: "completed",
+      result: outcome.summary,
+      outcome,
+    });
+    const eventCount = (await services.store.listEvents(thread.id)).length;
+    const app = createApp(services);
+
+    const response = await app.request(
+      `/api/threads/${thread.id}/subagents/${task.id}/outcome/review`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: reviewer.provider.id, id: "faux-1" },
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const review = (await response.json()) as SubagentOutcomeReview;
+    expect(review).toEqual(
+      expect.objectContaining({
+        kind: "napier.subagent-outcome-review",
+        taskId: task.id,
+        outcomeSha256: outcome.contentSha256,
+        workerModel: task.model,
+        reviewerModel: { provider: reviewer.provider.id, id: "faux-1" },
+        verdict: "accept",
+        score: 94,
+        risk: "low",
+        reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("x-napier-content-sha256-mode")).toBe("stable");
+    expect(response.headers.get("x-napier-content-sha256")).toBe(
+      review.reviewSha256,
+    );
+    expect(response.headers.get("x-napier-subagent-review-verdict")).toBe(
+      "accept",
+    );
+    expect(response.headers.get("x-napier-subagent-review-score")).toBe("94");
+    expect(response.headers.get("x-napier-subagent-review-risk")).toBe("low");
+    expect(await services.store.listEvents(thread.id)).toHaveLength(eventCount);
+    expect(reviewer.state.callCount).toBe(1);
+    expect(worker.state.callCount).toBe(0);
+
+    const sameModel = await app.request(
+      `/api/threads/${thread.id}/subagents/${task.id}/outcome/review`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ model: task.model }),
+      },
+    );
+    expect(sameModel.status).toBe(400);
+    await expect(sameModel.json()).resolves.toEqual({
+      error:
+        "Subagent outcome reviewer model must differ from the worker model",
+    });
   });
 
   it("audits MCP trust, discovery, tool review, and agent enablement", async () => {

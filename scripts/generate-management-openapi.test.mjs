@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(17);
+    expect(generated.routeCount).toBe(18);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 17,
+        "x-napier-route-count": 18,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -163,6 +163,55 @@ describe("management OpenAPI generator", () => {
           "outcomeSha256",
           "items",
           "contentSha256",
+        ]),
+        additionalProperties: false,
+      }),
+    );
+    expect(
+      generated.artifact.paths[
+        "/api/threads/{threadId}/subagents/{taskId}/outcome/review"
+      ].post,
+    ).toEqual(
+      expect.objectContaining({
+        operationId:
+          "post-threads-by-threadId-subagents-by-taskId-outcome-review",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/ReviewSubagentOutcomeRequest",
+              },
+            },
+          },
+        },
+        responses: expect.objectContaining({
+          200: expect.objectContaining({
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/SubagentOutcomeReview",
+                },
+              },
+            },
+          }),
+        }),
+        "x-napier-promoted-request-schema-ref":
+          "#/components/schemas/ReviewSubagentOutcomeRequest",
+        "x-napier-promoted-response-schema-refs": {
+          200: "#/components/schemas/SubagentOutcomeReview",
+        },
+      }),
+    );
+    expect(generated.artifact.components.schemas.SubagentOutcomeReview).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.arrayContaining([
+          "workerModel",
+          "reviewerModel",
+          "verdict",
+          "usage",
+          "reviewSha256",
         ]),
         additionalProperties: false,
       }),
@@ -654,10 +703,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 17 routes",
+      "Wrote docs/artifacts/management-openapi.json: 18 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(17);
+    expect(artifact["x-napier-route-count"]).toBe(18);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -715,6 +764,7 @@ async function createFixture() {
       app.post("/api/receipt-trust/anchors/directory/verify", () => undefined);
       app.post("/api/receipt-trust/verify", () => undefined);
       app.post("/api/threads/:threadId/subagents/:taskId/outcome/verify", () => undefined);
+      app.post("/api/threads/:threadId/subagents/:taskId/outcome/review", () => undefined);
       app.post(
         "/api/threads/:threadId/runs",
         () => undefined,

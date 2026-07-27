@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "8a6d5ee77c2a4cadb7b51f50b06e268268fadc9132e540ed854db82f21804e22",
-    "routeCount": 220,
-    "routeSetSha256": "48a13751fb8b9dc2b37d92a6fa9c53b41efbf57f9ab24bf89fc94472b17b3a4e"
+    "sha256": "a97eea7447cd64046543c282c09a6c3206b8165114ca570e943838d7775fb111",
+    "routeCount": 221,
+    "routeSetSha256": "fd16d8bb48f5583d68e0d6699213b8597d0496bed06b4ac165188f2fa1f60dc5"
   },
-  "operationCount": 220,
-  "operationSetSha256": "f2df4c5f9f338ea51c0f4961aded53cc0a35545719ca19ceab02ee9b9bb38b19",
+  "operationCount": 221,
+  "operationSetSha256": "5db6f0e76d934c09b0947440e97912d4601ab27d0ca02f1106b0ee349c7afbc5",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -4420,6 +4420,31 @@
       "acceptsJsonRequestBody": true,
       "jsonRequestSchemaRef": null,
       "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/subagents/{taskId}/outcome/review",
+      "method": "post",
+      "path": "/api/threads/{threadId}/subagents/{taskId}/outcome/review",
+      "operationId": "post-threads-by-threadId-subagents-by-taskId-outcome-review",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "taskId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": "#/components/schemas/ReviewSubagentOutcomeRequest",
+      "jsonResponseSchemaRefs": {
+        "200": "#/components/schemas/SubagentOutcomeReview"
+      },
       "responseStatuses": [
         "200",
         "400",

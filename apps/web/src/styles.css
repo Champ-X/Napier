@@ -6073,7 +6073,13 @@ button:disabled {
   margin-top: 8px;
 }
 
-.delegation-evidence-check > button {
+.delegation-evidence-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.delegation-evidence-actions button {
   display: inline-flex;
   width: fit-content;
   gap: 4px;
@@ -6088,11 +6094,11 @@ button:disabled {
   border-radius: 2px;
 }
 
-.delegation-evidence-check > button:hover:not(:disabled) {
+.delegation-evidence-actions button:hover:not(:disabled) {
   background: #e1e9df;
 }
 
-.delegation-evidence-check > button:disabled {
+.delegation-evidence-actions button:disabled {
   cursor: wait;
   opacity: 0.55;
 }
@@ -6147,10 +6153,79 @@ button:disabled {
   color: #765814;
 }
 
+.delegation-review-receipt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 6px;
+  padding: 5px 6px;
+  font-family: var(--mono);
+  font-size: 5px;
+  color: var(--ink-soft);
+  background: #e4ece8;
+  border: 1px solid #a9c3bd;
+  border-left: 2px solid #315d5c;
+}
+
+.delegation-review-receipt strong,
+.delegation-review-receipt span,
+.delegation-review-receipt small,
+.delegation-review-receipt code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delegation-review-receipt strong {
+  color: #315d5c;
+}
+
+.delegation-review-receipt small,
+.delegation-review-receipt code {
+  grid-column: 1 / -1;
+}
+
+.delegation-review-receipt small {
+  color: var(--ink-soft);
+}
+
+.delegation-review-receipt code {
+  color: var(--ink-faint);
+}
+
+.delegation-review-receipt.verdict-revise,
+.delegation-review-receipt.verdict-inconclusive {
+  background: #f3e8c8;
+  border-color: #d8c188;
+  border-left-color: #a17720;
+}
+
+.delegation-review-receipt.verdict-revise strong,
+.delegation-review-receipt.verdict-inconclusive strong {
+  color: #765814;
+}
+
+.delegation-review-receipt.verdict-reject {
+  background: #f2e6dc;
+  border-color: #cf9a74;
+  border-left-color: #9e5634;
+}
+
+.delegation-review-receipt.verdict-reject strong {
+  color: #9e5634;
+}
+
+.delegation-evidence-hint,
 .delegation-evidence-error {
   margin: 0;
   font-family: var(--mono);
   font-size: 5px;
+}
+
+.delegation-evidence-hint {
+  color: var(--ink-faint);
+}
+
+.delegation-evidence-error {
   color: #9e5634;
 }
 

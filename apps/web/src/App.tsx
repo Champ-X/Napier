@@ -352,6 +352,14 @@ export function App() {
                 exportReceipt={vm.traceExportReceipt}
                 verifyBusy={vm.traceVerifyBusy}
                 verificationReceipt={vm.traceVerificationReceipt}
+                reviewerModel={
+                  activeModel
+                    ? {
+                        provider: activeModel.provider,
+                        id: activeModel.id,
+                      }
+                    : undefined
+                }
                 onExport={(runId) => void vm.exportOpenTelemetryTrace(runId)}
                 onVerify={(file) =>
                   void vm.verifyOpenTelemetryTraceArtifactFile(file)

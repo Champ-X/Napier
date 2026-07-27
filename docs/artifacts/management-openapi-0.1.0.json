@@ -9470,6 +9470,72 @@
         "x-napier-source-route": "POST /api/threads/:threadId/stop"
       }
     },
+    "/api/threads/{threadId}/subagents/{taskId}/outcome/review": {
+      "post": {
+        "operationId": "post-threads-by-threadId-subagents-by-taskId-outcome-review",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/subagents/{taskId}/outcome/review",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewSubagentOutcomeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubagentOutcomeReview"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/subagents/:taskId/outcome/review",
+        "x-napier-promoted-request-schema-ref": "#/components/schemas/ReviewSubagentOutcomeRequest",
+        "x-napier-promoted-response-schema-refs": {
+          "200": "#/components/schemas/SubagentOutcomeReview"
+        }
+      }
+    },
     "/api/threads/{threadId}/subagents/{taskId}/outcome/verify": {
       "post": {
         "operationId": "post-threads-by-threadId-subagents-by-taskId-outcome-verify",
@@ -9932,6 +9998,226 @@
           "appliedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ModelRef": {
+        "type": "object",
+        "required": [
+          "provider",
+          "id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "provider": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{1,80}$"
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$"
+          }
+        }
+      },
+      "Usage": {
+        "type": "object",
+        "required": [
+          "inputTokens",
+          "outputTokens",
+          "cacheReadTokens",
+          "cacheWriteTokens",
+          "costUsd"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "inputTokens": {
+            "type": "number",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": "number",
+            "minimum": 0
+          },
+          "cacheReadTokens": {
+            "type": "number",
+            "minimum": 0
+          },
+          "cacheWriteTokens": {
+            "type": "number",
+            "minimum": 0
+          },
+          "costUsd": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "ReviewSubagentOutcomeRequest": {
+        "type": "object",
+        "required": [
+          "model"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "model": {
+            "$ref": "#/components/schemas/ModelRef"
+          }
+        }
+      },
+      "SubagentOutcomeReviewVerdict": {
+        "type": "string",
+        "enum": [
+          "accept",
+          "revise",
+          "reject",
+          "inconclusive"
+        ]
+      },
+      "SubagentOutcomeReviewRisk": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "SubagentOutcomeReview": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "policyId",
+          "taskId",
+          "role",
+          "outcomeSha256",
+          "workerModel",
+          "reviewerModel",
+          "verdict",
+          "score",
+          "risk",
+          "reason",
+          "concerns",
+          "criteria",
+          "itemCount",
+          "unknownCount",
+          "evidenceCount",
+          "usage",
+          "criteriaSha256",
+          "inputSha256",
+          "promptSha256",
+          "responseSha256",
+          "reviewSchemaSha256",
+          "createdAt",
+          "reviewSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.subagent-outcome-review"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "policyId": {
+            "const": "napier.subagent-outcome-review.v1"
+          },
+          "taskId": {
+            "type": "string",
+            "pattern": "^task_[a-z0-9]{8,80}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "researcher",
+              "reviewer",
+              "general"
+            ]
+          },
+          "outcomeSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "workerModel": {
+            "$ref": "#/components/schemas/ModelRef"
+          },
+          "reviewerModel": {
+            "$ref": "#/components/schemas/ModelRef"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/SubagentOutcomeReviewVerdict"
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "risk": {
+            "$ref": "#/components/schemas/SubagentOutcomeReviewRisk"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "concerns": {
+            "type": "array",
+            "maxItems": 8,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          "criteria": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            }
+          },
+          "itemCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          },
+          "unknownCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "evidenceCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          },
+          "criteriaSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "inputSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "promptSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "responseSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "reviewSchemaSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
           }
         }
       },
@@ -11773,7 +12059,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "69b735554b9c9b8cbc6f620f24a7a719c1068b47e2a30c788aad7f36b8833c41",
-  "x-napier-route-count": 220,
-  "x-napier-route-set-sha256": "48a13751fb8b9dc2b37d92a6fa9c53b41efbf57f9ab24bf89fc94472b17b3a4e"
+  "x-napier-source-sha256": "a56154dd3f3eebaa91a07456459da0523e25cbec5a4a99c4258bce7e018759ea",
+  "x-napier-route-count": 221,
+  "x-napier-route-set-sha256": "fd16d8bb48f5583d68e0d6699213b8597d0496bed06b4ac165188f2fa1f60dc5"
 }

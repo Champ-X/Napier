@@ -14,6 +14,9 @@ The product takes inspiration from:
   context governance, sandboxes, memory, subagents, and operational APIs.
 - [Deer Workflow](https://github.com/deerwork-ai/deer-workflow): workflow-style
   decomposition, durable handoffs, and inspectable multi-step execution.
+- [Oh My Pi](https://github.com/can1357/oh-my-pi): Hashline editing,
+  independent passive advisors, narrow reviewer tool scopes, and resilient
+  model-side control loops.
 
 Napier is not a fork of any of them. Its distinguishing primitive is the
 **work ledger**: messages, model calls, tools, goals, branches, artifacts, and
@@ -800,6 +803,15 @@ turn budgets never trigger repair. Final and repaired candidate steps persist
 only SHA-256 and byte counts; raw malformed candidates and repair prompts do
 not enter the Ledger. Replay import remaps task IDs and recomputes both repair
 receipts without changing result or diagnostic hashes.
+An operator can also run `POST
+/api/threads/:threadId/subagents/:taskId/outcome/review` with a model different
+from the worker. This no-store, zero-tool reviewer scores task alignment,
+evidence grounding, uncertainty honesty, and actionability, returning
+`accept`, `revise`, `reject`, or `inconclusive` with score, risk, reason,
+concerns, usage, and a stable review SHA-256. Reviewer failures become
+inconclusive artifacts and never rewrite the task, append Ledger events, or
+stall the completed delegation. The Trace card uses the globally selected
+model as the reviewer candidate and disables review until it is independent.
 
 ## Sandboxed Workspace Verification
 

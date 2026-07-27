@@ -1,11 +1,18 @@
 import { createHash } from "node:crypto";
 
-import type { SubagentOutcomeEvidenceVerification } from "@napier/contracts";
+import {
+  emptyUsage,
+  type SubagentOutcomeEvidenceVerification,
+  type SubagentOutcomeReview,
+} from "@napier/contracts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { verifySubagentOutcomeEvidence } from "../src/subagent-api";
+import {
+  reviewSubagentOutcome,
+  verifySubagentOutcomeEvidence,
+} from "../src/subagent-api";
 
-describe("subagent evidence API", () => {
+describe("subagent API", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -59,6 +66,68 @@ describe("subagent evidence API", () => {
     await expect(
       verifySubagentOutcomeEvidence("thread_fixture", "task_fixture"),
     ).resolves.toEqual(verification);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("reviews a stored outcome with the selected independent model", async () => {
+    const model = { provider: "reviewer", id: "reviewer-1" };
+    const content = {
+      kind: "napier.subagent-outcome-review" as const,
+      schemaVersion: 1 as const,
+      policyId: "napier.subagent-outcome-review.v1" as const,
+      taskId: "task_fixture",
+      role: "reviewer" as const,
+      outcomeSha256: "a".repeat(64),
+      workerModel: { provider: "worker", id: "worker-1" },
+      reviewerModel: model,
+      verdict: "accept" as const,
+      score: 91,
+      risk: "low" as const,
+      reason: "The outcome is grounded.",
+      concerns: [],
+      criteria: [
+        "task_alignment",
+        "evidence_grounding",
+        "uncertainty_honesty",
+        "actionability",
+      ],
+      itemCount: 1,
+      unknownCount: 0,
+      evidenceCount: 1,
+      usage: emptyUsage(),
+      criteriaSha256: "b".repeat(64),
+      inputSha256: "c".repeat(64),
+      promptSha256: "d".repeat(64),
+      responseSha256: "e".repeat(64),
+      reviewSchemaSha256: "f".repeat(64),
+      createdAt: "2026-07-28T00:00:00.000Z",
+    };
+    const review: SubagentOutcomeReview = {
+      ...content,
+      reviewSha256: sha256Canonical(content),
+    };
+    const fetchMock = vi.fn(async (requestPath: string, init?: RequestInit) => {
+      expect(requestPath).toBe(
+        "/api/threads/thread_fixture/subagents/task_fixture/outcome/review",
+      );
+      expect(init).toEqual({
+        method: "POST",
+        body: JSON.stringify({ model }),
+        headers: { "Content-Type": "application/json" },
+      });
+      return new Response(JSON.stringify(review), {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": review.reviewSha256,
+          "X-Napier-Content-SHA256-Mode": "stable",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      reviewSubagentOutcome("thread_fixture", "task_fixture", model),
+    ).resolves.toEqual(review);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

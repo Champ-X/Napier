@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 
 import type {
+  ModelRef,
   RunEvent,
   RunRecord,
   SubagentOutcomeEvidenceVerification,
+  SubagentOutcomeReview,
   SubagentTask,
 } from "@napier/contracts";
 
@@ -36,6 +38,7 @@ export default function TracePanel({
   exportReceipt,
   verifyBusy,
   verificationReceipt,
+  reviewerModel,
   onExport,
   onVerify,
 }: {
@@ -47,6 +50,7 @@ export default function TracePanel({
   exportReceipt: OpenTelemetryTraceReceipt | undefined;
   verifyBusy: boolean;
   verificationReceipt: OpenTelemetryTraceVerificationReceipt | undefined;
+  reviewerModel: ModelRef | undefined;
   onExport: (runId?: string) => void;
   onVerify: (file: File) => void;
 }) {
@@ -182,7 +186,7 @@ export default function TracePanel({
           {copy.trace.otel.safety}
         </p>
       </section>
-      <DelegationLedger tasks={subagents} />
+      <DelegationLedger tasks={subagents} reviewerModel={reviewerModel} />
       {events.length === 0 ? (
         <p className="empty-panel">{copy.trace.empty}</p>
       ) : null}
@@ -209,7 +213,13 @@ export default function TracePanel({
   );
 }
 
-function DelegationLedger({ tasks }: { tasks: SubagentTask[] }) {
+function DelegationLedger({
+  tasks,
+  reviewerModel,
+}: {
+  tasks: SubagentTask[];
+  reviewerModel: ModelRef | undefined;
+}) {
   if (tasks.length === 0) return null;
   return (
     <section className="delegation-ledger" aria-labelledby="delegation-title">
@@ -225,24 +235,45 @@ function DelegationLedger({ tasks }: { tasks: SubagentTask[] }) {
           .slice()
           .reverse()
           .map((task) => (
-            <DelegationCard key={task.id} task={task} />
+            <DelegationCard
+              key={`${task.id}:${reviewerModel?.provider ?? ""}/${reviewerModel?.id ?? ""}`}
+              task={task}
+              reviewerModel={reviewerModel}
+            />
           ))}
       </div>
     </section>
   );
 }
 
-function DelegationCard({ task }: { task: SubagentTask }) {
+function DelegationCard({
+  task,
+  reviewerModel,
+}: {
+  task: SubagentTask;
+  reviewerModel: ModelRef | undefined;
+}) {
   const [verification, setVerification] =
     useState<SubagentOutcomeEvidenceVerification>();
   const [verifying, setVerifying] = useState(false);
   const [verificationFailed, setVerificationFailed] = useState(false);
+  const [review, setReview] = useState<SubagentOutcomeReview>();
+  const [reviewing, setReviewing] = useState(false);
+  const [reviewFailed, setReviewFailed] = useState(false);
   const outcomeSha256 = task.outcome?.contentSha256;
+  const reviewerModelKey = reviewerModel
+    ? `${reviewerModel.provider}/${reviewerModel.id}`
+    : "";
+  const workerModelKey = `${task.model.provider}/${task.model.id}`;
+  const reviewerIsIndependent =
+    Boolean(reviewerModel) && reviewerModelKey !== workerModelKey;
 
   useEffect(() => {
     setVerification(undefined);
     setVerificationFailed(false);
-  }, [outcomeSha256]);
+    setReview(undefined);
+    setReviewFailed(false);
+  }, [outcomeSha256, reviewerModelKey]);
 
   const summary =
     task.error ?? task.outcome?.summary ?? task.result ?? task.prompt;
@@ -271,6 +302,30 @@ function DelegationCard({ task }: { task: SubagentTask }) {
     }
   }
 
+  async function reviewOutcome(): Promise<void> {
+    if (
+      !task.outcome ||
+      !reviewerModel ||
+      !reviewerIsIndependent ||
+      reviewing
+    ) {
+      return;
+    }
+    setReviewing(true);
+    setReviewFailed(false);
+    try {
+      const api = await import("./subagent-api");
+      setReview(
+        await api.reviewSubagentOutcome(task.threadId, task.id, reviewerModel),
+      );
+    } catch {
+      setReview(undefined);
+      setReviewFailed(true);
+    } finally {
+      setReviewing(false);
+    }
+  }
+
   return (
     <article className={`delegation-card delegation-${task.status}`}>
       <header>
@@ -289,16 +344,38 @@ function DelegationCard({ task }: { task: SubagentTask }) {
       </div>
       {task.outcome ? (
         <div className="delegation-evidence-check">
-          <button
-            type="button"
-            disabled={verifying}
-            onClick={() => void verifyEvidence()}
-          >
-            <ShieldCheck size={10} aria-hidden="true" />
-            {verifying
-              ? copy.delegation.verifyingEvidence
-              : copy.delegation.verifyEvidence}
-          </button>
+          <div className="delegation-evidence-actions">
+            <button
+              type="button"
+              disabled={verifying}
+              onClick={() => void verifyEvidence()}
+            >
+              <ShieldCheck size={10} aria-hidden="true" />
+              {verifying
+                ? copy.delegation.verifyingEvidence
+                : copy.delegation.verifyEvidence}
+            </button>
+            <button
+              type="button"
+              disabled={reviewing || !reviewerIsIndependent}
+              title={
+                reviewerIsIndependent
+                  ? reviewerModelKey
+                  : copy.delegation.independentReviewerRequired
+              }
+              onClick={() => void reviewOutcome()}
+            >
+              <Sparkles size={10} aria-hidden="true" />
+              {reviewing
+                ? copy.delegation.reviewingOutcome
+                : copy.delegation.reviewOutcome}
+            </button>
+          </div>
+          {!reviewerIsIndependent ? (
+            <p className="delegation-evidence-hint">
+              {copy.delegation.independentReviewerRequired}
+            </p>
+          ) : null}
           {verification ? (
             <output
               className={`delegation-evidence-receipt status-${verification.status}`}
@@ -326,6 +403,28 @@ function DelegationCard({ task }: { task: SubagentTask }) {
           {verificationFailed ? (
             <p className="delegation-evidence-error" role="status">
               {copy.delegation.verifyFailed}
+            </p>
+          ) : null}
+          {review ? (
+            <output
+              className={`delegation-review-receipt verdict-${review.verdict}`}
+              aria-live="polite"
+            >
+              <strong>{copy.delegation.reviewVerdicts[review.verdict]}</strong>
+              <span>
+                {copy.delegation.score} {review.score}
+                {" · "}
+                {copy.delegation.risk} {review.risk}
+              </span>
+              <small title={review.reason}>{review.reason}</small>
+              <code title={review.reviewSha256}>
+                {review.reviewSha256.slice(0, 12)}
+              </code>
+            </output>
+          ) : null}
+          {reviewFailed ? (
+            <p className="delegation-evidence-error" role="status">
+              {copy.delegation.reviewFailed}
             </p>
           ) : null}
         </div>

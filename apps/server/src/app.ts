@@ -243,10 +243,12 @@ import type {
   RunReplaySnapshotVerification,
   RunStatus,
   SubagentOutcomeEvidenceVerification,
+  SubagentOutcomeReview,
   EvaluationReviewerBallot,
   EvaluationConsensusReport,
   EvaluationConsensusResolution,
   ResumeRunRequest,
+  ReviewSubagentOutcomeRequest,
   ReviewExtensionRequest,
   ReviewMemoryRequest,
   ReviewMcpToolRequest,
@@ -373,6 +375,7 @@ import {
   receiptTrustAnchorsFromDirectory,
   reviewExecutionPlanBlueprintRecordOutcomes,
   reviewExecutionPlanReplanDraft,
+  reviewSubagentOutcome,
   RunEvaluationService,
   signTrustedReceipt,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
@@ -4321,6 +4324,58 @@ export function createApp(services: NapierServices): Hono {
       );
       setSubagentOutcomeEvidenceVerificationHeaders(context, verification);
       return context.json(verification);
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/subagents/:taskId/outcome/review",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const taskId = context.req.param("taskId");
+      services.store.getThread(threadId);
+      const task = services.store
+        .listSubagentTasks(threadId)
+        .find((candidate) => candidate.id === taskId);
+      if (!task) {
+        return jsonError(context, "Subagent task not found", 404);
+      }
+      if (!task.outcome) {
+        return jsonError(context, "Subagent outcome is unavailable", 409);
+      }
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          8 * 1024,
+          "Subagent outcome review request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const request = parseReviewSubagentOutcomeRequest(input);
+      if (!request) {
+        return jsonError(
+          context,
+          "Subagent outcome review request is invalid",
+          400,
+        );
+      }
+      try {
+        assertAvailableModel(services, request.model);
+        const review = await reviewSubagentOutcome(
+          services.models,
+          task,
+          request.model,
+        );
+        setSubagentOutcomeReviewHeaders(context, review);
+        return context.json(review);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
     },
   );
 
@@ -10150,6 +10205,14 @@ function parseModelRef(input: unknown): PromptRequest["model"] | undefined {
     return undefined;
   }
   return { provider, id };
+}
+
+function parseReviewSubagentOutcomeRequest(
+  input: unknown,
+): ReviewSubagentOutcomeRequest | undefined {
+  const record = requestRecord(input, ["model"]);
+  const model = parseModelRef(record?.["model"]);
+  return record && model ? { model } : undefined;
 }
 
 function parseUpdateAgentProfileRequest(
@@ -18965,6 +19028,35 @@ function setSubagentOutcomeEvidenceVerificationHeaders(
   context.header(
     "X-Napier-Evidence-Missing-Count",
     String(verification.missingCount),
+  );
+}
+
+function setSubagentOutcomeReviewHeaders(
+  context: Context,
+  review: SubagentOutcomeReview,
+): void {
+  context.header("Cache-Control", "no-store");
+  setStableContentSha256Header(context, review.reviewSha256);
+  context.header("X-Napier-Subagent-Task-Id", review.taskId);
+  context.header("X-Napier-Subagent-Outcome-SHA256", review.outcomeSha256);
+  context.header("X-Napier-Subagent-Review-Verdict", review.verdict);
+  context.header("X-Napier-Subagent-Review-Score", String(review.score));
+  context.header("X-Napier-Subagent-Review-Risk", review.risk);
+  context.header(
+    "X-Napier-Subagent-Review-Concern-Count",
+    String(review.concerns.length),
+  );
+  context.header(
+    "X-Napier-Subagent-Review-Input-Tokens",
+    String(review.usage.inputTokens),
+  );
+  context.header(
+    "X-Napier-Subagent-Review-Output-Tokens",
+    String(review.usage.outputTokens),
+  );
+  context.header(
+    "X-Napier-Subagent-Review-Cost-USD",
+    String(review.usage.costUsd),
   );
 }
 
