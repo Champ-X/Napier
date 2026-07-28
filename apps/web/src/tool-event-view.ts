@@ -9,6 +9,15 @@ export interface ToolEventTraceView {
   searchMatchCount?: number;
   searchTruncated?: boolean;
   searchMatchSetSha256?: string;
+  dataFormat?: "json" | "jsonl" | "csv";
+  dataRowCount?: number;
+  dataColumnCount?: number;
+  dataSizeBytes?: number;
+  dataTruncated?: boolean;
+  dataPathSha256?: string;
+  dataFileSha256?: string;
+  dataColumnSetSha256?: string;
+  dataSampleSha256?: string;
   verificationKind?: "typecheck" | "test" | "format";
   verificationStatus?: "passed" | "failed" | "timed_out" | "output_capped";
   verificationExitCode?: number;
@@ -77,6 +86,10 @@ export function toolEventTraceView(
     toolName === "search_files"
       ? searchFilesEvidence(event.payload["details"])
       : undefined;
+  const dataEvidence =
+    toolName === "inspect_data"
+      ? inspectDataEvidence(event.payload["details"])
+      : undefined;
   const verificationEvidence =
     toolName === "verify_workspace"
       ? verificationEvidenceView(event.payload["details"])
@@ -100,6 +113,7 @@ export function toolEventTraceView(
     ...(inputSha256 ? { inputSha256 } : {}),
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
     ...(searchEvidence ? searchEvidence : {}),
+    ...(dataEvidence ? dataEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
@@ -125,6 +139,25 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.searchTruncated ? ["truncated"] : []),
     ...(view.searchMatchSetSha256
       ? [`match-set ${view.searchMatchSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.dataFormat ? [`data ${view.dataFormat}`] : []),
+    ...(view.dataRowCount !== undefined ? [`rows ${view.dataRowCount}`] : []),
+    ...(view.dataColumnCount !== undefined
+      ? [`columns ${view.dataColumnCount}`]
+      : []),
+    ...(view.dataSizeBytes !== undefined ? [`size ${view.dataSizeBytes}`] : []),
+    ...(view.dataTruncated ? ["data-truncated"] : []),
+    ...(view.dataPathSha256
+      ? [`data-path ${view.dataPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.dataFileSha256
+      ? [`data-file ${view.dataFileSha256.slice(0, 12)}`]
+      : []),
+    ...(view.dataColumnSetSha256
+      ? [`column-set ${view.dataColumnSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.dataSampleSha256
+      ? [`sample ${view.dataSampleSha256.slice(0, 12)}`]
       : []),
     ...(view.verificationKind && view.verificationStatus
       ? [`verification ${view.verificationKind} ${view.verificationStatus}`]
@@ -273,6 +306,53 @@ function searchFilesEvidence(value: unknown):
     ...(truncated ? { searchTruncated: true } : {}),
     ...(matchSetSha256 ? { searchMatchSetSha256: matchSetSha256 } : {}),
   };
+}
+
+function inspectDataEvidence(value: unknown):
+  | {
+      dataFormat: "json" | "jsonl" | "csv";
+      dataRowCount: number;
+      dataColumnCount: number;
+      dataSizeBytes?: number;
+      dataTruncated?: boolean;
+      dataPathSha256?: string;
+      dataFileSha256?: string;
+      dataColumnSetSha256?: string;
+      dataSampleSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const format = dataFormat(record["format"]);
+  const rowCount = integerInRange(record["rowCount"], 0, 1_000_000);
+  const columnCount = integerInRange(record["columnCount"], 0, 1_000);
+  if (!format || rowCount === undefined || columnCount === undefined) {
+    return undefined;
+  }
+  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2 * 1024 * 1024);
+  const pathSha256 = sha256(record["pathSha256"]);
+  const fileSha256 = sha256(record["sha256"]);
+  const columnSetSha256 = sha256(record["columnSetSha256"]);
+  const sampleSha256 = sha256(record["sampleSha256"]);
+  return {
+    dataFormat: format,
+    dataRowCount: rowCount,
+    dataColumnCount: columnCount,
+    ...(sizeBytes !== undefined ? { dataSizeBytes: sizeBytes } : {}),
+    ...(record["truncated"] === true ? { dataTruncated: true } : {}),
+    ...(pathSha256 ? { dataPathSha256: pathSha256 } : {}),
+    ...(fileSha256 ? { dataFileSha256: fileSha256 } : {}),
+    ...(columnSetSha256 ? { dataColumnSetSha256: columnSetSha256 } : {}),
+    ...(sampleSha256 ? { dataSampleSha256: sampleSha256 } : {}),
+  };
+}
+
+function dataFormat(value: unknown): "json" | "jsonl" | "csv" | undefined {
+  return value === "json" || value === "jsonl" || value === "csv"
+    ? value
+    : undefined;
 }
 
 function verificationEvidenceView(value: unknown):

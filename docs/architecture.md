@@ -1507,6 +1507,14 @@ search_files
      line-anchor SHA-256, and byte size
   -> hash the structured match set so Trace can show count/truncation/hash
      without rendering match text or paths
+inspect_data
+  -> resolve JSON / JSONL / CSV files through the same read-only realpath and
+     UTF-8 boundary as read_file
+  -> reject oversized or malformed input and return at most 25 structured
+     sample rows to the Agent
+  -> hash the workspace-relative path, complete file, column set, and sample
+     rows so Trace can show format, row/column counts, truncation, and hashes
+     without rendering column names or sample values
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require an existing safe parent and a missing target

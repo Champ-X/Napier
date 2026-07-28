@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-LXuAL2U4.js",
+    "path": "apps/web/dist/assets/index-Cw6YWtRl.js",
     "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "54a7d411e9737227bf0ed35830392deffbef353ef3530a0d828461d9cac01454"
+    "sha256": "6b5263d50093b76b1e2cd0a27ce090df66c1c7bfb6953e695b16750223009a20"
   },
-  "distContentSha256": "54a7d411e9737227bf0ed35830392deffbef353ef3530a0d828461d9cac01454",
+  "distContentSha256": "6b5263d50093b76b1e2cd0a27ce090df66c1c7bfb6953e695b16750223009a20",
   "errors": []
 }

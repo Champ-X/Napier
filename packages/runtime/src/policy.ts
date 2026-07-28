@@ -12,6 +12,7 @@ const READ_ONLY_TOOLS = new Set([
   "list_files",
   "read_file",
   "search_files",
+  "inspect_data",
   "web_fetch",
   "web_search",
 ]);

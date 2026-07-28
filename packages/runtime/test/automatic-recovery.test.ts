@@ -307,6 +307,7 @@ describe("safe automatic recovery", () => {
         "list_files",
         "read_file",
         "search_files",
+        "inspect_data",
         "apply_patch",
         "verify_workspace",
       ],
@@ -354,6 +355,7 @@ describe("safe automatic recovery", () => {
           "list_files",
           "read_file",
           "search_files",
+          "inspect_data",
         ]);
         expect(JSON.stringify(context.messages)).toContain(
           "safe read-only recovery attempt",
@@ -408,7 +410,12 @@ describe("safe automatic recovery", () => {
         schemaVersion: 8,
         executionMode: "safe_read_only_recovery",
         toolPolicy: "observe",
-        enabledTools: ["list_files", "read_file", "search_files"],
+        enabledTools: [
+          "inspect_data",
+          "list_files",
+          "read_file",
+          "search_files",
+        ],
         enabledSubagents: [],
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),

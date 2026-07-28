@@ -343,10 +343,12 @@ export default function ContextPanel({
   const [credentialEnvVariable, setCredentialEnvVariable] = useState(
     initialCredentialDraft.environmentVariable,
   );
-  const [credentialKeychainService, setCredentialKeychainService] =
-    useState(initialCredentialDraft.keychainService);
-  const [credentialKeychainAccount, setCredentialKeychainAccount] =
-    useState(initialCredentialDraft.keychainAccount);
+  const [credentialKeychainService, setCredentialKeychainService] = useState(
+    initialCredentialDraft.keychainService,
+  );
+  const [credentialKeychainAccount, setCredentialKeychainAccount] = useState(
+    initialCredentialDraft.keychainAccount,
+  );
   const [credentialKeychainSecret, setCredentialKeychainSecret] = useState("");
   const [credentialKeychainReplace, setCredentialKeychainReplace] =
     useState(false);
@@ -1116,6 +1118,7 @@ export default function ContextPanel({
     "list_files",
     "read_file",
     "search_files",
+    "inspect_data",
     "apply_patch",
     "verify_workspace",
   ] as const;
@@ -1595,8 +1598,7 @@ export default function ContextPanel({
                         }
                       >
                         {option.label}
-                        {option.configured &&
-                        option.key === selectedModelKey
+                        {option.configured && option.key === selectedModelKey
                           ? ` · ${copy.context.modelAdvisorReviewModelPrimary}`
                           : ""}
                       </option>
@@ -1791,9 +1793,7 @@ export default function ContextPanel({
           className="primary-wide context-save"
           type="submit"
           disabled={configurationBusy || !canSaveAgent}
-          aria-describedby={
-            profileSaveDescriptionIds || undefined
-          }
+          aria-describedby={profileSaveDescriptionIds || undefined}
         >
           <Save size={13} aria-hidden="true" />
           {configurationBusy ? copy.context.saving : copy.context.saveProfile}

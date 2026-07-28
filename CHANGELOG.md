@@ -261,6 +261,10 @@ All notable changes to Napier are recorded here.
   literal search results can feed `read_file` and Hashline edits directly.
 - Trace tool summaries now surface `search_files` match counts and match-set
   hashes without exposing matched text or paths.
+- Added a read-only `inspect_data` workspace tool for JSON, JSONL, and CSV
+  files. It returns bounded schema/sample evidence to the Agent while Trace
+  renders only format, row/column counts, truncation state, and path/file/
+  column-set/sample hashes.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
 - `verify_workspace` results now include a hash-only scope receipt over cwd and

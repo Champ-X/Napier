@@ -53,6 +53,7 @@ describe("workspace tools", () => {
       "list_files",
       "read_file",
       "search_files",
+      "inspect_data",
     ]);
     const read = readOnly.find((tool) => tool.name === "read_file")!;
     const result = await read.execute("read-notes", {
@@ -94,7 +95,13 @@ describe("workspace tools", () => {
         includeWriteTools: true,
         dataRoot,
       }).map((tool) => tool.name),
-    ).toEqual(["list_files", "read_file", "search_files", "apply_patch"]);
+    ).toEqual([
+      "list_files",
+      "read_file",
+      "search_files",
+      "inspect_data",
+      "apply_patch",
+    ]);
   });
 
   it("returns hash receipts for listed workspace entries", async () => {
@@ -185,6 +192,66 @@ describe("workspace tools", () => {
         .digest("hex"),
       matches,
     });
+  });
+
+  it("inspects structured data files with bounded sample receipts", async () => {
+    const { workspaceRoot } = await createFixture();
+    const csv = "name,score\nAda,98\nLinus,87\n";
+    const jsonl = [
+      JSON.stringify({ id: 1, status: "open", hidden: "alpha" }),
+      JSON.stringify({ id: 2, status: "closed", hidden: "beta" }),
+    ].join("\n");
+    await writeFile(path.join(workspaceRoot, "scores.csv"), csv);
+    await writeFile(path.join(workspaceRoot, "items.jsonl"), jsonl);
+    const inspect = createWorkspaceTools(workspaceRoot).find(
+      (tool) => tool.name === "inspect_data",
+    )!;
+
+    const csvResult = await inspect.execute("inspect-csv", {
+      path: "scores.csv",
+      maxRows: 1,
+    });
+
+    const csvColumns = ["name", "score"];
+    const csvSample = [{ name: "Ada", score: "98" }];
+    expect(csvResult.content[0]).toEqual(
+      expect.objectContaining({
+        type: "text",
+        text: expect.stringContaining('"columns":["name","score"]'),
+      }),
+    );
+    expect(csvResult.content[0]!.text).toContain('"name": "Ada"');
+    expect(csvResult.details).toEqual({
+      path: "scores.csv",
+      pathSha256: createHash("sha256").update("scores.csv").digest("hex"),
+      format: "csv",
+      sha256: createHash("sha256").update(csv).digest("hex"),
+      sizeBytes: Buffer.byteLength(csv),
+      rowCount: 2,
+      columnCount: 2,
+      truncated: true,
+      columnSetSha256: createHash("sha256")
+        .update(JSON.stringify(csvColumns))
+        .digest("hex"),
+      sampleSha256: createHash("sha256")
+        .update(JSON.stringify(csvSample))
+        .digest("hex"),
+    });
+
+    const jsonlResult = await inspect.execute("inspect-jsonl", {
+      path: "items.jsonl",
+      format: "jsonl",
+      maxRows: 2,
+    });
+    expect(jsonlResult.details).toEqual(
+      expect.objectContaining({
+        format: "jsonl",
+        rowCount: 2,
+        columnCount: 3,
+        truncated: false,
+      }),
+    );
+    expect(jsonlResult.content[0]!.text).toContain('"status": "open"');
   });
 
   it("creates and exact-replaces UTF-8 files with hash preconditions", async () => {

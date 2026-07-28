@@ -148,6 +148,45 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes inspect_data receipts without columns or sample rows", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "inspect_data",
+      status: "completed",
+      output: "TOP_SECRET_SAMPLE_VALUE",
+      details: {
+        path: "TOP_SECRET_DATA_PATH",
+        format: "csv",
+        sha256: "a".repeat(64),
+        pathSha256: "b".repeat(64),
+        sizeBytes: 256,
+        rowCount: 42,
+        columnCount: 3,
+        truncated: true,
+        columns: ["TOP_SECRET_COLUMN"],
+        columnSetSha256: "c".repeat(64),
+        sampleSha256: "d".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "inspect_data",
+      status: "completed",
+      dataFormat: "csv",
+      dataRowCount: 42,
+      dataColumnCount: 3,
+      dataSizeBytes: 256,
+      dataTruncated: true,
+      dataPathSha256: "b".repeat(64),
+      dataFileSha256: "a".repeat(64),
+      dataColumnSetSha256: "c".repeat(64),
+      dataSampleSha256: "d".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / inspect_data / completed / data csv / rows 42 / columns 3 / size 256 / data-truncated / data-path ${"b".repeat(12)} / data-file ${"a".repeat(12)} / column-set ${"c".repeat(12)} / sample ${"d".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes verify_workspace status and output hashes only", () => {
     const event = toolEvent("tool.completed", {
       toolName: "verify_workspace",

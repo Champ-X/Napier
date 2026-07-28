@@ -3066,7 +3066,9 @@ function formatImportedLedgerBoundary(
 function localImportedThroughSeq(
   provenance: ThreadImportProvenance | undefined,
 ): number {
-  return provenance?.localImportedThroughSeq ?? provenance?.sourceEventCount ?? 0;
+  return (
+    provenance?.localImportedThroughSeq ?? provenance?.sourceEventCount ?? 0
+  );
 }
 
 function formatImportedHistoryMessage(seq: number, text: string): string {
@@ -3226,6 +3228,7 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     toolName === "list_files" ||
     toolName === "read_file" ||
     toolName === "search_files" ||
+    toolName === "inspect_data" ||
     toolName === "verify_workspace" ||
     toolName === "web_fetch" ||
     toolName === "web_search"

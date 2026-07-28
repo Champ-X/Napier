@@ -53,6 +53,7 @@ const SAFE_RECOVERY_TOOLS = new Set([
   "list_files",
   "read_file",
   "search_files",
+  "inspect_data",
 ]);
 const V1_FINGERPRINT_KEYS = new Set([
   "schemaVersion",

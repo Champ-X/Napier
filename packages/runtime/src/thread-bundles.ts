@@ -166,6 +166,7 @@ const AGENT_TOOLS = new Set([
   "list_files",
   "read_file",
   "search_files",
+  "inspect_data",
   "apply_patch",
   "verify_workspace",
 ]);

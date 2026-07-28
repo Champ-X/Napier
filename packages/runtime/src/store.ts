@@ -9432,6 +9432,7 @@ export class LocalStore {
         "list_files",
         "read_file",
         "search_files",
+        "inspect_data",
         "apply_patch",
         "verify_workspace",
       ],
@@ -11434,10 +11435,7 @@ export class LocalStore {
         );
       }
       if (thread.importProvenance) {
-        validateThreadImportProvenanceLedgerReceipt(
-          thread,
-          threadEvents,
-        );
+        validateThreadImportProvenanceLedgerReceipt(thread, threadEvents);
       }
       assertRunEvaluationCompletedEventBindings({
         evaluations: this.state.evaluations.filter(

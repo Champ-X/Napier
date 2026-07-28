@@ -58,9 +58,9 @@ Version `0.1.0` includes:
   execution, verification, or delivery snapshots; each immutable snapshot is
   predecessor-linked and automatically binds the actual same-Run Ledger events
   since the prior milestone before being reinjected on the next Pi turn;
-- workspace-confined read, list, and literal search tools with canonical
-  realpath checks plus complete-file, entry-set, and line-anchor SHA-256
-  evidence;
+- workspace-confined read, list, literal search, and structured data inspection
+  tools with canonical realpath checks plus complete-file, entry-set,
+  line-anchor, column-set, and sample SHA-256 evidence;
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
   replacement, and Hashline-style line-anchor replacement under the explicit
   `workspace` policy, without general shell or file deletion;
@@ -1036,6 +1036,14 @@ keeps the matching line for human-readable orientation. This lets a follow-up
 `read_file` or `apply_patch hashline_replace` bind work to the same evidence
 without trusting plain grep output, while Trace summaries render only the
 match count, truncation state, and match-set hash.
+
+`inspect_data` gives the Agent a bounded local preview for UTF-8 JSON, JSONL,
+and CSV files without adding a shell or network dependency. It resolves through
+the same workspace realpath boundary, rejects oversized or malformed input,
+returns only a capped structured sample to the model, and records path/file,
+column-set, and sample SHA-256 receipts. Trace summaries show only format,
+row/column counts, byte size, truncation state, and hashes, never column names
+or sample values.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

@@ -24,6 +24,9 @@ const MAX_READ_BYTES = 96 * 1024;
 const MAX_READ_LINE_ANCHORS = 80;
 const MAX_HASHABLE_TEXT_BYTES = 2 * 1024 * 1024;
 const MAX_SEARCH_MATCHES = 80;
+const MAX_DATA_SAMPLE_ROWS = 25;
+const MAX_DATA_COLUMNS = 80;
+const MAX_DATA_PREVIEW_BYTES = 4_096;
 const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
@@ -50,6 +53,27 @@ const searchFilesSchema = Type.Object({
   path: Type.Optional(
     Type.String({
       description: "Workspace-relative directory. Defaults to '.'.",
+    }),
+  ),
+});
+
+const inspectDataSchema = Type.Object({
+  path: Type.String({
+    description: "Workspace-relative JSON, JSONL, or CSV file path.",
+  }),
+  format: Type.Optional(
+    Type.Union([
+      Type.Literal("auto"),
+      Type.Literal("json"),
+      Type.Literal("jsonl"),
+      Type.Literal("csv"),
+    ]),
+  ),
+  maxRows: Type.Optional(
+    Type.Integer({
+      minimum: 1,
+      maximum: MAX_DATA_SAMPLE_ROWS,
+      description: "Maximum structured sample rows to return.",
     }),
   ),
 });
@@ -197,6 +221,21 @@ export interface WorkspaceSearchDetails {
   matches: WorkspaceSearchMatch[];
 }
 
+export type WorkspaceDataFormat = "json" | "jsonl" | "csv";
+
+export interface WorkspaceDataInspectDetails {
+  path: string;
+  pathSha256: string;
+  format: WorkspaceDataFormat;
+  sha256: string;
+  sizeBytes: number;
+  rowCount: number;
+  columnCount: number;
+  truncated: boolean;
+  columnSetSha256: string;
+  sampleSha256: string;
+}
+
 export interface WorkspaceListDetails {
   count: number;
   truncated: boolean;
@@ -326,6 +365,256 @@ function decodeUtf8(buffer: Buffer, label: string): string {
 
 function sha256(value: Uint8Array | string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function inspectStructuredData(
+  source: string,
+  relativePath: string,
+  requestedFormat: "auto" | WorkspaceDataFormat | undefined,
+  maxRows: number,
+): {
+  format: WorkspaceDataFormat;
+  rowCount: number;
+  columnCount: number;
+  columns: string[];
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+  truncated: boolean;
+} {
+  const format = detectDataFormat(source, relativePath, requestedFormat);
+  const inspected =
+    format === "csv"
+      ? inspectCsvData(source, maxRows)
+      : format === "jsonl"
+        ? inspectJsonLinesData(source, maxRows)
+        : inspectJsonData(source, maxRows);
+  return { format, ...inspected };
+}
+
+function detectDataFormat(
+  source: string,
+  relativePath: string,
+  requestedFormat: "auto" | WorkspaceDataFormat | undefined,
+): WorkspaceDataFormat {
+  if (requestedFormat && requestedFormat !== "auto") return requestedFormat;
+  const lower = relativePath.toLowerCase();
+  if (lower.endsWith(".jsonl") || lower.endsWith(".ndjson")) return "jsonl";
+  if (lower.endsWith(".json")) return "json";
+  if (lower.endsWith(".csv")) return "csv";
+  const trimmed = source.trimStart();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) return "json";
+  return "csv";
+}
+
+function inspectJsonData(
+  source: string,
+  maxRows: number,
+): {
+  rowCount: number;
+  columnCount: number;
+  columns: string[];
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+  truncated: boolean;
+} {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(source);
+  } catch {
+    throw new Error("inspect_data JSON parse failed");
+  }
+  const rows = Array.isArray(parsed) ? parsed : [parsed];
+  return inspectStructuredRows(rows, maxRows);
+}
+
+function inspectJsonLinesData(
+  source: string,
+  maxRows: number,
+): {
+  rowCount: number;
+  columnCount: number;
+  columns: string[];
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+  truncated: boolean;
+} {
+  const lines = source
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  const rows = lines.map((line, index): unknown => {
+    try {
+      return JSON.parse(line);
+    } catch {
+      throw new Error(`inspect_data JSONL parse failed at line ${index + 1}`);
+    }
+  });
+  return inspectStructuredRows(rows, maxRows);
+}
+
+function inspectCsvData(
+  source: string,
+  maxRows: number,
+): {
+  rowCount: number;
+  columnCount: number;
+  columns: string[];
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+  truncated: boolean;
+} {
+  const rows = parseCsvRows(source);
+  if (rows.length === 0) {
+    return {
+      rowCount: 0,
+      columnCount: 0,
+      columns: [],
+      sampleRows: [],
+      truncated: false,
+    };
+  }
+  const headers = rows[0]!.map((value, index) =>
+    value.trim().length > 0 ? value.trim() : `column_${index + 1}`,
+  );
+  const dataRows = rows.slice(1);
+  const columns = headers.slice(0, MAX_DATA_COLUMNS);
+  const sampleRows = dataRows
+    .slice(0, maxRows)
+    .map((row) =>
+      Object.fromEntries(
+        columns.map((column, index) => [column, previewCell(row[index] ?? "")]),
+      ),
+    );
+  return {
+    rowCount: dataRows.length,
+    columnCount: headers.length,
+    columns,
+    sampleRows,
+    truncated:
+      dataRows.length > sampleRows.length || headers.length > columns.length,
+  };
+}
+
+function parseCsvRows(source: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index]!;
+    if (quoted) {
+      if (char === '"') {
+        if (source[index + 1] === '"') {
+          field += '"';
+          index += 1;
+        } else {
+          quoted = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+    if (char === '"') {
+      if (field.length !== 0) {
+        throw new Error("inspect_data CSV quote is invalid");
+      }
+      quoted = true;
+      continue;
+    }
+    if (char === ",") {
+      row.push(field);
+      field = "";
+      continue;
+    }
+    if (char === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      continue;
+    }
+    if (char === "\r") {
+      continue;
+    }
+    field += char;
+  }
+  if (quoted) throw new Error("inspect_data CSV quote is unterminated");
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows.filter((candidate) =>
+    candidate.some((fieldValue) => fieldValue.length > 0),
+  );
+}
+
+function inspectStructuredRows(
+  rows: unknown[],
+  maxRows: number,
+): {
+  rowCount: number;
+  columnCount: number;
+  columns: string[];
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+  truncated: boolean;
+} {
+  const columnSet = new Set<string>();
+  for (const row of rows) {
+    for (const column of rowColumns(row)) {
+      columnSet.add(column);
+    }
+  }
+  const allColumns = [...columnSet];
+  const columns = allColumns.slice(0, MAX_DATA_COLUMNS);
+  const sampleRows = rows
+    .slice(0, maxRows)
+    .map((row) => projectStructuredRow(row, columns));
+  return {
+    rowCount: rows.length,
+    columnCount: allColumns.length,
+    columns,
+    sampleRows,
+    truncated:
+      rows.length > sampleRows.length || allColumns.length > columns.length,
+  };
+}
+
+function rowColumns(row: unknown): string[] {
+  if (isPlainRecord(row)) return Object.keys(row);
+  return ["value"];
+}
+
+function projectStructuredRow(
+  row: unknown,
+  columns: string[],
+): Record<string, string | number | boolean | null> {
+  if (!isPlainRecord(row)) {
+    return { value: previewCell(row) };
+  }
+  return Object.fromEntries(
+    columns.map((column) => [column, previewCell(row[column])]),
+  );
+}
+
+function previewCell(value: unknown): string | number | boolean | null {
+  if (
+    value === null ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+  if (typeof value === "string") {
+    return truncatePreview(value);
+  }
+  return truncatePreview(JSON.stringify(value));
+}
+
+function truncatePreview(value: string | undefined): string {
+  const text = value ?? "";
+  if (Buffer.byteLength(text) <= MAX_DATA_PREVIEW_BYTES) return text;
+  return `${Buffer.from(text).subarray(0, MAX_DATA_PREVIEW_BYTES).toString("utf8")}...[truncated]`;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 export interface WorkspaceTextEvidence {
@@ -783,10 +1072,7 @@ export function createWorkspaceTools(
   workspaceRoot: string,
   options: CreateWorkspaceToolsOptions = {},
 ): AgentTool[] {
-  const listFiles: AgentTool<
-    typeof listFilesSchema,
-    WorkspaceListDetails
-  > = {
+  const listFiles: AgentTool<typeof listFilesSchema, WorkspaceListDetails> = {
     name: "list_files",
     label: "List files",
     description: "List files and directories inside the configured workspace.",
@@ -957,7 +1243,75 @@ export function createWorkspaceTools(
     },
   };
 
-  const tools: AgentTool[] = [listFiles, readTextFile, searchFiles];
+  const inspectData: AgentTool<
+    typeof inspectDataSchema,
+    WorkspaceDataInspectDetails
+  > = {
+    name: "inspect_data",
+    label: "Inspect data",
+    description:
+      "Inspect a UTF-8 JSON, JSONL, or CSV workspace file and return bounded schema/sample evidence.",
+    parameters: inspectDataSchema,
+    async execute(_toolCallId, input) {
+      const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
+      const target = resolved.target;
+      const info = await stat(target);
+      if (!info.isFile()) throw new Error("inspect_data path must be a file");
+      if (info.size > MAX_HASHABLE_TEXT_BYTES) {
+        throw new Error(
+          `inspect_data supports files up to ${MAX_HASHABLE_TEXT_BYTES} bytes`,
+        );
+      }
+      const buffer = await readFile(target);
+      const source = decodeUtf8(buffer, "inspect_data target");
+      const relativePath = path.relative(resolved.root, target);
+      const inspected = inspectStructuredData(
+        source,
+        relativePath,
+        input.format ?? "auto",
+        input.maxRows ?? 5,
+      );
+      const columnSetSha256 = sha256(JSON.stringify(inspected.columns));
+      const sampleSha256 = sha256(JSON.stringify(inspected.sampleRows));
+      const contentSha256 = sha256(buffer);
+      const details: WorkspaceDataInspectDetails = {
+        path: relativePath,
+        pathSha256: sha256(relativePath),
+        format: inspected.format,
+        sha256: contentSha256,
+        sizeBytes: buffer.byteLength,
+        rowCount: inspected.rowCount,
+        columnCount: inspected.columnCount,
+        truncated: inspected.truncated,
+        columnSetSha256,
+        sampleSha256,
+      };
+      const metadata = JSON.stringify({
+        ...details,
+        columns: inspected.columns,
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: [
+              `Napier data metadata: ${metadata}`,
+              "Sample rows:",
+              JSON.stringify(inspected.sampleRows, null, 2),
+            ].join("\n"),
+          },
+        ],
+        details,
+      };
+    },
+  };
+
+  const tools: AgentTool[] = [
+    listFiles,
+    readTextFile,
+    searchFiles,
+    inspectData,
+  ];
   if (options.includeWriteTools) {
     if (!options.dataRoot) {
       throw new Error("Write-capable workspace tools require a dataRoot");

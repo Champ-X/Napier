@@ -1906,8 +1906,7 @@ describe("Napier HTTP goal flow", () => {
     expect(sameAdvisorReviewModelResponse.status).toBe(400);
     expect(await sameAdvisorReviewModelResponse.json()).toEqual(
       expect.objectContaining({
-        error:
-          "Model Advisor review model must differ from the primary model",
+        error: "Model Advisor review model must differ from the primary model",
       }),
     );
 
@@ -1975,6 +1974,7 @@ describe("Napier HTTP goal flow", () => {
         enabledTools: [
           "read_file",
           "search_files",
+          "inspect_data",
           "apply_patch",
           "verify_workspace",
         ],
@@ -2027,6 +2027,7 @@ describe("Napier HTTP goal flow", () => {
         toolPolicy: "workspace",
         enabledTools: [
           "apply_patch",
+          "inspect_data",
           "read_file",
           "search_files",
           "verify_workspace",
@@ -8625,8 +8626,7 @@ describe("Napier HTTP goal flow", () => {
     expect(unconfiguredEvaluationResponse.status).toBe(400);
     expect(await unconfiguredEvaluationResponse.json()).toEqual(
       expect.objectContaining({
-        error:
-          "Model provider is not configured: faux-evaluation-unconfigured",
+        error: "Model provider is not configured: faux-evaluation-unconfigured",
       }),
     );
     expect(services.store.listRunEvaluations(created.thread.id)).toHaveLength(
