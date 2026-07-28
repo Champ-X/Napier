@@ -227,6 +227,7 @@ export class ChannelService {
       retryBaseMs: delivery.retryBaseMs,
     });
     try {
+      await this.assertDeliveryModelAvailable(delivery, execution.model);
       const run = await this.runtime.runPrompt({
         threadId: delivery.threadId,
         text: execution.message,
@@ -297,6 +298,22 @@ export class ChannelService {
         },
         existingRun.id,
       );
+    }
+  }
+
+  private async assertDeliveryModelAvailable(
+    delivery: InboundDelivery,
+    deliveryModel: InboundMessageRequest["model"] | undefined,
+  ): Promise<void> {
+    const thread = this.store.getThread(delivery.threadId);
+    const agent = this.store.getAgent(thread.agentId);
+    const model = deliveryModel ?? agent.model;
+    if (model.provider === "napier" && model.id === "demo") return;
+    if (!this.runtime.modelRegistry.resolve(model)) {
+      throw new Error(`Model not found: ${model.provider}/${model.id}`);
+    }
+    if (!(await this.runtime.modelRegistry.isConfigured(model))) {
+      throw new Error(`Model provider is not configured: ${model.provider}`);
     }
   }
 

@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { fauxProvider } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
@@ -407,6 +408,68 @@ describe("inbound webhook channels", () => {
         "channel.delivery.retry.scheduled",
         "channel.delivery.completed",
       ]),
+    );
+  });
+
+  it("retries a delivery before creating a Run when its model is unavailable", async () => {
+    const { store, runtime } = await createFixture();
+    const unavailable = fauxProvider({ provider: "faux-channel-unavailable" });
+    runtime.modelRegistry.registerProvider({
+      ...unavailable.provider,
+      auth: {
+        apiKey: {
+          name: "Unavailable",
+          resolve: async () => undefined,
+        },
+      },
+    });
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Unavailable inbound model",
+      agentId: agent.id,
+    });
+    const created = await store.createInboundChannel({
+      name: "Unavailable hook",
+      threadId: thread.id,
+      retryPolicy: {
+        maxAttempts: 3,
+        baseDelayMs: 250,
+      },
+    });
+    const receipt = await store.acceptInboundDelivery(
+      created.channel.id,
+      created.token,
+      {
+        idempotencyKey: "unavailable-channel-model-0001",
+        message: "This delivery should wait for credentials.",
+        model: { provider: "faux-channel-unavailable", id: "faux-1" },
+      },
+    );
+    const channels = new ChannelService(store, runtime);
+
+    await channels.drain(new Date("2026-07-25T00:00:00.000Z"));
+
+    expect(store.listRuns(thread.id)).toHaveLength(0);
+    expect(store.listInboundDeliveries(created.channel.id)).toEqual([
+      expect.objectContaining({
+        id: receipt.delivery.id,
+        status: "retrying",
+        attemptCount: 1,
+        error: "Model provider is not configured: faux-channel-unavailable",
+        nextAttemptAt: "2026-07-25T00:00:00.250Z",
+      }),
+    ]);
+    const events = await store.listEvents(thread.id);
+    expect(events.map((event) => event.type)).toEqual([
+      "channel.delivery.started",
+      "channel.delivery.retry.scheduled",
+    ]);
+    expect(events[1]?.payload).toEqual(
+      expect.objectContaining({
+        error: "Model provider is not configured: faux-channel-unavailable",
+        status: "retrying",
+        attempt: 1,
+      }),
     );
   });
 

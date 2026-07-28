@@ -246,6 +246,8 @@ All notable changes to Napier are recorded here.
   receipts are generated.
 - Due schedule execution now re-checks the effective model before creating a
   Run, settling credential drift as `schedule.failed` ledger evidence.
+- Inbound delivery execution now re-checks the effective model before creating
+  a Run, routing credential drift through retry or dead-letter evidence.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
