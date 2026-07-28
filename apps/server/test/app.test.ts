@@ -9719,6 +9719,43 @@ function expectThreadDetailProjectionHeaders(
   expect(response.headers.get("x-napier-recovery-attempt-count")).toBe(
     String(detail.automaticRecoveryAttempts.length),
   );
+  const provenance = detail.thread.importProvenance;
+  expect(response.headers.get("x-napier-import-source-thread-id")).toBe(
+    provenance?.sourceThreadId ?? null,
+  );
+  expect(response.headers.get("x-napier-import-source-api-version")).toBe(
+    provenance?.sourceApiVersion ?? null,
+  );
+  expect(response.headers.get("x-napier-import-source-content-sha256")).toBe(
+    provenance?.sourceContentSha256 ?? null,
+  );
+  expect(
+    response.headers.get("x-napier-import-source-event-stream-sha256"),
+  ).toBe(provenance?.sourceEventStreamSha256 ?? null);
+  expect(response.headers.get("x-napier-import-source-event-count")).toBe(
+    provenance ? String(provenance.sourceEventCount) : null,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-import-source-model-context-envelope-count",
+    ),
+  ).toBe(
+    provenance?.sourceModelContextEnvelopeCount === undefined
+      ? null
+      : String(provenance.sourceModelContextEnvelopeCount),
+  );
+  expect(
+    response.headers.get(
+      "x-napier-import-source-embedded-model-context-envelope-count",
+    ),
+  ).toBe(
+    provenance?.sourceEmbeddedModelContextEnvelopeCount === undefined
+      ? null
+      : String(provenance.sourceEmbeddedModelContextEnvelopeCount),
+  );
+  expect(response.headers.get("x-napier-imported-at")).toBe(
+    provenance?.importedAt ?? null,
+  );
 }
 
 function expectThreadEventsProjectionHeaders(

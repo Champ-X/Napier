@@ -19363,6 +19363,38 @@ function setThreadDetailProjectionHeaders(
     "X-Napier-Recovery-Attempt-Count",
     String(detail.automaticRecoveryAttempts.length),
   );
+  const provenance = detail.thread.importProvenance;
+  if (!provenance) return;
+  context.header("X-Napier-Import-Source-Thread-Id", provenance.sourceThreadId);
+  context.header(
+    "X-Napier-Import-Source-API-Version",
+    provenance.sourceApiVersion,
+  );
+  context.header(
+    "X-Napier-Import-Source-Content-SHA256",
+    provenance.sourceContentSha256,
+  );
+  context.header(
+    "X-Napier-Import-Source-Event-Stream-SHA256",
+    provenance.sourceEventStreamSha256,
+  );
+  context.header(
+    "X-Napier-Import-Source-Event-Count",
+    String(provenance.sourceEventCount),
+  );
+  if (provenance.sourceModelContextEnvelopeCount !== undefined) {
+    context.header(
+      "X-Napier-Import-Source-Model-Context-Envelope-Count",
+      String(provenance.sourceModelContextEnvelopeCount),
+    );
+  }
+  if (provenance.sourceEmbeddedModelContextEnvelopeCount !== undefined) {
+    context.header(
+      "X-Napier-Import-Source-Embedded-Model-Context-Envelope-Count",
+      String(provenance.sourceEmbeddedModelContextEnvelopeCount),
+    );
+  }
+  context.header("X-Napier-Imported-At", provenance.importedAt);
 }
 
 function setSubagentOutcomeEvidenceVerificationHeaders(

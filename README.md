@@ -1322,8 +1322,11 @@ ordered event.
 `generatedAt` is excluded from the canonical content digest, so repeated
 exports of unchanged evidence produce the same content SHA-256.
 The fixture response is no-store and mirrors the bundle content SHA-256,
-event-stream SHA-256, thread ID, run/event counts, and first/last event
-sequence headers for CI archive checks.
+event-stream SHA-256, thread ID, verification status, run/event/plan/evaluation
+counts, ledger-backed and embedded Model Context Envelope counts, and
+first/last event sequence headers for CI archive checks. Imported ThreadDetail
+responses also mirror the source fixture hashes/counts as no-store provenance
+headers.
 Per-Run replay snapshots are self-contained: they carry the Run, ordered events,
 Subagent task evidence, a stable `contentSha256`, and an ordered
 `eventStreamSha256`. `POST /api/threads/:threadId/runs/:runId/replay/verify`

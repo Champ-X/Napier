@@ -1201,6 +1201,9 @@ no-store headers, a response content SHA-256, and run/event/plan/evaluation/
 subagent/recovery counts for polling. The digest binds the returned snapshot;
 it is not a privacy-preserving hash-only artifact because ThreadDetail contains
 the visible conversation and Trace context.
+Imported Threads also mirror their source replay provenance in headers:
+source thread/API version, source content/event-stream hashes, source event
+count, optional source Model Context Envelope counts, and imported-at time.
 Thread creation, replay import, goal set/clear, and branch creation return the
 same ThreadDetail projection headers. `POST /api/threads/:threadId/stop`
 returns a no-store control receipt with its content SHA-256, thread ID, and
@@ -2210,7 +2213,9 @@ export Thread
   -> hash canonical bundle content independently of generatedAt
   -> return napier.thread-replay schema version 1
   -> mirror no-store bundle content hash, event-stream hash, thread ID,
-     run/event counts, and first/last event sequence headers
+     verification status, run/event/plan/evaluation counts,
+     ledger-backed/embedded Model Context Envelope counts, and first/last
+     event sequence headers
 verify fixture (maximum 10 MiB, no mutation)
   -> strictly parse the verify wrapper: only bundle is accepted
   -> run the same schema, reference, event-stream, and content-hash validation
