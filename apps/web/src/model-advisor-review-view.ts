@@ -29,6 +29,7 @@ export interface IndependentModelAdvisorReviewView {
   reviewerModel: string;
   issueCodes: IndependentModelAdvisorIssueCode[];
   diagnosticCodes: string[];
+  modelContextEnvelopeSha256?: string;
   contentSha256: string;
 }
 
@@ -50,6 +51,7 @@ export function independentModelAdvisorReviewViews(
       const reviewerModel = payload["reviewerModel"];
       const issues = payload["issues"];
       const diagnosticCodes = payload["diagnosticCodes"];
+      const modelContextEnvelope = payload["modelContextEnvelope"];
       const contentSha256 = payload["contentSha256"];
       if (
         typeof verdict !== "string" ||
@@ -81,6 +83,11 @@ export function independentModelAdvisorReviewViews(
         typeof code === "string" ? [code] : [],
       );
       if (diagnostics.length !== diagnosticCodes.length) return [];
+      const modelContextEnvelopeSha256 = hash(
+        record(modelContextEnvelope)
+          ? modelContextEnvelope["contentSha256"]
+          : undefined,
+      );
       return [
         {
           eventSeq: event.seq,
@@ -90,6 +97,7 @@ export function independentModelAdvisorReviewViews(
           reviewerModel: `${reviewerModel["provider"]}/${reviewerModel["id"]}`,
           issueCodes,
           diagnosticCodes: diagnostics,
+          ...(modelContextEnvelopeSha256 ? { modelContextEnvelopeSha256 } : {}),
           contentSha256,
         },
       ];
@@ -99,4 +107,10 @@ export function independentModelAdvisorReviewViews(
 
 function record(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function hash(value: unknown): string | undefined {
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
+    ? value
+    : undefined;
 }

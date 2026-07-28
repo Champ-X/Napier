@@ -534,9 +534,20 @@ function IndependentAdvisorLedger({
                 </p>
               ) : null}
               <footer>
-                <code title={review.contentSha256}>
-                  {review.contentSha256.slice(0, 12)}
-                </code>
+                {review.modelContextEnvelopeSha256 ? (
+                  <span>
+                    {modelAdvisorReviewCopy.envelope}{" "}
+                    <code title={review.modelContextEnvelopeSha256}>
+                      {review.modelContextEnvelopeSha256.slice(0, 12)}
+                    </code>
+                  </span>
+                ) : null}
+                <span>
+                  {modelAdvisorReviewCopy.receipt}{" "}
+                  <code title={review.contentSha256}>
+                    {review.contentSha256.slice(0, 12)}
+                  </code>
+                </span>
               </footer>
             </li>
           ))}

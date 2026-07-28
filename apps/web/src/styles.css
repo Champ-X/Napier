@@ -6502,10 +6502,17 @@ button:disabled {
 }
 
 .independent-advisor-card > footer {
+  flex-wrap: wrap;
   justify-content: flex-end;
   margin-top: 8px;
   font-size: 7px;
   color: var(--ink-faint);
+}
+
+.independent-advisor-card > footer span {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
 }
 
 .agent-milestone-ledger {

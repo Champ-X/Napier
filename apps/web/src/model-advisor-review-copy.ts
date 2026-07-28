@@ -7,6 +7,8 @@ export const modelAdvisorReviewCopy = {
   risk: "risk",
   issues: "issues",
   diagnostics: "diagnostics",
+  envelope: "envelope",
+  receipt: "receipt",
   verdicts: {
     accept: "Accepted",
     revise: "Revision requested",

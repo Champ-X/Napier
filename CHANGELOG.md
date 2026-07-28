@@ -78,7 +78,8 @@ All notable changes to Napier are recorded here.
   model-context envelope, without copying candidate text or free-form reviewer
   guidance into the review receipt. Observe mode records the second opinion;
   enforce mode combines non-accept reviews with deterministic blockers in the
-  existing bounded tool-free correction state machine. Reviewer usage now
+  existing bounded tool-free correction state machine. Trace now renders the
+  Advisor request envelope hash beside the review receipt hash. Reviewer usage now
   participates in live budget enforcement and final Run settlement. Schema-6
   Run fingerprints bind the review model while schemas 1-5 remain verifiable;
   portable replay rejects malformed review receipts, metadata-only OTLP exposes

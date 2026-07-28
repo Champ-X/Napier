@@ -14,6 +14,9 @@ describe("independent Model Advisor review views", () => {
         reviewerModel: { provider: "reviewer", id: "model-2" },
         issues: [],
         diagnosticCodes: [],
+        modelContextEnvelope: {
+          contentSha256: "c".repeat(64),
+        },
         contentSha256: "b".repeat(64),
       }),
       event(2, {
@@ -28,7 +31,8 @@ describe("independent Model Advisor review views", () => {
       }),
     ];
 
-    expect(independentModelAdvisorReviewViews(events)).toEqual([
+    const views = independentModelAdvisorReviewViews(events);
+    expect(views).toEqual([
       {
         eventSeq: 4,
         verdict: "accept",
@@ -37,6 +41,7 @@ describe("independent Model Advisor review views", () => {
         reviewerModel: "reviewer/model-2",
         issueCodes: [],
         diagnosticCodes: [],
+        modelContextEnvelopeSha256: "c".repeat(64),
         contentSha256: "b".repeat(64),
       },
       expect.objectContaining({
@@ -45,6 +50,7 @@ describe("independent Model Advisor review views", () => {
         issueCodes: ["evidence"],
       }),
     ]);
+    expect(views[1]).not.toHaveProperty("modelContextEnvelopeSha256");
   });
 
   it("ignores malformed or unrelated events", () => {

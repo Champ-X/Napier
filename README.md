@@ -761,6 +761,9 @@ reviewer guidance are never copied into the receipt. In
 existing correction state machine: at most three subsequent primary-model
 turns run without tools, and only a candidate accepted by every configured
 advisor is persisted as the visible answer.
+Trace renders each independent review with both the request envelope hash and
+the review receipt hash, so the second opinion can be inspected without opening
+raw event JSON.
 
 Reviewer usage participates in the same frozen Run token, cost, and time
 budgets and in final Run settlement. Schema-6 Run fingerprints bind the review
