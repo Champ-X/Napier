@@ -849,7 +849,9 @@ regressed. The same envelope binding now covers pairwise evaluator model calls:
 each service-created evaluation Run records the evaluator request envelope and
 a redacted `model.response` with only text hashes, byte counts, usage, and the
 binding hashes. Replay validation fails closed when an envelope lacks exactly
-one bound response.
+one bound response. Live Agent primary turns share a Run-level turn counter, so
+goal continuations and advisor corrections keep a contiguous envelope sequence
+instead of restarting at turn 0.
 
 ## Agent Configuration History
 

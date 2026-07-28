@@ -650,6 +650,34 @@ describe("AgentRuntime demo path", () => {
     expect(
       detail.events.filter((event) => event.type === "message.assistant"),
     ).toHaveLength(2);
+    const envelopeTurnIndexes = detail.events
+      .filter((event) => event.type === "context.model_envelope")
+      .map((event) => event.payload)
+      .filter(
+        (payload): payload is Record<string, unknown> =>
+          Boolean(payload) &&
+          !Array.isArray(payload) &&
+          typeof payload === "object",
+      )
+      .map((payload) => payload["turnIndex"]);
+    expect(envelopeTurnIndexes).toEqual([0, 1]);
+    const responseTurnIndexes = detail.events
+      .filter((event) => event.type === "model.response")
+      .map((event) => event.payload)
+      .filter(
+        (payload): payload is Record<string, unknown> =>
+          Boolean(payload) &&
+          !Array.isArray(payload) &&
+          typeof payload === "object",
+      )
+      .map((payload) => payload["modelContextEnvelopeTurnIndex"]);
+    expect(responseTurnIndexes).toEqual([0, 1]);
+    await expect(exportThreadReplayBundle(store, thread.id)).resolves.toEqual(
+      expect.objectContaining({
+        thread: expect.objectContaining({ id: thread.id }),
+        eventStreamSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
     expect(store.listMemories()).toEqual([
       expect.objectContaining({
         status: "proposed",

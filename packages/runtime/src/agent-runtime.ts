@@ -296,6 +296,9 @@ export class AgentRuntime {
         .renewRunLease(run.id, leasedRun.token, RUN_LEASE_TTL_MS)
         .catch(() => abortController.abort());
     }, RUN_LEASE_HEARTBEAT_MS);
+    let modelContextEnvelopeTurnIndex = 0;
+    const nextModelContextEnvelopeTurnIndex = (): number =>
+      modelContextEnvelopeTurnIndex++;
 
     try {
       await options.onRunCreated?.(run);
@@ -449,6 +452,7 @@ export class AgentRuntime {
               advisorReviewPrompt,
               abortController.signal,
               budget,
+              nextModelContextEnvelopeTurnIndex,
               options.onEvent,
             )
           : this.runDemo(
@@ -1045,6 +1049,7 @@ export class AgentRuntime {
     advisorReviewPrompt: string,
     signal: AbortSignal,
     budget: RunBudgetTracker,
+    nextModelContextEnvelopeTurnIndex: () => number,
     onEvent?: EventSink,
   ): Promise<string> {
     const history = await this.buildModelHistory(
@@ -1213,19 +1218,17 @@ export class AgentRuntime {
       milestoneContextProjection,
       activeToolLoopGuard,
     );
-    let modelContextEnvelopeTurnIndex = 0;
     const recordModelContextEnvelope = async (
       nextSystemPrompt: string,
       nextMessages: readonly unknown[],
       nextTools: readonly { name: string }[],
     ): Promise<ModelContextEnvelopeReceipt> => {
       const receipt = createModelContextEnvelopeReceipt({
-        turnIndex: modelContextEnvelopeTurnIndex,
+        turnIndex: nextModelContextEnvelopeTurnIndex(),
         systemPrompt: nextSystemPrompt,
         messages: nextMessages,
         tools: nextTools,
       });
-      modelContextEnvelopeTurnIndex += 1;
       await this.record(
         {
           threadId: run.threadId,

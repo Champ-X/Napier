@@ -515,7 +515,9 @@ The lazy Trace projection joins matching response bindings back into the
 envelope card as response sequence, model, and stop reason; mismatched bindings
 remain unrendered. Run replay metrics count context envelopes, bound model
 responses, and unbound model responses so Run Lab comparisons can surface
-context-governance coverage.
+context-governance coverage. Live Agent primary turns allocate envelope turn
+indexes from a Run-level counter, so continuations and advisor corrections
+remain contiguous within the same Run.
 Comparison snapshots also derive a metadata-only `contextCoverageDelta` with
 left/right rates, diagnostics, and a clean/partial/missing/regressed status for
 candidate governance review.
