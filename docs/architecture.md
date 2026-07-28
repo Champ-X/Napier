@@ -2367,6 +2367,11 @@ bounded projection, a fixed fail-closed receipt summary, a category-only
 fallback, or the legacy generic payload fallback. The Workbench displays those
 counts plus the distinct event types still using generic fallback, making
 privacy regressions visible in the product surface during review.
+Run Lab reuses the same projection when comparing two Runs. The comparison
+sheet shows baseline and candidate generic fallback counts, bounded-summary
+deltas, and diagnostics when the candidate introduces or retains generic
+event-list summaries, so privacy posture can be reviewed alongside context
+coverage, configuration drift, and output changes.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

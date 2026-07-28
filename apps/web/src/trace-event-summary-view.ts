@@ -49,6 +49,23 @@ export interface TraceSummaryCoverageView {
   genericEventTypes: string[];
 }
 
+export type TraceSummaryCoverageDeltaStatus =
+  | "clean"
+  | "generic_present"
+  | "regressed";
+
+export interface TraceSummaryCoverageDeltaView {
+  status: TraceSummaryCoverageDeltaStatus;
+  left: TraceSummaryCoverageView;
+  right: TraceSummaryCoverageView;
+  boundedDelta: number;
+  fixedDelta: number;
+  categoryDelta: number;
+  genericDelta: number;
+  diagnostics: string[];
+  genericEventTypes: string[];
+}
+
 export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
   if (event.type === "trace.otlp.exported") {
     return classifiedSummary(
@@ -167,6 +184,33 @@ export function traceSummaryCoverageView(
   }
   counts.genericEventTypes = [...genericTypes].sort();
   return counts;
+}
+
+export function traceSummaryCoverageDeltaView(
+  leftEvents: readonly RunEvent[],
+  rightEvents: readonly RunEvent[],
+): TraceSummaryCoverageDeltaView {
+  const left = traceSummaryCoverageView(leftEvents);
+  const right = traceSummaryCoverageView(rightEvents);
+  const genericDelta = right.generic - left.generic;
+  const diagnostics = [
+    ...(genericDelta > 0
+      ? ["candidate_generic_summary_fallback_increased"]
+      : []),
+    ...(right.generic > 0 ? ["candidate_generic_summary_fallback_present"] : []),
+  ];
+  return {
+    status:
+      genericDelta > 0 ? "regressed" : right.generic > 0 ? "generic_present" : "clean",
+    left,
+    right,
+    boundedDelta: right.bounded - left.bounded,
+    fixedDelta: right.fixed - left.fixed,
+    categoryDelta: right.category - left.category,
+    genericDelta,
+    diagnostics,
+    genericEventTypes: right.genericEventTypes,
+  };
 }
 
 function classifiedSummary(

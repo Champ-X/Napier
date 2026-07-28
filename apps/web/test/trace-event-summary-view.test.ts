@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   traceEventSummaryView,
+  traceSummaryCoverageDeltaView,
   traceSummaryCoverageView,
 } from "../src/trace-event-summary-view";
 
@@ -68,6 +69,61 @@ describe("Trace event summary view", () => {
       fixed: 1,
       category: 1,
       generic: 3,
+      genericEventTypes: ["alpha.audit", "zeta.audit"],
+    });
+  });
+
+  it("compares coverage between baseline and candidate runs", () => {
+    const delta = traceSummaryCoverageDeltaView(
+      [
+        traceEvent("message.user", "message", {
+          role: "user",
+          textBytes: 12,
+        }),
+        traceEvent("message.future", "message", {
+          text: "TOP_SECRET_BASELINE_FUTURE",
+        }),
+      ],
+      [
+        traceEvent("message.user", "message", {
+          role: "user",
+          textBytes: 12,
+        }),
+        traceEvent("alpha.audit", "system", {
+          summary: "TOP_SECRET_ALPHA",
+        }),
+        traceEvent("zeta.audit", "system", {
+          status: "TOP_SECRET_ZETA",
+        }),
+      ],
+    );
+
+    expect(delta).toEqual({
+      status: "regressed",
+      left: {
+        total: 2,
+        bounded: 1,
+        fixed: 0,
+        category: 1,
+        generic: 0,
+        genericEventTypes: [],
+      },
+      right: {
+        total: 3,
+        bounded: 1,
+        fixed: 0,
+        category: 0,
+        generic: 2,
+        genericEventTypes: ["alpha.audit", "zeta.audit"],
+      },
+      boundedDelta: 0,
+      fixedDelta: 0,
+      categoryDelta: -1,
+      genericDelta: 2,
+      diagnostics: [
+        "candidate_generic_summary_fallback_increased",
+        "candidate_generic_summary_fallback_present",
+      ],
       genericEventTypes: ["alpha.audit", "zeta.audit"],
     });
   });

@@ -23,6 +23,10 @@ import type {
   RunReplayVerificationReceipt,
 } from "./use-workspace-view-model";
 import { importProvenanceReceiptView } from "./use-workspace-view-model";
+import {
+  traceSummaryCoverageDeltaView,
+  type TraceSummaryCoverageDeltaStatus,
+} from "./trace-event-summary-view";
 
 const LazyEvaluationSuitePanel = lazy(() => import("./EvaluationSuitePanel"));
 
@@ -90,6 +94,12 @@ export default function RunLabPanel({
         .sort((left, right) => Math.abs(right[1]) - Math.abs(left[1]))
         .slice(0, 8)
     : [];
+  const traceSummaryCoverageDelta = comparison
+    ? traceSummaryCoverageDeltaView(
+        comparison.left.events,
+        comparison.right.events,
+      )
+    : undefined;
 
   return (
     <section className="panel-section run-lab" aria-labelledby="run-lab-title">
@@ -297,6 +307,59 @@ export default function RunLabPanel({
               <p>{copy.lab.contextCoverageHealthy}</p>
             )}
           </div>
+          {traceSummaryCoverageDelta ? (
+            <div
+              className={`configuration-drift ${traceSummaryCoverageClassName(
+                traceSummaryCoverageDelta.status,
+              )}`}
+            >
+              <div className="configuration-drift-heading">
+                <span>{copy.lab.traceSummaryCoverage}</span>
+                <strong>
+                  {traceSummaryCoverageStatusLabel(
+                    traceSummaryCoverageDelta.status,
+                  )}
+                </strong>
+              </div>
+              <div className="configuration-hashes">
+                <code>
+                  {copy.lab.left} {copy.lab.traceSummaryGeneric}{" "}
+                  {traceSummaryCoverageDelta.left.generic}
+                </code>
+                <code>
+                  {copy.lab.right} {copy.lab.traceSummaryGeneric}{" "}
+                  {traceSummaryCoverageDelta.right.generic}
+                </code>
+                <code>
+                  {copy.lab.traceSummaryGenericDelta}{" "}
+                  {formatSignedNumber(traceSummaryCoverageDelta.genericDelta)}
+                </code>
+                <code>
+                  {copy.lab.traceSummaryBoundedDelta}{" "}
+                  {formatSignedNumber(traceSummaryCoverageDelta.boundedDelta)}
+                </code>
+              </div>
+              {traceSummaryCoverageDelta.diagnostics.length > 0 ? (
+                <>
+                  <p>{copy.lab.traceSummaryDiagnostics}</p>
+                  <ul>
+                    {traceSummaryCoverageDelta.diagnostics.map((diagnostic) => (
+                      <li key={diagnostic}>
+                        <code>{diagnostic}</code>
+                      </li>
+                    ))}
+                    {traceSummaryCoverageDelta.genericEventTypes.map((type) => (
+                      <li key={type}>
+                        <code>{type}</code>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p>{copy.lab.traceSummaryHealthy}</p>
+              )}
+            </div>
+          ) : null}
           <div
             className={`configuration-drift ${
               comparison.configurationDelta.status === "unavailable"
@@ -873,6 +936,22 @@ function contextCoverageClassName(
 ): string {
   if (status === "clean") return "is-unchanged";
   if (status === "partial") return "is-unavailable";
+  return "is-changed";
+}
+
+function traceSummaryCoverageStatusLabel(
+  status: TraceSummaryCoverageDeltaStatus,
+): string {
+  if (status === "clean") return copy.lab.traceSummaryClean;
+  if (status === "generic_present") return copy.lab.traceSummaryGenericPresent;
+  return copy.lab.traceSummaryRegressed;
+}
+
+function traceSummaryCoverageClassName(
+  status: TraceSummaryCoverageDeltaStatus,
+): string {
+  if (status === "clean") return "is-unchanged";
+  if (status === "generic_present") return "is-unavailable";
   return "is-changed";
 }
 

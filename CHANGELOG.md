@@ -168,6 +168,9 @@ All notable changes to Napier are recorded here.
   source badges, classifying event-list summaries as bounded, fixed receipt,
   category-only, or generic fallback so new raw-payload fallbacks are visible
   during review instead of relying on code inspection alone.
+- Run Lab comparisons now derive the same Trace summary-boundary coverage for
+  baseline and candidate Runs, highlighting generic fallback deltas and the
+  candidate event types still using generic summaries.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.
