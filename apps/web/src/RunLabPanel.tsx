@@ -28,7 +28,6 @@ import {
   traceSummaryCoverageDeltaView,
   verifyTraceSummaryCoverageDeltaReceipt,
   type TraceSummaryCoverageDeltaReceipt,
-  type TraceSummaryCoverageDeltaStatus,
   type TraceSummaryCoverageReceiptVerification,
 } from "./trace-event-summary-view";
 
@@ -587,6 +586,36 @@ export default function RunLabPanel({
                         12,
                       )}
                     </code>
+                    {latestEvaluation.comparisonGovernance
+                      .traceSummaryBoundaryStatus ? (
+                      <code>
+                        {copy.lab.traceSummaryCoverage}{" "}
+                        {traceSummaryCoverageStatusLabel(
+                          latestEvaluation.comparisonGovernance
+                            .traceSummaryBoundaryStatus,
+                        )}
+                      </code>
+                    ) : null}
+                    {latestEvaluation.comparisonGovernance
+                      .traceSummaryBoundaryDiagnosticsSha256 ? (
+                      <code>
+                        {copy.lab.traceSummaryDiagnostics}{" "}
+                        {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256.slice(
+                          0,
+                          12,
+                        )}
+                      </code>
+                    ) : null}
+                    {latestEvaluation.comparisonGovernance
+                      .traceSummaryBoundaryDeltaSha256 ? (
+                      <code>
+                        {copy.lab.traceSummaryDelta}{" "}
+                        {latestEvaluation.comparisonGovernance.traceSummaryBoundaryDeltaSha256.slice(
+                          0,
+                          12,
+                        )}
+                      </code>
+                    ) : null}
                   </>
                 ) : null}
               </div>
@@ -1012,7 +1041,7 @@ function contextCoverageClassName(
 }
 
 function traceSummaryCoverageStatusLabel(
-  status: TraceSummaryCoverageDeltaStatus,
+  status: RunComparison["traceSummaryBoundaryDelta"]["status"],
 ): string {
   if (status === "clean") return copy.lab.traceSummaryClean;
   if (status === "generic_present") return copy.lab.traceSummaryGenericPresent;
@@ -1020,7 +1049,7 @@ function traceSummaryCoverageStatusLabel(
 }
 
 function traceSummaryCoverageClassName(
-  status: TraceSummaryCoverageDeltaStatus,
+  status: RunComparison["traceSummaryBoundaryDelta"]["status"],
 ): string {
   if (status === "clean") return "is-unchanged";
   if (status === "generic_present") return "is-unavailable";

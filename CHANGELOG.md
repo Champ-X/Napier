@@ -184,6 +184,9 @@ All notable changes to Napier are recorded here.
   bound into runtime Run comparisons, HTTP no-store headers, and evaluator
   governance receipts so generic event-list fallback regressions can influence
   review without relying on Web-only projection state.
+- Trace summary-boundary governance now appears in OTLP event attributes and
+  the Run Lab evaluation hash strip as status plus SHA-256 evidence, closing the
+  observability loop without exposing evaluation prose or raw event payloads.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

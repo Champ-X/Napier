@@ -368,6 +368,8 @@ describe("OpenTelemetry trace export", () => {
         comparisonGovernanceSha256: "c".repeat(64),
         contextCoverageStatus: "regressed",
         contextCoverageDiagnosticsSha256: "d".repeat(64),
+        traceSummaryBoundaryStatus: "generic_present",
+        traceSummaryBoundaryDiagnosticsSha256: "e".repeat(64),
       },
     });
     await store.requestOperatorDecision({
@@ -608,6 +610,18 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.context_coverage_diagnostics_sha256",
       ),
     ).toBe("d".repeat(64));
+    expect(
+      attributeValue(
+        evaluationEvent.attributes,
+        "napier.event.payload.trace_summary_boundary_status",
+      ),
+    ).toBe("generic_present");
+    expect(
+      attributeValue(
+        evaluationEvent.attributes,
+        "napier.event.payload.trace_summary_boundary_diagnostics_sha256",
+      ),
+    ).toBe("e".repeat(64));
     const promptVariableEvent = traceSpans
       .flatMap((span) => span.events)
       .find((event) => event.name === "context.prompt_variables")!;

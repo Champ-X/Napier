@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-ByLcgd8w.js",
-    "sizeBytes": 147187,
+    "path": "apps/web/dist/assets/index-D_PdJhkv.js",
+    "sizeBytes": 147221,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "6f8336ef10f9c1bb6b5054ab223fcc34c47a28b2550e59bc6e1283828a841790"
+    "sha256": "181103fc09c2f0c7df16c525aa07d5d254a0419441be0b4414b8ecfad180da49"
   },
-  "distContentSha256": "6f8336ef10f9c1bb6b5054ab223fcc34c47a28b2550e59bc6e1283828a841790",
+  "distContentSha256": "181103fc09c2f0c7df16c525aa07d5d254a0419441be0b4414b8ecfad180da49",
   "errors": []
 }

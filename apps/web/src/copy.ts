@@ -131,6 +131,7 @@ export const copy = {
     traceSummaryGeneric: "Generic",
     traceSummaryGenericDelta: "Generic delta",
     traceSummaryDedicatedDelta: "Dedicated delta",
+    traceSummaryDelta: "Summary delta",
     traceSummaryReceipt: "Summary receipt",
     traceSummaryVerification: "Summary verification",
     traceSummaryVerified: "Verified",

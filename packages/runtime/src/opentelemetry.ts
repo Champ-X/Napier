@@ -90,6 +90,7 @@ const SAFE_STRING_PAYLOAD_KEYS = new Set([
   "status",
   "stopReason",
   "toolName",
+  "traceSummaryBoundaryStatus",
   "verdict",
   "importedAt",
 ]);

@@ -2380,6 +2380,10 @@ full delta hash into `RunEvaluationGovernanceBinding`. Evaluators therefore see
 summary-boundary governance beside context coverage, and the binding remains
 hash-only: it contains counts, event types, status, diagnostics, and SHA-256
 receipts, but not raw Ledger payload prose.
+The same governance evidence is projected into metadata-only OTLP event
+attributes and the Run Lab evaluation hash strip, so operators can audit the
+evaluator's summary-boundary posture from traces or the product UI without
+opening raw event payloads.
 Both the single-Run coverage projection and the Run Lab delta projection are
 canonicalized and hashed into Web-side `contentSha256` receipts. Those receipts
 cover only summary source counts, generic event-type sets, deltas, diagnostics,
