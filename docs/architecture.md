@@ -1151,6 +1151,8 @@ render Runtime and Evaluation model selectors
   -> reject server-side prompt, resume, model-call, and persistence requests
      for unconfigured live providers before writing durable state or launching
      a model call
+  -> re-check Run Evaluation and Evaluation Suite execution models at execution
+     time so credential drift fails closed before evaluation receipts are saved
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1182,9 +1184,11 @@ adds the independent live-reviewer constraint before persistence. Server-side
 profile update and rollback repeat the non-demo, known-model, and
 not-primary-reviewer checks before writing a profile revision. Server-side
 prompt, resume, schedule, inbound, plan review, subagent review, casebook
-qualification, and evaluation-suite model requests also call the same
-configured-live model projection before state is written or a model call
-starts. Credential
+qualification, Run Evaluation, and evaluation-suite model requests also call
+the same configured-live model projection before state is written or a model
+call starts. Evaluation Suite execution repeats the check against the saved
+suite evaluator model so post-save credential drift fails closed before
+evaluation receipts are generated. Credential
 ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are

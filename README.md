@@ -317,7 +317,8 @@ path also reject Advisor reviewers that are `napier/demo`, unknown to the
 model registry, or equal to the effective primary model before a revision is
 persisted. Server-side prompt, resume, model-call, and persistence entry points
 repeat the same configured-live check before accepting live provider models,
-while `napier/demo` remains the explicit zero-key demo path.
+including Run Evaluation creation and Evaluation Suite execution after
+credential drift, while `napier/demo` remains the explicit zero-key demo path.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source

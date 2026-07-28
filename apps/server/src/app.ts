@@ -7214,6 +7214,13 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Run evaluation request is invalid", 400);
     }
+    const thread = services.store.getThread(context.req.param("threadId"));
+    const agent = services.store.getAgent(thread.agentId);
+    try {
+      await assertAvailableModel(services, body.model ?? agent.model);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
     const evaluation = await services.evaluations.evaluate(
       context.req.param("threadId"),
       body,
@@ -7793,9 +7800,24 @@ export function createApp(services: NapierServices): Hono {
   app.post(
     "/api/threads/:threadId/evaluation-suites/:suiteId/executions",
     async (context) => {
+      const threadId = context.req.param("threadId");
+      const suiteId = context.req.param("suiteId");
+      const suite = services.store.getEvaluationSuite(suiteId);
+      if (suite.threadId !== threadId) {
+        return jsonError(
+          context,
+          "Evaluation suite does not belong to the target thread",
+          400,
+        );
+      }
+      try {
+        await assertAvailableModel(services, suite.evaluatorModel);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
       const execution = await services.evaluationSuites.execute(
-        context.req.param("threadId"),
-        context.req.param("suiteId"),
+        threadId,
+        suiteId,
       );
       setEvaluationSuiteExecutionHeaders(context, execution);
       return context.json(execution, 201);

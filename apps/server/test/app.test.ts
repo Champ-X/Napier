@@ -8019,6 +8019,33 @@ describe("Napier HTTP goal flow", () => {
       }),
     );
 
+    const unavailableSuiteProvider = fauxProvider({
+      provider: "faux-suite-api",
+    });
+    services.models.registerProvider({
+      ...unavailableSuiteProvider.provider,
+      auth: {
+        apiKey: {
+          name: "Unavailable",
+          resolve: async () => undefined,
+        },
+      },
+    });
+    const unavailableExecuteResponse = await app.request(
+      `/api/threads/${thread.id}/evaluation-suites/${created.id}/executions`,
+      { method: "POST" },
+    );
+    expect(unavailableExecuteResponse.status).toBe(400);
+    expect(await unavailableExecuteResponse.json()).toEqual(
+      expect.objectContaining({
+        error: "Model provider is not configured: faux-suite-api",
+      }),
+    );
+    expect(
+      services.store.listEvaluationSuiteExecutions(thread.id, created.id),
+    ).toHaveLength(0);
+    services.models.registerProvider(provider.provider);
+
     const executeResponse = await app.request(
       `/api/threads/${thread.id}/evaluation-suites/${created.id}/executions`,
       { method: "POST" },
@@ -8566,6 +8593,41 @@ describe("Napier HTTP goal flow", () => {
     expect(invalidEvaluationResponse.status).toBe(400);
     expect(await invalidEvaluationResponse.json()).toEqual(
       expect.objectContaining({ error: "Run evaluation request is invalid" }),
+    );
+    expect(services.store.listRunEvaluations(created.thread.id)).toHaveLength(
+      0,
+    );
+
+    const unconfiguredEvaluator = fauxProvider({
+      provider: "faux-evaluation-unconfigured",
+    });
+    services.models.registerProvider({
+      ...unconfiguredEvaluator.provider,
+      auth: {
+        apiKey: {
+          name: "Unavailable",
+          resolve: async () => undefined,
+        },
+      },
+    });
+    const unconfiguredEvaluationResponse = await app.request(
+      `/api/threads/${created.thread.id}/evaluations`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          leftRunId: left!.id,
+          rightRunId: right!.id,
+          model: { provider: "faux-evaluation-unconfigured", id: "faux-1" },
+        }),
+      },
+    );
+    expect(unconfiguredEvaluationResponse.status).toBe(400);
+    expect(await unconfiguredEvaluationResponse.json()).toEqual(
+      expect.objectContaining({
+        error:
+          "Model provider is not configured: faux-evaluation-unconfigured",
+      }),
     );
     expect(services.store.listRunEvaluations(created.thread.id)).toHaveLength(
       0,

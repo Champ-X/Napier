@@ -241,6 +241,9 @@ All notable changes to Napier are recorded here.
 - Server-side prompt, resume, model-call, and model-persistence entry points
   now reuse the configured-live model projection, rejecting unconfigured live
   providers before durable state is written or auxiliary model calls start.
+- Run Evaluation creation and Evaluation Suite execution now re-check evaluator
+  model availability so credential drift fails closed before evaluation
+  receipts are generated.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
