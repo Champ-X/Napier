@@ -2332,6 +2332,20 @@ names, raw tokens, queued message text, inbound body text, delivery errors,
 diagnostics, or arbitrary future channel payload prose. Unknown automation
 ingress events fail closed to their category before the generic fallback can
 inspect `name`, `message`, `error`, `reason`, or `text`.
+Credential and Extension governance events use the same projection rule.
+`credential.*` summaries may show safe credential-reference IDs, provider IDs,
+source type, status, availability, and revision, but not credential labels,
+keychain/source names, last-error text, or arbitrary future credential payload
+prose. `extension.*` summaries may show safe extension/agent/channel/anchor
+IDs, kind/status/trust/review/effect/version enums, public key IDs, booleans,
+capability/change counts, rollout/package/dependency counts, and SHA-256
+receipts for anchors, manifests, envelopes, package bindings, deployments,
+lockfiles, indexes, policies, schemas, and dependency sets. They do not render
+extension names, descriptions, capability labels, MCP tool names, direct tool
+names, rollout channel names, package-change labels, transport details,
+diagnostics, or arbitrary future extension payload prose. Unknown credential
+or extension events fail closed to their category before the generic fallback
+can inspect `label`, `name`, `description`, `toolName`, `error`, or `summary`.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

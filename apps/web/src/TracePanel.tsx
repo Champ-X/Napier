@@ -38,7 +38,9 @@ import {
 import { channelEventTraceSummary } from "./channel-event-view";
 import { contextEventTraceSummary } from "./context-event-view";
 import { copy } from "./copy";
+import { credentialEventTraceSummary } from "./credential-event-view";
 import { evaluationEventTraceSummary } from "./evaluation-event-view";
+import { extensionEventTraceSummary } from "./extension-event-view";
 import {
   goalEventTraceSummary,
   memoryEventTraceSummary,
@@ -972,6 +974,12 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("channel.")) {
     return channelEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("credential.")) {
+    return credentialEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("extension.")) {
+    return extensionEventTraceSummary(event) ?? event.category;
   }
   if (event.type.startsWith("context.")) {
     return contextEventTraceSummary(event) ?? event.category;
