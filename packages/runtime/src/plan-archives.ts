@@ -8,7 +8,10 @@ import {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { refreshPlanProjection } from "./plans.js";
+import {
+  assertPlanArtifactEventBindings,
+  refreshPlanProjection,
+} from "./plans.js";
 import { hashEventStream } from "./replay.js";
 import type { LocalStore } from "./store.js";
 
@@ -160,6 +163,11 @@ export function validateExecutionPlanArchive(
   if (eventStreamSha256 !== hashEventStream(events as RunEvent[])) {
     throw new Error("Execution plan archive event stream hash mismatch");
   }
+  assertPlanArtifactEventBindings({
+    plans: [plan],
+    events: events as RunEvent[],
+    label: "Execution plan archive",
+  });
   const contentSha256 = stringField(record, "contentSha256");
   assertSha256(contentSha256, "contentSha256");
   const archive = input as ExecutionPlanArchive;
@@ -476,6 +484,9 @@ function executionPlanArchiveDiagnostic(error: unknown): string {
   if (message.includes("duplicate")) return "duplicate_resource_id";
   if (message.includes("event stream hash mismatch")) return "hash_mismatch";
   if (message.includes("content hash mismatch")) return "hash_mismatch";
+  if (message.includes("event binding mismatch")) {
+    return "event_binding_mismatch";
+  }
   if (message.includes("invalid")) return "invalid_shape";
   return "invalid_archive";
 }

@@ -461,6 +461,7 @@ import {
   supersedeMemoryFact,
 } from "./memory.js";
 import {
+  assertPlanArtifactEventBindings,
   createExecutionPlan,
   interruptPlanRun,
   refreshPlanProjection,
@@ -11442,6 +11443,11 @@ export class LocalStore {
         evaluations: this.state.evaluations.filter(
           (evaluation) => evaluation.threadId === thread.id,
         ),
+        events: threadEvents,
+        label: `Persisted Thread ${thread.id}`,
+      });
+      assertPlanArtifactEventBindings({
+        plans: this.state.plans.filter((plan) => plan.threadId === thread.id),
         events: threadEvents,
         label: `Persisted Thread ${thread.id}`,
       });

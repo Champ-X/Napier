@@ -4,6 +4,7 @@ import {
   NAPIER_API_VERSION,
   type AgentProfile,
   type AgentProfileRevision,
+  type ExecutionPlan,
   type EvaluationAdjudication,
   type EvaluationConsensusResolution,
   type EvaluationReviewerBallot,
@@ -44,6 +45,7 @@ import {
   assertRunEvaluationGovernanceReceiptSourceBinding,
   assertRunEvaluationSnapshotSourceBinding,
 } from "./evaluation-governance.js";
+import { assertPlanArtifactEventBindings } from "./plans.js";
 import {
   AGENT_MILESTONE_RECORDED_EVENT,
   projectAgentMilestones,
@@ -1519,6 +1521,11 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
   }
   assertRunEvaluationCompletedEventBindings({
     evaluations: [...evaluationRecords.values()],
+    events: typedEvents,
+    label: "Thread replay bundle",
+  });
+  assertPlanArtifactEventBindings({
+    plans: plans as ExecutionPlan[],
     events: typedEvents,
     label: "Thread replay bundle",
   });

@@ -15,6 +15,7 @@ import {
   AgentRuntime,
   canonicalJson,
   compareRuns,
+  createPlanArtifactEventPayload,
   createRunEvaluationGovernanceBinding,
   createSubagentOutcome,
   createSubagentOutcomeRepairOutcome,
@@ -272,6 +273,71 @@ describe("thread replay bundles", () => {
     event.payload["verdict"] = "left_better";
     expect(() => validateThreadReplayBundle(tampered)).toThrow(
       "evaluation.completed event binding mismatch",
+    );
+  });
+
+  it("binds plan artifact events to the artifact manifest", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Artifact event binding",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    let plan = await store.createPlan(thread.id, {
+      objective: "Record artifact evidence.",
+      steps: [
+        {
+          id: "produce",
+          title: "Produce artifact",
+          description: "Produce the artifact.",
+          verification: "The artifact event matches the manifest.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: "report.md",
+          description: "The report artifact.",
+        },
+      ],
+    });
+    plan = await store.updatePlanArtifact(plan.id, "report", {
+      status: "produced",
+      sourceRunId: run.id,
+      evidence: "The report was produced.",
+    });
+    const artifact = plan.artifacts.find(
+      (candidate) => candidate.id === "report",
+    )!;
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "plan.artifact.produced",
+      category: "plan",
+      visibility: "user",
+      payload: createPlanArtifactEventPayload(plan, artifact),
+    });
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    expect(validateThreadReplayBundle(bundle).events).toEqual(bundle.events);
+    const tampered = structuredClone(bundle);
+    const event = tampered.events.find(
+      (candidate) => candidate.type === "plan.artifact.produced",
+    );
+    if (
+      !event?.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object"
+    ) {
+      throw new Error("Plan artifact event fixture is missing");
+    }
+    event.payload["evidence"] = "Drifted artifact evidence.";
+    expect(() => validateThreadReplayBundle(tampered)).toThrow(
+      "plan.artifact event binding mismatch",
     );
   });
 

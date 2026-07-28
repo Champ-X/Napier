@@ -16,6 +16,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   canonicalJson,
   compareRuns,
+  createPlanArtifactEventPayload,
   createRunEvaluationGovernanceBinding,
   LEDGER_DATABASE_FILENAME,
   LEDGER_SCHEMA_VERSION,
@@ -443,6 +444,80 @@ describe("transactional LocalStore", () => {
     openStores.push(reopened);
     await expect(reopened.initialize()).rejects.toThrow(
       "evaluation.completed event binding mismatch",
+    );
+  });
+
+  it("fails closed on persisted plan artifact event drift during restore", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const agent = first.listAgents()[0]!;
+    const thread = await first.createThread({
+      title: "Artifact event restore validation",
+      agentId: agent.id,
+    });
+    const run = await first.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    let plan = await first.createPlan(thread.id, {
+      objective: "Produce a restore-verified artifact.",
+      steps: [
+        {
+          id: "produce",
+          title: "Produce artifact",
+          description: "Produce the artifact.",
+          verification: "The artifact event is bound to state.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: "report.md",
+          description: "The report artifact.",
+        },
+      ],
+    });
+    plan = await first.updatePlanArtifact(plan.id, "report", {
+      status: "produced",
+      sourceRunId: run.id,
+      evidence: "The report was produced.",
+    });
+    const artifact = plan.artifacts.find(
+      (candidate) => candidate.id === "report",
+    )!;
+    const event = await first.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "plan.artifact.produced",
+      category: "plan",
+      visibility: "user",
+      payload: createPlanArtifactEventPayload(plan, artifact),
+    });
+    first.close();
+    openStores.splice(openStores.indexOf(first), 1);
+
+    const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
+    const database = new DatabaseSync(databasePath);
+    const row = database
+      .prepare(
+        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
+      )
+      .get(thread.id, event.seq) as { event_json: string };
+    const persistedEvent = JSON.parse(row.event_json) as {
+      payload: Record<string, unknown>;
+    };
+    persistedEvent.payload.evidence = "Drifted artifact evidence.";
+    database
+      .prepare(
+        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
+      )
+      .run(JSON.stringify(persistedEvent), thread.id, event.seq);
+    database.close();
+
+    const reopened = new LocalStore(options);
+    openStores.push(reopened);
+    await expect(reopened.initialize()).rejects.toThrow(
+      "plan.artifact event binding mismatch",
     );
   });
 

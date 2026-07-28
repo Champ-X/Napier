@@ -204,6 +204,10 @@ All notable changes to Napier are recorded here.
   exactly matches the saved `RunEvaluationRecord`, keeping Trace projections,
   Thread replay bundles, and SQLite restore aligned with the authoritative
   evaluation state.
+- Plan artifact Ledger events now share one runtime payload builder across the
+  Agent tool and HTTP API, and validation rejects the latest `plan.artifact.*`
+  event for an artifact when it drifts from the artifact manifest during
+  SQLite restore, Thread replay bundle validation, or Plan archive verification.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

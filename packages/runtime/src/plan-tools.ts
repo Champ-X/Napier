@@ -15,6 +15,7 @@ import type {
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { createPlanArtifactEventPayload } from "./plans.js";
 import { isPathInsideWorkspace } from "./policy.js";
 import { createReplanPolicyTemplate } from "./replan-policies.js";
 import type { LocalStore } from "./store.js";
@@ -318,24 +319,7 @@ export function createPlanTools(
           type: `plan.artifact.${updated.status}`,
           category: "plan",
           visibility: "user",
-          payload: {
-            planId: plan.id,
-            artifactId: updated.id,
-            path: updated.path,
-            status: updated.status,
-            evidence: updated.evidence,
-            criticalPathStepIds: plan.criticalPathStepIds,
-            readyStepIds: plan.readyStepIds,
-            blockedStepIds: plan.blockedStepIds,
-            activePhaseIndex: plan.activePhaseIndex,
-            parallelReadyStepIds: plan.parallelReadyStepIds,
-            phaseWaveCount: plan.phaseWaves.length,
-            phaseProjectionSha256: plan.phaseProjectionSha256,
-            ...(updated.sha256 ? { sha256: updated.sha256 } : {}),
-            ...(updated.sizeBytes !== undefined
-              ? { sizeBytes: updated.sizeBytes }
-              : {}),
-          },
+          payload: createPlanArtifactEventPayload(plan, updated),
         });
       }
       return planToolResult(

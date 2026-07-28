@@ -344,6 +344,7 @@ import {
   createId,
   createExecutionPlanArchive,
   createExecutionPlanBlueprint,
+  createPlanArtifactEventPayload,
   createRunReplaySnapshot,
   createWorkspaceArtifactVerificationRequest,
   createInboundDeadLetterRetryHistory,
@@ -7154,23 +7155,7 @@ export function createApp(services: NapierServices): Hono {
           type: `plan.artifact.${artifact.status}`,
           category: "plan",
           visibility: "user",
-          payload: {
-            planId,
-            artifactId: artifact.id,
-            path: artifact.path,
-            status: artifact.status,
-            evidence: artifact.evidence,
-            criticalPathStepIds: plan.criticalPathStepIds,
-            readyStepIds: plan.readyStepIds,
-            blockedStepIds: plan.blockedStepIds,
-            ...(artifact.sha256 ? { sha256: artifact.sha256 } : {}),
-            ...(artifact.sizeBytes !== undefined
-              ? { sizeBytes: artifact.sizeBytes }
-              : {}),
-            ...(artifact.sourceRunId
-              ? { sourceRunId: artifact.sourceRunId }
-              : {}),
-          },
+          payload: createPlanArtifactEventPayload(plan, artifact),
         });
       }
       setExecutionPlanHeaders(context, plan);

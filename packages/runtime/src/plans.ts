@@ -10,8 +10,10 @@ import type {
   ExecutionPlanReplanPolicyPosture,
   ExecutionPlanReplanRecommendation,
   ExecutionPlanReplanRecord,
+  JsonValue,
   PlanStep,
   ReplanExecutionPlanRequest,
+  RunEvent,
   TransitionPlanStepRequest,
   UpdateArtifactManifestRequest,
 } from "@napier/contracts";
@@ -507,6 +509,153 @@ export function updateArtifactManifest(
   next.updatedAt = artifact.updatedAt;
   refreshPlanProjection(next);
   return next;
+}
+
+export function createPlanArtifactEventPayload(
+  plan: ExecutionPlan,
+  artifact: ArtifactManifestEntry,
+): { [key: string]: JsonValue } {
+  const payload: { [key: string]: JsonValue } = {
+    planId: plan.id,
+    artifactId: artifact.id,
+    path: artifact.path,
+    status: artifact.status,
+    evidence: artifact.evidence,
+    criticalPathStepIds: plan.criticalPathStepIds,
+    readyStepIds: plan.readyStepIds,
+    blockedStepIds: plan.blockedStepIds,
+    activePhaseIndex: plan.activePhaseIndex,
+    parallelReadyStepIds: plan.parallelReadyStepIds,
+    phaseWaveCount: plan.phaseWaves.length,
+    phaseProjectionSha256: plan.phaseProjectionSha256,
+    ...(artifact.sha256 ? { sha256: artifact.sha256 } : {}),
+    ...(artifact.sizeBytes !== undefined
+      ? { sizeBytes: artifact.sizeBytes }
+      : {}),
+    ...(artifact.sourceRunId ? { sourceRunId: artifact.sourceRunId } : {}),
+  };
+  return payload;
+}
+
+export function assertPlanArtifactEventBindings({
+  plans,
+  events,
+  label,
+}: {
+  plans: readonly ExecutionPlan[];
+  events: readonly RunEvent[];
+  label: string;
+}): void {
+  const plansById = new Map(plans.map((plan) => [plan.id, plan] as const));
+  const latestArtifactEvents = new Map<string, RunEvent>();
+  for (const event of events) {
+    if (!event.type.startsWith("plan.artifact.")) continue;
+    const payload = objectPayload(event.payload);
+    const planId = payloadString(payload, "planId");
+    const artifactId = payloadString(payload, "artifactId");
+    const status = payloadString(payload, "status");
+    if (
+      !payload ||
+      !planId ||
+      !artifactId ||
+      !status ||
+      event.category !== "plan" ||
+      event.visibility !== "user" ||
+      event.type !== `plan.artifact.${status}` ||
+      hasUnsupportedArtifactEventPayloadKey(payload) ||
+      (payload.sourceRunId !== undefined && payload.sourceRunId !== event.runId)
+    ) {
+      throw new Error(`${label} plan.artifact event binding mismatch`);
+    }
+    const key = `${planId}:${artifactId}`;
+    const current = latestArtifactEvents.get(key);
+    if (!current || event.seq > current.seq) latestArtifactEvents.set(key, event);
+  }
+  for (const event of latestArtifactEvents.values()) {
+    const payload = objectPayload(event.payload);
+    const planId = payloadString(payload, "planId");
+    const artifactId = payloadString(payload, "artifactId");
+    const plan = planId ? plansById.get(planId) : undefined;
+    const artifact = plan?.artifacts.find(
+      (candidate) => candidate.id === artifactId,
+    );
+    if (!payload || !plan || !artifact) {
+      throw new Error(`${label} plan.artifact event binding mismatch`);
+    }
+    if (
+      canonicalJson(normalizePlanArtifactEventPayload(payload)) !==
+      canonicalJson(
+        normalizePlanArtifactEventPayload(
+          createPlanArtifactEventPayload(plan, artifact),
+          payload,
+        ),
+      )
+    ) {
+      throw new Error(`${label} plan.artifact event binding mismatch`);
+    }
+  }
+}
+
+const PLAN_ARTIFACT_EVENT_COMMON_KEYS = new Set([
+  "planId",
+  "artifactId",
+  "path",
+  "status",
+  "evidence",
+  "criticalPathStepIds",
+  "readyStepIds",
+  "blockedStepIds",
+  "sha256",
+  "sizeBytes",
+  "sourceRunId",
+]);
+const PLAN_ARTIFACT_EVENT_PROJECTION_KEYS = new Set([
+  "activePhaseIndex",
+  "parallelReadyStepIds",
+  "phaseWaveCount",
+  "phaseProjectionSha256",
+]);
+const PLAN_ARTIFACT_EVENT_ALLOWED_KEYS = new Set([
+  ...PLAN_ARTIFACT_EVENT_COMMON_KEYS,
+  ...PLAN_ARTIFACT_EVENT_PROJECTION_KEYS,
+]);
+
+function hasUnsupportedArtifactEventPayloadKey(
+  payload: Record<string, unknown>,
+): boolean {
+  return Object.keys(payload).some(
+    (key) => !PLAN_ARTIFACT_EVENT_ALLOWED_KEYS.has(key),
+  );
+}
+
+function normalizePlanArtifactEventPayload(
+  payload: Record<string, unknown>,
+  projectionKeySource = payload,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    [
+      ...PLAN_ARTIFACT_EVENT_COMMON_KEYS,
+      ...[...PLAN_ARTIFACT_EVENT_PROJECTION_KEYS].filter((key) =>
+        Object.prototype.hasOwnProperty.call(projectionKeySource, key),
+      ),
+    ]
+      .filter((key) => Object.prototype.hasOwnProperty.call(payload, key))
+      .map((key) => [key, payload[key]]),
+  );
+}
+
+function objectPayload(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function payloadString(
+  payload: Record<string, unknown> | undefined,
+  key: string,
+): string | undefined {
+  const value = payload?.[key];
+  return typeof value === "string" ? value : undefined;
 }
 
 export function refreshPlanProjection(

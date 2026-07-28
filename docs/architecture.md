@@ -3296,7 +3296,12 @@ and rejects simultaneous self-reported `sha256` or `sizeBytes` values. Its
 REST boundary rejects unknown fields, malformed IDs, oversized JSON, invalid
 replan strategies, invalid status values, and invalid SHA-256 values before
 the runtime state machine is called. Every accepted state change is appended
-to the Thread ledger.
+to the Thread ledger. The HTTP API and internal Agent tool share the same
+`plan.artifact.*` payload builder, and validators treat the latest artifact
+event as a projection of the manifest's current state. SQLite restore, Thread
+replay bundle validation, and Plan archive verification all fail closed if the
+event's artifact ID, path, status, evidence, digest, size, source Run, or phase
+projection metadata drifts from the current artifact manifest.
 
 ## Context Compaction Flow
 

@@ -10,6 +10,7 @@ import {
   hashExecutionPlanArchiveContent,
   verifyExecutionPlanArchive,
 } from "../src/plan-archives.js";
+import { createPlanArtifactEventPayload } from "../src/plans.js";
 import { LocalStore } from "../src/store.js";
 import {
   createExecutionPlanBlueprint,
@@ -131,6 +132,86 @@ describe("execution plan archives", () => {
       expect.objectContaining({
         status: "invalid",
         diagnostics: ["invalid_shape"],
+      }),
+    );
+  });
+
+  it("rejects artifact event drift even when archive hashes are recomputed", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Artifact event archive",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    let plan = await store.createPlan(thread.id, {
+      objective: "Verify a workflow artifact.",
+      steps: [
+        {
+          id: "write",
+          title: "Write artifact",
+          description: "Write the artifact.",
+          verification: "The artifact is marked produced.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: "report.md",
+          description: "The report artifact.",
+        },
+      ],
+    });
+    plan = await store.updatePlanArtifact(plan.id, "report", {
+      status: "produced",
+      sourceRunId: run.id,
+      evidence: "The report was produced.",
+    });
+    const artifact = plan.artifacts.find(
+      (candidate) => candidate.id === "report",
+    )!;
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "plan.artifact.produced",
+      category: "plan",
+      visibility: "user",
+      payload: createPlanArtifactEventPayload(plan, artifact),
+    });
+    const archive = await createExecutionPlanArchive(store, thread.id, plan.id);
+    expect(verifyExecutionPlanArchive(archive).status).toBe("valid");
+
+    const tampered = structuredClone(archive);
+    const artifactEvent = tampered.events.find(
+      (event) => event.type === "plan.artifact.produced",
+    );
+    if (
+      !artifactEvent?.payload ||
+      Array.isArray(artifactEvent.payload) ||
+      typeof artifactEvent.payload !== "object"
+    ) {
+      throw new Error("Artifact event fixture is missing");
+    }
+    artifactEvent.payload["evidence"] = "Drifted event evidence.";
+    tampered.eventStreamSha256 = createHash("sha256")
+      .update(tampered.events.map((event) => JSON.stringify(event)).join("\n"))
+      .digest("hex");
+    tampered.contentSha256 = hashExecutionPlanArchiveContent({
+      kind: tampered.kind,
+      schemaVersion: tampered.schemaVersion,
+      apiVersion: tampered.apiVersion,
+      threadId: tampered.threadId,
+      plan: tampered.plan,
+      events: tampered.events,
+      eventStreamSha256: tampered.eventStreamSha256,
+    });
+    expect(verifyExecutionPlanArchive(tampered)).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["event_binding_mismatch"],
       }),
     );
   });
