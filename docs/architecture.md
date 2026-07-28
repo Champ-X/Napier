@@ -2550,11 +2550,12 @@ diagnostics, and error strings do not drive Trace list summaries.
 Model Advisor governance events use an equivalent bounded projection.
 `model.advisor.*` summaries may show action, status/source, turn source,
 verdict, risk, score, diagnostic/issue/blocker counts, correction attempt
-counts, and SHA-256 receipts for candidate text, diagnostic sets, issue sets,
-evidence, request/response hashes, embedded envelope hashes, and receipt
-content. Deterministic diagnostic prose, independent reviewer guidance,
-correction prompts, correction responses, and arbitrary advisor payload text
-never drive the event-list summary.
+counts, verification current/stale metadata, latest workspace-write and
+passed-verification sequence numbers, and SHA-256 receipts for candidate text,
+diagnostic sets, issue sets, evidence, request/response hashes, embedded
+envelope hashes, and receipt content. Deterministic diagnostic prose,
+independent reviewer guidance, correction prompts, correction responses, and
+arbitrary advisor payload text never drive the event-list summary.
 Known `context.*` receipts are also routed through a bounded summary before the
 generic fallback runs. Context summaries may show schema/version metadata,
 message/tool/Skill counts, prompt-variable counts, compaction sequence ranges,

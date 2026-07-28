@@ -271,6 +271,9 @@ All notable changes to Napier are recorded here.
 - Model Advisor verification-claim suppression now also requires the passed
   verifier to be later than the latest workspace write, so code edits after a
   green check make the claim stale until the Agent verifies again.
+- Trace Model Advisor summaries now expose verification current/stale metadata
+  and the latest write/verification sequence numbers without rendering
+  diagnostic prose or candidate text.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

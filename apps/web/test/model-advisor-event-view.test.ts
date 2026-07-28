@@ -43,6 +43,55 @@ describe("Model Advisor event trace view", () => {
     expect(modelAdvisorEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects stale verification evidence without diagnostic prose", () => {
+    const event = advisorEvent("model.advisor.notice", {
+      kind: "napier.model-advisor-notice",
+      source: "deterministic_stream_lint",
+      turnSource: "user",
+      status: "notice",
+      textSha256: "a".repeat(64),
+      diagnosticCount: 1,
+      diagnosticSetSha256: "b".repeat(64),
+      diagnostics: [
+        {
+          ruleId: "unverified_verification_claim",
+          severity: "warning",
+          guidance: "TOP_SECRET_STALE_GUIDANCE",
+        },
+      ],
+      evidence: {
+        verificationToolCompleted: true,
+        verificationToolPassed: true,
+        workspaceWriteCompleted: true,
+        verificationToolPassedAfterWorkspaceWrite: false,
+        latestPassedVerificationSeq: 12,
+        latestWorkspaceWriteSeq: 13,
+      },
+      contentSha256: "c".repeat(64),
+    });
+
+    expect(modelAdvisorEventTraceView(event)).toEqual({
+      action: "notice",
+      status: "notice",
+      source: "deterministic_stream_lint",
+      turnSource: "user",
+      diagnosticCount: 1,
+      verificationToolCompleted: true,
+      verificationToolPassed: true,
+      workspaceWriteCompleted: true,
+      verificationToolPassedAfterWorkspaceWrite: false,
+      latestWorkspaceWriteSeq: 13,
+      latestPassedVerificationSeq: 12,
+      textSha256: "a".repeat(64),
+      diagnosticSetSha256: "b".repeat(64),
+      contentSha256: "c".repeat(64),
+    });
+    expect(modelAdvisorEventTraceSummary(event)).toBe(
+      `advisor / notice / status notice / source deterministic_stream_lint / turn user / diagnostics 1 / verification completed / verification passed / workspace-write / workspace-write-seq 13 / passed-verification-seq 12 / verification-stale / text ${"a".repeat(12)} / diagnostics ${"b".repeat(12)} / receipt ${"c".repeat(12)}`,
+    );
+    expect(modelAdvisorEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("projects independent reviews without issue guidance text", () => {
     const event = advisorEvent("model.advisor.independent.reviewed", {
       kind: "napier.independent-model-advisor-review",
@@ -119,7 +168,9 @@ describe("Model Advisor event trace view", () => {
     expect(modelAdvisorEventTraceSummary(outcome)).toBe(
       `advisor / correction.outcome / status blocked / source combined_advisor / attempt 1/2 / diagnostics ${"a".repeat(12)} / request ${"8".repeat(12)} / response-text ${"9".repeat(12)} / receipt ${"b".repeat(12)}`,
     );
-    expect(modelAdvisorEventTraceSummary(requested)).not.toContain("TOP_SECRET");
+    expect(modelAdvisorEventTraceSummary(requested)).not.toContain(
+      "TOP_SECRET",
+    );
     expect(modelAdvisorEventTraceSummary(outcome)).not.toContain("TOP_SECRET");
   });
 

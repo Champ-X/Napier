@@ -13,6 +13,12 @@ export interface ModelAdvisorEventTraceView {
   blockerCount?: number;
   attempt?: number;
   maxAttempts?: number;
+  verificationToolCompleted?: boolean;
+  verificationToolPassed?: boolean;
+  workspaceWriteCompleted?: boolean;
+  verificationToolPassedAfterWorkspaceWrite?: boolean;
+  latestWorkspaceWriteSeq?: number;
+  latestPassedVerificationSeq?: number;
   textSha256?: string;
   candidateTextSha256?: string;
   diagnosticSetSha256?: string;
@@ -27,7 +33,8 @@ export interface ModelAdvisorEventTraceView {
   envelopeSha256?: string;
 }
 
-const MODEL_ADVISOR_EVENT = /^model\.advisor\.(notice|blocked|independent\.reviewed|correction\.(requested|outcome))$/u;
+const MODEL_ADVISOR_EVENT =
+  /^model\.advisor\.(notice|blocked|independent\.reviewed|correction\.(requested|outcome))$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const MODEL_ADVISOR_RECEIPT_SUMMARY = "model advisor receipt";
@@ -45,6 +52,9 @@ export function modelAdvisorEventTraceView(
   }
   const modelContextEnvelope = record(event.payload["modelContextEnvelope"])
     ? event.payload["modelContextEnvelope"]
+    : {};
+  const evidence = record(event.payload["evidence"])
+    ? event.payload["evidence"]
     : {};
   const diagnostics = Array.isArray(event.payload["diagnostics"])
     ? event.payload["diagnostics"]
@@ -66,6 +76,24 @@ export function modelAdvisorEventTraceView(
   const score = nonNegativeInteger(event.payload["score"]);
   const attempt = nonNegativeInteger(event.payload["attempt"]);
   const maxAttempts = nonNegativeInteger(event.payload["maxAttempts"]);
+  const verificationToolCompleted = booleanValue(
+    evidence["verificationToolCompleted"],
+  );
+  const verificationToolPassed = booleanValue(
+    evidence["verificationToolPassed"],
+  );
+  const workspaceWriteCompleted = booleanValue(
+    evidence["workspaceWriteCompleted"],
+  );
+  const verificationToolPassedAfterWorkspaceWrite = booleanValue(
+    evidence["verificationToolPassedAfterWorkspaceWrite"],
+  );
+  const latestWorkspaceWriteSeq = nonNegativeInteger(
+    evidence["latestWorkspaceWriteSeq"],
+  );
+  const latestPassedVerificationSeq = nonNegativeInteger(
+    evidence["latestPassedVerificationSeq"],
+  );
   const textSha256 = sha256(event.payload["textSha256"]);
   const candidateTextSha256 = sha256(event.payload["candidateTextSha256"]);
   const diagnosticSetSha256 = sha256(event.payload["diagnosticSetSha256"]);
@@ -99,6 +127,22 @@ export function modelAdvisorEventTraceView(
     ...(maxAttempts !== undefined ? { maxAttempts } : {}),
     ...(textSha256 ? { textSha256 } : {}),
     ...(candidateTextSha256 ? { candidateTextSha256 } : {}),
+    ...(verificationToolCompleted !== undefined
+      ? { verificationToolCompleted }
+      : {}),
+    ...(verificationToolPassed !== undefined ? { verificationToolPassed } : {}),
+    ...(workspaceWriteCompleted !== undefined
+      ? { workspaceWriteCompleted }
+      : {}),
+    ...(verificationToolPassedAfterWorkspaceWrite !== undefined
+      ? { verificationToolPassedAfterWorkspaceWrite }
+      : {}),
+    ...(latestWorkspaceWriteSeq !== undefined
+      ? { latestWorkspaceWriteSeq }
+      : {}),
+    ...(latestPassedVerificationSeq !== undefined
+      ? { latestPassedVerificationSeq }
+      : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
     ...(issueSetSha256 ? { issueSetSha256 } : {}),
     ...(evidenceSha256 ? { evidenceSha256 } : {}),
@@ -142,6 +186,36 @@ export function modelAdvisorEventTraceSummary(
       : view.maxAttempts !== undefined
         ? [`max-attempts ${view.maxAttempts}`]
         : []),
+    ...(view.verificationToolCompleted !== undefined
+      ? [
+          view.verificationToolCompleted
+            ? "verification completed"
+            : "verification missing",
+        ]
+      : []),
+    ...(view.verificationToolPassed !== undefined
+      ? [
+          view.verificationToolPassed
+            ? "verification passed"
+            : "verification not-passed",
+        ]
+      : []),
+    ...(view.workspaceWriteCompleted ? ["workspace-write"] : []),
+    ...(view.latestWorkspaceWriteSeq !== undefined
+      ? [`workspace-write-seq ${view.latestWorkspaceWriteSeq}`]
+      : []),
+    ...(view.latestPassedVerificationSeq !== undefined
+      ? [`passed-verification-seq ${view.latestPassedVerificationSeq}`]
+      : []),
+    ...(view.verificationToolPassedAfterWorkspaceWrite !== undefined
+      ? [
+          view.verificationToolPassedAfterWorkspaceWrite
+            ? "verification-current"
+            : view.verificationToolPassed && view.workspaceWriteCompleted
+              ? "verification-stale"
+              : "verification-not-current",
+        ]
+      : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),
     ...(view.candidateTextSha256
       ? [`candidate ${view.candidateTextSha256.slice(0, 12)}`]
@@ -176,7 +250,9 @@ export function modelAdvisorEventTraceSummary(
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {
@@ -187,6 +263,10 @@ function nonNegativeInteger(value: unknown): number | undefined {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
     ? value
     : undefined;
+}
+
+function booleanValue(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
 }
 
 function record(value: unknown): value is Record<string, unknown> {

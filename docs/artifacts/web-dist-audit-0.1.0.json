@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Cebr_mY_.js",
+    "path": "apps/web/dist/assets/index-Ce1u9OAG.js",
     "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "fcee9f0262cf4e95654e1e653e30b1b87af5db9e564a738aef170624f3435dd3"
+    "sha256": "4efccfc09385a9e42c03140dd6b3d23112f43ee21c31a7c37319a350b74f0bb4"
   },
-  "distContentSha256": "fcee9f0262cf4e95654e1e653e30b1b87af5db9e564a738aef170624f3435dd3",
+  "distContentSha256": "4efccfc09385a9e42c03140dd6b3d23112f43ee21c31a7c37319a350b74f0bb4",
   "errors": []
 }
