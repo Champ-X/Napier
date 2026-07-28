@@ -2769,6 +2769,104 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("inspects structured data through the parent Agent ledger", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const csv = "name,score\nAda,98\nLinus,87\n";
+    await writeFile(path.join(workspaceRoot, "scores.csv"), csv, "utf8");
+    const csvSha256 = createHash("sha256").update(csv).digest("hex");
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const originalAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(originalAgent.id, {
+      toolPolicy: "observe",
+      enabledTools: ["inspect_data"],
+    });
+    const thread = await store.createThread({
+      title: "Structured data inspection",
+      agentId: agent.id,
+    });
+
+    const faux = fauxProvider({ provider: "faux-data-inspection" });
+    faux.setResponses([
+      (context) => {
+        const toolNames = context.tools?.map((tool) => tool.name) ?? [];
+        expect(toolNames).toContain("inspect_data");
+        expect(toolNames).not.toContain("apply_patch");
+        return fauxAssistantMessage(
+          fauxToolCall("inspect_data", {
+            path: "scores.csv",
+            format: "csv",
+            maxRows: 1,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const serialized = JSON.stringify(context.messages);
+        expect(serialized).toContain("Napier data metadata");
+        expect(serialized).toContain("Ada");
+        expect(serialized).toContain(csvSha256);
+        return fauxAssistantMessage(
+          "The CSV contains two score rows and two columns.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Inspect the local score data.",
+      model: { provider: "faux-data-inspection", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(faux.state.callCount).toBe(3);
+    const inspectEvents = await store.listEvents(thread.id);
+    const toolEvent = inspectEvents.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "inspect_data",
+    );
+    expect(toolEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          path: "scores.csv",
+          pathSha256: createHash("sha256").update("scores.csv").digest("hex"),
+          format: "csv",
+          sha256: csvSha256,
+          sizeBytes: Buffer.byteLength(csv),
+          rowCount: 2,
+          columnCount: 2,
+          truncated: true,
+          columnSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          sampleSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("runs read-only sandboxed verification through the parent Agent", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);
