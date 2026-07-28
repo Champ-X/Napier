@@ -3181,6 +3181,43 @@ describe("AgentRuntime demo path", () => {
         summarySha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    const firstRunEnvelopeTurnIndexes = firstEvents
+      .filter(
+        (event) =>
+          event.runId === firstRun.id &&
+          event.type === "context.model_envelope",
+      )
+      .map((event) => event.payload)
+      .filter(
+        (payload): payload is Record<string, unknown> =>
+          Boolean(payload) &&
+          !Array.isArray(payload) &&
+          typeof payload === "object",
+      )
+      .map((payload) => payload["turnIndex"]);
+    expect(firstRunEnvelopeTurnIndexes).toEqual([0, 1, 2]);
+    const firstRunModelResponses = firstEvents.filter(
+      (event) => event.runId === firstRun.id && event.type === "model.response",
+    );
+    expect(
+      firstRunModelResponses
+        .map((event) => event.payload)
+        .filter(
+          (payload): payload is Record<string, unknown> =>
+            Boolean(payload) &&
+            !Array.isArray(payload) &&
+            typeof payload === "object",
+        )
+        .map((payload) => ({
+          purpose: payload["modelCallPurpose"],
+          turnIndex: payload["modelContextEnvelopeTurnIndex"],
+          usage: payload["usage"],
+        })),
+    ).toEqual([
+      { purpose: "context_compaction", turnIndex: 0, usage: undefined },
+      { purpose: undefined, turnIndex: 1, usage: expect.any(Object) },
+      { purpose: "memory_extraction", turnIndex: 2, usage: undefined },
+    ]);
 
     const reuse = fauxProvider({ provider: "faux-compaction-reuse" });
     reuse.setResponses([

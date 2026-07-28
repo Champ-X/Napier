@@ -517,10 +517,10 @@ remain unrendered. Run replay metrics count context envelopes, bound model
 responses, and unbound model responses so Run Lab comparisons can surface
 context-governance coverage. Live Agent primary turns allocate envelope turn
 indexes from a Run-level counter, so continuations and advisor corrections
-remain contiguous within the same Run. Goal-evaluator and memory-extraction
-auxiliary calls use the same envelope counter and redacted response binding,
-but leave usage on `goal.evaluated` or `memory.extraction.*` to preserve
-existing accounting semantics.
+remain contiguous within the same Run. Context compaction, goal-evaluator, and
+memory-extraction auxiliary calls use the same envelope counter and redacted
+response binding, but leave usage on `context.compaction.*`, `goal.evaluated`,
+or `memory.extraction.*` to preserve existing accounting semantics.
 Comparison snapshots also derive a metadata-only `contextCoverageDelta` with
 left/right rates, diagnostics, and a clean/partial/missing/regressed status for
 candidate governance review.
@@ -3033,6 +3033,8 @@ conversation projection exceeds message or character budget
   -> retain the newest raw messages within the active model budget
   -> send only the previous checkpoint plus newly covered evidence to a
      no-tool compactor
+  -> record the compactor request as a hash-only model-context envelope
+     with a redacted response binding
   -> require strict summary / decisions / openLoops / artifacts JSON
   -> hash every covered raw message event and the normalized summary
   -> append context.compaction.completed without altering source events

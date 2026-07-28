@@ -1060,6 +1060,7 @@ export class AgentRuntime {
       model,
       signal,
       budget,
+      nextModelContextEnvelopeTurnIndex,
       onEvent,
     );
     budget.assertCanStartPrimaryTurn();
@@ -2092,6 +2093,7 @@ export class AgentRuntime {
     model: Model<Api>,
     signal: AbortSignal,
     budget: RunBudgetTracker,
+    nextModelContextEnvelopeTurnIndex: () => number,
     onEvent?: EventSink,
   ): Promise<{
     messages: AgentMessage[];
@@ -2141,20 +2143,94 @@ export class AgentRuntime {
           priorCheckpoint,
           plan.deltaEvents,
         );
-        const response = await this.modelRegistry.models.completeSimple(
-          model,
+        const requestContext = {
+          systemPrompt: prompt.system,
+          messages: [
+            {
+              role: "user" as const,
+              content: prompt.user,
+              timestamp: Date.now(),
+            },
+          ],
+          tools: [],
+        };
+        const envelope = createModelContextEnvelopeReceipt({
+          turnIndex: nextModelContextEnvelopeTurnIndex(),
+          systemPrompt: requestContext.systemPrompt,
+          messages: requestContext.messages,
+          tools: requestContext.tools,
+        });
+        await this.record(
           {
-            systemPrompt: prompt.system,
-            messages: [
-              {
-                role: "user",
-                content: prompt.user,
-                timestamp: Date.now(),
-              },
-            ],
-            tools: [],
+            threadId: run.threadId,
+            runId: run.id,
+            type: MODEL_CONTEXT_ENVELOPE_EVENT,
+            category: "model",
+            visibility: "debug",
+            payload: toJsonValue(envelope),
           },
-          { signal, maxTokens: 1_200, temperature: 0 },
+          onEvent,
+        );
+        let response: AssistantMessage;
+        try {
+          response = await this.modelRegistry.models.completeSimple(
+            model,
+            requestContext,
+            { signal, maxTokens: 1_200, temperature: 0 },
+          );
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          await this.record(
+            {
+              threadId: run.threadId,
+              runId: run.id,
+              type: "model.response",
+              category: "model",
+              visibility: "debug",
+              payload: {
+                modelCallPurpose: "context_compaction",
+                errorSha256: sha256Text(message),
+                errorBytes: Buffer.byteLength(message, "utf8"),
+                contentRedacted: true,
+                model: `${model.provider}/${model.id}`,
+                stopReason: "error",
+                modelContextEnvelopeSha256: envelope.contentSha256,
+                modelContextEnvelopeTurnIndex: envelope.turnIndex,
+                modelContextMessageSetSha256: envelope.messageSetSha256,
+                modelContextToolDefinitionSetSha256:
+                  envelope.toolDefinitionSetSha256,
+              },
+            },
+            onEvent,
+          );
+          throw error;
+        }
+        const responseText = contentText(response.content);
+        await this.record(
+          {
+            threadId: run.threadId,
+            runId: run.id,
+            type: "model.response",
+            category: "model",
+            visibility: "debug",
+            payload: {
+              modelCallPurpose: "context_compaction",
+              textSha256: sha256Text(responseText),
+              textBytes: Buffer.byteLength(responseText, "utf8"),
+              contentRedacted: true,
+              model: `${model.provider}/${model.id}`,
+              ...(response.stopReason
+                ? { stopReason: response.stopReason }
+                : {}),
+              modelContextEnvelopeSha256: envelope.contentSha256,
+              modelContextEnvelopeTurnIndex: envelope.turnIndex,
+              modelContextMessageSetSha256: envelope.messageSetSha256,
+              modelContextToolDefinitionSetSha256:
+                envelope.toolDefinitionSetSha256,
+            },
+          },
+          onEvent,
         );
         compactorUsage = mapUsage(response.usage);
         compactorUsageAccounting = createUsageAccounting(
@@ -2171,7 +2247,7 @@ export class AgentRuntime {
           ...(priorCheckpoint ? { parent: priorCheckpoint } : {}),
           compactEvents: plan.compactEvents,
           retainedFromSeq,
-          result: parseContextCompactionResponse(contentText(response.content)),
+          result: parseContextCompactionResponse(responseText),
         });
         await this.record(
           {
