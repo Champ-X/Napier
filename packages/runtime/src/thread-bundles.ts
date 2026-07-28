@@ -46,6 +46,10 @@ import {
   INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
   projectIndependentModelAdvisorReviews,
 } from "./independent-model-advisor.js";
+import {
+  MODEL_CONTEXT_ENVELOPE_EVENT,
+  validateModelContextEnvelopeReceipt,
+} from "./model-context-envelope.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import {
   createPromptVariableCatalog,
@@ -819,6 +823,29 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
         `Thread replay bundle Tool Loop Guard context count is invalid: ${String(run["id"])}`,
       );
     }
+  }
+  const modelContextEnvelopeEvents = typedEvents.filter(
+    (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
+  );
+  const modelContextEnvelopeTurnIndexesByRun = new Map<string, number>();
+  for (const event of modelContextEnvelopeEvents) {
+    const receipt = validateModelContextEnvelopeReceipt(event.payload);
+    if (!runIds.has(event.runId)) {
+      throw new Error(
+        `Thread replay bundle Model Context Envelope references unknown Run: ${event.runId}`,
+      );
+    }
+    const expectedTurnIndex =
+      modelContextEnvelopeTurnIndexesByRun.get(event.runId) ?? 0;
+    if (receipt.turnIndex !== expectedTurnIndex) {
+      throw new Error(
+        `Thread replay bundle Model Context Envelope turn index is invalid: ${event.runId}`,
+      );
+    }
+    modelContextEnvelopeTurnIndexesByRun.set(
+      event.runId,
+      expectedTurnIndex + 1,
+    );
   }
   const toolLoopTriggerEvents = typedEvents.filter(
     (event) => event.type === TOOL_LOOP_GUARD_TRIGGERED_EVENT,

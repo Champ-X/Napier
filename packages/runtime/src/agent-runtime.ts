@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 
 import {
   runAgentLoop,
-  type AgentTool,
   type AgentEvent,
   type AgentMessage,
+  type AgentTool,
+  type StreamFn,
 } from "@earendil-works/pi-agent-core";
 import {
   type Api,
@@ -73,6 +74,10 @@ import {
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
 } from "./memory.js";
+import {
+  createModelContextEnvelopeReceipt,
+  MODEL_CONTEXT_ENVELOPE_EVENT,
+} from "./model-context-envelope.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
   CombinedModelAdvisorBlockedError,
@@ -1207,6 +1212,47 @@ export class AgentRuntime {
       milestoneContextProjection,
       activeToolLoopGuard,
     );
+    let modelContextEnvelopeTurnIndex = 0;
+    const recordModelContextEnvelope = async (
+      nextSystemPrompt: string,
+      nextMessages: readonly unknown[],
+      nextTools: readonly { name: string }[],
+    ): Promise<void> => {
+      const receipt = createModelContextEnvelopeReceipt({
+        turnIndex: modelContextEnvelopeTurnIndex,
+        systemPrompt: nextSystemPrompt,
+        messages: nextMessages,
+        tools: nextTools,
+      });
+      modelContextEnvelopeTurnIndex += 1;
+      await this.record(
+        {
+          threadId: run.threadId,
+          runId: run.id,
+          type: MODEL_CONTEXT_ENVELOPE_EVENT,
+          category: "model",
+          visibility: "debug",
+          payload: toJsonValue(receipt),
+        },
+        onEvent,
+      );
+    };
+    const streamWithModelContextEnvelope: StreamFn = async (
+      requestModel,
+      requestContext,
+      options,
+    ) => {
+      await recordModelContextEnvelope(
+        requestContext.systemPrompt ?? "",
+        requestContext.messages,
+        requestContext.tools ?? [],
+      );
+      return this.modelRegistry.models.streamSimple(
+        requestModel,
+        requestContext,
+        options,
+      );
+    };
     const beforeToolCall = async (
       {
         assistantMessage,
@@ -1443,7 +1489,6 @@ export class AgentRuntime {
       },
       onEvent,
     );
-
     let finalText = "";
     await runAgentLoop(
       [
@@ -1669,7 +1714,7 @@ export class AgentRuntime {
         if (text !== undefined) finalText = text;
       },
       signal,
-      this.modelRegistry.models.streamSimple.bind(this.modelRegistry.models),
+      streamWithModelContextEnvelope,
     );
     if (signal.aborted && !budget.exhaustion) {
       throw new Error("Run was cancelled");

@@ -513,6 +513,54 @@ describe("thread replay bundles", () => {
       "Tool Loop Guard trigger is not grounded",
     );
 
+    const invalidEnvelopeDetail = structuredClone(
+      await store.getDetail(thread.id),
+    );
+    const invalidEnvelope = invalidEnvelopeDetail.events.find(
+      (event) => event.type === "context.model_envelope",
+    )!;
+    if (
+      !invalidEnvelope.payload ||
+      Array.isArray(invalidEnvelope.payload) ||
+      typeof invalidEnvelope.payload !== "object" ||
+      typeof invalidEnvelope.payload["messageCount"] !== "number"
+    ) {
+      throw new Error("Model Context Envelope fixture is missing");
+    }
+    const { contentSha256: _envelopeContentSha256, ...envelopeContent } =
+      invalidEnvelope.payload;
+    const forgedEnvelopeContent = {
+      ...envelopeContent,
+      messageCount: invalidEnvelope.payload["messageCount"] + 1,
+    };
+    invalidEnvelope.payload = {
+      ...forgedEnvelopeContent,
+      contentSha256: sha256(canonicalJson(forgedEnvelopeContent)),
+    };
+    expect(() => createThreadReplayBundle(invalidEnvelopeDetail)).toThrow(
+      "Model context envelope message counts are invalid",
+    );
+
+    const duplicateEnvelopeDetail = structuredClone(
+      await store.getDetail(thread.id),
+    );
+    const sourceDuplicateEnvelope = duplicateEnvelopeDetail.events.find(
+      (event) => event.type === "context.model_envelope",
+    )!;
+    duplicateEnvelopeDetail.events.push({
+      ...sourceDuplicateEnvelope,
+      id: "event_model_envelope_duplicate",
+      seq: duplicateEnvelopeDetail.events.length + 1,
+      createdAt: new Date(
+        Date.parse(sourceDuplicateEnvelope.createdAt) + 1,
+      ).toISOString(),
+    });
+    duplicateEnvelopeDetail.thread.eventCount =
+      duplicateEnvelopeDetail.events.length;
+    expect(() => createThreadReplayBundle(duplicateEnvelopeDetail)).toThrow(
+      "Model Context Envelope turn index is invalid",
+    );
+
     const bundle = await exportThreadReplayBundle(store, thread.id);
     const sourceTrigger = bundle.events.find(
       (event) => event.type === "model.tool_loop.detected",

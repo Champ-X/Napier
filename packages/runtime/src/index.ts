@@ -26,6 +26,7 @@ export * from "./independent-model-advisor.js";
 export * from "./inspector-packages.js";
 export * from "./memory.js";
 export * from "./model-advisor.js";
+export * from "./model-context-envelope.js";
 export * from "./mcp.js";
 export * from "./mcp-stdio.js";
 export * from "./models.js";

@@ -70,6 +70,10 @@ Version `0.1.0` includes:
 - a durable Tool Loop Guard that detects repeated single-tool calls with
   identical argument/result hashes, injects a next-turn redirect, and blocks a
   further identical call before execution;
+- hash-only Model Context Envelopes that bind every actual Pi provider request
+  to System Prompt, provider-message, tool-name, and tool-definition hashes
+  without persisting raw prompts, messages, tool names, tool schemas, or tool
+  outputs;
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
@@ -171,10 +175,10 @@ Version `0.1.0` includes:
   evaluations, append-only human adjudications, reviewer ballots, consensus
   resolutions, evaluation suites and executions, automatic-recovery
   assessments and attempts, subagents, Operator Decisions, Agent Milestones,
-  frozen Prompt Variable snapshots, and the complete ordered event stream to
-  independent content/event SHA-256 digests, with atomic import,
-  collision-free resource-ID remapping, and milestone evidence-range
-  rehashing;
+  frozen Prompt Variable snapshots, Model Context Envelopes, and the complete
+  ordered event stream to independent content/event SHA-256 digests, with
+  atomic import, collision-free resource-ID remapping, and milestone
+  evidence-range rehashing;
 - OpenTelemetry-compatible OTLP/JSON trace export for complete Threads or
   individual Runs, with deterministic trace/span identities, GenAI semantic
   attributes, metadata-only redaction, stable artifact hashes, no-store
@@ -816,6 +820,21 @@ redirects before the next side effect. Schema 8 binds the effective policy;
 portable replay recomputes every trigger from prior Ledger events; OTLP exposes
 only scalar metadata and hashes. Lazy Context and Trace registers configure and
 inspect the circuit breaker outside the main entry bundle.
+
+## Model Context Envelopes
+
+Every provider request leaves a debug-only `context.model_envelope` receipt
+just before Pi calls the model. The receipt is generated after Napier has built
+the current System Prompt and Pi has converted Agent messages into provider
+messages, so the first envelope includes the live user prompt and later
+envelopes include tool-result context. It stores only role counts, byte counts,
+turn index, and SHA-256 projections for the System Prompt, message set,
+tool-name set, and tool-definition set.
+
+The raw prompt, messages, tool names, tool schemas, and tool outputs are not
+copied into the receipt. Portable ledger validation replays the receipt shape,
+hash, and per-Run turn-index sequence so a tampered or duplicated model-context
+claim fails closed during export/import verification.
 
 ## Agent Configuration History
 

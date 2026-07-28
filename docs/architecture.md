@@ -57,6 +57,9 @@ removal is a versioned contract change.
   and schema-versioned hash-only Run snapshots;
 - a Ledger-derived Tool Loop Guard with next-turn redirects and pre-execution
   blocking for repeated identical calls/results;
+- provider-bound Model Context Envelope receipts that hash the actual Pi
+  System Prompt, provider-message set, tool-name set, and tool-definition set
+  without storing raw model context;
 - hash-only signed Skill, Prompt, and Inspector package baselines plus local
   qualification checks;
 - reviewed memory proposals, expiry, usage evidence, immutable supersession,
@@ -479,6 +482,30 @@ requires one context receipt for every schema-8 Run and recomputes each trigger
 from its preceding events and exact Agent revision policy. OTLP emits only
 allowlisted counts, tool name, and hashes. The lazy Context circuit-breaker
 ticket and Trace register stay outside the size-constrained entry chunk.
+
+### Model Context Envelopes
+
+`context.model_envelope` is a hash-only receipt for the actual model request
+boundary. Napier records it inside the Pi `streamFn` wrapper, after the
+agent-loop has injected the live prompt, appended any tool results, applied the
+current System Prompt, and converted Agent messages into provider messages.
+This avoids pre-run approximations: the first receipt includes the live user
+prompt, and subsequent receipts reflect the exact provider-message roles Pi is
+about to send.
+
+The receipt stores `turnIndex`, prompt byte count, role counts, total message
+count, tool count, and SHA-256 values for the System Prompt, message set,
+tool-name set, tool-definition set, and canonical receipt body. It never stores
+raw prompt text, message bodies, tool names, tool schemas, or tool output. The
+tool-definition hash is derived from model-facing fields only
+(`name`, `description`, `parameters`, and constrained-sampling metadata), so
+runtime-only execution functions are excluded.
+
+Portable replay validates every envelope receipt, recomputes the content hash,
+checks role-count consistency, and requires turn indexes to be contiguous per
+Run. Duplicated, reordered, or content-mutated context claims fail closed during
+bundle construction and import verification. OTLP allows only the scalar counts
+and SHA-256 keys.
 
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event

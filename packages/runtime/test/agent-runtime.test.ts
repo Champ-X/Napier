@@ -375,6 +375,50 @@ describe("AgentRuntime demo path", () => {
     );
     expect(faux.state.callCount).toBe(6);
     const events = await store.listEvents(thread.id);
+    const contextEnvelopes = events.filter(
+      (event) => event.type === "context.model_envelope",
+    );
+    expect(contextEnvelopes.length).toBeGreaterThanOrEqual(2);
+    expect(contextEnvelopes[0]?.payload).toEqual(
+      expect.objectContaining({
+        kind: "napier.model-context-envelope",
+        turnIndex: 0,
+        systemPromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        systemPromptBytes: expect.any(Number),
+        messageCount: expect.any(Number),
+        messageSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        toolCount: expect.any(Number),
+        toolNameSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        toolDefinitionSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(contextEnvelopes[0]?.payload).toEqual(
+      expect.objectContaining({
+        messageCount: 1,
+        userMessageCount: 1,
+        assistantMessageCount: 0,
+        toolResultMessageCount: 0,
+      }),
+    );
+    expect(
+      contextEnvelopes.some((event) => {
+        const payload = event.payload as Record<string, unknown> | undefined;
+        return (
+          payload !== undefined &&
+          payload !== null &&
+          !Array.isArray(payload) &&
+          typeof payload === "object" &&
+          typeof payload["toolResultMessageCount"] === "number" &&
+          payload["toolResultMessageCount"] > 0
+        );
+      }),
+    ).toBe(true);
+    expect(JSON.stringify(contextEnvelopes)).not.toContain("loop.txt");
+    expect(JSON.stringify(contextEnvelopes)).not.toContain(
+      "stable loop evidence",
+    );
+    expect(JSON.stringify(contextEnvelopes)).not.toContain("read_file");
     expect(
       events.filter((event) => event.type === "context.tool_loop_guard"),
     ).toHaveLength(1);

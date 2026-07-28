@@ -6,6 +6,14 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Hash-only Model Context Envelopes. Every Pi provider request now records a
+  debug-only `context.model_envelope` receipt at the actual stream boundary,
+  after message conversion and before the model call. The receipt binds System
+  Prompt, provider-message set, tool-name set, and tool-definition set hashes
+  plus role/count metadata without copying prompt text, messages, tool schemas,
+  tool names, or tool outputs. Portable replay validates receipt hashes and
+  per-Run turn-index continuity, while metadata-only OTLP exports only counts
+  and SHA-256 values.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

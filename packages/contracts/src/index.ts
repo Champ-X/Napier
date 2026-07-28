@@ -294,6 +294,24 @@ export interface ToolLoopGuardTriggerReceipt {
   contentSha256: string;
 }
 
+export interface ModelContextEnvelopeReceipt {
+  kind: "napier.model-context-envelope";
+  schemaVersion: 1;
+  turnIndex: number;
+  systemPromptSha256: string;
+  systemPromptBytes: number;
+  messageCount: number;
+  userMessageCount: number;
+  assistantMessageCount: number;
+  toolResultMessageCount: number;
+  otherMessageCount: number;
+  messageSetSha256: string;
+  toolCount: number;
+  toolNameSetSha256: string;
+  toolDefinitionSetSha256: string;
+  contentSha256: string;
+}
+
 export interface ModelAdvisorCorrectionRequestPayload {
   kind: "napier.model-advisor-correction-request";
   schemaVersion: 1;
