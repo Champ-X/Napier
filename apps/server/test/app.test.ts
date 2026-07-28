@@ -9071,7 +9071,7 @@ describe("Napier HTTP goal flow", () => {
     expect(imported.thread).toEqual(
       expect.objectContaining({
         title: "Imported Run Lab fixture",
-        eventCount: fixture.events.length,
+        eventCount: fixture.events.length + 1,
         importProvenance: expect.objectContaining({
           sourceThreadId: created.thread.id,
           sourceContentSha256: fixture.contentSha256,
@@ -9083,6 +9083,29 @@ describe("Napier HTTP goal flow", () => {
           sourceEmbeddedModelContextEnvelopeCount:
             verification.embeddedModelContextEnvelopeCount,
         }),
+      }),
+    );
+    expect(imported.events.at(-1)).toEqual(
+      expect.objectContaining({
+        type: "thread.imported",
+        category: "lifecycle",
+        visibility: "debug",
+        seq: imported.thread.importProvenance!.localImportedThroughSeq,
+        payload: {
+          kind: "napier.thread-import-provenance",
+          sourceThreadId: created.thread.id,
+          sourceApiVersion: fixture.apiVersion,
+          sourceContentSha256: fixture.contentSha256,
+          sourceEventStreamSha256: fixture.eventStreamSha256,
+          sourceEventCount: fixture.events.length,
+          localImportedThroughSeq:
+            imported.thread.importProvenance!.localImportedThroughSeq,
+          sourceModelContextEnvelopeCount:
+            verification.modelContextEnvelopeCount,
+          sourceEmbeddedModelContextEnvelopeCount:
+            verification.embeddedModelContextEnvelopeCount,
+          importedAt: imported.thread.importProvenance!.importedAt,
+        },
       }),
     );
     const importedBranchResponse = await app.request(

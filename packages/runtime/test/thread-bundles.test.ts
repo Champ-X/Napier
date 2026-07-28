@@ -1172,7 +1172,7 @@ describe("thread replay bundles", () => {
       expect.objectContaining({
         title: "Imported verification fixture",
         status: "waiting",
-        eventCount: bundle.events.length,
+        eventCount: bundle.events.length + 1,
         importProvenance: expect.objectContaining({
           sourceThreadId: thread.id,
           sourceContentSha256: bundle.contentSha256,
@@ -1184,6 +1184,29 @@ describe("thread replay bundles", () => {
           sourceEmbeddedModelContextEnvelopeCount:
             verification.embeddedModelContextEnvelopeCount,
         }),
+      }),
+    );
+    expect(imported.events.at(-1)).toEqual(
+      expect.objectContaining({
+        type: "thread.imported",
+        category: "lifecycle",
+        visibility: "debug",
+        seq: imported.thread.importProvenance!.localImportedThroughSeq,
+        payload: {
+          kind: "napier.thread-import-provenance",
+          sourceThreadId: thread.id,
+          sourceApiVersion: bundle.apiVersion,
+          sourceContentSha256: bundle.contentSha256,
+          sourceEventStreamSha256: bundle.eventStreamSha256,
+          sourceEventCount: bundle.events.length,
+          localImportedThroughSeq:
+            imported.thread.importProvenance!.localImportedThroughSeq,
+          sourceModelContextEnvelopeCount:
+            verification.modelContextEnvelopeCount,
+          sourceEmbeddedModelContextEnvelopeCount:
+            verification.embeddedModelContextEnvelopeCount,
+          importedAt: imported.thread.importProvenance!.importedAt,
+        },
       }),
     );
     expect(imported.thread).not.toHaveProperty("currentRunId");
@@ -1385,8 +1408,14 @@ describe("thread replay bundles", () => {
         outcome: importedCompletedTask.outcome,
       }),
     );
-    expect(imported.events.map((event) => event.seq)).toEqual(
-      bundle.events.map((event) => event.seq),
+    expect(
+      imported.events.slice(0, bundle.events.length).map((event) => event.seq),
+    ).toEqual(bundle.events.map((event) => event.seq));
+    expect(imported.events.at(-1)).toEqual(
+      expect.objectContaining({
+        type: "thread.imported",
+        seq: bundle.events.length + 1,
+      }),
     );
     const referenceEvent = imported.events.find(
       (event) => event.type === "fixture.references",

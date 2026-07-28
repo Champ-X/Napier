@@ -2250,6 +2250,7 @@ import fixture (maximum 10 MiB)
   -> close claimed/running recovery attempts as imported terminal evidence
   -> convert queued/running Runs to interrupted
   -> convert running plan steps to blocked and active subagents to cancelled
+  -> append a local thread.imported receipt with source hashes and cutoff
   -> commit the complete projection and event batch atomically
   -> persist source hashes, source event count, and import time on the Thread
 ```
@@ -2267,7 +2268,11 @@ Imported provenance is also an unconditional automatic-recovery blocker; an
 imported interrupted Run can only continue through explicit operator action.
 SQLite state restore validates imported provenance hashes, counts, timestamps,
 and the local cutoff against the persisted Thread event count before any
-runtime prompt can consume it.
+runtime prompt can consume it. The import action itself is ledger-backed by a
+local `thread.imported` lifecycle event appended after the source fixture
+events; the event carries only the source Thread/API identifiers, content and
+event-stream SHA-256 hashes, event/envelope counts, import time, and the local
+cutoff sequence.
 
 ## Delegation Flow
 

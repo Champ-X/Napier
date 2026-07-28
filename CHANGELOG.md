@@ -97,6 +97,11 @@ All notable changes to Napier are recorded here.
 - Persisted imported Thread provenance is now validated during SQLite state
   restore, including source hashes, optional envelope counts, and the local
   imported-history cutoff bound against the Thread event count.
+- Replay imports now append a local `thread.imported` lifecycle receipt after
+  the source fixture events. The receipt records only source IDs, SHA-256
+  hashes, event/envelope counts, import time, and the local cutoff sequence, so
+  the Work Ledger itself explains why imported history is untrusted without
+  persisting the raw replay bundle again.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

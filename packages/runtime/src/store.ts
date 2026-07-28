@@ -8397,6 +8397,31 @@ export class LocalStore {
         goal.lastEvaluatedRunId =
           runIds.get(goal.lastEvaluatedRunId) ?? goal.lastEvaluatedRunId;
       }
+      const localImportedThroughSeq = events.length + 1;
+      const importProvenance: ThreadImportProvenance = {
+        sourceThreadId: bundle.thread.id,
+        sourceApiVersion: bundle.apiVersion,
+        sourceContentSha256: bundle.contentSha256,
+        sourceEventStreamSha256: bundle.eventStreamSha256,
+        sourceEventCount: bundle.events.length,
+        localImportedThroughSeq,
+        sourceModelContextEnvelopeCount:
+          bundleVerification.modelContextEnvelopeCount,
+        sourceEmbeddedModelContextEnvelopeCount:
+          bundleVerification.embeddedModelContextEnvelopeCount,
+        importedAt,
+      };
+      events.push({
+        id: createId("event"),
+        threadId,
+        runId: createId("runctl"),
+        seq: localImportedThroughSeq,
+        type: "thread.imported",
+        category: "lifecycle",
+        visibility: "debug",
+        createdAt: importedAt,
+        payload: threadImportProvenanceEventPayload(importProvenance),
+      });
       const thread: ThreadRecord = {
         id: threadId,
         title: normalizeImportedThreadTitle(
@@ -8410,19 +8435,7 @@ export class LocalStore {
         eventCount: events.length,
         ...(goal ? { goal } : {}),
         runIds: bundle.thread.runIds.map((runId) => runIds.get(runId)!),
-        importProvenance: {
-          sourceThreadId: bundle.thread.id,
-          sourceApiVersion: bundle.apiVersion,
-          sourceContentSha256: bundle.contentSha256,
-          sourceEventStreamSha256: bundle.eventStreamSha256,
-          sourceEventCount: bundle.events.length,
-          localImportedThroughSeq: events.length,
-          sourceModelContextEnvelopeCount:
-            bundleVerification.modelContextEnvelopeCount,
-          sourceEmbeddedModelContextEnvelopeCount:
-            bundleVerification.embeddedModelContextEnvelopeCount,
-          importedAt,
-        },
+        importProvenance,
       };
       this.state.agents.push(agent);
       this.state.agentRevisions.push(...agentRevisions);
@@ -15160,6 +15173,25 @@ function validateThreadImportProvenance(
       ? { sourceEmbeddedModelContextEnvelopeCount }
       : {}),
     importedAt: value["importedAt"],
+  };
+}
+
+function threadImportProvenanceEventPayload(
+  provenance: ThreadImportProvenance,
+): JsonValue {
+  return {
+    kind: "napier.thread-import-provenance",
+    sourceThreadId: provenance.sourceThreadId,
+    sourceApiVersion: provenance.sourceApiVersion,
+    sourceContentSha256: provenance.sourceContentSha256,
+    sourceEventStreamSha256: provenance.sourceEventStreamSha256,
+    sourceEventCount: provenance.sourceEventCount,
+    localImportedThroughSeq: provenance.localImportedThroughSeq ?? 0,
+    sourceModelContextEnvelopeCount:
+      provenance.sourceModelContextEnvelopeCount ?? 0,
+    sourceEmbeddedModelContextEnvelopeCount:
+      provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0,
+    importedAt: provenance.importedAt,
   };
 }
 
