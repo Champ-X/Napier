@@ -1532,6 +1532,17 @@ inspect_code
   -> hash the workspace-relative path, complete file, symbol lines, and
      signatures so Trace can show language, symbol count, line/byte counts,
      truncation, and hashes without rendering symbol names or signatures
+read_symbol
+  -> resolve a TypeScript / JavaScript / Python / Go file and symbol line
+     through the same read-only realpath and UTF-8 boundary as read_file
+  -> optionally require the exact symbol-line SHA-256 from list_symbols or
+     inspect_code before returning source
+  -> infer a bounded brace or indentation range with optional context and
+     return line anchors for follow-up Hashline edits
+  -> hash the path, complete file, symbol name, symbol line, signature, source
+     range, and line-anchor set so Trace can show kind, range, counts,
+     truncation, and hashes without rendering source, paths, names, or
+     signatures
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require an existing safe parent and a missing target

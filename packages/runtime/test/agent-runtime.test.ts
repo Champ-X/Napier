@@ -3103,6 +3103,121 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("reads symbol source through the parent Agent ledger", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    const source = [
+      "export class Worker {",
+      "  run(input: string): string {",
+      "    return input;",
+      "  }",
+      "}",
+      "",
+      "export const createWorker = () => new Worker();",
+    ].join("\n");
+    await writeFile(path.join(workspaceRoot, "src/worker.ts"), source, "utf8");
+    const sourceSha256 = createHash("sha256").update(source).digest("hex");
+    const lineSha256 = createHash("sha256")
+      .update("export class Worker {")
+      .digest("hex");
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const originalAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(originalAgent.id, {
+      toolPolicy: "observe",
+      enabledTools: ["read_symbol"],
+    });
+    const thread = await store.createThread({
+      title: "Symbol source reading",
+      agentId: agent.id,
+    });
+
+    const faux = fauxProvider({ provider: "faux-symbol-reading" });
+    faux.setResponses([
+      (context) => {
+        const toolNames = context.tools?.map((tool) => tool.name) ?? [];
+        expect(toolNames).toContain("read_symbol");
+        expect(toolNames).not.toContain("apply_patch");
+        return fauxAssistantMessage(
+          fauxToolCall("read_symbol", {
+            path: "src/worker.ts",
+            line: 1,
+            lineSha256,
+            maxLines: 20,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const serialized = JSON.stringify(context.messages);
+        expect(serialized).toContain("Napier symbol source metadata");
+        expect(serialized).toContain("export class Worker");
+        expect(serialized).toContain("run(input: string)");
+        expect(serialized).toContain(sourceSha256);
+        return fauxAssistantMessage("The Worker class source was read.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Read the Worker symbol source.",
+      model: { provider: "faux-symbol-reading", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(faux.state.callCount).toBe(3);
+    const events = await store.listEvents(thread.id);
+    const toolEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "read_symbol",
+    );
+    expect(toolEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          path: "src/worker.ts",
+          pathSha256: createHash("sha256")
+            .update("src/worker.ts")
+            .digest("hex"),
+          language: "typescript",
+          sha256: sourceSha256,
+          sizeBytes: Buffer.byteLength(source),
+          totalLines: 7,
+          startLine: 1,
+          endLine: 5,
+          symbolLine: 1,
+          symbolKind: "class",
+          symbolNameSha256: createHash("sha256").update("Worker").digest("hex"),
+          lineSha256,
+          rangeSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          lineAnchorSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("runs read-only sandboxed verification through the parent Agent", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

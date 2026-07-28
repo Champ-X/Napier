@@ -479,6 +479,7 @@ describe("SubagentCoordinator", () => {
           "list_symbols",
           "inspect_data",
           "inspect_code",
+          "read_symbol",
         ]);
         return fauxAssistantMessage(
           fauxToolCall("list_files", { path: ".", depth: 0 }),

@@ -3231,6 +3231,7 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     toolName === "list_symbols" ||
     toolName === "inspect_data" ||
     toolName === "inspect_code" ||
+    toolName === "read_symbol" ||
     toolName === "verify_workspace" ||
     toolName === "web_fetch" ||
     toolName === "web_search"

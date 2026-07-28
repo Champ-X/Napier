@@ -120,6 +120,7 @@ export const contextCopy = {
     list_symbols: "List symbols",
     inspect_data: "Inspect data",
     inspect_code: "Inspect code",
+    read_symbol: "Read symbol",
     apply_patch: "Atomic patch",
     verify_workspace: "Sandbox verify",
   },

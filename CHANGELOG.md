@@ -273,6 +273,10 @@ All notable changes to Napier are recorded here.
   Python, and Go files. It returns bounded symbol outlines to the Agent while
   Trace renders only language, symbol/line/byte counts, truncation state, and
   path/file/symbol-set hashes.
+- Added a read-only `read_symbol` workspace tool that expands a hash-anchored
+  symbol line into a bounded source range with line anchors for follow-up
+  Hashline edits. Trace renders only kind, range/count metadata, truncation
+  state, and path/file/name/line/signature/range/anchor hashes.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
 - `verify_workspace` results now include a hash-only scope receipt over cwd and

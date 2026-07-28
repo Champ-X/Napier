@@ -277,6 +277,58 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes read_symbol receipts without source or symbol names", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "read_symbol",
+      status: "completed",
+      output: "TOP_SECRET_SOURCE\nTOP_SECRET_SYMBOL",
+      details: {
+        path: "TOP_SECRET_PATH",
+        pathSha256: "a".repeat(64),
+        language: "typescript",
+        sha256: "b".repeat(64),
+        sizeBytes: 512,
+        totalLines: 88,
+        startLine: 10,
+        endLine: 22,
+        symbolLine: 10,
+        symbolKind: "class",
+        symbolName: "TOP_SECRET_SYMBOL",
+        symbolNameSha256: "c".repeat(64),
+        lineSha256: "d".repeat(64),
+        signaturePreview: "TOP_SECRET_SIGNATURE",
+        signatureSha256: "e".repeat(64),
+        rangeSha256: "f".repeat(64),
+        observedLineCount: 13,
+        truncated: true,
+        lineAnchorSetSha256: "1".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "read_symbol",
+      status: "completed",
+      symbolSourceKind: "class",
+      symbolSourceStartLine: 10,
+      symbolSourceEndLine: 22,
+      symbolSourceLine: 10,
+      symbolSourceObservedLineCount: 13,
+      symbolSourceSizeBytes: 512,
+      symbolSourceTruncated: true,
+      symbolSourcePathSha256: "a".repeat(64),
+      symbolSourceFileSha256: "b".repeat(64),
+      symbolSourceNameSha256: "c".repeat(64),
+      symbolSourceLineSha256: "d".repeat(64),
+      symbolSourceSignatureSha256: "e".repeat(64),
+      symbolSourceRangeSha256: "f".repeat(64),
+      symbolSourceLineAnchorSetSha256: "1".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / read_symbol / completed / symbol class / symbol-range 10-22 / symbol-line 10 / symbol-lines 13 / symbol-size 512 / symbol-truncated / symbol-path ${"a".repeat(12)} / symbol-file ${"b".repeat(12)} / symbol-name ${"c".repeat(12)} / symbol-line-hash ${"d".repeat(12)} / signature ${"e".repeat(12)} / symbol-source ${"f".repeat(12)} / symbol-anchors ${"1".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes verify_workspace status and output hashes only", () => {
     const event = toolEvent("tool.completed", {
       toolName: "verify_workspace",

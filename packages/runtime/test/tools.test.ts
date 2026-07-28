@@ -56,6 +56,7 @@ describe("workspace tools", () => {
       "list_symbols",
       "inspect_data",
       "inspect_code",
+      "read_symbol",
     ]);
     const read = readOnly.find((tool) => tool.name === "read_file")!;
     const result = await read.execute("read-notes", {
@@ -104,6 +105,7 @@ describe("workspace tools", () => {
       "list_symbols",
       "inspect_data",
       "inspect_code",
+      "read_symbol",
       "apply_patch",
     ]);
   });
@@ -530,6 +532,80 @@ describe("workspace tools", () => {
       }),
     );
     expect(goResult.content[0]!.text).toContain("runner.go:3 struct Runner");
+  });
+
+  it("reads a symbol source range with hash receipts", async () => {
+    const { workspaceRoot } = await createFixture();
+    await mkdir(path.join(workspaceRoot, "src"));
+    const source = [
+      "export class Planner {",
+      "  plan(input: string): string {",
+      "    return input;",
+      "  }",
+      "}",
+      "",
+      "export const createPlan = () => new Planner();",
+    ].join("\n");
+    await writeFile(path.join(workspaceRoot, "src/planner.ts"), source);
+    const readSymbol = createWorkspaceTools(workspaceRoot).find(
+      (tool) => tool.name === "read_symbol",
+    )!;
+    const classLineSha256 = createHash("sha256")
+      .update("export class Planner {")
+      .digest("hex");
+
+    const result = await readSymbol.execute("read-symbol", {
+      path: "src/planner.ts",
+      line: 1,
+      lineSha256: classLineSha256,
+      maxLines: 20,
+    });
+
+    const selected = [
+      "export class Planner {",
+      "  plan(input: string): string {",
+      "    return input;",
+      "  }",
+      "}",
+    ].join("\n");
+    const lineAnchors = selected.split("\n").map((line, index) => ({
+      line: index + 1,
+      sha256: createHash("sha256").update(line).digest("hex"),
+    }));
+    expect(result.content[0]!.text).toContain("Napier symbol source metadata");
+    expect(result.content[0]!.text).toContain("export class Planner");
+    expect(result.content[0]!.text).toContain("plan(input: string)");
+    expect(result.details).toEqual({
+      path: "src/planner.ts",
+      pathSha256: createHash("sha256").update("src/planner.ts").digest("hex"),
+      language: "typescript",
+      sha256: createHash("sha256").update(source).digest("hex"),
+      sizeBytes: Buffer.byteLength(source),
+      totalLines: 7,
+      startLine: 1,
+      endLine: 5,
+      symbolLine: 1,
+      symbolKind: "class",
+      symbolNameSha256: createHash("sha256").update("Planner").digest("hex"),
+      lineSha256: classLineSha256,
+      signatureSha256: classLineSha256,
+      rangeSha256: createHash("sha256").update(selected).digest("hex"),
+      observedLineCount: 5,
+      truncated: false,
+      lineAnchors,
+      lineAnchorsTruncated: false,
+      lineAnchorSetSha256: createHash("sha256")
+        .update(JSON.stringify(lineAnchors))
+        .digest("hex"),
+    });
+
+    await expect(
+      readSymbol.execute("read-symbol-stale", {
+        path: "src/planner.ts",
+        line: 1,
+        lineSha256: "0".repeat(64),
+      }),
+    ).rejects.toThrow("lineSha256 precondition failed");
   });
 
   it("creates and exact-replaces UTF-8 files with hash preconditions", async () => {

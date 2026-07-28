@@ -310,6 +310,7 @@ describe("safe automatic recovery", () => {
         "list_symbols",
         "inspect_data",
         "inspect_code",
+        "read_symbol",
         "apply_patch",
         "verify_workspace",
       ],
@@ -360,6 +361,7 @@ describe("safe automatic recovery", () => {
           "list_symbols",
           "inspect_data",
           "inspect_code",
+          "read_symbol",
         ]);
         expect(JSON.stringify(context.messages)).toContain(
           "safe read-only recovery attempt",
@@ -420,6 +422,7 @@ describe("safe automatic recovery", () => {
           "list_files",
           "list_symbols",
           "read_file",
+          "read_symbol",
           "search_files",
         ],
         enabledSubagents: [],

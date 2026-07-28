@@ -1063,6 +1063,15 @@ symbol-set SHA-256 receipt. Trace summaries show only language, symbol count,
 line/byte counts, truncation state, and hashes, never symbol names or
 signatures.
 
+`read_symbol` turns a `list_symbols` or `inspect_code` line into a bounded
+source slice. The caller supplies the file path, 1-based symbol line, and
+optionally the exact line SHA-256; a mismatch fails closed before any content is
+returned. Napier infers a conservative brace or indentation range, includes
+optional context, emits line anchors for follow-up Hashline edits, and records
+file/range/signature/name hashes. Trace summaries show only kind, range,
+counts, truncation state, and hashes, never source text, paths, symbol names, or
+signatures.
+
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
 optional line number, so small line edits do not require the model to retype

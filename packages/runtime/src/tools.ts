@@ -31,6 +31,8 @@ const MAX_CODE_SYMBOLS = 120;
 const MAX_CODE_INDEX_FILES = 120;
 const MAX_CODE_INDEX_SYMBOLS = 240;
 const MAX_CODE_SIGNATURE_BYTES = 512;
+const MAX_SYMBOL_READ_LINES = 220;
+const MAX_SYMBOL_CONTEXT_LINES = 20;
 const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
@@ -114,6 +116,39 @@ const inspectCodeSchema = Type.Object({
       minimum: 1,
       maximum: MAX_CODE_SYMBOLS,
       description: "Maximum code symbols to return.",
+    }),
+  ),
+});
+
+const readSymbolSchema = Type.Object({
+  path: Type.String({
+    description:
+      "Workspace-relative TypeScript, JavaScript, Python, or Go file path.",
+  }),
+  line: Type.Integer({
+    minimum: 1,
+    description: "1-based symbol line from list_symbols or inspect_code.",
+  }),
+  lineSha256: Type.Optional(
+    Type.String({
+      pattern: SHA256_PATTERN,
+      description:
+        "Optional SHA-256 of the exact symbol line from list_symbols or inspect_code.",
+    }),
+  ),
+  maxLines: Type.Optional(
+    Type.Integer({
+      minimum: 1,
+      maximum: MAX_SYMBOL_READ_LINES,
+      description: "Maximum source lines to return.",
+    }),
+  ),
+  contextLines: Type.Optional(
+    Type.Integer({
+      minimum: 0,
+      maximum: MAX_SYMBOL_CONTEXT_LINES,
+      description:
+        "Context lines to include before and after the symbol range.",
     }),
   ),
 });
@@ -318,6 +353,28 @@ export interface WorkspaceSymbolIndexDetails {
   languageCountsSha256: string;
   fileSetSha256: string;
   symbolSetSha256: string;
+}
+
+export interface WorkspaceSymbolReadDetails {
+  path: string;
+  pathSha256: string;
+  language: WorkspaceCodeLanguage;
+  sha256: string;
+  sizeBytes: number;
+  totalLines: number;
+  startLine: number;
+  endLine: number;
+  symbolLine: number;
+  symbolKind: WorkspaceCodeSymbolKind;
+  symbolNameSha256: string;
+  lineSha256: string;
+  signatureSha256: string;
+  rangeSha256: string;
+  observedLineCount: number;
+  truncated: boolean;
+  lineAnchors: Array<{ line: number; sha256: string }>;
+  lineAnchorsTruncated: boolean;
+  lineAnchorSetSha256: string;
 }
 
 export interface WorkspaceListDetails {
@@ -854,6 +911,58 @@ function goSymbolFromLine(
 function truncateCodeSignature(value: string): string {
   if (Buffer.byteLength(value) <= MAX_CODE_SIGNATURE_BYTES) return value;
   return `${Buffer.from(value).subarray(0, MAX_CODE_SIGNATURE_BYTES).toString("utf8")}...[truncated]`;
+}
+
+function inferSymbolEndIndex(
+  lines: string[],
+  language: WorkspaceCodeLanguage,
+  startIndex: number,
+): number {
+  if (language === "python") return inferIndentBlockEndIndex(lines, startIndex);
+  if (
+    language === "typescript" ||
+    language === "javascript" ||
+    language === "go"
+  ) {
+    return inferBraceBlockEndIndex(lines, startIndex);
+  }
+  return startIndex;
+}
+
+function inferIndentBlockEndIndex(lines: string[], startIndex: number): number {
+  const startIndent = leadingWhitespaceLength(lines[startIndex] ?? "");
+  let last = startIndex;
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    if (line.trim().length === 0) {
+      last = index;
+      continue;
+    }
+    if (leadingWhitespaceLength(line) <= startIndent) break;
+    last = index;
+  }
+  return last;
+}
+
+function inferBraceBlockEndIndex(lines: string[], startIndex: number): number {
+  let depth = 0;
+  let sawOpenBrace = false;
+  for (let index = startIndex; index < lines.length; index += 1) {
+    for (const char of lines[index] ?? "") {
+      if (char === "{") {
+        depth += 1;
+        sawOpenBrace = true;
+      } else if (char === "}") {
+        depth -= 1;
+      }
+    }
+    if (sawOpenBrace && depth <= 0) return index;
+  }
+  return startIndex;
+}
+
+function leadingWhitespaceLength(value: string): number {
+  return value.match(/^\s*/u)?.[0].length ?? 0;
 }
 
 const CONTROL_KEYWORDS = new Set([
@@ -1821,6 +1930,113 @@ export function createWorkspaceTools(
     },
   };
 
+  const readSymbol: AgentTool<
+    typeof readSymbolSchema,
+    WorkspaceSymbolReadDetails
+  > = {
+    name: "read_symbol",
+    label: "Read symbol",
+    description:
+      "Read a bounded source range for a TypeScript, JavaScript, Python, or Go symbol line.",
+    parameters: readSymbolSchema,
+    async execute(_toolCallId, input) {
+      const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
+      const target = resolved.target;
+      const info = await stat(target);
+      if (!info.isFile()) throw new Error("read_symbol path must be a file");
+      if (info.size > MAX_HASHABLE_TEXT_BYTES) {
+        throw new Error(
+          `read_symbol supports files up to ${MAX_HASHABLE_TEXT_BYTES} bytes`,
+        );
+      }
+      const buffer = await readFile(target);
+      const source = decodeUtf8(buffer, "read_symbol target");
+      const relativePath = path.relative(resolved.root, target);
+      const language = detectCodeLanguage(relativePath);
+      if (!isInspectableCodeLanguage(language)) {
+        throw new Error(
+          "read_symbol supports TypeScript, JavaScript, Python, and Go files",
+        );
+      }
+      const lines = source.split("\n");
+      const symbolLine = input.line;
+      if (symbolLine > lines.length) {
+        throw new Error(`read_symbol line exceeds ${lines.length} lines`);
+      }
+      const symbolIndex = symbolLine - 1;
+      const symbolSourceLine = lines[symbolIndex] ?? "";
+      const lineSha256 = sha256(symbolSourceLine);
+      if (input.lineSha256 !== undefined && input.lineSha256 !== lineSha256) {
+        throw new Error("read_symbol lineSha256 precondition failed");
+      }
+      const symbol = codeSymbolFromLine(language, symbolSourceLine);
+      if (!symbol) {
+        throw new Error("read_symbol line is not a recognized code symbol");
+      }
+      const signaturePreview = truncateCodeSignature(symbolSourceLine.trim());
+      const signatureSha256 = sha256(signaturePreview);
+      const inferredEndIndex = inferSymbolEndIndex(
+        lines,
+        language,
+        symbolIndex,
+      );
+      const maxLines = input.maxLines ?? 80;
+      const contextLines = input.contextLines ?? 0;
+      const startIndex = Math.max(
+        0,
+        symbolIndex - Math.min(contextLines, Math.max(0, maxLines - 1)),
+      );
+      const desiredEndIndex = Math.min(
+        lines.length - 1,
+        inferredEndIndex + contextLines,
+      );
+      const endIndex = Math.min(desiredEndIndex, startIndex + maxLines - 1);
+      const selected = lines.slice(startIndex, endIndex + 1).join("\n");
+      const { lineAnchors, lineAnchorsTruncated } = createLineAnchors(
+        lines,
+        startIndex,
+        endIndex + 1,
+      );
+      const contentSha256 = sha256(buffer);
+      const lineAnchorSetSha256 = sha256(JSON.stringify(lineAnchors));
+      const details: WorkspaceSymbolReadDetails = {
+        path: relativePath,
+        pathSha256: sha256(relativePath),
+        language,
+        sha256: contentSha256,
+        sizeBytes: buffer.byteLength,
+        totalLines: lines.length,
+        startLine: startIndex + 1,
+        endLine: endIndex + 1,
+        symbolLine,
+        symbolKind: symbol.kind,
+        symbolNameSha256: sha256(symbol.name),
+        lineSha256,
+        signatureSha256,
+        rangeSha256: sha256(selected),
+        observedLineCount: endIndex - startIndex + 1,
+        truncated: endIndex < desiredEndIndex,
+        lineAnchors,
+        lineAnchorsTruncated,
+        lineAnchorSetSha256,
+      };
+      const metadata = JSON.stringify({
+        ...details,
+        symbolName: symbol.name,
+        signaturePreview,
+      });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Napier symbol source metadata: ${metadata}\n\n${selected}`,
+          },
+        ],
+        details,
+      };
+    },
+  };
+
   const tools: AgentTool[] = [
     listFiles,
     readTextFile,
@@ -1828,6 +2044,7 @@ export function createWorkspaceTools(
     listSymbols,
     inspectData,
     inspectCode,
+    readSymbol,
   ];
   if (options.includeWriteTools) {
     if (!options.dataRoot) {

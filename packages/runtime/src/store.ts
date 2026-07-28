@@ -9435,6 +9435,7 @@ export class LocalStore {
         "list_symbols",
         "inspect_data",
         "inspect_code",
+        "read_symbol",
         "apply_patch",
         "verify_workspace",
       ],

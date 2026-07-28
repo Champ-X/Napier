@@ -36,6 +36,28 @@ export interface ToolEventTraceView {
   codePathSha256?: string;
   codeFileSha256?: string;
   codeSymbolSetSha256?: string;
+  symbolSourceKind?:
+    | "class"
+    | "function"
+    | "interface"
+    | "type"
+    | "enum"
+    | "variable"
+    | "struct"
+    | "method";
+  symbolSourceStartLine?: number;
+  symbolSourceEndLine?: number;
+  symbolSourceLine?: number;
+  symbolSourceObservedLineCount?: number;
+  symbolSourceSizeBytes?: number;
+  symbolSourceTruncated?: boolean;
+  symbolSourcePathSha256?: string;
+  symbolSourceFileSha256?: string;
+  symbolSourceNameSha256?: string;
+  symbolSourceLineSha256?: string;
+  symbolSourceSignatureSha256?: string;
+  symbolSourceRangeSha256?: string;
+  symbolSourceLineAnchorSetSha256?: string;
   verificationKind?: "typecheck" | "test" | "format";
   verificationStatus?: "passed" | "failed" | "timed_out" | "output_capped";
   verificationExitCode?: number;
@@ -116,6 +138,10 @@ export function toolEventTraceView(
     toolName === "inspect_code"
       ? inspectCodeEvidence(event.payload["details"])
       : undefined;
+  const symbolSourceEvidence =
+    toolName === "read_symbol"
+      ? readSymbolEvidence(event.payload["details"])
+      : undefined;
   const verificationEvidence =
     toolName === "verify_workspace"
       ? verificationEvidenceView(event.payload["details"])
@@ -142,6 +168,7 @@ export function toolEventTraceView(
     ...(symbolIndexEvidence ? symbolIndexEvidence : {}),
     ...(dataEvidence ? dataEvidence : {}),
     ...(codeEvidence ? codeEvidence : {}),
+    ...(symbolSourceEvidence ? symbolSourceEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
@@ -232,6 +259,44 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.codeSymbolSetSha256
       ? [`symbol-set ${view.codeSymbolSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolSourceKind ? [`symbol ${view.symbolSourceKind}`] : []),
+    ...(view.symbolSourceStartLine !== undefined &&
+    view.symbolSourceEndLine !== undefined
+      ? [
+          `symbol-range ${view.symbolSourceStartLine}-${view.symbolSourceEndLine}`,
+        ]
+      : []),
+    ...(view.symbolSourceLine !== undefined
+      ? [`symbol-line ${view.symbolSourceLine}`]
+      : []),
+    ...(view.symbolSourceObservedLineCount !== undefined
+      ? [`symbol-lines ${view.symbolSourceObservedLineCount}`]
+      : []),
+    ...(view.symbolSourceSizeBytes !== undefined
+      ? [`symbol-size ${view.symbolSourceSizeBytes}`]
+      : []),
+    ...(view.symbolSourceTruncated ? ["symbol-truncated"] : []),
+    ...(view.symbolSourcePathSha256
+      ? [`symbol-path ${view.symbolSourcePathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolSourceFileSha256
+      ? [`symbol-file ${view.symbolSourceFileSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolSourceNameSha256
+      ? [`symbol-name ${view.symbolSourceNameSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolSourceLineSha256
+      ? [`symbol-line-hash ${view.symbolSourceLineSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolSourceSignatureSha256
+      ? [`signature ${view.symbolSourceSignatureSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolSourceRangeSha256
+      ? [`symbol-source ${view.symbolSourceRangeSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolSourceLineAnchorSetSha256
+      ? [`symbol-anchors ${view.symbolSourceLineAnchorSetSha256.slice(0, 12)}`]
       : []),
     ...(view.verificationKind && view.verificationStatus
       ? [`verification ${view.verificationKind} ${view.verificationStatus}`]
@@ -515,6 +580,105 @@ function inspectCodeEvidence(value: unknown):
     ...(fileSha256 ? { codeFileSha256: fileSha256 } : {}),
     ...(symbolSetSha256 ? { codeSymbolSetSha256: symbolSetSha256 } : {}),
   };
+}
+
+function readSymbolEvidence(value: unknown):
+  | {
+      symbolSourceKind:
+        | "class"
+        | "function"
+        | "interface"
+        | "type"
+        | "enum"
+        | "variable"
+        | "struct"
+        | "method";
+      symbolSourceStartLine: number;
+      symbolSourceEndLine: number;
+      symbolSourceLine: number;
+      symbolSourceObservedLineCount?: number;
+      symbolSourceSizeBytes?: number;
+      symbolSourceTruncated?: boolean;
+      symbolSourcePathSha256?: string;
+      symbolSourceFileSha256?: string;
+      symbolSourceNameSha256?: string;
+      symbolSourceLineSha256?: string;
+      symbolSourceSignatureSha256?: string;
+      symbolSourceRangeSha256?: string;
+      symbolSourceLineAnchorSetSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const kind = symbolKind(record["symbolKind"]);
+  const startLine = integerInRange(record["startLine"], 1, 1_000_000);
+  const endLine = integerInRange(record["endLine"], 1, 1_000_000);
+  const symbolLine = integerInRange(record["symbolLine"], 1, 1_000_000);
+  if (
+    !kind ||
+    startLine === undefined ||
+    endLine === undefined ||
+    symbolLine === undefined
+  ) {
+    return undefined;
+  }
+  const observedLineCount = integerInRange(record["observedLineCount"], 1, 220);
+  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2 * 1024 * 1024);
+  const pathSha256 = sha256(record["pathSha256"]);
+  const fileSha256 = sha256(record["sha256"]);
+  const nameSha256 = sha256(record["symbolNameSha256"]);
+  const lineSha256 = sha256(record["lineSha256"]);
+  const signatureSha256 = sha256(record["signatureSha256"]);
+  const rangeSha256 = sha256(record["rangeSha256"]);
+  const lineAnchorSetSha256 = sha256(record["lineAnchorSetSha256"]);
+  return {
+    symbolSourceKind: kind,
+    symbolSourceStartLine: startLine,
+    symbolSourceEndLine: endLine,
+    symbolSourceLine: symbolLine,
+    ...(observedLineCount !== undefined
+      ? { symbolSourceObservedLineCount: observedLineCount }
+      : {}),
+    ...(sizeBytes !== undefined ? { symbolSourceSizeBytes: sizeBytes } : {}),
+    ...(record["truncated"] === true ? { symbolSourceTruncated: true } : {}),
+    ...(pathSha256 ? { symbolSourcePathSha256: pathSha256 } : {}),
+    ...(fileSha256 ? { symbolSourceFileSha256: fileSha256 } : {}),
+    ...(nameSha256 ? { symbolSourceNameSha256: nameSha256 } : {}),
+    ...(lineSha256 ? { symbolSourceLineSha256: lineSha256 } : {}),
+    ...(signatureSha256
+      ? { symbolSourceSignatureSha256: signatureSha256 }
+      : {}),
+    ...(rangeSha256 ? { symbolSourceRangeSha256: rangeSha256 } : {}),
+    ...(lineAnchorSetSha256
+      ? { symbolSourceLineAnchorSetSha256: lineAnchorSetSha256 }
+      : {}),
+  };
+}
+
+function symbolKind(
+  value: unknown,
+):
+  | "class"
+  | "function"
+  | "interface"
+  | "type"
+  | "enum"
+  | "variable"
+  | "struct"
+  | "method"
+  | undefined {
+  return value === "class" ||
+    value === "function" ||
+    value === "interface" ||
+    value === "type" ||
+    value === "enum" ||
+    value === "variable" ||
+    value === "struct" ||
+    value === "method"
+    ? value
+    : undefined;
 }
 
 function codeLanguage(

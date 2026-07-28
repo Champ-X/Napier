@@ -27,6 +27,7 @@ const SAFE_READ_ONLY_TOOLS = new Set([
   "list_symbols",
   "inspect_data",
   "inspect_code",
+  "read_symbol",
   "verify_workspace",
   "web_fetch",
   "web_search",

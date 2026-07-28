@@ -15,6 +15,7 @@ const READ_ONLY_TOOLS = new Set([
   "list_symbols",
   "inspect_data",
   "inspect_code",
+  "read_symbol",
   "web_fetch",
   "web_search",
 ]);
