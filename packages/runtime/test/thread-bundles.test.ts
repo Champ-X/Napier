@@ -232,17 +232,27 @@ describe("thread replay bundles", () => {
       agentId: agent.id,
       model: { provider: "faux-review", id: "faux-1" },
     });
-    const result = await reviewIndependentModelAdvisorCandidate(
-      new ModelRegistry(),
-      {
-        turnSource: "user",
-        turnPrompt: "Review portable evidence.",
-        candidateText: "The evidence remains incomplete.",
-        candidateModel: { provider: "faux-review", id: "faux-1" },
-        reviewerModel: { provider: "faux-review", id: "faux-1" },
-        runEvents: [],
-      },
-    );
+    const reviewer = fauxProvider({ provider: "faux-independent-reviewer" });
+    reviewer.setResponses([
+      fauxAssistantMessage(
+        JSON.stringify({
+          verdict: "accept",
+          score: 92,
+          risk: "low",
+          issues: [],
+        }),
+      ),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(reviewer.provider);
+    const result = await reviewIndependentModelAdvisorCandidate(registry, {
+      turnSource: "user",
+      turnPrompt: "Review portable evidence.",
+      candidateText: "The evidence remains incomplete.",
+      candidateModel: { provider: "faux-review", id: "faux-1" },
+      reviewerModel: { provider: reviewer.provider.id, id: "faux-1" },
+      runEvents: [],
+    });
     await store.appendEvent({
       threadId: thread.id,
       runId: run.id,
@@ -266,6 +276,72 @@ describe("thread replay bundles", () => {
     );
 
     const bundle = await exportThreadReplayBundle(store, thread.id);
+    const invalidEnvelopeDetail = structuredClone(
+      await store.getDetail(thread.id),
+    );
+    const invalidEnvelopeEvent = invalidEnvelopeDetail.events.find(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    )!;
+    if (
+      !invalidEnvelopeEvent.payload ||
+      Array.isArray(invalidEnvelopeEvent.payload) ||
+      typeof invalidEnvelopeEvent.payload !== "object" ||
+      !invalidEnvelopeEvent.payload["modelContextEnvelope"] ||
+      Array.isArray(invalidEnvelopeEvent.payload["modelContextEnvelope"]) ||
+      typeof invalidEnvelopeEvent.payload["modelContextEnvelope"] !== "object"
+    ) {
+      throw new Error("Independent review envelope fixture is missing");
+    }
+    invalidEnvelopeEvent.payload = {
+      ...invalidEnvelopeEvent.payload,
+      modelContextEnvelope: {
+        ...invalidEnvelopeEvent.payload["modelContextEnvelope"],
+        contentSha256: "b".repeat(64),
+      },
+    };
+    expect(() => createThreadReplayBundle(invalidEnvelopeDetail)).toThrow(
+      "embedded Model Context Envelope is invalid",
+    );
+
+    const tamperedBundle = structuredClone(bundle);
+    const tamperedBundleEvent = tamperedBundle.events.find(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    )!;
+    if (
+      !tamperedBundleEvent.payload ||
+      Array.isArray(tamperedBundleEvent.payload) ||
+      typeof tamperedBundleEvent.payload !== "object" ||
+      !tamperedBundleEvent.payload["modelContextEnvelope"] ||
+      Array.isArray(tamperedBundleEvent.payload["modelContextEnvelope"]) ||
+      typeof tamperedBundleEvent.payload["modelContextEnvelope"] !== "object"
+    ) {
+      throw new Error("Bundle review envelope fixture is missing");
+    }
+    tamperedBundleEvent.payload = {
+      ...tamperedBundleEvent.payload,
+      modelContextEnvelope: {
+        ...tamperedBundleEvent.payload["modelContextEnvelope"],
+        contentSha256: "c".repeat(64),
+      },
+    };
+    tamperedBundle.eventStreamSha256 = hashThreadEventStream(
+      tamperedBundle.events,
+    );
+    const {
+      generatedAt: _tamperedGeneratedAt,
+      contentSha256: _tamperedContentSha256,
+      ...tamperedContent
+    } = tamperedBundle;
+    tamperedBundle.contentSha256 = sha256(canonicalJson(tamperedContent));
+    expect(verifyThreadReplayBundle(tamperedBundle)).toEqual({
+      status: "invalid",
+      diagnostics: ["context_mismatch"],
+      eventCount: 0,
+      runCount: 0,
+      planCount: 0,
+      evaluationCount: 0,
+    });
+
     const imported = await store.importThreadReplayBundle(bundle);
     const importedEvent = (await store.listEvents(imported.thread.id)).find(
       (event) => event.type === "model.advisor.independent.reviewed",

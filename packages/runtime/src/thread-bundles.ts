@@ -46,7 +46,10 @@ import {
   INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
   projectIndependentModelAdvisorReviews,
 } from "./independent-model-advisor.js";
-import { assertModelContextEnvelopeEventBindings } from "./model-context-envelope.js";
+import {
+  assertModelContextEnvelopeEventBindings,
+  validateModelContextEnvelopeReceipt,
+} from "./model-context-envelope.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import {
   createPromptVariableCatalog,
@@ -686,6 +689,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     assertJsonValue(event["payload"], `events[${index}].payload`);
     typedEvents.push(value as RunEvent);
   }
+  assertEmbeddedModelContextEnvelopeReceipts(typedEvents);
   const runsById = new Map(
     runRecords.map((run) => [String(run["id"]), run] as const),
   );
@@ -1551,10 +1555,36 @@ function threadReplayBundleDiagnostic(error: unknown): string {
   if (message.includes("API version is unsupported")) {
     return "unsupported_api_version";
   }
+  if (message.includes("Model Context Envelope")) return "context_mismatch";
   if (message.includes("hash mismatch")) return "hash_mismatch";
   if (message.includes("Duplicate")) return "duplicate_resource_id";
   if (message.includes("invalid")) return "invalid_shape";
   return "invalid_bundle";
+}
+
+function assertEmbeddedModelContextEnvelopeReceipts(
+  events: readonly RunEvent[],
+): void {
+  for (const event of events) {
+    const envelope = embeddedModelContextEnvelope(event.payload);
+    if (envelope === undefined) continue;
+    try {
+      validateModelContextEnvelopeReceipt(envelope);
+    } catch (error) {
+      throw new Error(
+        `Thread replay bundle embedded Model Context Envelope is invalid for event ${event.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+}
+
+function embeddedModelContextEnvelope(payload: unknown): unknown {
+  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
+    return undefined;
+  }
+  return (payload as Record<string, unknown>)["modelContextEnvelope"];
 }
 
 function bundleContent(bundle: ThreadReplayBundle) {

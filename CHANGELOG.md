@@ -51,6 +51,10 @@ All notable changes to Napier are recorded here.
   embedded receipts, Run comparison headers export the delta, and Run Lab shows
   the same count without mixing auxiliary reviewer calls into primary response
   binding coverage.
+- Thread replay bundle validation now fail-closes on malformed embedded
+  `modelContextEnvelope` receipts before import, and verification classifies
+  those failures as `context_mismatch` even when the forged bundle's top-level
+  event/content hashes are internally consistent.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent
