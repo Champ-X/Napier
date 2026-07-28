@@ -3692,6 +3692,28 @@ export interface RunConfigurationDelta {
   removedSubagents: SubagentRole[];
 }
 
+export type RunContextCoverageStatus =
+  | "clean"
+  | "partial"
+  | "missing"
+  | "regressed";
+
+export interface RunContextCoverageSummary {
+  modelResponseCount: number;
+  envelopeCount: number;
+  boundResponseCount: number;
+  unboundResponseCount: number;
+  coverageRate: number;
+}
+
+export interface RunContextCoverageDelta {
+  status: RunContextCoverageStatus;
+  left: RunContextCoverageSummary;
+  right: RunContextCoverageSummary;
+  coverageRateDelta: number;
+  diagnostics: string[];
+}
+
 export interface RunComparison {
   threadId: string;
   left: RunReplaySnapshot;
@@ -3702,6 +3724,7 @@ export interface RunComparison {
   addedToolNames: string[];
   removedToolNames: string[];
   configurationDelta: RunConfigurationDelta;
+  contextCoverageDelta: RunContextCoverageDelta;
 }
 
 export interface EvaluationCriterion {

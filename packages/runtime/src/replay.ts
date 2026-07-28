@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import {
   emptyUsage,
   type JsonValue,
+  type RunContextCoverageDelta,
+  type RunContextCoverageSummary,
   type RunComparison,
   type RunEvent,
   type RunMetricDelta,
@@ -173,6 +175,10 @@ export async function compareRuns(
   );
   const leftTools = toolNames(left.events);
   const rightTools = toolNames(right.events);
+  const configurationDelta = compareRunConfigurations(
+    left.run.configuration,
+    right.run.configuration,
+  );
   return {
     threadId,
     left,
@@ -187,10 +193,8 @@ export async function compareRuns(
     removedToolNames: [...leftTools]
       .filter((name) => !rightTools.has(name))
       .sort(),
-    configurationDelta: compareRunConfigurations(
-      left.run.configuration,
-      right.run.configuration,
-    ),
+    configurationDelta,
+    contextCoverageDelta: compareContextCoverage(left.metrics, right.metrics),
   };
 }
 
@@ -587,6 +591,67 @@ function addUsage(left: Usage, right: Usage): Usage {
     cacheReadTokens: left.cacheReadTokens + right.cacheReadTokens,
     cacheWriteTokens: left.cacheWriteTokens + right.cacheWriteTokens,
     costUsd: left.costUsd + right.costUsd,
+  };
+}
+
+function compareContextCoverage(
+  leftMetrics: RunMetrics,
+  rightMetrics: RunMetrics,
+): RunContextCoverageDelta {
+  const left = runContextCoverageSummary(leftMetrics);
+  const right = runContextCoverageSummary(rightMetrics);
+  const coverageRateDelta = right.coverageRate - left.coverageRate;
+  const diagnostics: string[] = [];
+  const missing =
+    right.modelResponseCount > 0 &&
+    right.envelopeCount === 0 &&
+    right.boundResponseCount === 0;
+  const regressed =
+    coverageRateDelta < 0 ||
+    right.unboundResponseCount > left.unboundResponseCount;
+  const partial =
+    right.unboundResponseCount > 0 ||
+    right.coverageRate < 1 ||
+    right.envelopeCount > right.boundResponseCount;
+  if (missing) {
+    diagnostics.push("candidate_context_envelopes_missing");
+  }
+  if (right.unboundResponseCount > 0) {
+    diagnostics.push("candidate_context_responses_unbound");
+  }
+  if (right.envelopeCount > right.boundResponseCount) {
+    diagnostics.push("candidate_context_envelopes_unmatched");
+  }
+  if (regressed) {
+    diagnostics.push("candidate_context_coverage_regressed");
+  }
+  return {
+    status: missing
+      ? "missing"
+      : regressed
+        ? "regressed"
+        : partial
+          ? "partial"
+          : "clean",
+    left,
+    right,
+    coverageRateDelta,
+    diagnostics,
+  };
+}
+
+function runContextCoverageSummary(
+  metrics: RunMetrics,
+): RunContextCoverageSummary {
+  return {
+    modelResponseCount: metrics.modelResponseCount,
+    envelopeCount: metrics.modelContextEnvelopeCount,
+    boundResponseCount: metrics.modelContextBoundResponseCount,
+    unboundResponseCount: metrics.modelContextUnboundResponseCount,
+    coverageRate:
+      metrics.modelResponseCount === 0
+        ? 1
+        : metrics.modelContextBoundResponseCount / metrics.modelResponseCount,
   };
 }
 

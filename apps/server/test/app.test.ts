@@ -11653,6 +11653,24 @@ function expectRunComparisonHeaders(
   expect(response.headers.get("x-napier-configuration-delta-status")).toBe(
     comparison.configurationDelta.status,
   );
+  expect(response.headers.get("x-napier-context-coverage-status")).toBe(
+    comparison.contextCoverageDelta.status,
+  );
+  expect(response.headers.get("x-napier-context-coverage-left-rate")).toBe(
+    String(comparison.contextCoverageDelta.left.coverageRate),
+  );
+  expect(response.headers.get("x-napier-context-coverage-right-rate")).toBe(
+    String(comparison.contextCoverageDelta.right.coverageRate),
+  );
+  expect(response.headers.get("x-napier-context-coverage-rate-delta")).toBe(
+    String(comparison.contextCoverageDelta.coverageRateDelta),
+  );
+  expect(
+    response.headers.get("x-napier-context-coverage-diagnostic-count"),
+  ).toBe(String(comparison.contextCoverageDelta.diagnostics.length));
+  expect(
+    response.headers.get("x-napier-context-coverage-diagnostics-sha256"),
+  ).toBe(responseSha256(comparison.contextCoverageDelta.diagnostics));
   expect(response.headers.get("x-napier-event-type-delta-sha256")).toBe(
     responseSha256(comparison.eventTypeDelta),
   );

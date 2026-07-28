@@ -235,6 +235,56 @@ export default function RunLabPanel({
             />
           </div>
           <div
+            className={`configuration-drift ${contextCoverageClassName(
+              comparison.contextCoverageDelta.status,
+            )}`}
+          >
+            <div className="configuration-drift-heading">
+              <span>{copy.lab.contextCoverage}</span>
+              <strong>
+                {contextCoverageStatusLabel(
+                  comparison.contextCoverageDelta.status,
+                )}
+              </strong>
+            </div>
+            <div className="configuration-hashes">
+              <code>
+                {copy.lab.left}{" "}
+                {formatPercent(
+                  comparison.contextCoverageDelta.left.coverageRate,
+                )}
+              </code>
+              <code>
+                {copy.lab.right}{" "}
+                {formatPercent(
+                  comparison.contextCoverageDelta.right.coverageRate,
+                )}
+              </code>
+              <code>
+                {copy.lab.contextCoverageDelta}{" "}
+                {formatSignedPercent(
+                  comparison.contextCoverageDelta.coverageRateDelta,
+                )}
+              </code>
+            </div>
+            {comparison.contextCoverageDelta.diagnostics.length > 0 ? (
+              <>
+                <p>{copy.lab.contextCoverageDiagnostics}</p>
+                <ul>
+                  {comparison.contextCoverageDelta.diagnostics.map(
+                    (diagnostic) => (
+                      <li key={diagnostic}>
+                        <code>{diagnostic}</code>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              </>
+            ) : (
+              <p>{copy.lab.contextCoverageHealthy}</p>
+            )}
+          </div>
+          <div
             className={`configuration-drift ${
               comparison.configurationDelta.status === "unavailable"
                 ? "is-unavailable"
@@ -717,6 +767,32 @@ function formatSignedDuration(value: number): string {
 function formatSignedCost(value: number): string {
   if (value === 0) return "$0";
   return `${value > 0 ? "+" : "-"}$${Math.abs(value).toFixed(4)}`;
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatSignedPercent(value: number): string {
+  if (value === 0) return formatPercent(value);
+  return `${value > 0 ? "+" : "-"}${formatPercent(Math.abs(value))}`;
+}
+
+function contextCoverageStatusLabel(
+  status: RunComparison["contextCoverageDelta"]["status"],
+): string {
+  if (status === "clean") return copy.lab.contextCoverageClean;
+  if (status === "partial") return copy.lab.contextCoveragePartial;
+  if (status === "missing") return copy.lab.contextCoverageMissing;
+  return copy.lab.contextCoverageRegressed;
+}
+
+function contextCoverageClassName(
+  status: RunComparison["contextCoverageDelta"]["status"],
+): string {
+  if (status === "clean") return "is-unchanged";
+  if (status === "partial") return "is-unavailable";
+  return "is-changed";
 }
 
 function shortId(value: string): string {

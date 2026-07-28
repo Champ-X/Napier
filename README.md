@@ -843,7 +843,9 @@ these envelopes as a hash-only register, shows the bound response sequence,
 model, and stop reason when the response hashes match, and refuses malformed
 payloads or payloads containing raw fields. Run replay snapshots and Run Lab
 comparisons expose envelope coverage plus bound/unbound response counts as
-ordinary metrics.
+ordinary metrics, then derive a metadata-only `contextCoverageDelta` status so
+operators can see whether a candidate Run is clean, partial, missing, or
+regressed.
 
 ## Agent Configuration History
 

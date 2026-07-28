@@ -352,9 +352,78 @@ describe("run replay", () => {
         removedTools: [],
       }),
     );
+    expect(comparison.contextCoverageDelta).toEqual({
+      status: "clean",
+      left: {
+        modelResponseCount: 1,
+        envelopeCount: 1,
+        boundResponseCount: 1,
+        unboundResponseCount: 0,
+        coverageRate: 1,
+      },
+      right: {
+        modelResponseCount: 1,
+        envelopeCount: 1,
+        boundResponseCount: 1,
+        unboundResponseCount: 0,
+        coverageRate: 1,
+      },
+      coverageRateDelta: 0,
+      diagnostics: [],
+    });
     await expect(
       compareRuns(store, threadId, left.id, left.id),
     ).rejects.toThrow("two distinct runs");
+  });
+
+  it("flags context coverage regressions in run comparisons", async () => {
+    const store = await createStore();
+    const { threadId, left, right } = await createComparedRuns(store);
+
+    await store.appendEvent({
+      threadId,
+      runId: right.id,
+      type: "model.response",
+      category: "model",
+      visibility: "debug",
+      payload: {
+        text: "A follow-up response without a bound context envelope.",
+        model: "faux/faux-1",
+      },
+    });
+
+    const comparison = await compareRuns(store, threadId, left.id, right.id);
+
+    expect(comparison.metricDelta).toEqual(
+      expect.objectContaining({
+        modelResponseCount: 1,
+        modelContextEnvelopeCount: 0,
+        modelContextBoundResponseCount: 0,
+        modelContextUnboundResponseCount: 1,
+      }),
+    );
+    expect(comparison.contextCoverageDelta).toEqual({
+      status: "regressed",
+      left: {
+        modelResponseCount: 1,
+        envelopeCount: 1,
+        boundResponseCount: 1,
+        unboundResponseCount: 0,
+        coverageRate: 1,
+      },
+      right: {
+        modelResponseCount: 2,
+        envelopeCount: 1,
+        boundResponseCount: 1,
+        unboundResponseCount: 1,
+        coverageRate: 0.5,
+      },
+      coverageRateDelta: -0.5,
+      diagnostics: [
+        "candidate_context_responses_unbound",
+        "candidate_context_coverage_regressed",
+      ],
+    });
   });
 });
 

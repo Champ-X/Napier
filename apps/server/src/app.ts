@@ -19938,6 +19938,30 @@ function setRunComparisonHeaders(
     comparison.configurationDelta.status,
   );
   context.header(
+    "X-Napier-Context-Coverage-Status",
+    comparison.contextCoverageDelta.status,
+  );
+  context.header(
+    "X-Napier-Context-Coverage-Left-Rate",
+    String(comparison.contextCoverageDelta.left.coverageRate),
+  );
+  context.header(
+    "X-Napier-Context-Coverage-Right-Rate",
+    String(comparison.contextCoverageDelta.right.coverageRate),
+  );
+  context.header(
+    "X-Napier-Context-Coverage-Rate-Delta",
+    String(comparison.contextCoverageDelta.coverageRateDelta),
+  );
+  context.header(
+    "X-Napier-Context-Coverage-Diagnostic-Count",
+    String(comparison.contextCoverageDelta.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Context-Coverage-Diagnostics-SHA256",
+    sha256Json(comparison.contextCoverageDelta.diagnostics),
+  );
+  context.header(
     "X-Napier-Event-Type-Delta-SHA256",
     sha256Json(comparison.eventTypeDelta),
   );
