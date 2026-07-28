@@ -69,6 +69,14 @@ describe("independent Model Advisor", () => {
         ],
         candidateTextSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        modelContextEnvelope: expect.objectContaining({
+          kind: "napier.model-context-envelope",
+          schemaVersion: 1,
+          turnIndex: 0,
+          messageCount: 1,
+          toolCount: 0,
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
@@ -81,6 +89,12 @@ describe("independent Model Advisor", () => {
     ]);
     expect(JSON.stringify(result.review)).not.toContain(CANDIDATE_TEXT);
     expect(JSON.stringify(result.review)).not.toContain(GUIDANCE_TEXT);
+    expect(JSON.stringify(result.review.modelContextEnvelope)).not.toContain(
+      CANDIDATE_TEXT,
+    );
+    expect(JSON.stringify(result.review.modelContextEnvelope)).not.toContain(
+      "Inspect the release evidence.",
+    );
 
     const reviewEvent = event(
       2,
@@ -96,6 +110,20 @@ describe("independent Model Advisor", () => {
       score: 99,
     };
     expect(projectIndependentModelAdvisorReviews([tampered])).toEqual([]);
+    const envelope = result.review.modelContextEnvelope;
+    expect(envelope).toBeDefined();
+    if (!envelope) throw new Error("Expected independent review envelope");
+    const tamperedEnvelope = structuredClone(reviewEvent);
+    tamperedEnvelope.payload = {
+      ...result.review,
+      modelContextEnvelope: {
+        ...envelope,
+        contentSha256: "b".repeat(64),
+      },
+    };
+    expect(projectIndependentModelAdvisorReviews([tamperedEnvelope])).toEqual(
+      [],
+    );
 
     const forged = structuredClone(result.review);
     forged.turnSource = "forged_source";
@@ -166,6 +194,39 @@ describe("independent Model Advisor", () => {
         risk: "high",
         diagnosticCodes: ["reviewer_matches_candidate"],
       }),
+    );
+    expect(result.review).not.toHaveProperty("modelContextEnvelope");
+  });
+
+  it("keeps a hash-only envelope for live reviewer parse failures", async () => {
+    const faux = fauxProvider({ provider: "faux-independent-advisor-failure" });
+    faux.setResponses([fauxAssistantMessage("not json")]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+
+    const result = await reviewIndependentModelAdvisorCandidate(registry, {
+      turnSource: "user",
+      turnPrompt: "Inspect the release evidence.",
+      candidateText: CANDIDATE_TEXT,
+      candidateModel: { provider: "worker", id: "worker-1" },
+      reviewerModel: { provider: faux.provider.id, id: "faux-1" },
+      runEvents: [],
+    });
+
+    expect(result.review).toEqual(
+      expect.objectContaining({
+        verdict: "inconclusive",
+        score: 0,
+        risk: "high",
+        diagnosticCodes: ["review_failed_closed"],
+        modelContextEnvelope: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(JSON.stringify(result.review)).not.toContain("not json");
+    expect(JSON.stringify(result.review.modelContextEnvelope)).not.toContain(
+      CANDIDATE_TEXT,
     );
   });
 });

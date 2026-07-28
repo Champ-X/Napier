@@ -74,8 +74,9 @@ All notable changes to Napier are recorded here.
   reviewed through a zero-tool strict-JSON call using the current turn prompt
   and metadata-only Run evidence. Durable receipts retain verdict, score, risk,
   typed issue codes, usage, model identities, and candidate/prompt/evidence/
-  response/issue-set SHA-256 values without copying candidate text or free-form
-  reviewer guidance into the review receipt. Observe mode records the second opinion;
+  response/issue-set SHA-256 values plus the live request's hash-only
+  model-context envelope, without copying candidate text or free-form reviewer
+  guidance into the review receipt. Observe mode records the second opinion;
   enforce mode combines non-accept reviews with deterministic blockers in the
   existing bounded tool-free correction state machine. Reviewer usage now
   participates in live budget enforcement and final Run settlement. Schema-6

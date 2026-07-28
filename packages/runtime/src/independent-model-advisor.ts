@@ -12,12 +12,17 @@ import {
   type IndependentModelAdvisorRisk,
   type IndependentModelAdvisorVerdict,
   type ModelAdvisorSeverity,
+  type ModelContextEnvelopeReceipt,
   type ModelRef,
   type RunEvent,
   type Usage,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  createModelContextEnvelopeReceipt,
+  validateModelContextEnvelopeReceipt,
+} from "./model-context-envelope.js";
 import type { ModelRegistry } from "./models.js";
 
 export const INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT =
@@ -333,28 +338,31 @@ async function completeIndependentReview(
 ): Promise<IndependentModelAdvisorReviewResult> {
   let responseText = "";
   let usage = emptyUsage();
+  const requestContext = {
+    systemPrompt: input.prompt.system,
+    messages: [
+      {
+        role: "user" as const,
+        content: input.prompt.user,
+        timestamp: Date.now(),
+      },
+    ],
+    tools: [],
+  };
+  const modelContextEnvelope = createModelContextEnvelopeReceipt({
+    turnIndex: 0,
+    systemPrompt: requestContext.systemPrompt,
+    messages: requestContext.messages,
+    tools: requestContext.tools,
+  });
   try {
-    const response = await models.models.completeSimple(
-      model,
-      {
-        systemPrompt: input.prompt.system,
-        messages: [
-          {
-            role: "user",
-            content: input.prompt.user,
-            timestamp: Date.now(),
-          },
-        ],
-        tools: [],
-      },
-      {
-        ...(input.signal ? { signal: input.signal } : {}),
-        maxTokens: 900,
-        temperature: 0,
-        timeoutMs: 30_000,
-        maxRetries: 0,
-      },
-    );
+    const response = await models.models.completeSimple(model, requestContext, {
+      ...(input.signal ? { signal: input.signal } : {}),
+      maxTokens: 900,
+      temperature: 0,
+      timeoutMs: 30_000,
+      maxRetries: 0,
+    });
     responseText = contentText(response.content);
     usage = normalizeUsage(response.usage);
     const parsed = parseIndependentModelAdvisorResponse(responseText);
@@ -367,6 +375,7 @@ async function completeIndependentReview(
       responseSha256: sha256(responseText),
       usage,
       diagnosticCodes: [],
+      modelContextEnvelope,
     });
   } catch (error) {
     if (input.signal?.aborted) throw error;
@@ -385,6 +394,7 @@ async function completeIndependentReview(
       responseSha256: sha256(responseText || message),
       usage,
       diagnosticCodes: ["review_failed_closed"],
+      modelContextEnvelope,
     });
   }
 }
@@ -419,6 +429,7 @@ function createReviewResult(input: {
   responseSha256: string;
   usage: Usage;
   diagnosticCodes: string[];
+  modelContextEnvelope?: ModelContextEnvelopeReceipt;
 }): IndependentModelAdvisorReviewResult {
   const issues: IndependentModelAdvisorIssue[] = input.parsed.guidance.map(
     (issue) => ({
@@ -451,6 +462,9 @@ function createReviewResult(input: {
     reviewSchemaSha256: input.prompt.reviewSchemaSha256,
     issueSetSha256,
     usage: input.usage,
+    ...(input.modelContextEnvelope
+      ? { modelContextEnvelope: input.modelContextEnvelope }
+      : {}),
   } satisfies Omit<IndependentModelAdvisorReview, "contentSha256">;
   return {
     review: {
@@ -516,7 +530,7 @@ function parseReviewPayload(
   input: unknown,
 ): IndependentModelAdvisorReview | undefined {
   if (!record(input)) return undefined;
-  const keys = [
+  const requiredKeys = [
     "kind",
     "schemaVersion",
     "policyId",
@@ -541,9 +555,13 @@ function parseReviewPayload(
     "usage",
     "contentSha256",
   ];
+  const optionalKeys = ["modelContextEnvelope"];
+  const keys = Object.keys(input);
   if (
-    Object.keys(input).length !== keys.length ||
-    keys.some((key) => !(key in input)) ||
+    requiredKeys.some((key) => !(key in input)) ||
+    keys.some(
+      (key) => !requiredKeys.includes(key) && !optionalKeys.includes(key),
+    ) ||
     input["kind"] !== "napier.independent-model-advisor-review" ||
     input["schemaVersion"] !== 1 ||
     input["policyId"] !== REVIEW_POLICY_ID
@@ -559,6 +577,10 @@ function parseReviewPayload(
     const issues = parsePersistedIssues(input["issues"]);
     const diagnosticCodes = parseDiagnostics(input["diagnosticCodes"]);
     const usage = parseUsage(input["usage"]);
+    const modelContextEnvelope =
+      input["modelContextEnvelope"] === undefined
+        ? undefined
+        : validateModelContextEnvelopeReceipt(input["modelContextEnvelope"]);
     const turnSource = normalizeTurnSource(input["turnSource"]);
     const candidateTextBytes = input["candidateTextBytes"];
     if (
@@ -632,6 +654,7 @@ function parseReviewPayload(
       reviewSchemaSha256: String(input["reviewSchemaSha256"]),
       issueSetSha256: String(input["issueSetSha256"]),
       usage,
+      ...(modelContextEnvelope ? { modelContextEnvelope } : {}),
     };
     return sha256(canonicalJson(content)) === input["contentSha256"]
       ? { ...content, contentSha256: String(input["contentSha256"]) }

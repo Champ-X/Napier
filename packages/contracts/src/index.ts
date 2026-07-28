@@ -212,6 +212,7 @@ export interface IndependentModelAdvisorReview {
   reviewSchemaSha256: string;
   issueSetSha256: string;
   usage: Usage;
+  modelContextEnvelope?: ModelContextEnvelopeReceipt;
   contentSha256: string;
 }
 
