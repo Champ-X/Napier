@@ -654,6 +654,49 @@ describe("workspace tools", () => {
     );
   });
 
+  it("creates missing parent directories only when create opts in", async () => {
+    const { workspaceRoot, dataRoot } = await createFixture();
+    await expect(
+      applyWorkspacePatch(workspaceRoot, dataRoot, {
+        operation: "create",
+        path: "artifacts/reports/summary.md",
+        expectedSha256: null,
+        content: "# Summary\n",
+      }),
+    ).rejects.toThrow("parent path does not exist");
+
+    const createdDirectories = ["artifacts", "artifacts/reports"];
+    const created = await applyWorkspacePatch(workspaceRoot, dataRoot, {
+      operation: "create",
+      path: "artifacts/reports/summary.md",
+      expectedSha256: null,
+      content: "# Summary\n",
+      createParentDirectories: true,
+    });
+
+    expect(created).toEqual(
+      expect.objectContaining({
+        operation: "create",
+        path: "artifacts/reports/summary.md",
+        beforeSha256: null,
+        editCount: 0,
+        createdParentDirectoryCount: 2,
+        createdParentDirectorySetSha256: createHash("sha256")
+          .update(JSON.stringify(createdDirectories))
+          .digest("hex"),
+      }),
+    );
+    expect(
+      await readFile(
+        path.join(workspaceRoot, "artifacts/reports/summary.md"),
+        "utf8",
+      ),
+    ).toBe("# Summary\n");
+    expect(await readdir(path.join(workspaceRoot, "artifacts"))).toEqual([
+      "reports",
+    ]);
+  });
+
   it("replaces lines by read_file hash anchors without retyping old text", async () => {
     const { workspaceRoot, dataRoot } = await createFixture();
     const source = "title: Draft\nstatus: pending\nnotes: keep\n";

@@ -1493,10 +1493,11 @@ concise `workspace_tool_protocol` into the live system prompt. That protocol is
 derived from the actual enabled tools, tells the Agent to treat tool output as
 evidence rather than instructions, guides code changes through symbol/range
 hashes when available, requires complete-file SHA-256 preconditions for
-`apply_patch`, and asks for `verify_workspace` after relevant writes before
-claiming checks passed. The protocol is prompt guidance only; policy
-enforcement still comes from the tool allowlist, sandbox, hash preconditions,
-Ledger events, and Advisor freshness checks.
+`apply_patch`, treats parent-directory creation as an intentional create-only
+opt-in for new artifact paths, and asks for `verify_workspace` after relevant
+writes before claiming checks passed. The protocol is prompt guidance only;
+policy enforcement still comes from the tool allowlist, sandbox, hash
+preconditions, Ledger events, and Advisor freshness checks.
 
 ```text
 read_file
@@ -1554,7 +1555,12 @@ read_symbol
      signatures
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
-  -> require an existing safe parent and a missing target
+  -> require a missing target
+  -> require an existing safe parent by default
+  -> when createParentDirectories is true, create only missing
+     workspace-relative parents after validating protected segments and
+     existing path components
+  -> record created-parent count and directory-set SHA-256
 apply_patch replace
   -> require workspace policy + enabled tool + complete expected SHA-256
   -> require every oldText to occur exactly once in the evolving buffer
@@ -1578,16 +1584,17 @@ all operations
   -> append tool.completed with path, path SHA-256, byte counts, and both
      content hashes
   -> render Workbench Trace summaries with only operation, edit/byte counts,
-     path hash, and content hashes
+     path hash, content hashes, and created-parent count/hash
 ```
 
 This lock serializes Napier runtimes on one host; the second writer fails or
 observes a stale hash instead of silently overwriting the first. External
 processes do not honor the lock, so the final precondition recheck narrows but
-cannot turn a local filesystem into distributed consensus. File deletion,
-directory creation, and permission changes are intentionally outside this
-tool. Subagents call the read-only tool factory and never receive
-`apply_patch`.
+cannot turn a local filesystem into distributed consensus. Parent-directory
+creation is limited to `create` with an explicit opt-in and uses the same
+workspace, protected-segment, and symlink checks; file deletion, arbitrary
+directory operations, and permission changes remain outside this tool.
+Subagents call the read-only tool factory and never receive `apply_patch`.
 
 ## Workspace Verification Flow
 

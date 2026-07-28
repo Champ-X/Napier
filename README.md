@@ -1022,7 +1022,8 @@ When workspace tools are available, the Runtime injects a concise
 `workspace_tool_protocol` into the live system prompt. It tells the Agent to
 treat tool output as evidence, inspect before editing, prefer symbol/range
 hashes for code changes, pass complete-file SHA-256 preconditions to
-`apply_patch`, and rerun `verify_workspace` after relevant writes before
+`apply_patch`, opt in to parent-directory creation only for intentional new
+artifact paths, and rerun `verify_workspace` after relevant writes before
 claiming checks passed.
 
 `read_file` reports the SHA-256 and byte size of the complete UTF-8 file even
@@ -1094,10 +1095,14 @@ whole-symbol replacement possible without retyping the old source block.
 
 Edits are limited to 256 KiB and cannot target `.git`, `.napier`, or
 `node_modules`, follow a symlink outside the workspace, delete a file, or
-create parent directories. Local runtimes serialize each target with a
-recoverable PID lock, write and fsync a same-directory temporary file, recheck
-the precondition, and commit with an atomic link or rename. Trace records the
-operation, path, byte counts, before/after hashes, and a path SHA-256 receipt;
+create parent directories unless `apply_patch create` explicitly sets
+`createParentDirectories: true`. That opt-in creates only missing
+workspace-relative parents, rejects protected segments and symlink components,
+and records the created-directory count plus directory-set SHA-256. Local
+runtimes serialize each target with a recoverable PID lock, write and fsync a
+same-directory temporary file, recheck the precondition, and commit with an
+atomic link or rename. Trace records the operation, path, byte counts,
+before/after hashes, and a path SHA-256 receipt;
 Workbench summaries show only the operation, byte/edit counts, path hash, and
 content hashes. Researcher, reviewer, and general subagents remain read-only.
 New delegations must return a bounded

@@ -86,6 +86,8 @@ export interface ToolEventTraceView {
   patchBeforeBytes?: number;
   patchAfterBytes?: number;
   patchEditCount?: number;
+  patchCreatedParentDirectoryCount?: number;
+  patchCreatedParentDirectorySetSha256?: string;
   listCount?: number;
   listTruncated?: boolean;
   listPathSha256?: string;
@@ -368,6 +370,14 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
         : []),
     ...(view.patchAfterSha256
       ? [`after ${view.patchAfterSha256.slice(0, 12)}`]
+      : []),
+    ...(view.patchCreatedParentDirectoryCount !== undefined
+      ? [`created-dirs ${view.patchCreatedParentDirectoryCount}`]
+      : []),
+    ...(view.patchCreatedParentDirectorySetSha256
+      ? [
+          `created-dir-set ${view.patchCreatedParentDirectorySetSha256.slice(0, 12)}`,
+        ]
       : []),
     ...(view.listCount !== undefined ? [`entries ${view.listCount}`] : []),
     ...(view.listTruncated ? ["entries-truncated"] : []),
@@ -828,6 +838,8 @@ function applyPatchEvidence(value: unknown):
       patchBeforeBytes?: number;
       patchAfterBytes?: number;
       patchEditCount?: number;
+      patchCreatedParentDirectoryCount?: number;
+      patchCreatedParentDirectorySetSha256?: string;
     }
   | undefined {
   if (!value || Array.isArray(value) || typeof value !== "object") {
@@ -842,6 +854,14 @@ function applyPatchEvidence(value: unknown):
   const beforeBytes = integerInRange(record["beforeBytes"], 0, 262_144);
   const afterBytes = integerInRange(record["afterBytes"], 0, 262_144);
   const editCount = integerInRange(record["editCount"], 0, 32);
+  const createdParentDirectoryCount = integerInRange(
+    record["createdParentDirectoryCount"],
+    0,
+    32,
+  );
+  const createdParentDirectorySetSha256 = sha256(
+    record["createdParentDirectorySetSha256"],
+  );
   return {
     patchOperation: operation,
     ...(pathSha256 ? { patchPathSha256: pathSha256 } : {}),
@@ -850,6 +870,14 @@ function applyPatchEvidence(value: unknown):
     ...(beforeBytes !== undefined ? { patchBeforeBytes: beforeBytes } : {}),
     ...(afterBytes !== undefined ? { patchAfterBytes: afterBytes } : {}),
     ...(editCount !== undefined ? { patchEditCount: editCount } : {}),
+    ...(createdParentDirectoryCount !== undefined
+      ? { patchCreatedParentDirectoryCount: createdParentDirectoryCount }
+      : {}),
+    ...(createdParentDirectorySetSha256
+      ? {
+          patchCreatedParentDirectorySetSha256: createdParentDirectorySetSha256,
+        }
+      : {}),
   };
 }
 

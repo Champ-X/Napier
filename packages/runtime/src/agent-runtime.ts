@@ -3288,6 +3288,9 @@ function formatWorkspaceToolGuidance(tools: readonly AgentTool[]): string {
     lines.push(
       "Before apply_patch, obtain the current complete SHA-256 from read_file or read_symbol, then use exact, hashline, or hashrange preconditions; do not guess stale hashes.",
     );
+    lines.push(
+      "For new artifact files in missing directories, set createParentDirectories only when the requested output path intentionally needs those parents.",
+    );
   }
   if (hasPatch && hasVerification) {
     lines.push(

@@ -398,6 +398,8 @@ describe("Tool event trace view", () => {
         beforeBytes: 42,
         afterBytes: 45,
         editCount: 1,
+        createdParentDirectoryCount: 2,
+        createdParentDirectorySetSha256: "4".repeat(64),
       },
     });
 
@@ -411,9 +413,11 @@ describe("Tool event trace view", () => {
       patchBeforeBytes: 42,
       patchAfterBytes: 45,
       patchEditCount: 1,
+      patchCreatedParentDirectoryCount: 2,
+      patchCreatedParentDirectorySetSha256: "4".repeat(64),
     });
     expect(toolEventTraceSummary(event)).toBe(
-      `tool / apply_patch / completed / patch hashrange_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)}`,
+      `tool / apply_patch / completed / patch hashrange_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)} / created-dirs 2 / created-dir-set ${"4".repeat(12)}`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

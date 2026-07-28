@@ -2769,6 +2769,108 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("creates nested artifact files through parent Agent tools", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const filePath = path.join(workspaceRoot, "artifacts/reports/summary.md");
+    const content = "# Summary\n\nDurable artifact evidence.\n";
+    const contentSha256 = createHash("sha256").update(content).digest("hex");
+    const createdDirectories = ["artifacts", "artifacts/reports"];
+    const createdDirectorySetSha256 = createHash("sha256")
+      .update(JSON.stringify(createdDirectories))
+      .digest("hex");
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const originalAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(originalAgent.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["apply_patch"],
+    });
+    const thread = await store.createThread({
+      title: "Nested artifact creation",
+      agentId: agent.id,
+    });
+
+    const faux = fauxProvider({ provider: "faux-nested-artifact" });
+    faux.setResponses([
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toEqual(
+          expect.arrayContaining(["apply_patch"]),
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("apply_patch", {
+            operation: "create",
+            path: "artifacts/reports/summary.md",
+            expectedSha256: null,
+            content,
+            createParentDirectories: true,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const serialized = JSON.stringify(context.messages);
+        expect(serialized).toContain(contentSha256);
+        expect(serialized).toContain("Created parent directories: 2");
+        expect(serialized).toContain(createdDirectorySetSha256);
+        return fauxAssistantMessage(
+          "The nested artifact file was created with directory evidence.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Create a nested artifact report.",
+      model: { provider: "faux-nested-artifact", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(await readFile(filePath, "utf8")).toBe(content);
+    expect(faux.state.callCount).toBe(3);
+    const events = await store.listEvents(thread.id);
+    const patchEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "apply_patch",
+    );
+    expect(patchEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          path: "artifacts/reports/summary.md",
+          operation: "create",
+          beforeSha256: null,
+          afterSha256: contentSha256,
+          editCount: 0,
+          createdParentDirectoryCount: 2,
+          createdParentDirectorySetSha256: createdDirectorySetSha256,
+        }),
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("replaces a symbol range through hash-bound parent Agent tools", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

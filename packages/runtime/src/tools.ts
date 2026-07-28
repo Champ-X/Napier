@@ -9,6 +9,7 @@ import {
   readFile,
   realpath,
   rename,
+  rmdir,
   stat,
   unlink,
 } from "node:fs/promises";
@@ -168,6 +169,12 @@ const applyPatchSchema = Type.Union([
         maxLength: MAX_PATCH_BYTES,
         description: "Complete UTF-8 content for the new file.",
       }),
+      createParentDirectories: Type.Optional(
+        Type.Boolean({
+          description:
+            "When true, create missing workspace-relative parent directories before creating the file.",
+        }),
+      ),
     },
     { additionalProperties: false },
   ),
@@ -293,6 +300,7 @@ export type WorkspacePatchInput =
       path: string;
       expectedSha256: null;
       content: string;
+      createParentDirectories?: boolean;
     }
   | {
       operation: "replace";
@@ -331,6 +339,8 @@ export interface WorkspacePatchResult {
   beforeBytes: number;
   afterBytes: number;
   editCount: number;
+  createdParentDirectoryCount?: number;
+  createdParentDirectorySetSha256?: string;
 }
 
 export interface WorkspaceSearchMatch {
@@ -518,7 +528,15 @@ async function inspectWritableTarget(
   let cursor = root;
   for (const segment of segments.slice(0, -1)) {
     cursor = path.join(cursor, segment);
-    const info = await lstat(cursor);
+    let info;
+    try {
+      info = await lstat(cursor);
+    } catch (error) {
+      if (isMissingFileError(error)) {
+        throw new Error("apply_patch parent path does not exist");
+      }
+      throw error;
+    }
     if (info.isSymbolicLink()) {
       throw new Error("apply_patch refuses symlink path components");
     }
@@ -545,6 +563,75 @@ async function inspectWritableTarget(
       return { target, parent, exists: false, mode: 0o644 };
     }
     throw error;
+  }
+}
+
+async function ensureWritableParentDirectories(
+  workspaceRoot: string,
+  relativePath: string,
+): Promise<string[]> {
+  const root = path.resolve(workspaceRoot);
+  const rootReal = await realpath(root);
+  const target = path.resolve(root, relativePath);
+  if (!isPathInsideWorkspace(target, root)) {
+    throw new Error("apply_patch path escapes the configured workspace");
+  }
+  const created: string[] = [];
+  let cursor = root;
+  for (const segment of relativePath.split(path.sep).slice(0, -1)) {
+    cursor = path.join(cursor, segment);
+    try {
+      const info = await lstat(cursor);
+      if (info.isSymbolicLink()) {
+        throw new Error("apply_patch refuses symlink path components");
+      }
+      if (!info.isDirectory()) {
+        throw new Error("apply_patch parent path must be a directory");
+      }
+    } catch (error) {
+      if (!isMissingFileError(error)) throw error;
+      let directoryCreated = false;
+      try {
+        await mkdir(cursor, { mode: 0o755 });
+        directoryCreated = true;
+      } catch (mkdirError) {
+        if (errorCode(mkdirError) !== "EEXIST") throw mkdirError;
+      }
+      const createdInfo = await lstat(cursor);
+      if (createdInfo.isSymbolicLink()) {
+        throw new Error("apply_patch refuses symlink path components");
+      }
+      if (!createdInfo.isDirectory()) {
+        throw new Error("apply_patch parent path must be a directory");
+      }
+      const createdReal = await realpath(cursor);
+      if (!isPathInsideWorkspace(createdReal, rootReal)) {
+        throw new Error("apply_patch parent resolves outside the workspace");
+      }
+      if (directoryCreated) {
+        const createdRelative = path.relative(root, cursor) || ".";
+        created.push(createdRelative);
+        await syncDirectory(path.dirname(cursor));
+      }
+    }
+  }
+  return created;
+}
+
+async function cleanupCreatedParentDirectories(
+  workspaceRoot: string,
+  createdDirectories: string[],
+): Promise<void> {
+  const root = path.resolve(workspaceRoot);
+  for (const relativeDirectory of createdDirectories.slice().reverse()) {
+    const target = path.resolve(root, relativeDirectory);
+    if (!isPathInsideWorkspace(target, root)) continue;
+    try {
+      await rmdir(target);
+      await syncDirectory(path.dirname(target));
+    } catch {
+      // Leave directories that are no longer empty or have already been removed.
+    }
   }
 }
 
@@ -1426,115 +1513,149 @@ export async function applyWorkspacePatch(
   input: WorkspacePatchInput,
 ): Promise<WorkspacePatchResult> {
   const relativePath = normalizeWritablePath(input.path);
-  const preflight = await inspectWritableTarget(workspaceRoot, relativePath);
-  const canonicalTarget = preflight.exists
-    ? await realpath(preflight.target)
-    : path.join(
-        await realpath(preflight.parent),
-        path.basename(preflight.target),
-      );
+  const canonicalTarget = path.join(
+    await realpath(path.resolve(workspaceRoot)),
+    relativePath,
+  );
   return withEditLock(dataRoot, canonicalTarget, async () => {
-    const initial = await inspectWritableTarget(workspaceRoot, relativePath);
+    let createdParentDirectories: string[] = [];
+    let committed = false;
     let source = "";
     let beforeBytes = 0;
     let beforeSha256: string | null = null;
-    if (input.operation === "create") {
-      if (initial.exists) {
-        throw new Error("apply_patch create target already exists");
-      }
-      if (input.expectedSha256 !== null) {
-        throw new Error("apply_patch create requires expectedSha256 null");
-      }
-    } else {
-      if (!initial.exists) {
-        throw new Error("apply_patch replace target does not exist");
-      }
-      const current = await readPatchSource(initial.target);
-      source = current.source;
-      beforeBytes = current.bytes;
-      beforeSha256 = current.sha256;
-      if (beforeSha256 !== input.expectedSha256) {
-        throw new Error(
-          `apply_patch precondition failed; current SHA-256 is ${beforeSha256}`,
-        );
-      }
-    }
-    const updated =
-      input.operation === "create"
-        ? input.content
-        : input.operation === "replace"
-          ? applyExactEdits(source, input.edits)
-          : input.operation === "hashline_replace"
-            ? applyHashlineEdits(source, input.edits)
-            : applyHashRangeEdits(source, input.edits);
-    if (updated.includes("\u0000")) {
-      throw new Error("apply_patch output contains a null byte");
-    }
-    const output = Buffer.from(updated, "utf8");
-    if (output.byteLength > MAX_PATCH_BYTES) {
-      throw new Error(`apply_patch output exceeds ${MAX_PATCH_BYTES} bytes`);
-    }
-    const afterSha256 = sha256(output);
-    if (beforeSha256 === afterSha256) {
-      throw new Error("apply_patch produced no content change");
-    }
-
-    const latest = await inspectWritableTarget(workspaceRoot, relativePath);
-    if (input.operation === "create") {
-      if (latest.exists) {
-        throw new Error(
-          "apply_patch create precondition changed before commit",
-        );
-      }
-    } else {
-      if (!latest.exists) {
-        throw new Error("apply_patch target disappeared before commit");
-      }
-      const latestSource = await readPatchSource(latest.target);
-      if (latestSource.sha256 !== input.expectedSha256) {
-        throw new Error(
-          `apply_patch precondition changed before commit; current SHA-256 is ${latestSource.sha256}`,
-        );
-      }
-    }
-
-    const temporaryPath = path.join(
-      latest.parent,
-      `.${path.basename(latest.target)}.napier-${randomBytes(8).toString("hex")}.tmp`,
-    );
-    let temporaryExists = false;
     try {
-      const temporary = await open(temporaryPath, "wx", latest.mode);
-      temporaryExists = true;
-      try {
-        await temporary.writeFile(output);
-        await temporary.sync();
-      } finally {
-        await temporary.close();
-      }
+      let initial: Awaited<ReturnType<typeof inspectWritableTarget>>;
       if (input.operation === "create") {
-        await link(temporaryPath, latest.target);
-        await unlink(temporaryPath);
+        if (input.expectedSha256 !== null) {
+          throw new Error("apply_patch create requires expectedSha256 null");
+        }
       } else {
-        await rename(temporaryPath, latest.target);
+        initial = await inspectWritableTarget(workspaceRoot, relativePath);
+        if (!initial.exists) {
+          throw new Error("apply_patch replace target does not exist");
+        }
+        const current = await readPatchSource(initial.target);
+        source = current.source;
+        beforeBytes = current.bytes;
+        beforeSha256 = current.sha256;
+        if (beforeSha256 !== input.expectedSha256) {
+          throw new Error(
+            `apply_patch precondition failed; current SHA-256 is ${beforeSha256}`,
+          );
+        }
       }
-      temporaryExists = false;
-      await syncDirectory(latest.parent);
+
+      const updated =
+        input.operation === "create"
+          ? input.content
+          : input.operation === "replace"
+            ? applyExactEdits(source, input.edits)
+            : input.operation === "hashline_replace"
+              ? applyHashlineEdits(source, input.edits)
+              : applyHashRangeEdits(source, input.edits);
+      if (updated.includes("\u0000")) {
+        throw new Error("apply_patch output contains a null byte");
+      }
+      const output = Buffer.from(updated, "utf8");
+      if (output.byteLength > MAX_PATCH_BYTES) {
+        throw new Error(`apply_patch output exceeds ${MAX_PATCH_BYTES} bytes`);
+      }
+      const afterSha256 = sha256(output);
+      if (beforeSha256 === afterSha256) {
+        throw new Error("apply_patch produced no content change");
+      }
+
+      if (
+        input.operation === "create" &&
+        input.createParentDirectories === true
+      ) {
+        createdParentDirectories = await ensureWritableParentDirectories(
+          workspaceRoot,
+          relativePath,
+        );
+      }
+
+      initial = await inspectWritableTarget(workspaceRoot, relativePath);
+      if (input.operation === "create") {
+        if (initial.exists) {
+          throw new Error("apply_patch create target already exists");
+        }
+      }
+
+      const latest = await inspectWritableTarget(workspaceRoot, relativePath);
+      if (input.operation === "create") {
+        if (latest.exists) {
+          throw new Error(
+            "apply_patch create precondition changed before commit",
+          );
+        }
+      } else {
+        if (!latest.exists) {
+          throw new Error("apply_patch target disappeared before commit");
+        }
+        const latestSource = await readPatchSource(latest.target);
+        if (latestSource.sha256 !== input.expectedSha256) {
+          throw new Error(
+            `apply_patch precondition changed before commit; current SHA-256 is ${latestSource.sha256}`,
+          );
+        }
+      }
+
+      const temporaryPath = path.join(
+        latest.parent,
+        `.${path.basename(latest.target)}.napier-${randomBytes(8).toString("hex")}.tmp`,
+      );
+      let temporaryExists = false;
+      try {
+        const temporary = await open(temporaryPath, "wx", latest.mode);
+        temporaryExists = true;
+        try {
+          await temporary.writeFile(output);
+          await temporary.sync();
+        } finally {
+          await temporary.close();
+        }
+        if (input.operation === "create") {
+          await link(temporaryPath, latest.target);
+          await unlink(temporaryPath);
+        } else {
+          await rename(temporaryPath, latest.target);
+        }
+        temporaryExists = false;
+        committed = true;
+        await syncDirectory(latest.parent);
+      } finally {
+        if (temporaryExists) {
+          await unlink(temporaryPath).catch(() => undefined);
+        }
+      }
+
+      return {
+        path: relativePath,
+        pathSha256: sha256(relativePath),
+        operation: input.operation,
+        beforeSha256,
+        afterSha256,
+        beforeBytes,
+        afterBytes: output.byteLength,
+        editCount: input.operation === "create" ? 0 : input.edits.length,
+        ...(createdParentDirectories.length > 0
+          ? {
+              createdParentDirectoryCount: createdParentDirectories.length,
+              createdParentDirectorySetSha256: sha256(
+                JSON.stringify(createdParentDirectories),
+              ),
+            }
+          : {}),
+      };
     } finally {
-      if (temporaryExists) {
-        await unlink(temporaryPath).catch(() => undefined);
+      if (!committed && createdParentDirectories.length > 0) {
+        await cleanupCreatedParentDirectories(
+          workspaceRoot,
+          createdParentDirectories,
+        );
       }
     }
-    return {
-      path: relativePath,
-      pathSha256: sha256(relativePath),
-      operation: input.operation,
-      beforeSha256,
-      afterSha256,
-      beforeBytes,
-      afterBytes: output.byteLength,
-      editCount: input.operation === "create" ? 0 : input.edits.length,
-    };
   });
 }
 
@@ -2177,7 +2298,7 @@ export function createWorkspaceTools(
         name: "apply_patch",
         label: "Apply patch",
         description:
-          "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file or read_symbol, and replacements can match exact text, read_file line anchors, or read_symbol range hashes. Deletion is not supported.",
+          "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file or read_symbol, replacements can match exact text, read_file line anchors, or read_symbol range hashes, and create can explicitly create missing parent directories. Deletion is not supported.",
         parameters: applyPatchSchema,
         async execute(_toolCallId, input) {
           const result = await applyWorkspacePatch(
@@ -2195,6 +2316,13 @@ export function createWorkspaceTools(
                   `After SHA-256: ${result.afterSha256}`,
                   `Bytes: ${result.beforeBytes} -> ${result.afterBytes}`,
                   `Edits: ${result.editCount}`,
+                  ...(result.createdParentDirectoryCount !== undefined &&
+                  result.createdParentDirectorySetSha256
+                    ? [
+                        `Created parent directories: ${result.createdParentDirectoryCount}`,
+                        `Created parent directory set SHA-256: ${result.createdParentDirectorySetSha256}`,
+                      ]
+                    : []),
                 ].join("\n"),
               },
             ],

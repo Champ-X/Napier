@@ -286,6 +286,11 @@ All notable changes to Napier are recorded here.
   prefer symbol/range hashes for code edits, use complete-file SHA-256
   preconditions, and re-run `verify_workspace` after relevant writes before
   claiming checks passed.
+- `apply_patch create` can now explicitly opt in to creating missing
+  workspace-relative parent directories for new artifact paths. The operation
+  keeps protected-segment and symlink checks, records created-directory count
+  and set hash evidence, and Workbench Trace renders only hash-only directory
+  receipts.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
 - `verify_workspace` results now include a hash-only scope receipt over cwd and

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DGUPLVHP.js",
+    "path": "apps/web/dist/assets/index-BrWtLn0O.js",
     "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "6236f6a16a065146ed00be3ed775fc1c11b04473e4f1c56eaf0646dd971d3733"
+    "sha256": "7eeac86a48912370f0eb41e0bfe393d7fc364b7caa120767b9119e4f07d3f1b0"
   },
-  "distContentSha256": "6236f6a16a065146ed00be3ed775fc1c11b04473e4f1c56eaf0646dd971d3733",
+  "distContentSha256": "7eeac86a48912370f0eb41e0bfe393d7fc364b7caa120767b9119e4f07d3f1b0",
   "errors": []
 }
