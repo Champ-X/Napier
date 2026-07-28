@@ -69,6 +69,7 @@ const SAFE_STRING_PAYLOAD_KEYS = new Set([
   "algorithm",
   "availability",
   "consensusVerdict",
+  "contextCoverageStatus",
   "effect",
   "evidenceState",
   "expectedVerdict",

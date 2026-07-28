@@ -1433,7 +1433,9 @@ casebook curation, and reviewer consensus hashes include the binding when it is
 present. Casebook qualification also passes the curated binding back to the
 no-tool evaluator as metadata, so replayed judgments preserve the governance
 context without reconstructing raw model input. Thread replay bundle validation
-recomputes the binding hash during export/import verification.
+recomputes the binding hash during export/import verification. OTLP trace
+export projects only the governance status and SHA-256 fields while excluding
+evaluator reason and evidence text.
 
 Every case stores the pair-evaluation ID and SHA-256 alongside both replay
 snapshot hashes. The execution stores a canonical batch SHA-256 over the suite

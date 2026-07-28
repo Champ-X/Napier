@@ -29,7 +29,9 @@ All notable changes to Napier are recorded here.
   receipt consumed by suite, casebook, and consensus hashes. Casebook
   qualification replays the curated hash-only governance binding back into the
   no-tool evaluator instead of rehydrating raw context. Portable Thread replay
-  bundle verification now also recomputes the governance binding hash.
+  bundle verification now also recomputes the governance binding hash. OTLP
+  trace export surfaces evaluation governance only as status plus SHA-256
+  attributes while continuing to drop evaluator reason/evidence text.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

@@ -309,6 +309,24 @@ describe("OpenTelemetry trace export", () => {
         arguments: "TOP_SECRET_LOOP_ARGUMENTS",
       },
     });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "evaluation.completed",
+      category: "evaluation",
+      visibility: "user",
+      payload: {
+        evaluationId: createId("evaluation"),
+        leftRunId: run.id,
+        rightRunId: createId("run"),
+        verdict: "right_better",
+        reason: "TOP_SECRET_EVALUATION_REASON",
+        evidence: "TOP_SECRET_EVALUATION_EVIDENCE",
+        comparisonGovernanceSha256: "c".repeat(64),
+        contextCoverageStatus: "regressed",
+        contextCoverageDiagnosticsSha256: "d".repeat(64),
+      },
+    });
     await store.requestOperatorDecision({
       threadId: thread.id,
       runId: run.id,
@@ -450,6 +468,27 @@ describe("OpenTelemetry trace export", () => {
     expect(
       attributeValue(advisorEvent.attributes, "napier.event.payload.score"),
     ).toBe(61);
+    const evaluationEvent = traceSpans
+      .flatMap((span) => span.events)
+      .find((event) => event.name === "evaluation.completed")!;
+    expect(
+      attributeValue(
+        evaluationEvent.attributes,
+        "napier.event.payload.comparison_governance_sha256",
+      ),
+    ).toBe("c".repeat(64));
+    expect(
+      attributeValue(
+        evaluationEvent.attributes,
+        "napier.event.payload.context_coverage_status",
+      ),
+    ).toBe("regressed");
+    expect(
+      attributeValue(
+        evaluationEvent.attributes,
+        "napier.event.payload.context_coverage_diagnostics_sha256",
+      ),
+    ).toBe("d".repeat(64));
     const promptVariableEvent = traceSpans
       .flatMap((span) => span.events)
       .find((event) => event.name === "context.prompt_variables")!;
@@ -519,6 +558,8 @@ describe("OpenTelemetry trace export", () => {
       "TOP_SECRET_OPERATOR_OPTION_B",
       "TOP_SECRET_PROMPT_VARIABLE_VALUE",
       "TOP_SECRET_LOOP_ARGUMENTS",
+      "TOP_SECRET_EVALUATION_REASON",
+      "TOP_SECRET_EVALUATION_EVIDENCE",
       "TOP_SECRET_CREDENTIAL_LABEL",
       "TOP_SECRET_USER_ID",
     ]) {

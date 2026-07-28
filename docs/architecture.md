@@ -2020,6 +2020,9 @@ borrowing history. The receipt is integrity evidence, not a signature.
 Thread replay bundle validation also recomputes any saved pair-evaluation
 `comparisonGovernance` binding hash before accepting exported or imported
 fixtures.
+OTLP trace export keeps those evaluation governance signals metadata-only:
+status and SHA-256 attributes are allowed, while evaluator `reason` and
+`evidence` text remain excluded by the redaction policy.
 
 Casebook read projections are machine-checkable without parsing the full
 artifact:
