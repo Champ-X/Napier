@@ -1148,6 +1148,8 @@ render Runtime and Evaluation model selectors
      live, and distinct from the primary runtime model
   -> reject API or rollback persistence when an Advisor reviewer is demo,
      unknown, or equal to the effective primary model
+  -> reject server-side model-call and persistence requests for unconfigured
+     live providers before writing durable state or launching a model call
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1177,7 +1179,10 @@ reviewer model. The Agent profile save path uses the same projection before
 making a revisioned default-model update, and the Advisor review-model field
 adds the independent live-reviewer constraint before persistence. Server-side
 profile update and rollback repeat the non-demo, known-model, and
-not-primary-reviewer checks before writing a profile revision. Credential
+not-primary-reviewer checks before writing a profile revision. Server-side
+schedule, inbound, plan review, subagent review, casebook qualification, and
+evaluation-suite model requests also call the same configured-live model
+projection before state is written or a model call starts. Credential
 ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are

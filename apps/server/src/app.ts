@@ -4381,7 +4381,7 @@ export function createApp(services: NapierServices): Hono {
         );
       }
       try {
-        assertAvailableModel(services, request.model);
+        await assertAvailableModel(services, request.model);
         const review = await reviewSubagentOutcome(
           services.models,
           task,
@@ -4434,7 +4434,11 @@ export function createApp(services: NapierServices): Hono {
       return jsonError(context, "Schedule request is invalid", 400);
     }
     services.store.getThread(body.threadId);
-    if (body.model) assertAvailableModel(services, body.model);
+    try {
+      if (body.model) await assertAvailableModel(services, body.model);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
     const schedule = await services.store.createSchedule(body);
     await appendAutomationEvent(services, schedule, "schedule.created", {
       scheduleId: schedule.id,
@@ -4468,7 +4472,11 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Schedule update request is invalid", 400);
     }
-    if (body.model) assertAvailableModel(services, body.model);
+    try {
+      if (body.model) await assertAvailableModel(services, body.model);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
     const before = services.store.getSchedule(scheduleId);
     const schedule = await services.store.updateSchedule(scheduleId, body);
     const changedFields = scheduleChangedFields(before, schedule);
@@ -4778,7 +4786,7 @@ export function createApp(services: NapierServices): Hono {
     }
     if (parsed.body.model) {
       try {
-        assertAvailableModel(services, parsed.body.model);
+        await assertAvailableModel(services, parsed.body.model);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -5120,7 +5128,7 @@ export function createApp(services: NapierServices): Hono {
     };
     if (body.model) {
       try {
-        assertAvailableModel(services, body.model);
+        await assertAvailableModel(services, body.model);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -5190,17 +5198,16 @@ export function createApp(services: NapierServices): Hono {
       : undefined;
     if (
       requestedModel &&
-      !(requestedModel.provider === "napier" && requestedModel.id === "demo") &&
-      !services.models.resolve(requestedModel)
+      !(await services.models.isConfigured(requestedModel))
     ) {
       return jsonError(
         context,
-        `Model not found: ${requestedModel.provider}/${requestedModel.id}`,
+        modelUnavailableMessage(services, requestedModel),
         400,
       );
     }
     try {
-      assertAdvisorReviewModel(
+      await assertAdvisorReviewModel(
         services,
         requestedModel ?? before.model,
         body.modelAdvisor !== undefined
@@ -5277,8 +5284,8 @@ export function createApp(services: NapierServices): Hono {
     }
     const target = services.store.getAgentRevision(agentId, body.revision);
     try {
-      assertAvailableModel(services, target.profile.model);
-      assertAdvisorReviewModel(
+      await assertAvailableModel(services, target.profile.model);
+      await assertAdvisorReviewModel(
         services,
         target.profile.model,
         target.profile.modelAdvisor?.reviewModel,
@@ -5999,7 +6006,7 @@ export function createApp(services: NapierServices): Hono {
       const agent = services.store.getAgent(thread.agentId);
       const model = body.model ?? agent.model;
       try {
-        assertAvailableModel(services, model);
+        await assertAvailableModel(services, model);
         const review = await reviewExecutionPlanReplanDraft(
           services.models,
           plan,
@@ -6610,7 +6617,7 @@ export function createApp(services: NapierServices): Hono {
         );
       }
       try {
-        assertAvailableModel(services, request.model);
+        await assertAvailableModel(services, request.model);
         const review = await reviewExecutionPlanBlueprintRecordOutcomes(
           services.store,
           services.models,
@@ -7666,8 +7673,8 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      assertAvailableModel(services, body.model);
       try {
+        await assertAvailableModel(services, body.model);
         const execution =
           await services.evaluationCasebookQualifications.execute(
             context.req.param("casebookId"),
@@ -7707,7 +7714,11 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Evaluation suite request is invalid", 400);
     }
-    if (body.model) assertAvailableModel(services, body.model);
+    try {
+      if (body.model) await assertAvailableModel(services, body.model);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
     const suite = await services.store.createEvaluationSuite(threadId, body);
     await services.store.appendEvent({
       threadId,
@@ -7755,7 +7766,11 @@ export function createApp(services: NapierServices): Hono {
           400,
         );
       }
-      if (body.model) assertAvailableModel(services, body.model);
+      try {
+        if (body.model) await assertAvailableModel(services, body.model);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
       const suite = await services.store.updateEvaluationSuite(
         current.id,
         body,
@@ -13021,25 +13036,27 @@ function isSha256Hex(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
-function assertAvailableModel(
+async function assertAvailableModel(
   services: NapierServices,
   model: { provider: string; id: string },
-): void {
+): Promise<void> {
   const provider = model.provider.trim().toLowerCase();
   const id = model.id.trim();
-  if (
-    !(provider === "napier" && id === "demo") &&
-    !services.models.resolve({ provider, id })
-  ) {
+  if (provider === "napier" && id === "demo") return;
+  const ref = { provider, id };
+  if (!services.models.resolve(ref)) {
     throw new Error(`Model not found: ${provider}/${id}`);
+  }
+  if (!(await services.models.isConfigured(ref))) {
+    throw new Error(modelUnavailableMessage(services, ref));
   }
 }
 
-function assertAdvisorReviewModel(
+async function assertAdvisorReviewModel(
   services: NapierServices,
   primaryModel: { provider: string; id: string },
   reviewModel: { provider: string; id: string } | undefined,
-): void {
+): Promise<void> {
   if (!reviewModel) return;
   const primaryProvider = primaryModel.provider.trim().toLowerCase();
   const primaryId = primaryModel.id.trim();
@@ -13053,9 +13070,19 @@ function assertAdvisorReviewModel(
   if (reviewerProvider === "napier" && reviewerId === "demo") {
     throw new Error("Model Advisor review model must use a live model");
   }
-  if (!services.models.resolve({ provider: reviewerProvider, id: reviewerId })) {
-    throw new Error(`Model not found: ${reviewerProvider}/${reviewerId}`);
-  }
+  await assertAvailableModel(services, {
+    provider: reviewerProvider,
+    id: reviewerId,
+  });
+}
+
+function modelUnavailableMessage(
+  services: NapierServices,
+  model: { provider: string; id: string },
+): string {
+  return services.models.resolve(model)
+    ? `Model provider is not configured: ${model.provider}`
+    : `Model not found: ${model.provider}/${model.id}`;
 }
 
 function scheduleChangedFields(

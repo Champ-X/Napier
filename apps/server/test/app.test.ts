@@ -1775,7 +1775,41 @@ describe("Napier HTTP goal flow", () => {
     const profileReviewProvider = fauxProvider({
       provider: "faux-agent-profile-review",
     });
+    const unconfiguredProfileProvider = fauxProvider({
+      provider: "faux-agent-profile-unconfigured",
+    });
     services.models.registerProvider(profileReviewProvider.provider);
+    services.models.registerProvider({
+      ...unconfiguredProfileProvider.provider,
+      auth: {
+        apiKey: {
+          name: "Unavailable",
+          resolve: async () => undefined,
+        },
+      },
+    });
+    const unconfiguredPrimaryModelResponse = await app.request(
+      `/api/agents/${created.agent.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: {
+            provider: "faux-agent-profile-unconfigured",
+            id: "faux-1",
+          },
+          threadId: created.thread.id,
+        }),
+      },
+    );
+    expect(unconfiguredPrimaryModelResponse.status).toBe(400);
+    expect(await unconfiguredPrimaryModelResponse.json()).toEqual(
+      expect.objectContaining({
+        error:
+          "Model provider is not configured: faux-agent-profile-unconfigured",
+      }),
+    );
+
     const demoAdvisorReviewModelResponse = await app.request(
       `/api/agents/${created.agent.id}`,
       {
@@ -1848,6 +1882,34 @@ describe("Napier HTTP goal flow", () => {
     expect(await missingAdvisorReviewModelResponse.json()).toEqual(
       expect.objectContaining({
         error: "Model not found: missing-reviewer/missing-1",
+      }),
+    );
+
+    const unconfiguredAdvisorReviewModelResponse = await app.request(
+      `/api/agents/${created.agent.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: "faux-agent-profile-review", id: "faux-1" },
+          modelAdvisor: {
+            mode: "observe",
+            enabledRules: [],
+            maxCorrectionAttempts: 0,
+            reviewModel: {
+              provider: "faux-agent-profile-unconfigured",
+              id: "faux-1",
+            },
+          },
+          threadId: created.thread.id,
+        }),
+      },
+    );
+    expect(unconfiguredAdvisorReviewModelResponse.status).toBe(400);
+    expect(await unconfiguredAdvisorReviewModelResponse.json()).toEqual(
+      expect.objectContaining({
+        error:
+          "Model provider is not configured: faux-agent-profile-unconfigured",
       }),
     );
 

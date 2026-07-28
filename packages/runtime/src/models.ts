@@ -37,6 +37,18 @@ export class ModelRegistry {
     return this.models.getModel(ref.provider, ref.id);
   }
 
+  async isConfigured(ref: ModelRef): Promise<boolean> {
+    if (ref.provider === "napier" && ref.id === "demo") return true;
+    const model = this.resolve(ref);
+    if (!model) return false;
+    try {
+      const available = await this.models.getAvailable(ref.provider);
+      return available.some((candidate) => candidate.id === ref.id);
+    } catch {
+      return false;
+    }
+  }
+
   async list(): Promise<ModelSummary[]> {
     const providers = this.models.getProviders();
     const configuredEntries = await Promise.all(

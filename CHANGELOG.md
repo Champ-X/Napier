@@ -238,6 +238,9 @@ All notable changes to Napier are recorded here.
 - The Agent Profile API, rollback path, and runtime profile normalization now
   reject Advisor reviewers that are `napier/demo`, unknown, or equal to the
   effective primary model before persisting a revision.
+- Server-side model-call and model-persistence entry points now reuse the
+  configured-live model projection, rejecting unconfigured live providers before
+  durable state is written or auxiliary model calls start.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
