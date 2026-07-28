@@ -305,6 +305,22 @@ describe("Agent profile updates", () => {
       }),
     ).toThrow("must differ from the primary model");
     expect(() =>
+      updateAgentProfile(
+        {
+          ...PROFILE,
+          model: { provider: "openrouter", id: "anthropic/claude-sonnet" },
+        },
+        {
+          modelAdvisor: {
+            mode: "observe",
+            enabledRules: [],
+            maxCorrectionAttempts: 0,
+            reviewModel: { provider: "napier", id: "demo" },
+          },
+        },
+      ),
+    ).toThrow("must use a live model");
+    expect(() =>
       updateAgentProfile(PROFILE, {
         toolLoopGuard: {
           enabled: true,

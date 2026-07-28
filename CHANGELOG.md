@@ -235,6 +235,9 @@ All notable changes to Napier are recorded here.
   provider can trigger a review request.
 - Agent Profile saves now also validate the Independent Advisor review model,
   requiring a configured live reviewer distinct from the primary runtime model.
+- The Agent Profile API, rollback path, and runtime profile normalization now
+  reject Advisor reviewers that are `napier/demo`, unknown, or equal to the
+  effective primary model before persisting a revision.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

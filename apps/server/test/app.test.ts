@@ -1772,6 +1772,85 @@ describe("Napier HTTP goal flow", () => {
       expect.objectContaining({ error: "Agent profile request is invalid" }),
     );
 
+    const profileReviewProvider = fauxProvider({
+      provider: "faux-agent-profile-review",
+    });
+    services.models.registerProvider(profileReviewProvider.provider);
+    const demoAdvisorReviewModelResponse = await app.request(
+      `/api/agents/${created.agent.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: "faux-agent-profile-review", id: "faux-1" },
+          modelAdvisor: {
+            mode: "observe",
+            enabledRules: [],
+            maxCorrectionAttempts: 0,
+            reviewModel: { provider: "napier", id: "demo" },
+          },
+          threadId: created.thread.id,
+        }),
+      },
+    );
+    expect(demoAdvisorReviewModelResponse.status).toBe(400);
+    expect(await demoAdvisorReviewModelResponse.json()).toEqual(
+      expect.objectContaining({
+        error: "Model Advisor review model must use a live model",
+      }),
+    );
+
+    const sameAdvisorReviewModelResponse = await app.request(
+      `/api/agents/${created.agent.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: "faux-agent-profile-review", id: "faux-1" },
+          modelAdvisor: {
+            mode: "enforce",
+            enabledRules: [],
+            maxCorrectionAttempts: 0,
+            reviewModel: {
+              provider: "faux-agent-profile-review",
+              id: "faux-1",
+            },
+          },
+          threadId: created.thread.id,
+        }),
+      },
+    );
+    expect(sameAdvisorReviewModelResponse.status).toBe(400);
+    expect(await sameAdvisorReviewModelResponse.json()).toEqual(
+      expect.objectContaining({
+        error:
+          "Model Advisor review model must differ from the primary model",
+      }),
+    );
+
+    const missingAdvisorReviewModelResponse = await app.request(
+      `/api/agents/${created.agent.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          modelAdvisor: {
+            mode: "observe",
+            enabledRules: [],
+            maxCorrectionAttempts: 0,
+            reviewModel: { provider: "missing-reviewer", id: "missing-1" },
+          },
+          threadId: created.thread.id,
+        }),
+      },
+    );
+    expect(missingAdvisorReviewModelResponse.status).toBe(400);
+    expect(await missingAdvisorReviewModelResponse.json()).toEqual(
+      expect.objectContaining({
+        error: "Model not found: missing-reviewer/missing-1",
+      }),
+    );
+
     const agentResponse = await app.request(`/api/agents/${created.agent.id}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -1807,8 +1886,8 @@ describe("Napier HTTP goal flow", () => {
           enabledRules: ["destructive_command_reference"],
           maxCorrectionAttempts: 2,
           reviewModel: {
-            provider: "openrouter",
-            id: "anthropic/claude-sonnet",
+            provider: "faux-agent-profile-review",
+            id: "faux-1",
           },
         },
         promptVariables: [
@@ -1852,8 +1931,8 @@ describe("Napier HTTP goal flow", () => {
           enabledRules: ["destructive_command_reference"],
           maxCorrectionAttempts: 2,
           reviewModel: {
-            provider: "openrouter",
-            id: "anthropic/claude-sonnet",
+            provider: "faux-agent-profile-review",
+            id: "faux-1",
           },
         },
         promptVariables: [

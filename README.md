@@ -312,8 +312,10 @@ evaluator model is not configured. Trace Subagent outcome reviews use the same
 availability check before invoking an independent reviewer. Saving an Agent
 profile likewise refuses to persist an unconfigured runtime model as the
 default, and Independent Advisor review models must be configured live models
-distinct from the primary runtime model. These client-side checks match the
-server-side fail-closed credential boundary.
+distinct from the primary runtime model. The Agent Profile API and rollback
+path also reject Advisor reviewers that are `napier/demo`, unknown to the
+model registry, or equal to the effective primary model before a revision is
+persisted.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source
@@ -763,7 +765,8 @@ the current turn prompt, candidate text, and a metadata-only summary of Run
 evidence in an isolated zero-tool call. It must return strict JSON containing
 an `accept`, `revise`, `block`, or `inconclusive` verdict, score, risk, and up
 to six typed issue codes. The primary and review models cannot be the same in
-the saved Agent profile.
+the saved Agent profile, and the review model cannot be the zero-key
+`napier/demo` model.
 
 The durable `model.advisor.independent.reviewed` receipt stores model
 identities, issue codes, severities, usage, and SHA-256 bindings for the

@@ -1042,7 +1042,8 @@ also binds the effective Model Advisor mode and deterministic rule set. Schema
 5 adds the bounded correction-attempt policy while retaining schema-4 hash
 verification with an effective legacy budget of zero. Schema 6 adds the
 optional independent review model; schema-6 validation requires that identity
-to be present, while profiles reject a reviewer equal to their primary model.
+to be present, while profiles reject a reviewer equal to their primary model or
+the zero-key `napier/demo` model.
 Schema 7 adds the frozen Prompt Variable catalog, complete snapshot, and
 rendered System Prompt hashes while retaining the effective Advisor policy.
 Schema 8 additionally binds the effective Tool Loop Guard policy.
@@ -1145,6 +1146,8 @@ render Runtime and Evaluation model selectors
   -> reject Agent profile saves that would persist an unconfigured default model
   -> reject Advisor review-model saves unless the reviewer is configured,
      live, and distinct from the primary runtime model
+  -> reject API or rollback persistence when an Advisor reviewer is demo,
+     unknown, or equal to the effective primary model
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1172,7 +1175,9 @@ unavailable providers fail closed before a request leaves the browser. Trace
 Subagent outcome review applies the same check before launching an independent
 reviewer model. The Agent profile save path uses the same projection before
 making a revisioned default-model update, and the Advisor review-model field
-adds the independent live-reviewer constraint before persistence. Credential
+adds the independent live-reviewer constraint before persistence. Server-side
+profile update and rollback repeat the non-demo, known-model, and
+not-primary-reviewer checks before writing a profile revision. Credential
 ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are

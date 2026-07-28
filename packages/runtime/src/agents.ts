@@ -457,6 +457,13 @@ function assertIndependentAdvisorModel(
       "Model Advisor review model must differ from the primary model",
     );
   }
+  if (
+    reviewModel &&
+    reviewModel.provider === "napier" &&
+    reviewModel.id === "demo"
+  ) {
+    throw new Error("Model Advisor review model must use a live model");
+  }
 }
 
 function sha256(value: string): string {

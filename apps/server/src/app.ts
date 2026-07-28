@@ -5181,6 +5181,7 @@ export function createApp(services: NapierServices): Hono {
         );
       }
     }
+    const before = services.store.getAgent(agentId);
     const requestedModel = body.model
       ? {
           provider: body.model.provider.trim().toLowerCase(),
@@ -5198,11 +5199,26 @@ export function createApp(services: NapierServices): Hono {
         400,
       );
     }
-    const before = services.store.getAgent(agentId);
-    const updated = await services.store.updateAgent(agentId, {
-      ...body,
-      ...(requestedModel ? { model: requestedModel } : {}),
-    });
+    try {
+      assertAdvisorReviewModel(
+        services,
+        requestedModel ?? before.model,
+        body.modelAdvisor !== undefined
+          ? body.modelAdvisor.reviewModel
+          : before.modelAdvisor?.reviewModel,
+      );
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
+    let updated: AgentProfile;
+    try {
+      updated = await services.store.updateAgent(agentId, {
+        ...body,
+        ...(requestedModel ? { model: requestedModel } : {}),
+      });
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
     const changedFields = changedAgentFields(before, updated);
     const revision = services.store.getAgentRevision(agentId, updated.revision);
     if (body.threadId && changedFields.length > 0) {
@@ -5260,7 +5276,16 @@ export function createApp(services: NapierServices): Hono {
       );
     }
     const target = services.store.getAgentRevision(agentId, body.revision);
-    assertAvailableModel(services, target.profile.model);
+    try {
+      assertAvailableModel(services, target.profile.model);
+      assertAdvisorReviewModel(
+        services,
+        target.profile.model,
+        target.profile.modelAdvisor?.reviewModel,
+      );
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 400);
+    }
     const result = await services.store.rollbackAgent(agentId, body.revision);
     await services.store.appendEvent({
       threadId: body.threadId,
@@ -13007,6 +13032,29 @@ function assertAvailableModel(
     !services.models.resolve({ provider, id })
   ) {
     throw new Error(`Model not found: ${provider}/${id}`);
+  }
+}
+
+function assertAdvisorReviewModel(
+  services: NapierServices,
+  primaryModel: { provider: string; id: string },
+  reviewModel: { provider: string; id: string } | undefined,
+): void {
+  if (!reviewModel) return;
+  const primaryProvider = primaryModel.provider.trim().toLowerCase();
+  const primaryId = primaryModel.id.trim();
+  const reviewerProvider = reviewModel.provider.trim().toLowerCase();
+  const reviewerId = reviewModel.id.trim();
+  if (reviewerProvider === primaryProvider && reviewerId === primaryId) {
+    throw new Error(
+      "Model Advisor review model must differ from the primary model",
+    );
+  }
+  if (reviewerProvider === "napier" && reviewerId === "demo") {
+    throw new Error("Model Advisor review model must use a live model");
+  }
+  if (!services.models.resolve({ provider: reviewerProvider, id: reviewerId })) {
+    throw new Error(`Model not found: ${reviewerProvider}/${reviewerId}`);
   }
 }
 
