@@ -73,6 +73,17 @@ function ledgerEventUsage(event: RunEvent): Usage {
   };
 }
 
+function hasLedgerEventUsage(event: RunEvent): boolean {
+  return Boolean(
+    event.payload &&
+    !Array.isArray(event.payload) &&
+    typeof event.payload === "object" &&
+    event.payload["usage"] &&
+    !Array.isArray(event.payload["usage"]) &&
+    typeof event.payload["usage"] === "object",
+  );
+}
+
 afterEach(async () => {
   vi.useRealTimers();
   await Promise.all(
@@ -600,7 +611,7 @@ describe("AgentRuntime demo path", () => {
     const detail = await store.getDetail(thread.id);
     const usageEvents = detail.events.filter(
       (event) =>
-        event.type === "model.response" ||
+        (event.type === "model.response" && hasLedgerEventUsage(event)) ||
         event.type === "goal.evaluated" ||
         event.type === "memory.extraction.completed",
     );
@@ -660,7 +671,7 @@ describe("AgentRuntime demo path", () => {
           typeof payload === "object",
       )
       .map((payload) => payload["turnIndex"]);
-    expect(envelopeTurnIndexes).toEqual([0, 1]);
+    expect(envelopeTurnIndexes).toEqual([0, 1, 2, 3]);
     const responseTurnIndexes = detail.events
       .filter((event) => event.type === "model.response")
       .map((event) => event.payload)
@@ -671,7 +682,20 @@ describe("AgentRuntime demo path", () => {
           typeof payload === "object",
       )
       .map((payload) => payload["modelContextEnvelopeTurnIndex"]);
-    expect(responseTurnIndexes).toEqual([0, 1]);
+    expect(responseTurnIndexes).toEqual([0, 1, 2, 3]);
+    expect(
+      detail.events
+        .filter((event) => event.type === "model.response")
+        .map((event) => event.payload)
+        .filter(
+          (payload): payload is Record<string, unknown> =>
+            Boolean(payload) &&
+            !Array.isArray(payload) &&
+            typeof payload === "object" &&
+            payload["modelCallPurpose"] === "goal_evaluation",
+        )
+        .map((payload) => payload["usage"]),
+    ).toEqual([undefined, undefined]);
     await expect(exportThreadReplayBundle(store, thread.id)).resolves.toEqual(
       expect.objectContaining({
         thread: expect.objectContaining({ id: thread.id }),

@@ -547,6 +547,7 @@ export class AgentRuntime {
         model,
         abortController.signal,
         budget,
+        nextModelContextEnvelopeTurnIndex,
         options.onEvent,
       );
       while (
@@ -582,6 +583,7 @@ export class AgentRuntime {
           model,
           abortController.signal,
           budget,
+          nextModelContextEnvelopeTurnIndex,
           options.onEvent,
         );
       }
@@ -2292,6 +2294,7 @@ export class AgentRuntime {
     model: Model<Api> | undefined,
     signal: AbortSignal,
     budget: RunBudgetTracker,
+    nextModelContextEnvelopeTurnIndex: () => number,
     onEvent?: EventSink,
   ): Promise<GoalState | undefined> {
     const thread = this.store.getThread(threadId);
@@ -2320,8 +2323,11 @@ export class AgentRuntime {
         const response = await this.requestGoalEvaluation(
           thread.goal,
           threadId,
+          runId,
           model,
           signal,
+          nextModelContextEnvelopeTurnIndex,
+          onEvent,
         );
         evaluationUsage = mapUsage(response.usage);
         evaluationUsageAccounting = createUsageAccounting(
@@ -2408,30 +2414,104 @@ export class AgentRuntime {
   private async requestGoalEvaluation(
     goal: GoalState,
     threadId: string,
+    runId: string,
     model: Model<Api>,
     signal: AbortSignal,
+    nextModelContextEnvelopeTurnIndex: () => number,
+    onEvent?: EventSink,
   ): Promise<AssistantMessage> {
     const conversation = await this.buildVisibleConversation(threadId);
     const prompt = buildGoalEvaluatorMessages(goal, conversation);
-    return this.modelRegistry.models.completeSimple(
-      model,
+    const requestContext = {
+      systemPrompt: prompt.system,
+      messages: [
+        {
+          role: "user" as const,
+          content: prompt.user,
+          timestamp: Date.now(),
+        },
+      ],
+      tools: [],
+    };
+    const envelope = createModelContextEnvelopeReceipt({
+      turnIndex: nextModelContextEnvelopeTurnIndex(),
+      systemPrompt: requestContext.systemPrompt,
+      messages: requestContext.messages,
+      tools: requestContext.tools,
+    });
+    await this.record(
       {
-        systemPrompt: prompt.system,
-        messages: [
-          {
-            role: "user",
-            content: prompt.user,
-            timestamp: Date.now(),
-          },
-        ],
-        tools: [],
+        threadId,
+        runId,
+        type: MODEL_CONTEXT_ENVELOPE_EVENT,
+        category: "model",
+        visibility: "debug",
+        payload: toJsonValue(envelope),
       },
-      {
-        signal,
-        maxTokens: 512,
-        temperature: 0,
-      },
+      onEvent,
     );
+    try {
+      const response = await this.modelRegistry.models.completeSimple(
+        model,
+        requestContext,
+        {
+          signal,
+          maxTokens: 512,
+          temperature: 0,
+        },
+      );
+      const text = contentText(response.content);
+      await this.record(
+        {
+          threadId,
+          runId,
+          type: "model.response",
+          category: "model",
+          visibility: "debug",
+          payload: {
+            modelCallPurpose: "goal_evaluation",
+            textSha256: sha256Text(text),
+            textBytes: Buffer.byteLength(text, "utf8"),
+            contentRedacted: true,
+            model: `${model.provider}/${model.id}`,
+            ...(response.stopReason ? { stopReason: response.stopReason } : {}),
+            modelContextEnvelopeSha256: envelope.contentSha256,
+            modelContextEnvelopeTurnIndex: envelope.turnIndex,
+            modelContextMessageSetSha256: envelope.messageSetSha256,
+            modelContextToolDefinitionSetSha256:
+              envelope.toolDefinitionSetSha256,
+          },
+        },
+        onEvent,
+      );
+      return response;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await this.record(
+        {
+          threadId,
+          runId,
+          type: "model.response",
+          category: "model",
+          visibility: "debug",
+          payload: {
+            modelCallPurpose: "goal_evaluation",
+            errorSha256: sha256Text(message),
+            errorBytes: Buffer.byteLength(message, "utf8"),
+            contentRedacted: true,
+            model: `${model.provider}/${model.id}`,
+            stopReason: "error",
+            modelContextEnvelopeSha256: envelope.contentSha256,
+            modelContextEnvelopeTurnIndex: envelope.turnIndex,
+            modelContextMessageSetSha256: envelope.messageSetSha256,
+            modelContextToolDefinitionSetSha256:
+              envelope.toolDefinitionSetSha256,
+          },
+        },
+        onEvent,
+      );
+      throw error;
+    }
   }
 
   private async proposeMemoriesFromRun(

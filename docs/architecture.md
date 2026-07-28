@@ -517,7 +517,9 @@ remain unrendered. Run replay metrics count context envelopes, bound model
 responses, and unbound model responses so Run Lab comparisons can surface
 context-governance coverage. Live Agent primary turns allocate envelope turn
 indexes from a Run-level counter, so continuations and advisor corrections
-remain contiguous within the same Run.
+remain contiguous within the same Run. Goal-evaluator auxiliary calls use the
+same envelope counter and redacted response binding, but leave usage on the
+`goal.evaluated` event to preserve existing accounting semantics.
 Comparison snapshots also derive a metadata-only `contextCoverageDelta` with
 left/right rates, diagnostics, and a clean/partial/missing/regressed status for
 candidate governance review.
