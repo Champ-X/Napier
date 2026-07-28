@@ -114,6 +114,10 @@ All notable changes to Napier are recorded here.
   and the trace verifier binds any exported import receipt back to the root
   `thread.imported` span event, failing closed on hidden or drifting receipt
   evidence even after the artifact hash is recomputed.
+- Import provenance fields that appear on the OTLP root span are now mirrored
+  through the `thread.imported` span event's safe payload projection and
+  verified field-by-field, so source IDs, source hashes, cutoff sequence,
+  envelope counts, and import time cannot drift independently from the receipt.
 - ThreadDetail no-store responses now mirror the same aligned
   `thread.imported` receipt sequence and payload SHA-256 in
   `X-Napier-Import-Receipt-*` headers, keeping API clients and OTLP consumers

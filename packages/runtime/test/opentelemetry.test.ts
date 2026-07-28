@@ -759,6 +759,47 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload_sha256",
       ),
     ).toBe(sha256(canonicalJson(importEvent.payload)));
+    expect(
+      attributeValue(
+        importedTraceEvent.attributes,
+        "napier.event.payload.source_thread_id",
+      ),
+    ).toBe(
+      attributeValue(
+        importedRoot.attributes,
+        "napier.thread.import.source_thread_id",
+      ),
+    );
+    expect(
+      attributeValue(
+        importedTraceEvent.attributes,
+        "napier.event.payload.source_api_version",
+      ),
+    ).toBe(
+      attributeValue(
+        importedRoot.attributes,
+        "napier.thread.import.source_api_version",
+      ),
+    );
+    expect(
+      attributeValue(
+        importedTraceEvent.attributes,
+        "napier.event.payload.imported_at",
+      ),
+    ).toBe(
+      attributeValue(importedRoot.attributes, "napier.thread.import.imported_at"),
+    );
+    expect(
+      attributeValue(
+        importedTraceEvent.attributes,
+        "napier.event.payload.source_model_context_envelope_count",
+      ),
+    ).toBe(
+      attributeValue(
+        importedRoot.attributes,
+        "napier.thread.import.source_model_context_envelope_count",
+      ),
+    );
     expect(JSON.stringify(importedArtifact)).not.toContain(
       "Imported OTLP receipt",
     );
@@ -825,6 +866,43 @@ describe("OpenTelemetry trace export", () => {
     expect(() => validateOpenTelemetryTraceArtifact(hiddenReceipt)).toThrow(
       "import receipt binding",
     );
+
+    const forgedRootProvenance = structuredClone(artifact);
+    const forgedProvenanceRoot = spans(forgedRootProvenance).find(
+      (span) => !span.parentSpanId,
+    )!;
+    setAttributeValue(
+      forgedProvenanceRoot.attributes,
+      "napier.thread.import.source_content_sha256",
+      "9".repeat(64),
+    );
+    rehashArtifact(forgedRootProvenance);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(forgedRootProvenance),
+    ).toThrow("import provenance binding");
+    expect(verifyOpenTelemetryTraceArtifact(forgedRootProvenance)).toEqual({
+      status: "invalid",
+      diagnostics: ["import_provenance_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
+
+    const forgedEventProvenance = structuredClone(artifact);
+    const forgedProvenanceEventRoot = spans(forgedEventProvenance).find(
+      (span) => !span.parentSpanId,
+    )!;
+    const provenanceEvent = forgedProvenanceEventRoot.events.find(
+      (event) => event.name === "thread.imported",
+    )!;
+    setAttributeValue(
+      provenanceEvent.attributes,
+      "napier.event.payload.source_event_count",
+      999,
+    );
+    rehashArtifact(forgedEventProvenance);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(forgedEventProvenance),
+    ).toThrow("import provenance binding");
   });
 
   it("rejects structural, graph, and content-hash tampering", async () => {

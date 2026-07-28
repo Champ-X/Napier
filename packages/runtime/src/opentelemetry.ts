@@ -85,11 +85,13 @@ const SAFE_STRING_PAYLOAD_KEYS = new Set([
   "reviewStatus",
   "role",
   "source",
+  "sourceApiVersion",
   "sourceType",
   "status",
   "stopReason",
   "toolName",
   "verdict",
+  "importedAt",
 ]);
 
 const SAFE_MODEL_PAYLOAD_KEYS = new Set(["candidateModel", "reviewerModel"]);
@@ -123,6 +125,7 @@ const SAFE_ID_PAYLOAD_KEYS = new Set([
   "scheduleId",
   "sourceEvaluationId",
   "sourceRunId",
+  "sourceThreadId",
   "stepId",
   "suiteId",
   "taskId",
@@ -183,7 +186,9 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "score",
   "sizeBytes",
   "localImportedThroughSeq",
+  "sourceEmbeddedModelContextEnvelopeCount",
   "sourceEventCount",
+  "sourceModelContextEnvelopeCount",
   "spanCount",
   "stepCount",
   "systemPromptBytes",
@@ -505,6 +510,9 @@ function openTelemetryTraceArtifactDiagnostic(error: unknown): string {
   if (message.includes("header is invalid")) return "invalid_header";
   if (message.includes("event range")) return "invalid_event_range";
   if (message.includes("redaction")) return "invalid_redaction";
+  if (message.includes("import provenance binding")) {
+    return "import_provenance_mismatch";
+  }
   if (message.includes("import receipt binding")) {
     return "import_receipt_mismatch";
   }
@@ -1549,6 +1557,131 @@ function validateImportReceiptTraceBinding(root: OtlpSpan): void {
   ) {
     throw new Error("OpenTelemetry trace import receipt binding is invalid");
   }
+  validateImportProvenanceTraceBinding(root.attributes, event.attributes);
+}
+
+function validateImportProvenanceTraceBinding(
+  rootAttributes: OtlpKeyValue[],
+  eventAttributes: OtlpKeyValue[],
+): void {
+  const sourceThreadId = requiredMatchingStringAttribute(
+    rootAttributes,
+    "napier.thread.import.source_thread_id",
+    eventAttributes,
+    "napier.event.payload.source_thread_id",
+  );
+  const sourceApiVersion = requiredMatchingStringAttribute(
+    rootAttributes,
+    "napier.thread.import.source_api_version",
+    eventAttributes,
+    "napier.event.payload.source_api_version",
+  );
+  const sourceContentSha256 = requiredMatchingStringAttribute(
+    rootAttributes,
+    "napier.thread.import.source_content_sha256",
+    eventAttributes,
+    "napier.event.payload.source_content_sha256",
+  );
+  const sourceEventStreamSha256 = requiredMatchingStringAttribute(
+    rootAttributes,
+    "napier.thread.import.source_event_stream_sha256",
+    eventAttributes,
+    "napier.event.payload.source_event_stream_sha256",
+  );
+  const sourceEventCount = requiredMatchingIntegerAttribute(
+    rootAttributes,
+    "napier.thread.import.source_event_count",
+    eventAttributes,
+    "napier.event.payload.source_event_count",
+  );
+  const localImportedThroughSeq = requiredMatchingIntegerAttribute(
+    rootAttributes,
+    "napier.thread.import.local_imported_through_seq",
+    eventAttributes,
+    "napier.event.payload.local_imported_through_seq",
+  );
+  const importedAt = requiredMatchingStringAttribute(
+    rootAttributes,
+    "napier.thread.import.imported_at",
+    eventAttributes,
+    "napier.event.payload.imported_at",
+  );
+  optionalMatchingIntegerAttribute(
+    rootAttributes,
+    "napier.thread.import.source_model_context_envelope_count",
+    eventAttributes,
+    "napier.event.payload.source_model_context_envelope_count",
+  );
+  optionalMatchingIntegerAttribute(
+    rootAttributes,
+    "napier.thread.import.source_embedded_model_context_envelope_count",
+    eventAttributes,
+    "napier.event.payload.source_embedded_model_context_envelope_count",
+  );
+  if (
+    !RESOURCE_ID_PATTERN.test(sourceThreadId) ||
+    sourceApiVersion.length < 1 ||
+    sourceApiVersion.length > 64 ||
+    !SHA256_PATTERN.test(sourceContentSha256) ||
+    !SHA256_PATTERN.test(sourceEventStreamSha256) ||
+    sourceEventCount < 0 ||
+    localImportedThroughSeq < 1 ||
+    !validTimestamp(importedAt)
+  ) {
+    throw new Error(
+      "OpenTelemetry trace import provenance binding is invalid",
+    );
+  }
+}
+
+function requiredMatchingStringAttribute(
+  rootAttributes: OtlpKeyValue[],
+  rootKey: string,
+  eventAttributes: OtlpKeyValue[],
+  eventKey: string,
+): string {
+  const rootValue = stringAttribute(rootAttributes, rootKey);
+  const eventValue = stringAttribute(eventAttributes, eventKey);
+  if (rootValue === undefined || rootValue !== eventValue) {
+    throw new Error(
+      "OpenTelemetry trace import provenance binding is invalid",
+    );
+  }
+  return rootValue;
+}
+
+function requiredMatchingIntegerAttribute(
+  rootAttributes: OtlpKeyValue[],
+  rootKey: string,
+  eventAttributes: OtlpKeyValue[],
+  eventKey: string,
+): number {
+  const rootValue = integerAttribute(rootAttributes, rootKey);
+  const eventValue = integerAttribute(eventAttributes, eventKey);
+  if (rootValue === undefined || rootValue !== eventValue) {
+    throw new Error(
+      "OpenTelemetry trace import provenance binding is invalid",
+    );
+  }
+  return rootValue;
+}
+
+function optionalMatchingIntegerAttribute(
+  rootAttributes: OtlpKeyValue[],
+  rootKey: string,
+  eventAttributes: OtlpKeyValue[],
+  eventKey: string,
+): void {
+  const rootValue = integerAttribute(rootAttributes, rootKey);
+  const eventValue = integerAttribute(eventAttributes, eventKey);
+  if (
+    rootValue === eventValue ||
+    (rootValue === undefined && eventValue === undefined) ||
+    (rootValue === undefined && eventValue === 0)
+  ) {
+    return;
+  }
+  throw new Error("OpenTelemetry trace import provenance binding is invalid");
 }
 
 function stringAttribute(

@@ -2272,6 +2272,10 @@ projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
 changing its payload hash, or changing the event payload hash invalidates the
 artifact even when the artifact's top-level content hash is recomputed.
+The same validator also compares the root provenance projection with the safe
+payload projection on `thread.imported`, covering source IDs, source hashes,
+source event count, local cutoff, envelope counts, and import time so imported
+lineage metadata cannot drift away from its ledger-backed receipt.
 ThreadDetail no-store headers expose the same receipt sequence and payload hash
 under `X-Napier-Import-Receipt-*`, so API clients get the same proof without
 parsing the event stream. Run Lab consumes that header-backed projection and
