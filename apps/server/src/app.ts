@@ -10788,6 +10788,7 @@ function parseEnabledTools(input: unknown): string[] | undefined {
     "read_file",
     "search_files",
     "inspect_data",
+    "inspect_code",
     "apply_patch",
     "verify_workspace",
   ]);

@@ -265,6 +265,10 @@ All notable changes to Napier are recorded here.
   files. It returns bounded schema/sample evidence to the Agent while Trace
   renders only format, row/column counts, truncation state, and path/file/
   column-set/sample hashes.
+- Added a read-only `inspect_code` workspace tool for TypeScript, JavaScript,
+  Python, and Go files. It returns bounded symbol outlines to the Agent while
+  Trace renders only language, symbol/line/byte counts, truncation state, and
+  path/file/symbol-set hashes.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
 - `verify_workspace` results now include a hash-only scope receipt over cwd and

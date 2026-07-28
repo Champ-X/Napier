@@ -3229,6 +3229,7 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     toolName === "read_file" ||
     toolName === "search_files" ||
     toolName === "inspect_data" ||
+    toolName === "inspect_code" ||
     toolName === "verify_workspace" ||
     toolName === "web_fetch" ||
     toolName === "web_search"

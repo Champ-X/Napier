@@ -1515,6 +1515,14 @@ inspect_data
   -> hash the workspace-relative path, complete file, column set, and sample
      rows so Trace can show format, row/column counts, truncation, and hashes
      without rendering column names or sample values
+inspect_code
+  -> resolve TypeScript / JavaScript / Python / Go files through the same
+     read-only realpath and UTF-8 boundary as read_file
+  -> return a bounded symbol outline to the Agent without starting LSP,
+     subprocess, or network capabilities
+  -> hash the workspace-relative path, complete file, symbol lines, and
+     signatures so Trace can show language, symbol count, line/byte counts,
+     truncation, and hashes without rendering symbol names or signatures
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require an existing safe parent and a missing target

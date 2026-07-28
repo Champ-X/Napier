@@ -54,6 +54,7 @@ describe("workspace tools", () => {
       "read_file",
       "search_files",
       "inspect_data",
+      "inspect_code",
     ]);
     const read = readOnly.find((tool) => tool.name === "read_file")!;
     const result = await read.execute("read-notes", {
@@ -100,6 +101,7 @@ describe("workspace tools", () => {
       "read_file",
       "search_files",
       "inspect_data",
+      "inspect_code",
       "apply_patch",
     ]);
   });
@@ -252,6 +254,135 @@ describe("workspace tools", () => {
       }),
     );
     expect(jsonlResult.content[0]!.text).toContain('"status": "open"');
+  });
+
+  it("inspects code files with bounded symbol receipts", async () => {
+    const { workspaceRoot } = await createFixture();
+    await mkdir(path.join(workspaceRoot, "src"));
+    const source = [
+      "export interface AgentTask {",
+      "  id: string;",
+      "}",
+      "",
+      "export class Planner {",
+      "  plan(input: string): string {",
+      "    helper(input);",
+      "    return input;",
+      "  }",
+      "}",
+      "",
+      "export const createPlan = () => new Planner();",
+    ].join("\n");
+    const python = [
+      "class Notebook:",
+      "    def run(self):",
+      "        pass",
+    ].join("\n");
+    const go = [
+      "package main",
+      "",
+      "type Runner struct{}",
+      "func (r Runner) Run() {}",
+    ].join("\n");
+    await writeFile(path.join(workspaceRoot, "src/planner.ts"), source);
+    await writeFile(path.join(workspaceRoot, "notebook.py"), python);
+    await writeFile(path.join(workspaceRoot, "runner.go"), go);
+    const inspect = createWorkspaceTools(workspaceRoot).find(
+      (tool) => tool.name === "inspect_code",
+    )!;
+
+    const result = await inspect.execute("inspect-code", {
+      path: "src/planner.ts",
+      maxSymbols: 10,
+    });
+
+    const symbolReceipts = [
+      {
+        kind: "interface",
+        name: "AgentTask",
+        line: 1,
+        lineSha256: createHash("sha256")
+          .update("export interface AgentTask {")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("export interface AgentTask {")
+          .digest("hex"),
+      },
+      {
+        kind: "class",
+        name: "Planner",
+        line: 5,
+        lineSha256: createHash("sha256")
+          .update("export class Planner {")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("export class Planner {")
+          .digest("hex"),
+      },
+      {
+        kind: "method",
+        name: "plan",
+        line: 6,
+        lineSha256: createHash("sha256")
+          .update("  plan(input: string): string {")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("plan(input: string): string {")
+          .digest("hex"),
+      },
+      {
+        kind: "variable",
+        name: "createPlan",
+        line: 12,
+        lineSha256: createHash("sha256")
+          .update("export const createPlan = () => new Planner();")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("export const createPlan = () => new Planner();")
+          .digest("hex"),
+      },
+    ];
+    expect(result.content[0]!.text).toContain("Napier code metadata");
+    expect(result.content[0]!.text).toContain("src/planner.ts:6 method plan");
+    expect(result.details).toEqual({
+      path: "src/planner.ts",
+      pathSha256: createHash("sha256").update("src/planner.ts").digest("hex"),
+      language: "typescript",
+      sha256: createHash("sha256").update(source).digest("hex"),
+      sizeBytes: Buffer.byteLength(source),
+      totalLines: 12,
+      symbolCount: 4,
+      truncated: false,
+      symbolSetSha256: createHash("sha256")
+        .update(JSON.stringify(symbolReceipts))
+        .digest("hex"),
+    });
+
+    const pythonResult = await inspect.execute("inspect-python", {
+      path: "notebook.py",
+    });
+    expect(pythonResult.details).toEqual(
+      expect.objectContaining({
+        language: "python",
+        symbolCount: 2,
+      }),
+    );
+    expect(pythonResult.content[0]!.text).toContain(
+      "notebook.py:2 function run",
+    );
+
+    const goResult = await inspect.execute("inspect-go", {
+      path: "runner.go",
+      maxSymbols: 1,
+    });
+    expect(goResult.details).toEqual(
+      expect.objectContaining({
+        language: "go",
+        symbolCount: 1,
+        truncated: true,
+      }),
+    );
+    expect(goResult.content[0]!.text).toContain("runner.go:3 struct Runner");
   });
 
   it("creates and exact-replaces UTF-8 files with hash preconditions", async () => {

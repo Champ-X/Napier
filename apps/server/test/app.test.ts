@@ -1975,6 +1975,7 @@ describe("Napier HTTP goal flow", () => {
           "read_file",
           "search_files",
           "inspect_data",
+          "inspect_code",
           "apply_patch",
           "verify_workspace",
         ],
@@ -2027,6 +2028,7 @@ describe("Napier HTTP goal flow", () => {
         toolPolicy: "workspace",
         enabledTools: [
           "apply_patch",
+          "inspect_code",
           "inspect_data",
           "read_file",
           "search_files",

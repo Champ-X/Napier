@@ -118,6 +118,7 @@ export const contextCopy = {
     read_file: "Read file",
     search_files: "Search files",
     inspect_data: "Inspect data",
+    inspect_code: "Inspect code",
     apply_patch: "Atomic patch",
     verify_workspace: "Sandbox verify",
   },

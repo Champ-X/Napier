@@ -25,6 +25,7 @@ const SAFE_READ_ONLY_TOOLS = new Set([
   "read_file",
   "search_files",
   "inspect_data",
+  "inspect_code",
   "verify_workspace",
   "web_fetch",
   "web_search",

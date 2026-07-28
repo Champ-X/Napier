@@ -1119,6 +1119,7 @@ export default function ContextPanel({
     "read_file",
     "search_files",
     "inspect_data",
+    "inspect_code",
     "apply_patch",
     "verify_workspace",
   ] as const;

@@ -308,6 +308,7 @@ describe("safe automatic recovery", () => {
         "read_file",
         "search_files",
         "inspect_data",
+        "inspect_code",
         "apply_patch",
         "verify_workspace",
       ],
@@ -356,6 +357,7 @@ describe("safe automatic recovery", () => {
           "read_file",
           "search_files",
           "inspect_data",
+          "inspect_code",
         ]);
         expect(JSON.stringify(context.messages)).toContain(
           "safe read-only recovery attempt",
@@ -411,6 +413,7 @@ describe("safe automatic recovery", () => {
         executionMode: "safe_read_only_recovery",
         toolPolicy: "observe",
         enabledTools: [
+          "inspect_code",
           "inspect_data",
           "list_files",
           "read_file",

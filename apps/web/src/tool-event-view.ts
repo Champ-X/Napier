@@ -18,6 +18,14 @@ export interface ToolEventTraceView {
   dataFileSha256?: string;
   dataColumnSetSha256?: string;
   dataSampleSha256?: string;
+  codeLanguage?: "typescript" | "javascript" | "python" | "go" | "unknown";
+  codeSymbolCount?: number;
+  codeTotalLines?: number;
+  codeSizeBytes?: number;
+  codeTruncated?: boolean;
+  codePathSha256?: string;
+  codeFileSha256?: string;
+  codeSymbolSetSha256?: string;
   verificationKind?: "typecheck" | "test" | "format";
   verificationStatus?: "passed" | "failed" | "timed_out" | "output_capped";
   verificationExitCode?: number;
@@ -90,6 +98,10 @@ export function toolEventTraceView(
     toolName === "inspect_data"
       ? inspectDataEvidence(event.payload["details"])
       : undefined;
+  const codeEvidence =
+    toolName === "inspect_code"
+      ? inspectCodeEvidence(event.payload["details"])
+      : undefined;
   const verificationEvidence =
     toolName === "verify_workspace"
       ? verificationEvidenceView(event.payload["details"])
@@ -114,6 +126,7 @@ export function toolEventTraceView(
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
     ...(searchEvidence ? searchEvidence : {}),
     ...(dataEvidence ? dataEvidence : {}),
+    ...(codeEvidence ? codeEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
@@ -158,6 +171,24 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.dataSampleSha256
       ? [`sample ${view.dataSampleSha256.slice(0, 12)}`]
+      : []),
+    ...(view.codeLanguage ? [`code ${view.codeLanguage}`] : []),
+    ...(view.codeSymbolCount !== undefined
+      ? [`symbols ${view.codeSymbolCount}`]
+      : []),
+    ...(view.codeTotalLines !== undefined
+      ? [`lines ${view.codeTotalLines}`]
+      : []),
+    ...(view.codeSizeBytes !== undefined ? [`size ${view.codeSizeBytes}`] : []),
+    ...(view.codeTruncated ? ["code-truncated"] : []),
+    ...(view.codePathSha256
+      ? [`code-path ${view.codePathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.codeFileSha256
+      ? [`code-file ${view.codeFileSha256.slice(0, 12)}`]
+      : []),
+    ...(view.codeSymbolSetSha256
+      ? [`symbol-set ${view.codeSymbolSetSha256.slice(0, 12)}`]
       : []),
     ...(view.verificationKind && view.verificationStatus
       ? [`verification ${view.verificationKind} ${view.verificationStatus}`]
@@ -351,6 +382,56 @@ function inspectDataEvidence(value: unknown):
 
 function dataFormat(value: unknown): "json" | "jsonl" | "csv" | undefined {
   return value === "json" || value === "jsonl" || value === "csv"
+    ? value
+    : undefined;
+}
+
+function inspectCodeEvidence(value: unknown):
+  | {
+      codeLanguage: "typescript" | "javascript" | "python" | "go" | "unknown";
+      codeSymbolCount: number;
+      codeTotalLines: number;
+      codeSizeBytes?: number;
+      codeTruncated?: boolean;
+      codePathSha256?: string;
+      codeFileSha256?: string;
+      codeSymbolSetSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const language = codeLanguage(record["language"]);
+  const symbolCount = integerInRange(record["symbolCount"], 0, 120);
+  const totalLines = integerInRange(record["totalLines"], 0, 1_000_000);
+  if (!language || symbolCount === undefined || totalLines === undefined) {
+    return undefined;
+  }
+  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2 * 1024 * 1024);
+  const pathSha256 = sha256(record["pathSha256"]);
+  const fileSha256 = sha256(record["sha256"]);
+  const symbolSetSha256 = sha256(record["symbolSetSha256"]);
+  return {
+    codeLanguage: language,
+    codeSymbolCount: symbolCount,
+    codeTotalLines: totalLines,
+    ...(sizeBytes !== undefined ? { codeSizeBytes: sizeBytes } : {}),
+    ...(record["truncated"] === true ? { codeTruncated: true } : {}),
+    ...(pathSha256 ? { codePathSha256: pathSha256 } : {}),
+    ...(fileSha256 ? { codeFileSha256: fileSha256 } : {}),
+    ...(symbolSetSha256 ? { codeSymbolSetSha256: symbolSetSha256 } : {}),
+  };
+}
+
+function codeLanguage(
+  value: unknown,
+): "typescript" | "javascript" | "python" | "go" | "unknown" | undefined {
+  return value === "typescript" ||
+    value === "javascript" ||
+    value === "python" ||
+    value === "go" ||
+    value === "unknown"
     ? value
     : undefined;
 }

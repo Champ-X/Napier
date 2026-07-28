@@ -1045,6 +1045,15 @@ column-set, and sample SHA-256 receipts. Trace summaries show only format,
 row/column counts, byte size, truncation state, and hashes, never column names
 or sample values.
 
+`inspect_code` gives the Agent a bounded local symbol outline for TypeScript,
+JavaScript, Python, and Go files without starting LSP, subprocess, or network
+capabilities. It resolves through the same read-only workspace boundary,
+returns capped symbol names, lines, signature previews, and line/signature
+hashes to the model, and records language, line/byte counts, file hash, and a
+symbol-set SHA-256 receipt. Trace summaries show only language, symbol count,
+line/byte counts, truncation state, and hashes, never symbol names or
+signatures.
+
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
 optional line number, so small line edits do not require the model to retype

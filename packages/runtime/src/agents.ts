@@ -25,6 +25,7 @@ const ALLOWED_TOOLS = new Set([
   "read_file",
   "search_files",
   "inspect_data",
+  "inspect_code",
   "apply_patch",
   "verify_workspace",
 ]);

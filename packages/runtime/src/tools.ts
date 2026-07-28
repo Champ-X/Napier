@@ -27,6 +27,8 @@ const MAX_SEARCH_MATCHES = 80;
 const MAX_DATA_SAMPLE_ROWS = 25;
 const MAX_DATA_COLUMNS = 80;
 const MAX_DATA_PREVIEW_BYTES = 4_096;
+const MAX_CODE_SYMBOLS = 120;
+const MAX_CODE_SIGNATURE_BYTES = 512;
 const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
@@ -74,6 +76,20 @@ const inspectDataSchema = Type.Object({
       minimum: 1,
       maximum: MAX_DATA_SAMPLE_ROWS,
       description: "Maximum structured sample rows to return.",
+    }),
+  ),
+});
+
+const inspectCodeSchema = Type.Object({
+  path: Type.String({
+    description:
+      "Workspace-relative TypeScript, JavaScript, Python, or Go file path.",
+  }),
+  maxSymbols: Type.Optional(
+    Type.Integer({
+      minimum: 1,
+      maximum: MAX_CODE_SYMBOLS,
+      description: "Maximum code symbols to return.",
     }),
   ),
 });
@@ -234,6 +250,35 @@ export interface WorkspaceDataInspectDetails {
   truncated: boolean;
   columnSetSha256: string;
   sampleSha256: string;
+}
+
+export type WorkspaceCodeLanguage =
+  | "typescript"
+  | "javascript"
+  | "python"
+  | "go"
+  | "unknown";
+
+export type WorkspaceCodeSymbolKind =
+  | "class"
+  | "function"
+  | "interface"
+  | "type"
+  | "enum"
+  | "variable"
+  | "struct"
+  | "method";
+
+export interface WorkspaceCodeInspectDetails {
+  path: string;
+  pathSha256: string;
+  language: WorkspaceCodeLanguage;
+  sha256: string;
+  sizeBytes: number;
+  totalLines: number;
+  symbolCount: number;
+  truncated: boolean;
+  symbolSetSha256: string;
 }
 
 export interface WorkspaceListDetails {
@@ -616,6 +661,170 @@ function truncatePreview(value: string | undefined): string {
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
+
+interface WorkspaceCodeSymbol {
+  kind: WorkspaceCodeSymbolKind;
+  name: string;
+  line: number;
+  lineSha256: string;
+  signatureSha256: string;
+  signaturePreview: string;
+}
+
+function inspectCodeSymbols(
+  source: string,
+  relativePath: string,
+  maxSymbols: number,
+): {
+  language: WorkspaceCodeLanguage;
+  totalLines: number;
+  symbols: WorkspaceCodeSymbol[];
+  truncated: boolean;
+} {
+  const language = detectCodeLanguage(relativePath);
+  const lines = source.split("\n");
+  const symbols: WorkspaceCodeSymbol[] = [];
+  for (const [index, line] of lines.entries()) {
+    if (symbols.length >= maxSymbols) break;
+    const match = codeSymbolFromLine(language, line);
+    if (!match) continue;
+    const signaturePreview = truncateCodeSignature(line.trim());
+    symbols.push({
+      ...match,
+      line: index + 1,
+      lineSha256: sha256(line),
+      signatureSha256: sha256(signaturePreview),
+      signaturePreview,
+    });
+  }
+  return {
+    language,
+    totalLines: lines.length,
+    symbols,
+    truncated:
+      symbols.length >= maxSymbols &&
+      lines
+        .slice(symbols.at(-1)?.line ?? 0)
+        .some((line) => Boolean(codeSymbolFromLine(language, line))),
+  };
+}
+
+function detectCodeLanguage(relativePath: string): WorkspaceCodeLanguage {
+  const lower = relativePath.toLowerCase();
+  if (
+    lower.endsWith(".ts") ||
+    lower.endsWith(".tsx") ||
+    lower.endsWith(".mts") ||
+    lower.endsWith(".cts")
+  ) {
+    return "typescript";
+  }
+  if (
+    lower.endsWith(".js") ||
+    lower.endsWith(".jsx") ||
+    lower.endsWith(".mjs") ||
+    lower.endsWith(".cjs")
+  ) {
+    return "javascript";
+  }
+  if (lower.endsWith(".py")) return "python";
+  if (lower.endsWith(".go")) return "go";
+  return "unknown";
+}
+
+function codeSymbolFromLine(
+  language: WorkspaceCodeLanguage,
+  line: string,
+): Pick<WorkspaceCodeSymbol, "kind" | "name"> | undefined {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith("//") || trimmed.startsWith("#")) {
+    return undefined;
+  }
+  if (language === "python") return pythonSymbolFromLine(trimmed);
+  if (language === "go") return goSymbolFromLine(trimmed);
+  if (language === "typescript" || language === "javascript") {
+    return typescriptSymbolFromLine(line, trimmed);
+  }
+  return undefined;
+}
+
+function typescriptSymbolFromLine(
+  line: string,
+  trimmed: string,
+): Pick<WorkspaceCodeSymbol, "kind" | "name"> | undefined {
+  const topLevel = !/^\s/u.test(line);
+  const patterns: Array<[WorkspaceCodeSymbolKind, RegExp]> = [
+    ["class", /^(?:export\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)\b/u],
+    ["interface", /^(?:export\s+)?interface\s+([A-Za-z_$][\w$]*)\b/u],
+    ["type", /^(?:export\s+)?type\s+([A-Za-z_$][\w$]*)\b/u],
+    ["enum", /^(?:export\s+)?(?:const\s+)?enum\s+([A-Za-z_$][\w$]*)\b/u],
+    [
+      "function",
+      /^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\b/u,
+    ],
+    [
+      "variable",
+      /^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::|=|\(|$)/u,
+    ],
+  ];
+  for (const [kind, pattern] of patterns) {
+    const match = trimmed.match(pattern);
+    if (match?.[1] && (topLevel || kind !== "variable")) {
+      return { kind, name: match[1] };
+    }
+  }
+  const methodMatch = trimmed.match(
+    /^(?:public\s+|private\s+|protected\s+|static\s+|async\s+|get\s+|set\s+)*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?:\{|:[^{;]+(?:\{|;))/u,
+  );
+  if (!topLevel && methodMatch?.[1] && !CONTROL_KEYWORDS.has(methodMatch[1])) {
+    return { kind: "method", name: methodMatch[1] };
+  }
+  return undefined;
+}
+
+function pythonSymbolFromLine(
+  trimmed: string,
+): Pick<WorkspaceCodeSymbol, "kind" | "name"> | undefined {
+  const classMatch = trimmed.match(/^class\s+([A-Za-z_]\w*)\b/u);
+  if (classMatch?.[1]) return { kind: "class", name: classMatch[1] };
+  const functionMatch = trimmed.match(/^(?:async\s+)?def\s+([A-Za-z_]\w*)\b/u);
+  if (functionMatch?.[1]) return { kind: "function", name: functionMatch[1] };
+  return undefined;
+}
+
+function goSymbolFromLine(
+  trimmed: string,
+): Pick<WorkspaceCodeSymbol, "kind" | "name"> | undefined {
+  const functionMatch = trimmed.match(
+    /^func\s+(?:\([^)]+\)\s*)?([A-Za-z_]\w*)\s*\(/u,
+  );
+  if (functionMatch?.[1]) {
+    return {
+      kind: trimmed.startsWith("func (") ? "method" : "function",
+      name: functionMatch[1],
+    };
+  }
+  const typeMatch = trimmed.match(/^type\s+([A-Za-z_]\w*)\s+([A-Za-z_]\w*)/u);
+  if (typeMatch?.[1]) {
+    const kind = typeMatch[2] === "struct" ? "struct" : "type";
+    return { kind, name: typeMatch[1] };
+  }
+  return undefined;
+}
+
+function truncateCodeSignature(value: string): string {
+  if (Buffer.byteLength(value) <= MAX_CODE_SIGNATURE_BYTES) return value;
+  return `${Buffer.from(value).subarray(0, MAX_CODE_SIGNATURE_BYTES).toString("utf8")}...[truncated]`;
+}
+
+const CONTROL_KEYWORDS = new Set([
+  "if",
+  "for",
+  "while",
+  "switch",
+  "catch",
+  "function",
+]);
 
 export interface WorkspaceTextEvidence {
   path: string;
@@ -1306,11 +1515,86 @@ export function createWorkspaceTools(
     },
   };
 
+  const inspectCode: AgentTool<
+    typeof inspectCodeSchema,
+    WorkspaceCodeInspectDetails
+  > = {
+    name: "inspect_code",
+    label: "Inspect code",
+    description:
+      "Inspect a UTF-8 TypeScript, JavaScript, Python, or Go workspace file and return a bounded symbol outline.",
+    parameters: inspectCodeSchema,
+    async execute(_toolCallId, input) {
+      const resolved = await resolveWorkspacePath(workspaceRoot, input.path);
+      const target = resolved.target;
+      const info = await stat(target);
+      if (!info.isFile()) throw new Error("inspect_code path must be a file");
+      if (info.size > MAX_HASHABLE_TEXT_BYTES) {
+        throw new Error(
+          `inspect_code supports files up to ${MAX_HASHABLE_TEXT_BYTES} bytes`,
+        );
+      }
+      const buffer = await readFile(target);
+      const source = decodeUtf8(buffer, "inspect_code target");
+      const relativePath = path.relative(resolved.root, target);
+      const inspected = inspectCodeSymbols(
+        source,
+        relativePath,
+        input.maxSymbols ?? MAX_CODE_SYMBOLS,
+      );
+      const symbolReceipts = inspected.symbols.map(
+        ({ kind, name, line, lineSha256, signatureSha256 }) => ({
+          kind,
+          name,
+          line,
+          lineSha256,
+          signatureSha256,
+        }),
+      );
+      const symbolSetSha256 = sha256(JSON.stringify(symbolReceipts));
+      const contentSha256 = sha256(buffer);
+      const details: WorkspaceCodeInspectDetails = {
+        path: relativePath,
+        pathSha256: sha256(relativePath),
+        language: inspected.language,
+        sha256: contentSha256,
+        sizeBytes: buffer.byteLength,
+        totalLines: inspected.totalLines,
+        symbolCount: inspected.symbols.length,
+        truncated: inspected.truncated,
+        symbolSetSha256,
+      };
+      const outline = inspected.symbols.map((symbol) =>
+        [
+          `${relativePath}:${symbol.line}`,
+          symbol.kind,
+          symbol.name,
+          `[lineSha256=${symbol.lineSha256} signatureSha256=${symbol.signatureSha256}]`,
+          symbol.signaturePreview,
+        ].join(" "),
+      );
+      const metadata = JSON.stringify(details);
+      return {
+        content: [
+          {
+            type: "text",
+            text: [
+              `Napier code metadata: ${metadata}`,
+              outline.length > 0 ? outline.join("\n") : "No symbols found.",
+            ].join("\n"),
+          },
+        ],
+        details,
+      };
+    },
+  };
+
   const tools: AgentTool[] = [
     listFiles,
     readTextFile,
     searchFiles,
     inspectData,
+    inspectCode,
   ];
   if (options.includeWriteTools) {
     if (!options.dataRoot) {

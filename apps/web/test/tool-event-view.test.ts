@@ -187,6 +187,48 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes inspect_code receipts without symbol names or signatures", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "inspect_code",
+      status: "completed",
+      output: "TOP_SECRET_SYMBOL_SIGNATURE",
+      details: {
+        path: "TOP_SECRET_SOURCE_PATH",
+        language: "typescript",
+        sha256: "a".repeat(64),
+        pathSha256: "b".repeat(64),
+        sizeBytes: 512,
+        totalLines: 88,
+        symbolCount: 7,
+        truncated: true,
+        symbols: [
+          {
+            name: "TOP_SECRET_SYMBOL",
+            signaturePreview: "TOP_SECRET_SIGNATURE",
+          },
+        ],
+        symbolSetSha256: "c".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "inspect_code",
+      status: "completed",
+      codeLanguage: "typescript",
+      codeSymbolCount: 7,
+      codeTotalLines: 88,
+      codeSizeBytes: 512,
+      codeTruncated: true,
+      codePathSha256: "b".repeat(64),
+      codeFileSha256: "a".repeat(64),
+      codeSymbolSetSha256: "c".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / inspect_code / completed / code typescript / symbols 7 / lines 88 / size 512 / code-truncated / code-path ${"b".repeat(12)} / code-file ${"a".repeat(12)} / symbol-set ${"c".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes verify_workspace status and output hashes only", () => {
     const event = toolEvent("tool.completed", {
       toolName: "verify_workspace",
