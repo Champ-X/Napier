@@ -1467,10 +1467,11 @@ Export is metadata-only. Prompts, completions, reasoning, message text, tool
 arguments/results, Subagent descriptions/results, review notes, evidence
 prose, errors, credential labels, arbitrary user IDs, and key locators are
 excluded. Safe IDs, models, tool names, states, token/cache counts, cost,
-durations, sequence numbers, and evidence hashes remain. The artifact binds
-the selected source-event range, its SHA-256, explicit redaction policy,
-complete OTLP request, and span count to a stable content SHA-256 independent
-of `generatedAt`.
+durations, sequence numbers, evidence hashes, and metadata-only Advisor
+verification freshness fields remain. The artifact binds the selected
+source-event range, its SHA-256, explicit redaction policy, complete OTLP
+request, and span count to a stable content SHA-256 independent of
+`generatedAt`.
 
 Every export appends a `trace.otlp.exported` Ledger event containing only
 scope, source Run ID when applicable, trace ID, counts, source hash, and

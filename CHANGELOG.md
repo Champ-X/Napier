@@ -277,6 +277,9 @@ All notable changes to Napier are recorded here.
 - Independent Model Advisor review receipts now persist the same metadata-only
   evidence summary, allowing the Trace review card to explain verification
   freshness without reopening prompt or candidate text.
+- OTLP export now projects Advisor verification freshness summaries as
+  metadata-only event attributes, preserving candidate text, prompts, guidance,
+  and diagnostic prose redaction.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

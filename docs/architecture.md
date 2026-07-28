@@ -1934,6 +1934,7 @@ select complete Thread or one Run
   -> preserve unmatched starts as explicit unknown-outcome tool spans
   -> map durable Subagent tasks to `invoke_agent {role}` spans
   -> attach remaining Ledger records as metadata-only span events
+  -> project Advisor verification freshness as boolean/count/seq attributes
   -> encode timestamps as decimal nanoseconds and scalar AnyValue attributes
   -> validate IDs, parent graph, temporal containment, schema, and counts
   -> bind source range/hash + redaction policy + OTLP request to content SHA-256
@@ -1955,6 +1956,11 @@ semantic-convention schema `1.43.0`, and can be posted to a Collector
 `generatedAt` is excluded from the Napier artifact hash; prior export-audit
 events are excluded from source selection, so an unchanged repeated export
 remains deterministic.
+Advisor review evidence summaries are exported only as metadata attributes:
+verification completed/passed/current booleans, workspace-write booleans, and
+latest write/verification sequence numbers. Candidate text, review prompts,
+diagnostic prose, and reviewer guidance remain excluded by the redaction
+policy.
 
 The Workbench Trace card exposes the verification path as a file upload. The
 browser parses the selected JSON locally, submits only `{ artifact }` through

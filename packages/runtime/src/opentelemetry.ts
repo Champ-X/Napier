@@ -318,6 +318,22 @@ const SAFE_EVENT_PAYLOAD_ATTRIBUTE_KEYS = new Set(
   ].map((key) => `napier.event.payload.${camelToSnake(key)}`),
 );
 
+const SAFE_EVENT_EVIDENCE_SUMMARY_ATTRIBUTE_KEYS = new Set(
+  [
+    "eventCount",
+    "toolCompletedNameCount",
+    "toolFailedNameCount",
+    "verificationToolCompleted",
+    "verificationToolPassed",
+    "workspaceWriteCompleted",
+    "verificationToolPassedAfterWorkspaceWrite",
+    "latestWorkspaceWriteSeq",
+    "latestPassedVerificationSeq",
+    "milestoneCount",
+    "operatorDecisionRequested",
+  ].map((key) => `napier.event.payload.evidence_summary_${camelToSnake(key)}`),
+);
+
 interface ToolTrace {
   callId: string;
   toolName: string;
@@ -1042,6 +1058,15 @@ function safePayloadAttributes(payload: JsonValue): {
   const values: Record<string, string | number | boolean> = {};
   let dropped = 0;
   for (const [key, value] of Object.entries(payload)) {
+    if ((key === "evidence" || key === "evidenceSummary") && isRecord(value)) {
+      const projected = evidenceSummaryPayloadAttributes(value);
+      if (Object.keys(projected).length === 0) {
+        dropped += 1;
+      } else {
+        Object.assign(values, projected);
+      }
+      continue;
+    }
     if (
       EXCLUDED_PAYLOAD_KEYS.includes(
         key as (typeof EXCLUDED_PAYLOAD_KEYS)[number],
@@ -1115,6 +1140,44 @@ function safePayloadAttributes(payload: JsonValue): {
     dropped += 1;
   }
   return { values, dropped };
+}
+
+function evidenceSummaryPayloadAttributes(
+  evidence: Record<string, JsonValue>,
+): Record<string, number | boolean> {
+  const values: Record<string, number | boolean> = {};
+  for (const key of [
+    "eventCount",
+    "toolCompletedNameCount",
+    "toolFailedNameCount",
+    "latestWorkspaceWriteSeq",
+    "latestPassedVerificationSeq",
+    "milestoneCount",
+  ]) {
+    const value = evidence[key];
+    if (
+      typeof value === "number" &&
+      Number.isSafeInteger(value) &&
+      value >= 0
+    ) {
+      values[`napier.event.payload.evidence_summary_${camelToSnake(key)}`] =
+        value;
+    }
+  }
+  for (const key of [
+    "verificationToolCompleted",
+    "verificationToolPassed",
+    "workspaceWriteCompleted",
+    "verificationToolPassedAfterWorkspaceWrite",
+    "operatorDecisionRequested",
+  ]) {
+    const value = evidence[key];
+    if (typeof value === "boolean") {
+      values[`napier.event.payload.evidence_summary_${camelToSnake(key)}`] =
+        value;
+    }
+  }
+  return values;
 }
 
 function attributes(
@@ -1389,6 +1452,7 @@ function isAllowedEventAttributeKey(key: string): boolean {
   return (
     BASE_EVENT_ATTRIBUTE_KEYS.has(key) ||
     SAFE_EVENT_PAYLOAD_ATTRIBUTE_KEYS.has(key) ||
+    SAFE_EVENT_EVIDENCE_SUMMARY_ATTRIBUTE_KEYS.has(key) ||
     /^napier\.event\.payload\.[a-z0-9_.-]+_(sha256|fingerprint)$/.test(key)
   );
 }
@@ -1563,7 +1627,8 @@ function validateRootTraceArtifactBinding(
     root.kind !== 1 ||
     stringAttribute(root.attributes, "gen_ai.conversation.id") !==
       artifact.threadId ||
-    stringAttribute(root.attributes, "napier.thread.id") !== artifact.threadId ||
+    stringAttribute(root.attributes, "napier.thread.id") !==
+      artifact.threadId ||
     integerAttribute(root.attributes, "napier.event.count") !==
       artifact.eventRange.eventCount ||
     stringAttribute(root.attributes, "napier.event_stream.sha256") !==
@@ -1698,7 +1763,10 @@ function eventAnchorFromSpanEvent(event: OtlpSpanEvent): EventAnchor {
   const seq = integerAttribute(event.attributes, "napier.event.seq");
   const type = stringAttribute(event.attributes, "napier.event.type");
   const category = stringAttribute(event.attributes, "napier.event.category");
-  const visibility = stringAttribute(event.attributes, "napier.event.visibility");
+  const visibility = stringAttribute(
+    event.attributes,
+    "napier.event.visibility",
+  );
   const payloadSha256 = stringAttribute(
     event.attributes,
     "napier.event.payload_sha256",
@@ -1718,7 +1786,10 @@ function eventAnchorFromLedgerSpan(span: OtlpSpan): EventAnchor | undefined {
   const seq = integerAttribute(span.attributes, "napier.ledger.seq");
   const type = stringAttribute(span.attributes, "napier.ledger.event_type");
   const category = stringAttribute(span.attributes, "napier.ledger.category");
-  const visibility = stringAttribute(span.attributes, "napier.ledger.visibility");
+  const visibility = stringAttribute(
+    span.attributes,
+    "napier.ledger.visibility",
+  );
   const payloadSha256 = stringAttribute(
     span.attributes,
     "napier.ledger.payload_sha256",
@@ -1811,7 +1882,8 @@ function validateImportReceiptTraceBinding(root: OtlpSpan): void {
   const importEvents = root.events.filter((event) => {
     const eventType = stringAttribute(event.attributes, "napier.event.type");
     return (
-      event.name === THREAD_IMPORTED_EVENT || eventType === THREAD_IMPORTED_EVENT
+      event.name === THREAD_IMPORTED_EVENT ||
+      eventType === THREAD_IMPORTED_EVENT
     );
   });
   if (receiptSeq === undefined && receiptSha256 === undefined) {
@@ -1928,9 +2000,7 @@ function validateImportProvenanceTraceBinding(
     localImportedThroughSeq < 1 ||
     !validTimestamp(importedAt)
   ) {
-    throw new Error(
-      "OpenTelemetry trace import provenance binding is invalid",
-    );
+    throw new Error("OpenTelemetry trace import provenance binding is invalid");
   }
 }
 
@@ -1943,9 +2013,7 @@ function requiredMatchingStringAttribute(
   const rootValue = stringAttribute(rootAttributes, rootKey);
   const eventValue = stringAttribute(eventAttributes, eventKey);
   if (rootValue === undefined || rootValue !== eventValue) {
-    throw new Error(
-      "OpenTelemetry trace import provenance binding is invalid",
-    );
+    throw new Error("OpenTelemetry trace import provenance binding is invalid");
   }
   return rootValue;
 }
@@ -1959,9 +2027,7 @@ function requiredMatchingIntegerAttribute(
   const rootValue = integerAttribute(rootAttributes, rootKey);
   const eventValue = integerAttribute(eventAttributes, eventKey);
   if (rootValue === undefined || rootValue !== eventValue) {
-    throw new Error(
-      "OpenTelemetry trace import provenance binding is invalid",
-    );
+    throw new Error("OpenTelemetry trace import provenance binding is invalid");
   }
   return rootValue;
 }

@@ -281,6 +281,19 @@ describe("OpenTelemetry trace export", () => {
       candidateTextBytes: 128,
       turnPromptSha256: "c".repeat(64),
       evidenceSha256: "d".repeat(64),
+      evidenceSummary: {
+        eventCount: 12,
+        toolCompletedNameCount: 2,
+        toolFailedNameCount: 1,
+        verificationToolCompleted: true,
+        verificationToolPassed: true,
+        workspaceWriteCompleted: true,
+        verificationToolPassedAfterWorkspaceWrite: false,
+        latestWorkspaceWriteSeq: 9,
+        latestPassedVerificationSeq: 8,
+        milestoneCount: 1,
+        operatorDecisionRequested: false,
+      },
       criteriaSha256: "e".repeat(64),
       inputSha256: "f".repeat(64),
       promptSha256: "1".repeat(64),
@@ -586,6 +599,42 @@ describe("OpenTelemetry trace export", () => {
     expect(
       attributeValue(
         advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_verification_tool_completed",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_verification_tool_passed",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_workspace_write_completed",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_verification_tool_passed_after_workspace_write",
+      ),
+    ).toBe(false);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_workspace_write_seq",
+      ),
+    ).toBe(9);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_passed_verification_seq",
+      ),
+    ).toBe(8);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
         "napier.event.payload.model_context_envelope_sha256",
       ),
     ).toBe(advisorEnvelope.contentSha256);
@@ -878,7 +927,10 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.imported_at",
       ),
     ).toBe(
-      attributeValue(importedRoot.attributes, "napier.thread.import.imported_at"),
+      attributeValue(
+        importedRoot.attributes,
+        "napier.thread.import.imported_at",
+      ),
     );
     expect(
       attributeValue(
@@ -921,9 +973,9 @@ describe("OpenTelemetry trace export", () => {
       "0".repeat(64),
     );
     rehashArtifact(forgedRootReceipt);
-    expect(() =>
-      validateOpenTelemetryTraceArtifact(forgedRootReceipt),
-    ).toThrow("import receipt binding");
+    expect(() => validateOpenTelemetryTraceArtifact(forgedRootReceipt)).toThrow(
+      "import receipt binding",
+    );
     expect(verifyOpenTelemetryTraceArtifact(forgedRootReceipt)).toEqual({
       status: "invalid",
       diagnostics: ["import_receipt_mismatch"],
