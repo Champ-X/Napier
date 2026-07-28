@@ -117,6 +117,7 @@ export const copy = {
     left: "L",
     right: "R",
     hashes: "Evidence hashes",
+    governance: "Governance",
     demoNotice:
       "The demo model records an inconclusive verdict. Choose a configured live model for independent scoring.",
     safety:

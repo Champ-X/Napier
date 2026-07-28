@@ -416,6 +416,31 @@ export default function RunLabPanel({
                   {copy.lab.right}{" "}
                   {latestEvaluation.rightSnapshotSha256.slice(0, 12)}
                 </code>
+                {latestEvaluation.comparisonGovernance ? (
+                  <>
+                    <code>
+                      {copy.lab.governance}{" "}
+                      {latestEvaluation.comparisonGovernance.contentSha256.slice(
+                        0,
+                        12,
+                      )}
+                    </code>
+                    <code>
+                      {copy.lab.contextCoverage}{" "}
+                      {contextCoverageStatusLabel(
+                        latestEvaluation.comparisonGovernance
+                          .contextCoverageStatus,
+                      )}
+                    </code>
+                    <code>
+                      {copy.lab.contextCoverageDiagnostics}{" "}
+                      {latestEvaluation.comparisonGovernance.contextCoverageDiagnosticsSha256.slice(
+                        0,
+                        12,
+                      )}
+                    </code>
+                  </>
+                ) : null}
               </div>
             </>
           ) : null}
