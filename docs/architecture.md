@@ -2324,6 +2324,11 @@ option labels/descriptions, and custom answer text are ignored.
 `run.control.*` summaries show safe control IDs, mode, byte counts, sequence
 numbers, reasons, and SHA-256 receipts; live control text is never used as the
 event-list summary.
+Subagent lifecycle and outcome events also use bounded summaries. `subagent.*`
+events can show safe task IDs, role/status/kind, counts, stop reason, and
+hash-only receipts for text, repair requests, diagnostics, outcomes, item sets,
+and evidence sets. Delegated prompts, step text, tool arguments, final results,
+diagnostics, and error strings do not drive Trace list summaries.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

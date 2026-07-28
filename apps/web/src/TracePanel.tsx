@@ -47,6 +47,7 @@ import {
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
+import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import {
   independentModelAdvisorReviewViews,
@@ -967,6 +968,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("run.control.")) {
     return runControlTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("subagent.")) {
+    return subagentEventTraceSummary(event) ?? event.category;
   }
   if (
     !event.payload ||

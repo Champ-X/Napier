@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-2lE3e7YK.js",
+    "path": "apps/web/dist/assets/index-Bty-L2ud.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "a5db0b1c9c3bb669d0ee20df97f92c96fd45e3d63ff5675b6db0874e731781d1"
+    "sha256": "3ad50983fb8b50aa507fc2cc16ded57b8ebd847eb2af86257708bcceb9dba483"
   },
-  "distContentSha256": "a5db0b1c9c3bb669d0ee20df97f92c96fd45e3d63ff5675b6db0874e731781d1",
+  "distContentSha256": "3ad50983fb8b50aa507fc2cc16ded57b8ebd847eb2af86257708bcceb9dba483",
   "errors": []
 }
