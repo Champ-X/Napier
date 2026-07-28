@@ -1432,7 +1432,8 @@ hash-only `comparisonGovernance` binding for that projection; suite execution,
 casebook curation, and reviewer consensus hashes include the binding when it is
 present. Casebook qualification also passes the curated binding back to the
 no-tool evaluator as metadata, so replayed judgments preserve the governance
-context without reconstructing raw model input.
+context without reconstructing raw model input. Thread replay bundle validation
+recomputes the binding hash during export/import verification.
 
 Every case stores the pair-evaluation ID and SHA-256 alongside both replay
 snapshot hashes. The execution stores a canonical batch SHA-256 over the suite

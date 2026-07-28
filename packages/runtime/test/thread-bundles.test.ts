@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   AgentRuntime,
   canonicalJson,
+  createRunEvaluationGovernanceBinding,
   createSubagentOutcome,
   createSubagentOutcomeRepairOutcome,
   createSubagentOutcomeRepairRequest,
@@ -866,6 +867,25 @@ describe("thread replay bundles", () => {
       },
     });
     await store.finishRun(right.id, "completed");
+    const comparisonGovernance = createRunEvaluationGovernanceBinding({
+      status: "clean",
+      left: {
+        modelResponseCount: 0,
+        envelopeCount: 0,
+        boundResponseCount: 0,
+        unboundResponseCount: 0,
+        coverageRate: 1,
+      },
+      right: {
+        modelResponseCount: 0,
+        envelopeCount: 0,
+        boundResponseCount: 0,
+        unboundResponseCount: 0,
+        coverageRate: 1,
+      },
+      coverageRateDelta: 0,
+      diagnostics: [],
+    });
     const evaluation = await store.saveRunEvaluation({
       id: "evaluation_fixture_source",
       threadId: thread.id,
@@ -895,6 +915,7 @@ describe("thread replay bundles", () => {
       reason: "The second run is better supported.",
       evidence: "Both snapshots are hash-bound.",
       evaluatorModel: { provider: "napier", id: "demo" },
+      comparisonGovernance,
       createdAt: "2026-07-25T08:15:00.000Z",
     });
     const initialAdjudication = await store.reviewRunEvaluation(
@@ -1010,6 +1031,15 @@ describe("thread replay bundles", () => {
     expect(bundle.evaluationConsensusResolutions).toEqual([
       consensus.resolution,
     ]);
+    expect(bundle.evaluations[0]?.comparisonGovernance).toEqual(
+      comparisonGovernance,
+    );
+    const tamperedGovernance = structuredClone(bundle);
+    tamperedGovernance.evaluations[0]!.comparisonGovernance!.contentSha256 =
+      "0".repeat(64);
+    expect(() => validateThreadReplayBundle(tamperedGovernance)).toThrow(
+      "comparisonGovernance content hash mismatch",
+    );
     const tamperedHistory = structuredClone(bundle);
     tamperedHistory.agentRevisions![0]!.profile.systemPrompt =
       "Tampered historical prompt.";

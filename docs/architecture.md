@@ -2017,6 +2017,9 @@ verified evidence but returns an inconclusive judgment. A qualification
 receipt includes the complete Casebook plus only the latest execution for its
 current revision; after any Casebook revision it emits `not_run` rather than
 borrowing history. The receipt is integrity evidence, not a signature.
+Thread replay bundle validation also recomputes any saved pair-evaluation
+`comparisonGovernance` binding hash before accepting exported or imported
+fixtures.
 
 Casebook read projections are machine-checkable without parsing the full
 artifact:

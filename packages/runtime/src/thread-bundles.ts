@@ -1957,6 +1957,50 @@ function assertEvaluationBody(
   assertEnum(evaluation["verdict"], EVALUATION_VERDICTS, `${label}.verdict`);
   assertString(evaluation["reason"], `${label}.reason`, 20_000);
   assertText(evaluation["evidence"], `${label}.evidence`, 20_000);
+  if (evaluation["comparisonGovernance"] !== undefined) {
+    assertEvaluationGovernanceBinding(
+      evaluation["comparisonGovernance"],
+      `${label}.comparisonGovernance`,
+    );
+  }
+}
+
+function assertEvaluationGovernanceBinding(
+  value: unknown,
+  label: string,
+): void {
+  const governance = assertRecord(value, label);
+  if (
+    governance["kind"] !== "napier.run-evaluation-governance" ||
+    governance["schemaVersion"] !== 1
+  ) {
+    throw new Error(`Thread replay bundle ${label} is invalid`);
+  }
+  assertEnum(
+    governance["contextCoverageStatus"],
+    new Set(["clean", "partial", "missing", "regressed"]),
+    `${label}.contextCoverageStatus`,
+  );
+  const rateDelta = governance["contextCoverageRateDelta"];
+  if (typeof rateDelta !== "number" || !Number.isFinite(rateDelta)) {
+    throw new Error(
+      `Thread replay bundle ${label}.contextCoverageRateDelta is invalid`,
+    );
+  }
+  assertSha256(
+    governance["contextCoverageDiagnosticsSha256"],
+    `${label}.contextCoverageDiagnosticsSha256`,
+  );
+  assertSha256(
+    governance["contextCoverageDeltaSha256"],
+    `${label}.contextCoverageDeltaSha256`,
+  );
+  const contentSha256 = String(governance["contentSha256"]);
+  assertSha256(contentSha256, `${label}.contentSha256`);
+  const { contentSha256: _contentSha256, ...content } = governance;
+  if (sha256(canonicalJson(content)) !== contentSha256) {
+    throw new Error(`Thread replay bundle ${label} content hash mismatch`);
+  }
 }
 
 function assertJsonValue(value: unknown, label: string, depth = 0): void {
