@@ -12,10 +12,7 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { IndependentModelAdvisorGuidance } from "./independent-model-advisor.js";
-import {
-  isPassedVerifyWorkspaceCompletion,
-  isVerifyWorkspaceCompletion,
-} from "./model-advisor-evidence.js";
+import { createModelAdvisorVerificationEvidence } from "./model-advisor-evidence.js";
 
 export interface CreateModelAdvisorNoticeInput {
   assistantText: string;
@@ -313,12 +310,7 @@ function createAdvisorEvidence(
         ? 0
         : assistantText.split(/\r\n|\r|\n/u).length,
     toolCompletedCount: toolCompletedEvents.length,
-    verificationToolCompleted: toolCompletedEvents.some(
-      isVerifyWorkspaceCompletion,
-    ),
-    verificationToolPassed: toolCompletedEvents.some(
-      isPassedVerifyWorkspaceCompletion,
-    ),
+    ...createModelAdvisorVerificationEvidence(runEvents),
   };
 }
 
@@ -330,7 +322,7 @@ function createVerificationClaimDiagnostic(
     assistantText,
     VERIFICATION_CLAIM_PATTERNS,
   );
-  if (matchCount === 0 || evidence.verificationToolPassed) {
+  if (matchCount === 0 || evidence.verificationToolPassedAfterWorkspaceWrite) {
     return undefined;
   }
   return createDiagnostic(
@@ -341,6 +333,11 @@ function createVerificationClaimDiagnostic(
       matchCount,
       verificationToolCompleted: evidence.verificationToolCompleted,
       verificationToolPassed: evidence.verificationToolPassed,
+      workspaceWriteCompleted: evidence.workspaceWriteCompleted,
+      verificationToolPassedAfterWorkspaceWrite:
+        evidence.verificationToolPassedAfterWorkspaceWrite,
+      latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq,
+      latestPassedVerificationSeq: evidence.latestPassedVerificationSeq,
       toolCompletedCount: evidence.toolCompletedCount,
     },
   );

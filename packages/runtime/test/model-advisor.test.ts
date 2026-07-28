@@ -1,3 +1,4 @@
+import type { RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -116,6 +117,75 @@ describe("model advisor stream lint", () => {
         ],
       }),
     );
+  });
+
+  it("does not suppress verification claims after later workspace writes", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The build and tests passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        toolCompleted(1, {
+          callId: "tool_1",
+          toolName: "verify_workspace",
+          status: "completed",
+          details: { status: "passed" },
+        }),
+        toolCompleted(2, {
+          callId: "tool_2",
+          toolName: "apply_patch",
+          status: "completed",
+          details: {
+            operation: "replace",
+            afterSha256: "a".repeat(64),
+          },
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          verificationToolPassed: true,
+          workspaceWriteCompleted: true,
+          verificationToolPassedAfterWorkspaceWrite: false,
+          latestWorkspaceWriteSeq: 2,
+          latestPassedVerificationSeq: 1,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("suppresses verification claims after writes are re-verified", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The build and tests passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        toolCompleted(1, {
+          callId: "tool_1",
+          toolName: "apply_patch",
+          status: "completed",
+          details: {
+            operation: "replace",
+            afterSha256: "a".repeat(64),
+          },
+        }),
+        toolCompleted(2, {
+          callId: "tool_2",
+          toolName: "verify_workspace",
+          status: "completed",
+          details: { status: "passed" },
+        }),
+      ],
+    });
+
+    expect(notice).toBeUndefined();
   });
 
   it("flags destructive command references without copying text", () => {
@@ -339,3 +409,20 @@ describe("model advisor stream lint", () => {
     ).toThrow("correction request is invalid");
   });
 });
+
+function toolCompleted(
+  seq: number,
+  payload: Record<string, unknown>,
+): RunEvent {
+  return {
+    id: `evt_${seq}`,
+    threadId: "thread_1",
+    runId: "run_1",
+    seq,
+    type: "tool.completed",
+    category: "tool",
+    visibility: "user",
+    createdAt: "2026-07-27T00:00:00.000Z",
+    payload,
+  };
+}

@@ -230,6 +230,10 @@ export interface ModelAdvisorEvidence {
   toolCompletedCount: number;
   verificationToolCompleted: boolean;
   verificationToolPassed: boolean;
+  workspaceWriteCompleted: boolean;
+  verificationToolPassedAfterWorkspaceWrite: boolean;
+  latestWorkspaceWriteSeq?: number;
+  latestPassedVerificationSeq?: number;
 }
 
 export interface ModelAdvisorNoticePayload {

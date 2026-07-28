@@ -23,10 +23,7 @@ import {
   createModelContextEnvelopeReceipt,
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
-import {
-  isPassedVerifyWorkspaceCompletion,
-  isVerifyWorkspaceCompletion,
-} from "./model-advisor-evidence.js";
+import { createModelAdvisorVerificationEvidence } from "./model-advisor-evidence.js";
 import type { ModelRegistry } from "./models.js";
 
 export const INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT =
@@ -486,8 +483,7 @@ function createEvidence(events: RunEvent[]) {
     eventCount: events.length,
     toolCompletedNames,
     toolFailedNames,
-    verificationToolCompleted: events.some(isVerifyWorkspaceCompletion),
-    verificationToolPassed: events.some(isPassedVerifyWorkspaceCompletion),
+    ...createModelAdvisorVerificationEvidence(events),
     milestoneCount: events.filter(
       (event) => event.type === "agent.milestone.recorded",
     ).length,

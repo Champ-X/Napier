@@ -33,6 +33,38 @@ describe("independent Model Advisor", () => {
 
     expect(prompt.user).toContain('"verificationToolCompleted":true');
     expect(prompt.user).toContain('"verificationToolPassed":false');
+    expect(prompt.user).toContain('"workspaceWriteCompleted":false');
+    expect(prompt.user).toContain(
+      '"verificationToolPassedAfterWorkspaceWrite":false',
+    );
+  });
+
+  it("reports stale verification evidence after workspace writes", () => {
+    const prompt = buildIndependentModelAdvisorPrompt({
+      turnPrompt: "Report release state.",
+      candidateText: "The tests passed.",
+      candidateModel: { provider: "worker", id: "worker-1" },
+      runEvents: [
+        event(1, "tool.completed", {
+          toolName: "verify_workspace",
+          status: "completed",
+          details: { status: "passed" },
+        }),
+        event(2, "tool.completed", {
+          toolName: "apply_patch",
+          status: "completed",
+          details: { operation: "replace" },
+        }),
+      ],
+    });
+
+    expect(prompt.user).toContain('"verificationToolPassed":true');
+    expect(prompt.user).toContain('"workspaceWriteCompleted":true');
+    expect(prompt.user).toContain(
+      '"verificationToolPassedAfterWorkspaceWrite":false',
+    );
+    expect(prompt.user).toContain('"latestPassedVerificationSeq":1');
+    expect(prompt.user).toContain('"latestWorkspaceWriteSeq":2');
   });
 
   it("uses a zero-tool reviewer and persists only hash-bound guidance", async () => {

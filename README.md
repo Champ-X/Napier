@@ -779,7 +779,10 @@ to six typed issue codes. The primary and review models cannot be the same in
 the saved Agent profile, and the review model cannot be the zero-key
 `napier/demo` model. Verification evidence distinguishes a completed
 `verify_workspace` call from a passed one; failed, timed-out, output-capped, or
-legacy status-less verifier completions are not treated as passing checks.
+legacy status-less verifier completions are not treated as passing checks. A
+passed verifier also has to occur after the latest workspace write in the Run,
+so a later `apply_patch` invalidates earlier passing-check evidence until the
+workspace is verified again.
 
 The durable `model.advisor.independent.reviewed` receipt stores model
 identities, issue codes, severities, usage, and SHA-256 bindings for the
