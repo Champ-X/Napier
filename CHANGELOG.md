@@ -118,6 +118,10 @@ All notable changes to Napier are recorded here.
   root span, covering Thread ID, Run scope, event count, and event-stream
   SHA-256, so a recomputed artifact hash cannot hide root/header projection
   drift.
+- OTLP artifact verification now reconstructs a metadata-only event-sequence
+  projection from span events and specialized model spans, requiring the
+  projected ledger sequences to match the artifact event range count and
+  boundaries without duplicates.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,

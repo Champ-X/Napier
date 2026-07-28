@@ -456,6 +456,9 @@ describe("OpenTelemetry trace export", () => {
     ).toHaveLength(1);
     const modelSpan = traceSpans.find((span) => span.name === "chat faux-1")!;
     expect(modelSpan.kind).toBe(3);
+    expect(attributeValue(modelSpan.attributes, "napier.ledger.seq")).toEqual(
+      expect.any(Number),
+    );
     expect(attributeValue(modelSpan.attributes, "gen_ai.provider.name")).toBe(
       "faux-secure",
     );
@@ -486,6 +489,21 @@ describe("OpenTelemetry trace export", () => {
         "napier.model_context.tool_definition_set.sha256",
       ),
     ).toBe("f".repeat(64));
+    const sequenceTampered = structuredClone(first);
+    const tamperedModelSpan = spans(sequenceTampered).find(
+      (span) => span.name === "chat faux-1",
+    )!;
+    setAttributeValue(tamperedModelSpan.attributes, "napier.ledger.seq", 999);
+    rehashArtifact(sequenceTampered);
+    expect(() => validateOpenTelemetryTraceArtifact(sequenceTampered)).toThrow(
+      "event sequence binding",
+    );
+    expect(verifyOpenTelemetryTraceArtifact(sequenceTampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["event_sequence_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
     const unknownTool = traceSpans.find(
       (span) => span.name === "execute_tool write_file",
     )!;

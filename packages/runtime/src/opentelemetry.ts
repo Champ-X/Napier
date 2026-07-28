@@ -466,6 +466,7 @@ export function validateOpenTelemetryTraceArtifact(
     throw new Error("OpenTelemetry trace root span is invalid");
   }
   validateRootTraceArtifactBinding(artifact, root);
+  validateEventSequenceTraceBinding(artifact, spans);
   validateImportReceiptTraceBinding(root);
   const {
     generatedAt: _generatedAt,
@@ -510,6 +511,9 @@ function openTelemetryTraceArtifactDiagnostic(error: unknown): string {
   if (message.includes("unsupported fields")) return "unsupported_field";
   if (message.includes("header is invalid")) return "invalid_header";
   if (message.includes("event range")) return "invalid_event_range";
+  if (message.includes("event sequence binding")) {
+    return "event_sequence_mismatch";
+  }
   if (message.includes("redaction")) return "invalid_redaction";
   if (message.includes("root binding")) return "root_binding_mismatch";
   if (message.includes("import provenance binding")) {
@@ -1527,6 +1531,41 @@ function validateRootTraceArtifactBinding(
     (!artifact.runId && rootRunId !== undefined)
   ) {
     throw new Error("OpenTelemetry trace root binding is invalid");
+  }
+}
+
+function validateEventSequenceTraceBinding(
+  artifact: OpenTelemetryTraceArtifact,
+  spans: OtlpSpan[],
+): void {
+  const sequences: number[] = [];
+  for (const span of spans) {
+    const ledgerSeq = integerAttribute(span.attributes, "napier.ledger.seq");
+    if (ledgerSeq !== undefined) sequences.push(ledgerSeq);
+    for (const event of span.events) {
+      const eventSeq = integerAttribute(event.attributes, "napier.event.seq");
+      if (eventSeq === undefined) {
+        throw new Error(
+          "OpenTelemetry trace event sequence binding is invalid",
+        );
+      }
+      sequences.push(eventSeq);
+    }
+  }
+  if (sequences.length !== artifact.eventRange.eventCount) {
+    throw new Error("OpenTelemetry trace event sequence binding is invalid");
+  }
+  if (artifact.eventRange.eventCount === 0) return;
+  const uniqueSequences = new Set(sequences);
+  const minSeq = Math.min(...sequences);
+  const maxSeq = Math.max(...sequences);
+  if (
+    uniqueSequences.size !== sequences.length ||
+    minSeq !== artifact.eventRange.fromSeq ||
+    maxSeq !== artifact.eventRange.toSeq ||
+    sequences.some((seq) => seq < 1)
+  ) {
+    throw new Error("OpenTelemetry trace event sequence binding is invalid");
   }
 }
 

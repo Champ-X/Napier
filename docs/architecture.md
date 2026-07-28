@@ -2272,6 +2272,11 @@ root span before checking import-specific evidence: Thread ID, export scope,
 Run ID when present, event count, and event-stream SHA-256 must all match the
 root attributes. Recomputing the artifact hash after changing either side still
 fails closed as root/header projection drift.
+The verifier also reconstructs a metadata-only event-sequence projection from
+`napier.event.seq` span-event attributes plus specialized span
+`napier.ledger.seq` attributes. The projected sequence count, minimum, maximum,
+and uniqueness must match the artifact `eventRange`, so a trace cannot drift
+its declared event window away from the span evidence it carries.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
