@@ -81,8 +81,8 @@ async function createGovernedEvaluationInput(
     threadId: thread.id,
     leftRunId: left.id,
     rightRunId: right.id,
-    leftSnapshotSha256: "a".repeat(64),
-    rightSnapshotSha256: "b".repeat(64),
+    leftSnapshotSha256: comparison.left.eventStreamSha256,
+    rightSnapshotSha256: comparison.right.eventStreamSha256,
     rubric: {
       name: "Persisted governance",
       criteria: [
@@ -250,6 +250,22 @@ describe("transactional LocalStore", () => {
     ).rejects.toThrow("comparisonGovernance source binding mismatch");
   });
 
+  it("rejects persisted evaluation snapshot source drift during save", async () => {
+    const options = await createOptions();
+    const store = await openStore(options);
+    const evaluation = await createGovernedEvaluationInput(
+      store,
+      "evaluation_snapshot_save_drift",
+    );
+
+    await expect(
+      store.saveRunEvaluation({
+        ...evaluation,
+        leftSnapshotSha256: "3".repeat(64),
+      }),
+    ).rejects.toThrow("snapshot source binding mismatch");
+  });
+
   it("fails closed on persisted evaluation governance source drift during restore", async () => {
     const options = await createOptions();
     const first = await openStore(options);
@@ -294,6 +310,47 @@ describe("transactional LocalStore", () => {
     );
   });
 
+  it("fails closed on persisted evaluation snapshot source drift during restore", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const evaluation = await first.saveRunEvaluation(
+      await createGovernedEvaluationInput(
+        first,
+        "evaluation_snapshot_restore_drift",
+      ),
+    );
+    first.close();
+    openStores.splice(openStores.indexOf(first), 1);
+
+    const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
+    const database = new DatabaseSync(databasePath);
+    const row = database
+      .prepare(
+        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
+      )
+      .get() as { revision: number; state_json: string };
+    const state = JSON.parse(row.state_json) as {
+      evaluations: RunEvaluationRecord[];
+    };
+    const persistedEvaluation = state.evaluations.find(
+      (candidate) => candidate.id === evaluation.id,
+    );
+    if (!persistedEvaluation?.comparisonGovernance) {
+      throw new Error("Expected persisted evaluation governance");
+    }
+    persistedEvaluation.rightSnapshotSha256 = "4".repeat(64);
+    database
+      .prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1")
+      .run(JSON.stringify(state));
+    database.close();
+
+    const reopened = new LocalStore(options);
+    openStores.push(reopened);
+    await expect(reopened.initialize()).rejects.toThrow(
+      "snapshot source binding mismatch",
+    );
+  });
+
   it("fails closed on invalid persisted imported Thread provenance", async () => {
     const options = await createOptions();
     const first = await openStore(options);
@@ -324,7 +381,10 @@ describe("transactional LocalStore", () => {
       )
       .get() as { revision: number; state_json: string };
     const state = JSON.parse(row.state_json) as {
-      threads: Array<{ id: string; importProvenance?: Record<string, unknown> }>;
+      threads: Array<{
+        id: string;
+        importProvenance?: Record<string, unknown>;
+      }>;
     };
     const persistedThread = state.threads.find(
       (candidate) => candidate.id === thread.id,

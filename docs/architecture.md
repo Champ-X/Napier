@@ -2053,7 +2053,14 @@ was recalculated. LocalStore uses the same source-binding validator when saving
 an evaluation and when restoring SQLite `workspace_state`: restore reads the
 referenced Thread events from `ledger_events`, reprojects the left/right Run
 governance, and rejects forged persisted receipts before any evaluator record
-can influence Casebook, suite, consensus, or Run Lab projections.
+can influence Casebook, suite, consensus, or Run Lab projections. Governed
+evaluations also bind `leftSnapshotSha256` and `rightSnapshotSha256` to the
+referenced local Run event streams, so changing either snapshot hash fails even
+when the surrounding receipt remains internally well-formed. Imported
+historical evaluations are the deliberate exception: their snapshot hashes
+continue to describe the validated source replay bundle and are protected by
+`ThreadImportProvenance`, because import remaps local IDs and would otherwise
+change the event-stream hash.
 OTLP trace export keeps those evaluation governance signals metadata-only:
 status and SHA-256 attributes are allowed, while evaluator `reason` and
 `evidence` text remain excluded by the redaction policy. The underlying

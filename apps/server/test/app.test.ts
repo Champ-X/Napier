@@ -9122,10 +9122,7 @@ describe("Napier HTTP goal flow", () => {
     expect(importedBranchResponse.status).toBe(201);
     const importedBranch =
       (await importedBranchResponse.json()) as ThreadDetail;
-    expectThreadDetailProjectionHeaders(
-      importedBranchResponse,
-      importedBranch,
-    );
+    expectThreadDetailProjectionHeaders(importedBranchResponse, importedBranch);
     expect(importedBranch.thread).toEqual(
       expect.objectContaining({
         title: "Imported branch",
@@ -9181,7 +9178,7 @@ describe("Napier HTTP goal flow", () => {
     expect(rejectedResponse.status).toBe(400);
     expect(await rejectedResponse.json()).toEqual(
       expect.objectContaining({
-        error: expect.stringContaining("hash mismatch"),
+        error: expect.stringContaining("snapshot source binding mismatch"),
       }),
     );
     expect(services.store.listThreads()).toHaveLength(
@@ -9205,7 +9202,7 @@ describe("Napier HTTP goal flow", () => {
     );
     expect(invalidVerification).toEqual({
       status: "invalid",
-      diagnostics: ["hash_mismatch"],
+      diagnostics: ["invalid_bundle"],
       eventCount: 0,
       runCount: 0,
       planCount: 0,
@@ -9799,9 +9796,7 @@ function expectThreadDetailProjectionHeaders(
       : String(provenance.localImportedThroughSeq),
   );
   expect(
-    response.headers.get(
-      "x-napier-import-source-model-context-envelope-count",
-    ),
+    response.headers.get("x-napier-import-source-model-context-envelope-count"),
   ).toBe(
     provenance?.sourceModelContextEnvelopeCount === undefined
       ? null
@@ -11793,9 +11788,7 @@ function expectThreadReplayBundleHeaders(
   );
   expect(
     response.headers.get("x-napier-embedded-model-context-envelope-count"),
-  ).toBe(
-    String(verification.embeddedModelContextEnvelopeCount),
-  );
+  ).toBe(String(verification.embeddedModelContextEnvelopeCount));
   expectEventBoundaryHeaders(response, bundle.events);
 }
 
@@ -11934,14 +11927,10 @@ function expectRunComparisonHeaders(
     comparison.traceSummaryBoundaryDelta.status,
   );
   expect(
-    response.headers.get(
-      "x-napier-trace-summary-boundary-left-generic-count",
-    ),
+    response.headers.get("x-napier-trace-summary-boundary-left-generic-count"),
   ).toBe(String(comparison.traceSummaryBoundaryDelta.left.generic));
   expect(
-    response.headers.get(
-      "x-napier-trace-summary-boundary-right-generic-count",
-    ),
+    response.headers.get("x-napier-trace-summary-boundary-right-generic-count"),
   ).toBe(String(comparison.traceSummaryBoundaryDelta.right.generic));
   expect(
     response.headers.get("x-napier-trace-summary-boundary-generic-delta"),
@@ -12160,8 +12149,7 @@ function expectRunEvaluationRecordHeaders(
           "x-napier-trace-summary-boundary-diagnostics-sha256",
         ),
       ).toBe(
-        evaluation.comparisonGovernance
-          .traceSummaryBoundaryDiagnosticsSha256,
+        evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256,
       );
     }
   }

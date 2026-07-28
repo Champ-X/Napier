@@ -11802,6 +11802,10 @@ function validatePersistedRunEvaluation(
         events: sourceBindingEvents,
         subagents,
         label: `Persisted Run evaluation ${evaluation.id}`,
+        skipSnapshotSourceBinding: isImportedHistoricalEvaluation(
+          evaluation,
+          thread.importProvenance,
+        ),
       });
     }
   }
@@ -11875,6 +11879,16 @@ function assertEvaluationSuiteRuns(
       throw new Error(`Evaluation suite run must be terminal: ${runId}`);
     }
   }
+}
+
+function isImportedHistoricalEvaluation(
+  evaluation: RunEvaluationRecord,
+  importProvenance: ThreadImportProvenance | undefined,
+): boolean {
+  return Boolean(
+    importProvenance &&
+    Date.parse(evaluation.createdAt) <= Date.parse(importProvenance.importedAt),
+  );
 }
 
 function normalizePersistedEvaluationSuite(suite: EvaluationSuite): void {

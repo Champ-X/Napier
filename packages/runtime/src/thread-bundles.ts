@@ -39,7 +39,10 @@ import {
   normalizeEvaluationSuiteGate,
 } from "./evaluation-suites.js";
 import { normalizeRubric } from "./evaluation.js";
-import { assertRunEvaluationGovernanceSourceBinding } from "./evaluation-governance.js";
+import {
+  assertRunEvaluationGovernanceReceiptSourceBinding,
+  assertRunEvaluationSnapshotSourceBinding,
+} from "./evaluation-governance.js";
 import {
   AGENT_MILESTONE_RECORDED_EVENT,
   projectAgentMilestones,
@@ -1033,7 +1036,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       `evaluations[${index}].evaluatorModel`,
     );
     assertEvaluationBody(evaluation, `evaluations[${index}]`);
-    assertRunEvaluationGovernanceSourceBinding({
+    assertRunEvaluationGovernanceReceiptSourceBinding({
       evaluation: value as RunEvaluationRecord,
       events: typedEvents,
       subagents,
@@ -1502,6 +1505,18 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     }
   }
 
+  for (const [index, evaluation] of evaluations.entries()) {
+    assertRunEvaluationSnapshotSourceBinding({
+      evaluation: evaluation as RunEvaluationRecord,
+      events: typedEvents,
+      label: `Thread replay bundle evaluations[${index}]`,
+      skip: isImportedHistoricalEvaluation(
+        evaluation as RunEvaluationRecord,
+        thread["importProvenance"] as ThreadImportProvenance | undefined,
+      ),
+    });
+  }
+
   assertGloballyUniqueResourceIds([
     threadId,
     agentId,
@@ -1751,9 +1766,7 @@ function assertThreadImportProvenance(
     "importedAt",
   ]);
   if (Object.keys(provenance).some((key) => !allowed.has(key))) {
-    throw new Error(
-      "Thread replay bundle thread.importProvenance is invalid",
-    );
+    throw new Error("Thread replay bundle thread.importProvenance is invalid");
   }
   const sourceThreadId = assertResourceId(
     provenance["sourceThreadId"],
@@ -1834,7 +1847,9 @@ function assertThreadImportProvenanceReceipt(
   );
   if (receipts.length === 0) return;
   if (!provenance || receipts.length !== 1) {
-    throw new Error("Thread replay bundle import provenance receipt is invalid");
+    throw new Error(
+      "Thread replay bundle import provenance receipt is invalid",
+    );
   }
   const receipt = receipts[0]!;
   if (
@@ -1845,7 +1860,9 @@ function assertThreadImportProvenanceReceipt(
     canonicalJson(receipt.payload) !==
       canonicalJson(threadImportProvenanceEventPayload(provenance))
   ) {
-    throw new Error("Thread replay bundle import provenance receipt is invalid");
+    throw new Error(
+      "Thread replay bundle import provenance receipt is invalid",
+    );
   }
 }
 
@@ -2183,6 +2200,16 @@ function assertEvaluationBody(
       `${label}.comparisonGovernance`,
     );
   }
+}
+
+function isImportedHistoricalEvaluation(
+  evaluation: RunEvaluationRecord,
+  importProvenance: ThreadImportProvenance | undefined,
+): boolean {
+  return Boolean(
+    importProvenance &&
+    Date.parse(evaluation.createdAt) <= Date.parse(importProvenance.importedAt),
+  );
 }
 
 function assertEvaluationGovernanceBinding(

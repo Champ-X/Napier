@@ -967,8 +967,8 @@ describe("thread replay bundles", () => {
       threadId: thread.id,
       leftRunId: left.id,
       rightRunId: right.id,
-      leftSnapshotSha256: "a".repeat(64),
-      rightSnapshotSha256: "b".repeat(64),
+      leftSnapshotSha256: comparison.left.eventStreamSha256,
+      rightSnapshotSha256: comparison.right.eventStreamSha256,
       rubric: {
         name: "Fixture rubric",
         criteria: [
@@ -1141,6 +1141,15 @@ describe("thread replay bundles", () => {
     expect(() =>
       validateThreadReplayBundle(tamperedTraceGovernanceSourceBinding),
     ).toThrow("comparisonGovernance source binding mismatch");
+    const tamperedSnapshotSourceBinding = structuredClone(bundle);
+    tamperedSnapshotSourceBinding.evaluationAdjudications = [];
+    tamperedSnapshotSourceBinding.evaluationReviewerBallots = [];
+    tamperedSnapshotSourceBinding.evaluationConsensusResolutions = [];
+    tamperedSnapshotSourceBinding.evaluations[0]!.leftSnapshotSha256 =
+      "3".repeat(64);
+    expect(() =>
+      validateThreadReplayBundle(tamperedSnapshotSourceBinding),
+    ).toThrow("snapshot source binding mismatch");
     const tamperedHistory = structuredClone(bundle);
     tamperedHistory.agentRevisions![0]!.profile.systemPrompt =
       "Tampered historical prompt.";

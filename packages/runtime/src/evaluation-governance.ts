@@ -6,11 +6,40 @@ import {
   type RunEvaluationRecord,
 } from "@napier/contracts";
 
-import { canonicalJson } from "./ed25519.js";
+import { canonicalJson, sha256 } from "./ed25519.js";
 import { createRunEvaluationGovernanceBinding } from "./evaluation.js";
 import { MODEL_CONTEXT_ENVELOPE_EVENT } from "./model-context-envelope.js";
 
 export function assertRunEvaluationGovernanceSourceBinding({
+  evaluation,
+  events,
+  subagents,
+  label,
+  skipSnapshotSourceBinding = false,
+}: {
+  evaluation: RunEvaluationRecord;
+  events: readonly RunEvent[];
+  subagents: readonly unknown[];
+  label: string;
+  skipSnapshotSourceBinding?: boolean;
+}): void {
+  const governance = evaluation.comparisonGovernance;
+  if (!governance) return;
+  assertRunEvaluationSnapshotSourceBinding({
+    evaluation,
+    events,
+    label,
+    skip: skipSnapshotSourceBinding,
+  });
+  assertRunEvaluationGovernanceReceiptSourceBinding({
+    evaluation,
+    events,
+    subagents,
+    label,
+  });
+}
+
+export function assertRunEvaluationGovernanceReceiptSourceBinding({
   evaluation,
   events,
   subagents,
@@ -53,6 +82,37 @@ export function assertRunEvaluationGovernanceSourceBinding({
   if (canonicalJson(governance) !== canonicalJson(expected)) {
     throw new Error(`${label} comparisonGovernance source binding mismatch`);
   }
+}
+
+export function assertRunEvaluationSnapshotSourceBinding({
+  evaluation,
+  events,
+  label,
+  skip = false,
+}: {
+  evaluation: RunEvaluationRecord;
+  events: readonly RunEvent[];
+  label: string;
+  skip?: boolean;
+}): void {
+  if (!evaluation.comparisonGovernance || skip) return;
+  const leftEvents = events.filter(
+    (event) => event.runId === evaluation.leftRunId,
+  );
+  const rightEvents = events.filter(
+    (event) => event.runId === evaluation.rightRunId,
+  );
+  if (
+    evaluation.leftSnapshotSha256 !==
+      hashRunEvaluationEventStream(leftEvents) ||
+    evaluation.rightSnapshotSha256 !== hashRunEvaluationEventStream(rightEvents)
+  ) {
+    throw new Error(`${label} snapshot source binding mismatch`);
+  }
+}
+
+function hashRunEvaluationEventStream(events: readonly RunEvent[]): string {
+  return sha256(events.map((event) => JSON.stringify(event)).join("\n"));
 }
 
 function runContextCoverageSummary(
@@ -164,9 +224,9 @@ function walkEmbeddedModelContextEnvelopes(
 function unknownSubagentBelongsToRun(value: unknown, runId: string): boolean {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      (value as { runId?: unknown }).runId === runId,
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    (value as { runId?: unknown }).runId === runId,
   );
 }
 

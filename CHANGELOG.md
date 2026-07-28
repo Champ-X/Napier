@@ -195,6 +195,11 @@ All notable changes to Napier are recorded here.
   governance source-binding check, so persisted `comparisonGovernance` must
   match the referenced left/right Run ledger evidence before it can be accepted
   from either the live API path or `workspace_state`.
+- Governed Run evaluations now also bind `leftSnapshotSha256` and
+  `rightSnapshotSha256` back to the referenced local Run event streams during
+  live save, SQLite restore, and Thread replay bundle validation. Imported
+  historical evaluations keep their source bundle snapshot hashes and remain
+  protected by import provenance instead of being rehashed after ID remapping.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.
