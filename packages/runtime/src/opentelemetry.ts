@@ -342,6 +342,7 @@ const SAFE_EVENT_EVIDENCE_SUMMARY_ATTRIBUTE_KEYS = new Set(
     "latestPlanArtifactVerifiedSeq",
     "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
+    "latestGoalInvalidatedSeq",
     "milestoneCount",
     "operatorDecisionRequested",
   ].map((key) => `napier.event.payload.evidence_summary_${camelToSnake(key)}`),
@@ -1184,6 +1185,7 @@ function evidenceSummaryPayloadAttributes(
     "latestPlanArtifactVerifiedSeq",
     "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
+    "latestGoalInvalidatedSeq",
     "milestoneCount",
   ]) {
     const value = evidence[key];

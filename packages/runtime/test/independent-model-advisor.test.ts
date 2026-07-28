@@ -88,7 +88,13 @@ describe("independent Model Advisor", () => {
           "goal",
         ),
         event(4, "plan.artifact.missing", { status: "missing" }, "plan"),
-        event(5, "tool.completed", {
+        event(
+          5,
+          "goal.evaluated",
+          { status: "active", satisfied: false },
+          "goal",
+        ),
+        event(6, "tool.completed", {
           toolName: "apply_patch",
           status: "completed",
         }),
@@ -108,6 +114,7 @@ describe("independent Model Advisor", () => {
     expect(prompt.user).toContain('"latestPlanArtifactVerifiedSeq":1');
     expect(prompt.user).toContain('"latestGoalSatisfiedSeq":3');
     expect(prompt.user).toContain('"latestPlanArtifactInvalidatedSeq":4');
+    expect(prompt.user).toContain('"latestGoalInvalidatedSeq":5');
   });
 
   it("uses a zero-tool reviewer and persists only hash-bound guidance", async () => {

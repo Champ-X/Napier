@@ -447,6 +447,43 @@ describe("model advisor stream lint", () => {
     );
   });
 
+  it("marks satisfied goal evidence stale after later unsatisfied evaluation", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The active goal is complete.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        goalEvent(1, {
+          status: "completed",
+          satisfied: true,
+          blocker: "none",
+        }),
+        goalEvent(2, {
+          status: "active",
+          satisfied: false,
+          blocker: "goal_not_met_yet",
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          goalSatisfied: true,
+          goalSatisfiedAfterWorkspaceWrite: false,
+          latestGoalSatisfiedSeq: 1,
+          latestGoalInvalidatedSeq: 2,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("flags destructive command references without copying text", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "Never run git reset --hard here.",

@@ -546,6 +546,9 @@ export function createIndependentModelAdvisorEvidenceSummary(
     ...(evidence.latestGoalSatisfiedSeq !== undefined
       ? { latestGoalSatisfiedSeq: evidence.latestGoalSatisfiedSeq }
       : {}),
+    ...(evidence.latestGoalInvalidatedSeq !== undefined
+      ? { latestGoalInvalidatedSeq: evidence.latestGoalInvalidatedSeq }
+      : {}),
     milestoneCount: evidence.milestoneCount,
     operatorDecisionRequested: evidence.operatorDecisionRequested,
   };
@@ -853,6 +856,7 @@ function parseEvidenceSummary(
     "latestPlanArtifactVerifiedSeq",
     "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
+    "latestGoalInvalidatedSeq",
   ];
   const keys = Object.keys(value);
   if (
@@ -961,6 +965,14 @@ function parseEvidenceSummary(
           latestGoalSatisfiedSeq: boundedCount(
             summary["latestGoalSatisfiedSeq"],
             "latestGoalSatisfiedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestGoalInvalidatedSeq"] !== undefined
+      ? {
+          latestGoalInvalidatedSeq: boundedCount(
+            summary["latestGoalInvalidatedSeq"],
+            "latestGoalInvalidatedSeq",
           ),
         }
       : {}),

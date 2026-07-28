@@ -30,6 +30,7 @@ export interface ModelAdvisorEventTraceView {
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
+  latestGoalInvalidatedSeq?: number;
   textSha256?: string;
   candidateTextSha256?: string;
   diagnosticSetSha256?: string;
@@ -134,6 +135,9 @@ export function modelAdvisorEventTraceView(
   const latestGoalSatisfiedSeq = nonNegativeInteger(
     evidence["latestGoalSatisfiedSeq"],
   );
+  const latestGoalInvalidatedSeq = nonNegativeInteger(
+    evidence["latestGoalInvalidatedSeq"],
+  );
   const textSha256 = sha256(event.payload["textSha256"]);
   const candidateTextSha256 = sha256(event.payload["candidateTextSha256"]);
   const diagnosticSetSha256 = sha256(event.payload["diagnosticSetSha256"]);
@@ -206,6 +210,9 @@ export function modelAdvisorEventTraceView(
       ? { latestPlanArtifactInvalidatedSeq }
       : {}),
     ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
+    ...(latestGoalInvalidatedSeq !== undefined
+      ? { latestGoalInvalidatedSeq }
+      : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
     ...(issueSetSha256 ? { issueSetSha256 } : {}),
     ...(evidenceSha256 ? { evidenceSha256 } : {}),
@@ -329,11 +336,16 @@ export function modelAdvisorEventTraceSummary(
     ...(view.latestGoalSatisfiedSeq !== undefined
       ? [`goal-satisfied-seq ${view.latestGoalSatisfiedSeq}`]
       : []),
+    ...(view.latestGoalInvalidatedSeq !== undefined
+      ? [`goal-invalidated-seq ${view.latestGoalInvalidatedSeq}`]
+      : []),
     ...(view.goalSatisfiedAfterWorkspaceWrite !== undefined
       ? [
           view.goalSatisfiedAfterWorkspaceWrite
             ? "goal-satisfaction-current"
-            : view.goalSatisfied && view.workspaceWriteCompleted
+            : view.goalSatisfied &&
+                (view.workspaceWriteCompleted ||
+                  view.latestGoalInvalidatedSeq !== undefined)
               ? "goal-satisfaction-stale"
               : "goal-satisfaction-not-current",
         ]

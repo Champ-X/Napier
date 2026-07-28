@@ -48,6 +48,7 @@ export interface IndependentModelAdvisorReviewView {
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
+  latestGoalInvalidatedSeq?: number;
   modelContextEnvelopeSha256?: string;
   contentSha256: string;
 }
@@ -186,6 +187,7 @@ function completionFreshnessParts(
       review.goalSatisfiedAfterWorkspaceWrite,
       review.workspaceWriteCompleted,
       review.latestGoalSatisfiedSeq,
+      review.latestGoalInvalidatedSeq,
     ),
   ];
 }
@@ -256,6 +258,7 @@ function evidenceSummaryView(
       | "latestPlanArtifactVerifiedSeq"
       | "latestPlanArtifactInvalidatedSeq"
       | "latestGoalSatisfiedSeq"
+      | "latestGoalInvalidatedSeq"
     >
   | undefined {
   if (!record(value)) return undefined;
@@ -311,6 +314,7 @@ function evidenceSummaryView(
     ...numberField(value, "latestPlanArtifactVerifiedSeq"),
     ...numberField(value, "latestPlanArtifactInvalidatedSeq"),
     ...numberField(value, "latestGoalSatisfiedSeq"),
+    ...numberField(value, "latestGoalInvalidatedSeq"),
   };
 }
 
@@ -327,7 +331,8 @@ function numberField(
     | "latestPlanInvalidatedSeq"
     | "latestPlanArtifactVerifiedSeq"
     | "latestPlanArtifactInvalidatedSeq"
-    | "latestGoalSatisfiedSeq",
+    | "latestGoalSatisfiedSeq"
+    | "latestGoalInvalidatedSeq",
 ): Pick<IndependentModelAdvisorReviewView, typeof key> | undefined {
   const value = source[key];
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0

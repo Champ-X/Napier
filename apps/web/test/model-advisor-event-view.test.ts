@@ -122,6 +122,7 @@ describe("Model Advisor event trace view", () => {
         latestPlanArtifactVerifiedSeq: 11,
         latestPlanArtifactInvalidatedSeq: 13,
         latestGoalSatisfiedSeq: 10,
+        latestGoalInvalidatedSeq: 14,
       },
       contentSha256: "c".repeat(64),
     });
@@ -145,12 +146,13 @@ describe("Model Advisor event trace view", () => {
       latestPlanArtifactVerifiedSeq: 11,
       latestPlanArtifactInvalidatedSeq: 13,
       latestGoalSatisfiedSeq: 10,
+      latestGoalInvalidatedSeq: 14,
       textSha256: "a".repeat(64),
       diagnosticSetSha256: "b".repeat(64),
       contentSha256: "c".repeat(64),
     });
     expect(modelAdvisorEventTraceSummary(event)).toBe(
-      `advisor / notice / status notice / source deterministic_stream_lint / turn user / diagnostics 1 / workspace-write / workspace-write-seq 17 / plan-completed / plan-completed-seq 12 / plan-invalidated-seq 13 / plan-completion-stale / artifact-verified / artifact-verified-seq 11 / artifact-invalidated-seq 13 / artifact-verification-stale / goal-satisfied / goal-satisfied-seq 10 / goal-satisfaction-stale / text ${"a".repeat(12)} / diagnostics ${"b".repeat(12)} / receipt ${"c".repeat(12)}`,
+      `advisor / notice / status notice / source deterministic_stream_lint / turn user / diagnostics 1 / workspace-write / workspace-write-seq 17 / plan-completed / plan-completed-seq 12 / plan-invalidated-seq 13 / plan-completion-stale / artifact-verified / artifact-verified-seq 11 / artifact-invalidated-seq 13 / artifact-verification-stale / goal-satisfied / goal-satisfied-seq 10 / goal-invalidated-seq 14 / goal-satisfaction-stale / text ${"a".repeat(12)} / diagnostics ${"b".repeat(12)} / receipt ${"c".repeat(12)}`,
     );
     expect(modelAdvisorEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

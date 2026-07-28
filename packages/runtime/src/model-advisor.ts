@@ -408,6 +408,7 @@ function createVerificationClaimDiagnostic(
       latestPlanArtifactInvalidatedSeq:
         evidence.latestPlanArtifactInvalidatedSeq,
       latestGoalSatisfiedSeq: evidence.latestGoalSatisfiedSeq,
+      latestGoalInvalidatedSeq: evidence.latestGoalInvalidatedSeq,
       toolCompletedCount: evidence.toolCompletedCount,
     },
   );

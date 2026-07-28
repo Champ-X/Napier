@@ -376,14 +376,16 @@ artifact-verified claims without a `plan.artifact.verified` event later than
 the latest workspace write or followed by a later non-verified artifact event
 such as `plan.artifact.missing` or `plan.artifact.superseded`, and
 goal-complete claims without a satisfied `goal.evaluated` event later than the
-latest workspace write, and destructive command references such as
-`git reset --hard` or `rm -rf`
+latest workspace write or followed by a later unsatisfied goal evaluation, and
+destructive command references such as `git reset --hard` or `rm -rf`
 patterns. Failed, timed-out, output-capped, legacy status-less verifier
 completions, or passed verifier completions followed by `apply_patch` do not
 satisfy a passing-check claim; similarly, Plan, artifact, or goal evidence
 followed by `apply_patch` is stale until that state is settled again, and
 Plan or artifact evidence followed by an invalidating Plan/artifact event is
-stale until the Plan is completed or the artifact is verified again.
+stale until the Plan is completed or the artifact is verified again; goal
+evidence followed by an unsatisfied goal evaluation is stale until the goal is
+satisfied again.
 The Agent profile can switch the advisor `off`, choose the enabled rule set,
 configure a distinct `reviewModel`, or set `enforce` mode with zero to three
 correction attempts. Schema-5 Run configuration fingerprints bind the

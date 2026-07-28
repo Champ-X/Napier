@@ -327,6 +327,9 @@ All notable changes to Napier are recorded here.
 - Plan-complete claim suppression now also treats later non-completed Plan
   events as invalidation evidence, so artifact drift or reopened work makes the
   completion claim stale until the Plan reaches completed again.
+- Goal-complete claim suppression now treats later unsatisfied `goal.evaluated`
+  events as invalidation evidence, so a previous satisfied verdict cannot
+  support completion claims after the evaluator reports remaining work.
 - Trace Model Advisor summaries now expose verification current/stale metadata
   plus plan/artifact/goal completion freshness and the latest evidence
   sequence numbers without rendering diagnostic prose or candidate text.

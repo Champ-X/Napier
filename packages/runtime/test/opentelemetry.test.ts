@@ -302,6 +302,7 @@ describe("OpenTelemetry trace export", () => {
         latestPlanArtifactVerifiedSeq: 6,
         latestPlanArtifactInvalidatedSeq: 4,
         latestGoalSatisfiedSeq: 5,
+        latestGoalInvalidatedSeq: 10,
         milestoneCount: 1,
         operatorDecisionRequested: false,
       },
@@ -716,6 +717,12 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.evidence_summary_latest_plan_invalidated_seq",
       ),
     ).toBe(4);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_goal_invalidated_seq",
+      ),
+    ).toBe(10);
     expect(
       attributeValue(
         advisorEvent.attributes,

@@ -18,6 +18,7 @@ export interface ModelAdvisorVerificationEvidence {
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
+  latestGoalInvalidatedSeq?: number;
 }
 
 export function isVerifyWorkspaceCompletion(event: RunEvent): boolean {
@@ -115,6 +116,20 @@ export function isGoalSatisfiedEvent(event: RunEvent): boolean {
   );
 }
 
+export function isGoalInvalidationEvent(event: RunEvent): boolean {
+  if (
+    event.type !== "goal.evaluated" ||
+    event.category !== "goal" ||
+    !isRecord(event.payload)
+  ) {
+    return false;
+  }
+  return !(
+    event.payload["satisfied"] === true &&
+    event.payload["status"] === "completed"
+  );
+}
+
 export function createModelAdvisorVerificationEvidence(
   events: RunEvent[],
 ): ModelAdvisorVerificationEvidence {
@@ -137,6 +152,7 @@ export function createModelAdvisorVerificationEvidence(
     isPlanArtifactInvalidationEvent,
   );
   const latestGoalSatisfiedSeq = latestSeq(events, isGoalSatisfiedEvent);
+  const latestGoalInvalidatedSeq = latestSeq(events, isGoalInvalidationEvent);
   const verificationToolPassedAfterWorkspaceWrite =
     latestPassedVerificationSeq !== undefined &&
     (latestWorkspaceWriteSeq === undefined ||
@@ -155,6 +171,8 @@ export function createModelAdvisorVerificationEvidence(
       latestPlanArtifactVerifiedSeq > latestWorkspaceWriteSeq);
   const goalSatisfiedAfterWorkspaceWrite =
     latestGoalSatisfiedSeq !== undefined &&
+    (latestGoalInvalidatedSeq === undefined ||
+      latestGoalSatisfiedSeq > latestGoalInvalidatedSeq) &&
     (latestWorkspaceWriteSeq === undefined ||
       latestGoalSatisfiedSeq > latestWorkspaceWriteSeq);
   return {
@@ -185,6 +203,9 @@ export function createModelAdvisorVerificationEvidence(
       ? { latestPlanArtifactInvalidatedSeq }
       : {}),
     ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
+    ...(latestGoalInvalidatedSeq !== undefined
+      ? { latestGoalInvalidatedSeq }
+      : {}),
   };
 }
 
