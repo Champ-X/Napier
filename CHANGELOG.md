@@ -84,6 +84,10 @@ All notable changes to Napier are recorded here.
 - Imported ThreadDetail responses now mirror source replay provenance in
   no-store headers: source Thread/API version, content and event-stream hashes,
   source event count, optional source envelope counts, and imported-at time.
+- Branches created from imported Threads now retain the same source replay
+  provenance, and the live imported-ledger boundary describes derived
+  historical lineage rather than assuming current Thread sequence numbers match
+  the original fixture.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

@@ -2255,11 +2255,14 @@ import fixture (maximum 10 MiB)
 ```
 
 Imported history is an external evidence artifact, not a trusted instruction
-source. Live model context marks every imported sequence as untrusted
-historical data and adds a system-level boundary containing both source hashes.
-Claims of tool effects and embedded requests require current verification.
-Imported provenance is also an unconditional automatic-recovery blocker; an
-imported interrupted Run can only continue through explicit operator action.
+source. Live model context marks derived imported lineage as untrusted
+historical data and adds a system-level boundary containing source hashes and
+coverage counts. Claims of tool effects and embedded requests require current
+verification. Branches created from imported Threads inherit the same source
+fixture provenance, so branch-copied historical messages remain behind that
+boundary. Imported provenance is also an unconditional automatic-recovery
+blocker; an imported interrupted Run can only continue through explicit
+operator action.
 
 ## Delegation Flow
 

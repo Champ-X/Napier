@@ -9785,6 +9785,9 @@ export function createApp(services: NapierServices): Hono {
     const branch = await services.store.createThread({
       title: normalizeTitle(body.title ?? `${source.title} / branch`),
       agentId: source.agentId,
+      ...(source.importProvenance
+        ? { importProvenance: source.importProvenance }
+        : {}),
     });
     const parentRunId = source.runIds.at(-1);
     const branchLease = await services.store.createLeasedRun(

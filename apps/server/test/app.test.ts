@@ -9084,6 +9084,33 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     );
+    const importedBranchResponse = await app.request(
+      `/api/threads/${imported.thread.id}/branches`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          fromSeq: imported.events.at(-1)!.seq,
+          title: "Imported branch",
+        }),
+      },
+    );
+    expect(importedBranchResponse.status).toBe(201);
+    const importedBranch =
+      (await importedBranchResponse.json()) as ThreadDetail;
+    expectThreadDetailProjectionHeaders(
+      importedBranchResponse,
+      importedBranch,
+    );
+    expect(importedBranch.thread).toEqual(
+      expect.objectContaining({
+        title: "Imported branch",
+        importProvenance: imported.thread.importProvenance,
+      }),
+    );
+    expect(importedBranch.events.map((event) => event.type)).toEqual(
+      expect.arrayContaining(["branch.created", "message.user"]),
+    );
     expect(imported.thread.id).not.toBe(created.thread.id);
     expect(imported.agent.id).not.toBe(created.agent.id);
     expect(imported.runs.map((run) => run.id)).not.toEqual(

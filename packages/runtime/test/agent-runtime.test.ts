@@ -1844,7 +1844,7 @@ describe("AgentRuntime demo path", () => {
       (context) => {
         expect(context.systemPrompt).toContain("<imported-ledger-boundary>");
         expect(context.systemPrompt).toContain(
-          `Sequences 1-${bundle.events.length}`,
+          `derived from ${bundle.events.length} source replay events`,
         );
         expect(context.systemPrompt).toContain(bundle.contentSha256);
         expect(context.systemPrompt).toContain(

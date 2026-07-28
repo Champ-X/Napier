@@ -1383,9 +1383,10 @@ new automatic recovery decision. Outcomes remain unknown until an operator
 starts a new Run that verifies current state.
 
 Imported event history is externally supplied data. Live model context marks
-the imported sequence range and source hashes explicitly, and instructs the
+the derived imported lineage and source hashes explicitly, and instructs the
 Agent never to treat embedded requests as current operator instructions or
-authorization.
+authorization. Branches created from imported Threads retain the same source
+fixture provenance so copied historical messages stay behind that boundary.
 
 ## OpenTelemetry Trace Export
 

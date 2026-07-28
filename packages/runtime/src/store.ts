@@ -210,6 +210,7 @@ import {
   type SubagentTask,
   type SubagentTaskStatus,
   type ThreadDetail,
+  type ThreadImportProvenance,
   type ThreadReplayBundle,
   type ThreadRecord,
   type ThreadStatus,
@@ -7665,6 +7666,7 @@ export class LocalStore {
   async createThread(input: {
     title: string;
     agentId: string;
+    importProvenance?: ThreadImportProvenance;
   }): Promise<ThreadRecord> {
     this.assertInitialized();
     this.getAgent(input.agentId);
@@ -7680,6 +7682,9 @@ export class LocalStore {
         lastMessage: "",
         eventCount: 0,
         runIds: [],
+        ...(input.importProvenance
+          ? { importProvenance: structuredClone(input.importProvenance) }
+          : {}),
       };
       this.state.threads.push(thread);
       await this.persistState();
