@@ -48,6 +48,7 @@ import {
 } from "./independent-model-advisor.js";
 import {
   assertModelContextEnvelopeEventBindings,
+  MODEL_CONTEXT_ENVELOPE_EVENT,
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
@@ -1526,6 +1527,12 @@ export function verifyThreadReplayBundle(
       runCount: bundle.runs.length,
       planCount: bundle.plans.length,
       evaluationCount: bundle.evaluations.length,
+      modelContextEnvelopeCount: bundle.events.filter(
+        (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
+      ).length,
+      embeddedModelContextEnvelopeCount: bundle.events.filter((event) =>
+        hasEmbeddedModelContextEnvelope(event.payload),
+      ).length,
     };
   } catch (error) {
     return {
@@ -1535,6 +1542,8 @@ export function verifyThreadReplayBundle(
       runCount: 0,
       planCount: 0,
       evaluationCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     };
   }
 }
@@ -1578,6 +1587,10 @@ function assertEmbeddedModelContextEnvelopeReceipts(
       );
     }
   }
+}
+
+function hasEmbeddedModelContextEnvelope(payload: unknown): boolean {
+  return embeddedModelContextEnvelope(payload) !== undefined;
 }
 
 function embeddedModelContextEnvelope(payload: unknown): unknown {

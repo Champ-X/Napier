@@ -700,6 +700,14 @@ function FixtureLedgerCard({
             {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events}
           </small>
           {receipt.action === "verified" ? (
+            <small>
+              {receipt.modelContextEnvelopeCount.toLocaleString()}{" "}
+              {copy.lab.fixture.contextEnvelopes} ·{" "}
+              {receipt.embeddedModelContextEnvelopeCount.toLocaleString()}{" "}
+              {copy.lab.fixture.embeddedEnvelopes}
+            </small>
+          ) : null}
+          {receipt.action === "verified" ? (
             <small className="fixture-diagnostics">
               {receipt.diagnostics.length > 0
                 ? receipt.diagnostics.join(", ")

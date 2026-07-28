@@ -89,6 +89,8 @@ describe("thread replay bundles", () => {
       runCount: first.runs.length,
       planCount: first.plans.length,
       evaluationCount: first.evaluations.length,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
 
     const tampered = structuredClone(first);
@@ -103,6 +105,8 @@ describe("thread replay bundles", () => {
       runCount: 0,
       planCount: 0,
       evaluationCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
 
     const extended = structuredClone(first) as unknown as Record<
@@ -276,6 +280,13 @@ describe("thread replay bundles", () => {
     );
 
     const bundle = await exportThreadReplayBundle(store, thread.id);
+    expect(verifyThreadReplayBundle(bundle)).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        modelContextEnvelopeCount: 0,
+        embeddedModelContextEnvelopeCount: 1,
+      }),
+    );
     const invalidEnvelopeDetail = structuredClone(
       await store.getDetail(thread.id),
     );
@@ -340,6 +351,8 @@ describe("thread replay bundles", () => {
       runCount: 0,
       planCount: 0,
       evaluationCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
 
     const imported = await store.importThreadReplayBundle(bundle);

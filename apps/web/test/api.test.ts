@@ -322,6 +322,8 @@ describe("Web JSON API wrappers", () => {
       runCount: 1,
       planCount: 0,
       evaluationCount: 0,
+      modelContextEnvelopeCount: 1,
+      embeddedModelContextEnvelopeCount: 1,
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe("/api/threads/import/verify");

@@ -19760,6 +19760,14 @@ function setThreadReplayBundleVerificationHeaders(
     String(verification.evaluationCount),
   );
   context.header(
+    "X-Napier-Model-Context-Envelope-Count",
+    String(verification.modelContextEnvelopeCount),
+  );
+  context.header(
+    "X-Napier-Embedded-Model-Context-Envelope-Count",
+    String(verification.embeddedModelContextEnvelopeCount),
+  );
+  context.header(
     "X-Napier-Diagnostic-Count",
     String(verification.diagnostics.length),
   );

@@ -9036,6 +9036,16 @@ describe("Napier HTTP goal flow", () => {
       runCount: fixture.runs.length,
       planCount: fixture.plans.length,
       evaluationCount: fixture.evaluations.length,
+      modelContextEnvelopeCount: fixture.events.filter(
+        (event) => event.type === "context.model_envelope",
+      ).length,
+      embeddedModelContextEnvelopeCount: fixture.events.filter(
+        (event) =>
+          event.payload &&
+          !Array.isArray(event.payload) &&
+          typeof event.payload === "object" &&
+          "modelContextEnvelope" in event.payload,
+      ).length,
     });
     expect(services.store.listThreads()).toHaveLength(
       threadCountBeforeVerification,
@@ -9134,6 +9144,8 @@ describe("Napier HTTP goal flow", () => {
       runCount: 0,
       planCount: 0,
       evaluationCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
     expect(services.store.listThreads()).toHaveLength(
       threadCountBeforeRejectedImport,
@@ -11660,6 +11672,12 @@ function expectThreadReplayBundleVerificationHeaders(
   expect(response.headers.get("x-napier-evaluation-count")).toBe(
     String(verification.evaluationCount),
   );
+  expect(response.headers.get("x-napier-model-context-envelope-count")).toBe(
+    String(verification.modelContextEnvelopeCount),
+  );
+  expect(
+    response.headers.get("x-napier-embedded-model-context-envelope-count"),
+  ).toBe(String(verification.embeddedModelContextEnvelopeCount));
   expect(response.headers.get("x-napier-diagnostic-count")).toBe(
     String(verification.diagnostics.length),
   );

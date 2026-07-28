@@ -5966,6 +5966,8 @@ export interface ThreadReplayBundleVerification {
   runCount: number;
   planCount: number;
   evaluationCount: number;
+  modelContextEnvelopeCount: number;
+  embeddedModelContextEnvelopeCount: number;
   threadId?: string;
   agentId?: string;
   contentSha256?: string;

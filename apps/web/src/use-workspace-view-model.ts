@@ -130,6 +130,8 @@ export type FixtureTransferReceipt =
       runCount: number;
       planCount: number;
       evaluationCount: number;
+      modelContextEnvelopeCount: number;
+      embeddedModelContextEnvelopeCount: number;
     };
 
 export interface RunReplayVerificationReceipt {
@@ -1906,6 +1908,9 @@ export function useWorkspaceViewModel() {
         runCount: verification.runCount,
         planCount: verification.planCount,
         evaluationCount: verification.evaluationCount,
+        modelContextEnvelopeCount: verification.modelContextEnvelopeCount,
+        embeddedModelContextEnvelopeCount:
+          verification.embeddedModelContextEnvelopeCount,
       });
     } catch (verifyError) {
       setError(

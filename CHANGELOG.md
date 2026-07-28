@@ -55,6 +55,9 @@ All notable changes to Napier are recorded here.
   `modelContextEnvelope` receipts before import, and verification classifies
   those failures as `context_mismatch` even when the forged bundle's top-level
   event/content hashes are internally consistent.
+- Thread replay bundle verification now returns and headers-export both
+  ledger-backed and embedded Model Context Envelope counts, and Run Lab fixture
+  verification renders those counts beside the local replay diagnostics.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

@@ -128,6 +128,8 @@ export const copy = {
       title: "Portable ledger",
       body: "Carry the complete Thread, Agent revisions, Runs, plans, evaluations, human adjudications, reviewer consensus, quality gates, subagents, and ordered evidence as one replay fixture.",
       events: "events",
+      contextEnvelopes: "context envelopes",
+      embeddedEnvelopes: "embedded envelopes",
       runs: "runs",
       plans: "plans",
       evaluations: "evaluations",
