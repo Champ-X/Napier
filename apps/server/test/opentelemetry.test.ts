@@ -6,8 +6,14 @@ import path from "node:path";
 import type {
   OpenTelemetryTraceArtifact,
   OpenTelemetryTraceArtifactVerification,
+  OtlpKeyValue,
+  OtlpSpan,
 } from "@napier/contracts";
-import { validateOpenTelemetryTraceArtifact } from "@napier/runtime";
+import {
+  exportThreadReplayBundle,
+  hashOpenTelemetryTraceArtifact,
+  validateOpenTelemetryTraceArtifact,
+} from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -117,6 +123,39 @@ function expectOpenTelemetryTraceVerificationHeaders(
   expect(response.headers.get("x-napier-event-stream-sha256")).toBe(
     verification.eventStreamSha256 ?? null,
   );
+}
+
+function spans(artifact: OpenTelemetryTraceArtifact): OtlpSpan[] {
+  return artifact.otlp.resourceSpans[0]!.scopeSpans[0]!.spans;
+}
+
+function setAttributeValue(
+  attributes: OtlpKeyValue[],
+  key: string,
+  value: string | number | boolean,
+): void {
+  const attribute = attributes.find((item) => item.key === key);
+  if (!attribute) throw new Error(`Missing OTLP attribute: ${key}`);
+  if (typeof value === "string") {
+    attribute.value = { stringValue: value };
+    return;
+  }
+  if (typeof value === "boolean") {
+    attribute.value = { boolValue: value };
+    return;
+  }
+  attribute.value = Number.isInteger(value)
+    ? { intValue: String(value) }
+    : { doubleValue: value };
+}
+
+function rehashArtifact(artifact: OpenTelemetryTraceArtifact): void {
+  const {
+    generatedAt: _generatedAt,
+    contentSha256: _contentSha256,
+    ...content
+  } = artifact;
+  artifact.contentSha256 = hashOpenTelemetryTraceArtifact(content);
 }
 
 describe("OpenTelemetry trace HTTP export", () => {
@@ -310,5 +349,59 @@ describe("OpenTelemetry trace HTTP export", () => {
       body: JSON.stringify({ runId: "run_00000000000000000000" }),
     });
     expect(missing.status).toBe(404);
+  });
+
+  it("rejects imported trace provenance drift through HTTP verification", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-otel-"));
+    temporaryRoots.push(root);
+    const services = await createNapierServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const source = services.store.listThreads()[0]!;
+    const bundle = await exportThreadReplayBundle(services.store, source.id);
+    const imported = await services.store.importThreadReplayBundle(
+      bundle,
+      "Server imported OTLP drift",
+    );
+
+    const exportResponse = await app.request(
+      `/api/threads/${imported.thread.id}/trace/otlp`,
+      { method: "POST" },
+    );
+    expect(exportResponse.status).toBe(200);
+    const artifact =
+      (await exportResponse.json()) as OpenTelemetryTraceArtifact;
+    expect(validateOpenTelemetryTraceArtifact(artifact)).toEqual(artifact);
+
+    const tampered = structuredClone(artifact);
+    const rootSpan = spans(tampered).find((span) => !span.parentSpanId)!;
+    setAttributeValue(
+      rootSpan.attributes,
+      "napier.thread.import.source_content_sha256",
+      "8".repeat(64),
+    );
+    rehashArtifact(tampered);
+    const verifyResponse = await app.request(
+      `/api/threads/${imported.thread.id}/trace/otlp/verify`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ artifact: tampered }),
+      },
+    );
+    expect(verifyResponse.status).toBe(200);
+    const verification =
+      (await verifyResponse.json()) as OpenTelemetryTraceArtifactVerification;
+    expect(verification).toEqual({
+      status: "invalid",
+      diagnostics: ["import_provenance_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
+    expectOpenTelemetryTraceVerificationHeaders(verifyResponse, verification);
+    expect(JSON.stringify(verification)).not.toContain("Server imported OTLP");
   });
 });
