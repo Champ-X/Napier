@@ -3298,8 +3298,10 @@ replan strategies, invalid status values, and invalid SHA-256 values before
 the runtime state machine is called. The Plan Workbench exposes the same
 operator path as Mark produced, Verify bytes, and Mark missing actions; Verify
 bytes always uses `observeWorkspace` and never accepts a browser-supplied
-digest. Every accepted state change is appended to the Thread ledger. The HTTP
-API and internal Agent tool share the same
+digest. Verified artifact cards render the server-computed byte count beside a
+short digest while retaining the full SHA-256 as audit context. Every accepted
+state change is appended to the Thread ledger. The HTTP API and internal Agent
+tool share the same
 `plan.artifact.*` payload builder, and validators treat the latest artifact
 event as a projection of the manifest's current state. SQLite restore, Thread
 replay bundle validation, and Plan archive verification all fail closed if the

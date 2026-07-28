@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Ckz1Agzc.js",
+    "path": "apps/web/dist/assets/index-DQ_-zPp0.js",
     "sizeBytes": 147411,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "2153cd97814b1b3e6e98bad403056aff8328ccee2e617478432dfd8298d66f8c"
+    "sha256": "9629e157310a1afc3979ee871722d15ceb54ddf7404078bf95b4a641054aba51"
   },
-  "distContentSha256": "2153cd97814b1b3e6e98bad403056aff8328ccee2e617478432dfd8298d66f8c",
+  "distContentSha256": "9629e157310a1afc3979ee871722d15ceb54ddf7404078bf95b4a641054aba51",
   "errors": []
 }

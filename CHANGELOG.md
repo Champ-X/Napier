@@ -212,6 +212,8 @@ All notable changes to Napier are recorded here.
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
   appending `plan.artifact.*` evidence.
+- Verified Plan artifact cards now show the server-computed byte count beside
+  the digest while retaining the full SHA-256 as hoverable audit context.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

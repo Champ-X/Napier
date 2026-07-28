@@ -51,6 +51,7 @@ export const planCopy = {
   blocker: "Blocker",
   artifacts: "Artifact manifest",
   digest: "SHA-256",
+  size: "Size",
   source: "Source run",
   artifactActions: {
     produce: "Mark produced",

@@ -59,6 +59,7 @@ import {
   verifyExecutionPlanBlueprintRecordReplays,
 } from "./api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
+import { projectArtifactManifestEvidence } from "./artifact-manifest-view-model";
 import { planCopy } from "./plan-copy";
 import {
   planBlueprintCreatedReceipt,
@@ -1614,83 +1615,96 @@ export default function PlanPanel({
                 <h3 id="artifact-manifest-title">{planCopy.artifacts}</h3>
                 <span>{String(plan.artifacts.length).padStart(2, "0")}</span>
               </header>
-              {plan.artifacts.map((artifact) => (
-                <article key={artifact.id}>
-                  <header>
-                    <code>{artifact.path}</code>
-                    <span>{planCopy.statuses[artifact.status]}</span>
-                  </header>
-                  <p>{artifact.description}</p>
-                  {artifact.evidence ? (
-                    <small>{artifact.evidence}</small>
-                  ) : null}
-                  {artifact.sha256 ? (
-                    <dl>
-                      <div>
-                        <dt>{planCopy.digest}</dt>
-                        <dd>
-                          <code>{artifact.sha256.slice(0, 16)}</code>
-                        </dd>
+              {plan.artifacts.map((artifact) => {
+                const evidence = projectArtifactManifestEvidence(artifact);
+                return (
+                  <article key={artifact.id}>
+                    <header>
+                      <code>{artifact.path}</code>
+                      <span>{planCopy.statuses[artifact.status]}</span>
+                    </header>
+                    <p>{artifact.description}</p>
+                    {artifact.evidence ? (
+                      <small>{artifact.evidence}</small>
+                    ) : null}
+                    {evidence.hasEvidence ? (
+                      <dl>
+                        {evidence.digestShort && evidence.digestFull ? (
+                          <div>
+                            <dt>{planCopy.digest}</dt>
+                            <dd>
+                              <code title={evidence.digestFull}>
+                                {evidence.digestShort}
+                              </code>
+                            </dd>
+                          </div>
+                        ) : null}
+                        {evidence.sizeBytesLabel ? (
+                          <div>
+                            <dt>{planCopy.size}</dt>
+                            <dd>{evidence.sizeBytesLabel}</dd>
+                          </div>
+                        ) : null}
+                        {artifact.sourceRunId ? (
+                          <div>
+                            <dt>{planCopy.source}</dt>
+                            <dd>
+                              <code>{shortId(artifact.sourceRunId)}</code>
+                            </dd>
+                          </div>
+                        ) : null}
+                      </dl>
+                    ) : null}
+                    {artifact.status !== "verified" &&
+                    artifact.status !== "superseded" ? (
+                      <div className="artifact-actions">
+                        {canProduceArtifact(artifact) ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.produce}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() =>
+                              void updateArtifact(artifact, "produced")
+                            }
+                          >
+                            {artifactBusyId === `${artifact.id}:produced`
+                              ? planCopy.artifactActions.producing
+                              : planCopy.artifactActions.produce}
+                          </button>
+                        ) : null}
+                        {canVerifyArtifact(artifact) ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.verify}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() =>
+                              void updateArtifact(artifact, "verified")
+                            }
+                          >
+                            {artifactBusyId === `${artifact.id}:verified`
+                              ? planCopy.artifactActions.verifying
+                              : planCopy.artifactActions.verify}
+                          </button>
+                        ) : null}
+                        {canMarkArtifactMissing(artifact) ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.markMissing}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() =>
+                              void updateArtifact(artifact, "missing")
+                            }
+                          >
+                            {artifactBusyId === `${artifact.id}:missing`
+                              ? planCopy.artifactActions.markingMissing
+                              : planCopy.artifactActions.markMissing}
+                          </button>
+                        ) : null}
                       </div>
-                      {artifact.sourceRunId ? (
-                        <div>
-                          <dt>{planCopy.source}</dt>
-                          <dd>
-                            <code>{shortId(artifact.sourceRunId)}</code>
-                          </dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                  ) : null}
-                  {artifact.status !== "verified" &&
-                  artifact.status !== "superseded" ? (
-                    <div className="artifact-actions">
-                      {canProduceArtifact(artifact) ? (
-                        <button
-                          type="button"
-                          aria-label={`${planCopy.artifactActions.produce}: ${artifact.path}`}
-                          disabled={Boolean(artifactBusyId)}
-                          onClick={() =>
-                            void updateArtifact(artifact, "produced")
-                          }
-                        >
-                          {artifactBusyId === `${artifact.id}:produced`
-                            ? planCopy.artifactActions.producing
-                            : planCopy.artifactActions.produce}
-                        </button>
-                      ) : null}
-                      {canVerifyArtifact(artifact) ? (
-                        <button
-                          type="button"
-                          aria-label={`${planCopy.artifactActions.verify}: ${artifact.path}`}
-                          disabled={Boolean(artifactBusyId)}
-                          onClick={() =>
-                            void updateArtifact(artifact, "verified")
-                          }
-                        >
-                          {artifactBusyId === `${artifact.id}:verified`
-                            ? planCopy.artifactActions.verifying
-                            : planCopy.artifactActions.verify}
-                        </button>
-                      ) : null}
-                      {canMarkArtifactMissing(artifact) ? (
-                        <button
-                          type="button"
-                          aria-label={`${planCopy.artifactActions.markMissing}: ${artifact.path}`}
-                          disabled={Boolean(artifactBusyId)}
-                          onClick={() =>
-                            void updateArtifact(artifact, "missing")
-                          }
-                        >
-                          {artifactBusyId === `${artifact.id}:missing`
-                            ? planCopy.artifactActions.markingMissing
-                            : planCopy.artifactActions.markMissing}
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </article>
-              ))}
+                    ) : null}
+                  </article>
+                );
+              })}
               {artifactError ? (
                 <p className="artifact-error" role="alert">
                   {artifactError}
