@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CuDPe854.js",
-    "sizeBytes": 143546,
+    "path": "apps/web/dist/assets/index-BZokQo-z.js",
+    "sizeBytes": 143614,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "f7173b7327474da421f7ca105974ad8c20abfbb56317cb57b9503cec7f2f218a"
+    "sha256": "7f6d8d8b341881bfd5418de6aad30de2cb4fa755508c8dc92f33dd19f1a1af3c"
   },
-  "distContentSha256": "f7173b7327474da421f7ca105974ad8c20abfbb56317cb57b9503cec7f2f218a",
+  "distContentSha256": "7f6d8d8b341881bfd5418de6aad30de2cb4fa755508c8dc92f33dd19f1a1af3c",
   "errors": []
 }
