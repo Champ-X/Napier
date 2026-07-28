@@ -2919,6 +2919,217 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("accepts verification claims after a parent Agent edit is re-verified", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    await mkdir(path.join(workspaceRoot, "node_modules/typescript/bin"), {
+      recursive: true,
+    });
+    await writeFile(
+      path.join(workspaceRoot, "node_modules/typescript/bin/tsc"),
+      "// fixture verifier\n",
+      "utf8",
+    );
+    await writeFile(path.join(workspaceRoot, "tsconfig.json"), "{}\n", "utf8");
+    const filePath = path.join(workspaceRoot, "src/status.ts");
+    const source = 'export const status = "draft";\n';
+    const updated = 'export const status = "ready";\n';
+    await writeFile(filePath, source, "utf8");
+    const sourceSha256 = createHash("sha256").update(source).digest("hex");
+    const updatedSha256 = createHash("sha256").update(updated).digest("hex");
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const originalAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(originalAgent.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["read_file", "apply_patch", "verify_workspace"],
+    });
+    const thread = await store.createThread({
+      title: "Verified workspace edit",
+      agentId: agent.id,
+    });
+    const launchRequests: SandboxLaunchRequest[] = [];
+    const sandbox: OsSandboxAdapter = {
+      id: "fake-edit-verifier",
+      async launch(request) {
+        launchRequests.push(structuredClone(request));
+        const stdin = new PassThrough();
+        const stdout = new PassThrough();
+        const stderr = new PassThrough();
+        let settled = false;
+        let resolveExit:
+          | ((value: {
+              code: number | null;
+              signal: NodeJS.Signals | null;
+            }) => void)
+          | undefined;
+        const exit = new Promise<{
+          code: number | null;
+          signal: NodeJS.Signals | null;
+        }>((resolve) => {
+          resolveExit = resolve;
+        });
+        const settle = (
+          code: number | null,
+          signal: NodeJS.Signals | null,
+        ): void => {
+          if (settled) return;
+          settled = true;
+          stdout.end();
+          stderr.end();
+          resolveExit?.({ code, signal });
+        };
+        setTimeout(() => {
+          stdout.write("Found 0 type errors.\n");
+          settle(0, null);
+        }, 0);
+        return {
+          stdin,
+          stdout,
+          stderr,
+          exit,
+          terminate: async () => settle(null, "SIGTERM"),
+        };
+      },
+    };
+
+    const faux = fauxProvider({ provider: "faux-edit-verify-claim" });
+    faux.setResponses([
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toEqual(
+          expect.arrayContaining([
+            "read_file",
+            "apply_patch",
+            "verify_workspace",
+          ]),
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("read_file", { path: "src/status.ts" }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(sourceSha256);
+        return fauxAssistantMessage(
+          fauxToolCall("apply_patch", {
+            operation: "replace",
+            path: "src/status.ts",
+            expectedSha256: sourceSha256,
+            edits: [{ oldText: source, newText: updated }],
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(updatedSha256);
+        return fauxAssistantMessage(
+          fauxToolCall("verify_workspace", { kind: "typecheck" }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const serialized = JSON.stringify(context.messages);
+        expect(serialized).toContain("Verification PASSED: typecheck");
+        expect(serialized).toContain("Found 0 type errors.");
+        return fauxAssistantMessage(
+          "The typecheck passed after the workspace edit.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry, undefined, sandbox);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Update the status file and verify it.",
+      model: { provider: "faux-edit-verify-claim", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(await readFile(filePath, "utf8")).toBe(updated);
+    expect(faux.state.callCount).toBe(5);
+    expect(launchRequests).toEqual([
+      expect.objectContaining({
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+        env: { CI: "1", FORCE_COLOR: "0", NO_COLOR: "1" },
+      }),
+    ]);
+    expect(JSON.stringify(launchRequests)).not.toContain("workspace.write");
+    expect(JSON.stringify(launchRequests)).not.toContain("network.connect");
+    const events = await store.listEvents(thread.id);
+    const patchEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "apply_patch",
+    );
+    const verificationEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "verify_workspace",
+    );
+    const assistantMessage = events.find(
+      (event) => event.type === "message.assistant",
+    );
+    expect(patchEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          path: "src/status.ts",
+          operation: "replace",
+          beforeSha256: sourceSha256,
+          afterSha256: updatedSha256,
+          editCount: 1,
+        }),
+      }),
+    );
+    expect(verificationEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          kind: "typecheck",
+          status: "passed",
+          sandbox: "fake-edit-verifier",
+          verifierSha256: createHash("sha256")
+            .update("// fixture verifier\n")
+            .digest("hex"),
+          stdoutSha256: createHash("sha256")
+            .update("Found 0 type errors.\n")
+            .digest("hex"),
+          workspaceSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(patchEvent?.seq).toEqual(expect.any(Number));
+    expect(verificationEvent?.seq).toEqual(expect.any(Number));
+    expect(assistantMessage?.seq).toEqual(expect.any(Number));
+    expect(patchEvent!.seq).toBeLessThan(verificationEvent!.seq);
+    expect(verificationEvent!.seq).toBeLessThan(assistantMessage!.seq);
+    expect(events.some((event) => event.type === "model.advisor.notice")).toBe(
+      false,
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("inspects structured data through the parent Agent ledger", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);
