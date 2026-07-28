@@ -31,14 +31,39 @@ describe("Model Context Envelope trace view", () => {
       messageCount: 5,
       contentSha256: "f".repeat(64),
     });
+    const validResponse = responseEvent({
+      model: "faux-secure/faux-1",
+      stopReason: "stop",
+      modelContextEnvelopeSha256: "e".repeat(64),
+      modelContextEnvelopeTurnIndex: 2,
+      modelContextMessageSetSha256: "b".repeat(64),
+      modelContextToolDefinitionSetSha256: "d".repeat(64),
+    });
+    const mismatchedResponse = responseEvent({
+      model: "faux-secure/faux-1",
+      stopReason: "stop",
+      modelContextEnvelopeSha256: "0".repeat(64),
+      modelContextEnvelopeTurnIndex: 9,
+      modelContextMessageSetSha256: "b".repeat(64),
+      modelContextToolDefinitionSetSha256: "d".repeat(64),
+    });
 
     expect(
-      modelContextEnvelopeViews([valid, rawPromptInjected, countDrifted]),
+      modelContextEnvelopeViews([
+        valid,
+        validResponse,
+        rawPromptInjected,
+        countDrifted,
+        mismatchedResponse,
+      ]),
     ).toEqual([
       {
         eventSeq: 17,
         runId: "run_context",
         turnIndex: 2,
+        responseSeq: 18,
+        responseModel: "faux-secure/faux-1",
+        responseStopReason: "stop",
         systemPromptBytes: 1024,
         messageCount: 4,
         userMessageCount: 1,
@@ -78,5 +103,19 @@ function envelopeEvent(payload: RunEvent["payload"]): RunEvent {
     visibility: "debug",
     payload,
     createdAt: "2026-07-28T12:00:00.000Z",
+  };
+}
+
+function responseEvent(payload: RunEvent["payload"]): RunEvent {
+  return {
+    id: "event_response",
+    threadId: "thread_context",
+    runId: "run_context",
+    seq: 18,
+    type: "model.response",
+    category: "model",
+    visibility: "debug",
+    payload,
+    createdAt: "2026-07-28T12:00:01.000Z",
   };
 }

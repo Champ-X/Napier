@@ -368,6 +368,21 @@ function ModelContextEnvelopeLedger({
                     {envelope.toolDefinitionSetSha256.slice(0, 12)}
                   </code>
                 </p>
+                {envelope.responseSeq !== undefined ? (
+                  <p>
+                    <span>{modelContextEnvelopeCopy.response}</span>
+                    <code>
+                      #{String(envelope.responseSeq).padStart(3, "0")} ·{" "}
+                      {envelope.responseModel} · {modelContextEnvelopeCopy.stop}{" "}
+                      {envelope.responseStopReason}
+                    </code>
+                  </p>
+                ) : (
+                  <p>
+                    <span>{modelContextEnvelopeCopy.response}</span>
+                    <code>{modelContextEnvelopeCopy.responseMissing}</code>
+                  </p>
+                )}
                 <footer>
                   <span>{modelContextEnvelopeCopy.receipt}</span>
                   <code title={envelope.contentSha256}>

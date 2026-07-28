@@ -14,5 +14,9 @@ export const modelContextEnvelopeCopy = {
   messageSet: "Messages",
   toolNames: "Tool names",
   toolDefinitions: "Tool definitions",
+  response: "Response",
+  responseMissing: "No bound response",
+  model: "Model",
+  stop: "Stop",
   receipt: "Receipt",
 } as const;

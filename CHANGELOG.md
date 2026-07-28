@@ -16,7 +16,8 @@ All notable changes to Napier are recorded here.
   its request envelope hash, message-set hash, and tool-definition-set hash.
   Metadata-only OTLP exposes those bindings on the chat span with counts and
   SHA-256 values only. The lazy Trace Workbench now projects the same envelopes
-  as a strict hash-only register and drops malformed or raw-field-injected
+  as a strict hash-only register, shows the bound response sequence/model/stop
+  reason when the hashes match, and drops malformed or raw-field-injected
   payloads.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
