@@ -17,6 +17,7 @@ import {
 import type { LocalStore } from "./store.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { compareRunConfigurations } from "./run-config.js";
+import { assertModelContextEnvelopeEventBindings } from "./model-context-envelope.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { createThreadReplayBundle as buildThreadReplayBundle } from "./thread-bundles.js";
 
@@ -302,6 +303,10 @@ function validateRunReplaySnapshot(input: unknown): RunReplaySnapshot {
     assertReplayEvent(event, threadId, runId, previousSeq);
     previousSeq = event.seq;
   }
+  assertModelContextEnvelopeEventBindings(events, {
+    knownRunIds: new Set([runId]),
+    label: "Run replay snapshot Model Context Envelope",
+  });
   for (const task of subagents) {
     assertReplaySubagent(task, threadId, runId);
   }
@@ -384,6 +389,7 @@ function runReplaySnapshotDiagnostic(error: unknown): string {
   if (message.includes("event stream hash mismatch")) return "hash_mismatch";
   if (message.includes("content hash mismatch")) return "hash_mismatch";
   if (message.includes("metrics hash mismatch")) return "metrics_mismatch";
+  if (message.includes("Model Context Envelope")) return "context_mismatch";
   if (message.includes("configuration hash mismatch")) {
     return "configuration_mismatch";
   }

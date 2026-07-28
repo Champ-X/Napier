@@ -507,11 +507,12 @@ Run. Duplicated, reordered, or content-mutated context claims fail closed during
 bundle construction and import verification. New `model.response` events bind
 back to the envelope content hash, turn index, message-set hash, and
 tool-definition-set hash; portable replay verifies any declared binding against
-the corresponding same-Run envelope and rejects partial binding coverage. OTLP
-projects those response bindings onto the chat span and allows only scalar
-counts plus SHA-256 keys. The lazy Trace projection joins matching response
-bindings back into the envelope card as response sequence, model, and stop
-reason; mismatched bindings remain unrendered.
+the corresponding same-Run envelope and rejects partial binding coverage. Run
+replay snapshot validation calls the same binding verifier before accepting an
+uploaded snapshot. OTLP projects those response bindings onto the chat span and
+allows only scalar counts plus SHA-256 keys. The lazy Trace projection joins
+matching response bindings back into the envelope card as response sequence,
+model, and stop reason; mismatched bindings remain unrendered.
 
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event

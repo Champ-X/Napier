@@ -46,10 +46,7 @@ import {
   INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
   projectIndependentModelAdvisorReviews,
 } from "./independent-model-advisor.js";
-import {
-  MODEL_CONTEXT_ENVELOPE_EVENT,
-  validateModelContextEnvelopeReceipt,
-} from "./model-context-envelope.js";
+import { assertModelContextEnvelopeEventBindings } from "./model-context-envelope.js";
 import { projectOperatorDecisions } from "./operator-decisions.js";
 import {
   createPromptVariableCatalog,
@@ -824,93 +821,10 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       );
     }
   }
-  const modelContextEnvelopeEvents = typedEvents.filter(
-    (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
-  );
-  const modelContextEnvelopeTurnIndexesByRun = new Map<string, number>();
-  const modelContextEnvelopeByRunAndTurn = new Map<
-    string,
-    ReturnType<typeof validateModelContextEnvelopeReceipt>
-  >();
-  const modelContextEnvelopeCountsByRun = new Map<string, number>();
-  for (const event of modelContextEnvelopeEvents) {
-    const receipt = validateModelContextEnvelopeReceipt(event.payload);
-    if (!runIds.has(event.runId)) {
-      throw new Error(
-        `Thread replay bundle Model Context Envelope references unknown Run: ${event.runId}`,
-      );
-    }
-    const expectedTurnIndex =
-      modelContextEnvelopeTurnIndexesByRun.get(event.runId) ?? 0;
-    if (receipt.turnIndex !== expectedTurnIndex) {
-      throw new Error(
-        `Thread replay bundle Model Context Envelope turn index is invalid: ${event.runId}`,
-      );
-    }
-    modelContextEnvelopeTurnIndexesByRun.set(
-      event.runId,
-      expectedTurnIndex + 1,
-    );
-    modelContextEnvelopeByRunAndTurn.set(
-      `${event.runId}:${receipt.turnIndex}`,
-      receipt,
-    );
-    modelContextEnvelopeCountsByRun.set(
-      event.runId,
-      (modelContextEnvelopeCountsByRun.get(event.runId) ?? 0) + 1,
-    );
-  }
-  const modelContextResponseBindingsByRun = new Map<string, number>();
-  for (const event of typedEvents) {
-    if (event.type !== "model.response") continue;
-    const payload =
-      event.payload &&
-      !Array.isArray(event.payload) &&
-      typeof event.payload === "object"
-        ? event.payload
-        : undefined;
-    if (!payload) continue;
-    const hasBinding =
-      payload["modelContextEnvelopeSha256"] !== undefined ||
-      payload["modelContextEnvelopeTurnIndex"] !== undefined ||
-      payload["modelContextMessageSetSha256"] !== undefined ||
-      payload["modelContextToolDefinitionSetSha256"] !== undefined;
-    if (!hasBinding) continue;
-    const turnIndex = payload["modelContextEnvelopeTurnIndex"];
-    const envelopeSha256 = payload["modelContextEnvelopeSha256"];
-    const messageSetSha256 = payload["modelContextMessageSetSha256"];
-    const toolDefinitionSetSha256 =
-      payload["modelContextToolDefinitionSetSha256"];
-    const receipt =
-      typeof turnIndex === "number" && Number.isSafeInteger(turnIndex)
-        ? modelContextEnvelopeByRunAndTurn.get(`${event.runId}:${turnIndex}`)
-        : undefined;
-    if (
-      !receipt ||
-      typeof envelopeSha256 !== "string" ||
-      typeof messageSetSha256 !== "string" ||
-      typeof toolDefinitionSetSha256 !== "string" ||
-      envelopeSha256 !== receipt.contentSha256 ||
-      messageSetSha256 !== receipt.messageSetSha256 ||
-      toolDefinitionSetSha256 !== receipt.toolDefinitionSetSha256
-    ) {
-      throw new Error(
-        `Thread replay bundle Model Context Envelope response binding is invalid: ${event.runId}`,
-      );
-    }
-    modelContextResponseBindingsByRun.set(
-      event.runId,
-      (modelContextResponseBindingsByRun.get(event.runId) ?? 0) + 1,
-    );
-  }
-  for (const [runId, bindingCount] of modelContextResponseBindingsByRun) {
-    const envelopeCount = modelContextEnvelopeCountsByRun.get(runId) ?? 0;
-    if (bindingCount !== envelopeCount) {
-      throw new Error(
-        `Thread replay bundle Model Context Envelope response binding count is invalid: ${runId}`,
-      );
-    }
-  }
+  assertModelContextEnvelopeEventBindings(typedEvents, {
+    knownRunIds: runIds,
+    label: "Thread replay bundle Model Context Envelope",
+  });
   const toolLoopTriggerEvents = typedEvents.filter(
     (event) => event.type === TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   );

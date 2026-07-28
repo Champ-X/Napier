@@ -142,6 +142,88 @@ export function projectModelContextEnvelopeReceipts(
     .map((event) => validateModelContextEnvelopeReceipt(event.payload));
 }
 
+export function assertModelContextEnvelopeEventBindings(
+  events: readonly RunEvent[],
+  options: {
+    knownRunIds?: ReadonlySet<string>;
+    label?: string;
+  } = {},
+): void {
+  const label = options.label ?? "Model Context Envelope";
+  const envelopeTurnIndexesByRun = new Map<string, number>();
+  const envelopeByRunAndTurn = new Map<
+    string,
+    { eventSeq: number; receipt: ModelContextEnvelopeReceipt }
+  >();
+  const envelopeCountsByRun = new Map<string, number>();
+  for (const event of events) {
+    if (event.type !== MODEL_CONTEXT_ENVELOPE_EVENT) continue;
+    const receipt = validateModelContextEnvelopeReceipt(event.payload);
+    if (options.knownRunIds && !options.knownRunIds.has(event.runId)) {
+      throw new Error(`${label} references unknown Run: ${event.runId}`);
+    }
+    const expectedTurnIndex = envelopeTurnIndexesByRun.get(event.runId) ?? 0;
+    if (receipt.turnIndex !== expectedTurnIndex) {
+      throw new Error(`${label} turn index is invalid: ${event.runId}`);
+    }
+    envelopeTurnIndexesByRun.set(event.runId, expectedTurnIndex + 1);
+    envelopeByRunAndTurn.set(`${event.runId}:${receipt.turnIndex}`, {
+      eventSeq: event.seq,
+      receipt,
+    });
+    envelopeCountsByRun.set(
+      event.runId,
+      (envelopeCountsByRun.get(event.runId) ?? 0) + 1,
+    );
+  }
+  const responseBindingsByRun = new Map<string, number>();
+  const responseBindingKeys = new Set<string>();
+  for (const event of events) {
+    if (event.type !== "model.response" || !record(event.payload)) continue;
+    const payload = event.payload;
+    const hasBinding =
+      payload["modelContextEnvelopeSha256"] !== undefined ||
+      payload["modelContextEnvelopeTurnIndex"] !== undefined ||
+      payload["modelContextMessageSetSha256"] !== undefined ||
+      payload["modelContextToolDefinitionSetSha256"] !== undefined;
+    if (!hasBinding) continue;
+    const turnIndex = payload["modelContextEnvelopeTurnIndex"];
+    const envelopeSha256 = payload["modelContextEnvelopeSha256"];
+    const messageSetSha256 = payload["modelContextMessageSetSha256"];
+    const toolDefinitionSetSha256 =
+      payload["modelContextToolDefinitionSetSha256"];
+    const binding =
+      typeof turnIndex === "number" && Number.isSafeInteger(turnIndex)
+        ? envelopeByRunAndTurn.get(`${event.runId}:${turnIndex}`)
+        : undefined;
+    const bindingKey = `${event.runId}:${String(turnIndex)}`;
+    if (
+      !binding ||
+      responseBindingKeys.has(bindingKey) ||
+      event.seq <= binding.eventSeq ||
+      !shaFieldOrUndefined(envelopeSha256) ||
+      !shaFieldOrUndefined(messageSetSha256) ||
+      !shaFieldOrUndefined(toolDefinitionSetSha256) ||
+      envelopeSha256 !== binding.receipt.contentSha256 ||
+      messageSetSha256 !== binding.receipt.messageSetSha256 ||
+      toolDefinitionSetSha256 !== binding.receipt.toolDefinitionSetSha256
+    ) {
+      throw new Error(`${label} response binding is invalid: ${event.runId}`);
+    }
+    responseBindingKeys.add(bindingKey);
+    responseBindingsByRun.set(
+      event.runId,
+      (responseBindingsByRun.get(event.runId) ?? 0) + 1,
+    );
+  }
+  for (const [runId, bindingCount] of responseBindingsByRun) {
+    const envelopeCount = envelopeCountsByRun.get(runId) ?? 0;
+    if (bindingCount !== envelopeCount) {
+      throw new Error(`${label} response binding count is invalid: ${runId}`);
+    }
+  }
+}
+
 function toolDefinitionProjection(tool: ModelContextEnvelopeTool) {
   return {
     name: tool.name,
@@ -180,6 +262,12 @@ function shaField(value: unknown): string {
     invalidReceipt();
   }
   return value;
+}
+
+function shaFieldOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
+    ? value
+    : undefined;
 }
 
 function invalidReceipt(): never {

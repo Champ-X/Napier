@@ -12,8 +12,9 @@ All notable changes to Napier are recorded here.
   Prompt, provider-message set, tool-name set, and tool-definition set hashes
   plus role/count metadata without copying prompt text, messages, tool schemas,
   tool names, or tool outputs. Portable replay validates receipt hashes and
-  per-Run turn-index continuity, and each `model.response` now binds back to
-  its request envelope hash, message-set hash, and tool-definition-set hash.
+  per-Run turn-index continuity, and the Run replay snapshot verifier now uses
+  the same fail-closed binding rules. Each `model.response` binds back to its
+  request envelope hash, message-set hash, and tool-definition-set hash.
   Metadata-only OTLP exposes those bindings on the chat span with counts and
   SHA-256 values only. The lazy Trace Workbench now projects the same envelopes
   as a strict hash-only register, shows the bound response sequence/model/stop

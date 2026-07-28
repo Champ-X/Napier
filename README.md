@@ -832,10 +832,11 @@ turn index, and SHA-256 projections for the System Prompt, message set,
 tool-name set, and tool-definition set.
 
 The raw prompt, messages, tool names, tool schemas, and tool outputs are not
-copied into the receipt. Portable ledger validation replays the receipt shape,
-hash, and per-Run turn-index sequence so a tampered or duplicated model-context
-claim fails closed during export/import verification. Each `model.response`
-also carries the envelope hash, turn index, message-set hash, and
+copied into the receipt. Portable ledger and Run replay snapshot validation
+replay the receipt shape, hash, and per-Run turn-index sequence so a tampered
+or duplicated model-context claim fails closed during export/import
+verification. Each `model.response` also carries the envelope hash, turn index,
+message-set hash, and
 tool-definition-set hash for the request that produced it; OTLP exposes those
 values on the chat span as metadata only. The lazy Trace Workbench renders
 these envelopes as a hash-only register, shows the bound response sequence,
