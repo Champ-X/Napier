@@ -106,6 +106,10 @@ All notable changes to Napier are recorded here.
   receipt against `ThreadRecord.importProvenance`, failing closed on payload,
   timestamp, category, visibility, or cutoff drift while remaining compatible
   with older imported Threads that predate the ledger receipt.
+- Metadata-only OTLP root spans now include the `thread.imported` receipt
+  sequence and payload SHA-256 when that ledger receipt is present and aligned,
+  giving trace consumers proof that imported lineage attributes are
+  ledger-backed without exposing the replay bundle.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

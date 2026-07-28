@@ -2264,6 +2264,9 @@ fixture provenance plus a local imported-history cutoff sequence, so
 branch-copied historical messages remain behind that boundary without
 over-redacting later local operator input. Run Lab and metadata-only OTLP root
 span attributes expose the same source event count and local cutoff for audit.
+When a matching `thread.imported` receipt exists, OTLP also exports its local
+sequence and payload SHA-256 so trace consumers can tell the imported lineage
+projection is ledger-backed without replaying or exposing the bundle.
 Imported provenance is also an unconditional automatic-recovery blocker; an
 imported interrupted Run can only continue through explicit operator action.
 SQLite state restore validates imported provenance hashes, counts, timestamps,

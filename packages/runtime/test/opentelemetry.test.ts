@@ -18,6 +18,7 @@ import {
   validateOpenTelemetryTraceArtifact,
   verifyOpenTelemetryTraceArtifact,
 } from "../src/opentelemetry.js";
+import { exportThreadReplayBundle } from "../src/replay.js";
 import { LocalStore } from "../src/store.js";
 
 const temporaryRoots: string[] = [];
@@ -680,7 +681,49 @@ describe("OpenTelemetry trace export", () => {
         "napier.thread.import.source_content_sha256",
       ),
     ).toBe("1".repeat(64));
+    expect(
+      attributeValue(root.attributes, "napier.thread.import.receipt_seq"),
+    ).toBeUndefined();
+    expect(
+      attributeValue(root.attributes, "napier.thread.import.receipt_sha256"),
+    ).toBeUndefined();
     expect(JSON.stringify(artifact)).not.toContain("Imported OTLP lineage");
+
+    const source = store
+      .listThreads()
+      .find((candidate) => !candidate.importProvenance)!;
+    const bundle = await exportThreadReplayBundle(store, source.id);
+    const imported = await store.importThreadReplayBundle(
+      bundle,
+      "Imported OTLP receipt",
+    );
+    const importEvent = imported.events.find(
+      (event) => event.type === "thread.imported",
+    );
+    if (!importEvent) throw new Error("Expected Thread import receipt event");
+    const importedArtifact = await createOpenTelemetryTraceArtifact(
+      store,
+      imported.thread.id,
+    );
+    const importedRoot = spans(importedArtifact).find(
+      (span) => !span.parentSpanId,
+    )!;
+
+    expect(
+      attributeValue(
+        importedRoot.attributes,
+        "napier.thread.import.receipt_seq",
+      ),
+    ).toBe(importEvent.seq);
+    expect(
+      attributeValue(
+        importedRoot.attributes,
+        "napier.thread.import.receipt_sha256",
+      ),
+    ).toBe(sha256(canonicalJson(importEvent.payload)));
+    expect(JSON.stringify(importedArtifact)).not.toContain(
+      "Imported OTLP receipt",
+    );
   });
 
   it("rejects structural, graph, and content-hash tampering", async () => {

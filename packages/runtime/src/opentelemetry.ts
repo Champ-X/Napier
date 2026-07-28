@@ -36,6 +36,7 @@ const SPAN_ID_PATTERN = /^[a-f0-9]{16}$/;
 const RESOURCE_ID_PATTERN = /^[a-z][a-z0-9_]{2,80}$/;
 const ATTRIBUTE_KEY_PATTERN = /^[A-Za-z][A-Za-z0-9_.-]{0,255}$/;
 const EVENT_NAME_PATTERN = /^[a-z][a-z0-9_.-]{1,127}$/;
+const THREAD_IMPORTED_EVENT = "thread.imported";
 
 const EXCLUDED_EVENT_TYPES = [
   "model.text.delta",
@@ -267,6 +268,8 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
   "napier.thread.id",
   "napier.thread.import.imported_at",
   "napier.thread.import.local_imported_through_seq",
+  "napier.thread.import.receipt_seq",
+  "napier.thread.import.receipt_sha256",
   "napier.thread.import.source_api_version",
   "napier.thread.import.source_content_sha256",
   "napier.thread.import.source_embedded_model_context_envelope_count",
@@ -552,6 +555,10 @@ function buildOtlpRequest(
         "napier.export.scope": runId ? "run" : "thread",
         "napier.thread.id": detail.thread.id,
         ...importProvenanceAttributes(detail.thread.importProvenance),
+        ...importProvenanceReceiptAttributes(
+          detail.thread.importProvenance,
+          events,
+        ),
         ...(runId ? { "napier.run.id": runId } : {}),
       }),
       events: rootEvents,
@@ -1350,6 +1357,28 @@ function importProvenanceAttributes(
         }
       : {}),
     "napier.thread.import.imported_at": provenance.importedAt,
+  };
+}
+
+function importProvenanceReceiptAttributes(
+  provenance: ThreadImportProvenance | undefined,
+  events: RunEvent[],
+): Record<string, string | number> {
+  if (!provenance?.localImportedThroughSeq) return {};
+  const receipt = events.find(
+    (event) =>
+      event.type === THREAD_IMPORTED_EVENT &&
+      event.seq === provenance.localImportedThroughSeq &&
+      event.category === "lifecycle" &&
+      event.visibility === "debug" &&
+      event.createdAt === provenance.importedAt,
+  );
+  if (!receipt) return {};
+  return {
+    "napier.thread.import.receipt_seq": receipt.seq,
+    "napier.thread.import.receipt_sha256": sha256(
+      canonicalJson(receipt.payload),
+    ),
   };
 }
 
