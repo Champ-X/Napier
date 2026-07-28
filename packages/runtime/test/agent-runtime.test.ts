@@ -2769,6 +2769,156 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("replaces a symbol range through hash-bound parent Agent tools", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    const filePath = path.join(workspaceRoot, "src", "service.ts");
+    const source = [
+      "export class Service {",
+      "  run(): string {",
+      '    return "old";',
+      "  }",
+      "}",
+      "",
+      "export const untouched = true;",
+    ].join("\n");
+    const replacement = [
+      "export class Service {",
+      "  run(): string {",
+      '    return "new";',
+      "  }",
+      "",
+      "  status(): string {",
+      '    return "ok";',
+      "  }",
+      "}",
+    ].join("\n");
+    const updated = `${replacement}\n\nexport const untouched = true;`;
+    await writeFile(filePath, source, "utf8");
+    const sourceSha256 = createHash("sha256").update(source).digest("hex");
+    const updatedSha256 = createHash("sha256").update(updated).digest("hex");
+    const symbolLineSha256 = createHash("sha256")
+      .update("export class Service {")
+      .digest("hex");
+    const symbolRangeSha256 = createHash("sha256")
+      .update(
+        [
+          "export class Service {",
+          "  run(): string {",
+          '    return "old";',
+          "  }",
+          "}",
+        ].join("\n"),
+      )
+      .digest("hex");
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const originalAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(originalAgent.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["read_symbol", "apply_patch"],
+    });
+    const thread = await store.createThread({
+      title: "Hash range workspace edit",
+      agentId: agent.id,
+    });
+
+    const faux = fauxProvider({ provider: "faux-hashrange-edit" });
+    faux.setResponses([
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toEqual(
+          expect.arrayContaining(["read_symbol", "apply_patch"]),
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("read_symbol", {
+            path: "src/service.ts",
+            line: 1,
+            lineSha256: symbolLineSha256,
+            maxLines: 20,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const serialized = JSON.stringify(context.messages);
+        expect(serialized).toContain("Napier symbol source metadata");
+        expect(serialized).toContain(sourceSha256);
+        expect(serialized).toContain(symbolRangeSha256);
+        return fauxAssistantMessage(
+          fauxToolCall("apply_patch", {
+            operation: "hashrange_replace",
+            path: "src/service.ts",
+            expectedSha256: sourceSha256,
+            edits: [
+              {
+                startLine: 1,
+                endLine: 5,
+                rangeSha256: symbolRangeSha256,
+                newText: replacement,
+              },
+            ],
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(updatedSha256);
+        return fauxAssistantMessage(
+          "The Service class was replaced with a hash range precondition.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Replace the Service class source range.",
+      model: { provider: "faux-hashrange-edit", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(await readFile(filePath, "utf8")).toBe(updated);
+    expect(faux.state.callCount).toBe(4);
+    const events = await store.listEvents(thread.id);
+    const patchEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "apply_patch",
+    );
+    expect(patchEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          path: "src/service.ts",
+          operation: "hashrange_replace",
+          beforeSha256: sourceSha256,
+          afterSha256: updatedSha256,
+          editCount: 1,
+        }),
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("inspects structured data through the parent Agent ledger", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);
