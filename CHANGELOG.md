@@ -256,6 +256,8 @@ All notable changes to Napier are recorded here.
   literal search results can feed `read_file` and Hashline edits directly.
 - Trace tool summaries now surface `search_files` match counts and match-set
   hashes without exposing matched text or paths.
+- Trace tool summaries now surface `verify_workspace` kind/status, exit code,
+  output hashes, and truncation flags without exposing verifier output or paths.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

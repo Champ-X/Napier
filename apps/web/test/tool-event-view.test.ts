@@ -83,6 +83,41 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes verify_workspace status and output hashes only", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "verify_workspace",
+      status: "completed",
+      output: "TOP_SECRET_STDOUT\nTOP_SECRET_STDERR",
+      details: {
+        kind: "typecheck",
+        status: "failed",
+        sandbox: "TOP_SECRET_SANDBOX",
+        cwd: "TOP_SECRET_CWD",
+        target: "TOP_SECRET_TARGET",
+        exitCode: 2,
+        stdoutSha256: "d".repeat(64),
+        stderrSha256: "e".repeat(64),
+        stdoutTruncated: true,
+        stderrTruncated: false,
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "verify_workspace",
+      status: "completed",
+      verificationKind: "typecheck",
+      verificationStatus: "failed",
+      verificationExitCode: 2,
+      verificationStdoutSha256: "d".repeat(64),
+      verificationStderrSha256: "e".repeat(64),
+      verificationStdoutTruncated: true,
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / verify_workspace / completed / verification typecheck failed / exit 2 / stdout ${"d".repeat(12)} / stderr ${"e".repeat(12)} / stdout-truncated`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("fails closed to a fixed summary for malformed tool receipts", () => {
     const event = toolEvent("tool.failed", {
       toolName: "bad tool name",

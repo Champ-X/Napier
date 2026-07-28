@@ -1116,7 +1116,9 @@ outlive the check.
 non-zero exit is preserved as failed verification evidence rather than a tool
 transport error. Trace records the sandbox, target, duration, exit status,
 signal, output sizes, truncation flags, and independent stdout/stderr SHA-256
-digests.
+digests. Workbench summaries expose only verifier kind/status, exit code,
+output hashes, and truncation flags; output text, cwd, target paths, and
+sandbox labels remain outside the bounded summary.
 
 ## Durable Plan Archives
 

@@ -1554,8 +1554,10 @@ successful check or a hidden transport exception. `timed_out` and
 The result records kind, sandbox, workspace-relative cwd and target, duration,
 exit code, signal, character counts, truncation flags, and independent
 stdout/stderr SHA-256 digests. Full bounded output is returned to the Agent;
-the structured details are retained in Trace. Subagents remain read-only and
-never receive the verifier.
+the structured details are retained in Trace. Workbench summaries expose only
+kind/status, exit code, output hashes, and truncation flags; output text,
+cwd/target paths, and sandbox labels stay out of the bounded summary. Subagents
+remain read-only and never receive the verifier.
 
 ## Background Automation And Channel Flow
 
