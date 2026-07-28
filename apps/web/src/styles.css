@@ -2225,6 +2225,14 @@ button:disabled {
   white-space: nowrap;
 }
 
+.configuration-hashes .receipt-verification-pill.status-valid {
+  color: #315d5c;
+}
+
+.configuration-hashes .receipt-verification-pill.status-invalid {
+  color: #9a4f31;
+}
+
 .event-delta {
   padding: 10px 12px 12px;
 }
@@ -7294,6 +7302,56 @@ button:disabled {
   margin-top: 7px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.trace-summary-verification {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 6px 7px;
+  margin-top: 8px;
+  background: rgb(225 237 232 / 75%);
+  border: 1px solid #b5ccc4;
+  border-left: 2px solid #315d5c;
+}
+
+.trace-summary-verification.status-invalid {
+  background: #f1e3dc;
+  border-color: #d0a085;
+  border-left-color: #9a4f31;
+}
+
+.trace-summary-verification.status-invalid span,
+.trace-summary-verification.status-invalid code {
+  color: #9a4f31;
+}
+
+.trace-summary-verification span,
+.trace-summary-verification small {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.trace-summary-verification span {
+  color: #315d5c;
+}
+
+.trace-summary-verification code {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: #315d5c;
+  text-overflow: ellipsis;
+}
+
+.trace-summary-verification small {
+  grid-column: 1 / -1;
 }
 
 .trace-summary-coverage dl {

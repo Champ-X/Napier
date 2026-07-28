@@ -177,6 +177,9 @@ All notable changes to Napier are recorded here.
 - Trace summary coverage receipts now have fail-closed Web verifiers that reject
   malformed counts, status/delta drift, generic event-type drift, and
   `contentSha256` mismatches before treating the coverage evidence as valid.
+- Trace Workbench and Run Lab now run those verifiers before presenting coverage
+  receipt state, surfacing hash-only verification status and diagnostic codes
+  next to the summary-boundary evidence.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

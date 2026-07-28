@@ -26,8 +26,10 @@ import { importProvenanceReceiptView } from "./use-workspace-view-model";
 import {
   traceSummaryCoverageDeltaReceipt,
   traceSummaryCoverageDeltaView,
+  verifyTraceSummaryCoverageDeltaReceipt,
   type TraceSummaryCoverageDeltaReceipt,
   type TraceSummaryCoverageDeltaStatus,
+  type TraceSummaryCoverageReceiptVerification,
 } from "./trace-event-summary-view";
 
 const LazyEvaluationSuitePanel = lazy(() => import("./EvaluationSuitePanel"));
@@ -104,18 +106,25 @@ export default function RunLabPanel({
     : undefined;
   const [traceSummaryReceipt, setTraceSummaryReceipt] =
     useState<TraceSummaryCoverageDeltaReceipt>();
+  const [traceSummaryReceiptVerification, setTraceSummaryReceiptVerification] =
+    useState<TraceSummaryCoverageReceiptVerification>();
 
   useEffect(() => {
     let active = true;
     setTraceSummaryReceipt(undefined);
+    setTraceSummaryReceiptVerification(undefined);
     if (!traceSummaryCoverageDelta) {
       return () => {
         active = false;
       };
     }
     void traceSummaryCoverageDeltaReceipt(traceSummaryCoverageDelta).then(
-      (receipt) => {
-        if (active) setTraceSummaryReceipt(receipt);
+      async (receipt) => {
+        const verification =
+          await verifyTraceSummaryCoverageDeltaReceipt(receipt);
+        if (!active) return;
+        setTraceSummaryReceipt(receipt);
+        setTraceSummaryReceiptVerification(verification);
       },
     );
     return () => {
@@ -384,6 +393,20 @@ export default function RunLabPanel({
                   <code title={traceSummaryReceipt.contentSha256}>
                     {copy.lab.traceSummaryReceipt}{" "}
                     {traceSummaryReceipt.contentSha256.slice(0, 12)}
+                  </code>
+                ) : null}
+                {traceSummaryReceiptVerification ? (
+                  <code
+                    className={`receipt-verification-pill status-${traceSummaryReceiptVerification.status}`}
+                    title={
+                      traceSummaryReceiptVerification.observedContentSha256 ??
+                      traceSummaryReceiptVerification.declaredContentSha256
+                    }
+                  >
+                    {copy.lab.traceSummaryVerification}{" "}
+                    {traceSummaryReceiptVerification.status === "valid"
+                      ? copy.lab.traceSummaryVerified
+                      : copy.lab.traceSummaryInvalid}
                   </code>
                 ) : null}
               </div>

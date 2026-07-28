@@ -50,7 +50,9 @@ import {
   traceEventSummaryView,
   traceSummaryCoverageReceipt,
   traceSummaryCoverageView,
+  verifyTraceSummaryCoverageReceipt,
   type TraceSummaryCoverageReceipt,
+  type TraceSummaryCoverageReceiptVerification,
   type TraceSummaryCoverageView,
 } from "./trace-event-summary-view";
 import type {
@@ -96,6 +98,8 @@ export default function TracePanel({
     summaryCoverage.genericEventTypes.join("\n");
   const [summaryCoverageReceipt, setSummaryCoverageReceipt] =
     useState<TraceSummaryCoverageReceipt>();
+  const [summaryCoverageVerification, setSummaryCoverageVerification] =
+    useState<TraceSummaryCoverageReceiptVerification>();
 
   useEffect(() => {
     if (exportRunId && !runs.some((run) => run.id === exportRunId)) {
@@ -131,13 +135,17 @@ export default function TracePanel({
   useEffect(() => {
     let active = true;
     setSummaryCoverageReceipt(undefined);
+    setSummaryCoverageVerification(undefined);
     if (summaryCoverage.total === 0) {
       return () => {
         active = false;
       };
     }
-    void traceSummaryCoverageReceipt(summaryCoverage).then((receipt) => {
-      if (active) setSummaryCoverageReceipt(receipt);
+    void traceSummaryCoverageReceipt(summaryCoverage).then(async (receipt) => {
+      const verification = await verifyTraceSummaryCoverageReceipt(receipt);
+      if (!active) return;
+      setSummaryCoverageReceipt(receipt);
+      setSummaryCoverageVerification(verification);
     });
     return () => {
       active = false;
@@ -290,6 +298,7 @@ export default function TracePanel({
       <TraceSummaryCoverageCard
         coverage={summaryCoverage}
         receipt={summaryCoverageReceipt}
+        verification={summaryCoverageVerification}
       />
       <AgentMilestoneLedger
         milestones={milestones}
@@ -314,9 +323,11 @@ export default function TracePanel({
 function TraceSummaryCoverageCard({
   coverage,
   receipt,
+  verification,
 }: {
   coverage: TraceSummaryCoverageView;
   receipt: TraceSummaryCoverageReceipt | undefined;
+  verification: TraceSummaryCoverageReceiptVerification | undefined;
 }) {
   if (coverage.total === 0) return null;
   return (
@@ -358,9 +369,26 @@ function TraceSummaryCoverageCard({
           : copy.trace.summary.noGeneric}
       </p>
       {receipt ? (
-        <code title={receipt.contentSha256}>
-          {copy.trace.summary.receipt} {receipt.contentSha256.slice(0, 12)}
-        </code>
+        <output
+          className={`trace-summary-verification status-${verification?.status ?? "pending"}`}
+          aria-live="polite"
+        >
+          <span>
+            {verification
+              ? verification.status === "valid"
+                ? copy.trace.summary.verificationValid
+                : copy.trace.summary.verificationInvalid
+              : copy.trace.summary.verificationPending}
+          </span>
+          <code title={receipt.contentSha256}>
+            {copy.trace.summary.receipt} {receipt.contentSha256.slice(0, 12)}
+          </code>
+          <small>
+            {verification && verification.diagnostics.length > 0
+              ? verification.diagnostics.join(", ")
+              : copy.trace.summary.noDiagnostics}
+          </small>
+        </output>
       ) : null}
     </section>
   );

@@ -2382,6 +2382,10 @@ coverage receipt is invalid when counts do not add up, generic event-type sets
 are malformed, or the recomputed canonical hash differs from `contentSha256`.
 A delta receipt also checks status, diagnostics, and every delta against the
 left/right coverage payloads before accepting its hash.
+Trace Workbench and Run Lab call those verifiers as part of their receipt
+projection, so the visible evidence includes a valid/invalid status and
+bounded diagnostic codes beside the short hash rather than treating generated
+receipt hashes as self-validating UI facts.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant
