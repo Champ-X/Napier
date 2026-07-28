@@ -158,6 +158,12 @@ All notable changes to Napier are recorded here.
   names/descriptions, capability labels, MCP tool names, rollout names, and
   package-change labels stay out of the event list while safe IDs, statuses,
   counts, booleans, and SHA-256 receipts remain visible.
+- Trace event summaries now project `skill.*`, `prompt.*`, `inspector.*`,
+  `receipt.*`, `receipt_trust.*`, and `branch.*` receipts through bounded
+  governance views, so Skill names/paths, package publisher prose, prompt or
+  inspector descriptions, receipt publishers/errors, and future branch prose
+  stay out of the event list while lineage IDs, status/count metadata, booleans,
+  and SHA-256 receipts remain visible.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

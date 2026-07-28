@@ -2346,6 +2346,21 @@ names, rollout channel names, package-change labels, transport details,
 diagnostics, or arbitrary future extension payload prose. Unknown credential
 or extension events fail closed to their category before the generic fallback
 can inspect `label`, `name`, `description`, `toolName`, `error`, or `summary`.
+Package, receipt, and branch governance events extend that boundary.
+`skill.*`, `prompt.*`, and `inspector.*` summaries may show installation,
+agent, and replacement IDs, package status, verification status, key IDs,
+skill/panel counts, file byte/line counts, booleans, and SHA-256 receipts for
+manifests, envelopes, catalogs, system prompts, reviews, frontmatter, body, and
+current content. They do not render Skill names, relative paths, package
+publisher names, prompt package prose, inspector descriptions, or arbitrary
+future package payload prose. `receipt.*` and legacy `receipt_trust.*`
+summaries may show receipt kind, safe anchor/subscription/decision IDs, status,
+refresh status, key IDs, algorithms, counts, booleans, and hash-only receipt,
+source, policy, discovery, selection, approval, and failure evidence. They do
+not render publishers, source URLs, failure prose, diagnostics, or arbitrary
+future receipt payload prose. `branch.*` summaries stay limited to source
+Thread ID and sequence lineage; branch names, objectives, descriptions, and
+future branch prose do not drive the event-list summary.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

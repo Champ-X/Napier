@@ -31,6 +31,7 @@ import {
 } from "./agent-milestone-api";
 import { agentEventTraceSummary } from "./agent-event-view";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
+import { branchEventTraceSummary } from "./branch-event-view";
 import {
   operatorDecisionTraceSummary,
   runControlTraceSummary,
@@ -56,7 +57,9 @@ import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import { modelEventTraceSummary } from "./model-event-view";
 import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
+import { packageGovernanceEventTraceSummary } from "./package-governance-event-view";
 import { planEventTraceSummary } from "./plan-event-view";
+import { receiptEventTraceSummary } from "./receipt-event-view";
 import { runEventTraceSummary } from "./run-event-view";
 import { scheduleEventTraceSummary } from "./schedule-event-view";
 import { subagentEventTraceSummary } from "./subagent-event-view";
@@ -969,6 +972,9 @@ function eventSummary(event: RunEvent): string {
   if (event.type.startsWith("agent.")) {
     return agentEventTraceSummary(event) ?? event.category;
   }
+  if (event.type.startsWith("branch.")) {
+    return branchEventTraceSummary(event) ?? event.category;
+  }
   if (event.type.startsWith("schedule.")) {
     return scheduleEventTraceSummary(event) ?? event.category;
   }
@@ -980,6 +986,19 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("extension.")) {
     return extensionEventTraceSummary(event) ?? event.category;
+  }
+  if (
+    event.type.startsWith("skill.") ||
+    event.type.startsWith("prompt.") ||
+    event.type.startsWith("inspector.")
+  ) {
+    return packageGovernanceEventTraceSummary(event) ?? event.category;
+  }
+  if (
+    event.type.startsWith("receipt.") ||
+    event.type.startsWith("receipt_trust.")
+  ) {
+    return receiptEventTraceSummary(event) ?? event.category;
   }
   if (event.type.startsWith("context.")) {
     return contextEventTraceSummary(event) ?? event.category;
