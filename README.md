@@ -323,6 +323,9 @@ Due schedules re-check the effective model at execution time too; credential
 drift settles the claim as `schedule.failed` without creating a Run.
 Inbound deliveries do the same before dispatch; drift enters the existing
 retry/dead-letter lane without creating a Run.
+Direct `AgentRuntime.runPrompt()` callers keep the Work Ledger failure contract:
+an unconfigured live provider becomes a stable `run.failed` diagnostic before
+the provider is called, so active goals block with replayable evidence.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source

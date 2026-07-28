@@ -417,6 +417,11 @@ export class AgentRuntime {
       if (!isDemoModel && !model) {
         throw new Error(`Model not found: ${modelRef.provider}/${modelRef.id}`);
       }
+      if (!isDemoModel && !(await this.modelRegistry.isConfigured(modelRef))) {
+        throw new Error(
+          `Model provider is not configured: ${modelRef.provider}`,
+        );
+      }
       const subagents =
         model && !safeReadOnlyRecovery
           ? new SubagentCoordinator({

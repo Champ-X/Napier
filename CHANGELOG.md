@@ -248,6 +248,8 @@ All notable changes to Napier are recorded here.
   Run, settling credential drift as `schedule.failed` ledger evidence.
 - Inbound delivery execution now re-checks the effective model before creating
   a Run, routing credential drift through retry or dead-letter evidence.
+- Direct runtime prompt calls now fail known-but-unconfigured live providers
+  with stable `run.failed` evidence before invoking the provider stream.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

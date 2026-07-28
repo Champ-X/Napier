@@ -1157,6 +1157,8 @@ render Runtime and Evaluation model selectors
      drift as schedule.failed evidence
   -> re-check inbound delivery models before creating a Run, routing credential
      drift through retry/dead-letter evidence
+  -> direct AgentRuntime callers fail an existing Run with a stable
+     unconfigured-provider diagnostic before invoking the provider
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1197,8 +1199,11 @@ model before creating a Run; credential drift settles the claim with
 `schedule.failed` ledger evidence and no Run side effect. Inbound deliveries
 repeat the check before dispatch and route drift through
 `channel.delivery.retry.*` or dead-letter evidence without creating a Run.
-Credential
-ledger events contain only
+Direct `AgentRuntime.runPrompt()` callers preserve the runtime failure-ledger
+contract instead: a missing credential for a known live provider becomes a
+stable `run.failed` diagnostic before the provider stream is invoked, allowing
+active goals to block with replayable evidence. Credential ledger events contain
+only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are
 metadata; submitted or resolved values exist only in memory for the vault

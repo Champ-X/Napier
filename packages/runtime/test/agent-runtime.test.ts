@@ -1357,6 +1357,72 @@ describe("AgentRuntime demo path", () => {
     expect(detail.thread.goal?.blocker).toBe("run_failed");
   });
 
+  it("fails a direct runtime run before calling an unconfigured provider", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Unconfigured runtime model",
+      agentId: agent.id,
+    });
+    await store.setGoal(
+      thread.id,
+      createGoal("Complete a configured model task"),
+    );
+    const unavailable = fauxProvider({
+      provider: "faux-runtime-unavailable",
+    });
+    unavailable.setResponses([
+      fauxAssistantMessage("This response must not be generated."),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider({
+      ...unavailable.provider,
+      auth: {
+        apiKey: {
+          name: "Unavailable",
+          resolve: async () => undefined,
+        },
+      },
+    });
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Start with a provider that lost credentials.",
+      model: { provider: "faux-runtime-unavailable", id: "faux-1" },
+    });
+
+    expect(run).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        error: "Model provider is not configured: faux-runtime-unavailable",
+      }),
+    );
+    expect(unavailable.state.callCount).toBe(0);
+    const events = await store.listEvents(thread.id);
+    expect(events.map((event) => event.type)).toContain("run.failed");
+    expect(
+      events.find((event) => event.type === "run.failed")?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        message: "Model provider is not configured: faux-runtime-unavailable",
+        status: "failed",
+      }),
+    );
+    expect(events.some((event) => event.type === "message.assistant")).toBe(
+      false,
+    );
+    const detail = await store.getDetail(thread.id);
+    expect(detail.thread.goal?.status).toBe("blocked");
+    expect(detail.thread.goal?.blocker).toBe("run_failed");
+  });
+
   it("injects only approved memory into the live model context", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);
