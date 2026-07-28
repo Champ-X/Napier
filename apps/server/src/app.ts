@@ -20048,6 +20048,18 @@ function setRunMetricsHeaders(
     `${prefix}-Model-Response-Count`,
     String(metrics.modelResponseCount),
   );
+  context.header(
+    `${prefix}-Model-Context-Envelope-Count`,
+    String(metrics.modelContextEnvelopeCount),
+  );
+  context.header(
+    `${prefix}-Model-Context-Bound-Response-Count`,
+    String(metrics.modelContextBoundResponseCount),
+  );
+  context.header(
+    `${prefix}-Model-Context-Unbound-Response-Count`,
+    String(metrics.modelContextUnboundResponseCount),
+  );
   context.header(`${prefix}-Tool-Call-Count`, String(metrics.toolCallCount));
   context.header(
     `${prefix}-Tool-Completed-Count`,

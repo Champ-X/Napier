@@ -841,7 +841,9 @@ tool-definition-set hash for the request that produced it; OTLP exposes those
 values on the chat span as metadata only. The lazy Trace Workbench renders
 these envelopes as a hash-only register, shows the bound response sequence,
 model, and stop reason when the response hashes match, and refuses malformed
-payloads or payloads containing raw fields.
+payloads or payloads containing raw fields. Run replay snapshots and Run Lab
+comparisons expose envelope coverage plus bound/unbound response counts as
+ordinary metrics.
 
 ## Agent Configuration History
 

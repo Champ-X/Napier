@@ -272,6 +272,9 @@ describe("run replay", () => {
         eventCount: 4,
         messageCount: 2,
         modelResponseCount: 1,
+        modelContextEnvelopeCount: 1,
+        modelContextBoundResponseCount: 1,
+        modelContextUnboundResponseCount: 0,
         inputTokens: 20,
         outputTokens: 8,
         cacheReadTokens: 3,
@@ -319,6 +322,9 @@ describe("run replay", () => {
     expect(comparison.metricDelta).toEqual(
       expect.objectContaining({
         eventCount: 2,
+        modelContextEnvelopeCount: 0,
+        modelContextBoundResponseCount: 0,
+        modelContextUnboundResponseCount: 0,
         toolCallCount: 1,
         toolCompletedCount: 1,
         inputTokens: 8,

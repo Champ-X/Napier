@@ -17,7 +17,10 @@ import {
 import type { LocalStore } from "./store.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { compareRunConfigurations } from "./run-config.js";
-import { assertModelContextEnvelopeEventBindings } from "./model-context-envelope.js";
+import {
+  assertModelContextEnvelopeEventBindings,
+  MODEL_CONTEXT_ENVELOPE_EVENT,
+} from "./model-context-envelope.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { createThreadReplayBundle as buildThreadReplayBundle } from "./thread-bundles.js";
 
@@ -26,6 +29,9 @@ const METRIC_KEYS: Array<keyof RunMetricDelta> = [
   "eventCount",
   "messageCount",
   "modelResponseCount",
+  "modelContextEnvelopeCount",
+  "modelContextBoundResponseCount",
+  "modelContextUnboundResponseCount",
   "toolCallCount",
   "toolCompletedCount",
   "toolFailedCount",
@@ -500,6 +506,22 @@ function buildRunMetrics(
     })
     .join("\n");
   const lastTimestamp = finishedAt ?? events.at(-1)?.createdAt ?? startedAt;
+  const modelResponses = events.filter(
+    (event) => event.type === "model.response",
+  );
+  const modelContextEnvelopeCount = events.filter(
+    (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
+  ).length;
+  const modelContextBoundResponseCount = modelResponses.filter(
+    (event) =>
+      Boolean(payloadString(event.payload, "modelContextEnvelopeSha256")) &&
+      typeof payloadNumber(event.payload, "modelContextEnvelopeTurnIndex") ===
+        "number" &&
+      Boolean(payloadString(event.payload, "modelContextMessageSetSha256")) &&
+      Boolean(
+        payloadString(event.payload, "modelContextToolDefinitionSetSha256"),
+      ),
+  ).length;
   return {
     durationMs: Math.max(0, Date.parse(lastTimestamp) - Date.parse(startedAt)),
     eventCount: events.length,
@@ -507,9 +529,11 @@ function buildRunMetrics(
       (event) =>
         event.type === "message.user" || event.type === "message.assistant",
     ).length,
-    modelResponseCount: events.filter(
-      (event) => event.type === "model.response",
-    ).length,
+    modelResponseCount: modelResponses.length,
+    modelContextEnvelopeCount,
+    modelContextBoundResponseCount,
+    modelContextUnboundResponseCount:
+      modelResponses.length - modelContextBoundResponseCount,
     toolCallCount: events.filter((event) => event.type === "tool.started")
       .length,
     toolCompletedCount: events.filter(
@@ -572,6 +596,16 @@ function payloadString(payload: JsonValue, key: string): string | undefined {
   }
   const value = payload[key];
   return typeof value === "string" ? value : undefined;
+}
+
+function payloadNumber(payload: JsonValue, key: string): number | undefined {
+  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
+    return undefined;
+  }
+  const value = payload[key];
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 function countEventTypes(events: RunEvent[]): Map<string, number> {

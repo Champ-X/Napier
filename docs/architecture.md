@@ -512,7 +512,9 @@ replay snapshot validation calls the same binding verifier before accepting an
 uploaded snapshot. OTLP projects those response bindings onto the chat span and
 allows only scalar counts plus SHA-256 keys. The lazy Trace projection joins
 matching response bindings back into the envelope card as response sequence,
-model, and stop reason; mismatched bindings remain unrendered.
+model, and stop reason; mismatched bindings remain unrendered. Run replay
+metrics count context envelopes, bound model responses, and unbound model
+responses so Run Lab comparisons can surface context-governance coverage.
 
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event

@@ -90,6 +90,7 @@ export const copy = {
     events: "Events",
     tokens: "Tokens",
     tools: "Tool calls",
+    contextBindings: "Context binds",
     cost: "Cost",
     noDelta: "No event-type differences.",
     configuration: "Configuration drift",

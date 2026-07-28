@@ -11748,6 +11748,15 @@ function expectRunMetricsHeaders(
   expect(response.headers.get(`${prefix}-model-response-count`)).toBe(
     String(metrics.modelResponseCount),
   );
+  expect(response.headers.get(`${prefix}-model-context-envelope-count`)).toBe(
+    String(metrics.modelContextEnvelopeCount),
+  );
+  expect(
+    response.headers.get(`${prefix}-model-context-bound-response-count`),
+  ).toBe(String(metrics.modelContextBoundResponseCount));
+  expect(
+    response.headers.get(`${prefix}-model-context-unbound-response-count`),
+  ).toBe(String(metrics.modelContextUnboundResponseCount));
   expect(response.headers.get(`${prefix}-tool-call-count`)).toBe(
     String(metrics.toolCallCount),
   );

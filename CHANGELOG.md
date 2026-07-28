@@ -19,7 +19,8 @@ All notable changes to Napier are recorded here.
   SHA-256 values only. The lazy Trace Workbench now projects the same envelopes
   as a strict hash-only register, shows the bound response sequence/model/stop
   reason when the hashes match, and drops malformed or raw-field-injected
-  payloads.
+  payloads. Run replay metrics and Run Lab comparisons now count envelope
+  coverage, bound responses, and unbound responses.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

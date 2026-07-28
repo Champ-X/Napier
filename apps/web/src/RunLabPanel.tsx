@@ -212,6 +212,12 @@ export default function RunLabPanel({
               value={formatSignedNumber(comparison.metricDelta.toolCallCount)}
             />
             <MetricDelta
+              label={copy.lab.contextBindings}
+              value={formatSignedNumber(
+                comparison.metricDelta.modelContextBoundResponseCount,
+              )}
+            />
+            <MetricDelta
               label={copy.lab.cost}
               value={formatSignedCost(comparison.metricDelta.costUsd)}
             />
