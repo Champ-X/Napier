@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CA4Hhmp1.js",
+    "path": "apps/web/dist/assets/index-DHgsSDyh.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "26d7170bbd194a369ca654b7e38d8eccd8b0d4902f427c46231797980544b035"
+    "sha256": "4ee8869b963333afc11bd5fa6fcf3aa469ba6ded549fbf5df82252109526a643"
   },
-  "distContentSha256": "26d7170bbd194a369ca654b7e38d8eccd8b0d4902f427c46231797980544b035",
+  "distContentSha256": "4ee8869b963333afc11bd5fa6fcf3aa469ba6ded549fbf5df82252109526a643",
   "errors": []
 }

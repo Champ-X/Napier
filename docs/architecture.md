@@ -2306,6 +2306,11 @@ the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant
 text, reasoning, or tool-call arguments. Malformed model response receipts fail
 closed to a fixed summary before the generic payload text fallback runs.
+Tool lifecycle events use the same rule: `tool.started`, `tool.completed`,
+`tool.failed`, and `tool.blocked` summaries show only the bounded tool name,
+status, effect, and known hash receipts such as input or loop-guard hashes.
+Raw tool input, output, details, policy prose, and arbitrary payload text never
+drive the event-list summary.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

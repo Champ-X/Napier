@@ -45,6 +45,7 @@ import {
   type IndependentModelAdvisorReviewView,
 } from "./model-advisor-review-view";
 import { toolLoopGuardCopy } from "./tool-loop-guard-copy";
+import { toolEventTraceSummary } from "./tool-event-view";
 import {
   toolLoopGuardTriggerViews,
   type ToolLoopGuardTriggerView,
@@ -943,6 +944,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type === "model.response") {
     return modelResponseTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("tool.")) {
+    return toolEventTraceSummary(event) ?? event.category;
   }
   if (
     !event.payload ||
