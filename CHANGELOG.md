@@ -213,6 +213,10 @@ All notable changes to Napier are recorded here.
   Agent tool and HTTP API, and validation rejects the latest `plan.artifact.*`
   event for an artifact when it drifts from the artifact manifest during
   SQLite restore, Thread replay bundle validation, or Plan archive verification.
+- Plan artifact validation now separates artifact bindings from event-time
+  scheduling projection metadata, so a normal flow can verify an artifact and
+  then complete a step without making replay export fail closed, while path,
+  evidence, digest, size, and source Run drift still fail closed.
 - Plan artifact Ledger events now include runtime-generated `pathSha256` and
   `evidenceSha256` companions, and the bounded Trace summary renders those
   hashes instead of artifact paths or evidence prose.

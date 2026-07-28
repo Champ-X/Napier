@@ -2678,6 +2678,239 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("plans, produces, and verifies a nested artifact through parent Agent tools", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const artifactPath = "artifacts/reports/summary.md";
+    const filePath = path.join(workspaceRoot, artifactPath);
+    const content = "# Summary\n\nDurable artifact evidence.\n";
+    const contentSha256 = createHash("sha256").update(content).digest("hex");
+    const createdDirectorySetSha256 = createHash("sha256")
+      .update(JSON.stringify(["artifacts", "artifacts/reports"]))
+      .digest("hex");
+    const producedEvidence = "Nested summary file was written by apply_patch.";
+    const verifiedEvidence = "Runtime hashed the nested artifact bytes.";
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const originalAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(originalAgent.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["apply_patch"],
+    });
+    const thread = await store.createThread({
+      title: "Planned nested artifact",
+      agentId: agent.id,
+    });
+    let planId = "";
+
+    const faux = fauxProvider({ provider: "faux-planned-artifact" });
+    faux.setResponses([
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toEqual(
+          expect.arrayContaining([
+            "create_plan",
+            "update_plan_step",
+            "update_plan_artifact",
+            "apply_patch",
+          ]),
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("create_plan", {
+            objective: "Produce and verify a nested artifact report.",
+            steps: [
+              {
+                id: "write-summary",
+                title: "Write summary",
+                description: "Create the nested artifact report.",
+                verification:
+                  "The plan artifact is verified from workspace bytes.",
+              },
+            ],
+            artifacts: [
+              {
+                id: "summary",
+                path: artifactPath,
+                kind: "file",
+                description: "Nested summary artifact.",
+              },
+            ],
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const match = /"planId":"([^"]+)"/.exec(
+          JSON.stringify(context.messages),
+        );
+        planId = match?.[1] ?? "";
+        expect(planId).toMatch(/^plan_/);
+        return fauxAssistantMessage(
+          fauxToolCall("update_plan_step", {
+            planId,
+            stepId: "write-summary",
+            action: "start",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      () =>
+        fauxAssistantMessage(
+          fauxToolCall("apply_patch", {
+            operation: "create",
+            path: artifactPath,
+            expectedSha256: null,
+            content,
+            createParentDirectories: true,
+          }),
+          { stopReason: "toolUse" },
+        ),
+      (context) => {
+        const serialized = JSON.stringify(context.messages);
+        expect(serialized).toContain(contentSha256);
+        expect(serialized).toContain(createdDirectorySetSha256);
+        return fauxAssistantMessage(
+          fauxToolCall("update_plan_artifact", {
+            planId,
+            artifactId: "summary",
+            action: "produced",
+            evidence: producedEvidence,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      () =>
+        fauxAssistantMessage(
+          fauxToolCall("update_plan_artifact", {
+            planId,
+            artifactId: "summary",
+            action: "verify",
+            evidence: verifiedEvidence,
+          }),
+          { stopReason: "toolUse" },
+        ),
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          '"status":"verified"',
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("update_plan_step", {
+            planId,
+            stepId: "write-summary",
+            action: "complete",
+            evidence:
+              "The nested artifact was written and verified from workspace bytes.",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage(
+        "The plan produced and verified the nested artifact with durable ledger evidence.",
+      ),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Plan, create, and verify a nested artifact report.",
+      model: { provider: "faux-planned-artifact", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(await readFile(filePath, "utf8")).toBe(content);
+    expect(faux.state.callCount).toBe(8);
+    const plan = store.getPlan(planId);
+    expect(plan).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        steps: [
+          expect.objectContaining({
+            id: "write-summary",
+            status: "completed",
+            runId: run.id,
+          }),
+        ],
+        artifacts: [
+          expect.objectContaining({
+            id: "summary",
+            path: artifactPath,
+            status: "verified",
+            sha256: contentSha256,
+            sizeBytes: Buffer.byteLength(content),
+            sourceRunId: run.id,
+            evidence: verifiedEvidence,
+          }),
+        ],
+      }),
+    );
+    const events = await store.listEvents(thread.id);
+    expect(events.map((event) => event.type)).toEqual(
+      expect.arrayContaining([
+        "plan.created",
+        "plan.step.started",
+        "tool.completed",
+        "plan.artifact.produced",
+        "plan.artifact.verified",
+        "plan.step.completed",
+      ]),
+    );
+    const patchEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "apply_patch",
+    );
+    expect(patchEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          path: artifactPath,
+          operation: "create",
+          afterSha256: contentSha256,
+          createdParentDirectoryCount: 2,
+          createdParentDirectorySetSha256: createdDirectorySetSha256,
+        }),
+      }),
+    );
+    const artifactVerified = events.find(
+      (event) => event.type === "plan.artifact.verified",
+    );
+    expect(artifactVerified?.payload).toEqual(
+      expect.objectContaining({
+        planId,
+        artifactId: "summary",
+        status: "verified",
+        sourceRunId: run.id,
+        path: artifactPath,
+        pathSha256: createHash("sha256").update(artifactPath).digest("hex"),
+        evidence: verifiedEvidence,
+        evidenceSha256: createHash("sha256")
+          .update(verifiedEvidence)
+          .digest("hex"),
+        sha256: contentSha256,
+        sizeBytes: Buffer.byteLength(content),
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("edits a workspace file through hash-bound policy-checked tools", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

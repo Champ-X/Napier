@@ -571,7 +571,8 @@ export function assertPlanArtifactEventBindings({
     }
     const key = `${planId}:${artifactId}`;
     const current = latestArtifactEvents.get(key);
-    if (!current || event.seq > current.seq) latestArtifactEvents.set(key, event);
+    if (!current || event.seq > current.seq)
+      latestArtifactEvents.set(key, event);
   }
   for (const event of latestArtifactEvents.values()) {
     const payload = objectPayload(event.payload);
@@ -589,10 +590,12 @@ export function assertPlanArtifactEventBindings({
       canonicalJson(
         normalizePlanArtifactEventPayload(
           createPlanArtifactEventPayload(plan, artifact),
-          payload,
         ),
       )
     ) {
+      throw new Error(`${label} plan.artifact event binding mismatch`);
+    }
+    if (!isPlanArtifactProjectionPayloadValid(payload)) {
       throw new Error(`${label} plan.artifact event binding mismatch`);
     }
   }
@@ -604,23 +607,26 @@ const PLAN_ARTIFACT_EVENT_COMMON_KEYS = new Set([
   "path",
   "status",
   "evidence",
-  "criticalPathStepIds",
-  "readyStepIds",
-  "blockedStepIds",
   "sha256",
   "sizeBytes",
   "sourceRunId",
 ]);
-const PLAN_ARTIFACT_EVENT_PROJECTION_KEYS = new Set([
+const PLAN_ARTIFACT_EVENT_BINDING_KEYS = new Set([
+  ...PLAN_ARTIFACT_EVENT_COMMON_KEYS,
   "pathSha256",
   "evidenceSha256",
+]);
+const PLAN_ARTIFACT_EVENT_PROJECTION_KEYS = new Set([
+  "criticalPathStepIds",
+  "readyStepIds",
+  "blockedStepIds",
   "activePhaseIndex",
   "parallelReadyStepIds",
   "phaseWaveCount",
   "phaseProjectionSha256",
 ]);
 const PLAN_ARTIFACT_EVENT_ALLOWED_KEYS = new Set([
-  ...PLAN_ARTIFACT_EVENT_COMMON_KEYS,
+  ...PLAN_ARTIFACT_EVENT_BINDING_KEYS,
   ...PLAN_ARTIFACT_EVENT_PROJECTION_KEYS,
 ]);
 
@@ -634,18 +640,54 @@ function hasUnsupportedArtifactEventPayloadKey(
 
 function normalizePlanArtifactEventPayload(
   payload: Record<string, unknown>,
-  projectionKeySource = payload,
 ): Record<string, unknown> {
   return Object.fromEntries(
-    [
-      ...PLAN_ARTIFACT_EVENT_COMMON_KEYS,
-      ...[...PLAN_ARTIFACT_EVENT_PROJECTION_KEYS].filter((key) =>
-        Object.prototype.hasOwnProperty.call(projectionKeySource, key),
-      ),
-    ]
+    [...PLAN_ARTIFACT_EVENT_BINDING_KEYS]
       .filter((key) => Object.prototype.hasOwnProperty.call(payload, key))
       .map((key) => [key, payload[key]]),
   );
+}
+
+function isPlanArtifactProjectionPayloadValid(
+  payload: Record<string, unknown>,
+): boolean {
+  return (
+    optionalStringArray(payload["criticalPathStepIds"]) &&
+    optionalStringArray(payload["readyStepIds"]) &&
+    optionalStringArray(payload["blockedStepIds"]) &&
+    optionalStringArray(payload["parallelReadyStepIds"]) &&
+    optionalNonNegativeIntegerOrNull(payload["activePhaseIndex"]) &&
+    optionalNonNegativeInteger(payload["phaseWaveCount"]) &&
+    optionalSha256(payload["phaseProjectionSha256"])
+  );
+}
+
+function optionalStringArray(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.length <= MAX_PLAN_STEPS &&
+      value.every((entry) => typeof entry === "string"))
+  );
+}
+
+function optionalNonNegativeInteger(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (typeof value === "number" && Number.isInteger(value) && value >= 0)
+  );
+}
+
+function optionalNonNegativeIntegerOrNull(value: unknown): boolean {
+  return value === null || optionalNonNegativeInteger(value);
+}
+
+function optionalSha256(value: unknown): boolean {
+  return value === undefined || (typeof value === "string" && isSha256(value));
+}
+
+function isSha256(value: string): boolean {
+  return /^[a-f0-9]{64}$/.test(value);
 }
 
 function objectPayload(value: unknown): Record<string, unknown> | undefined {

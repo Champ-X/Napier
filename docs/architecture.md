@@ -3465,11 +3465,13 @@ state change is appended to the Thread ledger. The HTTP API and internal Agent
 tool share the same
 `plan.artifact.*` payload builder, which also emits `pathSha256` and
 `evidenceSha256` companions for hash-only Trace reading. Validators treat the
-latest artifact event as a projection of the manifest's current state. SQLite
-restore, Thread replay bundle validation, and Plan archive verification all
-fail closed if the event's artifact ID, path, path hash, status, evidence,
-evidence hash, digest, size, source Run, or phase projection metadata drifts
-from the current artifact manifest.
+latest artifact event's artifact fields as a projection of the manifest's
+current state. SQLite restore, Thread replay bundle validation, and Plan
+archive verification all fail closed if the event's artifact ID, path, path
+hash, status, evidence, evidence hash, digest, size, or source Run drifts from
+the current artifact manifest. Phase and ready/blocked projection metadata is
+validated for shape but may reflect the event-time plan state, so later step
+transitions do not make a verified artifact look tampered.
 
 ## Context Compaction Flow
 

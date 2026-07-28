@@ -527,6 +527,64 @@ describe("execution plans", () => {
     ).toThrow("plan.artifact event binding mismatch");
   });
 
+  it("keeps artifact event bindings stable after later step projection changes", () => {
+    const running = transitionPlanStep(createDeliveryPlan(), "inspect", {
+      action: "start",
+      runId: "run-3",
+    });
+    const produced = updateArtifactManifest(running, "runtime-change", {
+      status: "produced",
+      sourceRunId: "run-3",
+      evidence: "plans.ts was written by run-3.",
+    });
+    const verified = updateArtifactManifest(produced, "runtime-change", {
+      status: "verified",
+      sourceRunId: "run-3",
+      sha256: "a".repeat(64),
+      sizeBytes: 4_096,
+      evidence: "Runtime hashed the artifact bytes.",
+    });
+    const artifact = verified.artifacts[0]!;
+    const event = planArtifactEvent(
+      verified.threadId,
+      "run-3",
+      1,
+      createPlanArtifactEventPayload(verified, artifact),
+    );
+    const completed = transitionPlanStep(verified, "inspect", {
+      action: "complete",
+      evidence: "Artifact was verified before closing the step.",
+    });
+    expect(completed.phaseProjectionSha256).not.toBe(
+      verified.phaseProjectionSha256,
+    );
+
+    expect(() =>
+      assertPlanArtifactEventBindings({
+        plans: [completed],
+        events: [event],
+        label: "Plan artifact hash binding",
+      }),
+    ).not.toThrow();
+
+    const tampered = structuredClone(event);
+    if (
+      !tampered.payload ||
+      Array.isArray(tampered.payload) ||
+      typeof tampered.payload !== "object"
+    ) {
+      throw new Error("Artifact event payload fixture is missing");
+    }
+    tampered.payload["evidenceSha256"] = "0".repeat(64);
+    expect(() =>
+      assertPlanArtifactEventBindings({
+        plans: [completed],
+        events: [tampered],
+        label: "Plan artifact hash binding",
+      }),
+    ).toThrow("plan.artifact event binding mismatch");
+  });
+
   it("recommends artifact-drift replanning when required output is missing", () => {
     const completedStep = transitionPlanStep(
       transitionPlanStep(createDeliveryPlan(), "inspect", {
