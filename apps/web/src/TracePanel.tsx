@@ -29,6 +29,7 @@ import {
   latestAgentMilestoneEventSeq,
   listAgentMilestones,
 } from "./agent-milestone-api";
+import { agentEventTraceSummary } from "./agent-event-view";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
 import {
   operatorDecisionTraceSummary,
@@ -960,6 +961,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("message.") || event.type.startsWith("system.")) {
     return messageEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("agent.")) {
+    return agentEventTraceSummary(event) ?? event.category;
   }
   if (event.type.startsWith("context.")) {
     return contextEventTraceSummary(event) ?? event.category;

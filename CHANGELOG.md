@@ -144,6 +144,10 @@ All notable changes to Napier are recorded here.
   through a bounded message view, so user prompts, assistant answers/reasoning,
   run-control text, and system note text stay out of the event list while role,
   model, token/cost counts, text byte counts, and optional hashes remain visible.
+- Trace event summaries now project `agent.*` receipts through a bounded agent
+  view, so milestone titles/summaries/open-loop text and Agent profile prose
+  stay out of the event list while phase, counts, revision IDs, and hashes
+  remain visible.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

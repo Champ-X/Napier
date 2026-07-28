@@ -2309,6 +2309,13 @@ do not render user prompts, assistant answers, reasoning text, run-control
 message text, system-note text, or arbitrary future message payload prose.
 Unknown `message.*` and `system.*` events fail closed to their category before
 the generic fallback can inspect `text` or `message`.
+Agent governance events are bounded before the fallback as well. `agent.*`
+summaries may show safe Agent/milestone IDs, milestone phase, revision counters,
+completed/open-loop counts, predecessor sequence, and SHA-256 receipts. They do
+not render milestone titles, summaries, completed item text, open-loop text,
+Agent names, descriptions, System Prompts, or arbitrary future Agent payload
+prose. The dedicated Agent Milestone card remains responsible for rendering the
+reviewed milestone projection; the event-list summary stays metadata-only.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant
