@@ -5293,9 +5293,16 @@ export function createApp(services: NapierServices): Hono {
       services.store,
       context.req.param("threadId"),
     );
+    const verification = verifyThreadReplayBundle(bundle);
+    if (verification.status !== "valid") {
+      throw new Error(
+        `Exported thread replay bundle verification failed: ${verification.diagnostics.join(", ")}`,
+      );
+    }
     setThreadReplayBundleHeaders(
       context,
       bundle,
+      verification,
       `napier-thread-${bundle.thread.id}-${bundle.contentSha256.slice(0, 12)}.json`,
     );
     return context.json(bundle);
@@ -19733,6 +19740,7 @@ function setThreadRunStreamErrorHeaders(context: Context): void {
 function setThreadReplayBundleHeaders(
   context: Context,
   bundle: ThreadReplayBundle,
+  verification: ThreadReplayBundleVerification,
   filename: string,
 ): void {
   context.header("Cache-Control", "no-store");
@@ -19740,8 +19748,22 @@ function setThreadReplayBundleHeaders(
   setStableContentSha256Header(context, bundle.contentSha256);
   context.header("X-Napier-Thread-Id", bundle.thread.id);
   context.header("X-Napier-Event-Stream-SHA256", bundle.eventStreamSha256);
-  context.header("X-Napier-Event-Count", String(bundle.events.length));
-  context.header("X-Napier-Run-Count", String(bundle.runs.length));
+  context.header("X-Napier-Verification-Status", verification.status);
+  context.header("X-Napier-Event-Count", String(verification.eventCount));
+  context.header("X-Napier-Run-Count", String(verification.runCount));
+  context.header("X-Napier-Plan-Count", String(verification.planCount));
+  context.header(
+    "X-Napier-Evaluation-Count",
+    String(verification.evaluationCount),
+  );
+  context.header(
+    "X-Napier-Model-Context-Envelope-Count",
+    String(verification.modelContextEnvelopeCount),
+  );
+  context.header(
+    "X-Napier-Embedded-Model-Context-Envelope-Count",
+    String(verification.embeddedModelContextEnvelopeCount),
+  );
   setEventBoundaryHeaders(context, bundle.events);
 }
 

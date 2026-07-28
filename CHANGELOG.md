@@ -61,6 +61,10 @@ All notable changes to Napier are recorded here.
 - Thread replay bundle verification now returns and headers-export both
   ledger-backed and embedded Model Context Envelope counts, and Run Lab fixture
   verification renders those counts beside the local replay diagnostics.
+- Thread replay bundle exports now self-verify before download and expose the
+  same plan/evaluation/envelope coverage counts in no-store headers, so the
+  export boundary carries the same metadata-only replay receipt as the verify
+  endpoint.
 - Run replay snapshot verification now mirrors the same envelope coverage
   counters in its response body, no-store headers, and Run Lab replay verifier
   receipt, while embedded-envelope validation scans both ordered events and

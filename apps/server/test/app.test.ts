@@ -104,6 +104,7 @@ import {
   validateEvaluationCasebookArtifact,
   validateEvaluationCasebookQualificationReceipt,
   validateEvaluationSuiteGateReceipt,
+  verifyThreadReplayBundle,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -11645,6 +11646,8 @@ function expectThreadReplayBundleHeaders(
   response: Response,
   bundle: ThreadReplayBundle,
 ): void {
+  const verification = verifyThreadReplayBundle(bundle);
+  expect(verification.status).toBe("valid");
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     bundle.contentSha256,
@@ -11653,11 +11656,28 @@ function expectThreadReplayBundleHeaders(
   expect(response.headers.get("x-napier-event-stream-sha256")).toBe(
     bundle.eventStreamSha256,
   );
+  expect(response.headers.get("x-napier-verification-status")).toBe(
+    verification.status,
+  );
   expect(response.headers.get("x-napier-event-count")).toBe(
-    String(bundle.events.length),
+    String(verification.eventCount),
   );
   expect(response.headers.get("x-napier-run-count")).toBe(
-    String(bundle.runs.length),
+    String(verification.runCount),
+  );
+  expect(response.headers.get("x-napier-plan-count")).toBe(
+    String(verification.planCount),
+  );
+  expect(response.headers.get("x-napier-evaluation-count")).toBe(
+    String(verification.evaluationCount),
+  );
+  expect(response.headers.get("x-napier-model-context-envelope-count")).toBe(
+    String(verification.modelContextEnvelopeCount),
+  );
+  expect(
+    response.headers.get("x-napier-embedded-model-context-envelope-count"),
+  ).toBe(
+    String(verification.embeddedModelContextEnvelopeCount),
   );
   expectEventBoundaryHeaders(response, bundle.events);
 }
