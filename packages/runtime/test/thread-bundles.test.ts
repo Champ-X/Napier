@@ -561,6 +561,27 @@ describe("thread replay bundles", () => {
       "Model Context Envelope turn index is invalid",
     );
 
+    const invalidResponseBindingDetail = structuredClone(
+      await store.getDetail(thread.id),
+    );
+    const invalidResponseBinding = invalidResponseBindingDetail.events.find(
+      (event) => event.type === "model.response",
+    )!;
+    if (
+      !invalidResponseBinding.payload ||
+      Array.isArray(invalidResponseBinding.payload) ||
+      typeof invalidResponseBinding.payload !== "object"
+    ) {
+      throw new Error("Model response fixture is missing");
+    }
+    invalidResponseBinding.payload = {
+      ...invalidResponseBinding.payload,
+      modelContextEnvelopeSha256: "f".repeat(64),
+    };
+    expect(() =>
+      createThreadReplayBundle(invalidResponseBindingDetail),
+    ).toThrow("Model Context Envelope response binding is invalid");
+
     const bundle = await exportThreadReplayBundle(store, thread.id);
     const sourceTrigger = bundle.events.find(
       (event) => event.type === "model.tool_loop.detected",

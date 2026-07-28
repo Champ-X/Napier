@@ -163,6 +163,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "milestoneCount",
   "milestoneOmittedCount",
   "milestoneSelectedCount",
+  "modelContextEnvelopeTurnIndex",
   "minimumAgreementRate",
   "minimumPassRate",
   "observed",
@@ -246,6 +247,10 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
   "napier.gen_ai.finish_reason",
   "napier.ledger.event_id",
   "napier.ledger.seq",
+  "napier.model_context.envelope.sha256",
+  "napier.model_context.envelope.turn_index",
+  "napier.model_context.message_set.sha256",
+  "napier.model_context.tool_definition_set.sha256",
   "napier.outcome.known",
   "napier.run.configuration.sha256",
   "napier.run.id",
@@ -686,6 +691,22 @@ function modelSpan(
   const modelId = separator > 0 ? model.slice(separator + 1) : model;
   const usage = payloadRecord(event.payload, "usage");
   const stopReason = payloadString(event.payload, "stopReason");
+  const modelContextEnvelopeSha256 = payloadString(
+    event.payload,
+    "modelContextEnvelopeSha256",
+  );
+  const modelContextEnvelopeTurnIndex = payloadNumber(
+    event.payload,
+    "modelContextEnvelopeTurnIndex",
+  );
+  const modelContextMessageSetSha256 = payloadString(
+    event.payload,
+    "modelContextMessageSetSha256",
+  );
+  const modelContextToolDefinitionSetSha256 = payloadString(
+    event.payload,
+    "modelContextToolDefinitionSetSha256",
+  );
   return createSpan({
     traceId,
     spanId: deterministicId(`model:${event.id}`, 16),
@@ -708,6 +729,29 @@ function modelSpan(
       "napier.ledger.seq": event.seq,
       "napier.timing.precision": "completion_only",
       ...(stopReason ? { "napier.gen_ai.finish_reason": stopReason } : {}),
+      ...(modelContextEnvelopeSha256
+        ? {
+            "napier.model_context.envelope.sha256": modelContextEnvelopeSha256,
+          }
+        : {}),
+      ...(modelContextEnvelopeTurnIndex !== undefined
+        ? {
+            "napier.model_context.envelope.turn_index":
+              modelContextEnvelopeTurnIndex,
+          }
+        : {}),
+      ...(modelContextMessageSetSha256
+        ? {
+            "napier.model_context.message_set.sha256":
+              modelContextMessageSetSha256,
+          }
+        : {}),
+      ...(modelContextToolDefinitionSetSha256
+        ? {
+            "napier.model_context.tool_definition_set.sha256":
+              modelContextToolDefinitionSetSha256,
+          }
+        : {}),
     }),
     events: [],
     status:
@@ -1358,6 +1402,14 @@ function payloadString(payload: JsonValue, key: string): string | undefined {
   if (!isRecord(payload)) return undefined;
   const value = payload[key];
   return typeof value === "string" ? value : undefined;
+}
+
+function payloadNumber(payload: JsonValue, key: string): number | undefined {
+  if (!isRecord(payload)) return undefined;
+  const value = payload[key];
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 function payloadRecord(

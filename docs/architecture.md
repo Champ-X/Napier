@@ -504,8 +504,12 @@ runtime-only execution functions are excluded.
 Portable replay validates every envelope receipt, recomputes the content hash,
 checks role-count consistency, and requires turn indexes to be contiguous per
 Run. Duplicated, reordered, or content-mutated context claims fail closed during
-bundle construction and import verification. OTLP allows only the scalar counts
-and SHA-256 keys.
+bundle construction and import verification. New `model.response` events bind
+back to the envelope content hash, turn index, message-set hash, and
+tool-definition-set hash; portable replay verifies any declared binding against
+the corresponding same-Run envelope and rejects partial binding coverage. OTLP
+projects those response bindings onto the chat span and allows only scalar
+counts plus SHA-256 keys.
 
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event

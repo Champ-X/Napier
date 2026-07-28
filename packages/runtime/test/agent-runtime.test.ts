@@ -419,6 +419,51 @@ describe("AgentRuntime demo path", () => {
       "stable loop evidence",
     );
     expect(JSON.stringify(contextEnvelopes)).not.toContain("read_file");
+    const contextEnvelopeByRunAndTurn = new Map(
+      contextEnvelopes.flatMap((event) => {
+        const payload = event.payload as Record<string, unknown> | undefined;
+        if (
+          !payload ||
+          Array.isArray(payload) ||
+          typeof payload !== "object" ||
+          typeof payload["turnIndex"] !== "number"
+        ) {
+          return [];
+        }
+        return [[`${event.runId}:${payload["turnIndex"]}`, payload] as const];
+      }),
+    );
+    const modelResponses = events.filter(
+      (event) => event.type === "model.response",
+    );
+    expect(modelResponses.length).toBeGreaterThanOrEqual(2);
+    for (const response of modelResponses) {
+      const payload = response.payload as Record<string, unknown> | undefined;
+      expect(payload).toEqual(
+        expect.objectContaining({
+          modelContextEnvelopeSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          modelContextEnvelopeTurnIndex: expect.any(Number),
+          modelContextMessageSetSha256:
+            expect.stringMatching(/^[a-f0-9]{64}$/u),
+          modelContextToolDefinitionSetSha256:
+            expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      );
+      const envelope = contextEnvelopeByRunAndTurn.get(
+        `${response.runId}:${String(payload?.["modelContextEnvelopeTurnIndex"])}`,
+      );
+      expect(envelope).toEqual(
+        expect.objectContaining({
+          contentSha256: payload?.["modelContextEnvelopeSha256"],
+          messageSetSha256: payload?.["modelContextMessageSetSha256"],
+          toolDefinitionSetSha256:
+            payload?.["modelContextToolDefinitionSetSha256"],
+        }),
+      );
+    }
+    expect(JSON.stringify(modelResponses)).not.toContain(
+      "stable loop evidence",
+    );
     expect(
       events.filter((event) => event.type === "context.tool_loop_guard"),
     ).toHaveLength(1);

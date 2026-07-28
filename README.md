@@ -834,9 +834,12 @@ tool-name set, and tool-definition set.
 The raw prompt, messages, tool names, tool schemas, and tool outputs are not
 copied into the receipt. Portable ledger validation replays the receipt shape,
 hash, and per-Run turn-index sequence so a tampered or duplicated model-context
-claim fails closed during export/import verification. The lazy Trace Workbench
-renders these envelopes as a hash-only register and refuses malformed or
-raw-field-injected payloads.
+claim fails closed during export/import verification. Each `model.response`
+also carries the envelope hash, turn index, message-set hash, and
+tool-definition-set hash for the request that produced it; OTLP exposes those
+values on the chat span as metadata only. The lazy Trace Workbench renders
+these envelopes as a hash-only register and refuses malformed payloads or
+payloads containing raw fields.
 
 ## Agent Configuration History
 

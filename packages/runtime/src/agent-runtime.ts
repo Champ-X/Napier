@@ -25,6 +25,7 @@ import {
   type GoalEvaluation,
   type GoalState,
   type JsonValue,
+  type ModelContextEnvelopeReceipt,
   type ModelRef,
   type RunEvent,
   type RunInvocationSource,
@@ -1217,7 +1218,7 @@ export class AgentRuntime {
       nextSystemPrompt: string,
       nextMessages: readonly unknown[],
       nextTools: readonly { name: string }[],
-    ): Promise<void> => {
+    ): Promise<ModelContextEnvelopeReceipt> => {
       const receipt = createModelContextEnvelopeReceipt({
         turnIndex: modelContextEnvelopeTurnIndex,
         systemPrompt: nextSystemPrompt,
@@ -1236,13 +1237,15 @@ export class AgentRuntime {
         },
         onEvent,
       );
+      return receipt;
     };
+    let currentModelContextEnvelope: ModelContextEnvelopeReceipt | undefined;
     const streamWithModelContextEnvelope: StreamFn = async (
       requestModel,
       requestContext,
       options,
     ) => {
-      await recordModelContextEnvelope(
+      currentModelContextEnvelope = await recordModelContextEnvelope(
         requestContext.systemPrompt ?? "",
         requestContext.messages,
         requestContext.tools ?? [],
@@ -1709,6 +1712,7 @@ export class AgentRuntime {
           advisorReviewPrompt,
           signal,
           preRecordedControlMessages,
+          currentModelContextEnvelope,
           onEvent,
         );
         if (text !== undefined) finalText = text;
@@ -1735,6 +1739,7 @@ export class AgentRuntime {
     advisorReviewPrompt: string,
     signal: AbortSignal,
     preRecordedControlMessages: Map<string, number>,
+    modelContextEnvelope: ModelContextEnvelopeReceipt | undefined,
     onEvent?: EventSink,
   ): Promise<string | undefined> {
     if (event.type === "turn_start" || event.type === "turn_end") {
@@ -1841,6 +1846,18 @@ export class AgentRuntime {
                 : { text, reasoning }),
               model: `${event.message.provider}/${event.message.model}`,
               stopReason: event.message.stopReason,
+              ...(modelContextEnvelope
+                ? {
+                    modelContextEnvelopeSha256:
+                      modelContextEnvelope.contentSha256,
+                    modelContextEnvelopeTurnIndex:
+                      modelContextEnvelope.turnIndex,
+                    modelContextMessageSetSha256:
+                      modelContextEnvelope.messageSetSha256,
+                    modelContextToolDefinitionSetSha256:
+                      modelContextEnvelope.toolDefinitionSetSha256,
+                  }
+                : {}),
               usage,
               usageAccounting,
               toolCalls: toJsonValue(toolCalls),

@@ -113,6 +113,10 @@ describe("OpenTelemetry trace export", () => {
         reasoning: "TOP_SECRET_REASONING",
         model: "faux-secure/faux-1",
         stopReason: "toolUse",
+        modelContextEnvelopeSha256: "d".repeat(64),
+        modelContextEnvelopeTurnIndex: 0,
+        modelContextMessageSetSha256: "e".repeat(64),
+        modelContextToolDefinitionSetSha256: "f".repeat(64),
         usage,
         toolCalls: [
           {
@@ -397,6 +401,30 @@ describe("OpenTelemetry trace export", () => {
     expect(
       attributeValue(modelSpan.attributes, "gen_ai.usage.input_tokens"),
     ).toBe(42);
+    expect(
+      attributeValue(
+        modelSpan.attributes,
+        "napier.model_context.envelope.sha256",
+      ),
+    ).toBe("d".repeat(64));
+    expect(
+      attributeValue(
+        modelSpan.attributes,
+        "napier.model_context.envelope.turn_index",
+      ),
+    ).toBe(0);
+    expect(
+      attributeValue(
+        modelSpan.attributes,
+        "napier.model_context.message_set.sha256",
+      ),
+    ).toBe("e".repeat(64));
+    expect(
+      attributeValue(
+        modelSpan.attributes,
+        "napier.model_context.tool_definition_set.sha256",
+      ),
+    ).toBe("f".repeat(64));
     const unknownTool = traceSpans.find(
       (span) => span.name === "execute_tool write_file",
     )!;
