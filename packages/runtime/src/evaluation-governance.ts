@@ -115,6 +115,78 @@ function hashRunEvaluationEventStream(events: readonly RunEvent[]): string {
   return sha256(events.map((event) => JSON.stringify(event)).join("\n"));
 }
 
+export function assertRunEvaluationCompletedEventBindings({
+  evaluations,
+  events,
+  label,
+}: {
+  evaluations: readonly RunEvaluationRecord[];
+  events: readonly RunEvent[];
+  label: string;
+}): void {
+  const evaluationsById = new Map(
+    evaluations.map((evaluation) => [evaluation.id, evaluation] as const),
+  );
+  const completedEvaluationIds = new Set<string>();
+  for (const event of events) {
+    if (event.type !== "evaluation.completed") continue;
+    const payload = objectPayload(event.payload);
+    const evaluationId = payloadString(payload, "evaluationId");
+    const evaluation = evaluationId
+      ? evaluationsById.get(evaluationId)
+      : undefined;
+    if (
+      !payload ||
+      !evaluation ||
+      event.category !== "evaluation" ||
+      event.visibility !== "user" ||
+      completedEvaluationIds.has(evaluation.id)
+    ) {
+      throw new Error(`${label} evaluation.completed event binding mismatch`);
+    }
+    completedEvaluationIds.add(evaluation.id);
+    if (
+      canonicalJson(payload) !==
+      canonicalJson(runEvaluationCompletedEventPayload(evaluation))
+    ) {
+      throw new Error(`${label} evaluation.completed event binding mismatch`);
+    }
+  }
+}
+
+function runEvaluationCompletedEventPayload(
+  evaluation: RunEvaluationRecord,
+): Record<string, unknown> {
+  const governance = evaluation.comparisonGovernance;
+  return {
+    evaluationId: evaluation.id,
+    leftRunId: evaluation.leftRunId,
+    rightRunId: evaluation.rightRunId,
+    verdict: evaluation.verdict,
+    reason: evaluation.reason,
+    evidence: evaluation.evidence,
+    rubric: evaluation.rubric.name,
+    leftSnapshotSha256: evaluation.leftSnapshotSha256,
+    rightSnapshotSha256: evaluation.rightSnapshotSha256,
+    ...(governance
+      ? {
+          comparisonGovernanceSha256: governance.contentSha256,
+          contextCoverageStatus: governance.contextCoverageStatus,
+          contextCoverageDiagnosticsSha256:
+            governance.contextCoverageDiagnosticsSha256,
+        }
+      : {}),
+    ...(governance?.traceSummaryBoundaryStatus &&
+    governance.traceSummaryBoundaryDiagnosticsSha256
+      ? {
+          traceSummaryBoundaryStatus: governance.traceSummaryBoundaryStatus,
+          traceSummaryBoundaryDiagnosticsSha256:
+            governance.traceSummaryBoundaryDiagnosticsSha256,
+        }
+      : {}),
+  };
+}
+
 function runContextCoverageSummary(
   events: readonly RunEvent[],
   subagents: readonly unknown[],
@@ -231,19 +303,23 @@ function unknownSubagentBelongsToRun(value: unknown, runId: string): boolean {
 }
 
 function payloadString(payload: unknown, key: string): string | undefined {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return undefined;
-  }
-  const value = (payload as Record<string, unknown>)[key];
+  const record = objectPayload(payload);
+  if (!record) return undefined;
+  const value = record[key];
   return typeof value === "string" ? value : undefined;
 }
 
 function payloadNumber(payload: unknown, key: string): number | undefined {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return undefined;
-  }
-  const value = (payload as Record<string, unknown>)[key];
+  const record = objectPayload(payload);
+  if (!record) return undefined;
+  const value = record[key];
   return typeof value === "number" && Number.isFinite(value)
     ? value
+    : undefined;
+}
+
+function objectPayload(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
     : undefined;
 }

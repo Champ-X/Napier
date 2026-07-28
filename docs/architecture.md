@@ -2060,7 +2060,12 @@ when the surrounding receipt remains internally well-formed. Imported
 historical evaluations are the deliberate exception: their snapshot hashes
 continue to describe the validated source replay bundle and are protected by
 `ThreadImportProvenance`, because import remaps local IDs and would otherwise
-change the event-stream hash.
+change the event-stream hash. The same validator also checks
+`evaluation.completed` ledger events as projections of saved
+`RunEvaluationRecord` state: if the event payload's Run IDs, verdict, rubric
+name, snapshot hashes, or governance hashes drift from the record, SQLite
+restore and Thread replay bundle validation fail closed before Trace or Run Lab
+can display the stale projection.
 OTLP trace export keeps those evaluation governance signals metadata-only:
 status and SHA-256 attributes are allowed, while evaluator `reason` and
 `evidence` text remain excluded by the redaction policy. The underlying

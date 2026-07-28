@@ -123,6 +123,60 @@ function rehashComparisonGovernance(
   };
 }
 
+async function appendEvaluationCompletedEvent(
+  store: LocalStore,
+  evaluation: RunEvaluationRecord,
+) {
+  const agent = store.listAgents()[0]!;
+  const run = await store.createRun({
+    threadId: evaluation.threadId,
+    agentId: agent.id,
+  });
+  const event = await store.appendEvent({
+    threadId: evaluation.threadId,
+    runId: run.id,
+    type: "evaluation.completed",
+    category: "evaluation",
+    visibility: "user",
+    payload: evaluationCompletedPayload(evaluation),
+  });
+  await store.finishRun(run.id, "completed");
+  return event;
+}
+
+function evaluationCompletedPayload(
+  evaluation: RunEvaluationRecord,
+): Record<string, unknown> {
+  const governance = evaluation.comparisonGovernance;
+  return {
+    evaluationId: evaluation.id,
+    leftRunId: evaluation.leftRunId,
+    rightRunId: evaluation.rightRunId,
+    verdict: evaluation.verdict,
+    reason: evaluation.reason,
+    evidence: evaluation.evidence,
+    rubric: evaluation.rubric.name,
+    leftSnapshotSha256: evaluation.leftSnapshotSha256,
+    rightSnapshotSha256: evaluation.rightSnapshotSha256,
+    ...(governance
+      ? {
+          comparisonGovernanceSha256: governance.contentSha256,
+          contextCoverageStatus: governance.contextCoverageStatus,
+          contextCoverageDiagnosticsSha256:
+            governance.contextCoverageDiagnosticsSha256,
+        }
+      : {}),
+    ...(governance?.traceSummaryBoundaryStatus &&
+    governance.traceSummaryBoundaryDiagnosticsSha256
+      ? {
+          traceSummaryBoundaryStatus: governance.traceSummaryBoundaryStatus,
+          traceSummaryBoundaryDiagnosticsSha256:
+            governance.traceSummaryBoundaryDiagnosticsSha256,
+        }
+      : {}),
+  };
+}
+
 describe("transactional LocalStore", () => {
   it("fails closed on an unsupported SQLite schema version", async () => {
     const options = await createOptions();
@@ -348,6 +402,47 @@ describe("transactional LocalStore", () => {
     openStores.push(reopened);
     await expect(reopened.initialize()).rejects.toThrow(
       "snapshot source binding mismatch",
+    );
+  });
+
+  it("fails closed on persisted evaluation completed event drift during restore", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const evaluation = await first.saveRunEvaluation(
+      await createGovernedEvaluationInput(
+        first,
+        "evaluation_event_restore_drift",
+      ),
+    );
+    const completedEvent = await appendEvaluationCompletedEvent(
+      first,
+      evaluation,
+    );
+    first.close();
+    openStores.splice(openStores.indexOf(first), 1);
+
+    const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
+    const database = new DatabaseSync(databasePath);
+    const row = database
+      .prepare(
+        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
+      )
+      .get(evaluation.threadId, completedEvent.seq) as { event_json: string };
+    const event = JSON.parse(row.event_json) as {
+      payload: Record<string, unknown>;
+    };
+    event.payload.verdict = "left_better";
+    database
+      .prepare(
+        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
+      )
+      .run(JSON.stringify(event), evaluation.threadId, completedEvent.seq);
+    database.close();
+
+    const reopened = new LocalStore(options);
+    openStores.push(reopened);
+    await expect(reopened.initialize()).rejects.toThrow(
+      "evaluation.completed event binding mismatch",
     );
   });
 

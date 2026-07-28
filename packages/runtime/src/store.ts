@@ -314,7 +314,10 @@ import {
   verifySignedExtensionPackageEnvelope,
 } from "./extension-packages.js";
 import { normalizeRubric } from "./evaluation.js";
-import { assertRunEvaluationGovernanceSourceBinding } from "./evaluation-governance.js";
+import {
+  assertRunEvaluationCompletedEventBindings,
+  assertRunEvaluationGovernanceSourceBinding,
+} from "./evaluation-governance.js";
 import {
   createEvaluationCalibrationReport,
   hashEvaluationAdjudicationRevision,
@@ -11420,6 +11423,7 @@ export class LocalStore {
         .map((item) => [item.threadId, item]),
     );
     for (const thread of this.state.threads) {
+      const threadEvents = this.requireLedger().listEvents(thread.id);
       const eventStats = stats.get(thread.id);
       const count = eventStats?.count ?? 0;
       const maxSeq = eventStats?.maxSeq ?? 0;
@@ -11431,9 +11435,16 @@ export class LocalStore {
       if (thread.importProvenance) {
         validateThreadImportProvenanceLedgerReceipt(
           thread,
-          this.requireLedger().listEvents(thread.id),
+          threadEvents,
         );
       }
+      assertRunEvaluationCompletedEventBindings({
+        evaluations: this.state.evaluations.filter(
+          (evaluation) => evaluation.threadId === thread.id,
+        ),
+        events: threadEvents,
+        label: `Persisted Thread ${thread.id}`,
+      });
       stats.delete(thread.id);
     }
     if (stats.size > 0) {

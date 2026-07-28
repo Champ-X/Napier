@@ -8,6 +8,7 @@ import {
   fauxProvider,
   fauxToolCall,
 } from "@earendil-works/pi-ai";
+import type { RunEvaluationRecord } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -58,6 +59,39 @@ async function createStore(): Promise<{
   openStores.push(store);
   await store.initialize();
   return { store, dataRoot };
+}
+
+function evaluationCompletedPayload(
+  evaluation: RunEvaluationRecord,
+): Record<string, unknown> {
+  const governance = evaluation.comparisonGovernance;
+  return {
+    evaluationId: evaluation.id,
+    leftRunId: evaluation.leftRunId,
+    rightRunId: evaluation.rightRunId,
+    verdict: evaluation.verdict,
+    reason: evaluation.reason,
+    evidence: evaluation.evidence,
+    rubric: evaluation.rubric.name,
+    leftSnapshotSha256: evaluation.leftSnapshotSha256,
+    rightSnapshotSha256: evaluation.rightSnapshotSha256,
+    ...(governance
+      ? {
+          comparisonGovernanceSha256: governance.contentSha256,
+          contextCoverageStatus: governance.contextCoverageStatus,
+          contextCoverageDiagnosticsSha256:
+            governance.contextCoverageDiagnosticsSha256,
+        }
+      : {}),
+    ...(governance?.traceSummaryBoundaryStatus &&
+    governance.traceSummaryBoundaryDiagnosticsSha256
+      ? {
+          traceSummaryBoundaryStatus: governance.traceSummaryBoundaryStatus,
+          traceSummaryBoundaryDiagnosticsSha256:
+            governance.traceSummaryBoundaryDiagnosticsSha256,
+        }
+      : {}),
+  };
 }
 
 describe("thread replay bundles", () => {
@@ -151,6 +185,93 @@ describe("thread replay bundles", () => {
     collidingIds.events[0]!.id = collidingIds.runs[0]!.id;
     expect(() => validateThreadReplayBundle(collidingIds)).toThrow(
       "reuses resource ID across record types",
+    );
+  });
+
+  it("binds evaluation completion events to saved evaluation records", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Evaluation completed event binding",
+      agentId: agent.id,
+    });
+    const left = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    await store.finishRun(left.id, "completed");
+    const right = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    await store.finishRun(right.id, "completed");
+    const comparison = await compareRuns(store, thread.id, left.id, right.id);
+    const comparisonGovernance = createRunEvaluationGovernanceBinding(
+      comparison.contextCoverageDelta,
+      comparison.traceSummaryBoundaryDelta,
+    );
+    const evaluation = await store.saveRunEvaluation({
+      id: "evaluation_completed_event",
+      threadId: thread.id,
+      leftRunId: left.id,
+      rightRunId: right.id,
+      leftSnapshotSha256: comparison.left.eventStreamSha256,
+      rightSnapshotSha256: comparison.right.eventStreamSha256,
+      rubric: {
+        name: "Event binding",
+        criteria: [
+          {
+            id: "correctness",
+            name: "Correctness",
+            description: "The event projection matches the saved record.",
+          },
+        ],
+      },
+      scores: [
+        {
+          criterionId: "correctness",
+          leftScore: 3,
+          rightScore: 4,
+          reason: "The candidate records stronger evidence.",
+        },
+      ],
+      verdict: "right_better",
+      reason: "The candidate is better supported.",
+      evidence: "Compared hash-bound snapshots.",
+      evaluatorModel: { provider: "napier", id: "demo" },
+      comparisonGovernance,
+      createdAt: "2026-07-25T08:30:00.000Z",
+    });
+    const evaluationRun = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: evaluationRun.id,
+      type: "evaluation.completed",
+      category: "evaluation",
+      visibility: "user",
+      payload: evaluationCompletedPayload(evaluation),
+    });
+    await store.finishRun(evaluationRun.id, "completed");
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    expect(validateThreadReplayBundle(bundle).events).toEqual(bundle.events);
+    const tampered = structuredClone(bundle);
+    const event = tampered.events.find(
+      (candidate) => candidate.type === "evaluation.completed",
+    );
+    if (
+      !event?.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object"
+    ) {
+      throw new Error("Evaluation completed event fixture is missing");
+    }
+    event.payload["verdict"] = "left_better";
+    expect(() => validateThreadReplayBundle(tampered)).toThrow(
+      "evaluation.completed event binding mismatch",
     );
   });
 

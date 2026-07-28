@@ -40,6 +40,7 @@ import {
 } from "./evaluation-suites.js";
 import { normalizeRubric } from "./evaluation.js";
 import {
+  assertRunEvaluationCompletedEventBindings,
   assertRunEvaluationGovernanceReceiptSourceBinding,
   assertRunEvaluationSnapshotSourceBinding,
 } from "./evaluation-governance.js";
@@ -1516,6 +1517,11 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       ),
     });
   }
+  assertRunEvaluationCompletedEventBindings({
+    evaluations: [...evaluationRecords.values()],
+    events: typedEvents,
+    label: "Thread replay bundle",
+  });
 
   assertGloballyUniqueResourceIds([
     threadId,

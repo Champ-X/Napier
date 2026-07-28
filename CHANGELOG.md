@@ -200,6 +200,10 @@ All notable changes to Napier are recorded here.
   live save, SQLite restore, and Thread replay bundle validation. Imported
   historical evaluations keep their source bundle snapshot hashes and remain
   protected by import provenance instead of being rehashed after ID remapping.
+- Ledger `evaluation.completed` events now fail closed unless their payload
+  exactly matches the saved `RunEvaluationRecord`, keeping Trace projections,
+  Thread replay bundles, and SQLite restore aligned with the authoritative
+  evaluation state.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.
