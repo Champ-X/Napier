@@ -74,6 +74,7 @@ import {
   setExecutionPlanBlueprintRecommendationPolicyOverride,
   setExecutionPlanBlueprintRecordStatus,
   signExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
+  updatePlanArtifact,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
   verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
@@ -540,6 +541,40 @@ describe("Web JSON API wrappers", () => {
     await expect(
       getExecutionPlanArchive("thread_1", "plan_1"),
     ).resolves.toEqual(archive);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates plan artifact manifests through the plan-bound wrapper", async () => {
+    const updatedPlan = {
+      id: "plan_1",
+      revision: 4,
+    } as unknown as ExecutionPlan;
+    const body = {
+      status: "verified" as const,
+      observeWorkspace: true,
+      evidence: "Workbench verified the artifact bytes from the workspace.",
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1",
+      );
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify(body));
+      const text = JSON.stringify(updatedPlan);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      updatePlanArtifact("thread_1", "plan_1", "artifact_1", body),
+    ).resolves.toEqual(updatedPlan);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

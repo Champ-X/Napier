@@ -110,6 +110,7 @@ import type {
   ThreadDetail,
   ThreadStatus,
   ThreadReplayBundle,
+  UpdateArtifactManifestRequest,
   UpdateEvaluationSuiteRequest,
   UsagePriceTableCatalog,
   UsagePriceTableVerification,
@@ -442,6 +443,21 @@ export function applyReplanDraft(
 ): Promise<ExecutionPlan> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/replan`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function updatePlanArtifact(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+  body: UpdateArtifactManifestRequest,
+): Promise<ExecutionPlan> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}`,
     {
       method: "POST",
       body: JSON.stringify(body),

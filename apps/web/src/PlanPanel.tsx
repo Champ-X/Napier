@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import type {
+  ArtifactManifestEntry,
   ExecutionPlan,
   ExecutionPlanArchive,
   ExecutionPlanArchiveVerification,
@@ -48,6 +49,7 @@ import {
   setExecutionPlanBlueprintRecommendationPolicyOverride,
   setExecutionPlanBlueprintRecordStatus,
   signExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
+  updatePlanArtifact,
   verifyExecutionPlanArchive,
   verifyExecutionPlanBlueprint,
   verifyExecutionPlanBlueprintRecommendationPolicyOverrideRetirementProofBundle,
@@ -257,6 +259,8 @@ export default function PlanPanel({
   const [draftReviewBusy, setDraftReviewBusy] = useState(false);
   const [draftApplyBusy, setDraftApplyBusy] = useState(false);
   const [draftReviewError, setDraftReviewError] = useState<string>();
+  const [artifactBusyId, setArtifactBusyId] = useState<string>();
+  const [artifactError, setArtifactError] = useState<string>();
   const [archiveBusyAction, setArchiveBusyAction] = useState<
     "export" | "verify" | undefined
   >();
@@ -290,6 +294,8 @@ export default function PlanPanel({
   useEffect(() => {
     setDraftReview(undefined);
     setDraftReviewError(undefined);
+    setArtifactBusyId(undefined);
+    setArtifactError(undefined);
     setArchiveReceipt(undefined);
     setArchiveError(undefined);
     setBlueprintReceipt(undefined);
@@ -374,6 +380,27 @@ export default function PlanPanel({
       setDraftReviewError(formatApiErrorMessage(error));
     } finally {
       setDraftApplyBusy(false);
+    }
+  };
+
+  const updateArtifact = async (
+    artifact: ArtifactManifestEntry,
+    action: "produced" | "verified" | "missing",
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:${action}`);
+    setArtifactError(undefined);
+    try {
+      await updatePlanArtifact(threadId, plan.id, artifact.id, {
+        status: action,
+        evidence: planCopy.artifactActions.evidence[action],
+        ...(action === "verified" ? { observeWorkspace: true } : {}),
+      });
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(formatApiErrorMessage(error));
+    } finally {
+      setArtifactBusyId(undefined);
     }
   };
 
@@ -1581,6 +1608,7 @@ export default function PlanPanel({
             <section
               className="artifact-manifest"
               aria-labelledby="artifact-manifest-title"
+              aria-busy={Boolean(artifactBusyId)}
             >
               <header>
                 <h3 id="artifact-manifest-title">{planCopy.artifacts}</h3>
@@ -1614,8 +1642,60 @@ export default function PlanPanel({
                       ) : null}
                     </dl>
                   ) : null}
+                  {artifact.status !== "verified" &&
+                  artifact.status !== "superseded" ? (
+                    <div className="artifact-actions">
+                      {canProduceArtifact(artifact) ? (
+                        <button
+                          type="button"
+                          aria-label={`${planCopy.artifactActions.produce}: ${artifact.path}`}
+                          disabled={Boolean(artifactBusyId)}
+                          onClick={() =>
+                            void updateArtifact(artifact, "produced")
+                          }
+                        >
+                          {artifactBusyId === `${artifact.id}:produced`
+                            ? planCopy.artifactActions.producing
+                            : planCopy.artifactActions.produce}
+                        </button>
+                      ) : null}
+                      {canVerifyArtifact(artifact) ? (
+                        <button
+                          type="button"
+                          aria-label={`${planCopy.artifactActions.verify}: ${artifact.path}`}
+                          disabled={Boolean(artifactBusyId)}
+                          onClick={() =>
+                            void updateArtifact(artifact, "verified")
+                          }
+                        >
+                          {artifactBusyId === `${artifact.id}:verified`
+                            ? planCopy.artifactActions.verifying
+                            : planCopy.artifactActions.verify}
+                        </button>
+                      ) : null}
+                      {canMarkArtifactMissing(artifact) ? (
+                        <button
+                          type="button"
+                          aria-label={`${planCopy.artifactActions.markMissing}: ${artifact.path}`}
+                          disabled={Boolean(artifactBusyId)}
+                          onClick={() =>
+                            void updateArtifact(artifact, "missing")
+                          }
+                        >
+                          {artifactBusyId === `${artifact.id}:missing`
+                            ? planCopy.artifactActions.markingMissing
+                            : planCopy.artifactActions.markMissing}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </article>
               ))}
+              {artifactError ? (
+                <p className="artifact-error" role="alert">
+                  {artifactError}
+                </p>
+              ) : null}
             </section>
           ) : null}
 
@@ -3451,6 +3531,21 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 function isSha256(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
+
+function canProduceArtifact(artifact: ArtifactManifestEntry): boolean {
+  return artifact.status === "expected" || artifact.status === "missing";
+}
+
+function canVerifyArtifact(artifact: ArtifactManifestEntry): boolean {
+  return (
+    artifact.status === "produced" &&
+    (artifact.kind === "file" || artifact.kind === "directory")
+  );
+}
+
+function canMarkArtifactMissing(artifact: ArtifactManifestEntry): boolean {
+  return artifact.status === "expected" || artifact.status === "produced";
 }
 
 function compareBlueprintRecords(

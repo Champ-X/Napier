@@ -6196,6 +6196,56 @@ button:disabled {
   text-overflow: ellipsis;
 }
 
+.artifact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.artifact-actions button {
+  min-height: 27px;
+  padding: 5px 8px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: var(--paper-bright);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+}
+
+.artifact-actions button:first-child {
+  color: #f8f5ee;
+  background: var(--ledger);
+  border-color: var(--ledger);
+}
+
+.artifact-actions button:hover:not(:disabled),
+.artifact-actions button:focus-visible {
+  color: var(--ledger);
+  border-color: var(--ledger);
+  outline: none;
+}
+
+.artifact-actions button:first-child:hover:not(:disabled),
+.artifact-actions button:first-child:focus-visible {
+  color: #fff;
+  background: #23483b;
+  border-color: #23483b;
+}
+
+.artifact-actions button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.artifact-error {
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: #80362f;
+}
+
 .plan-continue {
   display: flex;
   width: 100%;

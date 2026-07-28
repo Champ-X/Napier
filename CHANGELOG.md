@@ -208,6 +208,10 @@ All notable changes to Napier are recorded here.
   Agent tool and HTTP API, and validation rejects the latest `plan.artifact.*`
   event for an artifact when it drifts from the artifact manifest during
   SQLite restore, Thread replay bundle validation, or Plan archive verification.
+- The Plan Workbench now exposes artifact manifest actions for Mark produced,
+  Verify bytes, and Mark missing. Verify bytes calls the existing
+  `observeWorkspace` path so the server computes the digest and size before
+  appending `plan.artifact.*` evidence.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

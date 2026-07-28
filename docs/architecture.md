@@ -3295,8 +3295,11 @@ verification, where the server computes the file or directory digest itself
 and rejects simultaneous self-reported `sha256` or `sizeBytes` values. Its
 REST boundary rejects unknown fields, malformed IDs, oversized JSON, invalid
 replan strategies, invalid status values, and invalid SHA-256 values before
-the runtime state machine is called. Every accepted state change is appended
-to the Thread ledger. The HTTP API and internal Agent tool share the same
+the runtime state machine is called. The Plan Workbench exposes the same
+operator path as Mark produced, Verify bytes, and Mark missing actions; Verify
+bytes always uses `observeWorkspace` and never accepts a browser-supplied
+digest. Every accepted state change is appended to the Thread ledger. The HTTP
+API and internal Agent tool share the same
 `plan.artifact.*` payload builder, and validators treat the latest artifact
 event as a projection of the manifest's current state. SQLite restore, Thread
 replay bundle validation, and Plan archive verification all fail closed if the

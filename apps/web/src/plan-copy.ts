@@ -52,6 +52,19 @@ export const planCopy = {
   artifacts: "Artifact manifest",
   digest: "SHA-256",
   source: "Source run",
+  artifactActions: {
+    produce: "Mark produced",
+    producing: "Marking...",
+    verify: "Verify bytes",
+    verifying: "Verifying...",
+    markMissing: "Mark missing",
+    markingMissing: "Marking...",
+    evidence: {
+      produced: "Operator marked the artifact as produced from Workbench.",
+      verified: "Workbench verified the artifact bytes from the workspace.",
+      missing: "Operator marked the artifact as missing from Workbench.",
+    },
+  },
   archive: {
     eyebrow: "PLAN ARCHIVE",
     title: "Workflow archive",
