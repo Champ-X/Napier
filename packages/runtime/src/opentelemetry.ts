@@ -148,6 +148,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "durationMs",
   "editCount",
   "eventCount",
+  "exemptToolCount",
   "exitCode",
   "failedCount",
   "fromSeq",
@@ -175,7 +176,9 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "sourceEventCount",
   "spanCount",
   "stepCount",
+  "threshold",
   "toSeq",
+  "toolLoopGuardThreshold",
   "turnCount",
   "unverifiedCount",
   "predecessorEventSeq",
@@ -197,6 +200,8 @@ const SAFE_BOOLEAN_PAYLOAD_KEYS = new Set([
   "skillCatalogInjected",
   "milestoneTextRedacted",
   "truncated",
+  "toolLoopGuardActive",
+  "toolLoopGuardEnabled",
   "verified",
 ]);
 

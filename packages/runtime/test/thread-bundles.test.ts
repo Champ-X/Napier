@@ -1,8 +1,13 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import {
+  fauxAssistantMessage,
+  fauxProvider,
+  fauxToolCall,
+} from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -285,8 +290,8 @@ describe("thread replay bundles", () => {
       threadId: thread.id,
       text: "Freeze the prompt context.",
     });
-    if (run.configuration?.schemaVersion !== 7) {
-      throw new Error("Expected schema-7 Prompt Variable evidence");
+    if (run.configuration?.schemaVersion !== 8) {
+      throw new Error("Expected schema-8 runtime evidence");
     }
 
     const invalidDetail = structuredClone(await store.getDetail(thread.id));
@@ -309,7 +314,7 @@ describe("thread replay bundles", () => {
       (event) => event.type === "context.prompt_variables",
     )!;
     if (
-      forgedRun.configuration?.schemaVersion !== 7 ||
+      forgedRun.configuration?.schemaVersion !== 8 ||
       !forgedEvent.payload ||
       Array.isArray(forgedEvent.payload) ||
       typeof forgedEvent.payload !== "object"
@@ -339,7 +344,7 @@ describe("thread replay bundles", () => {
       canonicalJson(forgedConfigurationContent),
     );
     expect(() => createThreadReplayBundle(forgedDetail)).toThrow(
-      "schema-7 configuration does not match Agent revision",
+      "Prompt configuration does not match Agent revision",
     );
 
     const mismatchedEntryDetail = structuredClone(
@@ -352,7 +357,7 @@ describe("thread replay bundles", () => {
       (event) => event.type === "context.prompt_variables",
     )!;
     if (
-      mismatchedEntryRun.configuration?.schemaVersion !== 7 ||
+      mismatchedEntryRun.configuration?.schemaVersion !== 8 ||
       !mismatchedEntryEvent.payload ||
       Array.isArray(mismatchedEntryEvent.payload) ||
       typeof mismatchedEntryEvent.payload !== "object" ||
@@ -424,6 +429,112 @@ describe("thread replay bundles", () => {
     expect(importedEvent.runId).toBe(importedRun.id);
     expect(importedEvent.payload).toEqual(sourceEvent.payload);
     expect(importedRun.configuration).toEqual(run.configuration);
+  });
+
+  it("revalidates Tool Loop Guard triggers through portable replay", async () => {
+    const { store } = await createStore();
+    await mkdir(store.workspaceRoot, { recursive: true });
+    await writeFile(
+      path.join(store.workspaceRoot, "loop.txt"),
+      "portable stable result\n",
+      "utf8",
+    );
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolLoopGuard: {
+        enabled: true,
+        threshold: 3,
+        exemptTools: [],
+      },
+    });
+    const thread = await store.createThread({
+      title: "Portable Tool Loop Guard",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-portable-loop" });
+    const repeatedCall = () =>
+      fauxAssistantMessage(fauxToolCall("read_file", { path: "loop.txt" }));
+    faux.setResponses([
+      repeatedCall(),
+      repeatedCall(),
+      repeatedCall(),
+      fauxAssistantMessage("I changed strategy after the durable redirect."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const models = new ModelRegistry();
+    models.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, models);
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Inspect without looping.",
+      model: { provider: "faux-portable-loop", id: "faux-1" },
+    });
+    expect(run.configuration?.schemaVersion).toBe(8);
+
+    const invalidDetail = structuredClone(await store.getDetail(thread.id));
+    const invalidTrigger = invalidDetail.events.find(
+      (event) => event.type === "model.tool_loop.detected",
+    )!;
+    if (
+      !invalidTrigger.payload ||
+      Array.isArray(invalidTrigger.payload) ||
+      typeof invalidTrigger.payload !== "object" ||
+      typeof invalidTrigger.payload["fromSeq"] !== "number"
+    ) {
+      throw new Error("Tool Loop Guard trigger fixture is missing");
+    }
+    const { contentSha256: _triggerContentSha256, ...triggerContent } =
+      invalidTrigger.payload;
+    const forgedTriggerContent = {
+      ...triggerContent,
+      fromSeq: invalidTrigger.payload["fromSeq"] + 1,
+    };
+    invalidTrigger.payload = {
+      ...forgedTriggerContent,
+      contentSha256: sha256(canonicalJson(forgedTriggerContent)),
+    };
+    expect(() => createThreadReplayBundle(invalidDetail)).toThrow(
+      "Tool Loop Guard trigger is not grounded",
+    );
+
+    const duplicateDetail = structuredClone(await store.getDetail(thread.id));
+    const sourceDuplicateTrigger = duplicateDetail.events.find(
+      (event) => event.type === "model.tool_loop.detected",
+    )!;
+    duplicateDetail.events.push({
+      ...sourceDuplicateTrigger,
+      id: "event_loop_trigger_duplicate",
+      seq: duplicateDetail.events.length + 1,
+      createdAt: new Date(
+        Date.parse(sourceDuplicateTrigger.createdAt) + 1,
+      ).toISOString(),
+    });
+    duplicateDetail.thread.eventCount = duplicateDetail.events.length;
+    expect(() => createThreadReplayBundle(duplicateDetail)).toThrow(
+      "Tool Loop Guard trigger is not grounded",
+    );
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    const sourceTrigger = bundle.events.find(
+      (event) => event.type === "model.tool_loop.detected",
+    )!;
+    expect(sourceTrigger.payload).toEqual(
+      expect.objectContaining({
+        toolName: "read_file",
+        threshold: 3,
+        attemptCount: 3,
+      }),
+    );
+    expect(JSON.stringify(sourceTrigger.payload)).not.toContain("loop.txt");
+    expect(JSON.stringify(sourceTrigger.payload)).not.toContain(
+      "portable stable result",
+    );
+
+    const imported = await store.importThreadReplayBundle(bundle);
+    const importedTrigger = (await store.listEvents(imported.thread.id)).find(
+      (event) => event.type === "model.tool_loop.detected",
+    )!;
+    expect(importedTrigger.payload).toEqual(sourceTrigger.payload);
+    expect(importedTrigger.runId).not.toBe(sourceTrigger.runId);
   });
 
   it("reconstructs a continued operator decision after Run ID remapping", async () => {

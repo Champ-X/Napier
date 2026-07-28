@@ -54,7 +54,9 @@ removal is a versioned contract change.
   guidance evidence;
 - standard Agent Skills discovery;
 - strict Agent Prompt Variable catalogs, single-pass System Prompt resolution,
-  and schema-7 hash-only Run snapshots;
+  and schema-versioned hash-only Run snapshots;
+- a Ledger-derived Tool Loop Guard with next-turn redirects and pre-execution
+  blocking for repeated identical calls/results;
 - hash-only signed Skill, Prompt, and Inspector package baselines plus local
   qualification checks;
 - reviewed memory proposals, expiry, usage evidence, immutable supersession,
@@ -430,19 +432,53 @@ The resulting `napier.prompt-variable-snapshot` contains resolution time,
 definition/reference/unresolved counts, variable type, resolved byte count and
 value SHA-256, catalog SHA-256, rendered System Prompt SHA-256, and one complete
 content SHA-256. It contains no values, rendered Prompt, or unresolved names.
-Schema 7 binds the catalog, snapshot, and rendered Prompt hashes in the Run
-configuration. One `context.prompt_variables` event records the same snapshot
-before model execution, and every normal turn, Goal continuation, and Advisor
-correction reuses the in-memory rendered Prompt.
+Schema 7 introduced catalog, snapshot, and rendered Prompt hashes in the Run
+configuration; schema 8 retains them. One `context.prompt_variables` event
+records the same snapshot before model execution, and every normal turn, Goal
+continuation, and Advisor correction reuses the in-memory rendered Prompt.
 
-Portable replay requires exactly one valid snapshot event per schema-7 Run and
-checks all three fingerprint bindings, the raw Prompt hash, and the canonical
-catalog plus entry names/types recomputed from that Run's exact Agent revision;
-legacy Runs must not claim the event. OTLP allowlists only scalar counts, the
-Skill-injected flag, and SHA-256 values, dropping the entry array. Run
-comparison treats catalog or rendered Prompt movement as Prompt Variable drift
-while ignoring a receipt-only timestamp change. The editor lives entirely in
-the lazy Context panel, preserving the main entry budget.
+Portable replay requires exactly one valid snapshot event per schema-7 or
+schema-8 Run and checks all three fingerprint bindings, the raw Prompt hash,
+and the canonical catalog plus entry names/types recomputed from that Run's
+exact Agent revision; older Runs must not claim the event. OTLP allowlists only
+scalar counts, the Skill-injected flag, and SHA-256 values, dropping the entry
+array. Run comparison treats catalog or rendered Prompt movement as Prompt
+Variable drift while ignoring a receipt-only timestamp change. The editor lives
+entirely in the lazy Context panel, preserving the main entry budget.
+
+### Durable Tool Loop Guard
+
+The effective Tool Loop Guard policy is revisioned Agent configuration:
+`enabled`, threshold 2-8, and up to 32 canonical exempt tool names. The default
+is enabled at three identical results. Schema 8 binds the full policy, while
+`context.tool_loop_guard` records enabled state, threshold, exempt count/set
+hash, policy hash, and content hash without copying the exemption list.
+
+Detection follows Pi's executable truth: the presence of `toolCall` content,
+not a provider-specific stop reason. The runtime joins each single-call
+`model.response` to its completed or failed tool terminal event. A streak
+advances only while tool name, canonical argument SHA-256, and result SHA-256
+all remain equal. Multi-call turns, incomplete calls, different arguments,
+different results, or exempt tools break the streak. Guard-blocked attempts are
+excluded from subsequent evidence projection.
+
+At the threshold, `model.tool_loop.detected` stores the tool name, threshold,
+event range, attempt count, call/result/attempt-set/policy hashes, and content
+hash. `prepareNextTurn` adds a bounded `<tool-loop-guard>` redirect to the
+system context. This projection is rebuilt from the Ledger on every Pi turn, so
+it survives context compaction without duplicating raw arguments or results.
+If the next single-tool response repeats the same call hash,
+`beforeToolCall` records a hash-only `tool.blocked` event and returns a safe
+in-band error result before tool execution.
+
+Napier does not copy OMP's mid-token abort literally. Pi 0.82 shares an abort
+signal across the complete Run, and provider usage on an interrupted stream is
+not uniformly settleable. Completing the billed turn and blocking the next
+side effect preserves Run lifecycle and budget accounting. Portable replay
+requires one context receipt for every schema-8 Run and recomputes each trigger
+from its preceding events and exact Agent revision policy. OTLP emits only
+allowlisted counts, tool name, and hashes. The lazy Context circuit-breaker
+ticket and Trace register stay outside the size-constrained entry chunk.
 
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
@@ -951,6 +987,7 @@ optional independent review model; schema-6 validation requires that identity
 to be present, while profiles reject a reviewer equal to their primary model.
 Schema 7 adds the frozen Prompt Variable catalog, complete snapshot, and
 rendered System Prompt hashes while retaining the effective Advisor policy.
+Schema 8 additionally binds the effective Tool Loop Guard policy.
 The manifest contains requested/loaded/missing Skill names, relative
 `SKILL.md` paths, byte counts, diagnostics hash, and file SHA-256 values; it
 never stores Skill instruction text. The Agent records the same manifest as a
@@ -1085,6 +1122,9 @@ POST message
   -> append message.user
   -> assemble only approved and Agent-enabled extension tools
   -> stream model/tool events
+  -> detect repeated single-tool calls with identical argument/result hashes
+  -> inject a durable redirect at threshold and block another identical call
+     before execution
   -> account primary, compactor, evaluator, memory, and Subagent usage
   -> optionally delegate bounded tasks into isolated read-only subagents
   -> persist each task transition and return evidence through a tool result
@@ -1718,9 +1758,10 @@ covers every fingerprint field, while the duplicate Run-level revision and
 limits must agree with it. Schema 1 keeps its original exact key set and hash;
 schema 2 adds recovery policy and execution mode, schema 3 binds the Skill
 catalog, schemas 4-5 bind deterministic Advisor policy and correction limits,
-schema 6 binds an independent reviewer identity, and schema 7 binds frozen
-Prompt Variable catalog, snapshot, and rendered Prompt hashes. A schema-1 Run
-compares normally but is never automatically recovered.
+schema 6 binds an independent reviewer identity, schema 7 binds frozen Prompt
+Variable catalog, snapshot, and rendered Prompt hashes, and schema 8 binds the
+Tool Loop Guard policy. A schema-1 Run compares normally but is never
+automatically recovered.
 
 Run comparison reports changed configuration fields plus added/removed tools,
 skills, and subagent roles. If either side predates fingerprints, drift is
@@ -3036,6 +3077,10 @@ The current boundary has twenty-five parts:
     non-recursive resolution, exact Skill catalog injection, schema-7 Run
     fingerprints, hash-only Ledger/OTLP evidence, lazy Context editing, and
     portable snapshot-to-Run binding.
+27. a durable Tool Loop Guard with Agent-revision policy, canonical
+    argument/result repetition evidence, compaction-immune next-turn redirects,
+    pre-side-effect blocking, schema-8 fingerprints, metadata-only OTLP, lazy
+    Context/Trace inspection, and portable trigger revalidation.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits enabled hash-bound edits and read-only structured verification.

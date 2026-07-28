@@ -284,6 +284,27 @@ describe("OpenTelemetry trace export", () => {
         ],
       },
     });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "model.tool_loop.detected",
+      category: "system",
+      visibility: "debug",
+      payload: {
+        kind: "napier.tool-loop-guard-trigger",
+        toolName: "read_file",
+        threshold: 3,
+        attemptCount: 3,
+        fromSeq: 10,
+        toSeq: 20,
+        callSha256: "7".repeat(64),
+        resultSha256: "8".repeat(64),
+        attemptSetSha256: "9".repeat(64),
+        policySha256: "a".repeat(64),
+        contentSha256: "b".repeat(64),
+        arguments: "TOP_SECRET_LOOP_ARGUMENTS",
+      },
+    });
     await store.requestOperatorDecision({
       threadId: thread.id,
       runId: run.id,
@@ -428,6 +449,27 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.catalog_sha256",
       ),
     ).toBe("4".repeat(64));
+    const loopGuardEvent = traceSpans
+      .flatMap((span) => span.events)
+      .find((event) => event.name === "model.tool_loop.detected")!;
+    expect(
+      attributeValue(
+        loopGuardEvent.attributes,
+        "napier.event.payload.tool_name",
+      ),
+    ).toBe("read_file");
+    expect(
+      attributeValue(
+        loopGuardEvent.attributes,
+        "napier.event.payload.threshold",
+      ),
+    ).toBe(3);
+    expect(
+      attributeValue(
+        loopGuardEvent.attributes,
+        "napier.event.payload.call_sha256",
+      ),
+    ).toBe("7".repeat(64));
 
     const serialized = JSON.stringify(first);
     for (const secret of [
@@ -448,6 +490,7 @@ describe("OpenTelemetry trace export", () => {
       "TOP_SECRET_OPERATOR_OPTION_A",
       "TOP_SECRET_OPERATOR_OPTION_B",
       "TOP_SECRET_PROMPT_VARIABLE_VALUE",
+      "TOP_SECRET_LOOP_ARGUMENTS",
       "TOP_SECRET_CREDENTIAL_LABEL",
       "TOP_SECRET_USER_ID",
     ]) {

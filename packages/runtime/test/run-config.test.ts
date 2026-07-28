@@ -222,7 +222,7 @@ describe("Run configuration fingerprints", () => {
     );
   });
 
-  it("binds frozen Prompt Variable evidence in schema-7 fingerprints", () => {
+  it("binds Prompt Variables and Tool Loop Guard in schema-8 fingerprints", () => {
     const profile: AgentProfile = {
       ...PROFILE,
       promptVariables: [{ name: "project", type: "literal", value: "Napier" }],
@@ -246,17 +246,42 @@ describe("Run configuration fingerprints", () => {
 
     expect(fingerprint).toEqual(
       expect.objectContaining({
-        schemaVersion: 7,
+        schemaVersion: 8,
         skillCatalogSha256: "a".repeat(64),
         promptVariableCatalogSha256,
         promptVariableSnapshotSha256: "c".repeat(64),
         resolvedSystemPromptSha256: "d".repeat(64),
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 3,
+          exemptTools: [],
+        },
       }),
     );
     expect(JSON.stringify(fingerprint)).not.toContain("Napier");
     expect(validateRunConfigurationFingerprint(fingerprint)).toEqual(
       fingerprint,
     );
+    if (fingerprint.schemaVersion !== 8) {
+      throw new Error("Expected a schema-8 fingerprint");
+    }
+    const {
+      schemaVersion: _schemaVersion,
+      toolLoopGuard: _toolLoopGuard,
+      contentSha256: _contentSha256,
+      ...legacyShared
+    } = fingerprint;
+    const legacyContent = {
+      ...legacyShared,
+      schemaVersion: 7 as const,
+    };
+    const legacy = {
+      ...legacyContent,
+      contentSha256: createHash("sha256")
+        .update(canonicalJson(legacyContent))
+        .digest("hex"),
+    };
+    expect(validateRunConfigurationFingerprint(legacy)).toEqual(legacy);
 
     const receiptOnlyDrift = createRunConfigurationFingerprint(
       profile,
@@ -292,6 +317,60 @@ describe("Run configuration fingerprints", () => {
         changedFields: ["promptVariables"],
       }),
     );
+    const loopGuardDrift = createRunConfigurationFingerprint(
+      {
+        ...profile,
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 4,
+          exemptTools: ["read_file"],
+        },
+      },
+      PROFILE.model,
+      "standard",
+      {
+        skillCatalogSha256: "a".repeat(64),
+        promptVariables: {
+          catalogSha256: promptVariableCatalogSha256,
+          snapshotSha256: "c".repeat(64),
+          renderedSystemPromptSha256: "d".repeat(64),
+        },
+      },
+    );
+    expect(compareRunConfigurations(fingerprint, loopGuardDrift)).toEqual(
+      expect.objectContaining({
+        changedFields: ["toolLoopGuard"],
+      }),
+    );
+    const canonicalExemptions = createRunConfigurationFingerprint(
+      {
+        ...profile,
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 4,
+          exemptTools: ["read_file", "web_search"],
+        },
+      },
+      PROFILE.model,
+      "standard",
+      {
+        skillCatalogSha256: "a".repeat(64),
+        promptVariables: {
+          catalogSha256: promptVariableCatalogSha256,
+          snapshotSha256: "c".repeat(64),
+          renderedSystemPromptSha256: "d".repeat(64),
+        },
+      },
+    );
+    if (canonicalExemptions.schemaVersion !== 8) {
+      throw new Error("Expected a schema-8 fingerprint");
+    }
+    const nonCanonicalExemptions = structuredClone(canonicalExemptions);
+    nonCanonicalExemptions.toolLoopGuard.exemptTools.reverse();
+    expect(() =>
+      validateRunConfigurationFingerprint(nonCanonicalExemptions),
+    ).toThrow("Tool Loop Guard policy is not canonical");
+
     expect(() =>
       createRunConfigurationFingerprint(profile, PROFILE.model, "standard", {
         promptVariables: {

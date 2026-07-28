@@ -262,6 +262,38 @@ export interface LegacyResolvedModelAdvisorPolicy extends LegacyModelAdvisorPoli
   maxCorrectionAttempts: number;
 }
 
+export interface ToolLoopGuardPolicy {
+  enabled: boolean;
+  threshold: number;
+  exemptTools: string[];
+}
+
+export interface ToolLoopGuardContextReceipt {
+  kind: "napier.tool-loop-guard-context";
+  schemaVersion: 1;
+  enabled: boolean;
+  threshold: number;
+  exemptToolCount: number;
+  exemptToolSetSha256: string;
+  policySha256: string;
+  contentSha256: string;
+}
+
+export interface ToolLoopGuardTriggerReceipt {
+  kind: "napier.tool-loop-guard-trigger";
+  schemaVersion: 1;
+  toolName: string;
+  threshold: number;
+  attemptCount: number;
+  fromSeq: number;
+  toSeq: number;
+  callSha256: string;
+  resultSha256: string;
+  attemptSetSha256: string;
+  policySha256: string;
+  contentSha256: string;
+}
+
 export interface ModelAdvisorCorrectionRequestPayload {
   kind: "napier.model-advisor-correction-request";
   schemaVersion: 1;
@@ -2491,6 +2523,7 @@ export interface AgentProfile {
   automaticRecovery?: AutomaticRecoveryPolicy;
   modelAdvisor?: ModelAdvisorPolicy;
   promptVariables?: PromptVariableDefinition[];
+  toolLoopGuard?: ToolLoopGuardPolicy;
   revision: number;
   createdAt: string;
   updatedAt: string;
@@ -2510,7 +2543,8 @@ export type AgentProfileField =
   | "runLimits"
   | "automaticRecovery"
   | "modelAdvisor"
-  | "promptVariables";
+  | "promptVariables"
+  | "toolLoopGuard";
 
 export type AgentProfileRevisionSource =
   | "created"
@@ -2546,6 +2580,7 @@ export interface UpdateAgentProfileRequest {
   automaticRecovery?: AutomaticRecoveryPolicy;
   modelAdvisor?: ModelAdvisorPolicy;
   promptVariables?: PromptVariableDefinition[];
+  toolLoopGuard?: ToolLoopGuardPolicy;
   threadId?: string;
 }
 
@@ -2652,6 +2687,18 @@ export interface RunConfigurationFingerprintV7 extends RunConfigurationFingerpri
   resolvedSystemPromptSha256: string;
 }
 
+export interface RunConfigurationFingerprintV8 extends RunConfigurationFingerprintBase {
+  schemaVersion: 8;
+  automaticRecovery: AutomaticRecoveryPolicy;
+  executionMode: RunExecutionMode;
+  skillCatalogSha256: string;
+  modelAdvisor: ResolvedModelAdvisorPolicy;
+  promptVariableCatalogSha256: string;
+  promptVariableSnapshotSha256: string;
+  resolvedSystemPromptSha256: string;
+  toolLoopGuard: ToolLoopGuardPolicy;
+}
+
 export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV1
   | RunConfigurationFingerprintV2
@@ -2659,7 +2706,8 @@ export type RunConfigurationFingerprint =
   | RunConfigurationFingerprintV4
   | RunConfigurationFingerprintV5
   | RunConfigurationFingerprintV6
-  | RunConfigurationFingerprintV7;
+  | RunConfigurationFingerprintV7
+  | RunConfigurationFingerprintV8;
 
 export type AutomaticRecoveryBlockReason =
   | "configuration_missing"
@@ -3592,7 +3640,8 @@ export type RunConfigurationField =
   | "modelAdvisor"
   | "executionMode"
   | "skillCatalog"
-  | "promptVariables";
+  | "promptVariables"
+  | "toolLoopGuard";
 
 export interface RunConfigurationDelta {
   status: "comparable" | "unavailable";

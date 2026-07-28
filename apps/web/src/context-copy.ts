@@ -95,6 +95,18 @@ export const contextCopy = {
   modelAdvisorReviewModelPrimary: "primary model",
   modelAdvisorBody:
     "Candidate output is linted and can be reviewed by a distinct zero-tool model before it becomes visible. Enforced blockers share up to three tool-free rewrites; candidate text and reviewer guidance remain hash-only in receipts.",
+  toolLoopGuard: "Tool loop guard",
+  toolLoopGuardTitle: "Durable repetition breaker",
+  toolLoopGuardKicker: "LEDGER-DERIVED · PRE-SIDE-EFFECT",
+  toolLoopGuardEnabled: "Guard enabled",
+  toolLoopGuardDisabled: "Guard disabled",
+  toolLoopGuardThreshold: "Identical results",
+  toolLoopGuardExemptTools: "Exempt tools",
+  toolLoopGuardExemptPlaceholder: "web_search, status_check",
+  toolLoopGuardBody:
+    "After the same single-tool call returns the same result for the configured count, Napier injects a hash-only redirect. Repeating it again is blocked before execution; comma-separated exemptions remain revision-bound.",
+  toolLoopGuardInvalid:
+    "Use distinct comma-separated tool names containing only letters, digits, underscore, dot, colon, or hyphen.",
   recoveryShort: "Recovery",
   tools: "Workspace tools",
   toolLabels: {
@@ -169,6 +181,7 @@ export const contextCopy = {
     automaticRecovery: "Interruption policy",
     modelAdvisor: "Model Advisor",
     promptVariables: "Prompt variables",
+    toolLoopGuard: "Tool loop guard",
   },
   promptPackageEyebrow: "SIGNED PROMPT BASELINE",
   promptPackage: "Prompt package",

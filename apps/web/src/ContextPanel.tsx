@@ -40,6 +40,7 @@ import type {
   SkillPackageQualification,
   SkillPackageVerification,
   SubagentRole,
+  ToolLoopGuardPolicy,
   ToolPolicyMode,
   UsagePriceTableCatalog,
 } from "@napier/contracts";
@@ -269,6 +270,13 @@ export default function ContextPanel({
       ? `${agent.modelAdvisor.reviewModel.provider}/${agent.modelAdvisor.reviewModel.id}`
       : "",
   );
+  const [agentToolLoopGuardEnabled, setAgentToolLoopGuardEnabled] = useState(
+    agent.toolLoopGuard?.enabled ?? true,
+  );
+  const [agentToolLoopGuardThreshold, setAgentToolLoopGuardThreshold] =
+    useState(agent.toolLoopGuard?.threshold ?? 3);
+  const [agentToolLoopGuardExemptTools, setAgentToolLoopGuardExemptTools] =
+    useState((agent.toolLoopGuard?.exemptTools ?? []).join(", "));
   const [agentRunMaxTurns, setAgentRunMaxTurns] = useState(
     agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
   );
@@ -381,6 +389,11 @@ export default function ContextPanel({
       agent.modelAdvisor?.reviewModel
         ? `${agent.modelAdvisor.reviewModel.provider}/${agent.modelAdvisor.reviewModel.id}`
         : "",
+    );
+    setAgentToolLoopGuardEnabled(agent.toolLoopGuard?.enabled ?? true);
+    setAgentToolLoopGuardThreshold(agent.toolLoopGuard?.threshold ?? 3);
+    setAgentToolLoopGuardExemptTools(
+      (agent.toolLoopGuard?.exemptTools ?? []).join(", "),
     );
     setAgentRunMaxTurns(
       agent.runLimits?.maxTurns ?? DEFAULT_RUN_LIMITS.maxTurns,
@@ -532,6 +545,12 @@ export default function ContextPanel({
           ...(agentAdvisorReviewModelKey
             ? { reviewModel: parseModelKey(agentAdvisorReviewModelKey) }
             : {}),
+        },
+        toolLoopGuard: {
+          enabled: agentToolLoopGuardEnabled,
+          threshold: agentToolLoopGuardThreshold,
+          exemptTools:
+            parseToolLoopGuardExemptTools(agentToolLoopGuardExemptTools) ?? [],
         },
         runLimits: {
           maxTurns: agentRunMaxTurns,
@@ -1007,10 +1026,15 @@ export default function ContextPanel({
   };
 
   const canSaveAgent =
+    !configurationBusy &&
     agentName.trim().length > 0 &&
     agentDescription.trim().length > 0 &&
     agentSystemPrompt.trim().length > 0 &&
-    validPromptVariables(agentPromptVariables);
+    validPromptVariables(agentPromptVariables) &&
+    Number.isSafeInteger(agentToolLoopGuardThreshold) &&
+    agentToolLoopGuardThreshold >= 2 &&
+    agentToolLoopGuardThreshold <= 8 &&
+    parseToolLoopGuardExemptTools(agentToolLoopGuardExemptTools) !== undefined;
   const canAddCredential =
     credentialLabel.trim().length > 0 &&
     (credentialSourceType === "environment"
@@ -1511,6 +1535,71 @@ export default function ContextPanel({
             <ShieldCheck size={11} aria-hidden="true" />
             {copy.context.modelAdvisorBody}
           </p>
+        </fieldset>
+
+        <fieldset
+          className={`context-tool-loop-guard ${
+            agentToolLoopGuardEnabled ? "is-enabled" : "is-disabled"
+          }`}
+          disabled={configurationBusy}
+        >
+          <legend>{copy.context.toolLoopGuard}</legend>
+          <header>
+            <RotateCcw size={13} aria-hidden="true" />
+            <div>
+              <strong>{copy.context.toolLoopGuardTitle}</strong>
+              <span>{copy.context.toolLoopGuardKicker}</span>
+            </div>
+            <label className="context-loop-toggle">
+              <input
+                type="checkbox"
+                checked={agentToolLoopGuardEnabled}
+                onChange={(event) =>
+                  setAgentToolLoopGuardEnabled(event.target.checked)
+                }
+              />
+              <span>
+                {agentToolLoopGuardEnabled
+                  ? copy.context.toolLoopGuardEnabled
+                  : copy.context.toolLoopGuardDisabled}
+              </span>
+            </label>
+          </header>
+          <div className="context-loop-grid">
+            <NumberField
+              label={copy.context.toolLoopGuardThreshold}
+              value={agentToolLoopGuardThreshold}
+              min={2}
+              max={8}
+              onChange={setAgentToolLoopGuardThreshold}
+            />
+            <label className="context-field">
+              <span>{copy.context.toolLoopGuardExemptTools}</span>
+              <input
+                value={agentToolLoopGuardExemptTools}
+                maxLength={4_159}
+                aria-invalid={
+                  parseToolLoopGuardExemptTools(
+                    agentToolLoopGuardExemptTools,
+                  ) === undefined
+                }
+                placeholder={copy.context.toolLoopGuardExemptPlaceholder}
+                onChange={(event) =>
+                  setAgentToolLoopGuardExemptTools(event.target.value)
+                }
+              />
+            </label>
+          </div>
+          <p>
+            <ShieldCheck size={11} aria-hidden="true" />
+            {copy.context.toolLoopGuardBody}
+          </p>
+          {parseToolLoopGuardExemptTools(agentToolLoopGuardExemptTools) ===
+          undefined ? (
+            <p className="context-loop-error" role="alert">
+              {copy.context.toolLoopGuardInvalid}
+            </p>
+          ) : null}
         </fieldset>
 
         <OptionGroup
@@ -3145,6 +3234,7 @@ function agentProfileDelta(
     "automaticRecovery",
     "modelAdvisor",
     "promptVariables",
+    "toolLoopGuard",
   ];
   return fields.filter((field) => {
     if (field === "automaticRecovery") {
@@ -3171,6 +3261,12 @@ function agentProfileDelta(
         JSON.stringify(comparableModelAdvisor(target))
       );
     }
+    if (field === "toolLoopGuard") {
+      return (
+        JSON.stringify(comparableToolLoopGuard(current)) !==
+        JSON.stringify(comparableToolLoopGuard(target))
+      );
+    }
     return JSON.stringify(current[field]) !== JSON.stringify(target[field]);
   });
 }
@@ -3182,6 +3278,14 @@ function comparableModelAdvisor(agent: AgentProfile) {
     enabledRules: [...policy.enabledRules].sort(),
     maxCorrectionAttempts: policy.maxCorrectionAttempts ?? 0,
     reviewModel: agent.modelAdvisor?.reviewModel,
+  };
+}
+
+function comparableToolLoopGuard(agent: AgentProfile): ToolLoopGuardPolicy {
+  return {
+    enabled: agent.toolLoopGuard?.enabled ?? true,
+    threshold: agent.toolLoopGuard?.threshold ?? 3,
+    exemptTools: [...(agent.toolLoopGuard?.exemptTools ?? [])].sort(),
   };
 }
 
@@ -3245,6 +3349,24 @@ function validPromptVariableLiteral(value: string): boolean {
     [...normalized].length <= 2_000 &&
     new TextEncoder().encode(normalized).length <= 4 * 1024
   );
+}
+
+function parseToolLoopGuardExemptTools(
+  value: string,
+): ToolLoopGuardPolicy["exemptTools"] | undefined {
+  if (!value.trim()) return [];
+  const tools = value
+    .split(",")
+    .map((tool) => tool.trim())
+    .filter(Boolean);
+  if (
+    tools.length > 32 ||
+    new Set(tools).size !== tools.length ||
+    tools.some((tool) => !/^[A-Za-z_][A-Za-z0-9_.:-]{0,127}$/u.test(tool))
+  ) {
+    return undefined;
+  }
+  return tools.sort();
 }
 
 function formatDate(value: string): string {

@@ -1750,6 +1750,26 @@ describe("Napier HTTP goal flow", () => {
       expect.objectContaining({ error: "Agent profile request is invalid" }),
     );
 
+    const invalidToolLoopGuardResponse = await app.request(
+      `/api/agents/${created.agent.id}`,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          toolLoopGuard: {
+            enabled: true,
+            threshold: 1,
+            exemptTools: [],
+          },
+          threadId: created.thread.id,
+        }),
+      },
+    );
+    expect(invalidToolLoopGuardResponse.status).toBe(400);
+    expect(await invalidToolLoopGuardResponse.json()).toEqual(
+      expect.objectContaining({ error: "Agent profile request is invalid" }),
+    );
+
     const agentResponse = await app.request(`/api/agents/${created.agent.id}`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -1793,6 +1813,11 @@ describe("Napier HTTP goal flow", () => {
           { name: "skills", type: "skill_catalog" },
           { name: "release", type: "literal", value: "release-candidate" },
         ],
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 4,
+          exemptTools: ["search_files", "read_file"],
+        },
         threadId: created.thread.id,
       }),
     });
@@ -1833,6 +1858,11 @@ describe("Napier HTTP goal flow", () => {
           { name: "release", type: "literal", value: "release-candidate" },
           { name: "skills", type: "skill_catalog" },
         ],
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 4,
+          exemptTools: ["read_file", "search_files"],
+        },
       }),
     );
     const historyResponse = await app.request(
@@ -1851,6 +1881,7 @@ describe("Napier HTTP goal flow", () => {
           "toolPolicy",
           "modelAdvisor",
           "promptVariables",
+          "toolLoopGuard",
         ]),
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),

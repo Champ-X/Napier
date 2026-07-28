@@ -67,6 +67,9 @@ Version `0.1.0` includes:
   optional distinct zero-tool review model before assistant text becomes
   visible; candidate and reviewer guidance prose remain hash-only while
   observe/enforce modes share bounded tool-free correction receipts;
+- a durable Tool Loop Guard that detects repeated single-tool calls with
+  identical argument/result hashes, injects a next-turn redirect, and blocks a
+  further identical call before execution;
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
@@ -74,7 +77,7 @@ Version `0.1.0` includes:
 - Agent Skills discovery through standard `SKILL.md` packages;
 - frozen Agent Prompt Variables with strict `literal`, `current_date`, and
   `skill_catalog` definitions, single-pass non-recursive System Prompt
-  rendering, schema-7 Run fingerprints, and hash-only replay receipts;
+  rendering, schema-7/8 Run fingerprints, and hash-only replay receipts;
 - Ed25519-signed Skill package baselines that bind enabled `SKILL.md` file
   paths, sizes, diagnostics, and SHA-256 values without copying Skill
   instructions;
@@ -773,19 +776,45 @@ or introduce a second template pass.
 Before Run creation, Napier resolves the variables at one timestamp and freezes
 the canonical catalog SHA-256, each resolved value SHA-256 and byte count, the
 unresolved-name-set SHA-256, reference counts, and rendered System Prompt
-SHA-256. The schema-7 Run fingerprint binds the catalog, complete snapshot, and
-rendered Prompt hashes beside the Skill catalog and Advisor policy. The
+SHA-256. Schema 7 introduced bindings for the catalog, complete snapshot, and
+rendered Prompt hashes beside the Skill catalog and Advisor policy; current
+schema 8 retains them. The
 `context.prompt_variables` event carries that hash-only snapshot; it never
 contains literal values, rendered Prompt text, or unresolved names. If a
 `skill_catalog` token was used, the catalog is not appended a second time.
 
 Every turn, Goal continuation, and Advisor correction inside the Run reuses the
 same rendered Prompt. Portable replay requires exactly one valid snapshot event
-for each schema-7 Run, verifies all three fingerprint bindings, and recomputes
-the catalog plus entry names/types from the exact Agent revision. Metadata-only
-OTLP exports only counts, booleans, and hashes. The lazy Context editor
-provides typed definitions and token insertion without increasing the main
-Workbench entry bundle.
+for each schema-7 or schema-8 Run, verifies all three fingerprint bindings, and
+recomputes the catalog plus entry names/types from the exact Agent revision.
+Metadata-only OTLP exports only counts, booleans, and hashes. The lazy Context
+editor provides typed definitions and token insertion without increasing the
+main Workbench entry bundle.
+
+## Durable Tool Loop Guard
+
+The revisioned `toolLoopGuard` policy is enabled by default with threshold
+three and an optional canonical exemption list. Napier follows Pi's actual
+tool-call content rather than provider-specific stop reasons. It counts only
+consecutive single-tool turns whose canonical argument SHA-256 and terminal
+result SHA-256 are both identical; a changed tool, argument, result, parallel
+batch, or exempt tool resets the streak.
+
+When the threshold completes, `model.tool_loop.detected` records only the tool
+name, event range, count, policy/call/result/attempt-set hashes, and receipt
+hash. The next Pi turn receives a system-maintained redirect that survives
+context compaction. If the model still requests the same call,
+`beforeToolCall` emits a hash-only `tool.blocked` receipt and returns an in-band
+instruction to change arguments, inspect different evidence, use another tool,
+or report the blocker. No fourth side effect executes.
+
+This intentionally differs from mid-token stream abort: Pi 0.82 shares one
+abort signal across the Run, and an interrupted provider response cannot always
+settle usage reliably. Napier waits for the complete billed tool turn, then
+redirects before the next side effect. Schema 8 binds the effective policy;
+portable replay recomputes every trigger from prior Ledger events; OTLP exposes
+only scalar metadata and hashes. Lazy Context and Trace registers configure and
+inspect the circuit breaker outside the main entry bundle.
 
 ## Agent Configuration History
 
@@ -814,12 +843,13 @@ fingerprints remain separate and continue to prove the effective configuration
 used by each execution. Schema 3 Run fingerprints additionally bind the
 enabled Skill catalog SHA-256; schema 6 additionally binds an independent Model
 Advisor identity; schema 7 binds frozen Prompt Variable catalog, snapshot, and
-rendered System Prompt hashes. The corresponding `context.skills` Ledger event
-records only Skill names, relative `SKILL.md` paths, byte counts, diagnostics
-hashes, and file SHA-256 values, never Skill instructions. Portable full-thread
-fixtures optionally carry the complete Agent revision ledger, remap the Agent
-ID, and recompute every revision hash during atomic import; legacy
-schema-version-1 fixtures remain valid.
+rendered System Prompt hashes; schema 8 additionally binds the Tool Loop Guard
+policy. The corresponding `context.skills` Ledger event records only Skill
+names, relative `SKILL.md` paths, byte counts, diagnostics hashes, and file
+SHA-256 values, never Skill instructions. Portable full-thread fixtures
+optionally carry the complete Agent revision ledger, remap the Agent ID, and
+recompute every revision hash during atomic import; legacy schema-version-1
+fixtures remain valid.
 
 `POST /api/skills/packages/sign` issues a `napier.signed-skill-package`
 envelope over that same hash-only Skill catalog evidence using an Ed25519
@@ -1263,13 +1293,14 @@ effective limits, interruption policy, execution mode, and a SHA-256 of the
 system prompt. The prompt text is not copied into the fingerprint. Schema 3
 also binds the enabled Skill catalog SHA-256, schemas 4-5 bind deterministic
 Advisor policy and correction limits, schema 6 binds an independent review
-model, and schema 7 binds the frozen Prompt Variable catalog, snapshot receipt,
-and rendered System Prompt. Schema 1 remains hash-compatible and is interpreted
-as manual recovery; schemas 2-6 remain valid for Runs created before later
-bindings. **Lab → Compare** reports the exact fields that drifted and shows both
-fingerprint hashes; receipt timestamp changes alone do not count as Prompt
-drift, and a legacy Run without this evidence is labeled unavailable rather
-than reconstructed from the current Agent.
+model, schema 7 binds the frozen Prompt Variable catalog, snapshot receipt, and
+rendered System Prompt, and schema 8 binds the Tool Loop Guard policy. Schema 1
+remains hash-compatible and is interpreted as manual recovery; schemas 2-7
+remain valid for Runs created before later bindings. **Lab → Compare** reports
+the exact fields that drifted and shows both fingerprint hashes; receipt
+timestamp changes alone do not count as Prompt drift, and a legacy Run without
+this evidence is labeled unavailable rather than reconstructed from the current
+Agent.
 
 Import accepts at most 10 MiB and verifies both the complete content digest and
 the event-stream digest before mutation. Napier remaps every resource ID,

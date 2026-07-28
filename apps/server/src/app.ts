@@ -237,6 +237,7 @@ import type {
   PromptPackageQualification,
   PromptPackageVerification,
   PromptVariableDefinition,
+  ToolLoopGuardPolicy,
   ReplanExecutionPlanRequest,
   ReviewExecutionPlanReplanDraftRequest,
   RollbackAgentProfileRequest,
@@ -378,6 +379,7 @@ import {
   McpExtensionManager,
   ModelRegistry,
   normalizePromptVariableDefinitions,
+  normalizeToolLoopGuardPolicy,
   normalizeScheduleTrigger,
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
@@ -10507,6 +10509,7 @@ function parseUpdateAgentProfileRequest(
     "automaticRecovery",
     "modelAdvisor",
     "promptVariables",
+    "toolLoopGuard",
     "threadId",
   ]);
   if (!record) return undefined;
@@ -10558,6 +10561,10 @@ function parseUpdateAgentProfileRequest(
     record["promptVariables"] === undefined
       ? undefined
       : parsePromptVariableDefinitions(record["promptVariables"]);
+  const toolLoopGuard =
+    record["toolLoopGuard"] === undefined
+      ? undefined
+      : parseToolLoopGuardPolicy(record["toolLoopGuard"]);
   const threadId = record["threadId"];
   if (
     (record["name"] !== undefined && !name) ||
@@ -10575,6 +10582,7 @@ function parseUpdateAgentProfileRequest(
     (record["modelAdvisor"] !== undefined && !modelAdvisor) ||
     (record["promptVariables"] !== undefined &&
       promptVariables === undefined) ||
+    (record["toolLoopGuard"] !== undefined && toolLoopGuard === undefined) ||
     (threadId !== undefined && !validThreadId(threadId))
   ) {
     return undefined;
@@ -10594,8 +10602,19 @@ function parseUpdateAgentProfileRequest(
     ...(automaticRecovery ? { automaticRecovery } : {}),
     ...(modelAdvisor ? { modelAdvisor } : {}),
     ...(promptVariables !== undefined ? { promptVariables } : {}),
+    ...(toolLoopGuard !== undefined ? { toolLoopGuard } : {}),
     ...(typeof threadId === "string" ? { threadId } : {}),
   };
+}
+
+function parseToolLoopGuardPolicy(
+  input: unknown,
+): ToolLoopGuardPolicy | undefined {
+  try {
+    return normalizeToolLoopGuardPolicy(input as ToolLoopGuardPolicy);
+  } catch {
+    return undefined;
+  }
 }
 
 function parsePromptVariableDefinitions(

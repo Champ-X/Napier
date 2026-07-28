@@ -6,6 +6,23 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Durable Tool Loop Guard. Agent profiles now carry an enabled/threshold/exempt
+  policy that is normalized into immutable revisions and schema-8 Run
+  fingerprints. The runtime detects consecutive single-tool turns only when
+  canonical argument and terminal-result hashes are both identical, records a
+  hash-only `model.tool_loop.detected` receipt, and injects a
+  compaction-resistant redirect into the next Pi turn. Repeating the same call
+  again writes a hash-only `tool.blocked` receipt and returns guidance before
+  another side effect executes. Portable replay recomputes context and trigger
+  evidence from the exact Agent revision, metadata-only OTLP excludes arguments
+  and results, and lazy Context/Trace registers configure and inspect the guard.
+- Frozen Prompt Variables. Agent profiles can define strict `literal`,
+  `current_date`, and `skill_catalog` values for single-pass, non-recursive
+  System Prompt rendering. Every Run freezes catalog, value, unresolved-name
+  set, and rendered Prompt SHA-256 evidence without copying values into the
+  Ledger. Schema-7 fingerprints, portable replay, metadata-only OTLP, Skill
+  catalog de-duplication, and a lazy typed Context editor complete the
+  reproducible prompt boundary; schema 8 retains all schema-7 bindings.
 - Independent Model Advisor. Agent profiles can now bind an optional review
   model that must differ from the primary model. Every final candidate is
   reviewed through a zero-tool strict-JSON call using the current turn prompt

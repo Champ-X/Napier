@@ -12,11 +12,13 @@ import type {
   ResolvedModelAdvisorPolicy,
   RunLimits,
   SubagentLimits,
+  ToolLoopGuardPolicy,
   UpdateAgentProfileRequest,
 } from "@napier/contracts";
 
 import { nowIso } from "./ids.js";
 import { normalizePromptVariableDefinitions } from "./prompt-variables.js";
+import { normalizeToolLoopGuardPolicy } from "./tool-loop-guard.js";
 
 const ALLOWED_TOOLS = new Set([
   "list_files",
@@ -62,6 +64,7 @@ const AGENT_PROFILE_FIELDS: readonly AgentProfileField[] = [
   "automaticRecovery",
   "modelAdvisor",
   "promptVariables",
+  "toolLoopGuard",
 ];
 const AGENT_REVISION_SOURCES = new Set<AgentProfileRevisionSource>([
   "created",
@@ -186,6 +189,12 @@ export function updateAgentProfile(
           request.promptVariables,
         )
       : {}),
+    ...(request.toolLoopGuard !== undefined
+      ? optionalToolLoopGuardUpdate(
+          current.toolLoopGuard,
+          request.toolLoopGuard,
+        )
+      : {}),
   };
   assertIndependentAdvisorModel(updated);
   if (configSignature(updated) === configSignature(current)) {
@@ -211,6 +220,12 @@ export function changedAgentFields(
       return (
         JSON.stringify(effectiveModelAdvisorPolicy(before)) !==
         JSON.stringify(effectiveModelAdvisorPolicy(after))
+      );
+    }
+    if (field === "toolLoopGuard") {
+      return (
+        JSON.stringify(effectiveToolLoopGuardPolicy(before)) !==
+        JSON.stringify(effectiveToolLoopGuardPolicy(after))
       );
     }
     return JSON.stringify(before[field]) !== JSON.stringify(after[field]);
@@ -331,6 +346,7 @@ export function rollbackAgentProfile(
     promptVariables: normalizePromptVariableDefinitions(
       profile.promptVariables,
     ),
+    toolLoopGuard: effectiveToolLoopGuardPolicy(profile),
   });
   if (updated.revision === current.revision) {
     throw new Error("Agent profile already matches the target revision");
@@ -401,6 +417,13 @@ function assertAgentProfileSnapshot(profile: AgentProfile): void {
     JSON.stringify(profile.promptVariables) !== JSON.stringify(promptVariables)
   ) {
     throw new Error("Agent profile prompt variables are not canonical");
+  }
+  const toolLoopGuard = normalizeToolLoopGuardPolicy(profile.toolLoopGuard);
+  if (
+    profile.toolLoopGuard !== undefined &&
+    JSON.stringify(profile.toolLoopGuard) !== JSON.stringify(toolLoopGuard)
+  ) {
+    throw new Error("Agent profile tool loop guard is not canonical");
   }
   assertIndependentAdvisorModel(profile);
 }
@@ -499,6 +522,12 @@ export function effectiveModelAdvisorPolicy(
   );
 }
 
+export function effectiveToolLoopGuardPolicy(
+  profile: Pick<AgentProfile, "toolLoopGuard">,
+): ToolLoopGuardPolicy {
+  return normalizeToolLoopGuardPolicy(profile.toolLoopGuard);
+}
+
 export function normalizeModelAdvisorPolicy(
   input: ModelAdvisorPolicy,
 ): ResolvedModelAdvisorPolicy {
@@ -555,6 +584,18 @@ function optionalPromptVariableUpdate(
   }
   if (current === undefined && normalized.length === 0) return {};
   return { promptVariables: normalized };
+}
+
+function optionalToolLoopGuardUpdate(
+  current: AgentProfile["toolLoopGuard"],
+  requested: ToolLoopGuardPolicy,
+): { toolLoopGuard?: ToolLoopGuardPolicy } {
+  const normalized = normalizeToolLoopGuardPolicy(requested);
+  const effectiveCurrent = normalizeToolLoopGuardPolicy(current);
+  if (JSON.stringify(effectiveCurrent) === JSON.stringify(normalized)) {
+    return current === undefined ? {} : { toolLoopGuard: current };
+  }
+  return { toolLoopGuard: normalized };
 }
 
 function normalizeNames(values: string[], label: string): string[] {
@@ -745,5 +786,6 @@ function configSignature(profile: AgentProfile): string {
     promptVariables: normalizePromptVariableDefinitions(
       profile.promptVariables,
     ),
+    toolLoopGuard: effectiveToolLoopGuardPolicy(profile),
   });
 }

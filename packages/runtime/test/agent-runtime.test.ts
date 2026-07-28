@@ -161,7 +161,7 @@ describe("AgentRuntime demo path", () => {
 
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 7,
+        schemaVersion: 8,
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptVariableSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -272,7 +272,7 @@ describe("AgentRuntime demo path", () => {
 
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 7,
+        schemaVersion: 8,
         promptVariableCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         promptVariableSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         resolvedSystemPromptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -306,6 +306,121 @@ describe("AgentRuntime demo path", () => {
     expect(receipt).not.toContain("Napier");
     expect(receipt).not.toContain("Frozen catalog fixture");
     expect(receipt).not.toContain("{{missing}}");
+  });
+
+  it("redirects and blocks a repeated tool loop before another side effect", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    await writeFile(
+      path.join(workspaceRoot, "loop.txt"),
+      "stable loop evidence\n",
+      "utf8",
+    );
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolLoopGuard: {
+        enabled: true,
+        threshold: 3,
+        exemptTools: [],
+      },
+    });
+    const thread = await store.createThread({
+      title: "Durable tool loop guard",
+      agentId: agent.id,
+    });
+    const faux = fauxProvider({ provider: "faux-tool-loop" });
+    const repeatedCall = () =>
+      fauxAssistantMessage(fauxToolCall("read_file", { path: "loop.txt" }));
+    faux.setResponses([
+      repeatedCall(),
+      repeatedCall(),
+      repeatedCall(),
+      (context) => {
+        expect(context.systemPrompt).toContain("<tool-loop-guard>");
+        expect(context.systemPrompt).toContain("Tool: read_file");
+        expect(context.systemPrompt).not.toContain("loop.txt");
+        return repeatedCall();
+      },
+      fauxAssistantMessage(
+        "The read is repeating without new evidence, so I stopped and changed strategy.",
+      ),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Inspect the stable file without looping.",
+      model: { provider: "faux-tool-loop", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(run.configuration).toEqual(
+      expect.objectContaining({
+        schemaVersion: 8,
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 3,
+          exemptTools: [],
+        },
+      }),
+    );
+    expect(faux.state.callCount).toBe(6);
+    const events = await store.listEvents(thread.id);
+    expect(
+      events.filter((event) => event.type === "context.tool_loop_guard"),
+    ).toHaveLength(1);
+    const trigger = events.find(
+      (event) => event.type === "model.tool_loop.detected",
+    );
+    expect(trigger?.payload).toEqual(
+      expect.objectContaining({
+        toolName: "read_file",
+        threshold: 3,
+        attemptCount: 3,
+        callSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const blocked = events.find(
+      (event) =>
+        event.type === "tool.blocked" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["policyReason"] === "tool_loop_guard",
+    );
+    expect(blocked?.payload).toEqual(
+      expect.objectContaining({
+        toolName: "read_file",
+        status: "blocked",
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        loopGuardTriggerSha256: trigger?.payload["contentSha256"],
+      }),
+    );
+    expect(blocked?.payload).not.toHaveProperty("input");
+    expect(
+      events.filter((event) => event.type === "tool.completed"),
+    ).toHaveLength(3);
+    expect(events.filter((event) => event.type === "tool.failed")).toHaveLength(
+      1,
+    );
+    expect(
+      events.filter((event) => event.type === "message.assistant"),
+    ).toHaveLength(1);
+    expect(JSON.stringify(trigger?.payload)).not.toContain("loop.txt");
+    expect(JSON.stringify(trigger?.payload)).not.toContain(
+      "stable loop evidence",
+    );
   });
 
   it("fails goal evaluation closed when only the demo model is available", async () => {
@@ -877,7 +992,7 @@ describe("AgentRuntime demo path", () => {
     expect(run.status).toBe("completed");
     expect(run.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 7,
+        schemaVersion: 8,
         modelAdvisor: expect.objectContaining({
           reviewModel: { provider: "faux-turn-reviewer", id: "faux-1" },
         }),

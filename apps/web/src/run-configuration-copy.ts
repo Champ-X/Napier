@@ -17,4 +17,5 @@ export const runConfigurationFieldCopy: Record<RunConfigurationField, string> =
     executionMode: "Execution mode",
     skillCatalog: "Skill catalog",
     promptVariables: "Prompt variables",
+    toolLoopGuard: "Tool loop guard",
   };

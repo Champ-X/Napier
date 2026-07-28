@@ -14,6 +14,7 @@ import type {
   RunConfigurationFingerprintV5,
   RunConfigurationFingerprintV6,
   RunConfigurationFingerprintV7,
+  RunConfigurationFingerprintV8,
   RunExecutionMode,
   SubagentRole,
 } from "@napier/contracts";
@@ -25,12 +26,14 @@ import {
   DEFAULT_SUBAGENT_LIMITS,
   effectiveAutomaticRecoveryPolicy,
   effectiveModelAdvisorPolicy,
+  effectiveToolLoopGuardPolicy,
   normalizeAutomaticRecoveryPolicy,
   normalizeModelAdvisorPolicy,
   normalizeRunLimits,
   normalizeSubagentLimits,
 } from "./agents.js";
 import { createPromptVariableCatalog } from "./prompt-variables.js";
+import { normalizeToolLoopGuardPolicy } from "./tool-loop-guard.js";
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/;
@@ -83,6 +86,7 @@ const V7_FINGERPRINT_KEYS = new Set([
   "promptVariableSnapshotSha256",
   "resolvedSystemPromptSha256",
 ]);
+const V8_FINGERPRINT_KEYS = new Set([...V7_FINGERPRINT_KEYS, "toolLoopGuard"]);
 
 type FingerprintV1Content = Omit<
   RunConfigurationFingerprintV1,
@@ -110,6 +114,10 @@ type FingerprintV6Content = Omit<
 >;
 type FingerprintV7Content = Omit<
   RunConfigurationFingerprintV7,
+  "contentSha256"
+>;
+type FingerprintV8Content = Omit<
+  RunConfigurationFingerprintV8,
   "contentSha256"
 >;
 
@@ -162,9 +170,10 @@ export function createRunConfigurationFingerprint(
   }
   const safeRecovery = executionMode === "safe_read_only_recovery";
   const modelAdvisor = effectiveModelAdvisorPolicy(profile);
+  const toolLoopGuard = effectiveToolLoopGuardPolicy(profile);
   const content = {
     schemaVersion: options.promptVariables
-      ? (7 as const)
+      ? (8 as const)
       : options.skillCatalogSha256
         ? modelAdvisor.reviewModel
           ? (6 as const)
@@ -204,6 +213,7 @@ export function createRunConfigurationFingerprint(
           promptVariableSnapshotSha256: options.promptVariables.snapshotSha256,
           resolvedSystemPromptSha256:
             options.promptVariables.renderedSystemPromptSha256,
+          toolLoopGuard,
         }
       : {}),
   };
@@ -233,7 +243,9 @@ export function validateRunConfigurationFingerprint(
                 ? V6_FINGERPRINT_KEYS
                 : schemaVersion === 7
                   ? V7_FINGERPRINT_KEYS
-                  : undefined;
+                  : schemaVersion === 8
+                    ? V8_FINGERPRINT_KEYS
+                    : undefined;
   if (!keys) {
     throw new Error("Run configuration fingerprint schema is unsupported");
   }
@@ -411,6 +423,31 @@ export function validateRunConfigurationFingerprint(
     }
     return { ...content, contentSha256 };
   }
+  if (schemaVersion === 8) {
+    const content: FingerprintV8Content = {
+      schemaVersion: 8,
+      ...modernShared,
+      skillCatalogSha256,
+      modelAdvisor,
+      promptVariableCatalogSha256: assertSha256(
+        record["promptVariableCatalogSha256"],
+        "promptVariableCatalogSha256",
+      ),
+      promptVariableSnapshotSha256: assertSha256(
+        record["promptVariableSnapshotSha256"],
+        "promptVariableSnapshotSha256",
+      ),
+      resolvedSystemPromptSha256: assertSha256(
+        record["resolvedSystemPromptSha256"],
+        "resolvedSystemPromptSha256",
+      ),
+      toolLoopGuard: assertToolLoopGuardPolicy(record["toolLoopGuard"]),
+    };
+    if (sha256(canonicalJson(content)) !== contentSha256) {
+      throw new Error("Run configuration fingerprint hash mismatch");
+    }
+    return { ...content, contentSha256 };
+  }
   const content: FingerprintV5Content | FingerprintV6Content =
     schemaVersion === 5
       ? {
@@ -503,6 +540,9 @@ export function compareRunConfigurations(
   ) {
     changedFields.push("promptVariables");
   }
+  if (!same(fingerprintToolLoopGuard(left), fingerprintToolLoopGuard(right))) {
+    changedFields.push("toolLoopGuard");
+  }
   return {
     status: "comparable",
     leftSha256: left.contentSha256,
@@ -531,7 +571,8 @@ export function fingerprintAutomaticRecovery(
     fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
     fingerprint.schemaVersion === 6 ||
-    fingerprint.schemaVersion === 7
+    fingerprint.schemaVersion === 7 ||
+    fingerprint.schemaVersion === 8
     ? structuredClone(fingerprint.automaticRecovery)
     : structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY);
 }
@@ -544,7 +585,8 @@ export function fingerprintExecutionMode(
     fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
     fingerprint.schemaVersion === 6 ||
-    fingerprint.schemaVersion === 7
+    fingerprint.schemaVersion === 7 ||
+    fingerprint.schemaVersion === 8
     ? fingerprint.executionMode
     : "standard";
 }
@@ -556,7 +598,8 @@ export function fingerprintSkillCatalogSha256(
     fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
     fingerprint.schemaVersion === 6 ||
-    fingerprint.schemaVersion === 7
+    fingerprint.schemaVersion === 7 ||
+    fingerprint.schemaVersion === 8
     ? fingerprint.skillCatalogSha256
     : "";
 }
@@ -567,7 +610,8 @@ export function fingerprintModelAdvisor(
   return fingerprint.schemaVersion === 4 ||
     fingerprint.schemaVersion === 5 ||
     fingerprint.schemaVersion === 6 ||
-    fingerprint.schemaVersion === 7
+    fingerprint.schemaVersion === 7 ||
+    fingerprint.schemaVersion === 8
     ? normalizeModelAdvisorPolicy(fingerprint.modelAdvisor)
     : structuredClone(DEFAULT_MODEL_ADVISOR_POLICY);
 }
@@ -575,15 +619,41 @@ export function fingerprintModelAdvisor(
 function fingerprintPromptVariableHashes(
   fingerprint: RunConfigurationFingerprint,
 ): Pick<
-  RunConfigurationFingerprintV7,
+  RunConfigurationFingerprintV7 | RunConfigurationFingerprintV8,
   "promptVariableCatalogSha256" | "resolvedSystemPromptSha256"
 > | null {
-  return fingerprint.schemaVersion === 7
+  return fingerprint.schemaVersion === 7 || fingerprint.schemaVersion === 8
     ? {
         promptVariableCatalogSha256: fingerprint.promptVariableCatalogSha256,
         resolvedSystemPromptSha256: fingerprint.resolvedSystemPromptSha256,
       }
     : null;
+}
+
+function fingerprintToolLoopGuard(fingerprint: RunConfigurationFingerprint) {
+  return fingerprint.schemaVersion === 8
+    ? normalizeToolLoopGuardPolicy(fingerprint.toolLoopGuard)
+    : normalizeToolLoopGuardPolicy(undefined);
+}
+
+function assertToolLoopGuardPolicy(
+  value: unknown,
+): RunConfigurationFingerprintV8["toolLoopGuard"] {
+  if (value === undefined) {
+    throw new Error(
+      "Run configuration fingerprint Tool Loop Guard policy is invalid",
+    );
+  }
+  const input = value as RunConfigurationFingerprintV8["toolLoopGuard"];
+  const normalized = normalizeToolLoopGuardPolicy(input);
+  if (
+    JSON.stringify(input.exemptTools) !== JSON.stringify(normalized.exemptTools)
+  ) {
+    throw new Error(
+      "Run configuration fingerprint Tool Loop Guard policy is not canonical",
+    );
+  }
+  return normalized;
 }
 
 function assertModel(value: unknown): ModelRef {

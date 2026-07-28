@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CotC17mG.js",
+    "path": "apps/web/dist/assets/index-De9aRTap.js",
     "sizeBytes": 153173,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "da738854a47895597166c2d64a4367ca971dc2a602e3138c6c4f4590a9b501f9"
+    "sha256": "642a617c1899a30d706fde93d97fc6bcaecb493060db83c269fc8c65707c8ed9"
   },
-  "distContentSha256": "da738854a47895597166c2d64a4367ca971dc2a602e3138c6c4f4590a9b501f9",
+  "distContentSha256": "642a617c1899a30d706fde93d97fc6bcaecb493060db83c269fc8c65707c8ed9",
   "errors": []
 }

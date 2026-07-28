@@ -8,6 +8,7 @@ import {
   Command,
   Download,
   Layers,
+  RotateCcw,
   ShieldCheck,
   Sparkles,
   Target,
@@ -35,6 +36,11 @@ import {
   independentModelAdvisorReviewViews,
   type IndependentModelAdvisorReviewView,
 } from "./model-advisor-review-view";
+import { toolLoopGuardCopy } from "./tool-loop-guard-copy";
+import {
+  toolLoopGuardTriggerViews,
+  type ToolLoopGuardTriggerView,
+} from "./tool-loop-guard-view";
 import type {
   OpenTelemetryTraceReceipt,
   OpenTelemetryTraceVerificationReceipt,
@@ -71,6 +77,7 @@ export default function TracePanel({
   const threadId = runs[0]?.threadId ?? events[0]?.threadId;
   const milestoneEventSeq = latestAgentMilestoneEventSeq(events);
   const advisorReviews = independentModelAdvisorReviewViews(events);
+  const loopGuardTriggers = toolLoopGuardTriggerViews(events);
 
   useEffect(() => {
     if (exportRunId && !runs.some((run) => run.id === exportRunId)) {
@@ -232,6 +239,7 @@ export default function TracePanel({
         unavailable={milestonesUnavailable}
       />
       <IndependentAdvisorLedger reviews={advisorReviews} />
+      <ToolLoopGuardLedger triggers={loopGuardTriggers} />
       <DelegationLedger tasks={subagents} reviewerModel={reviewerModel} />
       {events.length === 0 ? (
         <p className="empty-panel">{copy.trace.empty}</p>
@@ -255,6 +263,80 @@ export default function TracePanel({
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+function ToolLoopGuardLedger({
+  triggers,
+}: {
+  triggers: ToolLoopGuardTriggerView[];
+}) {
+  return (
+    <section
+      className="tool-loop-guard-ledger"
+      aria-labelledby="tool-loop-guard-title"
+    >
+      <header>
+        <div>
+          <span>{toolLoopGuardCopy.eyebrow}</span>
+          <h3 id="tool-loop-guard-title">{toolLoopGuardCopy.title}</h3>
+        </div>
+        <span>{String(triggers.length).padStart(2, "0")}</span>
+      </header>
+      {triggers.length === 0 ? (
+        <p>{toolLoopGuardCopy.empty}</p>
+      ) : (
+        <ol>
+          {triggers
+            .slice()
+            .reverse()
+            .map((trigger) => (
+              <li
+                className="tool-loop-guard-card"
+                key={`${trigger.eventSeq}:${trigger.contentSha256}`}
+              >
+                <header>
+                  <span>
+                    <RotateCcw size={11} aria-hidden="true" />
+                    {trigger.toolName}
+                  </span>
+                  <code>#{String(trigger.eventSeq).padStart(3, "0")}</code>
+                </header>
+                <dl>
+                  <div>
+                    <dt>{toolLoopGuardCopy.attempts}</dt>
+                    <dd>{trigger.attemptCount}</dd>
+                  </div>
+                  <div>
+                    <dt>{toolLoopGuardCopy.range}</dt>
+                    <dd>
+                      {trigger.fromSeq}-{trigger.toSeq}
+                    </dd>
+                  </div>
+                </dl>
+                <p>
+                  <span>{toolLoopGuardCopy.call}</span>
+                  <code title={trigger.callSha256}>
+                    {trigger.callSha256.slice(0, 12)}
+                  </code>
+                </p>
+                <p>
+                  <span>{toolLoopGuardCopy.result}</span>
+                  <code title={trigger.resultSha256}>
+                    {trigger.resultSha256.slice(0, 12)}
+                  </code>
+                </p>
+                <footer>
+                  <span>{toolLoopGuardCopy.receipt}</span>
+                  <code title={trigger.contentSha256}>
+                    {trigger.contentSha256.slice(0, 12)}
+                  </code>
+                </footer>
+              </li>
+            ))}
+        </ol>
+      )}
     </section>
   );
 }

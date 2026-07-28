@@ -79,6 +79,11 @@ describe("Agent profile updates", () => {
         maxCorrectionAttempts: 2,
         reviewModel: { provider: "google", id: "gemini-2.5-pro" },
       },
+      toolLoopGuard: {
+        enabled: true,
+        threshold: 4,
+        exemptTools: ["web_search", "read_file"],
+      },
     });
 
     expect(updated).toEqual(
@@ -110,6 +115,11 @@ describe("Agent profile updates", () => {
           maxCorrectionAttempts: 2,
           reviewModel: { provider: "google", id: "gemini-2.5-pro" },
         },
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 4,
+          exemptTools: ["read_file", "web_search"],
+        },
         revision: 2,
       }),
     );
@@ -127,6 +137,7 @@ describe("Agent profile updates", () => {
         "runLimits",
         "automaticRecovery",
         "modelAdvisor",
+        "toolLoopGuard",
       ]),
     );
   });
@@ -191,6 +202,31 @@ describe("Agent profile updates", () => {
     const cleared = updateAgentProfile(updated, { promptVariables: [] });
     expect(cleared.promptVariables).toEqual([]);
     expect(cleared.revision).toBe(updated.revision + 1);
+  });
+
+  it("normalizes Tool Loop Guard policy without exempt-set order churn", () => {
+    const updated = updateAgentProfile(PROFILE, {
+      toolLoopGuard: {
+        enabled: true,
+        threshold: 4,
+        exemptTools: ["search_files", "read_file"],
+      },
+    });
+    expect(updated.toolLoopGuard).toEqual({
+      enabled: true,
+      threshold: 4,
+      exemptTools: ["read_file", "search_files"],
+    });
+    expect(changedAgentFields(PROFILE, updated)).toContain("toolLoopGuard");
+    expect(
+      updateAgentProfile(updated, {
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 4,
+          exemptTools: ["search_files", "read_file"],
+        },
+      }),
+    ).toEqual(updated);
   });
 
   it("rejects unsupported tools, malformed models, and unsafe budgets", () => {
@@ -268,6 +304,15 @@ describe("Agent profile updates", () => {
         },
       }),
     ).toThrow("must differ from the primary model");
+    expect(() =>
+      updateAgentProfile(PROFILE, {
+        toolLoopGuard: {
+          enabled: true,
+          threshold: 1,
+          exemptTools: [],
+        },
+      }),
+    ).toThrow("Tool loop guard policy is invalid");
   });
 
   it("hashes immutable revisions and restores history as a new revision", () => {

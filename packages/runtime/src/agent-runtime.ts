@@ -62,7 +62,11 @@ import {
   parseGoalEvaluationResponse,
   shouldContinueGoal,
 } from "./goals.js";
-import { DEFAULT_RUN_LIMITS, effectiveModelAdvisorPolicy } from "./agents.js";
+import {
+  DEFAULT_RUN_LIMITS,
+  effectiveModelAdvisorPolicy,
+  effectiveToolLoopGuardPolicy,
+} from "./agents.js";
 import {
   buildMemoryExtractorMessages,
   formatMemoryContext,
@@ -109,6 +113,18 @@ import {
 import { LocalStore } from "./store.js";
 import { SubagentCoordinator } from "./subagents.js";
 import { createUsageAccounting } from "./token-accounting.js";
+import {
+  createToolCallSha256,
+  createToolLoopGuardContextReceipt,
+  detectToolCallLoop,
+  formatToolLoopGuardContext,
+  latestActiveToolLoopGuard,
+  projectToolLoopGuardTriggers,
+  TOOL_LOOP_GUARD_CONTEXT_EVENT,
+  TOOL_LOOP_GUARD_POLICY_REASON,
+  TOOL_LOOP_GUARD_TRIGGERED_EVENT,
+  toolLoopGuardBlockReason,
+} from "./tool-loop-guard.js";
 import { createWorkspaceTools } from "./tools.js";
 import { createVerificationTool } from "./verification.js";
 
@@ -214,6 +230,9 @@ export class AgentRuntime {
       definitions: agentSnapshot.promptVariables,
       skillCatalogText: formatSkillCatalog(skillCatalog.skills),
     });
+    const toolLoopGuardContext = createToolLoopGuardContextReceipt(
+      agentSnapshot.toolLoopGuard,
+    );
     const leasedRun = await this.store.createLeasedRun(
       {
         threadId: thread.id,
@@ -341,6 +360,17 @@ export class AgentRuntime {
           category: "system",
           visibility: "debug",
           payload: toJsonValue(promptVariables.snapshot),
+        },
+        options.onEvent,
+      );
+      await this.record(
+        {
+          threadId: thread.id,
+          runId: run.id,
+          type: TOOL_LOOP_GUARD_CONTEXT_EVENT,
+          category: "system",
+          visibility: "debug",
+          payload: toJsonValue(toolLoopGuardContext),
         },
         options.onEvent,
       );
@@ -818,7 +848,8 @@ export class AgentRuntime {
       interrupted.configuration.schemaVersion === 4 ||
       interrupted.configuration.schemaVersion === 5 ||
       interrupted.configuration.schemaVersion === 6 ||
-      interrupted.configuration.schemaVersion === 7
+      interrupted.configuration.schemaVersion === 7 ||
+      interrupted.configuration.schemaVersion === 8
     ) {
       const currentSkillCatalog = await loadWorkspaceSkills(
         this.store.workspaceRoot,
@@ -1050,6 +1081,12 @@ export class AgentRuntime {
       ? resolvedSystemPrompt
       : appendSkillCatalog(resolvedSystemPrompt, skillCatalog.skills);
     const threadRecord = this.store.getThread(run.threadId);
+    const toolLoopGuardPolicy = effectiveToolLoopGuardPolicy(profile);
+    let activeToolLoopGuard = latestActiveToolLoopGuard(
+      await this.store.listEvents(run.threadId),
+      run.id,
+      toolLoopGuardPolicy,
+    );
     const importedLedgerBoundary = formatImportedLedgerBoundary(
       threadRecord.importProvenance,
     );
@@ -1155,17 +1192,20 @@ export class AgentRuntime {
     const buildSystemPrompt = (
       delegationProjection: typeof delegationLedgerProjection,
       milestoneProjection: typeof milestoneContextProjection,
+      loopGuard: typeof activeToolLoopGuard,
     ): string =>
       [
         ...baseSystemPromptSections,
         formatDelegationLedgerProjection(delegationProjection),
         formatAgentMilestoneContextProjection(milestoneProjection),
+        formatToolLoopGuardContext(loopGuard),
       ]
         .filter(Boolean)
         .join("\n\n");
     const systemPrompt = buildSystemPrompt(
       delegationLedgerProjection,
       milestoneContextProjection,
+      activeToolLoopGuard,
     );
     const beforeToolCall = async (
       {
@@ -1218,6 +1258,39 @@ export class AgentRuntime {
           onEvent,
         );
         return { block: true, reason: budgetExhaustion.message };
+      }
+      const currentLoopGuard = latestActiveToolLoopGuard(
+        await this.store.listEvents(run.threadId),
+        run.id,
+        toolLoopGuardPolicy,
+      );
+      if (
+        currentLoopGuard &&
+        toolCalls.length === 1 &&
+        !toolLoopGuardPolicy.exemptTools.includes(toolCall.name) &&
+        createToolCallSha256(toolCall.name, args) ===
+          currentLoopGuard.receipt.callSha256
+      ) {
+        const reason = toolLoopGuardBlockReason(currentLoopGuard);
+        await this.record(
+          {
+            threadId: run.threadId,
+            runId: run.id,
+            type: "tool.blocked",
+            category: "tool",
+            visibility: "user",
+            payload: {
+              callId: toolCall.id,
+              toolName: toolCall.name,
+              status: "blocked",
+              inputSha256: createToolCallSha256(toolCall.name, args),
+              policyReason: TOOL_LOOP_GUARD_POLICY_REASON,
+              loopGuardTriggerSha256: currentLoopGuard.receipt.contentSha256,
+            },
+          },
+          onEvent,
+        );
+        return { block: true, reason };
       }
       if (toolCall.name === "delegate_task") return undefined;
       const decision = safeReadOnlyRecovery
@@ -1357,6 +1430,15 @@ export class AgentRuntime {
           milestoneTextRedacted: milestoneContextProjection.textRedacted,
           milestoneSetSha256: milestoneContextProjection.milestoneSetSha256,
           milestoneProjectionSha256: milestoneContextProjection.contentSha256,
+          toolLoopGuardEnabled: toolLoopGuardPolicy.enabled,
+          toolLoopGuardThreshold: toolLoopGuardPolicy.threshold,
+          toolLoopGuardActive: Boolean(activeToolLoopGuard),
+          ...(activeToolLoopGuard
+            ? {
+                toolLoopGuardTriggerSha256:
+                  activeToolLoopGuard.receipt.contentSha256,
+              }
+            : {}),
         },
       },
       onEvent,
@@ -1406,6 +1488,7 @@ export class AgentRuntime {
           }
           let nextDelegationLedgerProjection = delegationLedgerProjection;
           let nextMilestoneContextProjection = milestoneContextProjection;
+          let nextActiveToolLoopGuard = activeToolLoopGuard;
           try {
             nextDelegationLedgerProjection = createDelegationLedgerProjection(
               run.threadId,
@@ -1424,10 +1507,52 @@ export class AgentRuntime {
           } catch {
             // Retain the last verified milestone projection.
           }
+          try {
+            let runEvents = await this.store.listEvents(run.threadId);
+            const detection = detectToolCallLoop(
+              runEvents,
+              run.id,
+              toolLoopGuardPolicy,
+            );
+            const knownTriggers = projectToolLoopGuardTriggers(
+              runEvents,
+              run.id,
+            );
+            if (
+              detection &&
+              !knownTriggers.some(
+                (trigger) =>
+                  trigger.receipt.attemptSetSha256 ===
+                  detection.attemptSetSha256,
+              )
+            ) {
+              await this.record(
+                {
+                  threadId: run.threadId,
+                  runId: run.id,
+                  type: TOOL_LOOP_GUARD_TRIGGERED_EVENT,
+                  category: "system",
+                  visibility: "debug",
+                  payload: toJsonValue(detection),
+                },
+                onEvent,
+              );
+              runEvents = await this.store.listEvents(run.threadId);
+            }
+            nextActiveToolLoopGuard = latestActiveToolLoopGuard(
+              runEvents,
+              run.id,
+              toolLoopGuardPolicy,
+            );
+          } catch {
+            // Retain the last verified loop-guard projection.
+          }
           const nextSystemPrompt = buildSystemPrompt(
             nextDelegationLedgerProjection,
             nextMilestoneContextProjection,
+            nextActiveToolLoopGuard,
           );
+          activeToolLoopGuard = nextActiveToolLoopGuard;
           if (
             nextDelegationLedgerProjection.contentSha256 !==
             delegationLedgerProjection.contentSha256
@@ -1649,9 +1774,9 @@ export class AgentRuntime {
             name: block.name,
             arguments: block.arguments,
           }));
+        const hasToolCalls = toolCalls.length > 0;
         const redactCandidate =
-          event.message.stopReason !== "toolUse" &&
-          modelAdvisorPolicy.mode === "enforce";
+          !hasToolCalls && modelAdvisorPolicy.mode === "enforce";
         await this.record(
           {
             threadId: run.threadId,
@@ -1679,7 +1804,7 @@ export class AgentRuntime {
           onEvent,
         );
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
-        if (event.message.stopReason === "toolUse") return undefined;
+        if (hasToolCalls) return undefined;
         await this.recordModelAdvisorGate(
           run,
           text,
@@ -2760,9 +2885,15 @@ function effectiveRunProfile(
     ...(configuration.schemaVersion === 4 ||
     configuration.schemaVersion === 5 ||
     configuration.schemaVersion === 6 ||
-    configuration.schemaVersion === 7
+    configuration.schemaVersion === 7 ||
+    configuration.schemaVersion === 8
       ? {
           modelAdvisor: structuredClone(configuration.modelAdvisor),
+        }
+      : {}),
+    ...(configuration.schemaVersion === 8
+      ? {
+          toolLoopGuard: structuredClone(configuration.toolLoopGuard),
         }
       : {}),
   };
@@ -2772,7 +2903,7 @@ function modernRunConfiguration(
   configuration: RunRecord["configuration"],
 ): configuration is Extract<
   NonNullable<RunRecord["configuration"]>,
-  { schemaVersion: 2 | 3 | 4 | 5 | 6 | 7 }
+  { schemaVersion: 2 | 3 | 4 | 5 | 6 | 7 | 8 }
 > {
   return (
     configuration !== undefined &&
@@ -2781,7 +2912,8 @@ function modernRunConfiguration(
       configuration.schemaVersion === 4 ||
       configuration.schemaVersion === 5 ||
       configuration.schemaVersion === 6 ||
-      configuration.schemaVersion === 7)
+      configuration.schemaVersion === 7 ||
+      configuration.schemaVersion === 8)
   );
 }
 

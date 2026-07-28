@@ -405,7 +405,7 @@ describe("safe automatic recovery", () => {
     );
     expect(recovered.configuration).toEqual(
       expect.objectContaining({
-        schemaVersion: 7,
+        schemaVersion: 8,
         executionMode: "safe_read_only_recovery",
         toolPolicy: "observe",
         enabledTools: ["list_files", "read_file", "search_files"],
