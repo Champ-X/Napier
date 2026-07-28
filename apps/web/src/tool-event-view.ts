@@ -23,6 +23,19 @@ export interface ToolEventTraceView {
   patchBeforeBytes?: number;
   patchAfterBytes?: number;
   patchEditCount?: number;
+  listCount?: number;
+  listTruncated?: boolean;
+  listPathSha256?: string;
+  listEntrySetSha256?: string;
+  readStartLine?: number;
+  readEndLine?: number;
+  readTotalLines?: number;
+  readPathSha256?: string;
+  readFileSha256?: string;
+  readSizeBytes?: number;
+  readTruncated?: boolean;
+  readLineAnchorsTruncated?: boolean;
+  readLineAnchorSetSha256?: string;
 }
 
 const TOOL_EVENT_PATTERN = /^tool\.(started|completed|failed|blocked)$/u;
@@ -62,6 +75,14 @@ export function toolEventTraceView(
     toolName === "apply_patch"
       ? applyPatchEvidence(event.payload["details"])
       : undefined;
+  const listEvidence =
+    toolName === "list_files"
+      ? listFilesEvidence(event.payload["details"])
+      : undefined;
+  const readEvidence =
+    toolName === "read_file"
+      ? readFileEvidence(event.payload["details"])
+      : undefined;
   return {
     toolName,
     status,
@@ -71,6 +92,8 @@ export function toolEventTraceView(
     ...(searchEvidence ? searchEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
+    ...(listEvidence ? listEvidence : {}),
+    ...(readEvidence ? readEvidence : {}),
   };
 }
 
@@ -124,6 +147,32 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
         : []),
     ...(view.patchAfterSha256
       ? [`after ${view.patchAfterSha256.slice(0, 12)}`]
+      : []),
+    ...(view.listCount !== undefined ? [`entries ${view.listCount}`] : []),
+    ...(view.listTruncated ? ["entries-truncated"] : []),
+    ...(view.listPathSha256
+      ? [`list-path ${view.listPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.listEntrySetSha256
+      ? [`entry-set ${view.listEntrySetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.readStartLine !== undefined && view.readEndLine !== undefined
+      ? [`range ${view.readStartLine}-${view.readEndLine}`]
+      : []),
+    ...(view.readTotalLines !== undefined ? [`lines ${view.readTotalLines}`] : []),
+    ...(view.readSizeBytes !== undefined
+      ? [`size ${view.readSizeBytes}`]
+      : []),
+    ...(view.readTruncated ? ["read-truncated"] : []),
+    ...(view.readLineAnchorsTruncated ? ["anchors-truncated"] : []),
+    ...(view.readPathSha256
+      ? [`read-path ${view.readPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.readFileSha256
+      ? [`file ${view.readFileSha256.slice(0, 12)}`]
+      : []),
+    ...(view.readLineAnchorSetSha256
+      ? [`anchor-set ${view.readLineAnchorSetSha256.slice(0, 12)}`]
       : []),
   ].join(" / ");
 }
@@ -297,4 +346,83 @@ function patchOperation(
     value === "hashline_replace"
     ? value
     : undefined;
+}
+
+function listFilesEvidence(
+  value: unknown,
+):
+  | {
+      listCount: number;
+      listTruncated?: boolean;
+      listPathSha256?: string;
+      listEntrySetSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const count = integerInRange(record["count"], 0, 300);
+  if (count === undefined) return undefined;
+  const pathSha256 = sha256(record["pathSha256"]);
+  const entrySetSha256 = sha256(record["entrySetSha256"]);
+  return {
+    listCount: count,
+    ...(record["truncated"] === true ? { listTruncated: true } : {}),
+    ...(pathSha256 ? { listPathSha256: pathSha256 } : {}),
+    ...(entrySetSha256 ? { listEntrySetSha256: entrySetSha256 } : {}),
+  };
+}
+
+function readFileEvidence(
+  value: unknown,
+):
+  | {
+      readStartLine?: number;
+      readEndLine?: number;
+      readTotalLines?: number;
+      readPathSha256?: string;
+      readFileSha256?: string;
+      readSizeBytes?: number;
+      readTruncated?: boolean;
+      readLineAnchorsTruncated?: boolean;
+      readLineAnchorSetSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const startLine = integerInRange(record["startLine"], 1, 1_000_000);
+  const endLine = integerInRange(record["endLine"], 1, 1_000_000);
+  if (
+    startLine !== undefined &&
+    endLine !== undefined &&
+    endLine < startLine
+  ) {
+    return undefined;
+  }
+  const totalLines = integerInRange(record["totalLines"], 1, 1_000_000);
+  const pathSha256 = sha256(record["pathSha256"]);
+  const fileSha256 = sha256(record["sha256"]);
+  const lineAnchorSetSha256 = sha256(record["lineAnchorSetSha256"]);
+  const sizeBytes = integerInRange(record["sizeBytes"], 0, 2_097_152);
+  if (!fileSha256 && !pathSha256 && startLine === undefined) {
+    return undefined;
+  }
+  return {
+    ...(startLine !== undefined ? { readStartLine: startLine } : {}),
+    ...(endLine !== undefined ? { readEndLine: endLine } : {}),
+    ...(totalLines !== undefined ? { readTotalLines: totalLines } : {}),
+    ...(pathSha256 ? { readPathSha256: pathSha256 } : {}),
+    ...(fileSha256 ? { readFileSha256: fileSha256 } : {}),
+    ...(sizeBytes !== undefined ? { readSizeBytes: sizeBytes } : {}),
+    ...(record["truncated"] === true ? { readTruncated: true } : {}),
+    ...(record["lineAnchorsTruncated"] === true
+      ? { readLineAnchorsTruncated: true }
+      : {}),
+    ...(lineAnchorSetSha256
+      ? { readLineAnchorSetSha256: lineAnchorSetSha256 }
+      : {}),
+  };
 }

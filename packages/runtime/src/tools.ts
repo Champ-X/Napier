@@ -197,6 +197,27 @@ export interface WorkspaceSearchDetails {
   matches: WorkspaceSearchMatch[];
 }
 
+export interface WorkspaceListDetails {
+  count: number;
+  truncated: boolean;
+  pathSha256: string;
+  entrySetSha256: string;
+}
+
+export interface WorkspaceReadDetails {
+  startLine: number;
+  endLine: number;
+  totalLines: number;
+  path: string;
+  pathSha256: string;
+  sha256: string;
+  sizeBytes: number;
+  truncated: boolean;
+  lineAnchors: Array<{ line: number; sha256: string }>;
+  lineAnchorsTruncated: boolean;
+  lineAnchorSetSha256: string;
+}
+
 export interface CreateWorkspaceToolsOptions {
   includeWriteTools?: boolean;
   dataRoot?: string;
@@ -764,7 +785,7 @@ export function createWorkspaceTools(
 ): AgentTool[] {
   const listFiles: AgentTool<
     typeof listFilesSchema,
-    { count: number; truncated: boolean }
+    WorkspaceListDetails
   > = {
     name: "list_files",
     label: "List files",
@@ -784,6 +805,7 @@ export function createWorkspaceTools(
         const relative = path.relative(resolved.root, file) || ".";
         return relative;
       });
+      const relativeTarget = path.relative(resolved.root, target) || ".";
       return {
         content: [
           {
@@ -794,25 +816,14 @@ export function createWorkspaceTools(
         details: {
           count: lines.length,
           truncated: lines.length >= MAX_LIST_ENTRIES,
+          pathSha256: sha256(relativeTarget),
+          entrySetSha256: sha256(JSON.stringify(lines)),
         },
       };
     },
   };
 
-  const readTextFile: AgentTool<
-    typeof readFileSchema,
-    {
-      startLine: number;
-      endLine: number;
-      totalLines: number;
-      path: string;
-      sha256: string;
-      sizeBytes: number;
-      truncated: boolean;
-      lineAnchors: Array<{ line: number; sha256: string }>;
-      lineAnchorsTruncated: boolean;
-    }
-  > = {
+  const readTextFile: AgentTool<typeof readFileSchema, WorkspaceReadDetails> = {
     name: "read_file",
     label: "Read file",
     description: `Read a UTF-8 text file inside the workspace, up to ${MAX_READ_BYTES / 1024} KB.`,
@@ -844,12 +855,16 @@ export function createWorkspaceTools(
         start,
         end,
       );
+      const relativePath = path.relative(resolved.root, target);
+      const lineAnchorSetSha256 = sha256(JSON.stringify(lineAnchors));
       const metadata = JSON.stringify({
-        path: path.relative(resolved.root, target),
+        path: relativePath,
+        pathSha256: sha256(relativePath),
         sha256: contentSha256,
         sizeBytes: buffer.byteLength,
         lineAnchors,
         lineAnchorsTruncated,
+        lineAnchorSetSha256,
       });
       return {
         content: [
@@ -862,12 +877,14 @@ export function createWorkspaceTools(
           startLine: start + 1,
           endLine: end,
           totalLines: lines.length,
-          path: path.relative(resolved.root, target),
+          path: relativePath,
+          pathSha256: sha256(relativePath),
           sha256: contentSha256,
           sizeBytes: buffer.byteLength,
           truncated: bytes > MAX_READ_BYTES,
           lineAnchors,
           lineAnchorsTruncated,
+          lineAnchorSetSha256,
         },
       };
     },

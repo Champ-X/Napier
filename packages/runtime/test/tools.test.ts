@@ -64,6 +64,7 @@ describe("workspace tools", () => {
     const secondLineDigest = createHash("sha256")
       .update("second line")
       .digest("hex");
+    const lineAnchors = [{ line: 2, sha256: secondLineDigest }];
     expect(result.content[0]).toEqual(
       expect.objectContaining({
         type: "text",
@@ -75,12 +76,16 @@ describe("workspace tools", () => {
     expect(result.details).toEqual(
       expect.objectContaining({
         path: "notes.txt",
+        pathSha256: createHash("sha256").update("notes.txt").digest("hex"),
         sha256: digest,
         sizeBytes: Buffer.byteLength(source),
         startLine: 2,
         endLine: 2,
-        lineAnchors: [{ line: 2, sha256: secondLineDigest }],
+        lineAnchors,
         lineAnchorsTruncated: false,
+        lineAnchorSetSha256: createHash("sha256")
+          .update(JSON.stringify(lineAnchors))
+          .digest("hex"),
       }),
     );
 
@@ -90,6 +95,34 @@ describe("workspace tools", () => {
         dataRoot,
       }).map((tool) => tool.name),
     ).toEqual(["list_files", "read_file", "search_files", "apply_patch"]);
+  });
+
+  it("returns hash receipts for listed workspace entries", async () => {
+    const { workspaceRoot } = await createFixture();
+    await mkdir(path.join(workspaceRoot, "src"));
+    await writeFile(path.join(workspaceRoot, "README.md"), "# Fixture\n");
+    await writeFile(path.join(workspaceRoot, "src/index.ts"), "export {};\n");
+    const list = createWorkspaceTools(workspaceRoot).find(
+      (tool) => tool.name === "list_files",
+    )!;
+
+    const result = await list.execute("list-root", { path: ".", depth: 1 });
+
+    const entries = ["README.md", "src", "src/index.ts"];
+    expect(result.content[0]).toEqual(
+      expect.objectContaining({
+        type: "text",
+        text: entries.join("\n"),
+      }),
+    );
+    expect(result.details).toEqual({
+      count: 3,
+      truncated: false,
+      pathSha256: createHash("sha256").update(".").digest("hex"),
+      entrySetSha256: createHash("sha256")
+        .update(JSON.stringify(entries))
+        .digest("hex"),
+    });
   });
 
   it("returns hash anchors for literal search matches", async () => {

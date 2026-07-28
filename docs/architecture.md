@@ -1490,6 +1490,12 @@ read_file
   -> reject external symlinks, non-files, invalid UTF-8, and oversized input
   -> return requested lines plus complete-file size, SHA-256, and bounded line
      anchors
+  -> hash the workspace-relative path and returned line-anchor set for Trace
+     summaries without rendering path or file text
+list_files
+  -> return bounded entries as tool output for the Agent
+  -> hash the requested path and returned entry set for Trace summaries
+     without rendering listed paths
 search_files
   -> scan bounded UTF-8 files with the same canonical workspace boundary
   -> return each literal match with path, line number, complete-file SHA-256,

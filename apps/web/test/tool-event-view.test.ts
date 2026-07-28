@@ -50,6 +50,71 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes list_files entry evidence without listed paths", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "list_files",
+      status: "completed",
+      output: "TOP_SECRET_FILE\nTOP_SECRET_DIR",
+      details: {
+        count: 2,
+        truncated: true,
+        pathSha256: "c".repeat(64),
+        entrySetSha256: "d".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "list_files",
+      status: "completed",
+      listCount: 2,
+      listTruncated: true,
+      listPathSha256: "c".repeat(64),
+      listEntrySetSha256: "d".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / list_files / completed / entries 2 / entries-truncated / list-path ${"c".repeat(12)} / entry-set ${"d".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
+  it("summarizes read_file hash evidence without path or content", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "read_file",
+      status: "completed",
+      output: "TOP_SECRET_FILE_CONTENT",
+      details: {
+        path: "TOP_SECRET_PATH",
+        pathSha256: "c".repeat(64),
+        sha256: "d".repeat(64),
+        startLine: 2,
+        endLine: 4,
+        totalLines: 20,
+        sizeBytes: 120,
+        truncated: true,
+        lineAnchorsTruncated: true,
+        lineAnchorSetSha256: "e".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "read_file",
+      status: "completed",
+      readStartLine: 2,
+      readEndLine: 4,
+      readTotalLines: 20,
+      readPathSha256: "c".repeat(64),
+      readFileSha256: "d".repeat(64),
+      readSizeBytes: 120,
+      readTruncated: true,
+      readLineAnchorsTruncated: true,
+      readLineAnchorSetSha256: "e".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / read_file / completed / range 2-4 / lines 20 / size 120 / read-truncated / anchors-truncated / read-path ${"c".repeat(12)} / file ${"d".repeat(12)} / anchor-set ${"e".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes search_files hash evidence without match text", () => {
     const event = toolEvent("tool.completed", {
       toolName: "search_files",

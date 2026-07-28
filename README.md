@@ -59,7 +59,8 @@ Version `0.1.0` includes:
   predecessor-linked and automatically binds the actual same-Run Ledger events
   since the prior milestone before being reinjected on the next Pi turn;
 - workspace-confined read, list, and literal search tools with canonical
-  realpath checks plus complete-file and line-anchor SHA-256 evidence;
+  realpath checks plus complete-file, entry-set, and line-anchor SHA-256
+  evidence;
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
   replacement, and Hashline-style line-anchor replacement under the explicit
   `workspace` policy, without general shell or file deletion;
@@ -1016,6 +1017,11 @@ back to `apply_patch`; creation instead requires `expectedSha256: null` to
 assert non-existence. Every replacement must match exactly once, and a stale
 digest fails without changing the file.
 
+`list_files` returns the human-readable workspace entries to the Agent while
+retaining a structured path SHA-256 and entry-set SHA-256 for Trace. Workbench
+summaries show only the entry count, truncation state, path hash, and entry-set
+hash.
+
 `search_files` is also hash-aware. Literal matches include the workspace path,
 line number, complete-file SHA-256, matched-line SHA-256, and file byte size in
 the structured tool details, plus a match-set SHA-256 receipt. The text output
@@ -1029,7 +1035,8 @@ match count, truncation state, and match-set hash.
 optional line number, so small line edits do not require the model to retype
 the old text. Duplicate anchors fail closed unless the read line number is
 provided, and the complete-file SHA-256 is still checked before and immediately
-before the atomic commit.
+before the atomic commit. Workbench summaries render only the line range,
+line/file counts, path hash, content hash, and anchor-set hash.
 
 Edits are limited to 256 KiB and cannot target `.git`, `.napier`, or
 `node_modules`, follow a symlink outside the workspace, delete a file, or
