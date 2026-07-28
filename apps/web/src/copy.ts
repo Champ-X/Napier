@@ -68,6 +68,18 @@ export const copy = {
         artifactInvalid: "OTLP trace artifact must be valid JSON.",
       },
     },
+    summary: {
+      eyebrow: "SUMMARY BOUNDARY",
+      title: "Trace summary coverage",
+      genericTypes: "Generic fallback",
+      noGeneric: "No generic fallback in this event set.",
+      sources: {
+        bounded: "Bounded",
+        fixed: "Fixed",
+        category: "Category",
+        generic: "Generic",
+      },
+    },
   },
   lab: {
     eyebrow: "RUN LAB",

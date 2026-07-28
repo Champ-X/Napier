@@ -2361,6 +2361,12 @@ not render publishers, source URLs, failure prose, diagnostics, or arbitrary
 future receipt payload prose. `branch.*` summaries stay limited to source
 Thread ID and sequence lineage; branch names, objectives, descriptions, and
 future branch prose do not drive the event-list summary.
+The Trace Workbench also computes a local summary-boundary coverage projection
+for the rendered event set. Each event summary is classified as a dedicated
+bounded projection, a fixed fail-closed receipt summary, a category-only
+fallback, or the legacy generic payload fallback. The Workbench displays those
+counts plus the distinct event types still using generic fallback, making
+privacy regressions visible in the product surface during review.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

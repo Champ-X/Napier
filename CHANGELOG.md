@@ -164,6 +164,10 @@ All notable changes to Napier are recorded here.
   inspector descriptions, receipt publishers/errors, and future branch prose
   stay out of the event list while lineage IDs, status/count metadata, booleans,
   and SHA-256 receipts remain visible.
+- Trace Workbench now includes a summary-boundary coverage card and per-event
+  source badges, classifying event-list summaries as bounded, fixed receipt,
+  category-only, or generic fallback so new raw-payload fallbacks are visible
+  during review instead of relying on code inspection alone.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-otbCemb-.js",
-    "sizeBytes": 146190,
+    "path": "apps/web/dist/assets/index-LW2vt3-8.js",
+    "sizeBytes": 146421,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "8bcf8d940bf894f9ab94ac8aba137c63569d77ad74c598fc0a38b3669f9f5054"
+    "sha256": "81f66510bf3c6b716d57c0f72388b828e82f97e08d52aa307a9472d576fc4663"
   },
-  "distContentSha256": "8bcf8d940bf894f9ab94ac8aba137c63569d77ad74c598fc0a38b3669f9f5054",
+  "distContentSha256": "81f66510bf3c6b716d57c0f72388b828e82f97e08d52aa307a9472d576fc4663",
   "errors": []
 }

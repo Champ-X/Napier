@@ -29,51 +29,28 @@ import {
   latestAgentMilestoneEventSeq,
   listAgentMilestones,
 } from "./agent-milestone-api";
-import { agentEventTraceSummary } from "./agent-event-view";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
-import { branchEventTraceSummary } from "./branch-event-view";
-import {
-  operatorDecisionTraceSummary,
-  runControlTraceSummary,
-} from "./control-event-view";
-import { channelEventTraceSummary } from "./channel-event-view";
-import { contextEventTraceSummary } from "./context-event-view";
 import { copy } from "./copy";
-import { credentialEventTraceSummary } from "./credential-event-view";
-import { evaluationEventTraceSummary } from "./evaluation-event-view";
-import { extensionEventTraceSummary } from "./extension-event-view";
-import {
-  goalEventTraceSummary,
-  memoryEventTraceSummary,
-} from "./goal-memory-event-view";
-import { messageEventTraceSummary } from "./message-event-view";
 import {
   modelContextEnvelopeViews,
   type ModelContextEnvelopeView,
 } from "./model-context-envelope-view";
 import { modelContextEnvelopeCopy } from "./model-context-envelope-copy";
-import { modelAdvisorEventTraceSummary } from "./model-advisor-event-view";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
-import { modelEventTraceSummary } from "./model-event-view";
-import { modelResponseTraceSummary } from "./model-response-view";
-import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
-import { packageGovernanceEventTraceSummary } from "./package-governance-event-view";
-import { planEventTraceSummary } from "./plan-event-view";
-import { receiptEventTraceSummary } from "./receipt-event-view";
-import { runEventTraceSummary } from "./run-event-view";
-import { scheduleEventTraceSummary } from "./schedule-event-view";
-import { subagentEventTraceSummary } from "./subagent-event-view";
-import { threadImportedSummary } from "./thread-imported-view";
 import {
   independentModelAdvisorReviewViews,
   type IndependentModelAdvisorReviewView,
 } from "./model-advisor-review-view";
 import { toolLoopGuardCopy } from "./tool-loop-guard-copy";
-import { toolEventTraceSummary } from "./tool-event-view";
 import {
   toolLoopGuardTriggerViews,
   type ToolLoopGuardTriggerView,
 } from "./tool-loop-guard-view";
+import {
+  traceEventSummaryView,
+  traceSummaryCoverageView,
+  type TraceSummaryCoverageView,
+} from "./trace-event-summary-view";
 import type {
   OpenTelemetryTraceReceipt,
   OpenTelemetryTraceVerificationReceipt,
@@ -112,6 +89,7 @@ export default function TracePanel({
   const advisorReviews = independentModelAdvisorReviewViews(events);
   const contextEnvelopes = modelContextEnvelopeViews(events);
   const loopGuardTriggers = toolLoopGuardTriggerViews(events);
+  const summaryCoverage = traceSummaryCoverageView(events);
 
   useEffect(() => {
     if (exportRunId && !runs.some((run) => run.id === exportRunId)) {
@@ -280,6 +258,7 @@ export default function TracePanel({
           {copy.trace.otel.safety}
         </p>
       </section>
+      <TraceSummaryCoverageCard coverage={summaryCoverage} />
       <AgentMilestoneLedger
         milestones={milestones}
         unavailable={milestonesUnavailable}
@@ -293,24 +272,82 @@ export default function TracePanel({
       ) : null}
       <ol className="trace-list">
         {events.map((event) => (
-          <li key={event.id}>
-            <div className={`trace-icon category-${event.category}`}>
-              {eventIcon(event.category)}
-            </div>
-            <div className="trace-copy">
-              <div>
-                <strong>{eventLabel(event.type)}</strong>
-                <span>#{String(event.seq).padStart(3, "0")}</span>
-              </div>
-              <p>{eventSummary(event)}</p>
-              <time dateTime={event.createdAt}>
-                {formatTime(event.createdAt)}
-              </time>
-            </div>
-          </li>
+          <TraceEventListItem event={event} key={event.id} />
         ))}
       </ol>
     </section>
+  );
+}
+
+function TraceSummaryCoverageCard({
+  coverage,
+}: {
+  coverage: TraceSummaryCoverageView;
+}) {
+  if (coverage.total === 0) return null;
+  return (
+    <section
+      className="trace-summary-coverage"
+      aria-labelledby="trace-summary-coverage-title"
+    >
+      <header>
+        <div>
+          <span>{copy.trace.summary.eyebrow}</span>
+          <h3 id="trace-summary-coverage-title">
+            {copy.trace.summary.title}
+          </h3>
+        </div>
+        <code>{coverage.total}</code>
+      </header>
+      <dl>
+        <div>
+          <dt>{copy.trace.summary.sources.bounded}</dt>
+          <dd>{coverage.bounded}</dd>
+        </div>
+        <div>
+          <dt>{copy.trace.summary.sources.fixed}</dt>
+          <dd>{coverage.fixed}</dd>
+        </div>
+        <div>
+          <dt>{copy.trace.summary.sources.category}</dt>
+          <dd>{coverage.category}</dd>
+        </div>
+        <div>
+          <dt>{copy.trace.summary.sources.generic}</dt>
+          <dd>{coverage.generic}</dd>
+        </div>
+      </dl>
+      <p>
+        <ShieldCheck size={10} aria-hidden="true" />
+        {coverage.genericEventTypes.length > 0
+          ? `${copy.trace.summary.genericTypes}: ${coverage.genericEventTypes.join(", ")}`
+          : copy.trace.summary.noGeneric}
+      </p>
+    </section>
+  );
+}
+
+function TraceEventListItem({ event }: { event: RunEvent }) {
+  const summary = traceEventSummaryView(event);
+  return (
+    <li data-summary-source={summary.source}>
+      <div className={`trace-icon category-${event.category}`}>
+        {eventIcon(event.category)}
+      </div>
+      <div className="trace-copy">
+        <div>
+          <strong>{eventLabel(event.type)}</strong>
+          <span>#{String(event.seq).padStart(3, "0")}</span>
+        </div>
+        <p>{summary.text}</p>
+        <footer>
+          <time dateTime={event.createdAt}>{formatTime(event.createdAt)}</time>
+          <span className={`trace-summary-source source-${summary.source}`}>
+            {copy.trace.summary.sources[summary.source]}
+          </span>
+        </footer>
+      </div>
+    </li>
   );
 }
 
@@ -957,117 +994,6 @@ function eventLabel(type: string): string {
     .split(".")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
-}
-
-function eventSummary(event: RunEvent): string {
-  if (event.type === "trace.otlp.exported") {
-    return openTelemetryTraceExportSummary(event) ?? event.category;
-  }
-  if (event.type === "thread.imported") {
-    return threadImportedSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("message.") || event.type.startsWith("system.")) {
-    return messageEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("agent.")) {
-    return agentEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("branch.")) {
-    return branchEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("schedule.")) {
-    return scheduleEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("channel.")) {
-    return channelEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("credential.")) {
-    return credentialEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("extension.")) {
-    return extensionEventTraceSummary(event) ?? event.category;
-  }
-  if (
-    event.type.startsWith("skill.") ||
-    event.type.startsWith("prompt.") ||
-    event.type.startsWith("inspector.")
-  ) {
-    return packageGovernanceEventTraceSummary(event) ?? event.category;
-  }
-  if (
-    event.type.startsWith("receipt.") ||
-    event.type.startsWith("receipt_trust.")
-  ) {
-    return receiptEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("context.")) {
-    return contextEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("evaluation.")) {
-    return evaluationEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("plan.")) {
-    return planEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type === "model.response") {
-    return modelResponseTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("tool.")) {
-    return toolEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("goal.")) {
-    return goalEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("memory.")) {
-    return memoryEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("operator.decision.")) {
-    return operatorDecisionTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("run.control.")) {
-    return runControlTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("run.")) {
-    return runEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("subagent.")) {
-    return subagentEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("model.advisor.")) {
-    return modelAdvisorEventTraceSummary(event) ?? event.category;
-  }
-  if (event.type.startsWith("model.")) {
-    return modelEventTraceSummary(event) ?? event.category;
-  }
-  if (
-    !event.payload ||
-    Array.isArray(event.payload) ||
-    typeof event.payload !== "object"
-  ) {
-    return event.category;
-  }
-  for (const key of [
-    "text",
-    "message",
-    "reason",
-    "objective",
-    "model",
-    "source",
-    "description",
-    "result",
-    "summary",
-    "error",
-    "toolName",
-    "name",
-    "trustStatus",
-    "status",
-  ]) {
-    const value = event.payload[key];
-    if (typeof value === "string" && value.trim()) {
-      return value.replace(/\s+/g, " ").trim().slice(0, 100);
-    }
-  }
-  return event.category;
 }
 
 function delegationStatusLabel(status: SubagentTask["status"]): string {

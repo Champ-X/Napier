@@ -7234,6 +7234,93 @@ button:disabled {
   color: #315d5c;
 }
 
+.trace-summary-coverage {
+  padding: 12px 13px 11px;
+  margin-bottom: 18px;
+  background: #f7f2e8;
+  border: 1px solid var(--rule);
+  border-radius: 17px;
+}
+
+.trace-summary-coverage header,
+.trace-summary-coverage dl,
+.trace-summary-coverage dl div,
+.trace-summary-coverage p,
+.trace-copy footer {
+  display: flex;
+  align-items: center;
+}
+
+.trace-summary-coverage header {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.trace-summary-coverage header div {
+  display: grid;
+  gap: 2px;
+}
+
+.trace-summary-coverage header span,
+.trace-summary-coverage dt,
+.trace-summary-source {
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.trace-summary-coverage header span {
+  color: #315d5c;
+}
+
+.trace-summary-coverage h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trace-summary-coverage header code {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #315d5c;
+}
+
+.trace-summary-coverage dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.trace-summary-coverage dl div {
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  padding: 6px 7px;
+  background: rgb(255 255 255 / 42%);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.trace-summary-coverage dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink);
+}
+
+.trace-summary-coverage p {
+  gap: 5px;
+  margin: 9px 0 0;
+  font-family: var(--mono);
+  font-size: 7px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
 .trace-list {
   position: relative;
   padding: 0;
@@ -7331,6 +7418,11 @@ button:disabled {
   color: var(--ink-faint);
 }
 
+.trace-copy footer {
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .trace-copy p {
   display: -webkit-box;
   margin: 4px 0 3px;
@@ -7341,6 +7433,31 @@ button:disabled {
   color: var(--ink-soft);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.trace-summary-source {
+  flex: 0 0 auto;
+  padding: 2px 5px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+}
+
+.trace-summary-source.source-bounded {
+  color: #315d5c;
+  background: #e1ede8;
+  border-color: #b5ccc4;
+}
+
+.trace-summary-source.source-fixed {
+  color: #7d6021;
+  background: #efe5cd;
+  border-color: #d3c08c;
+}
+
+.trace-summary-source.source-generic {
+  color: var(--vermilion);
+  background: var(--vermilion-soft);
+  border-color: #dfb4a7;
 }
 
 .goal-card {
