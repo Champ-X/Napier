@@ -110,6 +110,10 @@ All notable changes to Napier are recorded here.
   sequence and payload SHA-256 when that ledger receipt is present and aligned,
   giving trace consumers proof that imported lineage attributes are
   ledger-backed without exposing the replay bundle.
+- ThreadDetail no-store responses now mirror the same aligned
+  `thread.imported` receipt sequence and payload SHA-256 in
+  `X-Napier-Import-Receipt-*` headers, keeping API clients and OTLP consumers
+  on the same hash-only provenance contract.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

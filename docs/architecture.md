@@ -2267,6 +2267,9 @@ span attributes expose the same source event count and local cutoff for audit.
 When a matching `thread.imported` receipt exists, OTLP also exports its local
 sequence and payload SHA-256 so trace consumers can tell the imported lineage
 projection is ledger-backed without replaying or exposing the bundle.
+ThreadDetail no-store headers expose the same receipt sequence and payload hash
+under `X-Napier-Import-Receipt-*`, so API clients get the same proof without
+parsing the event stream.
 Imported provenance is also an unconditional automatic-recovery blocker; an
 imported interrupted Run can only continue through explicit operator action.
 SQLite state restore validates imported provenance hashes, counts, timestamps,

@@ -9819,6 +9819,23 @@ function expectThreadDetailProjectionHeaders(
   expect(response.headers.get("x-napier-imported-at")).toBe(
     provenance?.importedAt ?? null,
   );
+  const importReceipt =
+    provenance?.localImportedThroughSeq === undefined
+      ? undefined
+      : detail.events.find(
+          (event) =>
+            event.type === "thread.imported" &&
+            event.seq === provenance.localImportedThroughSeq &&
+            event.category === "lifecycle" &&
+            event.visibility === "debug" &&
+            event.createdAt === provenance.importedAt,
+        );
+  expect(response.headers.get("x-napier-import-receipt-seq")).toBe(
+    importReceipt ? String(importReceipt.seq) : null,
+  );
+  expect(response.headers.get("x-napier-import-receipt-sha256")).toBe(
+    importReceipt ? responseSha256(importReceipt.payload) : null,
+  );
 }
 
 function expectThreadEventsProjectionHeaders(

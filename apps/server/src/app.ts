@@ -19409,6 +19409,31 @@ function setThreadDetailProjectionHeaders(
     );
   }
   context.header("X-Napier-Imported-At", provenance.importedAt);
+  const receipt = importProvenanceReceipt(detail);
+  if (receipt) {
+    context.header("X-Napier-Import-Receipt-Seq", String(receipt.seq));
+    context.header("X-Napier-Import-Receipt-SHA256", receipt.payloadSha256);
+  }
+}
+
+function importProvenanceReceipt(
+  detail: ThreadDetail,
+): { seq: number; payloadSha256: string } | undefined {
+  const provenance = detail.thread.importProvenance;
+  if (provenance?.localImportedThroughSeq === undefined) return undefined;
+  const event = detail.events.find(
+    (candidate) =>
+      candidate.type === "thread.imported" &&
+      candidate.seq === provenance.localImportedThroughSeq &&
+      candidate.category === "lifecycle" &&
+      candidate.visibility === "debug" &&
+      candidate.createdAt === provenance.importedAt,
+  );
+  if (!event) return undefined;
+  return {
+    seq: event.seq,
+    payloadSha256: sha256Json(event.payload),
+  };
 }
 
 function setSubagentOutcomeEvidenceVerificationHeaders(
