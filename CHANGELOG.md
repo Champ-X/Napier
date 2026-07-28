@@ -171,6 +171,10 @@ All notable changes to Napier are recorded here.
   evaluation view, so evaluator reasons/evidence, rubric names, reviewer notes,
   casebook names/descriptions, and suite names stay out of the event list while
   verdicts, statuses, counts, rates, safe IDs, and hashes remain auditable.
+- Trace event summaries now project `plan.*` receipts through a bounded plan
+  view, so plan objectives, step titles, step/artifact evidence, blockers, and
+  artifact paths stay out of the event list while plan status, phase counts,
+  safe IDs, revision counters, and SHA-256 receipts remain visible.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,

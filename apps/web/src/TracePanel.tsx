@@ -51,6 +51,7 @@ import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import { modelEventTraceSummary } from "./model-event-view";
 import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
+import { planEventTraceSummary } from "./plan-event-view";
 import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import {
@@ -960,6 +961,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("evaluation.")) {
     return evaluationEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("plan.")) {
+    return planEventTraceSummary(event) ?? event.category;
   }
   if (event.type === "model.response") {
     return modelResponseTraceSummary(event) ?? event.category;
