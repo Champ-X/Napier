@@ -2,6 +2,7 @@ import type { ModelSummary } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
+  configuredModelProviderGroups,
   modelProviderGroups,
   modelSelectOption,
 } from "../src/model-selection-view-model";
@@ -23,6 +24,30 @@ describe("model selection view model", () => {
     expect(groups[2]?.options.map((option) => option.key)).toEqual([
       "deepseek/deepseek-v4-flash",
       "deepseek/deepseek-v4-pro",
+    ]);
+  });
+
+  it("filters qualification groups to executable configured models", () => {
+    const groups = configuredModelProviderGroups([
+      model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", true),
+      model("deepseek", "deepseek-v4-pro", "DeepSeek V4 Pro", false),
+      model("openrouter", "auto", "OpenRouter Auto", false),
+      model("napier", "demo", "Deterministic demo", true),
+    ]);
+
+    expect(groups.map((group) => group.label)).toEqual([
+      "napier · built in",
+      "deepseek · 1/2 configured",
+    ]);
+    expect(groups.flatMap((group) => group.options)).toEqual([
+      expect.objectContaining({
+        key: "napier/demo",
+        configured: true,
+      }),
+      expect.objectContaining({
+        key: "deepseek/deepseek-v4-flash",
+        configured: true,
+      }),
     ]);
   });
 

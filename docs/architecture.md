@@ -1134,9 +1134,10 @@ Napier persists credential locators, never credential values:
 choose provider in Context
   -> prefill provider-specific label, ENV variable name, and Keychain service
   -> preserve custom locator fields when switching providers
-render Runtime model selectors
+render Runtime and Evaluation model selectors
   -> group model options by provider with configured/total counts
   -> keep unavailable live models visible but disabled until credentials pass
+  -> restrict executable Casebook qualification selectors to configured models
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1155,7 +1156,10 @@ positional arguments, a timeout, and bounded output; no shell is involved.
 The Context prefill is draft-only UI state; it never reads environment values
 or writes secrets. The model selector grouping is likewise a projection over
 the server-returned model catalog and credential availability; it does not
-perform an authentication attempt. Credential ledger events contain only
+perform an authentication attempt. Evaluation Suite creation uses the same
+full catalog projection, while Casebook qualification filters that projection
+to executable configured candidates before replaying a gold set. Credential
+ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are
 metadata; submitted or resolved values exist only in memory for the vault

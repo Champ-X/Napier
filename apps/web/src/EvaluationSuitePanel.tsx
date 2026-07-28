@@ -48,6 +48,7 @@ import {
   listReceiptTrustAnchors,
 } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
+import { modelProviderGroups } from "./model-selection-view-model";
 
 export default function EvaluationSuitePanel({
   threadId,
@@ -89,6 +90,10 @@ export default function EvaluationSuitePanel({
   const [trustAnchors, setTrustAnchors] = useState<ReceiptTrustAnchor[]>([]);
   const [selectedTrustAnchorId, setSelectedTrustAnchorId] = useState("");
 
+  const evaluatorModelGroups = useMemo(
+    () => modelProviderGroups(models),
+    [models],
+  );
   useEffect(() => {
     if (runs.some((run) => run.id === baselineRunId)) return;
     const baseline = runs[0]?.id ?? "";
@@ -327,6 +332,28 @@ export default function EvaluationSuitePanel({
             placeholder={copy.lab.suite.namePlaceholder}
             onChange={(event) => setName(event.target.value)}
           />
+        </label>
+        <label>
+          <span>{copy.lab.suite.evaluator}</span>
+          <select
+            value={evaluatorModelKey}
+            disabled={Boolean(busyId)}
+            onChange={(event) => setEvaluatorModelKey(event.target.value)}
+          >
+            {evaluatorModelGroups.map((group) => (
+              <optgroup key={group.provider} label={group.label}>
+                {group.options.map((option) => (
+                  <option
+                    key={option.key}
+                    value={option.key}
+                    disabled={!option.configured}
+                  >
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </label>
         <label>
           <span>{copy.lab.suite.baseline}</span>

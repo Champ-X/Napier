@@ -48,6 +48,7 @@ import {
   promoteEvaluationQualificationBaseline,
 } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
+import { configuredModelProviderGroups } from "./model-selection-view-model";
 
 export default function EvaluationCasebookPanel({
   threadId,
@@ -140,9 +141,13 @@ export default function EvaluationCasebookPanel({
         selectedTruth?.contentSha256
       ? "current"
       : "refresh";
-  const qualificationModels = useMemo(
-    () => models.filter((model) => model.configured),
+  const qualificationModelGroups = useMemo(
+    () => configuredModelProviderGroups(models),
     [models],
+  );
+  const qualificationModelOptions = useMemo(
+    () => qualificationModelGroups.flatMap((group) => group.options),
+    [qualificationModelGroups],
   );
   const qualificationHistory = useMemo(
     () =>
@@ -242,19 +247,13 @@ export default function EvaluationCasebookPanel({
 
   useEffect(() => {
     if (
-      qualificationModels.some(
-        (model) => `${model.provider}/${model.id}` === selectedModelKey,
-      )
+      qualificationModelOptions.some((option) => option.key === selectedModelKey)
     ) {
       setQualifierModelKey(selectedModelKey);
       return;
     }
-    setQualifierModelKey(
-      qualificationModels[0]
-        ? `${qualificationModels[0].provider}/${qualificationModels[0].id}`
-        : "napier/demo",
-    );
-  }, [qualificationModels, selectedModelKey]);
+    setQualifierModelKey(qualificationModelOptions[0]?.key ?? "");
+  }, [qualificationModelOptions, selectedModelKey]);
 
   useEffect(() => {
     if (
@@ -791,13 +790,14 @@ export default function EvaluationCasebookPanel({
                   disabled={Boolean(busyId)}
                   onChange={(event) => setQualifierModelKey(event.target.value)}
                 >
-                  {qualificationModels.map((model) => (
-                    <option
-                      key={`${model.provider}/${model.id}`}
-                      value={`${model.provider}/${model.id}`}
-                    >
-                      {model.providerName} · {model.name}
-                    </option>
+                  {qualificationModelGroups.map((group) => (
+                    <optgroup key={group.provider} label={group.label}>
+                      {group.options.map((option) => (
+                        <option key={option.key} value={option.key}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </label>

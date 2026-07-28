@@ -303,7 +303,9 @@ closed rather than falling back to ambient credentials. The active Agent
 profile defaults to `napier/demo`; Context separates the next-run model from
 the revisioned persistent default. Runtime model selectors group models by
 provider and show configured/total counts, so a provider like DeepSeek remains
-visible but disabled until its credential reference is available.
+visible but disabled until its credential reference is available. Evaluation
+Suite creation uses the same grouped catalog selector; executable Casebook
+qualification only offers configured evaluator candidates.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source

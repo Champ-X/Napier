@@ -42,6 +42,15 @@ export function modelProviderGroups(
     .sort(compareModelProviderGroups);
 }
 
+export function configuredModelProviderGroups(
+  models: readonly ModelSummary[],
+): ModelProviderGroup[] {
+  return modelProviderGroups(models).flatMap((group) => {
+    const options = group.options.filter((option) => option.configured);
+    return options.length > 0 ? [{ ...group, options }] : [];
+  });
+}
+
 export function modelSelectOption(model: ModelSummary): ModelSelectOption {
   return {
     key: `${model.provider}/${model.id}`,
