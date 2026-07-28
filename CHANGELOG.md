@@ -230,6 +230,9 @@ All notable changes to Napier are recorded here.
   trigger a server request.
 - Agent Profile saves now use that projection too, preventing an unconfigured
   live provider from being persisted as the revisioned default model.
+- Trace Subagent outcome review now receives the active reviewer model's
+  availability state and disables independent review before an unconfigured
+  provider can trigger a review request.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

@@ -438,6 +438,7 @@ export function App() {
                   provider: activeModel.provider,
                   id: activeModel.id,
                 }}
+                reviewerModelConfigured={activeModel.configured}
                 onExport={(runId) => void vm.exportOpenTelemetryTrace(runId)}
                 onVerify={(file) =>
                   void vm.verifyOpenTelemetryTraceArtifactFile(file)

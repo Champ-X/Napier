@@ -70,6 +70,7 @@ export default function TracePanel({
   verifyBusy,
   verificationReceipt,
   reviewerModel,
+  reviewerModelConfigured,
   onExport,
   onVerify,
 }: {
@@ -82,6 +83,7 @@ export default function TracePanel({
   verifyBusy: boolean;
   verificationReceipt: OpenTelemetryTraceVerificationReceipt | undefined;
   reviewerModel: ModelRef | undefined;
+  reviewerModelConfigured: boolean;
   onExport: (runId?: string) => void;
   onVerify: (file: File) => void;
 }) {
@@ -307,7 +309,11 @@ export default function TracePanel({
       <ModelContextEnvelopeLedger envelopes={contextEnvelopes} />
       <IndependentAdvisorLedger reviews={advisorReviews} />
       <ToolLoopGuardLedger triggers={loopGuardTriggers} />
-      <DelegationLedger tasks={subagents} reviewerModel={reviewerModel} />
+      <DelegationLedger
+        tasks={subagents}
+        reviewerModel={reviewerModel}
+        reviewerModelConfigured={reviewerModelConfigured}
+      />
       {events.length === 0 ? (
         <p className="empty-panel">{copy.trace.empty}</p>
       ) : null}
@@ -780,9 +786,11 @@ function AgentMilestoneLedger({
 function DelegationLedger({
   tasks,
   reviewerModel,
+  reviewerModelConfigured,
 }: {
   tasks: SubagentTask[];
   reviewerModel: ModelRef | undefined;
+  reviewerModelConfigured: boolean;
 }) {
   if (tasks.length === 0) return null;
   return (
@@ -803,6 +811,7 @@ function DelegationLedger({
               key={`${task.id}:${reviewerModel?.provider ?? ""}/${reviewerModel?.id ?? ""}`}
               task={task}
               reviewerModel={reviewerModel}
+              reviewerModelConfigured={reviewerModelConfigured}
             />
           ))}
       </div>
@@ -813,9 +822,11 @@ function DelegationLedger({
 function DelegationCard({
   task,
   reviewerModel,
+  reviewerModelConfigured,
 }: {
   task: SubagentTask;
   reviewerModel: ModelRef | undefined;
+  reviewerModelConfigured: boolean;
 }) {
   const [verification, setVerification] =
     useState<SubagentOutcomeEvidenceVerification>();
@@ -831,6 +842,12 @@ function DelegationCard({
   const workerModelKey = `${task.model.provider}/${task.model.id}`;
   const reviewerIsIndependent =
     Boolean(reviewerModel) && reviewerModelKey !== workerModelKey;
+  const canReviewOutcome = reviewerIsIndependent && reviewerModelConfigured;
+  const reviewBlockedReason = !reviewerModelConfigured
+    ? copy.delegation.reviewerModelUnavailable
+    : !reviewerIsIndependent
+      ? copy.delegation.independentReviewerRequired
+      : undefined;
 
   useEffect(() => {
     setVerification(undefined);
@@ -867,12 +884,7 @@ function DelegationCard({
   }
 
   async function reviewOutcome(): Promise<void> {
-    if (
-      !task.outcome ||
-      !reviewerModel ||
-      !reviewerIsIndependent ||
-      reviewing
-    ) {
+    if (!task.outcome || !reviewerModel || !canReviewOutcome || reviewing) {
       return;
     }
     setReviewing(true);
@@ -921,12 +933,8 @@ function DelegationCard({
             </button>
             <button
               type="button"
-              disabled={reviewing || !reviewerIsIndependent}
-              title={
-                reviewerIsIndependent
-                  ? reviewerModelKey
-                  : copy.delegation.independentReviewerRequired
-              }
+              disabled={reviewing || !canReviewOutcome}
+              title={canReviewOutcome ? reviewerModelKey : reviewBlockedReason}
               onClick={() => void reviewOutcome()}
             >
               <Sparkles size={10} aria-hidden="true" />
@@ -935,9 +943,9 @@ function DelegationCard({
                 : copy.delegation.reviewOutcome}
             </button>
           </div>
-          {!reviewerIsIndependent ? (
+          {reviewBlockedReason ? (
             <p className="delegation-evidence-hint">
-              {copy.delegation.independentReviewerRequired}
+              {reviewBlockedReason}
             </p>
           ) : null}
           {verification ? (

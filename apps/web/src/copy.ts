@@ -752,6 +752,8 @@ export const copy = {
     reviewFailed: "Independent review failed.",
     independentReviewerRequired:
       "Select a model different from the Subagent worker to review.",
+    reviewerModelUnavailable:
+      "Configure this provider before using it as an independent reviewer.",
     score: "Score",
     risk: "Risk",
     reviewVerdicts: {
