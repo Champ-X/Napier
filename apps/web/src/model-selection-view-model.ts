@@ -24,6 +24,19 @@ export interface SelectedModelAvailability {
   known: boolean;
 }
 
+export type ReviewerModelUnavailableReason =
+  | "same_as_primary"
+  | "demo_not_allowed"
+  | "unconfigured";
+
+export type ReviewerModelAvailability =
+  | { available: true; model?: SelectedModelAvailability }
+  | {
+      available: false;
+      model: SelectedModelAvailability;
+      reason: ReviewerModelUnavailableReason;
+    };
+
 export function modelProviderGroups(
   models: readonly ModelSummary[],
 ): ModelProviderGroup[] {
@@ -97,6 +110,25 @@ export function selectedModelAvailability(
     configured: false,
     known: false,
   };
+}
+
+export function reviewerModelAvailability(
+  models: readonly ModelSummary[],
+  reviewerKey: string,
+  primaryKey: string,
+): ReviewerModelAvailability {
+  if (!reviewerKey) return { available: true };
+  const model = selectedModelAvailability(models, reviewerKey);
+  if (reviewerKey === primaryKey) {
+    return { available: false, model, reason: "same_as_primary" };
+  }
+  if (model.provider === "napier") {
+    return { available: false, model, reason: "demo_not_allowed" };
+  }
+  if (!model.configured) {
+    return { available: false, model, reason: "unconfigured" };
+  }
+  return { available: true, model };
 }
 
 function providerGroupLabel(

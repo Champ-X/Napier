@@ -95,6 +95,8 @@ export const contextCopy = {
   modelAdvisorReviewModel: "Independent review model",
   modelAdvisorReviewModelDisabled: "Deterministic rules only",
   modelAdvisorReviewModelPrimary: "primary model",
+  modelAdvisorReviewModelUnavailableHint:
+    "Choose a configured live model that is different from the primary runtime model.",
   modelAdvisorBody:
     "Candidate output is linted and can be reviewed by a distinct zero-tool model before it becomes visible. Enforced blockers share up to three tool-free rewrites; candidate text and reviewer guidance remain hash-only in receipts.",
   toolLoopGuard: "Tool loop guard",

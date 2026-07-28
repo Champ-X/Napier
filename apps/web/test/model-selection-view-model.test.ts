@@ -5,6 +5,7 @@ import {
   configuredModelProviderGroups,
   modelProviderGroups,
   modelSelectOption,
+  reviewerModelAvailability,
   selectedModelAvailability,
 } from "../src/model-selection-view-model";
 
@@ -96,6 +97,56 @@ describe("model selection view model", () => {
       label: "missing/model",
       configured: false,
       known: false,
+    });
+  });
+
+  it("requires an independent configured live reviewer model", () => {
+    const models = [
+      model("napier", "demo", "Deterministic demo", true),
+      model("openai", "gpt-4.1", "GPT-4.1", true),
+      model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", false),
+    ];
+
+    expect(reviewerModelAvailability(models, "", "openai/gpt-4.1")).toEqual({
+      available: true,
+    });
+    expect(
+      reviewerModelAvailability(
+        models,
+        "openai/gpt-4.1",
+        "openai/gpt-4.1",
+      ),
+    ).toEqual({
+      available: false,
+      model: expect.objectContaining({ key: "openai/gpt-4.1" }),
+      reason: "same_as_primary",
+    });
+    expect(
+      reviewerModelAvailability(models, "napier/demo", "openai/gpt-4.1"),
+    ).toEqual({
+      available: false,
+      model: expect.objectContaining({ key: "napier/demo" }),
+      reason: "demo_not_allowed",
+    });
+    expect(
+      reviewerModelAvailability(
+        models,
+        "deepseek/deepseek-v4-flash",
+        "openai/gpt-4.1",
+      ),
+    ).toEqual({
+      available: false,
+      model: expect.objectContaining({
+        key: "deepseek/deepseek-v4-flash",
+        configured: false,
+      }),
+      reason: "unconfigured",
+    });
+    expect(
+      reviewerModelAvailability(models, "openai/gpt-4.1", "napier/demo"),
+    ).toEqual({
+      available: true,
+      model: expect.objectContaining({ key: "openai/gpt-4.1" }),
     });
   });
 });

@@ -233,6 +233,8 @@ All notable changes to Napier are recorded here.
 - Trace Subagent outcome review now receives the active reviewer model's
   availability state and disables independent review before an unconfigured
   provider can trigger a review request.
+- Agent Profile saves now also validate the Independent Advisor review model,
+  requiring a configured live reviewer distinct from the primary runtime model.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

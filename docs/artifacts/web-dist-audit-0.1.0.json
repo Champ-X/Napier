@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-C2R3SZxw.js",
-    "sizeBytes": 149754,
+    "path": "apps/web/dist/assets/index-Rpl-j4XO.js",
+    "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "a0d19bce476ad2c2b25bbd41943af8346e4c8597c625fd68277bdef24cb50d0f"
+    "sha256": "857577f1fa45efcbb72acd6004934462a89dc0ddad7e26834da88e4168ae9e1b"
   },
-  "distContentSha256": "a0d19bce476ad2c2b25bbd41943af8346e4c8597c625fd68277bdef24cb50d0f",
+  "distContentSha256": "857577f1fa45efcbb72acd6004934462a89dc0ddad7e26834da88e4168ae9e1b",
   "errors": []
 }

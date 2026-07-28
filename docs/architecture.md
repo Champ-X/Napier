@@ -1143,6 +1143,8 @@ render Runtime and Evaluation model selectors
   -> disable Trace Subagent outcome review when the independent reviewer model
      is unavailable
   -> reject Agent profile saves that would persist an unconfigured default model
+  -> reject Advisor review-model saves unless the reviewer is configured,
+     live, and distinct from the primary runtime model
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1169,7 +1171,9 @@ model-review actions also consume that model-availability projection, so
 unavailable providers fail closed before a request leaves the browser. Trace
 Subagent outcome review applies the same check before launching an independent
 reviewer model. The Agent profile save path uses the same projection before
-making a revisioned default-model update. Credential ledger events contain only
+making a revisioned default-model update, and the Advisor review-model field
+adds the independent live-reviewer constraint before persistence. Credential
+ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are
 metadata; submitted or resolved values exist only in memory for the vault

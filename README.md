@@ -311,7 +311,9 @@ model-review actions are disabled client-side when the selected or suite
 evaluator model is not configured. Trace Subagent outcome reviews use the same
 availability check before invoking an independent reviewer. Saving an Agent
 profile likewise refuses to persist an unconfigured runtime model as the
-default, matching the server-side fail-closed credential boundary.
+default, and Independent Advisor review models must be configured live models
+distinct from the primary runtime model. These client-side checks match the
+server-side fail-closed credential boundary.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source

@@ -72,6 +72,7 @@ import {
 import { formatApiErrorMessage } from "./api-error";
 import {
   modelProviderGroups,
+  reviewerModelAvailability,
   selectedModelAvailability,
 } from "./model-selection-view-model";
 
@@ -280,6 +281,15 @@ export default function ContextPanel({
       ? `${agent.modelAdvisor.reviewModel.provider}/${agent.modelAdvisor.reviewModel.id}`
       : "",
   );
+  const advisorReviewModel = reviewerModelAvailability(
+    models,
+    agentAdvisorReviewModelKey,
+    selectedModelKey,
+  );
+  const shouldPersistAdvisorReviewModel =
+    agentAdvisorMode !== "off" && agentAdvisorReviewModelKey.length > 0;
+  const advisorReviewModelAvailable =
+    !shouldPersistAdvisorReviewModel || advisorReviewModel.available;
   const [agentToolLoopGuardEnabled, setAgentToolLoopGuardEnabled] = useState(
     agent.toolLoopGuard?.enabled ?? true,
   );
@@ -556,6 +566,10 @@ export default function ContextPanel({
       setError(copy.context.modelUnavailableHint);
       return;
     }
+    if (!advisorReviewModelAvailable) {
+      setError(copy.context.modelAdvisorReviewModelUnavailableHint);
+      return;
+    }
     setConfigurationBusy(true);
     setError(undefined);
     try {
@@ -579,7 +593,7 @@ export default function ContextPanel({
           mode: agentAdvisorMode,
           enabledRules: agentAdvisorRules,
           maxCorrectionAttempts: agentAdvisorCorrectionAttempts,
-          ...(agentAdvisorReviewModelKey
+          ...(shouldPersistAdvisorReviewModel
             ? { reviewModel: parseModelKey(agentAdvisorReviewModelKey) }
             : {}),
         },
@@ -1069,11 +1083,20 @@ export default function ContextPanel({
     agentDescription.trim().length > 0 &&
     agentSystemPrompt.trim().length > 0 &&
     selectedModel.configured &&
+    advisorReviewModelAvailable &&
     validPromptVariables(agentPromptVariables) &&
     Number.isSafeInteger(agentToolLoopGuardThreshold) &&
     agentToolLoopGuardThreshold >= 2 &&
     agentToolLoopGuardThreshold <= 8 &&
     parseToolLoopGuardExemptTools(agentToolLoopGuardExemptTools) !== undefined;
+  const profileSaveDescriptionIds = [
+    !selectedModel.configured ? "context-model-unavailable" : undefined,
+    !advisorReviewModelAvailable
+      ? "context-advisor-review-model-unavailable"
+      : undefined,
+  ]
+    .filter((id): id is string => Boolean(id))
+    .join(" ");
   const canAddCredential =
     credentialLabel.trim().length > 0 &&
     (credentialSourceType === "environment"
@@ -1582,6 +1605,15 @@ export default function ContextPanel({
                 ))}
             </select>
           </label>
+          {!advisorReviewModelAvailable ? (
+            <p
+              className="context-model-warning"
+              id="context-advisor-review-model-unavailable"
+              role="status"
+            >
+              {copy.context.modelAdvisorReviewModelUnavailableHint}
+            </p>
+          ) : null}
           <p className="guardrail-note">
             <ShieldCheck size={11} aria-hidden="true" />
             {copy.context.modelAdvisorBody}
@@ -1760,7 +1792,7 @@ export default function ContextPanel({
           type="submit"
           disabled={configurationBusy || !canSaveAgent}
           aria-describedby={
-            !selectedModel.configured ? "context-model-unavailable" : undefined
+            profileSaveDescriptionIds || undefined
           }
         >
           <Save size={13} aria-hidden="true" />
