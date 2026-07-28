@@ -1153,6 +1153,8 @@ render Runtime and Evaluation model selectors
      a model call
   -> re-check Run Evaluation and Evaluation Suite execution models at execution
      time so credential drift fails closed before evaluation receipts are saved
+  -> re-check due schedule models before creating a Run, settling credential
+     drift as schedule.failed evidence
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1188,7 +1190,9 @@ qualification, Run Evaluation, and evaluation-suite model requests also call
 the same configured-live model projection before state is written or a model
 call starts. Evaluation Suite execution repeats the check against the saved
 suite evaluator model so post-save credential drift fails closed before
-evaluation receipts are generated. Credential
+evaluation receipts are generated. Due schedules also re-check the effective
+model before creating a Run; credential drift settles the claim with
+`schedule.failed` ledger evidence and no Run side effect. Credential
 ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are

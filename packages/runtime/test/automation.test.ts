@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { fauxProvider } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
@@ -90,5 +91,66 @@ describe("AutomationService", () => {
     const repeated = await automation.tick(new Date(schedule.nextRunAt));
     expect(repeated.claimed).toBe(0);
     expect(store.listRuns(thread.id)).toHaveLength(1);
+  });
+
+  it("fails a due schedule before creating a Run when its model is unavailable", async () => {
+    const { store, runtime } = await createFixture();
+    const unavailable = fauxProvider({ provider: "faux-schedule-unavailable" });
+    runtime.modelRegistry.registerProvider({
+      ...unavailable.provider,
+      auth: {
+        apiKey: {
+          name: "Unavailable",
+          resolve: async () => undefined,
+        },
+      },
+    });
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Unavailable scheduled model",
+      agentId: agent.id,
+    });
+    const schedule = await store.createSchedule({
+      name: "Unavailable provider",
+      threadId: thread.id,
+      prompt: "This should not create a Run.",
+      model: { provider: "faux-schedule-unavailable", id: "faux-1" },
+      trigger: { type: "interval", everyMs: 60_000 },
+    });
+    const automation = new AutomationService(store, runtime, {
+      workerId: "scheduler.unavailable",
+      claimTtlMs: 30_000,
+    });
+
+    const result = await automation.tick(new Date(schedule.nextRunAt));
+
+    expect(result).toEqual({
+      claimed: 1,
+      skipped: 0,
+      completed: 0,
+      failed: 1,
+      deduplicated: 0,
+    });
+    expect(store.listRuns(thread.id)).toHaveLength(0);
+    const settled = store.getSchedule(schedule.id);
+    expect(settled).toEqual(
+      expect.objectContaining({
+        lastError: "Model provider is not configured: faux-schedule-unavailable",
+        lastScheduledFor: schedule.nextRunAt,
+      }),
+    );
+    expect(Date.parse(settled.nextRunAt)).toBeGreaterThan(
+      Date.parse(schedule.nextRunAt),
+    );
+    const events = await store.listEvents(thread.id);
+    expect(events.map((event) => event.type)).toEqual([
+      "schedule.claimed",
+      "schedule.failed",
+    ]);
+    expect(events[1]?.payload).toEqual(
+      expect.objectContaining({
+        error: "Model provider is not configured: faux-schedule-unavailable",
+      }),
+    );
   });
 });

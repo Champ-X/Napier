@@ -319,6 +319,8 @@ persisted. Server-side prompt, resume, model-call, and persistence entry points
 repeat the same configured-live check before accepting live provider models,
 including Run Evaluation creation and Evaluation Suite execution after
 credential drift, while `napier/demo` remains the explicit zero-key demo path.
+Due schedules re-check the effective model at execution time too; credential
+drift settles the claim as `schedule.failed` without creating a Run.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source
