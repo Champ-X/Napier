@@ -464,7 +464,7 @@ export function App() {
             <Suspense
               fallback={
                 <div className="context-loading" role="status">
-                  {copy.plan.title}
+                  {copy.planLoading}
                 </div>
               }
             >
@@ -473,7 +473,7 @@ export function App() {
                 plans={vm.detail?.plans ?? []}
                 running={vm.isRunning}
                 selectedModelKey={vm.selectedModelKey}
-                onContinue={() => void vm.submit(copy.plan.nextPrompt)}
+                onContinue={() => void vm.submit(copy.planNextPrompt)}
                 onDraftApplied={() => void vm.refreshActiveThread()}
               />
             </Suspense>

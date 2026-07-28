@@ -57,7 +57,7 @@ import {
   verifyExecutionPlanBlueprintRecordReplays,
 } from "./api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
-import { copy } from "./copy";
+import { planCopy } from "./plan-copy";
 import {
   planBlueprintCreatedReceipt,
   type PlanBlueprintLibraryCreatedReceipt,
@@ -408,7 +408,7 @@ export default function PlanPanel({
   const verifyArchiveFile = async (file: File): Promise<void> => {
     if (!plan) return;
     if (file.size > MAX_PLAN_ARCHIVE_FILE_BYTES) {
-      setArchiveError(copy.plan.archive.errors.tooLarge);
+      setArchiveError(planCopy.archive.errors.tooLarge);
       return;
     }
     setArchiveBusyAction("verify");
@@ -442,7 +442,7 @@ export default function PlanPanel({
     } catch (error) {
       setArchiveError(
         error instanceof SyntaxError
-          ? copy.plan.archive.errors.invalid
+          ? planCopy.archive.errors.invalid
           : formatApiErrorMessage(error),
       );
     } finally {
@@ -480,7 +480,7 @@ export default function PlanPanel({
   const verifyBlueprintFile = async (file: File): Promise<void> => {
     if (!threadId) return;
     if (file.size > MAX_PLAN_BLUEPRINT_FILE_BYTES) {
-      setBlueprintError(copy.plan.blueprint.errors.tooLarge);
+      setBlueprintError(planCopy.blueprint.errors.tooLarge);
       return;
     }
     setBlueprintBusyAction("verify");
@@ -511,7 +511,7 @@ export default function PlanPanel({
     } catch (error) {
       setBlueprintError(
         error instanceof SyntaxError
-          ? copy.plan.blueprint.errors.invalid
+          ? planCopy.blueprint.errors.invalid
           : formatApiErrorMessage(error),
       );
     } finally {
@@ -683,7 +683,7 @@ export default function PlanPanel({
   ): Promise<void> => {
     if (blueprintLibraryBusyAction) return;
     if (file.size > MAX_PLAN_BLUEPRINT_REPLAY_HISTORY_FILE_BYTES) {
-      setBlueprintLibraryError(copy.plan.blueprint.library.errors.tooLarge);
+      setBlueprintLibraryError(planCopy.blueprint.library.errors.tooLarge);
       return;
     }
     setBlueprintLibraryBusyAction("verifyHistory");
@@ -693,7 +693,7 @@ export default function PlanPanel({
       const history = JSON.parse(await file.text()) as unknown;
       const recordId = replayHistoryRecordId(history);
       if (!recordId) {
-        setBlueprintLibraryError(copy.plan.blueprint.library.errors.invalid);
+        setBlueprintLibraryError(planCopy.blueprint.library.errors.invalid);
         return;
       }
       const verification = await verifyExecutionPlanBlueprintRecordReplays(
@@ -706,7 +706,7 @@ export default function PlanPanel({
     } catch (error) {
       setBlueprintLibraryError(
         error instanceof SyntaxError
-          ? copy.plan.blueprint.library.errors.invalid
+          ? planCopy.blueprint.library.errors.invalid
           : formatApiErrorMessage(error),
       );
     } finally {
@@ -743,7 +743,7 @@ export default function PlanPanel({
     if (blueprintLibraryBusyAction) return;
     if (file.size > MAX_PLAN_BLUEPRINT_REPLAY_OUTCOMES_FILE_BYTES) {
       setBlueprintLibraryError(
-        copy.plan.blueprint.library.errors.outcomesTooLarge,
+        planCopy.blueprint.library.errors.outcomesTooLarge,
       );
       return;
     }
@@ -755,7 +755,7 @@ export default function PlanPanel({
       const recordId = replayOutcomesRecordId(outcomes);
       if (!recordId) {
         setBlueprintLibraryError(
-          copy.plan.blueprint.library.errors.outcomesInvalid,
+          planCopy.blueprint.library.errors.outcomesInvalid,
         );
         return;
       }
@@ -769,7 +769,7 @@ export default function PlanPanel({
     } catch (error) {
       setBlueprintLibraryError(
         error instanceof SyntaxError
-          ? copy.plan.blueprint.library.errors.outcomesInvalid
+          ? planCopy.blueprint.library.errors.outcomesInvalid
           : formatApiErrorMessage(error),
       );
     } finally {
@@ -1043,7 +1043,7 @@ export default function PlanPanel({
       MAX_PLAN_BLUEPRINT_POLICY_OVERRIDE_RETIREMENT_HISTORY_FILE_BYTES
     ) {
       setBlueprintLibraryError(
-        copy.plan.blueprint.library.errors.policyOverrideRetirementsTooLarge,
+        planCopy.blueprint.library.errors.policyOverrideRetirementsTooLarge,
       );
       return;
     }
@@ -1064,7 +1064,7 @@ export default function PlanPanel({
     } catch (error) {
       setBlueprintLibraryError(
         error instanceof SyntaxError
-          ? copy.plan.blueprint.library.errors.policyOverrideRetirementsInvalid
+          ? planCopy.blueprint.library.errors.policyOverrideRetirementsInvalid
           : formatApiErrorMessage(error),
       );
     } finally {
@@ -1083,7 +1083,7 @@ export default function PlanPanel({
         )
       ) {
         setBlueprintLibraryError(
-          copy.plan.blueprint.library.errors.policyOverrideRetirementsTooLarge,
+          planCopy.blueprint.library.errors.policyOverrideRetirementsTooLarge,
         );
         return;
       }
@@ -1108,8 +1108,7 @@ export default function PlanPanel({
       } catch (error) {
         setBlueprintLibraryError(
           error instanceof SyntaxError
-            ? copy.plan.blueprint.library.errors
-                .policyOverrideRetirementsInvalid
+            ? planCopy.blueprint.library.errors.policyOverrideRetirementsInvalid
             : formatApiErrorMessage(error),
         );
       } finally {
@@ -1128,7 +1127,7 @@ export default function PlanPanel({
         )
       ) {
         setBlueprintLibraryError(
-          copy.plan.blueprint.library.errors.policyOverrideRetirementsTooLarge,
+          planCopy.blueprint.library.errors.policyOverrideRetirementsTooLarge,
         );
         return;
       }
@@ -1147,7 +1146,7 @@ export default function PlanPanel({
         if (!signer) {
           setSelectedReceiptTrustAnchorId("");
           setBlueprintLibraryError(
-            copy.plan.blueprint.library.errors.policyOverrideProofBundleNoSigner,
+            planCopy.blueprint.library.errors.policyOverrideProofBundleNoSigner,
           );
           return;
         }
@@ -1175,8 +1174,7 @@ export default function PlanPanel({
       } catch (error) {
         setBlueprintLibraryError(
           error instanceof SyntaxError
-            ? copy.plan.blueprint.library.errors
-                .policyOverrideRetirementsInvalid
+            ? planCopy.blueprint.library.errors.policyOverrideRetirementsInvalid
             : formatApiErrorMessage(error),
         );
       } finally {
@@ -1245,30 +1243,30 @@ export default function PlanPanel({
     <section className="panel-section plan-panel" aria-labelledby="plan-title">
       <div className="panel-heading">
         <div>
-          <span>{copy.plan.eyebrow}</span>
-          <h2 id="plan-title">{copy.plan.title}</h2>
+          <span>{planCopy.eyebrow}</span>
+          <h2 id="plan-title">{planCopy.title}</h2>
         </div>
         <span className="plan-count">
-          {plans.length} {copy.plan.count}
+          {plans.length} {planCopy.count}
         </span>
       </div>
       {!plan ? (
-        <p className="empty-panel">{copy.plan.empty}</p>
+        <p className="empty-panel">{planCopy.empty}</p>
       ) : (
         <>
           <article className={`plan-sheet plan-${plan.status}`}>
             <header>
               <div>
-                <span>{copy.plan.objective}</span>
+                <span>{planCopy.objective}</span>
                 <h3>{plan.objective}</h3>
               </div>
               <span className="plan-status">
-                {copy.plan.statuses[plan.status]}
+                {planCopy.statuses[plan.status]}
               </span>
             </header>
             <div className="plan-progress">
               <div>
-                <span>{copy.plan.progress}</span>
+                <span>{planCopy.progress}</span>
                 <strong>
                   {settled} / {plan.steps.length}
                 </strong>
@@ -1283,79 +1281,79 @@ export default function PlanPanel({
             </div>
             <div
               className="plan-critical-path"
-              aria-label={copy.plan.criticalPath}
+              aria-label={planCopy.criticalPath}
             >
-              <span>{copy.plan.criticalPath}</span>
+              <span>{planCopy.criticalPath}</span>
               <strong>
                 {criticalPath.length > 0
                   ? criticalPath.join(" -> ")
-                  : copy.plan.none}
+                  : planCopy.none}
               </strong>
               <small>
-                {copy.plan.readyPath}:{" "}
+                {planCopy.readyPath}:{" "}
                 {plan.readyStepIds.length > 0
                   ? plan.readyStepIds.join(", ")
-                  : copy.plan.none}
+                  : planCopy.none}
                 {" / "}
-                {copy.plan.blockedPath}:{" "}
+                {planCopy.blockedPath}:{" "}
                 {plan.blockedStepIds.length > 0
                   ? plan.blockedStepIds.join(", ")
-                  : copy.plan.none}
+                  : planCopy.none}
               </small>
               <small>
-                {copy.plan.phase}:{" "}
+                {planCopy.phase}:{" "}
                 {activePhase
                   ? `${activePhase.index + 1} / ${plan.phaseWaves.length}`
-                  : copy.plan.none}
+                  : planCopy.none}
                 {" / "}
-                {copy.plan.parallelReady}:{" "}
+                {planCopy.parallelReady}:{" "}
                 {plan.parallelReadyStepIds.length > 0
                   ? plan.parallelReadyStepIds.join(", ")
-                  : copy.plan.none}
+                  : planCopy.none}
                 {" / "}
-                {copy.plan.phaseHash}:{" "}
+                {planCopy.phaseHash}:{" "}
                 <code title={plan.phaseProjectionSha256}>
                   {plan.phaseProjectionSha256.slice(0, 12)}
                 </code>
               </small>
             </div>
             {latestReplan ? (
-              <div className="plan-replan-ledger" aria-label={copy.plan.replan}>
-                <span>{copy.plan.replan}</span>
+              <div className="plan-replan-ledger" aria-label={planCopy.replan}>
+                <span>{planCopy.replan}</span>
                 <strong>
-                  {copy.plan.replanStrategies[latestReplan.strategy]}
+                  {planCopy.replanStrategies[latestReplan.strategy]}
                 </strong>
                 <small>
                   r{latestReplan.fromRevision} {"->"} r{latestReplan.toRevision}
                   {" / "}
-                  {copy.plan.hash}: {latestReplan.replanSha256.slice(0, 12)}
+                  {planCopy.hash}: {latestReplan.replanSha256.slice(0, 12)}
                 </small>
               </div>
             ) : null}
             {replanRecommendation ? (
               <div
                 className="plan-replan-ledger plan-replan-signal"
-                aria-label={copy.plan.replanSignal}
+                aria-label={planCopy.replanSignal}
               >
-                <span>{copy.plan.replanSignal}</span>
+                <span>{planCopy.replanSignal}</span>
                 <strong>
-                  {copy.plan.replanStrategies[replanRecommendation.strategy]}
+                  {planCopy.replanStrategies[replanRecommendation.strategy]}
                 </strong>
                 <small>
                   r{replanRecommendation.expectedRevision}
                   {" / "}
-                  {copy.plan.hash}:{" "}
+                  {planCopy.hash}:{" "}
                   {replanRecommendation.recommendationSha256.slice(0, 12)}
                   {" / "}
-                  {copy.plan.draft}:{" "}
+                  {planCopy.draft}:{" "}
                   {replanRecommendation.draft.draftSha256.slice(0, 12)}
                   {" / "}
-                  {copy.plan.score}:{" "}
+                  {planCopy.score}:{" "}
                   {replanRecommendation.draft.evaluation.score}
                   {" / "}
-                  {copy.plan.risk}:{" "}
+                  {planCopy.risk}:{" "}
                   {
-                    copy.plan.replanRisks[
+                    planCopy.replanRisks[
                       replanRecommendation.draft.evaluation.risk
                     ]
                   }
@@ -1368,8 +1366,8 @@ export default function PlanPanel({
                 >
                   <Brain size={12} aria-hidden="true" />
                   {draftReviewBusy
-                    ? copy.plan.reviewingDraft
-                    : copy.plan.reviewDraft}
+                    ? planCopy.reviewingDraft
+                    : planCopy.reviewDraft}
                 </button>
                 <button
                   className="plan-review-action plan-apply-action"
@@ -1379,21 +1377,21 @@ export default function PlanPanel({
                 >
                   <ChevronRight size={12} aria-hidden="true" />
                   {draftApplyBusy
-                    ? copy.plan.applyingDraft
-                    : copy.plan.applyDraft}
+                    ? planCopy.applyingDraft
+                    : planCopy.applyDraft}
                 </button>
                 {draftReview ? (
                   <div className="plan-replan-review">
-                    <span>{copy.plan.modelReview}</span>
+                    <span>{planCopy.modelReview}</span>
                     <strong>
-                      {copy.plan.reviewVerdicts[draftReview.verdict]} /{" "}
-                      {copy.plan.score} {draftReview.score} / {copy.plan.risk}{" "}
-                      {copy.plan.replanRisks[draftReview.risk]}
+                      {planCopy.reviewVerdicts[draftReview.verdict]} /{" "}
+                      {planCopy.score} {draftReview.score} / {planCopy.risk}{" "}
+                      {planCopy.replanRisks[draftReview.risk]}
                     </strong>
                     <small>
-                      {copy.plan.hash}: {draftReview.reviewSha256.slice(0, 12)}
+                      {planCopy.hash}: {draftReview.reviewSha256.slice(0, 12)}
                       {" / "}
-                      {copy.plan.response}:{" "}
+                      {planCopy.response}:{" "}
                       {draftReview.responseSha256.slice(0, 12)}
                     </small>
                     <p>{draftReview.reason}</p>
@@ -1425,31 +1423,31 @@ export default function PlanPanel({
                   <div className="step-body">
                     <header>
                       <h4>{step.title}</h4>
-                      <span>{copy.plan.statuses[step.status]}</span>
+                      <span>{planCopy.statuses[step.status]}</span>
                     </header>
                     <p>{step.description}</p>
                     <dl>
                       <div>
-                        <dt>{copy.plan.dependsOn}</dt>
+                        <dt>{planCopy.dependsOn}</dt>
                         <dd>
                           {step.dependsOn.length > 0
                             ? step.dependsOn.join(", ")
-                            : copy.plan.none}
+                            : planCopy.none}
                         </dd>
                       </div>
                       <div>
-                        <dt>{copy.plan.verification}</dt>
+                        <dt>{planCopy.verification}</dt>
                         <dd>{step.verification}</dd>
                       </div>
                       {step.evidence ? (
                         <div>
-                          <dt>{copy.plan.evidence}</dt>
+                          <dt>{planCopy.evidence}</dt>
                           <dd>{step.evidence}</dd>
                         </div>
                       ) : null}
                       {step.blocker ? (
                         <div>
-                          <dt>{copy.plan.blocker}</dt>
+                          <dt>{planCopy.blocker}</dt>
                           <dd>{step.blocker}</dd>
                         </div>
                       ) : null}
@@ -1562,14 +1560,14 @@ export default function PlanPanel({
               aria-labelledby="artifact-manifest-title"
             >
               <header>
-                <h3 id="artifact-manifest-title">{copy.plan.artifacts}</h3>
+                <h3 id="artifact-manifest-title">{planCopy.artifacts}</h3>
                 <span>{String(plan.artifacts.length).padStart(2, "0")}</span>
               </header>
               {plan.artifacts.map((artifact) => (
                 <article key={artifact.id}>
                   <header>
                     <code>{artifact.path}</code>
-                    <span>{copy.plan.statuses[artifact.status]}</span>
+                    <span>{planCopy.statuses[artifact.status]}</span>
                   </header>
                   <p>{artifact.description}</p>
                   {artifact.evidence ? (
@@ -1578,14 +1576,14 @@ export default function PlanPanel({
                   {artifact.sha256 ? (
                     <dl>
                       <div>
-                        <dt>{copy.plan.digest}</dt>
+                        <dt>{planCopy.digest}</dt>
                         <dd>
                           <code>{artifact.sha256.slice(0, 16)}</code>
                         </dd>
                       </div>
                       {artifact.sourceRunId ? (
                         <div>
-                          <dt>{copy.plan.source}</dt>
+                          <dt>{planCopy.source}</dt>
                           <dd>
                             <code>{shortId(artifact.sourceRunId)}</code>
                           </dd>
@@ -1605,13 +1603,13 @@ export default function PlanPanel({
             onClick={onContinue}
           >
             <ChevronRight size={13} aria-hidden="true" />
-            {readyStep ? copy.plan.next : copy.plan.noReady}
+            {readyStep ? planCopy.next : planCopy.noReady}
           </button>
         </>
       ) : null}
       <p className="guardrail-note">
         <ShieldCheck size={13} aria-hidden="true" />
-        {copy.plan.safety}
+        {planCopy.safety}
       </p>
     </section>
   );
@@ -1655,18 +1653,18 @@ function PlanArchiveCard({
     >
       <header>
         <div>
-          <span>{copy.plan.archive.eyebrow}</span>
-          <h3 id="plan-archive-title">{copy.plan.archive.title}</h3>
+          <span>{planCopy.archive.eyebrow}</span>
+          <h3 id="plan-archive-title">{planCopy.archive.title}</h3>
         </div>
         <Download size={14} aria-hidden="true" />
       </header>
-      <p>{copy.plan.archive.body}</p>
+      <p>{planCopy.archive.body}</p>
       <div className="fixture-actions">
         <button type="button" disabled={Boolean(busyAction)} onClick={onExport}>
           <Download size={12} aria-hidden="true" />
           {busyAction === "export"
-            ? copy.plan.archive.exporting
-            : copy.plan.archive.export}
+            ? planCopy.archive.exporting
+            : planCopy.archive.export}
         </button>
         <button
           className="fixture-verify"
@@ -1676,15 +1674,15 @@ function PlanArchiveCard({
         >
           <Upload size={12} aria-hidden="true" />
           {busyAction === "verify"
-            ? copy.plan.archive.verifying
-            : copy.plan.archive.verify}
+            ? planCopy.archive.verifying
+            : planCopy.archive.verify}
         </button>
         <input
           ref={fileInput}
           className="fixture-file-input"
           type="file"
           accept="application/json,.json"
-          aria-label={copy.plan.archive.verify}
+          aria-label={planCopy.archive.verify}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
@@ -1696,7 +1694,7 @@ function PlanArchiveCard({
       {error ? <p className="plan-review-error">{error}</p> : null}
       <p className="fixture-safety">
         <ShieldCheck size={13} aria-hidden="true" />
-        {copy.plan.archive.safety}
+        {planCopy.archive.safety}
       </p>
     </section>
   );
@@ -1706,10 +1704,10 @@ function PlanArchiveReceiptView({ receipt }: { receipt: PlanArchiveReceipt }) {
   const status = receipt.action === "verified" ? receipt.status : "valid";
   const title =
     receipt.action === "exported"
-      ? copy.plan.archive.exported
+      ? planCopy.archive.exported
       : receipt.status === "valid"
-        ? copy.plan.archive.verified
-        : copy.plan.archive.invalid;
+        ? planCopy.archive.verified
+        : planCopy.archive.invalid;
   return (
     <div className={`fixture-receipt status-${status}`}>
       <span>{title}</span>
@@ -1718,17 +1716,17 @@ function PlanArchiveReceiptView({ receipt }: { receipt: PlanArchiveReceipt }) {
       ) : null}
       <small>
         {receipt.revision !== undefined ? `r${receipt.revision} / ` : ""}
-        {receipt.eventCount.toLocaleString()} {copy.plan.archive.events}
+        {receipt.eventCount.toLocaleString()} {planCopy.archive.events}
         {" / "}
-        {receipt.stepCount.toLocaleString()} {copy.plan.archive.steps}
+        {receipt.stepCount.toLocaleString()} {planCopy.archive.steps}
         {" / "}
-        {receipt.artifactCount.toLocaleString()} {copy.plan.archive.artifacts}
+        {receipt.artifactCount.toLocaleString()} {planCopy.archive.artifacts}
         {" / "}
-        {receipt.replanCount.toLocaleString()} {copy.plan.archive.replans}
+        {receipt.replanCount.toLocaleString()} {planCopy.archive.replans}
       </small>
       {receipt.eventStreamSha256 ? (
         <small>
-          {copy.plan.archive.eventStream}:{" "}
+          {planCopy.archive.eventStream}:{" "}
           {receipt.eventStreamSha256.slice(0, 16)}
         </small>
       ) : null}
@@ -1736,7 +1734,7 @@ function PlanArchiveReceiptView({ receipt }: { receipt: PlanArchiveReceipt }) {
         <small className="fixture-diagnostics">
           {receipt.diagnostics.length > 0
             ? receipt.diagnostics.join(", ")
-            : copy.plan.archive.noDiagnostics}
+            : planCopy.archive.noDiagnostics}
         </small>
       ) : null}
     </div>
@@ -1770,12 +1768,12 @@ function PlanBlueprintCard({
     >
       <header>
         <div>
-          <span>{copy.plan.blueprint.eyebrow}</span>
-          <h3 id="plan-blueprint-title">{copy.plan.blueprint.title}</h3>
+          <span>{planCopy.blueprint.eyebrow}</span>
+          <h3 id="plan-blueprint-title">{planCopy.blueprint.title}</h3>
         </div>
         <BookGlyph />
       </header>
-      <p>{copy.plan.blueprint.body}</p>
+      <p>{planCopy.blueprint.body}</p>
       <div className="fixture-actions">
         <button
           type="button"
@@ -1784,8 +1782,8 @@ function PlanBlueprintCard({
         >
           <Download size={12} aria-hidden="true" />
           {busyAction === "export"
-            ? copy.plan.blueprint.exporting
-            : copy.plan.blueprint.export}
+            ? planCopy.blueprint.exporting
+            : planCopy.blueprint.export}
         </button>
         <button
           className="fixture-verify"
@@ -1795,8 +1793,8 @@ function PlanBlueprintCard({
         >
           <Upload size={12} aria-hidden="true" />
           {busyAction === "verify"
-            ? copy.plan.blueprint.verifying
-            : copy.plan.blueprint.verify}
+            ? planCopy.blueprint.verifying
+            : planCopy.blueprint.verify}
         </button>
         <button
           className="fixture-import"
@@ -1806,15 +1804,15 @@ function PlanBlueprintCard({
         >
           <ChevronRight size={12} aria-hidden="true" />
           {busyAction === "create"
-            ? copy.plan.blueprint.creating
-            : copy.plan.blueprint.create}
+            ? planCopy.blueprint.creating
+            : planCopy.blueprint.create}
         </button>
         <input
           ref={fileInput}
           className="fixture-file-input"
           type="file"
           accept="application/json,.json"
-          aria-label={copy.plan.blueprint.verify}
+          aria-label={planCopy.blueprint.verify}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
@@ -1826,7 +1824,7 @@ function PlanBlueprintCard({
       {error ? <p className="plan-review-error">{error}</p> : null}
       <p className="fixture-safety">
         <ShieldCheck size={13} aria-hidden="true" />
-        {copy.plan.blueprint.safety}
+        {planCopy.blueprint.safety}
       </p>
     </section>
   );
@@ -1840,12 +1838,12 @@ function PlanBlueprintReceiptView({
   const status = receipt.action === "verified" ? receipt.status : "valid";
   const title =
     receipt.action === "exported"
-      ? copy.plan.blueprint.exported
+      ? planCopy.blueprint.exported
       : receipt.action === "created"
-        ? copy.plan.blueprint.created
+        ? planCopy.blueprint.created
         : receipt.status === "valid"
-          ? copy.plan.blueprint.verified
-          : copy.plan.blueprint.invalid;
+          ? planCopy.blueprint.verified
+          : planCopy.blueprint.invalid;
   return (
     <div className={`fixture-receipt status-${status}`}>
       <span>{title}</span>
@@ -1857,16 +1855,16 @@ function PlanBlueprintReceiptView({
         receipt.sourcePlanRevision !== undefined
           ? `r${receipt.sourcePlanRevision} / `
           : ""}
-        {receipt.stepCount.toLocaleString()} {copy.plan.blueprint.steps}
+        {receipt.stepCount.toLocaleString()} {planCopy.blueprint.steps}
         {" / "}
-        {receipt.artifactCount.toLocaleString()} {copy.plan.blueprint.artifacts}
+        {receipt.artifactCount.toLocaleString()} {planCopy.blueprint.artifacts}
         {"planId" in receipt ? ` / ${shortId(receipt.planId)}` : ""}
       </small>
       {receipt.action === "verified" ? (
         <small className="fixture-diagnostics">
           {receipt.diagnostics.length > 0
             ? receipt.diagnostics.join(", ")
-            : copy.plan.blueprint.noDiagnostics}
+            : planCopy.blueprint.noDiagnostics}
         </small>
       ) : null}
     </div>
@@ -1976,20 +1974,20 @@ function PlanBlueprintLibraryCard({
     >
       <header>
         <div>
-          <span>{copy.plan.blueprint.library.eyebrow}</span>
+          <span>{planCopy.blueprint.library.eyebrow}</span>
           <h3 id="plan-blueprint-library-title">
-            {copy.plan.blueprint.library.title}
+            {planCopy.blueprint.library.title}
           </h3>
         </div>
         <BookGlyph />
       </header>
-      <p>{copy.plan.blueprint.library.body}</p>
+      <p>{planCopy.blueprint.library.body}</p>
       <div className="fixture-actions">
         <button type="button" disabled={busy} onClick={onRefresh}>
           <Download size={12} aria-hidden="true" />
           {busyAction === "load"
-            ? copy.plan.blueprint.library.refreshing
-            : copy.plan.blueprint.library.refresh}
+            ? planCopy.blueprint.library.refreshing
+            : planCopy.blueprint.library.refresh}
         </button>
         <button
           className="fixture-verify"
@@ -1999,20 +1997,20 @@ function PlanBlueprintLibraryCard({
         >
           <ShieldCheck size={12} aria-hidden="true" />
           {busyAction === "select"
-            ? copy.plan.blueprint.library.selecting
-            : copy.plan.blueprint.library.select}
+            ? planCopy.blueprint.library.selecting
+            : planCopy.blueprint.library.select}
         </button>
         <button type="button" disabled={busy} onClick={onCalibrate}>
           <ShieldCheck size={12} aria-hidden="true" />
           {busyAction === "calibratePortfolio"
-            ? copy.plan.blueprint.library.calibrating
-            : copy.plan.blueprint.library.calibrate}
+            ? planCopy.blueprint.library.calibrating
+            : planCopy.blueprint.library.calibrate}
         </button>
         <button type="button" disabled={busy} onClick={onBacktestPolicy}>
           <ShieldCheck size={12} aria-hidden="true" />
           {busyAction === "backtestPolicy"
-            ? copy.plan.blueprint.library.backtestingPolicy
-            : copy.plan.blueprint.library.backtestPolicy}
+            ? planCopy.blueprint.library.backtestingPolicy
+            : planCopy.blueprint.library.backtestPolicy}
         </button>
         <button
           type="button"
@@ -2021,8 +2019,8 @@ function PlanBlueprintLibraryCard({
         >
           <ShieldCheck size={12} aria-hidden="true" />
           {busyAction === "applyPolicyOverride"
-            ? copy.plan.blueprint.library.applyingPolicyOverride
-            : copy.plan.blueprint.library.applyPolicyOverride}
+            ? planCopy.blueprint.library.applyingPolicyOverride
+            : planCopy.blueprint.library.applyPolicyOverride}
         </button>
         <button
           type="button"
@@ -2031,8 +2029,8 @@ function PlanBlueprintLibraryCard({
         >
           <ShieldCheck size={12} aria-hidden="true" />
           {busyAction === "reviewPolicyOverrideDrift"
-            ? copy.plan.blueprint.library.reviewingPolicyOverrideDrift
-            : copy.plan.blueprint.library.reviewPolicyOverrideDrift}
+            ? planCopy.blueprint.library.reviewingPolicyOverrideDrift
+            : planCopy.blueprint.library.reviewPolicyOverrideDrift}
         </button>
         <button
           type="button"
@@ -2041,8 +2039,8 @@ function PlanBlueprintLibraryCard({
         >
           <ShieldCheck size={12} aria-hidden="true" />
           {busyAction === "retirePolicyOverride"
-            ? copy.plan.blueprint.library.retiringPolicyOverride
-            : copy.plan.blueprint.library.retirePolicyOverride}
+            ? planCopy.blueprint.library.retiringPolicyOverride
+            : planCopy.blueprint.library.retirePolicyOverride}
         </button>
         <button
           type="button"
@@ -2051,8 +2049,8 @@ function PlanBlueprintLibraryCard({
         >
           <ShieldCheck size={12} aria-hidden="true" />
           {busyAction === "auditPolicyOverrideRetirements"
-            ? copy.plan.blueprint.library.auditingPolicyOverrideRetirements
-            : copy.plan.blueprint.library.auditPolicyOverrideRetirements}
+            ? planCopy.blueprint.library.auditingPolicyOverrideRetirements
+            : planCopy.blueprint.library.auditPolicyOverrideRetirements}
         </button>
         <button
           className="fixture-verify"
@@ -2062,8 +2060,8 @@ function PlanBlueprintLibraryCard({
         >
           <Upload size={12} aria-hidden="true" />
           {busyAction === "verifyPolicyOverrideRetirements"
-            ? copy.plan.blueprint.library.verifyingPolicyOverrideRetirements
-            : copy.plan.blueprint.library.verifyPolicyOverrideRetirements}
+            ? planCopy.blueprint.library.verifyingPolicyOverrideRetirements
+            : planCopy.blueprint.library.verifyPolicyOverrideRetirements}
         </button>
         <button
           className="fixture-verify"
@@ -2075,9 +2073,9 @@ function PlanBlueprintLibraryCard({
         >
           <Upload size={12} aria-hidden="true" />
           {busyAction === "verifyPolicyOverrideRetirementProofBundle"
-            ? copy.plan.blueprint.library
+            ? planCopy.blueprint.library
                 .verifyingPolicyOverrideRetirementProofBundle
-            : copy.plan.blueprint.library
+            : planCopy.blueprint.library
                 .verifyPolicyOverrideRetirementProofBundle}
         </button>
         <button
@@ -2086,8 +2084,9 @@ function PlanBlueprintLibraryCard({
           disabled={busy}
           title={
             canSignPolicyOverrideRetirementProofBundle
-              ? copy.plan.blueprint.library.signPolicyOverrideRetirementProofBundle
-              : copy.plan.blueprint.library.errors
+              ? planCopy.blueprint.library
+                  .signPolicyOverrideRetirementProofBundle
+              : planCopy.blueprint.library.errors
                   .policyOverrideProofBundleNoSigner
           }
           onClick={() =>
@@ -2096,9 +2095,9 @@ function PlanBlueprintLibraryCard({
         >
           <KeyRound size={12} aria-hidden="true" />
           {busyAction === "signPolicyOverrideRetirementProofBundle"
-            ? copy.plan.blueprint.library
+            ? planCopy.blueprint.library
                 .signingPolicyOverrideRetirementProofBundle
-            : copy.plan.blueprint.library
+            : planCopy.blueprint.library
                 .signPolicyOverrideRetirementProofBundle}
         </button>
         <button
@@ -2109,8 +2108,8 @@ function PlanBlueprintLibraryCard({
         >
           <Upload size={12} aria-hidden="true" />
           {busyAction === "verifyHistory"
-            ? copy.plan.blueprint.library.verifyingHistory
-            : copy.plan.blueprint.library.verifyHistory}
+            ? planCopy.blueprint.library.verifyingHistory
+            : planCopy.blueprint.library.verifyHistory}
         </button>
         <button
           className="fixture-import"
@@ -2120,8 +2119,8 @@ function PlanBlueprintLibraryCard({
         >
           <Upload size={12} aria-hidden="true" />
           {busyAction === "save"
-            ? copy.plan.blueprint.library.saving
-            : copy.plan.blueprint.library.save}
+            ? planCopy.blueprint.library.saving
+            : planCopy.blueprint.library.save}
         </button>
         <button
           className="fixture-verify"
@@ -2131,15 +2130,15 @@ function PlanBlueprintLibraryCard({
         >
           <Upload size={12} aria-hidden="true" />
           {busyAction === "verifyOutcomes"
-            ? copy.plan.blueprint.library.verifyingOutcomes
-            : copy.plan.blueprint.library.verifyOutcomes}
+            ? planCopy.blueprint.library.verifyingOutcomes
+            : planCopy.blueprint.library.verifyOutcomes}
         </button>
         <input
           ref={historyInput}
           className="fixture-file-input"
           type="file"
           accept="application/json,.json"
-          aria-label={copy.plan.blueprint.library.verifyHistory}
+          aria-label={planCopy.blueprint.library.verifyHistory}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
@@ -2151,7 +2150,9 @@ function PlanBlueprintLibraryCard({
           className="fixture-file-input"
           type="file"
           accept="application/json,.json"
-          aria-label={copy.plan.blueprint.library.verifyPolicyOverrideRetirements}
+          aria-label={
+            planCopy.blueprint.library.verifyPolicyOverrideRetirements
+          }
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
@@ -2165,8 +2166,7 @@ function PlanBlueprintLibraryCard({
           accept="application/json,.json"
           multiple
           aria-label={
-            copy.plan.blueprint.library
-              .verifyPolicyOverrideRetirementProofBundle
+            planCopy.blueprint.library.verifyPolicyOverrideRetirementProofBundle
           }
           onChange={(event) => {
             const files = Array.from(event.currentTarget.files ?? []);
@@ -2183,8 +2183,7 @@ function PlanBlueprintLibraryCard({
           accept="application/json,.json"
           multiple
           aria-label={
-            copy.plan.blueprint.library
-              .signPolicyOverrideRetirementProofBundle
+            planCopy.blueprint.library.signPolicyOverrideRetirementProofBundle
           }
           onChange={(event) => {
             const files = Array.from(event.currentTarget.files ?? []);
@@ -2199,7 +2198,7 @@ function PlanBlueprintLibraryCard({
           className="fixture-file-input"
           type="file"
           accept="application/json,.json"
-          aria-label={copy.plan.blueprint.library.verifyOutcomes}
+          aria-label={planCopy.blueprint.library.verifyOutcomes}
           onChange={(event) => {
             const file = event.currentTarget.files?.[0];
             event.currentTarget.value = "";
@@ -2209,21 +2208,21 @@ function PlanBlueprintLibraryCard({
       </div>
       {!hasVerifiedBlueprint ? (
         <small className="blueprint-library-hint">
-          {copy.plan.blueprint.library.noVerified}
+          {planCopy.blueprint.library.noVerified}
         </small>
       ) : null}
       {loaded ? (
         <div className="blueprint-library-summary">
           <span>
             {records.length.toLocaleString()}{" "}
-            {copy.plan.blueprint.library.records}
+            {planCopy.blueprint.library.records}
           </span>
           <span>
-            {activeCount.toLocaleString()} {copy.plan.blueprint.library.active}
+            {activeCount.toLocaleString()} {planCopy.blueprint.library.active}
           </span>
           <span>
             {archivedCount.toLocaleString()}{" "}
-            {copy.plan.blueprint.library.archived}
+            {planCopy.blueprint.library.archived}
           </span>
         </div>
       ) : null}
@@ -2231,7 +2230,7 @@ function PlanBlueprintLibraryCard({
       {error ? <p className="plan-review-error">{error}</p> : null}
       {loaded && records.length === 0 ? (
         <p className="blueprint-library-empty">
-          {copy.plan.blueprint.library.empty}
+          {planCopy.blueprint.library.empty}
         </p>
       ) : null}
       {records.length > 0 ? (
@@ -2245,7 +2244,7 @@ function PlanBlueprintLibraryCard({
                 <div>
                   <strong>{record.name}</strong>
                   <span>
-                    {copy.plan.blueprint.library.statuses[record.status]}
+                    {planCopy.blueprint.library.statuses[record.status]}
                   </span>
                 </div>
                 <code>{record.blueprintSha256.slice(0, 16)}</code>
@@ -2253,23 +2252,23 @@ function PlanBlueprintLibraryCard({
               {record.description ? <p>{record.description}</p> : null}
               <dl>
                 <div>
-                  <dt>{copy.plan.blueprint.library.source}</dt>
+                  <dt>{planCopy.blueprint.library.source}</dt>
                   <dd>
                     {shortId(record.sourcePlanId)} r{record.sourcePlanRevision}
                   </dd>
                 </div>
                 <div>
-                  <dt>{copy.plan.blueprint.library.shape}</dt>
+                  <dt>{planCopy.blueprint.library.shape}</dt>
                   <dd>
                     {record.blueprint.stepCount.toLocaleString()}{" "}
-                    {copy.plan.blueprint.steps}
+                    {planCopy.blueprint.steps}
                     {" / "}
                     {record.blueprint.artifactCount.toLocaleString()}{" "}
-                    {copy.plan.blueprint.artifacts}
+                    {planCopy.blueprint.artifacts}
                   </dd>
                 </div>
                 <div>
-                  <dt>{copy.plan.blueprint.library.updated}</dt>
+                  <dt>{planCopy.blueprint.library.updated}</dt>
                   <dd>{new Date(record.updatedAt).toLocaleDateString()}</dd>
                 </div>
               </dl>
@@ -2282,8 +2281,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onCreate(record)}
                 >
                   {busyAction === "create"
-                    ? copy.plan.blueprint.library.creating
-                    : copy.plan.blueprint.library.create}
+                    ? planCopy.blueprint.library.creating
+                    : planCopy.blueprint.library.create}
                 </button>
                 <button
                   type="button"
@@ -2291,8 +2290,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onQualify(record)}
                 >
                   {busyAction === "qualify"
-                    ? copy.plan.blueprint.library.qualifying
-                    : copy.plan.blueprint.library.qualify}
+                    ? planCopy.blueprint.library.qualifying
+                    : planCopy.blueprint.library.qualify}
                 </button>
                 <button
                   type="button"
@@ -2300,8 +2299,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onPreview(record)}
                 >
                   {busyAction === "preview"
-                    ? copy.plan.blueprint.library.previewing
-                    : copy.plan.blueprint.library.preview}
+                    ? planCopy.blueprint.library.previewing
+                    : planCopy.blueprint.library.preview}
                 </button>
                 <button
                   type="button"
@@ -2309,8 +2308,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onHistory(record)}
                 >
                   {busyAction === "history"
-                    ? copy.plan.blueprint.library.loadingHistory
-                    : copy.plan.blueprint.library.history}
+                    ? planCopy.blueprint.library.loadingHistory
+                    : planCopy.blueprint.library.history}
                 </button>
                 <button
                   type="button"
@@ -2318,8 +2317,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onOutcomes(record)}
                 >
                   {busyAction === "outcomes"
-                    ? copy.plan.blueprint.library.loadingOutcomes
-                    : copy.plan.blueprint.library.outcomes}
+                    ? planCopy.blueprint.library.loadingOutcomes
+                    : planCopy.blueprint.library.outcomes}
                 </button>
                 <button
                   type="button"
@@ -2327,8 +2326,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onPromoteOutcomeBaseline(record)}
                 >
                   {busyAction === "promoteOutcomeBaseline"
-                    ? copy.plan.blueprint.library.promotingOutcomeBaseline
-                    : copy.plan.blueprint.library.promoteOutcomeBaseline}
+                    ? planCopy.blueprint.library.promotingOutcomeBaseline
+                    : planCopy.blueprint.library.promoteOutcomeBaseline}
                 </button>
                 {latestOutcomeReview?.recordId === record.id ? (
                   <button
@@ -2337,9 +2336,9 @@ function PlanBlueprintLibraryCard({
                     onClick={() => onPromoteReviewedOutcomeBaseline(record)}
                   >
                     {busyAction === "promoteReviewedOutcomeBaseline"
-                      ? copy.plan.blueprint.library
+                      ? planCopy.blueprint.library
                           .promotingReviewedOutcomeBaseline
-                      : copy.plan.blueprint.library
+                      : planCopy.blueprint.library
                           .promoteReviewedOutcomeBaseline}
                   </button>
                 ) : null}
@@ -2349,8 +2348,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onQualifyOutcomes(record)}
                 >
                   {busyAction === "qualifyOutcomes"
-                    ? copy.plan.blueprint.library.qualifyingOutcomes
-                    : copy.plan.blueprint.library.qualifyOutcomes}
+                    ? planCopy.blueprint.library.qualifyingOutcomes
+                    : planCopy.blueprint.library.qualifyOutcomes}
                 </button>
                 <button
                   type="button"
@@ -2358,8 +2357,8 @@ function PlanBlueprintLibraryCard({
                   onClick={() => onReviewOutcomes(record)}
                 >
                   {busyAction === "reviewOutcomes"
-                    ? copy.plan.blueprint.library.reviewingOutcomes
-                    : copy.plan.blueprint.library.reviewOutcomes}
+                    ? planCopy.blueprint.library.reviewingOutcomes
+                    : planCopy.blueprint.library.reviewOutcomes}
                 </button>
                 {record.status === "active" ? (
                   <button
@@ -2368,8 +2367,8 @@ function PlanBlueprintLibraryCard({
                     onClick={() => onArchive(record)}
                   >
                     {busyAction === "status"
-                      ? copy.plan.blueprint.library.archiving
-                      : copy.plan.blueprint.library.archive}
+                      ? planCopy.blueprint.library.archiving
+                      : planCopy.blueprint.library.archive}
                   </button>
                 ) : (
                   <button
@@ -2378,8 +2377,8 @@ function PlanBlueprintLibraryCard({
                     onClick={() => onRestore(record)}
                   >
                     {busyAction === "status"
-                      ? copy.plan.blueprint.library.restoring
-                      : copy.plan.blueprint.library.restore}
+                      ? planCopy.blueprint.library.restoring
+                      : planCopy.blueprint.library.restore}
                   </button>
                 )}
               </div>
@@ -2389,12 +2388,12 @@ function PlanBlueprintLibraryCard({
       ) : null}
       {!canCreateRecord ? (
         <small className="blueprint-library-hint">
-          {copy.plan.blueprint.library.locked}
+          {planCopy.blueprint.library.locked}
         </small>
       ) : null}
       <p className="fixture-safety">
         <ShieldCheck size={13} aria-hidden="true" />
-        {copy.plan.blueprint.library.safety}
+        {planCopy.blueprint.library.safety}
       </p>
     </section>
   );
@@ -2436,76 +2435,76 @@ function PlanBlueprintLibraryReceiptView({
                               : receipt.action ===
                                   "policyOverrideRetirementsVerified"
                                 ? receipt.verificationStatus === "valid"
-                              : receipt.action ===
-                                  "policyOverrideRetirementProofBundle"
-                                ? receipt.verificationStatus === "aligned"
                                 : receipt.action ===
-                                    "policyOverrideRetirementProofBundleSigned"
-                                  ? receipt.verificationStatus !== "invalid"
-                              : receipt.action === "created" &&
-                                  receipt.replayEventVerificationStatus
-                                ? receipt.replayEventVerificationStatus ===
-                                  "valid"
-                                : receipt.action === "created" &&
-                                    receipt.replayEventDiagnostics
-                                  ? false
-                                  : true;
+                                    "policyOverrideRetirementProofBundle"
+                                  ? receipt.verificationStatus === "aligned"
+                                  : receipt.action ===
+                                      "policyOverrideRetirementProofBundleSigned"
+                                    ? receipt.verificationStatus !== "invalid"
+                                    : receipt.action === "created" &&
+                                        receipt.replayEventVerificationStatus
+                                      ? receipt.replayEventVerificationStatus ===
+                                        "valid"
+                                      : receipt.action === "created" &&
+                                          receipt.replayEventDiagnostics
+                                        ? false
+                                        : true;
   const title =
     receipt.action === "qualified"
-      ? copy.plan.blueprint.library.qualificationStatuses[
+      ? planCopy.blueprint.library.qualificationStatuses[
           receipt.qualificationStatus
         ]
       : receipt.action === "previewed"
-        ? copy.plan.blueprint.library.previewStatuses[receipt.previewStatus]
+        ? planCopy.blueprint.library.previewStatuses[receipt.previewStatus]
         : receipt.action === "historyVerified"
-          ? copy.plan.blueprint.library.verificationStatuses[
+          ? planCopy.blueprint.library.verificationStatuses[
               receipt.verificationStatus
             ]
           : receipt.action === "outcomesVerified"
-            ? copy.plan.blueprint.library.outcomeVerificationStatuses[
+            ? planCopy.blueprint.library.outcomeVerificationStatuses[
                 receipt.verificationStatus
               ]
             : receipt.action === "outcomeQualified"
-              ? copy.plan.blueprint.library.outcomeQualificationStatuses[
+              ? planCopy.blueprint.library.outcomeQualificationStatuses[
                   receipt.qualificationStatus
                 ]
               : receipt.action === "outcomeReviewed"
-                ? copy.plan.blueprint.library.outcomeReviewVerdicts[
+                ? planCopy.blueprint.library.outcomeReviewVerdicts[
                     receipt.verdict
                   ]
                 : receipt.action === "selection"
-                  ? copy.plan.blueprint.library.receipts.selection
+                  ? planCopy.blueprint.library.receipts.selection
                   : receipt.action === "portfolioCalibrated"
-                    ? copy.plan.blueprint.library.receipts.portfolioCalibrated
+                    ? planCopy.blueprint.library.receipts.portfolioCalibrated
                     : receipt.action === "policyBacktested"
-                      ? copy.plan.blueprint.library.receipts.policyBacktested
+                      ? planCopy.blueprint.library.receipts.policyBacktested
                       : receipt.action === "policyOverrideApplied"
-                        ? copy.plan.blueprint.library.receipts
+                        ? planCopy.blueprint.library.receipts
                             .policyOverrideApplied
                         : receipt.action === "policyOverrideDriftReviewed"
-                          ? copy.plan.blueprint.library.receipts
+                          ? planCopy.blueprint.library.receipts
                               .policyOverrideDriftReviewed
                           : receipt.action === "policyOverrideRetired"
-                            ? copy.plan.blueprint.library.receipts
+                            ? planCopy.blueprint.library.receipts
                                 .policyOverrideRetired
                             : receipt.action === "policyOverrideRetirements"
-                              ? copy.plan.blueprint.library.receipts
+                              ? planCopy.blueprint.library.receipts
                                   .policyOverrideRetirements
                               : receipt.action ===
                                   "policyOverrideRetirementsVerified"
-                                ? copy.plan.blueprint.library.receipts
+                                ? planCopy.blueprint.library.receipts
                                     .policyOverrideRetirementsVerified
-                              : receipt.action ===
-                                  "policyOverrideRetirementProofBundle"
-                                ? copy.plan.blueprint.library.receipts
-                                    .policyOverrideRetirementProofBundle
                                 : receipt.action ===
-                                    "policyOverrideRetirementProofBundleSigned"
-                                  ? copy.plan.blueprint.library.receipts
-                                      .policyOverrideRetirementProofBundleSigned
-                              : copy.plan.blueprint.library.receipts[
-                                  receipt.action
-                                ];
+                                    "policyOverrideRetirementProofBundle"
+                                  ? planCopy.blueprint.library.receipts
+                                      .policyOverrideRetirementProofBundle
+                                  : receipt.action ===
+                                      "policyOverrideRetirementProofBundleSigned"
+                                    ? planCopy.blueprint.library.receipts
+                                        .policyOverrideRetirementProofBundleSigned
+                                    : planCopy.blueprint.library.receipts[
+                                        receipt.action
+                                      ];
   const receiptHash =
     "blueprintSha256" in receipt
       ? receipt.blueprintSha256
@@ -2532,37 +2531,36 @@ function PlanBlueprintLibraryReceiptView({
             : undefined;
   const summary =
     receipt.action === "history" || receipt.action === "historyVerified"
-      ? `${receipt.replayCount.toLocaleString()} ${copy.plan.blueprint.library.replays} / ${receipt.threadCount.toLocaleString()} ${copy.plan.blueprint.library.threads} / ${receipt.planCount.toLocaleString()} ${copy.plan.blueprint.library.plans}`
+      ? `${receipt.replayCount.toLocaleString()} ${planCopy.blueprint.library.replays} / ${receipt.threadCount.toLocaleString()} ${planCopy.blueprint.library.threads} / ${receipt.planCount.toLocaleString()} ${planCopy.blueprint.library.plans}`
       : receipt.action === "outcomes" ||
           receipt.action === "outcomesVerified" ||
           receipt.action === "outcomeBaseline" ||
           receipt.action === "outcomeReviewed" ||
           receipt.action === "outcomeQualified"
-        ? `${receipt.replayCount.toLocaleString()} ${copy.plan.blueprint.library.replays} / ${receipt.completedCount.toLocaleString()} ${copy.plan.blueprint.library.completed} / ${receipt.blockedCount.toLocaleString()} ${copy.plan.blueprint.library.blocked} / ${receipt.invalidCount.toLocaleString()} ${copy.plan.blueprint.library.invalid}`
+        ? `${receipt.replayCount.toLocaleString()} ${planCopy.blueprint.library.replays} / ${receipt.completedCount.toLocaleString()} ${planCopy.blueprint.library.completed} / ${receipt.blockedCount.toLocaleString()} ${planCopy.blueprint.library.blocked} / ${receipt.invalidCount.toLocaleString()} ${planCopy.blueprint.library.invalid}`
         : receipt.action === "selection"
-          ? `${receipt.candidateCount.toLocaleString()} ${copy.plan.blueprint.library.candidates} / ${receipt.qualifiedCandidateCount.toLocaleString()} ${copy.plan.blueprint.library.qualified} / ${receipt.rejectedCandidateCount.toLocaleString()} ${copy.plan.blueprint.library.rejected}`
+          ? `${receipt.candidateCount.toLocaleString()} ${planCopy.blueprint.library.candidates} / ${receipt.qualifiedCandidateCount.toLocaleString()} ${planCopy.blueprint.library.qualified} / ${receipt.rejectedCandidateCount.toLocaleString()} ${planCopy.blueprint.library.rejected}`
           : receipt.action === "portfolioCalibrated"
-            ? `${receipt.recordCount.toLocaleString()} ${copy.plan.blueprint.library.records} / ${receipt.familyCount.toLocaleString()} ${copy.plan.blueprint.library.families} / ${receipt.outcomeQualifiedCount.toLocaleString()} ${copy.plan.blueprint.library.qualified}`
+            ? `${receipt.recordCount.toLocaleString()} ${planCopy.blueprint.library.records} / ${receipt.familyCount.toLocaleString()} ${planCopy.blueprint.library.families} / ${receipt.outcomeQualifiedCount.toLocaleString()} ${planCopy.blueprint.library.qualified}`
             : receipt.action === "policyBacktested"
-              ? `${receipt.policyCount.toLocaleString()} ${copy.plan.blueprint.library.policies} / ${receipt.recordCount.toLocaleString()} ${copy.plan.blueprint.library.records} / ${receipt.divergentSelectionCount.toLocaleString()} ${copy.plan.blueprint.library.divergent}`
+              ? `${receipt.policyCount.toLocaleString()} ${planCopy.blueprint.library.policies} / ${receipt.recordCount.toLocaleString()} ${planCopy.blueprint.library.records} / ${receipt.divergentSelectionCount.toLocaleString()} ${planCopy.blueprint.library.divergent}`
               : receipt.action === "policyOverrideApplied"
-                ? `${receipt.familyRecordCount.toLocaleString()} ${copy.plan.blueprint.library.records} / ${receipt.familyOutcomeQualifiedCount.toLocaleString()} ${copy.plan.blueprint.library.qualified} / ${copy.plan.blueprint.library.recommendationPolicy}: ${receipt.recommendationPolicyTemplate}`
+                ? `${receipt.familyRecordCount.toLocaleString()} ${planCopy.blueprint.library.records} / ${receipt.familyOutcomeQualifiedCount.toLocaleString()} ${planCopy.blueprint.library.qualified} / ${planCopy.blueprint.library.recommendationPolicy}: ${receipt.recommendationPolicyTemplate}`
                 : receipt.action === "policyOverrideDriftReviewed"
-                  ? `${receipt.overrideCount.toLocaleString()} ${copy.plan.blueprint.library.override} / ${receipt.alignedCount.toLocaleString()} ${copy.plan.blueprint.library.aligned} / ${receipt.retireRecommendedCount.toLocaleString()} ${copy.plan.blueprint.library.recommendedRetire}`
+                  ? `${receipt.overrideCount.toLocaleString()} ${planCopy.blueprint.library.override} / ${receipt.alignedCount.toLocaleString()} ${planCopy.blueprint.library.aligned} / ${receipt.retireRecommendedCount.toLocaleString()} ${planCopy.blueprint.library.recommendedRetire}`
                   : receipt.action === "policyOverrideRetired"
-                    ? `${copy.plan.blueprint.library.retired}: ${receipt.retiredRecommendationPolicyTemplate} / ${copy.plan.blueprint.library.remaining}: ${receipt.remainingOverrideSetSha256.slice(0, 12)}`
+                    ? `${planCopy.blueprint.library.retired}: ${receipt.retiredRecommendationPolicyTemplate} / ${planCopy.blueprint.library.remaining}: ${receipt.remainingOverrideSetSha256.slice(0, 12)}`
                     : receipt.action === "policyOverrideRetirements"
-                      ? `${receipt.retirementCount.toLocaleString()} ${copy.plan.blueprint.library.retired} / ${copy.plan.blueprint.library.retirementSet}: ${receipt.retirementSetSha256.slice(0, 12)}`
-                      : receipt.action ===
-                          "policyOverrideRetirementsVerified"
-                        ? `${receipt.observedRetirementCount.toLocaleString()} ${copy.plan.blueprint.library.retired} / ${copy.plan.blueprint.library.retirementSet}: ${receipt.observedRetirementSetSha256.slice(0, 12)}`
-                      : receipt.action ===
-                          "policyOverrideRetirementProofBundle"
-                        ? `${receipt.validHistoryCount.toLocaleString()} ${copy.plan.blueprint.library.valid} / ${receipt.invalidHistoryCount.toLocaleString()} ${copy.plan.blueprint.library.invalid} / ${copy.plan.blueprint.library.retirementSet}: ${receipt.distinctRetirementSetCount.toLocaleString()}`
-                      : receipt.action ===
-                          "policyOverrideRetirementProofBundleSigned"
-                        ? `${receipt.historyCount.toLocaleString()} ${copy.plan.blueprint.library.histories} / ${copy.plan.blueprint.library.signer}: ${receipt.keyId.slice(0, 12)} / ${copy.plan.blueprint.library.receipt}: ${receipt.receiptContentSha256.slice(0, 12)}`
-                      : `${receipt.stepCount.toLocaleString()} ${copy.plan.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${copy.plan.blueprint.artifacts}`;
+                      ? `${receipt.retirementCount.toLocaleString()} ${planCopy.blueprint.library.retired} / ${planCopy.blueprint.library.retirementSet}: ${receipt.retirementSetSha256.slice(0, 12)}`
+                      : receipt.action === "policyOverrideRetirementsVerified"
+                        ? `${receipt.observedRetirementCount.toLocaleString()} ${planCopy.blueprint.library.retired} / ${planCopy.blueprint.library.retirementSet}: ${receipt.observedRetirementSetSha256.slice(0, 12)}`
+                        : receipt.action ===
+                            "policyOverrideRetirementProofBundle"
+                          ? `${receipt.validHistoryCount.toLocaleString()} ${planCopy.blueprint.library.valid} / ${receipt.invalidHistoryCount.toLocaleString()} ${planCopy.blueprint.library.invalid} / ${planCopy.blueprint.library.retirementSet}: ${receipt.distinctRetirementSetCount.toLocaleString()}`
+                          : receipt.action ===
+                              "policyOverrideRetirementProofBundleSigned"
+                            ? `${receipt.historyCount.toLocaleString()} ${planCopy.blueprint.library.histories} / ${planCopy.blueprint.library.signer}: ${receipt.keyId.slice(0, 12)} / ${planCopy.blueprint.library.receipt}: ${receipt.receiptContentSha256.slice(0, 12)}`
+                            : `${receipt.stepCount.toLocaleString()} ${planCopy.blueprint.steps} / ${receipt.artifactCount.toLocaleString()} ${planCopy.blueprint.artifacts}`;
   const identity =
     receipt.action === "qualified"
       ? shortId(receipt.recordId)
@@ -2604,26 +2602,26 @@ function PlanBlueprintLibraryReceiptView({
                                     0,
                                     12,
                                   )
-                              : receipt.action ===
-                                  "policyOverrideRetirementProofBundle"
-                                ? receipt.retirementSetBundleSha256.slice(
-                                    0,
-                                    12,
-                                  )
-                              : receipt.action ===
-                                  "policyOverrideRetirementProofBundleSigned"
-                                ? receipt.keyId.slice(0, 12)
-                              : receipt.action === "historyVerified" ||
-                                  receipt.action === "outcomesVerified" ||
-                                  receipt.action === "outcomeQualified"
-                                ? receipt.recordId
-                                  ? shortId(receipt.recordId)
-                                  : undefined
-                                : "status" in receipt
-                                  ? copy.plan.blueprint.library.statuses[
-                                      receipt.status
-                                    ]
-                                  : shortId(receipt.planId);
+                                : receipt.action ===
+                                    "policyOverrideRetirementProofBundle"
+                                  ? receipt.retirementSetBundleSha256.slice(
+                                      0,
+                                      12,
+                                    )
+                                  : receipt.action ===
+                                      "policyOverrideRetirementProofBundleSigned"
+                                    ? receipt.keyId.slice(0, 12)
+                                    : receipt.action === "historyVerified" ||
+                                        receipt.action === "outcomesVerified" ||
+                                        receipt.action === "outcomeQualified"
+                                      ? receipt.recordId
+                                        ? shortId(receipt.recordId)
+                                        : undefined
+                                      : "status" in receipt
+                                        ? planCopy.blueprint.library.statuses[
+                                            receipt.status
+                                          ]
+                                        : shortId(receipt.planId);
   return (
     <div
       className={`fixture-receipt status-${successful ? "valid" : "invalid"}`}
@@ -2639,15 +2637,15 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {receipt.diagnostics.length > 0
               ? receipt.diagnostics.join(", ")
-              : copy.plan.blueprint.library.noDiagnostics}
+              : planCopy.blueprint.library.noDiagnostics}
           </small>
           {receipt.action === "qualified" &&
           receipt.expectedPlanArchiveSha256 ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.expected}:{" "}
+              {planCopy.blueprint.library.expected}:{" "}
               {receipt.expectedPlanArchiveSha256.slice(0, 16)}
               {receipt.actualPlanArchiveSha256
-                ? ` / ${copy.plan.blueprint.library.actual}: ${receipt.actualPlanArchiveSha256.slice(0, 16)}`
+                ? ` / ${planCopy.blueprint.library.actual}: ${receipt.actualPlanArchiveSha256.slice(0, 16)}`
                 : ""}
             </small>
           ) : null}
@@ -2655,10 +2653,10 @@ function PlanBlueprintLibraryReceiptView({
       ) : null}
       {receipt.action === "history" ? (
         <small className="fixture-diagnostics">
-          {copy.plan.blueprint.library.eventSet}:{" "}
+          {planCopy.blueprint.library.eventSet}:{" "}
           {receipt.eventSetSha256.slice(0, 16)}
           {receipt.latestPreviewSha256
-            ? ` / ${copy.plan.blueprint.library.latestPreview}: ${receipt.latestPreviewSha256.slice(0, 16)}`
+            ? ` / ${planCopy.blueprint.library.latestPreview}: ${receipt.latestPreviewSha256.slice(0, 16)}`
             : ""}
         </small>
       ) : null}
@@ -2667,21 +2665,21 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {receipt.diagnostics.length > 0
               ? receipt.diagnostics.join(", ")
-              : copy.plan.blueprint.library.noDiagnostics}
+              : planCopy.blueprint.library.noDiagnostics}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.declared}:{" "}
+            {planCopy.blueprint.library.declared}:{" "}
             {receipt.declaredContentSha256?.slice(0, 16) ?? "missing"}
             {receipt.observedContentSha256
-              ? ` / ${copy.plan.blueprint.library.observed}: ${receipt.observedContentSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.observed}: ${receipt.observedContentSha256.slice(0, 16)}`
               : ""}
           </small>
           {receipt.declaredEventSetSha256 || receipt.observedEventSetSha256 ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.eventSet}:{" "}
+              {planCopy.blueprint.library.eventSet}:{" "}
               {receipt.declaredEventSetSha256?.slice(0, 16) ?? "missing"}
               {receipt.observedEventSetSha256
-                ? ` / ${copy.plan.blueprint.library.observed}: ${receipt.observedEventSetSha256.slice(0, 16)}`
+                ? ` / ${planCopy.blueprint.library.observed}: ${receipt.observedEventSetSha256.slice(0, 16)}`
                 : ""}
             </small>
           ) : null}
@@ -2690,22 +2688,22 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "outcomes" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.replayHistory}:{" "}
+            {planCopy.blueprint.library.replayHistory}:{" "}
             {receipt.replayHistorySha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.outcomeSet}:{" "}
+            {planCopy.blueprint.library.outcomeSet}:{" "}
             {receipt.outcomeSetSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.completion}:{" "}
+            {planCopy.blueprint.library.completion}:{" "}
             {(receipt.completionRateBps / 100).toFixed(2)}%{" / "}
             {receipt.activeCount.toLocaleString()}{" "}
-            {copy.plan.blueprint.library.active}
+            {planCopy.blueprint.library.active}
             {" / "}
             {receipt.cancelledCount.toLocaleString()}{" "}
-            {copy.plan.blueprint.library.cancelled}
+            {planCopy.blueprint.library.cancelled}
             {receipt.latestStatus
-              ? ` / ${copy.plan.blueprint.library.latest}: ${copy.plan.blueprint.library.outcomeStatuses[receipt.latestStatus]}`
+              ? ` / ${planCopy.blueprint.library.latest}: ${planCopy.blueprint.library.outcomeStatuses[receipt.latestStatus]}`
               : ""}
           </small>
         </>
@@ -2715,22 +2713,22 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {receipt.diagnostics.length > 0
               ? receipt.diagnostics.join(", ")
-              : copy.plan.blueprint.library.noDiagnostics}
+              : planCopy.blueprint.library.noDiagnostics}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.declared}:{" "}
+            {planCopy.blueprint.library.declared}:{" "}
             {receipt.declaredContentSha256?.slice(0, 16) ?? "missing"}
             {receipt.observedContentSha256
-              ? ` / ${copy.plan.blueprint.library.observed}: ${receipt.observedContentSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.observed}: ${receipt.observedContentSha256.slice(0, 16)}`
               : ""}
           </small>
           {receipt.declaredOutcomeSetSha256 ||
           receipt.observedOutcomeSetSha256 ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.outcomeSet}:{" "}
+              {planCopy.blueprint.library.outcomeSet}:{" "}
               {receipt.declaredOutcomeSetSha256?.slice(0, 16) ?? "missing"}
               {receipt.observedOutcomeSetSha256
-                ? ` / ${copy.plan.blueprint.library.observed}: ${receipt.observedOutcomeSetSha256.slice(0, 16)}`
+                ? ` / ${planCopy.blueprint.library.observed}: ${receipt.observedOutcomeSetSha256.slice(0, 16)}`
                 : ""}
             </small>
           ) : null}
@@ -2740,33 +2738,33 @@ function PlanBlueprintLibraryReceiptView({
         <>
           <small className="fixture-diagnostics">
             {receipt.created
-              ? copy.plan.blueprint.library.outcomeBaselineCreated
-              : copy.plan.blueprint.library.outcomeBaselineReused}
+              ? planCopy.blueprint.library.outcomeBaselineCreated
+              : planCopy.blueprint.library.outcomeBaselineReused}
             {" / "}
-            {copy.plan.blueprint.library.outcomeBaseline}:{" "}
+            {planCopy.blueprint.library.outcomeBaseline}:{" "}
             {receipt.baselineSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.completion}:{" "}
+            {planCopy.blueprint.library.completion}:{" "}
             {(receipt.completionRateBps / 100).toFixed(2)}%{" / "}
-            {copy.plan.blueprint.library.min}:{" "}
+            {planCopy.blueprint.library.min}:{" "}
             {(receipt.minCompletionRateBps / 100).toFixed(2)}%
           </small>
           {receipt.reviewSha256 ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.review}:{" "}
+              {planCopy.blueprint.library.review}:{" "}
               {receipt.reviewSha256.slice(0, 16)}
               {receipt.reviewScore !== undefined
-                ? ` / ${copy.plan.blueprint.library.score}: ${receipt.reviewScore.toLocaleString()}`
+                ? ` / ${planCopy.blueprint.library.score}: ${receipt.reviewScore.toLocaleString()}`
                 : ""}
               {receipt.reviewRisk
-                ? ` / ${copy.plan.blueprint.library.risk}: ${copy.plan.blueprint.library.outcomeReviewRisks[receipt.reviewRisk]}`
+                ? ` / ${planCopy.blueprint.library.risk}: ${planCopy.blueprint.library.outcomeReviewRisks[receipt.reviewRisk]}`
                 : ""}
               {receipt.reviewVerdict
-                ? ` / ${copy.plan.blueprint.library.outcomeReviewVerdicts[receipt.reviewVerdict]}`
+                ? ` / ${planCopy.blueprint.library.outcomeReviewVerdicts[receipt.reviewVerdict]}`
                 : ""}
               {receipt.reviewGateMinScore !== undefined
-                ? ` / ${copy.plan.blueprint.library.min}: ${receipt.reviewGateMinScore.toLocaleString()}`
+                ? ` / ${planCopy.blueprint.library.min}: ${receipt.reviewGateMinScore.toLocaleString()}`
                 : ""}
               {receipt.reviewModel ? ` / ${receipt.reviewModel}` : ""}
             </small>
@@ -2778,20 +2776,20 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {receipt.diagnostics.length > 0
               ? receipt.diagnostics.join(", ")
-              : copy.plan.blueprint.library.noDiagnostics}
+              : planCopy.blueprint.library.noDiagnostics}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.current}:{" "}
+            {planCopy.blueprint.library.current}:{" "}
             {receipt.currentOutcomesSha256.slice(0, 16)}
             {receipt.baselineSha256
-              ? ` / ${copy.plan.blueprint.library.outcomeBaseline}: ${receipt.baselineSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.outcomeBaseline}: ${receipt.baselineSha256.slice(0, 16)}`
               : ""}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.completion}:{" "}
+            {planCopy.blueprint.library.completion}:{" "}
             {(receipt.completionRateBps / 100).toFixed(2)}%
             {receipt.minCompletionRateBps !== undefined
-              ? ` / ${copy.plan.blueprint.library.min}: ${(receipt.minCompletionRateBps / 100).toFixed(2)}%`
+              ? ` / ${planCopy.blueprint.library.min}: ${(receipt.minCompletionRateBps / 100).toFixed(2)}%`
               : ""}
           </small>
         </>
@@ -2799,24 +2797,23 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "outcomeReviewed" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.score}:{" "}
-            {receipt.score.toLocaleString()}
+            {planCopy.blueprint.library.score}: {receipt.score.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.risk}:{" "}
-            {copy.plan.blueprint.library.outcomeReviewRisks[receipt.risk]}
+            {planCopy.blueprint.library.risk}:{" "}
+            {planCopy.blueprint.library.outcomeReviewRisks[receipt.risk]}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.current}:{" "}
+            {planCopy.blueprint.library.current}:{" "}
             {receipt.replayOutcomesSha256.slice(0, 16)}
             {receipt.baselineSha256
-              ? ` / ${copy.plan.blueprint.library.outcomeBaseline}: ${receipt.baselineSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.outcomeBaseline}: ${receipt.baselineSha256.slice(0, 16)}`
               : ""}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.input}:{" "}
+            {planCopy.blueprint.library.input}:{" "}
             {receipt.inputSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.response}:{" "}
+            {planCopy.blueprint.library.response}:{" "}
             {receipt.responseSha256.slice(0, 16)}
           </small>
           {receipt.concerns.length > 0 ? (
@@ -2829,20 +2826,20 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "selection" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.selectionSet}:{" "}
+            {planCopy.blueprint.library.selectionSet}:{" "}
             {receipt.selectionSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {planCopy.blueprint.library.overrideSet}:{" "}
             {receipt.familyPolicyOverrideSetSha256.slice(0, 16)}
             {receipt.selectedPreviewSha256
-              ? ` / ${copy.plan.blueprint.library.latestPreview}: ${receipt.selectedPreviewSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.latestPreview}: ${receipt.selectedPreviewSha256.slice(0, 16)}`
               : ""}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.recommendationPolicy}:{" "}
+            {planCopy.blueprint.library.recommendationPolicy}:{" "}
             {receipt.selectedRecommendationPolicyTemplate ??
               receipt.recommendationPolicyTemplate}
             {" / "}
@@ -2851,36 +2848,36 @@ function PlanBlueprintLibraryReceiptView({
               receipt.recommendationPolicySha256
             ).slice(0, 16)}
             {receipt.selectedRecommendationPolicySource
-              ? ` / ${copy.plan.blueprint.library.policySource}: ${receipt.selectedRecommendationPolicySource}`
+              ? ` / ${planCopy.blueprint.library.policySource}: ${receipt.selectedRecommendationPolicySource}`
               : ""}
             {receipt.selectedFamilyPolicyOverrideSha256
-              ? ` / ${copy.plan.blueprint.library.override}: ${receipt.selectedFamilyPolicyOverrideSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.override}: ${receipt.selectedFamilyPolicyOverrideSha256.slice(0, 16)}`
               : ""}
           </small>
           <small className="fixture-diagnostics">
             {receipt.selectedRecordId
-              ? `${copy.plan.blueprint.library.selected}: ${shortId(receipt.selectedRecordId)}`
+              ? `${planCopy.blueprint.library.selected}: ${shortId(receipt.selectedRecordId)}`
               : receipt.diagnostics.length > 0
                 ? receipt.diagnostics.join(", ")
-                : copy.plan.blueprint.library.noDiagnostics}
+                : planCopy.blueprint.library.noDiagnostics}
             {receipt.selectedBaselineSha256
-              ? ` / ${copy.plan.blueprint.library.outcomeBaseline}: ${receipt.selectedBaselineSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.outcomeBaseline}: ${receipt.selectedBaselineSha256.slice(0, 16)}`
               : ""}
             {receipt.selectedFamilySha256
-              ? ` / ${copy.plan.blueprint.library.topFamily}: ${receipt.selectedFamilySha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.topFamily}: ${receipt.selectedFamilySha256.slice(0, 16)}`
               : ""}
           </small>
           {receipt.selectedScoreBps !== undefined ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.score}:{" "}
+              {planCopy.blueprint.library.score}:{" "}
               {(receipt.selectedScoreBps / 100).toFixed(2)}%{" / "}
-              {copy.plan.blueprint.library.replays}:{" "}
+              {planCopy.blueprint.library.replays}:{" "}
               {(receipt.selectedReplayCount ?? 0).toLocaleString()}
               {receipt.selectedRecommendationScoreBps !== undefined
-                ? ` / ${copy.plan.blueprint.library.recommendation}: ${(receipt.selectedRecommendationScoreBps / 100).toFixed(2)}%`
+                ? ` / ${planCopy.blueprint.library.recommendation}: ${(receipt.selectedRecommendationScoreBps / 100).toFixed(2)}%`
                 : ""}
               {receipt.selectedFamilyCompletionRateBps !== undefined
-                ? ` / ${copy.plan.blueprint.library.families}: ${(receipt.selectedFamilyCompletionRateBps / 100).toFixed(2)}%`
+                ? ` / ${planCopy.blueprint.library.families}: ${(receipt.selectedFamilyCompletionRateBps / 100).toFixed(2)}%`
                 : ""}
             </small>
           ) : null}
@@ -2889,30 +2886,30 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "portfolioCalibrated" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetSha256.slice(0, 16)}
             {receipt.topFamilySha256
-              ? ` / ${copy.plan.blueprint.library.topFamily}: ${receipt.topFamilySha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.topFamily}: ${receipt.topFamilySha256.slice(0, 16)}`
               : ""}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.active}:{" "}
+            {planCopy.blueprint.library.active}:{" "}
             {receipt.activeCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.archived}:{" "}
+            {planCopy.blueprint.library.archived}:{" "}
             {receipt.archivedCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.reviewed}:{" "}
+            {planCopy.blueprint.library.reviewed}:{" "}
             {receipt.reviewedBaselineCount.toLocaleString()}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.missing}:{" "}
+            {planCopy.blueprint.library.missing}:{" "}
             {receipt.missingBaselineCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.policyFailed}:{" "}
+            {planCopy.blueprint.library.policyFailed}:{" "}
             {receipt.policyFailedCount.toLocaleString()}
             {receipt.topRecordScoreBps !== undefined
-              ? ` / ${copy.plan.blueprint.library.score}: ${(receipt.topRecordScoreBps / 100).toFixed(2)}%`
+              ? ` / ${planCopy.blueprint.library.score}: ${(receipt.topRecordScoreBps / 100).toFixed(2)}%`
               : ""}
           </small>
         </>
@@ -2920,33 +2917,33 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "policyBacktested" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.policySet}:{" "}
+            {planCopy.blueprint.library.policySet}:{" "}
             {receipt.policySetSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.recommendationPolicy}:{" "}
+            {planCopy.blueprint.library.recommendationPolicy}:{" "}
             {receipt.topPolicyTemplate}
             {receipt.topPolicySha256
               ? ` / ${receipt.topPolicySha256.slice(0, 16)}`
               : ""}
             {receipt.topSelectedFamilySha256
-              ? ` / ${copy.plan.blueprint.library.topFamily}: ${receipt.topSelectedFamilySha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.topFamily}: ${receipt.topSelectedFamilySha256.slice(0, 16)}`
               : ""}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.active}:{" "}
+            {planCopy.blueprint.library.active}:{" "}
             {receipt.activeCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.divergent}:{" "}
+            {planCopy.blueprint.library.divergent}:{" "}
             {receipt.divergentSelectionCount.toLocaleString()}
             {receipt.topSelectedRecommendationScoreBps !== undefined
-              ? ` / ${copy.plan.blueprint.library.recommendation}: ${(receipt.topSelectedRecommendationScoreBps / 100).toFixed(2)}%`
+              ? ` / ${planCopy.blueprint.library.recommendation}: ${(receipt.topSelectedRecommendationScoreBps / 100).toFixed(2)}%`
               : ""}
             {" / "}
-            {copy.plan.blueprint.library.average}:{" "}
+            {planCopy.blueprint.library.average}:{" "}
             {(receipt.averageRecommendationScoreBps / 100).toFixed(2)}%
           </small>
         </>
@@ -2954,23 +2951,23 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "policyOverrideApplied" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.topFamily}:{" "}
+            {planCopy.blueprint.library.topFamily}:{" "}
             {receipt.familySha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.recommendationPolicy}:{" "}
+            {planCopy.blueprint.library.recommendationPolicy}:{" "}
             {receipt.recommendationPolicyTemplate}
             {" / "}
             {receipt.recommendationPolicySha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.qualified}:{" "}
+            {planCopy.blueprint.library.qualified}:{" "}
             {receipt.familyOutcomeQualifiedCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.completion}:{" "}
+            {planCopy.blueprint.library.completion}:{" "}
             {(receipt.familyCompletionRateBps / 100).toFixed(2)}%
           </small>
         </>
@@ -2978,60 +2975,59 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "policyOverrideDriftReviewed" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {planCopy.blueprint.library.overrideSet}:{" "}
             {receipt.overrideSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.driftReviewSet}:{" "}
+            {planCopy.blueprint.library.driftReviewSet}:{" "}
             {receipt.reviewSetSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.aligned}:{" "}
+            {planCopy.blueprint.library.aligned}:{" "}
             {receipt.alignedCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.recommendedRetire}:{" "}
+            {planCopy.blueprint.library.recommendedRetire}:{" "}
             {receipt.retireRecommendedCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.missing}:{" "}
+            {planCopy.blueprint.library.missing}:{" "}
             {receipt.missingFamilyCount.toLocaleString()}
           </small>
           {receipt.reviewedFamilySha256 ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.topFamily}:{" "}
+              {planCopy.blueprint.library.topFamily}:{" "}
               {receipt.reviewedFamilySha256.slice(0, 16)}
               {receipt.reviewedStatus ? ` / ${receipt.reviewedStatus}` : ""}
               {receipt.reviewedRecommendation
-                ? ` / ${copy.plan.blueprint.library.recommendation}: ${receipt.reviewedRecommendation}`
+                ? ` / ${planCopy.blueprint.library.recommendation}: ${receipt.reviewedRecommendation}`
                 : ""}
             </small>
           ) : null}
           {receipt.overridePolicyTemplate || receipt.bestPolicyTemplate ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.overridePolicy}:{" "}
+              {planCopy.blueprint.library.overridePolicy}:{" "}
               {receipt.overridePolicyTemplate ??
-                copy.plan.blueprint.library.current}
+                planCopy.blueprint.library.current}
               {" / "}
-              {copy.plan.blueprint.library.bestPolicy}:{" "}
-              {receipt.bestPolicyTemplate ??
-                copy.plan.blueprint.library.current}
+              {planCopy.blueprint.library.bestPolicy}:{" "}
+              {receipt.bestPolicyTemplate ?? planCopy.blueprint.library.current}
             </small>
           ) : null}
           {receipt.overrideSelectedRecordId || receipt.bestSelectedRecordId ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.override}:{" "}
+              {planCopy.blueprint.library.override}:{" "}
               {receipt.overrideSelectedRecordId
                 ? shortId(receipt.overrideSelectedRecordId)
-                : copy.plan.blueprint.library.missing}
+                : planCopy.blueprint.library.missing}
               {receipt.overrideSelectedRecommendationScoreBps !== undefined
                 ? ` / ${(receipt.overrideSelectedRecommendationScoreBps / 100).toFixed(2)}%`
                 : ""}
               {" / "}
-              {copy.plan.blueprint.library.selected}:{" "}
+              {planCopy.blueprint.library.selected}:{" "}
               {receipt.bestSelectedRecordId
                 ? shortId(receipt.bestSelectedRecordId)
-                : copy.plan.blueprint.library.missing}
+                : planCopy.blueprint.library.missing}
               {receipt.bestSelectedRecommendationScoreBps !== undefined
                 ? ` / ${(receipt.bestSelectedRecommendationScoreBps / 100).toFixed(2)}%`
                 : ""}
@@ -3040,36 +3036,36 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {receipt.reviewedDiagnostics.length > 0
               ? receipt.reviewedDiagnostics.join(", ")
-              : copy.plan.blueprint.library.noDiagnostics}
+              : planCopy.blueprint.library.noDiagnostics}
           </small>
         </>
       ) : null}
       {receipt.action === "policyOverrideRetired" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.topFamily}:{" "}
+            {planCopy.blueprint.library.topFamily}:{" "}
             {receipt.familySha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.retired}:{" "}
+            {planCopy.blueprint.library.retired}:{" "}
             {receipt.retiredOverrideSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.recommendationPolicy}:{" "}
+            {planCopy.blueprint.library.recommendationPolicy}:{" "}
             {receipt.retiredRecommendationPolicyTemplate}
             {" / "}
             {receipt.retiredRecommendationPolicySha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {planCopy.blueprint.library.overrideSet}:{" "}
             {receipt.overrideSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.driftReviewSet}:{" "}
+            {planCopy.blueprint.library.driftReviewSet}:{" "}
             {receipt.driftReviewSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.remaining}:{" "}
+            {planCopy.blueprint.library.remaining}:{" "}
             {receipt.remainingOverrideSetSha256.slice(0, 16)}
           </small>
         </>
@@ -3077,32 +3073,32 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "policyOverrideRetirements" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {planCopy.blueprint.library.overrideSet}:{" "}
             {receipt.currentOverrideSetSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.retirementSet}:{" "}
+            {planCopy.blueprint.library.retirementSet}:{" "}
             {receipt.retirementSetSha256.slice(0, 16)}
           </small>
           {receipt.latestFamilySha256 ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.latest}:{" "}
+              {planCopy.blueprint.library.latest}:{" "}
               {receipt.latestFamilySha256.slice(0, 16)}
               {receipt.latestRetiredOverrideSha256
-                ? ` / ${copy.plan.blueprint.library.retired}: ${receipt.latestRetiredOverrideSha256.slice(0, 16)}`
+                ? ` / ${planCopy.blueprint.library.retired}: ${receipt.latestRetiredOverrideSha256.slice(0, 16)}`
                 : ""}
               {receipt.latestRetiredRecommendationPolicyTemplate
-                ? ` / ${copy.plan.blueprint.library.recommendationPolicy}: ${receipt.latestRetiredRecommendationPolicyTemplate}`
+                ? ` / ${planCopy.blueprint.library.recommendationPolicy}: ${receipt.latestRetiredRecommendationPolicyTemplate}`
                 : ""}
             </small>
           ) : null}
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.latest}:{" "}
-            {receipt.latestRetiredAt ?? copy.plan.blueprint.library.missing}
+            {planCopy.blueprint.library.latest}:{" "}
+            {receipt.latestRetiredAt ?? planCopy.blueprint.library.missing}
             {receipt.latestRemainingOverrideSetSha256
-              ? ` / ${copy.plan.blueprint.library.remaining}: ${receipt.latestRemainingOverrideSetSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.remaining}: ${receipt.latestRemainingOverrideSetSha256.slice(0, 16)}`
               : ""}
           </small>
         </>
@@ -3112,48 +3108,48 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {receipt.diagnostics.length > 0
               ? receipt.diagnostics.join(", ")
-              : copy.plan.blueprint.library.noDiagnostics}
+              : planCopy.blueprint.library.noDiagnostics}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.declared}:{" "}
+            {planCopy.blueprint.library.declared}:{" "}
             {receipt.declaredContentSha256?.slice(0, 16) ?? "missing"}
             {receipt.observedContentSha256
-              ? ` / ${copy.plan.blueprint.library.observed}: ${receipt.observedContentSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.observed}: ${receipt.observedContentSha256.slice(0, 16)}`
               : ""}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.declaredPortfolioSetSha256?.slice(0, 16) ?? "missing"}
             {" / "}
-            {copy.plan.blueprint.library.observed}:{" "}
+            {planCopy.blueprint.library.observed}:{" "}
             {receipt.observedPortfolioSetSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {planCopy.blueprint.library.overrideSet}:{" "}
             {receipt.declaredCurrentOverrideSetSha256?.slice(0, 16) ??
               "missing"}
             {" / "}
-            {copy.plan.blueprint.library.observed}:{" "}
+            {planCopy.blueprint.library.observed}:{" "}
             {receipt.observedCurrentOverrideSetSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.retirementSet}:{" "}
+            {planCopy.blueprint.library.retirementSet}:{" "}
             {receipt.declaredRetirementSetSha256?.slice(0, 16) ?? "missing"}
             {receipt.recomputedRetirementSetSha256
-              ? ` / ${copy.plan.blueprint.library.actual}: ${receipt.recomputedRetirementSetSha256.slice(0, 16)}`
+              ? ` / ${planCopy.blueprint.library.actual}: ${receipt.recomputedRetirementSetSha256.slice(0, 16)}`
               : ""}
             {" / "}
-            {copy.plan.blueprint.library.observed}:{" "}
+            {planCopy.blueprint.library.observed}:{" "}
             {receipt.observedRetirementSetSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.retired}:{" "}
+            {planCopy.blueprint.library.retired}:{" "}
             {receipt.retirementCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.observed}:{" "}
+            {planCopy.blueprint.library.observed}:{" "}
             {receipt.observedRetirementCount.toLocaleString()}
             {receipt.latestRetiredAt || receipt.observedLatestRetiredAt
-              ? ` / ${copy.plan.blueprint.library.latest}: ${receipt.latestRetiredAt ?? copy.plan.blueprint.library.missing} / ${copy.plan.blueprint.library.observed}: ${receipt.observedLatestRetiredAt ?? copy.plan.blueprint.library.missing}`
+              ? ` / ${planCopy.blueprint.library.latest}: ${receipt.latestRetiredAt ?? planCopy.blueprint.library.missing} / ${planCopy.blueprint.library.observed}: ${receipt.observedLatestRetiredAt ?? planCopy.blueprint.library.missing}`
               : ""}
           </small>
         </>
@@ -3163,46 +3159,46 @@ function PlanBlueprintLibraryReceiptView({
           <small className="fixture-diagnostics">
             {receipt.diagnostics.length > 0
               ? receipt.diagnostics.join(", ")
-              : copy.plan.blueprint.library.noDiagnostics}
+              : planCopy.blueprint.library.noDiagnostics}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.histories}:{" "}
+            {planCopy.blueprint.library.histories}:{" "}
             {receipt.historyCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.valid}:{" "}
+            {planCopy.blueprint.library.valid}:{" "}
             {receipt.validHistoryCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.invalid}:{" "}
+            {planCopy.blueprint.library.invalid}:{" "}
             {receipt.invalidHistoryCount.toLocaleString()}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.retirementSet}:{" "}
+            {planCopy.blueprint.library.retirementSet}:{" "}
             {receipt.retirementSetBundleSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.historySet}:{" "}
+            {planCopy.blueprint.library.historySet}:{" "}
             {receipt.historySetSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.portfolioSet}:{" "}
+            {planCopy.blueprint.library.portfolioSet}:{" "}
             {receipt.portfolioSetBundleSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.overrideSet}:{" "}
+            {planCopy.blueprint.library.overrideSet}:{" "}
             {receipt.currentOverrideSetBundleSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.divergent}:{" "}
+            {planCopy.blueprint.library.divergent}:{" "}
             {receipt.distinctRetirementSetCount.toLocaleString()}{" "}
-            {copy.plan.blueprint.library.retirementSet}
+            {planCopy.blueprint.library.retirementSet}
             {" / "}
             {receipt.distinctPortfolioSetCount.toLocaleString()}{" "}
-            {copy.plan.blueprint.library.portfolioSet}
+            {planCopy.blueprint.library.portfolioSet}
             {" / "}
             {receipt.distinctCurrentOverrideSetCount.toLocaleString()}{" "}
-            {copy.plan.blueprint.library.overrideSet}
+            {planCopy.blueprint.library.overrideSet}
           </small>
           {receipt.highlightedHistoryIndex !== undefined ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.highlighted}:{" "}
+              {planCopy.blueprint.library.highlighted}:{" "}
               {receipt.highlightedHistoryIndex.toLocaleString()}
               {receipt.highlightedHistoryStatus
                 ? ` / ${receipt.highlightedHistoryStatus}`
@@ -3211,7 +3207,7 @@ function PlanBlueprintLibraryReceiptView({
                 ? ` / ${receipt.highlightedHistoryContentSha256.slice(0, 16)}`
                 : ""}
               {receipt.highlightedRetirementSetSha256
-                ? ` / ${copy.plan.blueprint.library.retirementSet}: ${receipt.highlightedRetirementSetSha256.slice(0, 16)}`
+                ? ` / ${planCopy.blueprint.library.retirementSet}: ${receipt.highlightedRetirementSetSha256.slice(0, 16)}`
                 : ""}
             </small>
           ) : null}
@@ -3225,33 +3221,32 @@ function PlanBlueprintLibraryReceiptView({
       {receipt.action === "policyOverrideRetirementProofBundleSigned" ? (
         <>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.signed}: {receipt.signedAt}
+            {planCopy.blueprint.library.signed}: {receipt.signedAt}
             {" / "}
-            {copy.plan.blueprint.library.signer}:{" "}
-            {receipt.keyId.slice(0, 16)}
+            {planCopy.blueprint.library.signer}: {receipt.keyId.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.receipt}:{" "}
+            {planCopy.blueprint.library.receipt}:{" "}
             {receipt.receiptContentSha256.slice(0, 16)}
             {" / "}
-            {copy.plan.blueprint.library.artifact}:{" "}
+            {planCopy.blueprint.library.artifact}:{" "}
             {receipt.receiptArtifactSha256.slice(0, 16)}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.histories}:{" "}
+            {planCopy.blueprint.library.histories}:{" "}
             {receipt.historyCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.valid}:{" "}
+            {planCopy.blueprint.library.valid}:{" "}
             {receipt.validHistoryCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.invalid}:{" "}
+            {planCopy.blueprint.library.invalid}:{" "}
             {receipt.invalidHistoryCount.toLocaleString()}
           </small>
           <small className="fixture-diagnostics">
-            {copy.plan.blueprint.library.historySet}:{" "}
+            {planCopy.blueprint.library.historySet}:{" "}
             {receipt.distinctHistoryCount.toLocaleString()}
             {" / "}
-            {copy.plan.blueprint.library.retirementSet}:{" "}
+            {planCopy.blueprint.library.retirementSet}:{" "}
             {receipt.distinctRetirementSetCount.toLocaleString()}
           </small>
         </>
@@ -3263,7 +3258,7 @@ function PlanBlueprintLibraryReceiptView({
         <>
           {receipt.replayEventSha256 ? (
             <small className="fixture-diagnostics">
-              {copy.plan.blueprint.library.eventAnchor}:{" "}
+              {planCopy.blueprint.library.eventAnchor}:{" "}
               {receipt.replayEventSha256.slice(0, 16)}
               {receipt.replayEventId
                 ? ` / ${shortId(receipt.replayEventId)}`
@@ -3273,10 +3268,10 @@ function PlanBlueprintLibraryReceiptView({
           {receipt.replayEventVerificationStatus ? (
             <small className="fixture-diagnostics">
               {receipt.replayEventVerificationStatus === "valid"
-                ? copy.plan.blueprint.library.eventVerified
-                : copy.plan.blueprint.library.eventInvalid}
+                ? planCopy.blueprint.library.eventVerified
+                : planCopy.blueprint.library.eventInvalid}
               {receipt.replayEventVerificationSha256
-                ? ` / ${copy.plan.blueprint.library.eventVerification}: ${receipt.replayEventVerificationSha256.slice(0, 16)}`
+                ? ` / ${planCopy.blueprint.library.eventVerification}: ${receipt.replayEventVerificationSha256.slice(0, 16)}`
                 : ""}
             </small>
           ) : null}
@@ -3284,7 +3279,7 @@ function PlanBlueprintLibraryReceiptView({
             <small className="fixture-diagnostics">
               {receipt.replayEventDiagnostics.length > 0
                 ? receipt.replayEventDiagnostics.join(", ")
-                : copy.plan.blueprint.library.noDiagnostics}
+                : planCopy.blueprint.library.noDiagnostics}
             </small>
           ) : null}
         </>

@@ -1783,3 +1783,9 @@ write:management-openapi-compatibility` now emits
   completion.
 - Production static serving and a Preact compatibility build under the 150 kB
   main-entry budget.
+
+### Changed
+
+- Recovered Web main-entry budget by moving the large Plan Workbench copy block
+  into the lazy Plan chunk. The checked Web dist audit now reports the main
+  entry at 140.15 KiB while keeping Plan tests and release receipts current.
