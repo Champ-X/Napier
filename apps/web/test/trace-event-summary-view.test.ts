@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   traceEventSummaryView,
+  traceSummaryCoverageDeltaReceipt,
   traceSummaryCoverageDeltaView,
+  traceSummaryCoverageReceipt,
   traceSummaryCoverageView,
 } from "../src/trace-event-summary-view";
 
@@ -73,6 +75,38 @@ describe("Trace event summary view", () => {
     });
   });
 
+  it("hashes coverage receipts deterministically", async () => {
+    const coverage = traceSummaryCoverageView([
+      traceEvent("message.user", "message", {
+        role: "user",
+        textBytes: 24,
+      }),
+      traceEvent("alpha.audit", "system", {
+        status: "TOP_SECRET_ALPHA",
+      }),
+    ]);
+    const receipt = await traceSummaryCoverageReceipt(coverage);
+    const repeated = await traceSummaryCoverageReceipt(coverage);
+    const drifted = await traceSummaryCoverageReceipt({
+      ...coverage,
+      generic: coverage.generic + 1,
+    });
+
+    expect(receipt).toEqual({
+      kind: "napier.trace-summary-coverage",
+      schemaVersion: 1,
+      total: 2,
+      bounded: 1,
+      fixed: 0,
+      category: 0,
+      generic: 1,
+      genericEventTypes: ["alpha.audit"],
+      contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+    expect(repeated.contentSha256).toBe(receipt.contentSha256);
+    expect(drifted.contentSha256).not.toBe(receipt.contentSha256);
+  });
+
   it("compares coverage between baseline and candidate runs", () => {
     const delta = traceSummaryCoverageDeltaView(
       [
@@ -126,6 +160,62 @@ describe("Trace event summary view", () => {
       ],
       genericEventTypes: ["alpha.audit", "zeta.audit"],
     });
+  });
+
+  it("hashes coverage delta receipts deterministically", async () => {
+    const delta = traceSummaryCoverageDeltaView(
+      [
+        traceEvent("message.user", "message", {
+          role: "user",
+          textBytes: 12,
+        }),
+      ],
+      [
+        traceEvent("message.user", "message", {
+          role: "user",
+          textBytes: 12,
+        }),
+        traceEvent("alpha.audit", "system", {
+          summary: "TOP_SECRET_ALPHA",
+        }),
+      ],
+    );
+
+    const receipt = await traceSummaryCoverageDeltaReceipt(delta);
+    const repeated = await traceSummaryCoverageDeltaReceipt(delta);
+
+    expect(receipt).toEqual({
+      kind: "napier.trace-summary-coverage-delta",
+      schemaVersion: 1,
+      status: "regressed",
+      left: {
+        total: 1,
+        bounded: 1,
+        fixed: 0,
+        category: 0,
+        generic: 0,
+        genericEventTypes: [],
+      },
+      right: {
+        total: 2,
+        bounded: 1,
+        fixed: 0,
+        category: 0,
+        generic: 1,
+        genericEventTypes: ["alpha.audit"],
+      },
+      boundedDelta: 0,
+      fixedDelta: 0,
+      categoryDelta: 0,
+      genericDelta: 1,
+      diagnostics: [
+        "candidate_generic_summary_fallback_increased",
+        "candidate_generic_summary_fallback_present",
+      ],
+      genericEventTypes: ["alpha.audit"],
+      contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+    expect(repeated.contentSha256).toBe(receipt.contentSha256);
   });
 });
 

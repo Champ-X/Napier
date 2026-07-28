@@ -171,6 +171,9 @@ All notable changes to Napier are recorded here.
 - Run Lab comparisons now derive the same Trace summary-boundary coverage for
   baseline and candidate Runs, highlighting generic fallback deltas and the
   candidate event types still using generic summaries.
+- Trace summary coverage and Run Lab coverage deltas now emit stable
+  `contentSha256` receipts in the Web projection, so UI-visible privacy posture
+  can be copied, compared, and regression-reviewed without raw event payloads.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

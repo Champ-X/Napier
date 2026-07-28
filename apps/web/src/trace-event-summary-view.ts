@@ -25,6 +25,7 @@ import { planEventTraceSummary } from "./plan-event-view";
 import { receiptEventTraceSummary } from "./receipt-event-view";
 import { runEventTraceSummary } from "./run-event-view";
 import { scheduleEventTraceSummary } from "./schedule-event-view";
+import { sha256Canonical } from "./stable-digest";
 import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import { toolEventTraceSummary } from "./tool-event-view";
@@ -64,6 +65,33 @@ export interface TraceSummaryCoverageDeltaView {
   genericDelta: number;
   diagnostics: string[];
   genericEventTypes: string[];
+}
+
+export interface TraceSummaryCoverageReceipt {
+  kind: "napier.trace-summary-coverage";
+  schemaVersion: 1;
+  total: number;
+  bounded: number;
+  fixed: number;
+  category: number;
+  generic: number;
+  genericEventTypes: string[];
+  contentSha256: string;
+}
+
+export interface TraceSummaryCoverageDeltaReceipt {
+  kind: "napier.trace-summary-coverage-delta";
+  schemaVersion: 1;
+  status: TraceSummaryCoverageDeltaStatus;
+  left: Omit<TraceSummaryCoverageReceipt, "kind" | "schemaVersion" | "contentSha256">;
+  right: Omit<TraceSummaryCoverageReceipt, "kind" | "schemaVersion" | "contentSha256">;
+  boundedDelta: number;
+  fixedDelta: number;
+  categoryDelta: number;
+  genericDelta: number;
+  diagnostics: string[];
+  genericEventTypes: string[];
+  contentSha256: string;
 }
 
 export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
@@ -210,6 +238,72 @@ export function traceSummaryCoverageDeltaView(
     genericDelta,
     diagnostics,
     genericEventTypes: right.genericEventTypes,
+  };
+}
+
+export async function traceSummaryCoverageReceipt(
+  coverage: TraceSummaryCoverageView,
+): Promise<TraceSummaryCoverageReceipt> {
+  const content = traceSummaryCoverageReceiptContent(coverage);
+  return {
+    ...content,
+    contentSha256: await sha256Canonical(content),
+  };
+}
+
+export async function traceSummaryCoverageDeltaReceipt(
+  delta: TraceSummaryCoverageDeltaView,
+): Promise<TraceSummaryCoverageDeltaReceipt> {
+  const content = traceSummaryCoverageDeltaReceiptContent(delta);
+  return {
+    ...content,
+    contentSha256: await sha256Canonical(content),
+  };
+}
+
+function traceSummaryCoverageReceiptContent(
+  coverage: TraceSummaryCoverageView,
+): Omit<TraceSummaryCoverageReceipt, "contentSha256"> {
+  return {
+    kind: "napier.trace-summary-coverage",
+    schemaVersion: 1,
+    total: coverage.total,
+    bounded: coverage.bounded,
+    fixed: coverage.fixed,
+    category: coverage.category,
+    generic: coverage.generic,
+    genericEventTypes: [...coverage.genericEventTypes],
+  };
+}
+
+function traceSummaryCoverageDeltaReceiptContent(
+  delta: TraceSummaryCoverageDeltaView,
+): Omit<TraceSummaryCoverageDeltaReceipt, "contentSha256"> {
+  return {
+    kind: "napier.trace-summary-coverage-delta",
+    schemaVersion: 1,
+    status: delta.status,
+    left: traceSummaryCoverageReceiptPayload(delta.left),
+    right: traceSummaryCoverageReceiptPayload(delta.right),
+    boundedDelta: delta.boundedDelta,
+    fixedDelta: delta.fixedDelta,
+    categoryDelta: delta.categoryDelta,
+    genericDelta: delta.genericDelta,
+    diagnostics: [...delta.diagnostics],
+    genericEventTypes: [...delta.genericEventTypes],
+  };
+}
+
+function traceSummaryCoverageReceiptPayload(
+  coverage: TraceSummaryCoverageView,
+): Omit<TraceSummaryCoverageReceipt, "kind" | "schemaVersion" | "contentSha256"> {
+  return {
+    total: coverage.total,
+    bounded: coverage.bounded,
+    fixed: coverage.fixed,
+    category: coverage.category,
+    generic: coverage.generic,
+    genericEventTypes: [...coverage.genericEventTypes],
   };
 }
 

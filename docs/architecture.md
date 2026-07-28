@@ -2372,6 +2372,11 @@ sheet shows baseline and candidate generic fallback counts, bounded-summary
 deltas, and diagnostics when the candidate introduces or retains generic
 event-list summaries, so privacy posture can be reviewed alongside context
 coverage, configuration drift, and output changes.
+Both the single-Run coverage projection and the Run Lab delta projection are
+canonicalized and hashed into Web-side `contentSha256` receipts. Those receipts
+cover only summary source counts, generic event-type sets, deltas, diagnostics,
+and status metadata, providing copyable proof of the UI privacy posture without
+including raw Ledger payload fields.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

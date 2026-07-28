@@ -48,7 +48,9 @@ import {
 } from "./tool-loop-guard-view";
 import {
   traceEventSummaryView,
+  traceSummaryCoverageReceipt,
   traceSummaryCoverageView,
+  type TraceSummaryCoverageReceipt,
   type TraceSummaryCoverageView,
 } from "./trace-event-summary-view";
 import type {
@@ -90,6 +92,10 @@ export default function TracePanel({
   const contextEnvelopes = modelContextEnvelopeViews(events);
   const loopGuardTriggers = toolLoopGuardTriggerViews(events);
   const summaryCoverage = traceSummaryCoverageView(events);
+  const summaryCoverageGenericTypesKey =
+    summaryCoverage.genericEventTypes.join("\n");
+  const [summaryCoverageReceipt, setSummaryCoverageReceipt] =
+    useState<TraceSummaryCoverageReceipt>();
 
   useEffect(() => {
     if (exportRunId && !runs.some((run) => run.id === exportRunId)) {
@@ -121,6 +127,29 @@ export default function TracePanel({
       active = false;
     };
   }, [threadId, milestoneEventSeq]);
+
+  useEffect(() => {
+    let active = true;
+    setSummaryCoverageReceipt(undefined);
+    if (summaryCoverage.total === 0) {
+      return () => {
+        active = false;
+      };
+    }
+    void traceSummaryCoverageReceipt(summaryCoverage).then((receipt) => {
+      if (active) setSummaryCoverageReceipt(receipt);
+    });
+    return () => {
+      active = false;
+    };
+  }, [
+    summaryCoverage.total,
+    summaryCoverage.bounded,
+    summaryCoverage.fixed,
+    summaryCoverage.category,
+    summaryCoverage.generic,
+    summaryCoverageGenericTypesKey,
+  ]);
 
   return (
     <section className="panel-section" aria-labelledby="trace-title">
@@ -258,7 +287,10 @@ export default function TracePanel({
           {copy.trace.otel.safety}
         </p>
       </section>
-      <TraceSummaryCoverageCard coverage={summaryCoverage} />
+      <TraceSummaryCoverageCard
+        coverage={summaryCoverage}
+        receipt={summaryCoverageReceipt}
+      />
       <AgentMilestoneLedger
         milestones={milestones}
         unavailable={milestonesUnavailable}
@@ -281,8 +313,10 @@ export default function TracePanel({
 
 function TraceSummaryCoverageCard({
   coverage,
+  receipt,
 }: {
   coverage: TraceSummaryCoverageView;
+  receipt: TraceSummaryCoverageReceipt | undefined;
 }) {
   if (coverage.total === 0) return null;
   return (
@@ -323,6 +357,11 @@ function TraceSummaryCoverageCard({
           ? `${copy.trace.summary.genericTypes}: ${coverage.genericEventTypes.join(", ")}`
           : copy.trace.summary.noGeneric}
       </p>
+      {receipt ? (
+        <code title={receipt.contentSha256}>
+          {copy.trace.summary.receipt} {receipt.contentSha256.slice(0, 12)}
+        </code>
+      ) : null}
     </section>
   );
 }

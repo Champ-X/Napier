@@ -7282,10 +7282,18 @@ button:disabled {
   font-weight: 600;
 }
 
-.trace-summary-coverage header code {
+.trace-summary-coverage header code,
+.trace-summary-coverage > code {
   font-family: var(--mono);
   font-size: 9px;
   color: #315d5c;
+}
+
+.trace-summary-coverage > code {
+  display: block;
+  margin-top: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .trace-summary-coverage dl {

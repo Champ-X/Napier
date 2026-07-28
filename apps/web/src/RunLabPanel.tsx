@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Activity,
   BookOpen,
@@ -24,7 +24,9 @@ import type {
 } from "./use-workspace-view-model";
 import { importProvenanceReceiptView } from "./use-workspace-view-model";
 import {
+  traceSummaryCoverageDeltaReceipt,
   traceSummaryCoverageDeltaView,
+  type TraceSummaryCoverageDeltaReceipt,
   type TraceSummaryCoverageDeltaStatus,
 } from "./trace-event-summary-view";
 
@@ -100,6 +102,46 @@ export default function RunLabPanel({
         comparison.right.events,
       )
     : undefined;
+  const [traceSummaryReceipt, setTraceSummaryReceipt] =
+    useState<TraceSummaryCoverageDeltaReceipt>();
+
+  useEffect(() => {
+    let active = true;
+    setTraceSummaryReceipt(undefined);
+    if (!traceSummaryCoverageDelta) {
+      return () => {
+        active = false;
+      };
+    }
+    void traceSummaryCoverageDeltaReceipt(traceSummaryCoverageDelta).then(
+      (receipt) => {
+        if (active) setTraceSummaryReceipt(receipt);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [
+    traceSummaryCoverageDelta?.status,
+    traceSummaryCoverageDelta?.left.total,
+    traceSummaryCoverageDelta?.left.bounded,
+    traceSummaryCoverageDelta?.left.fixed,
+    traceSummaryCoverageDelta?.left.category,
+    traceSummaryCoverageDelta?.left.generic,
+    traceSummaryCoverageDelta?.left.genericEventTypes.join("\n"),
+    traceSummaryCoverageDelta?.right.total,
+    traceSummaryCoverageDelta?.right.bounded,
+    traceSummaryCoverageDelta?.right.fixed,
+    traceSummaryCoverageDelta?.right.category,
+    traceSummaryCoverageDelta?.right.generic,
+    traceSummaryCoverageDelta?.right.genericEventTypes.join("\n"),
+    traceSummaryCoverageDelta?.boundedDelta,
+    traceSummaryCoverageDelta?.fixedDelta,
+    traceSummaryCoverageDelta?.categoryDelta,
+    traceSummaryCoverageDelta?.genericDelta,
+    traceSummaryCoverageDelta?.diagnostics.join("\n"),
+    traceSummaryCoverageDelta?.genericEventTypes.join("\n"),
+  ]);
 
   return (
     <section className="panel-section run-lab" aria-labelledby="run-lab-title">
@@ -338,6 +380,12 @@ export default function RunLabPanel({
                   {copy.lab.traceSummaryBoundedDelta}{" "}
                   {formatSignedNumber(traceSummaryCoverageDelta.boundedDelta)}
                 </code>
+                {traceSummaryReceipt ? (
+                  <code title={traceSummaryReceipt.contentSha256}>
+                    {copy.lab.traceSummaryReceipt}{" "}
+                    {traceSummaryReceipt.contentSha256.slice(0, 12)}
+                  </code>
+                ) : null}
               </div>
               {traceSummaryCoverageDelta.diagnostics.length > 0 ? (
                 <>

@@ -73,6 +73,7 @@ export const copy = {
       title: "Trace summary coverage",
       genericTypes: "Generic fallback",
       noGeneric: "No generic fallback in this event set.",
+      receipt: "Receipt",
       sources: {
         bounded: "Bounded",
         fixed: "Fixed",
@@ -126,6 +127,7 @@ export const copy = {
     traceSummaryGeneric: "Generic",
     traceSummaryGenericDelta: "Generic delta",
     traceSummaryBoundedDelta: "Bounded delta",
+    traceSummaryReceipt: "Summary receipt",
     cost: "Cost",
     noDelta: "No event-type differences.",
     configuration: "Configuration drift",
