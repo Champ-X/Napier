@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { createId } from "../src/ids.js";
+import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import {
   createOpenTelemetryTraceArtifact,
   hashOpenTelemetryTraceArtifact,
@@ -223,6 +224,17 @@ describe("OpenTelemetry trace export", () => {
         guidanceSha256: "a".repeat(64),
       },
     ];
+    const advisorEnvelope = createModelContextEnvelopeReceipt({
+      turnIndex: 0,
+      systemPrompt: "TOP_SECRET_ADVISOR_SYSTEM_PROMPT",
+      messages: [
+        {
+          role: "user",
+          content: "TOP_SECRET_ADVISOR_REVIEW_INPUT",
+        },
+      ],
+      tools: [],
+    });
     const advisorReviewContent = {
       kind: "napier.independent-model-advisor-review" as const,
       schemaVersion: 1 as const,
@@ -252,6 +264,7 @@ describe("OpenTelemetry trace export", () => {
         cacheWriteTokens: 0,
         costUsd: 0.002,
       },
+      modelContextEnvelope: advisorEnvelope,
     };
     await store.appendEvent({
       threadId: thread.id,
@@ -468,6 +481,12 @@ describe("OpenTelemetry trace export", () => {
     expect(
       attributeValue(advisorEvent.attributes, "napier.event.payload.score"),
     ).toBe(61);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.model_context_envelope_sha256",
+      ),
+    ).toBe(advisorEnvelope.contentSha256);
     const evaluationEvent = traceSpans
       .flatMap((span) => span.events)
       .find((event) => event.name === "evaluation.completed")!;

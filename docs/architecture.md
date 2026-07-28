@@ -409,7 +409,8 @@ cannot authorize different candidates. Reviewer usage consumes the frozen Run
 budget and is included exactly once in final settlement. Portable fixtures
 recompute every known review receipt and fail closed on malformed payloads;
 OTLP admits reviewer/candidate model identities, verdict, score, risk, usage,
-and hashes while dropping nested issue data and all content prose.
+the live review request envelope hash, and hashes while dropping nested issue
+data and all content prose.
 
 ### Frozen Prompt Variables
 

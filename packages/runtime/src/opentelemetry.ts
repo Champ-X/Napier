@@ -979,6 +979,17 @@ function safePayloadAttributes(payload: JsonValue): {
       }
       continue;
     }
+    if (key === "modelContextEnvelope" && isRecord(value)) {
+      const contentSha256 = value["contentSha256"];
+      if (
+        typeof contentSha256 === "string" &&
+        SHA256_PATTERN.test(contentSha256)
+      ) {
+        values["napier.event.payload.model_context_envelope_sha256"] =
+          contentSha256;
+        continue;
+      }
+    }
     const normalizedKey = `napier.event.payload.${camelToSnake(key)}`;
     if (
       SAFE_MODEL_PAYLOAD_KEYS.has(key) &&
