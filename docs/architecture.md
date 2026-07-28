@@ -2335,6 +2335,7 @@ export Thread
 verify fixture (maximum 10 MiB, no mutation)
   -> strictly parse the verify wrapper: only bundle is accepted
   -> run the same schema, reference, event-stream, and content-hash validation
+  -> recompute Independent Advisor evidenceSummary from predecessor events
   -> return valid/invalid plus hash-only diagnostics and resource counts
   -> mirror no-store response content hash, verification status,
      diagnostics hash, bundle hash, event-stream hash, and counts

@@ -200,7 +200,9 @@ export function buildIndependentModelAdvisorPrompt(input: {
   runEvents: RunEvent[];
 }): IndependentModelAdvisorPrompt {
   const evidence = createEvidence(input.runEvents);
-  const evidenceSummary = createEvidenceSummary(evidence);
+  const evidenceSummary = createIndependentModelAdvisorEvidenceSummary(
+    input.runEvents,
+  );
   const evidenceSha256 = sha256(canonicalJson(evidence));
   const criteriaSha256 = sha256(canonicalJson(REVIEW_CRITERIA));
   const reviewSchemaSha256 = sha256(canonicalJson(REVIEW_SCHEMA));
@@ -498,9 +500,10 @@ function createEvidence(events: RunEvent[]) {
   };
 }
 
-function createEvidenceSummary(
-  evidence: ReturnType<typeof createEvidence>,
+export function createIndependentModelAdvisorEvidenceSummary(
+  events: RunEvent[],
 ): IndependentModelAdvisorEvidenceSummary {
+  const evidence = createEvidence(events);
   return {
     eventCount: evidence.eventCount,
     toolCompletedNameCount: evidence.toolCompletedNames.length,

@@ -1382,6 +1382,10 @@ counts, ledger-backed and embedded Model Context Envelope counts, and
 first/last event sequence headers for CI archive checks. Imported ThreadDetail
 responses also mirror the source fixture hashes/counts as no-store provenance
 headers.
+Verification also recomputes Independent Advisor `evidenceSummary` receipts
+from the review's bound predecessor events, so a replay bundle cannot make
+stale verification evidence look current by only recalculating the review and
+bundle hashes.
 Per-Run replay snapshots are self-contained: they carry the Run, ordered events,
 Subagent task evidence, a stable `contentSha256`, and an ordered
 `eventStreamSha256`. `POST /api/threads/:threadId/runs/:runId/replay/verify`

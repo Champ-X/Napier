@@ -280,6 +280,9 @@ All notable changes to Napier are recorded here.
 - OTLP export now projects Advisor verification freshness summaries as
   metadata-only event attributes, preserving candidate text, prompts, guidance,
   and diagnostic prose redaction.
+- Thread replay bundle validation now recomputes Independent Advisor
+  `evidenceSummary` from predecessor Run events, so a forged current/stale
+  summary fails even if review and bundle hashes are recalculated.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

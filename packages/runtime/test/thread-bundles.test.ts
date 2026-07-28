@@ -543,6 +543,62 @@ describe("thread replay bundles", () => {
       embeddedModelContextEnvelopeCount: 0,
     });
 
+    const staleEvidenceSummaryBundle = structuredClone(bundle);
+    const staleSummaryEvent = staleEvidenceSummaryBundle.events.find(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    )!;
+    if (
+      !staleSummaryEvent.payload ||
+      Array.isArray(staleSummaryEvent.payload) ||
+      typeof staleSummaryEvent.payload !== "object" ||
+      !staleSummaryEvent.payload["evidenceSummary"] ||
+      Array.isArray(staleSummaryEvent.payload["evidenceSummary"]) ||
+      typeof staleSummaryEvent.payload["evidenceSummary"] !== "object"
+    ) {
+      throw new Error("Bundle review evidence summary fixture is missing");
+    }
+    staleSummaryEvent.payload = {
+      ...staleSummaryEvent.payload,
+      evidenceSummary: {
+        ...staleSummaryEvent.payload["evidenceSummary"],
+        verificationToolCompleted: true,
+        verificationToolPassed: true,
+        latestPassedVerificationSeq: 7,
+      },
+    };
+    {
+      const { contentSha256: _reviewContentSha256, ...reviewContent } =
+        staleSummaryEvent.payload;
+      staleSummaryEvent.payload = {
+        ...reviewContent,
+        contentSha256: sha256(canonicalJson(reviewContent)),
+      };
+    }
+    staleEvidenceSummaryBundle.eventStreamSha256 = hashThreadEventStream(
+      staleEvidenceSummaryBundle.events,
+    );
+    const {
+      generatedAt: _staleSummaryGeneratedAt,
+      contentSha256: _staleSummaryContentSha256,
+      ...staleSummaryContent
+    } = staleEvidenceSummaryBundle;
+    staleEvidenceSummaryBundle.contentSha256 = sha256(
+      canonicalJson(staleSummaryContent),
+    );
+    expect(() =>
+      validateThreadReplayBundle(staleEvidenceSummaryBundle),
+    ).toThrow("independent Model Advisor evidence summary is invalid");
+    expect(verifyThreadReplayBundle(staleEvidenceSummaryBundle)).toEqual({
+      status: "invalid",
+      diagnostics: ["invalid_shape"],
+      eventCount: 0,
+      runCount: 0,
+      planCount: 0,
+      evaluationCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
+    });
+
     const imported = await store.importThreadReplayBundle(bundle);
     const importedEvent = (await store.listEvents(imported.thread.id)).find(
       (event) => event.type === "model.advisor.independent.reviewed",
