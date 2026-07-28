@@ -60,6 +60,7 @@ export const copy = {
       noDiagnostics: "No diagnostics",
       spans: "Spans",
       events: "Events",
+      eventAnchor: "Event anchor",
       safety:
         "Metadata-only export excludes prompts, completions, reasoning, tool I/O, notes, evidence text, and credential locators.",
       errors: {

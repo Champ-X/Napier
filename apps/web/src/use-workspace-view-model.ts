@@ -104,6 +104,22 @@ export type InspectorTab =
   | "automations"
   | "context";
 
+const SHA256 = /^[a-f0-9]{64}$/;
+
+function eventAnchorSetSha256FromArtifact(
+  artifact: OpenTelemetryTraceArtifact,
+): string | undefined {
+  const root = artifact.otlp.resourceSpans[0]?.scopeSpans[0]?.spans.find(
+    (span) => span.parentSpanId === undefined,
+  );
+  const value = root?.attributes.find(
+    (attribute) => attribute.key === "napier.event_anchor_set.sha256",
+  )?.value;
+  return value && "stringValue" in value && SHA256.test(value.stringValue)
+    ? value.stringValue
+    : undefined;
+}
+
 export interface MessageView {
   id: string;
   seq: number;
@@ -153,6 +169,7 @@ export interface OpenTelemetryTraceReceipt {
   scope: "thread" | "run";
   traceId: string;
   contentSha256: string;
+  eventAnchorSetSha256?: string;
   eventCount: number;
   spanCount: number;
 }
@@ -163,6 +180,7 @@ export interface OpenTelemetryTraceVerificationReceipt {
   traceId?: string;
   contentSha256?: string;
   eventStreamSha256?: string;
+  eventAnchorSetSha256?: string;
   eventCount: number;
   spanCount: number;
 }
@@ -1761,10 +1779,13 @@ export function useWorkspaceViewModel() {
           artifact,
           `napier-otel-${runId ?? detail.thread.id}-${artifact.contentSha256.slice(0, 12)}.json`,
         );
+        const eventAnchorSetSha256 =
+          eventAnchorSetSha256FromArtifact(artifact);
         setTraceExportReceipt({
           scope: runId ? "run" : "thread",
           traceId: artifact.traceId,
           contentSha256: artifact.contentSha256,
+          ...(eventAnchorSetSha256 ? { eventAnchorSetSha256 } : {}),
           eventCount: artifact.eventRange.eventCount,
           spanCount: artifact.spanCount,
         });
@@ -1809,6 +1830,9 @@ export function useWorkspaceViewModel() {
             : {}),
           ...(verification.eventStreamSha256
             ? { eventStreamSha256: verification.eventStreamSha256 }
+            : {}),
+          ...(verification.eventAnchorSetSha256
+            ? { eventAnchorSetSha256: verification.eventAnchorSetSha256 }
             : {}),
           eventCount: verification.eventCount,
           spanCount: verification.spanCount,

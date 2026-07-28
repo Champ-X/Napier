@@ -434,6 +434,10 @@ describe("OpenTelemetry trace export", () => {
       traceId: first.traceId,
       contentSha256: first.contentSha256,
       eventStreamSha256: first.eventRange.eventStreamSha256,
+      eventAnchorSetSha256: attributeValue(
+        spans(first).find((span) => !span.parentSpanId)!.attributes,
+        "napier.event_anchor_set.sha256",
+      ) as string,
       spanCount: first.spanCount,
       eventCount: first.eventRange.eventCount,
     });

@@ -437,6 +437,7 @@ describe("Web JSON API wrappers", () => {
       traceId: "c".repeat(32),
       contentSha256: "a".repeat(64),
       eventStreamSha256: "b".repeat(64),
+      eventAnchorSetSha256: "d".repeat(64),
       spanCount: 4,
       eventCount: 2,
     };

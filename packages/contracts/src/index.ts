@@ -3667,6 +3667,7 @@ export interface OpenTelemetryTraceArtifactVerification {
   traceId?: string;
   contentSha256?: string;
   eventStreamSha256?: string;
+  eventAnchorSetSha256?: string;
 }
 
 export type RunMetricDelta = Omit<RunMetrics, "assistantTextSha256">;

@@ -129,6 +129,9 @@ All notable changes to Napier are recorded here.
   over projected event IDs, sequences, types, categories, visibility, and
   payload hashes. Verification recomputes it from span events and specialized
   ledger spans to catch self-consistent span-level drift.
+- OTLP export and verification APIs now mirror that event-anchor-set hash in
+  no-store headers and verification bodies, and `trace.otlp.exported` ledger
+  receipts persist the same hash-only event-anchor evidence.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,

@@ -424,6 +424,21 @@ export function hashOpenTelemetryTraceArtifact(
   return sha256(canonicalJson(artifact));
 }
 
+export function openTelemetryTraceArtifactEventAnchorSetSha256(
+  artifact: OpenTelemetryTraceArtifact,
+): string {
+  const root = artifact.otlp.resourceSpans[0]?.scopeSpans[0]?.spans.find(
+    (span) => span.parentSpanId === undefined,
+  );
+  const value = root
+    ? stringAttribute(root.attributes, "napier.event_anchor_set.sha256")
+    : undefined;
+  if (!value || !SHA256_PATTERN.test(value)) {
+    throw new Error("OpenTelemetry trace event anchor set is missing");
+  }
+  return value;
+}
+
 export function validateOpenTelemetryTraceArtifact(
   value: unknown,
 ): OpenTelemetryTraceArtifact {
@@ -508,6 +523,8 @@ export function verifyOpenTelemetryTraceArtifact(
       traceId: artifact.traceId,
       contentSha256: artifact.contentSha256,
       eventStreamSha256: artifact.eventRange.eventStreamSha256,
+      eventAnchorSetSha256:
+        openTelemetryTraceArtifactEventAnchorSetSha256(artifact),
       spanCount: artifact.spanCount,
       eventCount: artifact.eventRange.eventCount,
     };

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-gaWK09fd.js",
-    "sizeBytes": 145775,
+    "path": "apps/web/dist/assets/index-BRvs44DD.js",
+    "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "67f3aedb29df7c60f8c29d26bc20358a02a9e8765d486aa2381f47f783a2c983"
+    "sha256": "7c0ec8b42319968e18b23268dc52167d9e465fadf5faceea9a8c53643fdfbb4d"
   },
-  "distContentSha256": "67f3aedb29df7c60f8c29d26bc20358a02a9e8765d486aa2381f47f783a2c983",
+  "distContentSha256": "7c0ec8b42319968e18b23268dc52167d9e465fadf5faceea9a8c53643fdfbb4d",
   "errors": []
 }

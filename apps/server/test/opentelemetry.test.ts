@@ -12,6 +12,7 @@ import type {
 import {
   exportThreadReplayBundle,
   hashOpenTelemetryTraceArtifact,
+  openTelemetryTraceArtifactEventAnchorSetSha256,
   validateOpenTelemetryTraceArtifact,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
@@ -65,6 +66,9 @@ function expectOpenTelemetryTraceHeaders(
   );
   expect(response.headers.get("x-napier-event-stream-sha256")).toBe(
     artifact.eventRange.eventStreamSha256,
+  );
+  expect(response.headers.get("x-napier-event-anchor-set-sha256")).toBe(
+    openTelemetryTraceArtifactEventAnchorSetSha256(artifact),
   );
   expect(response.headers.get("x-napier-trace-redaction-mode")).toBe(
     artifact.redaction.mode,
@@ -122,6 +126,9 @@ function expectOpenTelemetryTraceVerificationHeaders(
   );
   expect(response.headers.get("x-napier-event-stream-sha256")).toBe(
     verification.eventStreamSha256 ?? null,
+  );
+  expect(response.headers.get("x-napier-event-anchor-set-sha256")).toBe(
+    verification.eventAnchorSetSha256 ?? null,
   );
 }
 
@@ -242,6 +249,8 @@ describe("OpenTelemetry trace HTTP export", () => {
       traceId: first.traceId,
       contentSha256: first.contentSha256,
       eventStreamSha256: first.eventRange.eventStreamSha256,
+      eventAnchorSetSha256:
+        openTelemetryTraceArtifactEventAnchorSetSha256(first),
       spanCount: first.spanCount,
       eventCount: first.eventRange.eventCount,
     });
@@ -258,6 +267,8 @@ describe("OpenTelemetry trace HTTP export", () => {
           spanCount: first.spanCount,
           eventCount: first.eventRange.eventCount,
           eventStreamSha256: first.eventRange.eventStreamSha256,
+          eventAnchorSetSha256:
+            openTelemetryTraceArtifactEventAnchorSetSha256(first),
           contentSha256: first.contentSha256,
         }),
       }),

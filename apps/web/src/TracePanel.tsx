@@ -198,6 +198,12 @@ export default function TracePanel({
               <small>{copy.trace.otel.events}</small>
               <strong>{exportReceipt.eventCount}</strong>
             </span>
+            {exportReceipt.eventAnchorSetSha256 ? (
+              <code title={exportReceipt.eventAnchorSetSha256}>
+                {copy.trace.otel.eventAnchor}{" "}
+                {exportReceipt.eventAnchorSetSha256.slice(0, 12)}
+              </code>
+            ) : null}
             <code title={exportReceipt.contentSha256}>
               {exportReceipt.contentSha256.slice(0, 12)}
             </code>
@@ -228,6 +234,12 @@ export default function TracePanel({
               <small>{copy.trace.otel.events}</small>
               <strong>{verificationReceipt.eventCount}</strong>
             </span>
+            {verificationReceipt.eventAnchorSetSha256 ? (
+              <code title={verificationReceipt.eventAnchorSetSha256}>
+                {copy.trace.otel.eventAnchor}{" "}
+                {verificationReceipt.eventAnchorSetSha256.slice(0, 12)}
+              </code>
+            ) : null}
             {verificationReceipt.contentSha256 ? (
               <code title={verificationReceipt.contentSha256}>
                 {verificationReceipt.contentSha256.slice(0, 12)}

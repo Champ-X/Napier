@@ -380,6 +380,7 @@ import {
   ModelRegistry,
   normalizePromptVariableDefinitions,
   normalizeToolLoopGuardPolicy,
+  openTelemetryTraceArtifactEventAnchorSetSha256,
   normalizeScheduleTrigger,
   RecoveryService,
   receiptTrustAnchorsFromDirectory,
@@ -5383,6 +5384,8 @@ export function createApp(services: NapierServices): Hono {
         spanCount: artifact.spanCount,
         eventCount: artifact.eventRange.eventCount,
         eventStreamSha256: artifact.eventRange.eventStreamSha256,
+        eventAnchorSetSha256:
+          openTelemetryTraceArtifactEventAnchorSetSha256(artifact),
         contentSha256: artifact.contentSha256,
       },
     });
@@ -19933,6 +19936,12 @@ function setOpenTelemetryTraceArtifactVerificationHeaders(
       verification.eventStreamSha256,
     );
   }
+  if (verification.eventAnchorSetSha256) {
+    context.header(
+      "X-Napier-Event-Anchor-Set-SHA256",
+      verification.eventAnchorSetSha256,
+    );
+  }
 }
 
 function bindRunReplaySnapshotVerification(
@@ -23711,6 +23720,10 @@ function setOpenTelemetryTraceArtifactHeaders(
   context.header(
     "X-Napier-Event-Stream-SHA256",
     artifact.eventRange.eventStreamSha256,
+  );
+  context.header(
+    "X-Napier-Event-Anchor-Set-SHA256",
+    openTelemetryTraceArtifactEventAnchorSetSha256(artifact),
   );
   context.header("X-Napier-Trace-Redaction-Mode", artifact.redaction.mode);
   context.header(
