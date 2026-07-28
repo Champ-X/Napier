@@ -6,7 +6,7 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "9caab33e561ec55e357e39d42f7f964f40009414dc9ffcf1ab6616df20205c8d",
+  "artifactSetSha256": "de5d84e250d0d13b168fec78a4d0780aa6f0c0f9c9af61d947036956487b4d85",
   "artifacts": [
     {
       "kind": "package-lock-audit",
@@ -23,13 +23,13 @@
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "2f62504963438f9731800fa8fde08648686256f60ab46ea197db2eacca3b39c8",
+      "sha256": "79825fd2e46c0c70222e39ba9c9234a932691c00f5d3d63fa2116739960e2bb1",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "0766604a6f56de3614f374d3151ef2b69dde4e19085066acd0a49913f2bacba3",
+      "sha256": "3a58f9424885f980a2ead9e87a239e9cc010d78d5629b1e15aad1beffb57a8d4",
       "valid": true
     },
     {

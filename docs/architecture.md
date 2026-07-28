@@ -1131,6 +1131,9 @@ as `manual`; an old Run never inherits permission from a newer Agent revision.
 Napier persists credential locators, never credential values:
 
 ```text
+choose provider in Context
+  -> prefill provider-specific label, ENV variable name, and Keychain service
+  -> preserve custom locator fields when switching providers
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1146,10 +1149,12 @@ An active but unavailable reference throws instead of falling back to an
 ambient provider key. Disabling a reference removes it from Pi authentication.
 Keychain reads and writes use `/usr/bin/security` through `execFile` with
 positional arguments, a timeout, and bounded output; no shell is involved.
-Credential ledger events contain only reference ID, provider, label, source
-type, status, availability, revision, and a sanitized error. Environment-
-variable names and Keychain locators are metadata; submitted or resolved
-values exist only in memory for the vault operation or provider call.
+The Context prefill is draft-only UI state; it never reads environment values
+or writes secrets. Credential ledger events contain only reference ID,
+provider, label, source type, status, availability, revision, and a sanitized
+error. Environment-variable names and Keychain locators are metadata;
+submitted or resolved values exist only in memory for the vault operation or
+provider call.
 
 Credential management responses are no-store and response-hash-bound:
 

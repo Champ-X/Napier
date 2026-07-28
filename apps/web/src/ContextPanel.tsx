@@ -65,6 +65,10 @@ import {
   verifySkillPackage,
 } from "./context-api";
 import { contextCopy } from "./context-copy";
+import {
+  applyCredentialProviderDraft,
+  credentialReferenceDraft,
+} from "./credential-reference-view-model";
 import { formatApiErrorMessage } from "./api-error";
 
 const copy = { context: contextCopy };
@@ -309,17 +313,24 @@ export default function ContextPanel({
   );
   const [historyLoading, setHistoryLoading] = useState(true);
   const [rollbackTarget, setRollbackTarget] = useState<AgentProfileRevision>();
-  const [credentialProvider, setCredentialProvider] = useState(
+  const initialCredentialDraft = credentialReferenceDraft(
     providers[0] ?? "openai",
   );
-  const [credentialLabel, setCredentialLabel] = useState("");
+  const [credentialProvider, setCredentialProvider] = useState(
+    initialCredentialDraft.providerId,
+  );
+  const [credentialLabel, setCredentialLabel] = useState(
+    initialCredentialDraft.label,
+  );
   const [credentialSourceType, setCredentialSourceType] =
     useState<CredentialReferenceSource["type"]>("environment");
-  const [credentialEnvVariable, setCredentialEnvVariable] = useState("");
+  const [credentialEnvVariable, setCredentialEnvVariable] = useState(
+    initialCredentialDraft.environmentVariable,
+  );
   const [credentialKeychainService, setCredentialKeychainService] =
-    useState("");
+    useState(initialCredentialDraft.keychainService);
   const [credentialKeychainAccount, setCredentialKeychainAccount] =
-    useState("");
+    useState(initialCredentialDraft.keychainAccount);
   const [credentialKeychainSecret, setCredentialKeychainSecret] = useState("");
   const [credentialKeychainReplace, setCredentialKeychainReplace] =
     useState(false);
@@ -442,9 +453,25 @@ export default function ContextPanel({
     };
   }, [agent.id, agent.revision]);
 
+  const selectCredentialProvider = (providerId: string): void => {
+    const draft = applyCredentialProviderDraft({
+      previousProviderId: credentialProvider,
+      nextProviderId: providerId,
+      label: credentialLabel,
+      environmentVariable: credentialEnvVariable,
+      keychainService: credentialKeychainService,
+      keychainAccount: credentialKeychainAccount,
+    });
+    setCredentialProvider(draft.providerId);
+    setCredentialLabel(draft.label);
+    setCredentialEnvVariable(draft.environmentVariable);
+    setCredentialKeychainService(draft.keychainService);
+    setCredentialKeychainAccount(draft.keychainAccount);
+  };
+
   useEffect(() => {
     if (providers.length > 0 && !providers.includes(credentialProvider)) {
-      setCredentialProvider(providers[0]!);
+      selectCredentialProvider(providers[0]!);
     }
   }, [credentialProvider, providers]);
 
@@ -630,10 +657,11 @@ export default function ContextPanel({
           threadId,
         });
       }
-      setCredentialLabel("");
-      setCredentialEnvVariable("");
-      setCredentialKeychainService("");
-      setCredentialKeychainAccount("");
+      const draft = credentialReferenceDraft(credentialProvider);
+      setCredentialLabel(draft.label);
+      setCredentialEnvVariable(draft.environmentVariable);
+      setCredentialKeychainService(draft.keychainService);
+      setCredentialKeychainAccount(draft.keychainAccount);
       setCredentialKeychainSecret("");
       setCredentialKeychainReplace(false);
       await refreshWorkspace();
@@ -1812,7 +1840,9 @@ export default function ContextPanel({
               <select
                 value={credentialProvider}
                 disabled={configurationBusy}
-                onChange={(event) => setCredentialProvider(event.target.value)}
+                onChange={(event) =>
+                  selectCredentialProvider(event.target.value)
+                }
               >
                 {providers.map((provider) => (
                   <option key={provider} value={provider}>

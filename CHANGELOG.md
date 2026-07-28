@@ -215,6 +215,9 @@ All notable changes to Napier are recorded here.
   `DEEPSEEK_API_KEY`, with built-in price-table accounting for
   `deepseek-v4-flash`/compatible DeepSeek usage so cost gates do not fall back
   to provider-reported zero-cost runs.
+- The Context credential form now suggests provider-specific labels,
+  environment-variable names, and Keychain service names for OpenAI, DeepSeek,
+  Anthropic, Google, and OpenRouter without overwriting custom locators.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
