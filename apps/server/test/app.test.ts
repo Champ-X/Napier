@@ -9076,6 +9076,10 @@ describe("Napier HTTP goal flow", () => {
           sourceContentSha256: fixture.contentSha256,
           sourceEventStreamSha256: fixture.eventStreamSha256,
           sourceEventCount: fixture.events.length,
+          sourceModelContextEnvelopeCount:
+            verification.modelContextEnvelopeCount,
+          sourceEmbeddedModelContextEnvelopeCount:
+            verification.embeddedModelContextEnvelopeCount,
         }),
       }),
     );

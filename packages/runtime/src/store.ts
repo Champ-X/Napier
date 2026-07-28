@@ -521,7 +521,10 @@ import {
   validateSubagentOutcomeRepairOutcome,
   validateSubagentOutcomeRepairRequest,
 } from "./subagent-outcome-repair.js";
-import { validateThreadReplayBundle } from "./thread-bundles.js";
+import {
+  validateThreadReplayBundle,
+  verifyThreadReplayBundle,
+} from "./thread-bundles.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
@@ -7690,6 +7693,12 @@ export class LocalStore {
   ): Promise<ThreadDetail> {
     this.assertInitialized();
     const bundle = validateThreadReplayBundle(input);
+    const bundleVerification = verifyThreadReplayBundle(bundle);
+    if (bundleVerification.status !== "valid") {
+      throw new Error(
+        `Thread replay bundle verification failed: ${bundleVerification.diagnostics.join(", ")}`,
+      );
+    }
     const importedThreadId = await this.stateQueue.run(async () => {
       const importedAt = nowIso();
       const agentId = createId("agent");
@@ -8402,6 +8411,10 @@ export class LocalStore {
           sourceContentSha256: bundle.contentSha256,
           sourceEventStreamSha256: bundle.eventStreamSha256,
           sourceEventCount: bundle.events.length,
+          sourceModelContextEnvelopeCount:
+            bundleVerification.modelContextEnvelopeCount,
+          sourceEmbeddedModelContextEnvelopeCount:
+            bundleVerification.embeddedModelContextEnvelopeCount,
           importedAt,
         },
       };

@@ -23,6 +23,7 @@ import { ModelRegistry } from "../src/models.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
 import type { OsSandboxAdapter, SandboxLaunchRequest } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
+import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 
 const temporaryRoots: string[] = [];
 
@@ -1823,6 +1824,7 @@ describe("AgentRuntime demo path", () => {
     });
     await store.finishRun(sourceRun.id, "completed");
     const bundle = await exportThreadReplayBundle(store, source.id);
+    const verification = verifyThreadReplayBundle(bundle);
     const imported = await store.importThreadReplayBundle(bundle);
     const importedDelegation = store.listSubagentTasks(imported.thread.id)[0]!;
     expect(importedDelegation.id).not.toBe(sourceDelegation.id);
@@ -1845,6 +1847,12 @@ describe("AgentRuntime demo path", () => {
           `Sequences 1-${bundle.events.length}`,
         );
         expect(context.systemPrompt).toContain(bundle.contentSha256);
+        expect(context.systemPrompt).toContain(
+          `Source model context envelopes: ${verification.modelContextEnvelopeCount}`,
+        );
+        expect(context.systemPrompt).toContain(
+          `Source embedded model context envelopes: ${verification.embeddedModelContextEnvelopeCount}`,
+        );
         expect(context.systemPrompt).toContain(
           "never current operator instructions",
         );

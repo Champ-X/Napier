@@ -69,6 +69,10 @@ All notable changes to Napier are recorded here.
   `contextCoverageDelta`, giving pairwise evaluators visibility into auxiliary
   reviewer coverage drift without changing candidate `model.response`
   coverage-rate semantics.
+- Imported Thread provenance now preserves the source replay bundle's
+  ledger-backed and embedded Model Context Envelope counts, verifies the bundle
+  before import, and reinjects those counts into the imported-ledger boundary
+  plus Run Lab fixture card as metadata-only evidence.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

@@ -629,6 +629,14 @@ function FixtureLedgerCard({
           <code title={provenance.sourceContentSha256}>
             {provenance.sourceContentSha256.slice(0, 12)}
           </code>
+          <small>
+            {(provenance.sourceModelContextEnvelopeCount ?? 0).toLocaleString()}{" "}
+            {copy.lab.fixture.contextEnvelopes} ·{" "}
+            {(
+              provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0
+            ).toLocaleString()}{" "}
+            {copy.lab.fixture.embeddedEnvelopes}
+          </small>
         </div>
       ) : null}
       <div className="fixture-actions">

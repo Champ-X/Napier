@@ -1166,6 +1166,7 @@ describe("thread replay bundles", () => {
       bundle,
       "Imported verification fixture",
     );
+    const verification = verifyThreadReplayBundle(bundle);
 
     expect(imported.thread).toEqual(
       expect.objectContaining({
@@ -1177,6 +1178,10 @@ describe("thread replay bundles", () => {
           sourceContentSha256: bundle.contentSha256,
           sourceEventStreamSha256: bundle.eventStreamSha256,
           sourceEventCount: bundle.events.length,
+          sourceModelContextEnvelopeCount:
+            verification.modelContextEnvelopeCount,
+          sourceEmbeddedModelContextEnvelopeCount:
+            verification.embeddedModelContextEnvelopeCount,
         }),
       }),
     );

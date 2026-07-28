@@ -2649,6 +2649,8 @@ export interface ThreadImportProvenance {
   sourceContentSha256: string;
   sourceEventStreamSha256: string;
   sourceEventCount: number;
+  sourceModelContextEnvelopeCount?: number;
+  sourceEmbeddedModelContextEnvelopeCount?: number;
   importedAt: string;
 }
 
