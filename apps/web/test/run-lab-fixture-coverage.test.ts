@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { summarizeThreadReplayBundleCoverage } from "../src/use-workspace-view-model";
+import type { WebThreadDetail } from "../src/api";
+import {
+  importProvenanceReceiptView,
+  summarizeThreadReplayBundleCoverage,
+} from "../src/use-workspace-view-model";
 
 describe("Run Lab fixture coverage projection", () => {
   it("counts ledger-backed and embedded context envelopes separately", () => {
@@ -41,5 +45,36 @@ describe("Run Lab fixture coverage projection", () => {
       modelContextEnvelopeCount: 1,
       embeddedModelContextEnvelopeCount: 2,
     });
+  });
+
+  it("projects aligned imported provenance receipt metadata", () => {
+    const detail = {
+      thread: {
+        importProvenance: {
+          sourceThreadId: "thread_source",
+          sourceApiVersion: "2026-07-25",
+          sourceContentSha256: "a".repeat(64),
+          sourceEventStreamSha256: "b".repeat(64),
+          sourceEventCount: 3,
+          localImportedThroughSeq: 4,
+          importedAt: "2026-07-26T00:00:00.000Z",
+        },
+      },
+      importReceipt: {
+        seq: 4,
+        payloadSha256: "c".repeat(64),
+      },
+    } as WebThreadDetail;
+
+    expect(importProvenanceReceiptView(detail)).toEqual({
+      seq: 4,
+      payloadSha256: "c".repeat(64),
+    });
+    expect(
+      importProvenanceReceiptView({
+        ...detail,
+        importReceipt: { seq: 5, payloadSha256: "d".repeat(64) },
+      }),
+    ).toBeUndefined();
   });
 });

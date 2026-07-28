@@ -114,6 +114,9 @@ All notable changes to Napier are recorded here.
   `thread.imported` receipt sequence and payload SHA-256 in
   `X-Napier-Import-Receipt-*` headers, keeping API clients and OTLP consumers
   on the same hash-only provenance contract.
+- Run Lab now surfaces the aligned import receipt sequence and payload hash on
+  imported Thread fixture cards, using the no-store ThreadDetail header
+  projection instead of recomputing or exposing replay content in the browser.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

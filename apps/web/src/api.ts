@@ -187,6 +187,15 @@ const EVENT_CATEGORIES = new Set<EventCategory>([
   "system",
 ]);
 
+export interface ThreadDetailImportReceipt {
+  seq: number;
+  payloadSha256: string;
+}
+
+export type WebThreadDetail = ThreadDetail & {
+  importReceipt?: ThreadDetailImportReceipt;
+};
+
 export interface CreatedExecutionPlanFromBlueprintRecord {
   plan: ExecutionPlan;
   replayEvent?: VerifyExecutionPlanBlueprintRecordReplayEventRequest;
@@ -224,8 +233,36 @@ export function getHealth(): Promise<HealthResponse> {
   return requestJson("/api/health");
 }
 
-export function getThread(threadId: string): Promise<ThreadDetail> {
-  return requestJson(`/api/threads/${encodeURIComponent(threadId)}`);
+async function requestThreadDetail(
+  path: string,
+  init?: RequestInit,
+): Promise<WebThreadDetail> {
+  const { body, headers } = await requestJsonWithResponse<ThreadDetail>(
+    path,
+    init,
+  );
+  const importReceipt = importReceiptFromHeaders(headers);
+  return importReceipt ? { ...body, importReceipt } : body;
+}
+
+function importReceiptFromHeaders(
+  headers: Headers,
+): ThreadDetailImportReceipt | undefined {
+  const seq = Number(headers.get("x-napier-import-receipt-seq"));
+  const payloadSha256 = headers.get("x-napier-import-receipt-sha256");
+  if (
+    !Number.isSafeInteger(seq) ||
+    seq < 1 ||
+    !payloadSha256 ||
+    !SHA256.test(payloadSha256)
+  ) {
+    return undefined;
+  }
+  return { seq, payloadSha256 };
+}
+
+export function getThread(threadId: string): Promise<WebThreadDetail> {
+  return requestThreadDetail(`/api/threads/${encodeURIComponent(threadId)}`);
 }
 
 export function getRunReplay(
@@ -285,8 +322,8 @@ export function verifyOpenTelemetryTraceArtifact(
 
 export function importThreadReplayBundle(
   body: ImportThreadReplayBundleRequest,
-): Promise<ThreadDetail> {
-  return requestJson("/api/threads/import", {
+): Promise<WebThreadDetail> {
+  return requestThreadDetail("/api/threads/import", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -860,8 +897,8 @@ export function getEvaluationSuiteGateReceipt(
 
 export function createThread(
   body: CreateThreadRequest = {},
-): Promise<ThreadDetail> {
-  return requestJson("/api/threads", {
+): Promise<WebThreadDetail> {
+  return requestThreadDetail("/api/threads", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -870,27 +907,36 @@ export function createThread(
 export function setGoal(
   threadId: string,
   body: SetGoalRequest,
-): Promise<ThreadDetail> {
-  return requestJson(`/api/threads/${encodeURIComponent(threadId)}/goal`, {
-    method: "PUT",
-    body: JSON.stringify(body),
-  });
+): Promise<WebThreadDetail> {
+  return requestThreadDetail(
+    `/api/threads/${encodeURIComponent(threadId)}/goal`,
+    {
+      method: "PUT",
+      body: JSON.stringify(body),
+    },
+  );
 }
 
-export function clearGoal(threadId: string): Promise<ThreadDetail> {
-  return requestJson(`/api/threads/${encodeURIComponent(threadId)}/goal`, {
-    method: "DELETE",
-  });
+export function clearGoal(threadId: string): Promise<WebThreadDetail> {
+  return requestThreadDetail(
+    `/api/threads/${encodeURIComponent(threadId)}/goal`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export function createBranch(
   threadId: string,
   body: CreateBranchRequest,
-): Promise<ThreadDetail> {
-  return requestJson(`/api/threads/${encodeURIComponent(threadId)}/branches`, {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+): Promise<WebThreadDetail> {
+  return requestThreadDetail(
+    `/api/threads/${encodeURIComponent(threadId)}/branches`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
 }
 
 export function stopRun(threadId: string): Promise<{ stopped: boolean }> {

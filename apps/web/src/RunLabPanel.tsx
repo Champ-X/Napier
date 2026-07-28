@@ -13,15 +13,16 @@ import type {
   RunComparison,
   RunEvaluationRecord,
   RunRecord,
-  ThreadDetail,
 } from "@napier/contracts";
 
 import { copy } from "./copy";
 import { runConfigurationFieldCopy } from "./run-configuration-copy";
+import type { WebThreadDetail } from "./api";
 import type {
   FixtureTransferReceipt,
   RunReplayVerificationReceipt,
 } from "./use-workspace-view-model";
+import { importProvenanceReceiptView } from "./use-workspace-view-model";
 
 const LazyEvaluationSuitePanel = lazy(() => import("./EvaluationSuitePanel"));
 
@@ -48,7 +49,7 @@ export default function RunLabPanel({
   onImportFixture,
   onRefresh,
 }: {
-  detail: ThreadDetail | undefined;
+  detail: WebThreadDetail | undefined;
   runs: RunRecord[];
   evaluations: RunEvaluationRecord[];
   comparison: RunComparison | undefined;
@@ -583,7 +584,7 @@ function FixtureLedgerCard({
   onVerify,
   onImport,
 }: {
-  detail: ThreadDetail;
+  detail: WebThreadDetail;
   busyAction: string | undefined;
   receipt: FixtureTransferReceipt | undefined;
   onExport: () => void;
@@ -594,6 +595,7 @@ function FixtureLedgerCard({
   const verifyInput = useRef<HTMLInputElement>(null);
   const busy = Boolean(busyAction);
   const provenance = detail.thread.importProvenance;
+  const importReceipt = importProvenanceReceiptView(detail);
 
   return (
     <section className="fixture-docket" aria-labelledby="fixture-docket-title">
@@ -646,6 +648,15 @@ function FixtureLedgerCard({
             ).toLocaleString()}{" "}
             {copy.lab.fixture.embeddedEnvelopes}
           </small>
+          {importReceipt ? (
+            <small>
+              {copy.lab.fixture.importReceipt}{" "}
+              {importReceipt.seq.toLocaleString()} ·{" "}
+              <code title={importReceipt.payloadSha256}>
+                {importReceipt.payloadSha256.slice(0, 12)}
+              </code>
+            </small>
+          ) : null}
         </div>
       ) : null}
       <div className="fixture-actions">

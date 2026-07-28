@@ -136,6 +136,7 @@ export const copy = {
       importedSource: "Imported source SHA-256",
       sourceEvents: "source events",
       localImportedCutoff: "local cutoff",
+      importReceipt: "import receipt",
       export: "Export full ledger",
       exporting: "Binding fixture...",
       verify: "Verify fixture",

@@ -35,6 +35,7 @@ import type {
   RunControlMessage,
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
+  ThreadDetail,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
   TrustedReceiptEnvelope,
@@ -61,6 +62,7 @@ import {
   getExecutionPlanBlueprintRecordReplays,
   getExecutionPlanBlueprintRecords,
   getHealth,
+  getThread,
   queueRunControlMessage,
   cancelRunControlMessage,
   previewExecutionPlanFromBlueprintRecord,
@@ -135,6 +137,33 @@ describe("Web JSON API wrappers", () => {
 
     await expect(getHealth()).resolves.toEqual(health);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("attaches hash-only Thread import receipt metadata from headers", async () => {
+    const detail = threadDetailFixture();
+    const text = JSON.stringify(detail);
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe("/api/threads/thread_imported");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+          "X-Napier-Import-Receipt-Seq": "4",
+          "X-Napier-Import-Receipt-SHA256": "a".repeat(64),
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getThread("thread_imported")).resolves.toEqual({
+      ...detail,
+      importReceipt: {
+        seq: 4,
+        payloadSha256: "a".repeat(64),
+      },
+    });
   });
 
   it("queues and cancels hash-bound Run control messages", async () => {
@@ -1726,6 +1755,100 @@ describe("Web JSON API wrappers", () => {
 
 function sha256Text(value: string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function threadDetailFixture(): ThreadDetail {
+  return {
+    thread: {
+      id: "thread_imported",
+      title: "Imported",
+      agentId: "agent_imported",
+      status: "idle",
+      createdAt: "2026-07-26T00:00:00.000Z",
+      updatedAt: "2026-07-26T00:00:00.000Z",
+      lastMessage: "",
+      eventCount: 4,
+      runIds: [],
+      importProvenance: {
+        sourceThreadId: "thread_source",
+        sourceApiVersion: "2026-07-25",
+        sourceContentSha256: "b".repeat(64),
+        sourceEventStreamSha256: "c".repeat(64),
+        sourceEventCount: 3,
+        localImportedThroughSeq: 4,
+        sourceModelContextEnvelopeCount: 1,
+        sourceEmbeddedModelContextEnvelopeCount: 2,
+        importedAt: "2026-07-26T00:00:00.000Z",
+      },
+    },
+    agent: {
+      id: "agent_imported",
+      name: "Imported",
+      description: "",
+      systemPrompt: "System",
+      model: { provider: "napier", id: "demo" },
+      thinkingLevel: "medium",
+      toolPolicy: "observe",
+      enabledTools: [],
+      enabledSkills: [],
+      revision: 1,
+      createdAt: "2026-07-26T00:00:00.000Z",
+      updatedAt: "2026-07-26T00:00:00.000Z",
+    },
+    runs: [],
+    plans: [],
+    evaluations: [],
+    evaluationAdjudications: [],
+    evaluationReviewerBallots: [],
+    evaluationConsensusResolutions: [],
+    evaluationSuites: [],
+    evaluationSuiteExecutions: [],
+    automaticRecoveryAssessments: [],
+    automaticRecoveryAttempts: [],
+    subagents: [],
+    runControlMessages: [],
+    operatorDecisions: [],
+    contextCheckpointCalibration: {
+      kind: "napier.context-checkpoint-calibration",
+      schemaVersion: 1,
+      apiVersion: "2026-07-25",
+      generatedAt: "2026-07-26T00:00:00.000Z",
+      threadId: "thread_imported",
+      eventStreamSha256: "d".repeat(64),
+      messageEventCount: 0,
+      checkpointCount: 0,
+      verifiedCheckpointCount: 0,
+      driftedCheckpointCount: 0,
+      malformedCheckpointCount: 0,
+      failureCount: 0,
+      coveredMessageCount: 0,
+      coverageRate: 0,
+      sourceCharacterCount: 0,
+      summaryCharacterCount: 0,
+      compressionRatio: 0,
+      fallbackOmittedMessageCount: 0,
+      samples: [],
+      failures: [],
+      contentSha256: "e".repeat(64),
+    },
+    events: [
+      {
+        id: "event_imported",
+        threadId: "thread_imported",
+        runId: "runctl_import",
+        seq: 4,
+        type: "thread.imported",
+        category: "lifecycle",
+        visibility: "debug",
+        createdAt: "2026-07-26T00:00:00.000Z",
+        payload: {
+          kind: "napier.thread-import-provenance",
+          sourceThreadId: "thread_source",
+          sourceContentSha256: "b".repeat(64),
+        },
+      },
+    ],
+  };
 }
 
 function planBlueprintFixture(): ExecutionPlanBlueprint {

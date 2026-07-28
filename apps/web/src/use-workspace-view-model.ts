@@ -29,7 +29,6 @@ import type {
   RunReplaySnapshotVerification,
   StreamFrame,
   TextMessagePayload,
-  ThreadDetail,
   ThreadReplayBundle,
   ThreadReplayBundleVerification,
   ThreadSummary,
@@ -82,6 +81,7 @@ import {
   verifyRunReplaySnapshot as verifyRunReplaySnapshotApi,
   verifySignedExtensionPackage as verifySignedExtensionPackageApi,
   verifyThreadReplayBundle as verifyThreadReplayBundleApi,
+  type WebThreadDetail,
 } from "./api";
 import { copy } from "./copy";
 import { extensionCopy } from "./extension-copy";
@@ -201,6 +201,33 @@ export function summarizeThreadReplayBundleCoverage(
   };
 }
 
+export interface ImportProvenanceReceiptView {
+  seq: number;
+  payloadSha256: string;
+}
+
+export function importProvenanceReceiptView(
+  detail: WebThreadDetail,
+): ImportProvenanceReceiptView | undefined {
+  const receipt = detail.importReceipt;
+  const provenance = detail.thread.importProvenance;
+  if (!receipt || !provenance) return undefined;
+  if (provenance.localImportedThroughSeq !== receipt.seq) return undefined;
+  return receipt;
+}
+
+function preserveThreadDetailImportReceipt(
+  next: WebThreadDetail | undefined,
+  current: WebThreadDetail | undefined,
+): WebThreadDetail | undefined {
+  if (!next || next.importReceipt || next.thread.id !== current?.thread.id) {
+    return next;
+  }
+  return current.importReceipt
+    ? { ...next, importReceipt: current.importReceipt }
+    : next;
+}
+
 function countEmbeddedModelContextEnvelopes(value: unknown): number {
   if (!value || typeof value !== "object") return 0;
   if (Array.isArray(value)) {
@@ -224,7 +251,7 @@ function countEmbeddedModelContextEnvelopes(value: unknown): number {
 
 export function useWorkspaceViewModel() {
   const [bootstrap, setBootstrap] = useState<BootstrapResponse>();
-  const [detail, setDetail] = useState<ThreadDetail>();
+  const [detail, setDetail] = useState<WebThreadDetail>();
   const [selectedThreadId, setSelectedThreadId] = useState<string>();
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("trace");
   const [selectedModelKey, setSelectedModelKey] = useState("napier/demo");
@@ -454,7 +481,9 @@ export function useWorkspaceViewModel() {
           : current,
       );
     } else if (frame.type === "snapshot") {
-      setDetail(frame.detail);
+      setDetail((current) =>
+        preserveThreadDetailImportReceipt(frame.detail, current),
+      );
       setBootstrap((current) =>
         current
           ? {
@@ -473,7 +502,9 @@ export function useWorkspaceViewModel() {
   const refreshBootstrap = useCallback(async (threadId: string) => {
     const refreshed = await getBootstrap(threadId);
     setBootstrap(refreshed);
-    setDetail(refreshed.activeThread);
+    setDetail((current) =>
+      preserveThreadDetailImportReceipt(refreshed.activeThread, current),
+    );
   }, []);
 
   const refreshActiveThread = useCallback(async (): Promise<void> => {
