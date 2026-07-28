@@ -11854,6 +11854,17 @@ function expectRunEvaluationRecordHeaders(
   expect(response.headers.get("x-napier-evaluation-criterion-count")).toBe(
     String(evaluation.scores.length),
   );
+  if (evaluation.comparisonGovernance) {
+    expect(response.headers.get("x-napier-comparison-governance-sha256")).toBe(
+      evaluation.comparisonGovernance.contentSha256,
+    );
+    expect(response.headers.get("x-napier-context-coverage-status")).toBe(
+      evaluation.comparisonGovernance.contextCoverageStatus,
+    );
+    expect(
+      response.headers.get("x-napier-context-coverage-diagnostics-sha256"),
+    ).toBe(evaluation.comparisonGovernance.contextCoverageDiagnosticsSha256);
+  }
 }
 
 function expectEvaluationAdjudicationListHeaders(

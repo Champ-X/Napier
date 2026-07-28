@@ -11,6 +11,7 @@ import {
   RunEvaluationService,
   parseRunEvaluationResponse,
 } from "../src/evaluation.js";
+import { hashRunEvaluation } from "../src/evaluation-suites.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { ModelRegistry } from "../src/models.js";
 import {
@@ -516,12 +517,39 @@ describe("run evaluation", () => {
         rightRunId: right.id,
         leftSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         rightSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        comparisonGovernance: expect.objectContaining({
+          kind: "napier.run-evaluation-governance",
+          schemaVersion: 1,
+          contextCoverageStatus: "clean",
+          contextCoverageRateDelta: 0,
+          contextCoverageDiagnosticsSha256:
+            expect.stringMatching(/^[a-f0-9]{64}$/),
+          contextCoverageDeltaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
       }),
     );
     expect(store.listRunEvaluations(threadId)).toEqual([evaluation]);
-    expect((await store.listEvents(threadId)).at(-1)?.type).toBe(
-      "evaluation.completed",
+    const completedEvent = (await store.listEvents(threadId)).at(-1);
+    expect(completedEvent?.type).toBe("evaluation.completed");
+    expect(completedEvent?.payload).toEqual(
+      expect.objectContaining({
+        comparisonGovernanceSha256:
+          evaluation.comparisonGovernance?.contentSha256,
+        contextCoverageStatus: "clean",
+        contextCoverageDiagnosticsSha256:
+          evaluation.comparisonGovernance?.contextCoverageDiagnosticsSha256,
+      }),
     );
+    expect(
+      hashRunEvaluation({
+        ...evaluation,
+        comparisonGovernance: {
+          ...evaluation.comparisonGovernance!,
+          contentSha256: "0".repeat(64),
+        },
+      }),
+    ).not.toBe(hashRunEvaluation(evaluation));
   });
 
   it("fails closed for demo, malformed, and unavailable evaluator models", async () => {

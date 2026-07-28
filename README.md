@@ -1427,7 +1427,10 @@ The pairwise evaluator receives immutable left/right replay snapshots plus a
 separate comparison-governance block. That block includes the metadata-only
 `contextCoverageDelta` status, rates, and diagnostic codes, so scoring can
 penalize unbound or regressed model-context coverage without exposing raw
-prompt, message, or tool-schema content.
+prompt, message, or tool-schema content. Saved evaluation records carry a
+hash-only `comparisonGovernance` binding for that projection; suite execution,
+casebook curation, and reviewer consensus hashes include the binding when it is
+present.
 
 Every case stores the pair-evaluation ID and SHA-256 alongside both replay
 snapshot hashes. The execution stores a canonical batch SHA-256 over the suite

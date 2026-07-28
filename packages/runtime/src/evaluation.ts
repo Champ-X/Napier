@@ -7,11 +7,13 @@ import type {
   JsonValue,
   ModelRef,
   RunContextCoverageDelta,
+  RunEvaluationGovernanceBinding,
   RunEvaluationRecord,
   RunEvaluationVerdict,
   RunReplaySnapshot,
 } from "@napier/contracts";
 
+import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
 import type { ModelRegistry } from "./models.js";
 import { compareRuns } from "./replay.js";
@@ -88,6 +90,9 @@ export class RunEvaluationService {
       evaluatorModel,
       comparison.contextCoverageDelta,
     );
+    const comparisonGovernance = createRunEvaluationGovernanceBinding(
+      comparison.contextCoverageDelta,
+    );
     const record: RunEvaluationRecord = {
       id: createId("evaluation"),
       threadId,
@@ -101,6 +106,7 @@ export class RunEvaluationService {
       reason: result.reason,
       evidence: result.evidence,
       evaluatorModel,
+      comparisonGovernance,
       createdAt: nowIso(),
     };
     const saved = await this.store.saveRunEvaluation(record);
@@ -120,6 +126,10 @@ export class RunEvaluationService {
         rubric: saved.rubric.name,
         leftSnapshotSha256: saved.leftSnapshotSha256,
         rightSnapshotSha256: saved.rightSnapshotSha256,
+        comparisonGovernanceSha256: comparisonGovernance.contentSha256,
+        contextCoverageStatus: comparisonGovernance.contextCoverageStatus,
+        contextCoverageDiagnosticsSha256:
+          comparisonGovernance.contextCoverageDiagnosticsSha256,
       },
     });
     return saved;
@@ -357,6 +367,29 @@ export function buildRunEvaluationMessages(
 }
 
 type ParsedEvaluation = RunEvaluationJudgment;
+
+export function createRunEvaluationGovernanceBinding(
+  contextCoverageDelta: RunContextCoverageDelta,
+): RunEvaluationGovernanceBinding {
+  const contextCoverageDiagnosticsSha256 = sha256(
+    canonicalJson(contextCoverageDelta.diagnostics),
+  );
+  const contextCoverageDeltaSha256 = sha256(
+    canonicalJson(contextCoverageDelta),
+  );
+  const content = {
+    kind: "napier.run-evaluation-governance" as const,
+    schemaVersion: 1 as const,
+    contextCoverageStatus: contextCoverageDelta.status,
+    contextCoverageRateDelta: contextCoverageDelta.coverageRateDelta,
+    contextCoverageDiagnosticsSha256,
+    contextCoverageDeltaSha256,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
 
 function formatSnapshotForEvaluation(snapshot: RunReplaySnapshot): string {
   const evidence = snapshot.events

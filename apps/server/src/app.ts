@@ -20151,6 +20151,20 @@ function setRunEvaluationRecordHeaders(
     "X-Napier-Evaluation-Criterion-Count",
     String(evaluation.scores.length),
   );
+  if (evaluation.comparisonGovernance) {
+    context.header(
+      "X-Napier-Comparison-Governance-SHA256",
+      evaluation.comparisonGovernance.contentSha256,
+    );
+    context.header(
+      "X-Napier-Context-Coverage-Status",
+      evaluation.comparisonGovernance.contextCoverageStatus,
+    );
+    context.header(
+      "X-Napier-Context-Coverage-Diagnostics-SHA256",
+      evaluation.comparisonGovernance.contextCoverageDiagnosticsSha256,
+    );
+  }
 }
 
 function setEvaluationAdjudicationListHeaders(

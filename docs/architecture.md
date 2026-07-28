@@ -2102,6 +2102,7 @@ edit semantic input
 execute suite
   -> evaluate every candidate through the no-tool pairwise service
   -> include metadata-only contextCoverageDelta governance in evaluator input
+  -> bind that governance projection into the saved pair evaluation hash
   -> hash each complete pair evaluation into its case result
   -> require right_better or tie plus the minimum candidate mean to pass
   -> aggregate pass rate over conclusive cases

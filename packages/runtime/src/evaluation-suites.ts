@@ -250,6 +250,9 @@ export function hashRunEvaluation(record: RunEvaluationRecord): string {
       reason: record.reason,
       evidence: record.evidence,
       evaluatorModel: record.evaluatorModel,
+      ...(record.comparisonGovernance
+        ? { comparisonGovernance: record.comparisonGovernance }
+        : {}),
     }),
   );
 }

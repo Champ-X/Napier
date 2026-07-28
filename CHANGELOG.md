@@ -24,7 +24,9 @@ All notable changes to Napier are recorded here.
   `contextCoverageDelta` status so candidate Runs can be flagged as clean,
   partial, missing, or regressed without exposing raw context. The no-tool
   pairwise evaluator now receives the same governance metadata in a separate
-  prompt section so rubric scoring can account for context coverage drift.
+  prompt section so rubric scoring can account for context coverage drift, and
+  saved evaluation records bind that governance projection with a hash-only
+  receipt consumed by suite, casebook, and consensus hashes.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

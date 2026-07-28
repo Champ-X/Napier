@@ -11670,6 +11670,26 @@ function validatePersistedRunEvaluation(
   ) {
     throw new Error(`Persisted Run evaluation is invalid: ${evaluation.id}`);
   }
+  if (evaluation.comparisonGovernance) {
+    const governance = evaluation.comparisonGovernance;
+    const { contentSha256, ...governanceContent } = governance;
+    if (
+      governance.kind !== "napier.run-evaluation-governance" ||
+      governance.schemaVersion !== 1 ||
+      !["clean", "partial", "missing", "regressed"].includes(
+        governance.contextCoverageStatus,
+      ) ||
+      !Number.isFinite(governance.contextCoverageRateDelta) ||
+      !/^[a-f0-9]{64}$/.test(governance.contextCoverageDiagnosticsSha256) ||
+      !/^[a-f0-9]{64}$/.test(governance.contextCoverageDeltaSha256) ||
+      !/^[a-f0-9]{64}$/.test(contentSha256) ||
+      sha256(canonicalJson(governanceContent)) !== contentSha256
+    ) {
+      throw new Error(
+        `Persisted Run evaluation governance is invalid: ${evaluation.id}`,
+      );
+    }
+  }
   if (
     !evaluation.rubric.name.trim() ||
     evaluation.rubric.name.length > 500 ||

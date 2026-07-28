@@ -3714,6 +3714,16 @@ export interface RunContextCoverageDelta {
   diagnostics: string[];
 }
 
+export interface RunEvaluationGovernanceBinding {
+  kind: "napier.run-evaluation-governance";
+  schemaVersion: 1;
+  contextCoverageStatus: RunContextCoverageStatus;
+  contextCoverageRateDelta: number;
+  contextCoverageDiagnosticsSha256: string;
+  contextCoverageDeltaSha256: string;
+  contentSha256: string;
+}
+
 export interface RunComparison {
   threadId: string;
   left: RunReplaySnapshot;
@@ -3764,6 +3774,7 @@ export interface RunEvaluationRecord {
   reason: string;
   evidence: string;
   evaluatorModel: ModelRef;
+  comparisonGovernance?: RunEvaluationGovernanceBinding;
   createdAt: string;
 }
 
