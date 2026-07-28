@@ -12,6 +12,10 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { IndependentModelAdvisorGuidance } from "./independent-model-advisor.js";
+import {
+  isPassedVerifyWorkspaceCompletion,
+  isVerifyWorkspaceCompletion,
+} from "./model-advisor-evidence.js";
 
 export interface CreateModelAdvisorNoticeInput {
   assistantText: string;
@@ -310,9 +314,10 @@ function createAdvisorEvidence(
         : assistantText.split(/\r\n|\r|\n/u).length,
     toolCompletedCount: toolCompletedEvents.length,
     verificationToolCompleted: toolCompletedEvents.some(
-      (event) =>
-        isRecord(event.payload) &&
-        event.payload["toolName"] === "verify_workspace",
+      isVerifyWorkspaceCompletion,
+    ),
+    verificationToolPassed: toolCompletedEvents.some(
+      isPassedVerifyWorkspaceCompletion,
     ),
   };
 }
@@ -325,7 +330,7 @@ function createVerificationClaimDiagnostic(
     assistantText,
     VERIFICATION_CLAIM_PATTERNS,
   );
-  if (matchCount === 0 || evidence.verificationToolCompleted) {
+  if (matchCount === 0 || evidence.verificationToolPassed) {
     return undefined;
   }
   return createDiagnostic(
@@ -335,6 +340,7 @@ function createVerificationClaimDiagnostic(
     {
       matchCount,
       verificationToolCompleted: evidence.verificationToolCompleted,
+      verificationToolPassed: evidence.verificationToolPassed,
       toolCompletedCount: evidence.toolCompletedCount,
     },
   );
@@ -400,8 +406,4 @@ export function createModelAdvisorBlockFromNotice(
     guidance: [],
     correctable: true,
   };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

@@ -229,6 +229,7 @@ export interface ModelAdvisorEvidence {
   assistantLineCount: number;
   toolCompletedCount: number;
   verificationToolCompleted: boolean;
+  verificationToolPassed: boolean;
 }
 
 export interface ModelAdvisorNoticePayload {

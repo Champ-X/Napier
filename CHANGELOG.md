@@ -262,6 +262,8 @@ All notable changes to Napier are recorded here.
   path hash, and before/after hashes without exposing path or patch text.
 - Trace tool summaries now surface `list_files` and `read_file` hash receipts
   without exposing listed paths or file contents.
+- Model Advisor evidence now treats only `verify_workspace` results with
+  structured `passed` status as proof for passing-check claims.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

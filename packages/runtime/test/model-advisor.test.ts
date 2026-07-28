@@ -69,12 +69,53 @@ describe("model advisor stream lint", () => {
             callId: "tool_1",
             toolName: "verify_workspace",
             status: "completed",
+            details: { status: "passed" },
           },
         },
       ],
     });
 
     expect(notice).toBeUndefined();
+  });
+
+  it("does not suppress verification claims after failed verification", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The build and tests passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        {
+          id: "evt_1",
+          threadId: "thread_1",
+          runId: "run_1",
+          seq: 1,
+          type: "tool.completed",
+          category: "tool",
+          visibility: "user",
+          createdAt: "2026-07-27T00:00:00.000Z",
+          payload: {
+            callId: "tool_1",
+            toolName: "verify_workspace",
+            status: "completed",
+            details: { status: "failed" },
+          },
+        },
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          verificationToolCompleted: true,
+          verificationToolPassed: false,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+          }),
+        ],
+      }),
+    );
   });
 
   it("flags destructive command references without copying text", () => {

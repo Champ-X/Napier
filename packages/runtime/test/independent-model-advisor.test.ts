@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import {
+  buildIndependentModelAdvisorPrompt,
   INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
   parseIndependentModelAdvisorResponse,
   projectIndependentModelAdvisorReviews,
@@ -17,6 +18,23 @@ const GUIDANCE_TEXT =
   "Reconcile the claimed result with the available verification evidence.";
 
 describe("independent Model Advisor", () => {
+  it("distinguishes completed verification from passed verification evidence", () => {
+    const prompt = buildIndependentModelAdvisorPrompt({
+      turnPrompt: "Report release state.",
+      candidateText: "The tests passed.",
+      candidateModel: { provider: "worker", id: "worker-1" },
+      runEvents: [
+        event(1, "tool.completed", {
+          toolName: "verify_workspace",
+          details: { status: "failed" },
+        }),
+      ],
+    });
+
+    expect(prompt.user).toContain('"verificationToolCompleted":true');
+    expect(prompt.user).toContain('"verificationToolPassed":false');
+  });
+
   it("uses a zero-tool reviewer and persists only hash-bound guidance", async () => {
     const faux = fauxProvider({ provider: "faux-independent-advisor" });
     faux.setResponses([

@@ -777,7 +777,9 @@ evidence in an isolated zero-tool call. It must return strict JSON containing
 an `accept`, `revise`, `block`, or `inconclusive` verdict, score, risk, and up
 to six typed issue codes. The primary and review models cannot be the same in
 the saved Agent profile, and the review model cannot be the zero-key
-`napier/demo` model.
+`napier/demo` model. Verification evidence distinguishes a completed
+`verify_workspace` call from a passed one; failed, timed-out, output-capped, or
+legacy status-less verifier completions are not treated as passing checks.
 
 The durable `model.advisor.independent.reviewed` receipt stores model
 identities, issue codes, severities, usage, and SHA-256 bindings for the
