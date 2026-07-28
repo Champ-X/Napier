@@ -290,6 +290,11 @@ All notable changes to Napier are recorded here.
   prefer symbol/range hashes for code edits, use complete-file SHA-256
   preconditions, and re-run `verify_workspace` after relevant writes before
   claiming checks passed.
+- Runtime prompts now also inject a concise `plan_tool_protocol` whenever Plan
+  tools are enabled, guiding Agents to create focused durable plans, start and
+  settle steps with evidence, verify planned artifacts through
+  runtime-computed digests, and avoid claiming completion before required
+  steps and artifacts are settled.
 - `apply_patch create` can now explicitly opt in to creating missing
   workspace-relative parent directories for new artifact paths. The operation
   keeps protected-segment and symlink checks, records created-directory count

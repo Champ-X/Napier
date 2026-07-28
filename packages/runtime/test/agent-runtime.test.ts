@@ -2711,6 +2711,13 @@ describe("AgentRuntime demo path", () => {
     const faux = fauxProvider({ provider: "faux-planned-artifact" });
     faux.setResponses([
       (context) => {
+        expect(context.systemPrompt).toContain("<plan_tool_protocol>");
+        expect(context.systemPrompt).toContain(
+          "do not provide your own artifact hash",
+        );
+        expect(context.systemPrompt).toContain(
+          "Do not claim a plan is complete",
+        );
         expect(context.tools?.map((tool) => tool.name)).toEqual(
           expect.arrayContaining([
             "create_plan",

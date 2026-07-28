@@ -1183,6 +1183,7 @@ export class AgentRuntime {
     const baseSystemPromptSections = [
       skillPrompt,
       formatWorkspaceToolGuidance(tools),
+      formatPlanToolGuidance(tools),
       importedLedgerBoundary,
       history.checkpoint ? formatContextCheckpoint(history.checkpoint) : "",
       memoryContext.text,
@@ -3302,6 +3303,47 @@ function formatWorkspaceToolGuidance(tools: readonly AgentTool[]): string {
     );
   }
   lines.push("</workspace_tool_protocol>");
+  return lines.join("\n");
+}
+
+function formatPlanToolGuidance(tools: readonly AgentTool[]): string {
+  const toolNames = new Set(tools.map((tool) => tool.name));
+  const hasCreatePlan = toolNames.has("create_plan");
+  const hasStepUpdate = toolNames.has("update_plan_step");
+  const hasArtifactUpdate = toolNames.has("update_plan_artifact");
+  const hasReplan = toolNames.has("replan_plan");
+  if (!hasCreatePlan && !hasStepUpdate && !hasArtifactUpdate && !hasReplan) {
+    return "";
+  }
+
+  const lines = [
+    "<plan_tool_protocol>",
+    "Use durable plans for multi-step work, artifact delivery, or tasks where the operator needs progress and recovery evidence.",
+  ];
+  if (hasCreatePlan) {
+    lines.push(
+      "Create one focused plan with concrete verification criteria and declared artifacts before doing substantial delivery work.",
+    );
+  }
+  if (hasStepUpdate) {
+    lines.push(
+      "Start a step before acting on it, then complete, block, skip, or reopen it with concise evidence from the current run.",
+    );
+  }
+  if (hasArtifactUpdate) {
+    lines.push(
+      "For planned file or directory artifacts, record produced evidence after the workspace bytes exist, then verify so Napier computes the digest; do not provide your own artifact hash.",
+    );
+    lines.push(
+      "Do not claim a plan is complete until every required step is settled and every required artifact is verified or explicitly superseded.",
+    );
+  }
+  if (hasReplan) {
+    lines.push(
+      "When a step is blocked, scope changes, or an artifact is missing, use replan_plan instead of silently editing the old plan shape.",
+    );
+  }
+  lines.push("</plan_tool_protocol>");
   return lines.join("\n");
 }
 

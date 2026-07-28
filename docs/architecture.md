@@ -1499,6 +1499,15 @@ writes before claiming checks passed. The protocol is prompt guidance only;
 policy enforcement still comes from the tool allowlist, sandbox, hash
 preconditions, Ledger events, and Advisor freshness checks.
 
+When Plan tools are enabled, the runtime similarly injects a concise
+`plan_tool_protocol` derived from the assembled tool set. It steers Agents to
+create one focused durable plan for multi-step or artifact delivery work,
+start and settle steps with evidence, record planned artifacts only after
+workspace bytes exist, ask Napier to compute file or directory artifact
+digests, and avoid claiming completion until required steps and artifacts are
+settled. The protocol is guidance; Store transitions and replay validators
+remain the authority.
+
 ```text
 read_file
   -> resolve the target's canonical realpath inside the workspace
@@ -3130,6 +3139,10 @@ duplicate, or repeated target IDs before Store writes. Valid proposals inherit
 source scope and Agent and remain `proposed` until a human approves them.
 
 ## Plan And Artifact Flow
+
+The live system prompt includes `plan_tool_protocol` whenever the assembled
+tool surface contains Plan tools, so the following state machine is presented
+as the normal workflow rather than an optional afterthought.
 
 ```text
 create_plan

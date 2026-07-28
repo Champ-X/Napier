@@ -1026,6 +1026,13 @@ hashes for code changes, pass complete-file SHA-256 preconditions to
 artifact paths, and rerun `verify_workspace` after relevant writes before
 claiming checks passed.
 
+When Plan tools are available, the Runtime also injects a concise
+`plan_tool_protocol`. It tells the Agent to create one focused plan for
+multi-step or artifact delivery work, start and settle steps with evidence,
+record planned artifacts after workspace bytes exist, verify file and directory
+artifacts through runtime-computed digests, and avoid claiming plan completion
+until required steps and artifacts are settled.
+
 `read_file` reports the SHA-256 and byte size of the complete UTF-8 file even
 when only a line range is returned. A write-capable Agent must pass that digest
 back to `apply_patch`; creation instead requires `expectedSha256: null` to
