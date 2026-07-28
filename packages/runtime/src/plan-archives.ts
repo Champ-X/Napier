@@ -8,6 +8,7 @@ import {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { refreshPlanProjection } from "./plans.js";
 import { hashEventStream } from "./replay.js";
 import type { LocalStore } from "./store.js";
 
@@ -263,6 +264,7 @@ function assertArchivePlan(
       throw new Error("Execution plan archive projection is invalid");
     }
   }
+  assertArchivePhaseProjection(record);
   const recommendation = record["replanRecommendation"];
   if (recommendation !== null) {
     const recommendationRecord = recordField(
@@ -278,6 +280,33 @@ function assertArchivePlan(
     }
   }
   return record as unknown as ExecutionPlan;
+}
+
+function assertArchivePhaseProjection(record: Record<string, unknown>): void {
+  const phaseFields = [
+    "phaseWaves",
+    "activePhaseIndex",
+    "parallelReadyStepIds",
+    "phaseProjectionSha256",
+  ];
+  const hasAnyPhaseField = phaseFields.some((field) => field in record);
+  if (!hasAnyPhaseField) return;
+  if (phaseFields.some((field) => !(field in record))) {
+    throw new Error("Execution plan archive phase projection is invalid");
+  }
+  const projected = refreshPlanProjection(
+    structuredClone(record) as unknown as ExecutionPlan,
+  );
+  if (
+    JSON.stringify(projected.phaseWaves) !==
+      JSON.stringify(record["phaseWaves"]) ||
+    projected.activePhaseIndex !== record["activePhaseIndex"] ||
+    JSON.stringify(projected.parallelReadyStepIds) !==
+      JSON.stringify(record["parallelReadyStepIds"]) ||
+    projected.phaseProjectionSha256 !== record["phaseProjectionSha256"]
+  ) {
+    throw new Error("Execution plan archive phase projection is invalid");
+  }
 }
 
 function assertArchiveStep(value: unknown): string {

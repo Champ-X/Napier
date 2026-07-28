@@ -6,6 +6,13 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Deer Workflow-style Plan phase projection. Execution Plans now derive
+  deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
+  `phaseProjectionSha256` from the existing step DAG on every mutation. Agent
+  plan-tool results, `plan.*` Ledger events, Plan REST headers, archive
+  validation, Blueprint outcome projections, and the lazy Plan Workbench all
+  expose the same ID/status-only phase evidence without copying objective,
+  evidence, blocker, or artifact-path text.
 - Durable Tool Loop Guard. Agent profiles now carry an enabled/threshold/exempt
   policy that is normalized into immutable revisions and schema-8 Run
   fingerprints. The runtime detects consecutive single-tool turns only when

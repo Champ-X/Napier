@@ -185,6 +185,10 @@ export function createPlanTools(
             criticalPathStepIds: plan.criticalPathStepIds,
             readyStepIds: plan.readyStepIds,
             blockedStepIds: plan.blockedStepIds,
+            activePhaseIndex: plan.activePhaseIndex,
+            parallelReadyStepIds: plan.parallelReadyStepIds,
+            phaseWaveCount: plan.phaseWaves.length,
+            phaseProjectionSha256: plan.phaseProjectionSha256,
             evidence: step.evidence,
             ...(step.blocker ? { blocker: step.blocker } : {}),
           },
@@ -258,6 +262,10 @@ export function createPlanTools(
             criticalPathStepIds: plan.criticalPathStepIds,
             readyStepIds: plan.readyStepIds,
             blockedStepIds: plan.blockedStepIds,
+            activePhaseIndex: plan.activePhaseIndex,
+            parallelReadyStepIds: plan.parallelReadyStepIds,
+            phaseWaveCount: plan.phaseWaves.length,
+            phaseProjectionSha256: plan.phaseProjectionSha256,
           },
         });
       }
@@ -319,6 +327,10 @@ export function createPlanTools(
             criticalPathStepIds: plan.criticalPathStepIds,
             readyStepIds: plan.readyStepIds,
             blockedStepIds: plan.blockedStepIds,
+            activePhaseIndex: plan.activePhaseIndex,
+            parallelReadyStepIds: plan.parallelReadyStepIds,
+            phaseWaveCount: plan.phaseWaves.length,
+            phaseProjectionSha256: plan.phaseProjectionSha256,
             ...(updated.sha256 ? { sha256: updated.sha256 } : {}),
             ...(updated.sizeBytes !== undefined
               ? { sizeBytes: updated.sizeBytes }
@@ -583,6 +595,10 @@ async function appendPlanCreatedEvent(
       criticalPathStepIds: plan.criticalPathStepIds,
       readyStepIds: plan.readyStepIds,
       blockedStepIds: plan.blockedStepIds,
+      activePhaseIndex: plan.activePhaseIndex,
+      parallelReadyStepIds: plan.parallelReadyStepIds,
+      phaseWaveCount: plan.phaseWaves.length,
+      phaseProjectionSha256: plan.phaseProjectionSha256,
     },
   });
 }
@@ -636,6 +652,10 @@ function planToolResult<TDetails>(
           criticalPathStepIds: plan.criticalPathStepIds,
           readyStepIds: plan.readyStepIds,
           blockedStepIds: plan.blockedStepIds,
+          activePhaseIndex: plan.activePhaseIndex,
+          parallelReadyStepIds: plan.parallelReadyStepIds,
+          phaseWaveCount: plan.phaseWaves.length,
+          phaseProjectionSha256: plan.phaseProjectionSha256,
           steps: plan.steps.map((step) => ({
             id: step.id,
             status: step.status,

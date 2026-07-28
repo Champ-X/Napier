@@ -17462,6 +17462,19 @@ function setExecutionPlanHeaders(context: Context, plan: ExecutionPlan): void {
     "X-Napier-Plan-Blocked-Step-Count",
     String(plan.blockedStepIds.length),
   );
+  context.header("X-Napier-Plan-Phase-Count", String(plan.phaseWaves.length));
+  context.header(
+    "X-Napier-Plan-Active-Phase-Index",
+    plan.activePhaseIndex === null ? "" : String(plan.activePhaseIndex),
+  );
+  context.header(
+    "X-Napier-Plan-Parallel-Ready-Step-Count",
+    String(plan.parallelReadyStepIds.length),
+  );
+  context.header(
+    "X-Napier-Plan-Phase-Projection-SHA256",
+    plan.phaseProjectionSha256,
+  );
   if (plan.replanRecommendation) {
     context.header("X-Napier-Replan-Recommendation", "true");
     context.header(

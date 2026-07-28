@@ -208,8 +208,9 @@ Version `0.1.0` includes:
   checkpoint calibration for coverage, compression, drift, and fallback
   omission signals, with no-store count/rate headers for CI polling;
 - durable dependency-aware execution plans with persisted critical-path,
-  ready-step, and blocked-step projections, evidence-gated step transitions,
-  governed revision-CAS replanning, hash-bound replan recommendations for
+  ready-step, blocked-step, phase-wave, and parallel-ready projections,
+  evidence-gated step transitions, governed revision-CAS replanning,
+  hash-bound replan recommendations for
   blocked critical paths and missing artifacts, generated replacement-plan
   drafts that can be fed back through replan CAS, deterministic draft
   evaluation scores with risk and evidence hashes, no-store hash-bound model
@@ -1054,6 +1055,16 @@ to the URL Thread and Plan, and returns `valid` / `invalid` plus
 low-cardinality diagnostics without mutating Ledger state. The Plan Workbench
 exposes the same verifier as a local JSON upload action before an operator
 trusts an archived workflow record.
+
+Each `ExecutionPlan` also carries a Deer Workflow-style phase projection derived
+from the step DAG. `phaseWaves` partitions steps into deterministic dependency
+waves, `activePhaseIndex` points to the first unfinished wave,
+`parallelReadyStepIds` names the currently executable parallel set, and
+`phaseProjectionSha256` binds the ID/status-only projection. These fields are
+recomputed on every Plan mutation, mirrored in Plan REST headers, included in
+Agent plan-tool results and `plan.*` Ledger events, and revalidated by archive
+verification when present. They do not copy step descriptions, evidence prose,
+blockers, or artifact paths.
 
 Open **Plan → Reusable plan** to export the same work as a smaller
 `napier.execution-plan-blueprint`. A blueprint keeps only the reusable shape:

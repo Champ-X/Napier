@@ -59,6 +59,14 @@ describe("execution plans", () => {
     ]);
     expect(created.readyStepIds).toEqual(["inspect"]);
     expect(created.blockedStepIds).toEqual([]);
+    expect(created.activePhaseIndex).toBe(0);
+    expect(created.parallelReadyStepIds).toEqual(["inspect"]);
+    expect(created.phaseWaves.map((wave) => wave.stepIds)).toEqual([
+      ["inspect"],
+      ["implement"],
+      ["verify"],
+    ]);
+    expect(created.phaseProjectionSha256).toMatch(/^[a-f0-9]{64}$/);
 
     const running = transitionPlanStep(created, "inspect", {
       action: "start",
@@ -82,6 +90,11 @@ describe("execution plans", () => {
     ]);
     expect(inspected.criticalPathStepIds).toEqual(["implement", "verify"]);
     expect(inspected.readyStepIds).toEqual(["implement"]);
+    expect(inspected.activePhaseIndex).toBe(1);
+    expect(inspected.parallelReadyStepIds).toEqual(["implement"]);
+    expect(inspected.phaseProjectionSha256).not.toBe(
+      created.phaseProjectionSha256,
+    );
     const lateFailure = transitionPlanStep(inspected, "inspect", {
       action: "block",
       blocker: "Late callback",
@@ -209,6 +222,13 @@ describe("execution plans", () => {
       "recover-implement",
       "verify",
     ]);
+    expect(drafted.phaseWaves.map((wave) => wave.stepIds)).toEqual([
+      ["inspect"],
+      ["implement", "recover-implement"],
+      ["verify"],
+    ]);
+    expect(drafted.activePhaseIndex).toBe(1);
+    expect(drafted.parallelReadyStepIds).toEqual(["recover-implement"]);
     const reopened = transitionPlanStep(interrupted, "implement", {
       action: "reopen",
     });
@@ -216,7 +236,93 @@ describe("execution plans", () => {
     expect(reopened.steps[1]?.status).toBe("ready");
     expect(reopened.criticalPathStepIds).toEqual(["implement", "verify"]);
     expect(reopened.readyStepIds).toEqual(["implement"]);
+    expect(reopened.activePhaseIndex).toBe(1);
+    expect(reopened.parallelReadyStepIds).toEqual(["implement"]);
     expect(reopened.replanRecommendation).toBeNull();
+  });
+
+  it("derives Deer Workflow-style phase waves and parallel ready sets", () => {
+    const plan = createExecutionPlan("thread-plan", {
+      objective: "Coordinate parallel implementation work.",
+      steps: [
+        {
+          id: "inspect",
+          title: "Inspect",
+          description: "Inspect the target surface.",
+          verification: "Inspection evidence is recorded.",
+        },
+        {
+          id: "api",
+          title: "API",
+          description: "Implement the API path.",
+          verification: "API tests pass.",
+          dependsOn: ["inspect"],
+        },
+        {
+          id: "ui",
+          title: "UI",
+          description: "Implement the UI path.",
+          verification: "UI tests pass.",
+          dependsOn: ["inspect"],
+        },
+        {
+          id: "verify",
+          title: "Verify",
+          description: "Run the integrated check.",
+          verification: "Full verification passes.",
+          dependsOn: ["api", "ui"],
+        },
+      ],
+    });
+
+    expect(plan.phaseWaves).toEqual([
+      expect.objectContaining({
+        index: 0,
+        stepIds: ["inspect"],
+        readyStepIds: ["inspect"],
+        terminalStepIds: [],
+        waveSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+      expect.objectContaining({
+        index: 1,
+        stepIds: ["api", "ui"],
+        pendingStepIds: ["api", "ui"],
+        readyStepIds: [],
+      }),
+      expect.objectContaining({
+        index: 2,
+        stepIds: ["verify"],
+        pendingStepIds: ["verify"],
+      }),
+    ]);
+    expect(plan.activePhaseIndex).toBe(0);
+    expect(plan.parallelReadyStepIds).toEqual(["inspect"]);
+
+    const inspected = transitionPlanStep(
+      transitionPlanStep(plan, "inspect", { action: "start", runId: "run-1" }),
+      "inspect",
+      { action: "complete", evidence: "Inspection completed." },
+    );
+    expect(inspected.readyStepIds).toEqual(["api", "ui"]);
+    expect(inspected.activePhaseIndex).toBe(1);
+    expect(inspected.parallelReadyStepIds).toEqual(["api", "ui"]);
+    expect(inspected.phaseWaves[1]).toEqual(
+      expect.objectContaining({
+        readyStepIds: ["api", "ui"],
+        pendingStepIds: [],
+      }),
+    );
+
+    const apiDone = transitionPlanStep(
+      transitionPlanStep(inspected, "api", { action: "start", runId: "run-2" }),
+      "api",
+      { action: "complete", evidence: "API completed." },
+    );
+    expect(apiDone.activePhaseIndex).toBe(1);
+    expect(apiDone.parallelReadyStepIds).toEqual(["ui"]);
+    expect(apiDone.phaseProjectionSha256).not.toBe(
+      inspected.phaseProjectionSha256,
+    );
   });
 
   it("replans blocked work with revision CAS and hash-bound history", () => {

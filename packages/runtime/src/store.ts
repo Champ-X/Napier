@@ -5525,6 +5525,10 @@ export class LocalStore {
           criticalPathStepIds: plan.criticalPathStepIds,
           readyStepIds: plan.readyStepIds,
           blockedStepIds: plan.blockedStepIds,
+          activePhaseIndex: plan.activePhaseIndex,
+          parallelReadyStepIds: plan.parallelReadyStepIds,
+          phaseWaveCount: plan.phaseWaves.length,
+          phaseProjectionSha256: plan.phaseProjectionSha256,
           blueprintRecordId: record.id,
           blueprintSha256: record.blueprintSha256,
           blueprintSourcePlanId: record.sourcePlanId,
@@ -12441,6 +12445,10 @@ function executionPlanBlueprintRecordPreviewHashContent(
             criticalPathStepIds: preview.plan.criticalPathStepIds,
             readyStepIds: preview.plan.readyStepIds,
             blockedStepIds: preview.plan.blockedStepIds,
+            activePhaseIndex: preview.plan.activePhaseIndex,
+            parallelReadyStepIds: preview.plan.parallelReadyStepIds,
+            phaseWaveCount: preview.plan.phaseWaves.length,
+            phaseProjectionSha256: preview.plan.phaseProjectionSha256,
           },
         }
       : {}),
@@ -12637,6 +12645,10 @@ function executionPlanOutcomeProjectionSha256(plan: ExecutionPlan): string {
       criticalPathStepIds: plan.criticalPathStepIds,
       readyStepIds: plan.readyStepIds,
       blockedStepIds: plan.blockedStepIds,
+      activePhaseIndex: plan.activePhaseIndex,
+      parallelReadyStepIds: plan.parallelReadyStepIds,
+      phaseWaveCount: plan.phaseWaves.length,
+      phaseProjectionSha256: plan.phaseProjectionSha256,
     }),
   );
 }

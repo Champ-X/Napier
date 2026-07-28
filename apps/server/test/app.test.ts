@@ -9918,6 +9918,18 @@ function expectExecutionPlanHeaders(
   expect(response.headers.get("x-napier-plan-blocked-step-count")).toBe(
     String(plan.blockedStepIds.length),
   );
+  expect(response.headers.get("x-napier-plan-phase-count")).toBe(
+    String(plan.phaseWaves.length),
+  );
+  expect(response.headers.get("x-napier-plan-active-phase-index")).toBe(
+    plan.activePhaseIndex === null ? "" : String(plan.activePhaseIndex),
+  );
+  expect(response.headers.get("x-napier-plan-parallel-ready-step-count")).toBe(
+    String(plan.parallelReadyStepIds.length),
+  );
+  expect(response.headers.get("x-napier-plan-phase-projection-sha256")).toBe(
+    plan.phaseProjectionSha256,
+  );
   expect(response.headers.get("x-napier-replan-recommendation")).toBe(
     String(Boolean(plan.replanRecommendation)),
   );

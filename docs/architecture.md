@@ -2636,8 +2636,9 @@ source scope and Agent and remain `proposed` until a human approves them.
 create_plan
   -> validate stable IDs, dependency references, and an acyclic step graph
   -> mark root steps ready and dependent steps pending
-  -> derive criticalPathStepIds, readyStepIds, blockedStepIds, and
-     replanRecommendation
+  -> derive criticalPathStepIds, readyStepIds, blockedStepIds,
+     phaseWaves, activePhaseIndex, parallelReadyStepIds,
+     phaseProjectionSha256, and replanRecommendation
 replan_plan
   -> compare expectedRevision against the current durable plan revision
   -> require a strategy, reason, and concrete evidence
@@ -2647,8 +2648,8 @@ replan_plan
   -> start a ready step under a same-Thread running run
   -> settle completed / blocked / skipped only with explicit evidence
   -> promote newly unblocked dependents
-  -> refresh critical-path scheduling projection and active / blocked /
-     completed plan state
+  -> refresh critical-path and phase-wave scheduling projections plus active /
+     blocked / completed plan state
 ```
 
 Late callbacks cannot overwrite terminal step or artifact outcomes. An explicit
@@ -2656,9 +2657,15 @@ Late callbacks cannot overwrite terminal step or artifact outcomes. An explicit
 reconciliation changes a step owned by an interrupted run from `running` to
 `blocked`, records its outcome as unknown, and appends one
 `plan.step.blocked` event. Plan events, internal planning tool results, and the
-Paper Ledger Plan Workbench expose the same critical-path, ready-step, and
-blocked-step projection so the next schedulable work is visible without
-recomputing the DAG in each consumer. If there is no ready or running step,
+Paper Ledger Plan Workbench expose the same critical-path, ready-step,
+blocked-step, phase-wave, and parallel-ready projection so the next schedulable
+work is visible without recomputing the DAG in each consumer. The phase
+projection is a Deer Workflow-style `phase()` / `parallel()` view derived from
+the Plan DAG: each wave contains step IDs and status partitions only, the active
+phase is the first unfinished wave, and `parallelReadyStepIds` is the current
+same-wave executable set. `phaseProjectionSha256` binds that ID/status-only
+projection without copying objective, step descriptions, evidence, blockers, or
+artifact paths. If there is no ready or running step,
 Napier derives a deterministic `replanRecommendation` when the critical path is
 blocked or a required artifact is missing. The recommendation binds the current
 revision, strategy, affected IDs, suggested supersession IDs, reason/evidence,
@@ -2693,8 +2700,8 @@ list plans
 create/replan/step/artifact mutation
   -> hash the returned ExecutionPlan exactly as served
   -> mirror thread ID, plan ID, status, revision, step/artifact/replan counts,
-     critical-path/ready/blocked counts, and active recommendation digest when
-     present
+     critical-path/ready/blocked/phase/parallel-ready counts, phase-projection
+     hash, and active recommendation digest when present
 review replan draft
   -> expose reviewSha256 as the content digest
   -> mirror thread ID, plan ID, expected revision, recommendation/draft/
@@ -2706,8 +2713,9 @@ export plan archive
      resource counts, and event-boundary headers without mutating state
 verify plan archive
   -> strictly parse a single archive, recompute stable content and event-stream
-     hashes, validate plan/event ownership, bind to the URL Thread and Plan,
-     and return no-store valid/invalid diagnostics
+     hashes, validate plan/event ownership, recompute phase projection when
+     present, bind to the URL Thread and Plan, and return no-store valid/invalid
+     diagnostics
 export plan blueprint
   -> distill the current archive into napier.execution-plan-blueprint:
      objective, step DAG, artifact declarations, source plan revision, archive

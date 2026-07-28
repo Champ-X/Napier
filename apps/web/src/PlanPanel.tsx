@@ -241,6 +241,9 @@ export default function PlanPanel({
     plan?.steps.find((step) => step.id === plan.readyStepIds[0]) ??
     plan?.steps.find((step) => step.status === "ready");
   const criticalPath = plan?.criticalPathStepIds ?? [];
+  const activePhase = plan?.phaseWaves.find(
+    (wave) => wave.index === plan.activePhaseIndex,
+  );
   const criticalPathSet = new Set(criticalPath);
   const latestReplan = plan?.replans.at(-1);
   const replanRecommendation = plan?.replanRecommendation;
@@ -1298,6 +1301,22 @@ export default function PlanPanel({
                 {plan.blockedStepIds.length > 0
                   ? plan.blockedStepIds.join(", ")
                   : copy.plan.none}
+              </small>
+              <small>
+                {copy.plan.phase}:{" "}
+                {activePhase
+                  ? `${activePhase.index + 1} / ${plan.phaseWaves.length}`
+                  : copy.plan.none}
+                {" / "}
+                {copy.plan.parallelReady}:{" "}
+                {plan.parallelReadyStepIds.length > 0
+                  ? plan.parallelReadyStepIds.join(", ")
+                  : copy.plan.none}
+                {" / "}
+                {copy.plan.phaseHash}:{" "}
+                <code title={plan.phaseProjectionSha256}>
+                  {plan.phaseProjectionSha256.slice(0, 12)}
+                </code>
               </small>
             </div>
             {latestReplan ? (

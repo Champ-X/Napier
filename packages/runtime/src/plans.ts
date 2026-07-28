@@ -4,6 +4,7 @@ import type {
   ArtifactManifestEntry,
   CreateExecutionPlanRequest,
   ExecutionPlan,
+  ExecutionPlanPhaseWave,
   ExecutionPlanReplanDraftEvaluation,
   ExecutionPlanReplanDraftEvaluationCheck,
   ExecutionPlanReplanPolicyPosture,
@@ -34,6 +35,10 @@ type PlanProjectionInput = Omit<
   | "criticalPathStepIds"
   | "readyStepIds"
   | "blockedStepIds"
+  | "phaseWaves"
+  | "activePhaseIndex"
+  | "parallelReadyStepIds"
+  | "phaseProjectionSha256"
 > &
   Partial<
     Pick<
@@ -43,6 +48,10 @@ type PlanProjectionInput = Omit<
       | "criticalPathStepIds"
       | "readyStepIds"
       | "blockedStepIds"
+      | "phaseWaves"
+      | "activePhaseIndex"
+      | "parallelReadyStepIds"
+      | "phaseProjectionSha256"
     >
   >;
 
@@ -514,9 +523,110 @@ export function refreshPlanProjection(
     .filter((step) => step.status === "blocked")
     .map((step) => step.id)
     .sort();
+  const phaseProjection = derivePhaseProjection(plan);
+  plan.phaseWaves = phaseProjection.phaseWaves;
+  plan.activePhaseIndex = phaseProjection.activePhaseIndex;
+  plan.parallelReadyStepIds = phaseProjection.parallelReadyStepIds;
+  plan.phaseProjectionSha256 = phaseProjection.phaseProjectionSha256;
   const projected = plan as ExecutionPlan;
   projected.replanRecommendation = deriveReplanRecommendation(projected);
   return projected;
+}
+
+interface PhaseProjection {
+  phaseWaves: ExecutionPlanPhaseWave[];
+  activePhaseIndex: number | null;
+  parallelReadyStepIds: string[];
+  phaseProjectionSha256: string;
+}
+
+function derivePhaseProjection(
+  plan: Pick<ExecutionPlan, "steps">,
+): PhaseProjection {
+  const byId = new Map(plan.steps.map((step) => [step.id, step]));
+  const memo = new Map<string, number>();
+  const waveIndexFor = (stepId: string): number => {
+    const cached = memo.get(stepId);
+    if (cached !== undefined) return cached;
+    const step = byId.get(stepId);
+    if (!step || step.dependsOn.length === 0) {
+      memo.set(stepId, 0);
+      return 0;
+    }
+    const index =
+      Math.max(
+        ...step.dependsOn.map((dependencyId) => waveIndexFor(dependencyId)),
+      ) + 1;
+    memo.set(stepId, index);
+    return index;
+  };
+  for (const step of plan.steps) waveIndexFor(step.id);
+  const stepIdsByWave = new Map<number, string[]>();
+  for (const step of plan.steps) {
+    const index = waveIndexFor(step.id);
+    const list = stepIdsByWave.get(index) ?? [];
+    list.push(step.id);
+    stepIdsByWave.set(index, list);
+  }
+  const waves = [...stepIdsByWave.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([index, stepIds]): ExecutionPlanPhaseWave => {
+      const sortedStepIds = stepIds.sort();
+      const steps = sortedStepIds.map((stepId) => byId.get(stepId)!);
+      const pendingStepIds = steps
+        .filter((step) => step.status === "pending")
+        .map((step) => step.id)
+        .sort();
+      const readyStepIds = steps
+        .filter((step) => step.status === "ready")
+        .map((step) => step.id)
+        .sort();
+      const runningStepIds = steps
+        .filter((step) => step.status === "running")
+        .map((step) => step.id)
+        .sort();
+      const blockedStepIds = steps
+        .filter((step) => step.status === "blocked")
+        .map((step) => step.id)
+        .sort();
+      const terminalStepIds = steps
+        .filter(
+          (step) => step.status === "completed" || step.status === "skipped",
+        )
+        .map((step) => step.id)
+        .sort();
+      const content = {
+        schemaVersion: 1,
+        index,
+        stepIds: sortedStepIds,
+        pendingStepIds,
+        readyStepIds,
+        runningStepIds,
+        blockedStepIds,
+        terminalStepIds,
+      };
+      return {
+        ...content,
+        waveSha256: sha256(canonicalJson(content)),
+      };
+    });
+  const activeWave =
+    waves.find((wave) => wave.terminalStepIds.length !== wave.stepIds.length) ??
+    null;
+  const activePhaseIndex = activeWave?.index ?? null;
+  const parallelReadyStepIds = activeWave?.readyStepIds ?? [];
+  const content = {
+    schemaVersion: 1,
+    activePhaseIndex,
+    parallelReadyStepIds,
+    waves,
+  };
+  return {
+    phaseWaves: waves,
+    activePhaseIndex,
+    parallelReadyStepIds,
+    phaseProjectionSha256: sha256(canonicalJson(content)),
+  };
 }
 
 function deriveCriticalPathStepIds(

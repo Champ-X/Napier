@@ -512,6 +512,17 @@ export interface ExecutionPlanReplanRecommendation {
   recommendationSha256: string;
 }
 
+export interface ExecutionPlanPhaseWave {
+  index: number;
+  stepIds: string[];
+  pendingStepIds: string[];
+  readyStepIds: string[];
+  runningStepIds: string[];
+  blockedStepIds: string[];
+  terminalStepIds: string[];
+  waveSha256: string;
+}
+
 export interface ExecutionPlan {
   id: string;
   threadId: string;
@@ -524,6 +535,10 @@ export interface ExecutionPlan {
   criticalPathStepIds: string[];
   readyStepIds: string[];
   blockedStepIds: string[];
+  phaseWaves: ExecutionPlanPhaseWave[];
+  activePhaseIndex: number | null;
+  parallelReadyStepIds: string[];
+  phaseProjectionSha256: string;
   revision: number;
   createdAt: string;
   updatedAt: string;

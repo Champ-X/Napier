@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import {
   createExecutionPlanArchive,
+  hashExecutionPlanArchiveContent,
   verifyExecutionPlanArchive,
 } from "../src/plan-archives.js";
 import { LocalStore } from "../src/store.js";
@@ -113,6 +114,23 @@ describe("execution plan archives", () => {
       expect.objectContaining({
         status: "invalid",
         diagnostics: ["hash_mismatch"],
+      }),
+    );
+    const tamperedPhase = structuredClone(archive);
+    tamperedPhase.plan.phaseProjectionSha256 = "f".repeat(64);
+    tamperedPhase.contentSha256 = hashExecutionPlanArchiveContent({
+      kind: tamperedPhase.kind,
+      schemaVersion: tamperedPhase.schemaVersion,
+      apiVersion: tamperedPhase.apiVersion,
+      threadId: tamperedPhase.threadId,
+      plan: tamperedPhase.plan,
+      events: tamperedPhase.events,
+      eventStreamSha256: tamperedPhase.eventStreamSha256,
+    });
+    expect(verifyExecutionPlanArchive(tamperedPhase)).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["invalid_shape"],
       }),
     );
   });
@@ -1089,7 +1107,8 @@ describe("execution plan archives", () => {
             index: 0,
             status: "valid",
             diagnostics: [],
-            declaredContentSha256: policyOverrideRetirementHistory.contentSha256,
+            declaredContentSha256:
+              policyOverrideRetirementHistory.contentSha256,
             recomputedContentSha256:
               policyOverrideRetirementHistory.contentSha256,
             declaredRetirementSetSha256:
@@ -1106,7 +1125,8 @@ describe("execution plan archives", () => {
             index: 1,
             status: "valid",
             diagnostics: [],
-            declaredContentSha256: policyOverrideRetirementHistory.contentSha256,
+            declaredContentSha256:
+              policyOverrideRetirementHistory.contentSha256,
           }),
         ],
         contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),

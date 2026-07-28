@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-De9aRTap.js",
-    "sizeBytes": 153173,
+    "path": "apps/web/dist/assets/index-DcI99yzZ.js",
+    "sizeBytes": 153241,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "642a617c1899a30d706fde93d97fc6bcaecb493060db83c269fc8c65707c8ed9"
+    "sha256": "3e0522b6b2993bfbfab6acd093664ebbd9fb3e9a75728024853eab43d24d4fd6"
   },
-  "distContentSha256": "642a617c1899a30d706fde93d97fc6bcaecb493060db83c269fc8c65707c8ed9",
+  "distContentSha256": "3e0522b6b2993bfbfab6acd093664ebbd9fb3e9a75728024853eab43d24d4fd6",
   "errors": []
 }

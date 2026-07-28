@@ -130,6 +130,7 @@ const SAFE_ID_PAYLOAD_KEYS = new Set([
 
 const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "actualCostUsd",
+  "activePhaseIndex",
   "agreementCount",
   "agreementRate",
   "attempt",
@@ -166,6 +167,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "outputTokens",
   "passedCount",
   "passRate",
+  "phaseWaveCount",
   "retainedFromSeq",
   "retryBaseMs",
   "reviewerCount",

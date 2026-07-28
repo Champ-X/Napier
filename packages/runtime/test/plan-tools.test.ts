@@ -76,6 +76,10 @@ describe("plan tools", () => {
         criticalPathStepIds: ["write-report"],
         readyStepIds: ["write-report"],
         blockedStepIds: [],
+        activePhaseIndex: 0,
+        parallelReadyStepIds: ["write-report"],
+        phaseWaveCount: 1,
+        phaseProjectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
 
@@ -134,6 +138,10 @@ describe("plan tools", () => {
         criticalPathStepIds: ["write-report"],
         readyStepIds: ["write-report"],
         blockedStepIds: [],
+        activePhaseIndex: 0,
+        parallelReadyStepIds: ["write-report"],
+        phaseWaveCount: 1,
+        phaseProjectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
     expect(events.at(-1)?.payload).toEqual(
@@ -141,6 +149,10 @@ describe("plan tools", () => {
         criticalPathStepIds: [],
         readyStepIds: [],
         blockedStepIds: [],
+        activePhaseIndex: null,
+        parallelReadyStepIds: [],
+        phaseWaveCount: 1,
+        phaseProjectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
   });
@@ -265,6 +277,9 @@ describe("plan tools", () => {
         replanCount: 1,
         criticalPathStepIds: ["implement-alt", "verify"],
         readyStepIds: ["implement-alt"],
+        activePhaseIndex: 1,
+        parallelReadyStepIds: ["implement-alt"],
+        phaseProjectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
     expect(replanned.details).toEqual(
@@ -296,6 +311,9 @@ describe("plan tools", () => {
         addedStepIds: ["implement-alt"],
         dependencyUpdatedStepIds: ["verify"],
         criticalPathStepIds: ["implement-alt", "verify"],
+        activePhaseIndex: 1,
+        parallelReadyStepIds: ["implement-alt"],
+        phaseProjectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
   });
