@@ -286,6 +286,7 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
 const BASE_EVENT_ATTRIBUTE_KEYS = new Set([
   "napier.event.category",
   "napier.event.id",
+  "napier.event.payload_sha256",
   "napier.event.seq",
   "napier.event.type",
   "napier.event.visibility",
@@ -459,6 +460,7 @@ export function validateOpenTelemetryTraceArtifact(
   ) {
     throw new Error("OpenTelemetry trace root span is invalid");
   }
+  validateImportReceiptTraceBinding(root);
   const {
     generatedAt: _generatedAt,
     contentSha256: _contentSha256,
@@ -503,6 +505,9 @@ function openTelemetryTraceArtifactDiagnostic(error: unknown): string {
   if (message.includes("header is invalid")) return "invalid_header";
   if (message.includes("event range")) return "invalid_event_range";
   if (message.includes("redaction")) return "invalid_redaction";
+  if (message.includes("import receipt binding")) {
+    return "import_receipt_mismatch";
+  }
   if (message.includes("span count")) return "span_count_mismatch";
   if (message.includes("root span")) return "root_span_mismatch";
   if (message.includes("hash mismatch")) return "hash_mismatch";
@@ -958,6 +963,7 @@ function toOtlpSpanEvent(event: RunEvent): OtlpSpanEvent {
     attributes: attributes({
       "napier.event.category": event.category,
       "napier.event.id": event.id,
+      "napier.event.payload_sha256": sha256(canonicalJson(event.payload)),
       "napier.event.seq": event.seq,
       "napier.event.type": event.type,
       "napier.event.visibility": event.visibility,
@@ -1483,6 +1489,96 @@ function validateSpanGraph(spans: OtlpSpan[]): void {
       );
     }
   }
+}
+
+function validateImportReceiptTraceBinding(root: OtlpSpan): void {
+  const receiptSeq = integerAttribute(
+    root.attributes,
+    "napier.thread.import.receipt_seq",
+  );
+  const receiptSha256 = stringAttribute(
+    root.attributes,
+    "napier.thread.import.receipt_sha256",
+  );
+  const importEvents = root.events.filter((event) => {
+    const eventType = stringAttribute(event.attributes, "napier.event.type");
+    return (
+      event.name === THREAD_IMPORTED_EVENT || eventType === THREAD_IMPORTED_EVENT
+    );
+  });
+  if (receiptSeq === undefined && receiptSha256 === undefined) {
+    if (importEvents.length > 0) {
+      throw new Error("OpenTelemetry trace import receipt binding is invalid");
+    }
+    return;
+  }
+  const localImportedThroughSeq = integerAttribute(
+    root.attributes,
+    "napier.thread.import.local_imported_through_seq",
+  );
+  const importedAt = stringAttribute(
+    root.attributes,
+    "napier.thread.import.imported_at",
+  );
+  if (
+    receiptSeq === undefined ||
+    receiptSha256 === undefined ||
+    receiptSeq < 1 ||
+    !SHA256_PATTERN.test(receiptSha256) ||
+    localImportedThroughSeq === undefined ||
+    localImportedThroughSeq !== receiptSeq ||
+    !validTimestamp(importedAt)
+  ) {
+    throw new Error("OpenTelemetry trace import receipt binding is invalid");
+  }
+  if (importEvents.length !== 1) {
+    throw new Error("OpenTelemetry trace import receipt binding is invalid");
+  }
+  const event = importEvents[0]!;
+  if (
+    event.name !== THREAD_IMPORTED_EVENT ||
+    event.timeUnixNano !== timestampNanos(importedAt) ||
+    stringAttribute(event.attributes, "napier.event.type") !==
+      THREAD_IMPORTED_EVENT ||
+    stringAttribute(event.attributes, "napier.event.category") !==
+      "lifecycle" ||
+    stringAttribute(event.attributes, "napier.event.visibility") !== "debug" ||
+    integerAttribute(event.attributes, "napier.event.seq") !== receiptSeq ||
+    stringAttribute(event.attributes, "napier.event.payload_sha256") !==
+      receiptSha256
+  ) {
+    throw new Error("OpenTelemetry trace import receipt binding is invalid");
+  }
+}
+
+function stringAttribute(
+  attributes: OtlpKeyValue[],
+  key: string,
+): string | undefined {
+  const value = primitiveAttribute(attributes, key);
+  return typeof value === "string" ? value : undefined;
+}
+
+function integerAttribute(
+  attributes: OtlpKeyValue[],
+  key: string,
+): number | undefined {
+  const value = primitiveAttribute(attributes, key);
+  return typeof value === "number" && Number.isSafeInteger(value)
+    ? value
+    : undefined;
+}
+
+function primitiveAttribute(
+  attributes: OtlpKeyValue[],
+  key: string,
+): string | number | boolean | undefined {
+  const value = attributes.find((attribute) => attribute.key === key)?.value;
+  if (!value) return undefined;
+  if ("stringValue" in value) return value.stringValue;
+  if ("boolValue" in value) return value.boolValue;
+  if ("intValue" in value) return Number(value.intValue);
+  return value.doubleValue;
 }
 
 function payloadString(payload: JsonValue, key: string): string | undefined {

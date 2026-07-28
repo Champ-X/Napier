@@ -110,6 +110,10 @@ All notable changes to Napier are recorded here.
   sequence and payload SHA-256 when that ledger receipt is present and aligned,
   giving trace consumers proof that imported lineage attributes are
   ledger-backed without exposing the replay bundle.
+- OTLP span events now include a generic `napier.event.payload_sha256` receipt,
+  and the trace verifier binds any exported import receipt back to the root
+  `thread.imported` span event, failing closed on hidden or drifting receipt
+  evidence even after the artifact hash is recomputed.
 - ThreadDetail no-store responses now mirror the same aligned
   `thread.imported` receipt sequence and payload SHA-256 in
   `X-Napier-Import-Receipt-*` headers, keeping API clients and OTLP consumers

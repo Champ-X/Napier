@@ -61,6 +61,35 @@ function attributeValue(
   return value.doubleValue;
 }
 
+function setAttributeValue(
+  attributes: OtlpKeyValue[],
+  key: string,
+  value: string | number | boolean,
+): void {
+  const attribute = attributes.find((item) => item.key === key);
+  if (!attribute) throw new Error(`Missing OTLP attribute: ${key}`);
+  if (typeof value === "string") {
+    attribute.value = { stringValue: value };
+    return;
+  }
+  if (typeof value === "boolean") {
+    attribute.value = { boolValue: value };
+    return;
+  }
+  attribute.value = Number.isInteger(value)
+    ? { intValue: String(value) }
+    : { doubleValue: value };
+}
+
+function rehashArtifact(artifact: OpenTelemetryTraceArtifact): void {
+  const {
+    generatedAt: _generatedAt,
+    contentSha256: _contentSha256,
+    ...content
+  } = artifact;
+  artifact.contentSha256 = hashOpenTelemetryTraceArtifact(content);
+}
+
 describe("OpenTelemetry trace export", () => {
   it("maps the Ledger into deterministic privacy-safe OTLP spans", async () => {
     const store = await createStore();
@@ -721,8 +750,80 @@ describe("OpenTelemetry trace export", () => {
         "napier.thread.import.receipt_sha256",
       ),
     ).toBe(sha256(canonicalJson(importEvent.payload)));
+    const importedTraceEvent = importedRoot.events.find(
+      (event) => event.name === "thread.imported",
+    )!;
+    expect(
+      attributeValue(
+        importedTraceEvent.attributes,
+        "napier.event.payload_sha256",
+      ),
+    ).toBe(sha256(canonicalJson(importEvent.payload)));
     expect(JSON.stringify(importedArtifact)).not.toContain(
       "Imported OTLP receipt",
+    );
+  });
+
+  it("rejects import receipt trace binding drift", async () => {
+    const store = await createStore();
+    const source = store
+      .listThreads()
+      .find((candidate) => !candidate.importProvenance)!;
+    const bundle = await exportThreadReplayBundle(store, source.id);
+    const imported = await store.importThreadReplayBundle(
+      bundle,
+      "Imported OTLP receipt binding",
+    );
+    const artifact = await createOpenTelemetryTraceArtifact(
+      store,
+      imported.thread.id,
+    );
+
+    const forgedRootReceipt = structuredClone(artifact);
+    const forgedRoot = spans(forgedRootReceipt).find(
+      (span) => !span.parentSpanId,
+    )!;
+    setAttributeValue(
+      forgedRoot.attributes,
+      "napier.thread.import.receipt_sha256",
+      "0".repeat(64),
+    );
+    rehashArtifact(forgedRootReceipt);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(forgedRootReceipt),
+    ).toThrow("import receipt binding");
+    expect(verifyOpenTelemetryTraceArtifact(forgedRootReceipt)).toEqual({
+      status: "invalid",
+      diagnostics: ["import_receipt_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
+
+    const forgedEventReceipt = structuredClone(artifact);
+    const forgedEventRoot = spans(forgedEventReceipt).find(
+      (span) => !span.parentSpanId,
+    )!;
+    const receiptEvent = forgedEventRoot.events.find(
+      (event) => event.name === "thread.imported",
+    )!;
+    setAttributeValue(
+      receiptEvent.attributes,
+      "napier.event.payload_sha256",
+      "0".repeat(64),
+    );
+    rehashArtifact(forgedEventReceipt);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(forgedEventReceipt),
+    ).toThrow("import receipt binding");
+
+    const hiddenReceipt = structuredClone(artifact);
+    const hiddenRoot = spans(hiddenReceipt).find((span) => !span.parentSpanId)!;
+    hiddenRoot.attributes = hiddenRoot.attributes.filter(
+      (attribute) => !attribute.key.startsWith("napier.thread.import.receipt_"),
+    );
+    rehashArtifact(hiddenReceipt);
+    expect(() => validateOpenTelemetryTraceArtifact(hiddenReceipt)).toThrow(
+      "import receipt binding",
     );
   });
 

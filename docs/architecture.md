@@ -2267,6 +2267,11 @@ span attributes expose the same source event count and local cutoff for audit.
 When a matching `thread.imported` receipt exists, OTLP also exports its local
 sequence and payload SHA-256 so trace consumers can tell the imported lineage
 projection is ledger-backed without replaying or exposing the bundle.
+Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
+projection, and the trace verifier binds the root import receipt attributes
+back to the root `thread.imported` span event. Hiding that root receipt,
+changing its payload hash, or changing the event payload hash invalidates the
+artifact even when the artifact's top-level content hash is recomputed.
 ThreadDetail no-store headers expose the same receipt sequence and payload hash
 under `X-Napier-Import-Receipt-*`, so API clients get the same proof without
 parsing the event stream. Run Lab consumes that header-backed projection and
