@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Cx_7S8OR.js",
+    "path": "apps/web/dist/assets/index-DHmiegT-.js",
     "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "e7eb752352a04317ae9755013b1764edada6779e9c317496c5e5abc17d064531"
+    "sha256": "813b48a1177b8dbad45bb1ea2bb2d685d00c8bbdc74de2604d81dc9788b4153d"
   },
-  "distContentSha256": "e7eb752352a04317ae9755013b1764edada6779e9c317496c5e5abc17d064531",
+  "distContentSha256": "813b48a1177b8dbad45bb1ea2bb2d685d00c8bbdc74de2604d81dc9788b4153d",
   "errors": []
 }

@@ -1,7 +1,10 @@
 import type { RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { independentModelAdvisorReviewViews } from "../src/model-advisor-review-view";
+import {
+  independentModelAdvisorReviewViews,
+  independentModelAdvisorVerificationState,
+} from "../src/model-advisor-review-view";
 
 describe("independent Model Advisor review views", () => {
   it("projects valid receipts in descending Ledger order", () => {
@@ -82,6 +85,9 @@ describe("independent Model Advisor review views", () => {
         issueCodes: ["evidence"],
       }),
     ]);
+    expect(independentModelAdvisorVerificationState(views[0]!)).toBe(
+      "checks stale / passed / w#13 / v#12 / plan stale / plan#11 / artifact stale / artifact#10 / goal stale / goal#9",
+    );
     expect(views[1]).not.toHaveProperty("modelContextEnvelopeSha256");
   });
 

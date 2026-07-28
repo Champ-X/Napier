@@ -5,6 +5,8 @@ import type {
   RunEvent,
 } from "@napier/contracts";
 
+import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
+
 const VERDICTS = new Set<IndependentModelAdvisorVerdict>([
   "accept",
   "revise",
@@ -121,6 +123,91 @@ export function independentModelAdvisorReviewViews(
       ];
     })
     .sort((left, right) => right.eventSeq - left.eventSeq);
+}
+
+export function independentModelAdvisorVerificationState(
+  review: IndependentModelAdvisorReviewView,
+): string {
+  const states = modelAdvisorReviewCopy.verificationStates;
+  const checkFreshness =
+    review.verificationToolPassedAfterWorkspaceWrite === true
+      ? states.current
+      : review.verificationToolPassed === true &&
+          review.workspaceWriteCompleted === true
+        ? states.stale
+        : states.notCurrent;
+  const passed =
+    review.verificationToolPassed === true
+      ? states.passed
+      : review.verificationToolCompleted
+        ? states.notPassed
+        : states.missing;
+  const seqs = [
+    ...(review.latestWorkspaceWriteSeq !== undefined
+      ? [`w#${review.latestWorkspaceWriteSeq}`]
+      : []),
+    ...(review.latestPassedVerificationSeq !== undefined
+      ? [`v#${review.latestPassedVerificationSeq}`]
+      : []),
+  ];
+  return [
+    `checks ${checkFreshness}`,
+    passed,
+    ...seqs,
+    ...completionFreshnessParts(review),
+  ].join(" / ");
+}
+
+function completionFreshnessParts(
+  review: IndependentModelAdvisorReviewView,
+): string[] {
+  return [
+    ...completionFreshnessPart(
+      "plan",
+      review.planCompleted,
+      review.planCompletedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestPlanCompletedSeq,
+    ),
+    ...completionFreshnessPart(
+      "artifact",
+      review.planArtifactVerified,
+      review.planArtifactVerifiedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestPlanArtifactVerifiedSeq,
+    ),
+    ...completionFreshnessPart(
+      "goal",
+      review.goalSatisfied,
+      review.goalSatisfiedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestGoalSatisfiedSeq,
+    ),
+  ];
+}
+
+function completionFreshnessPart(
+  label: string,
+  present: boolean | undefined,
+  current: boolean | undefined,
+  workspaceWriteCompleted: boolean | undefined,
+  seq: number | undefined,
+): string[] {
+  if (present === undefined && current === undefined && seq === undefined) {
+    return [];
+  }
+  const state =
+    current === true
+      ? "current"
+      : present === true && workspaceWriteCompleted === true
+        ? "stale"
+        : present === true
+          ? "not-current"
+          : "missing";
+  return [
+    `${label} ${state}`,
+    ...(seq !== undefined ? [`${label}#${seq}`] : []),
+  ];
 }
 
 function record(value: unknown): value is Record<string, unknown> {
