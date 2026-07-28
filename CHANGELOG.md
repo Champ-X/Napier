@@ -174,6 +174,9 @@ All notable changes to Napier are recorded here.
 - Trace summary coverage and Run Lab coverage deltas now emit stable
   `contentSha256` receipts in the Web projection, so UI-visible privacy posture
   can be copied, compared, and regression-reviewed without raw event payloads.
+- Trace summary coverage receipts now have fail-closed Web verifiers that reject
+  malformed counts, status/delta drift, generic event-type drift, and
+  `contentSha256` mismatches before treating the coverage evidence as valid.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

@@ -2377,6 +2377,11 @@ canonicalized and hashed into Web-side `contentSha256` receipts. Those receipts
 cover only summary source counts, generic event-type sets, deltas, diagnostics,
 and status metadata, providing copyable proof of the UI privacy posture without
 including raw Ledger payload fields.
+The same Web ViewModel exposes fail-closed verifiers for those receipts. A
+coverage receipt is invalid when counts do not add up, generic event-type sets
+are malformed, or the recomputed canonical hash differs from `contentSha256`.
+A delta receipt also checks status, diagnostics, and every delta against the
+left/right coverage payloads before accepting its hash.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

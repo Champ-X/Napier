@@ -7,6 +7,8 @@ import {
   traceSummaryCoverageDeltaView,
   traceSummaryCoverageReceipt,
   traceSummaryCoverageView,
+  verifyTraceSummaryCoverageDeltaReceipt,
+  verifyTraceSummaryCoverageReceipt,
 } from "../src/trace-event-summary-view";
 
 describe("Trace event summary view", () => {
@@ -105,6 +107,42 @@ describe("Trace event summary view", () => {
     });
     expect(repeated.contentSha256).toBe(receipt.contentSha256);
     expect(drifted.contentSha256).not.toBe(receipt.contentSha256);
+  });
+
+  it("verifies coverage receipts fail-closed", async () => {
+    const coverage = traceSummaryCoverageView([
+      traceEvent("message.user", "message", {
+        role: "user",
+        textBytes: 24,
+      }),
+      traceEvent("alpha.audit", "system", {
+        status: "TOP_SECRET_ALPHA",
+      }),
+    ]);
+    const receipt = await traceSummaryCoverageReceipt(coverage);
+    const drifted = { ...receipt, contentSha256: "0".repeat(64) };
+    const malformed = { ...receipt, total: receipt.total + 1 };
+
+    await expect(verifyTraceSummaryCoverageReceipt(receipt)).resolves.toEqual({
+      status: "valid",
+      diagnostics: [],
+      observedContentSha256: receipt.contentSha256,
+      declaredContentSha256: receipt.contentSha256,
+    });
+    await expect(verifyTraceSummaryCoverageReceipt(drifted)).resolves.toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["content_sha256_mismatch"],
+        declaredContentSha256: "0".repeat(64),
+      }),
+    );
+    await expect(verifyTraceSummaryCoverageReceipt(malformed)).resolves.toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["count_mismatch"],
+        declaredContentSha256: receipt.contentSha256,
+      }),
+    );
   });
 
   it("compares coverage between baseline and candidate runs", () => {
@@ -216,6 +254,57 @@ describe("Trace event summary view", () => {
       contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
     });
     expect(repeated.contentSha256).toBe(receipt.contentSha256);
+  });
+
+  it("verifies coverage delta receipts fail-closed", async () => {
+    const delta = traceSummaryCoverageDeltaView(
+      [
+        traceEvent("message.user", "message", {
+          role: "user",
+          textBytes: 12,
+        }),
+      ],
+      [
+        traceEvent("message.user", "message", {
+          role: "user",
+          textBytes: 12,
+        }),
+        traceEvent("alpha.audit", "system", {
+          summary: "TOP_SECRET_ALPHA",
+        }),
+      ],
+    );
+
+    const receipt = await traceSummaryCoverageDeltaReceipt(delta);
+    const drifted = { ...receipt, genericDelta: receipt.genericDelta + 1 };
+    const malformed = { ...receipt, status: "clean" };
+
+    await expect(
+      verifyTraceSummaryCoverageDeltaReceipt(receipt),
+    ).resolves.toEqual({
+      status: "valid",
+      diagnostics: [],
+      observedContentSha256: receipt.contentSha256,
+      declaredContentSha256: receipt.contentSha256,
+    });
+    await expect(
+      verifyTraceSummaryCoverageDeltaReceipt(drifted),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["generic_delta_mismatch"],
+        declaredContentSha256: receipt.contentSha256,
+      }),
+    );
+    await expect(
+      verifyTraceSummaryCoverageDeltaReceipt(malformed),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["status_mismatch"],
+        declaredContentSha256: receipt.contentSha256,
+      }),
+    );
   });
 });
 
