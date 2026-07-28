@@ -315,9 +315,14 @@ All notable changes to Napier are recorded here.
 - Model Advisor verification-claim suppression now also requires the passed
   verifier to be later than the latest workspace write, so code edits after a
   green check make the claim stale until the Agent verifies again.
+- Model Advisor verification-claim suppression now also covers
+  plan-complete and artifact-verified claims, requiring current
+  `plan.step.*` / `plan.artifact.verified` Ledger evidence after the latest
+  workspace write before the final answer can claim those states without a
+  deterministic notice.
 - Trace Model Advisor summaries now expose verification current/stale metadata
-  and the latest write/verification sequence numbers without rendering
-  diagnostic prose or candidate text.
+  plus plan/artifact completion freshness and the latest evidence sequence
+  numbers without rendering diagnostic prose or candidate text.
 - Independent Model Advisor review receipts now persist the same metadata-only
   evidence summary, allowing the Trace review card to explain verification
   freshness without reopening prompt or candidate text.

@@ -92,6 +92,59 @@ describe("Model Advisor event trace view", () => {
     expect(modelAdvisorEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects stale plan and artifact evidence without prose", () => {
+    const event = advisorEvent("model.advisor.notice", {
+      kind: "napier.model-advisor-notice",
+      source: "deterministic_stream_lint",
+      turnSource: "user",
+      status: "notice",
+      textSha256: "a".repeat(64),
+      diagnosticCount: 1,
+      diagnosticSetSha256: "b".repeat(64),
+      diagnostics: [
+        {
+          ruleId: "unverified_verification_claim",
+          severity: "warning",
+          guidance: "TOP_SECRET_PLAN_GUIDANCE",
+        },
+      ],
+      evidence: {
+        workspaceWriteCompleted: true,
+        planCompleted: true,
+        planArtifactVerified: true,
+        planCompletedAfterWorkspaceWrite: false,
+        planArtifactVerifiedAfterWorkspaceWrite: false,
+        latestWorkspaceWriteSeq: 17,
+        latestPlanCompletedSeq: 12,
+        latestPlanArtifactVerifiedSeq: 11,
+      },
+      contentSha256: "c".repeat(64),
+    });
+
+    expect(modelAdvisorEventTraceView(event)).toEqual({
+      action: "notice",
+      status: "notice",
+      source: "deterministic_stream_lint",
+      turnSource: "user",
+      diagnosticCount: 1,
+      workspaceWriteCompleted: true,
+      planCompleted: true,
+      planArtifactVerified: true,
+      planCompletedAfterWorkspaceWrite: false,
+      planArtifactVerifiedAfterWorkspaceWrite: false,
+      latestWorkspaceWriteSeq: 17,
+      latestPlanCompletedSeq: 12,
+      latestPlanArtifactVerifiedSeq: 11,
+      textSha256: "a".repeat(64),
+      diagnosticSetSha256: "b".repeat(64),
+      contentSha256: "c".repeat(64),
+    });
+    expect(modelAdvisorEventTraceSummary(event)).toBe(
+      `advisor / notice / status notice / source deterministic_stream_lint / turn user / diagnostics 1 / workspace-write / workspace-write-seq 17 / plan-completed / plan-completed-seq 12 / plan-completion-stale / artifact-verified / artifact-verified-seq 11 / artifact-verification-stale / text ${"a".repeat(12)} / diagnostics ${"b".repeat(12)} / receipt ${"c".repeat(12)}`,
+    );
+    expect(modelAdvisorEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("projects independent reviews without issue guidance text", () => {
     const event = advisorEvent("model.advisor.independent.reviewed", {
       kind: "napier.independent-model-advisor-review",

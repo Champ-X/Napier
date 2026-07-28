@@ -5,8 +5,14 @@ export interface ModelAdvisorVerificationEvidence {
   verificationToolPassed: boolean;
   workspaceWriteCompleted: boolean;
   verificationToolPassedAfterWorkspaceWrite: boolean;
+  planCompleted: boolean;
+  planArtifactVerified: boolean;
+  planCompletedAfterWorkspaceWrite: boolean;
+  planArtifactVerifiedAfterWorkspaceWrite: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
+  latestPlanCompletedSeq?: number;
+  latestPlanArtifactVerifiedSeq?: number;
 }
 
 export function isVerifyWorkspaceCompletion(event: RunEvent): boolean {
@@ -36,6 +42,26 @@ export function isWorkspaceWriteCompletion(event: RunEvent): boolean {
   return event.payload["toolName"] === "apply_patch";
 }
 
+export function isPlanCompletionEvent(event: RunEvent): boolean {
+  if (
+    !event.type.startsWith("plan.step.") ||
+    !isRecord(event.payload) ||
+    event.payload["planStatus"] !== "completed"
+  ) {
+    return false;
+  }
+  return event.category === "plan";
+}
+
+export function isPlanArtifactVerificationEvent(event: RunEvent): boolean {
+  return (
+    event.type === "plan.artifact.verified" &&
+    event.category === "plan" &&
+    isRecord(event.payload) &&
+    event.payload["status"] === "verified"
+  );
+}
+
 export function createModelAdvisorVerificationEvidence(
   events: RunEvent[],
 ): ModelAdvisorVerificationEvidence {
@@ -44,20 +70,41 @@ export function createModelAdvisorVerificationEvidence(
     events,
     isPassedVerifyWorkspaceCompletion,
   );
+  const latestPlanCompletedSeq = latestSeq(events, isPlanCompletionEvent);
+  const latestPlanArtifactVerifiedSeq = latestSeq(
+    events,
+    isPlanArtifactVerificationEvent,
+  );
   const verificationToolPassedAfterWorkspaceWrite =
     latestPassedVerificationSeq !== undefined &&
     (latestWorkspaceWriteSeq === undefined ||
       latestPassedVerificationSeq > latestWorkspaceWriteSeq);
+  const planCompletedAfterWorkspaceWrite =
+    latestPlanCompletedSeq !== undefined &&
+    (latestWorkspaceWriteSeq === undefined ||
+      latestPlanCompletedSeq > latestWorkspaceWriteSeq);
+  const planArtifactVerifiedAfterWorkspaceWrite =
+    latestPlanArtifactVerifiedSeq !== undefined &&
+    (latestWorkspaceWriteSeq === undefined ||
+      latestPlanArtifactVerifiedSeq > latestWorkspaceWriteSeq);
   return {
     verificationToolCompleted: events.some(isVerifyWorkspaceCompletion),
     verificationToolPassed: latestPassedVerificationSeq !== undefined,
     workspaceWriteCompleted: latestWorkspaceWriteSeq !== undefined,
     verificationToolPassedAfterWorkspaceWrite,
+    planCompleted: latestPlanCompletedSeq !== undefined,
+    planArtifactVerified: latestPlanArtifactVerifiedSeq !== undefined,
+    planCompletedAfterWorkspaceWrite,
+    planArtifactVerifiedAfterWorkspaceWrite,
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
       : {}),
     ...(latestPassedVerificationSeq !== undefined
       ? { latestPassedVerificationSeq }
+      : {}),
+    ...(latestPlanCompletedSeq !== undefined ? { latestPlanCompletedSeq } : {}),
+    ...(latestPlanArtifactVerifiedSeq !== undefined
+      ? { latestPlanArtifactVerifiedSeq }
       : {}),
   };
 }

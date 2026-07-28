@@ -770,6 +770,15 @@ summary, and item text.
 
 ## Independent Model Advisor
 
+Before any final answer is committed, the deterministic Model Advisor checks
+completion claims against current Run evidence. Passing-check claims require a
+`verify_workspace` result with structured `passed` status after the latest
+workspace write. Plan-complete claims require a completed Plan event after the
+latest workspace write, and artifact-verified claims require a
+`plan.artifact.verified` event after the latest workspace write. Stale or
+missing evidence records a hash-only `model.advisor.notice` before the visible
+assistant message.
+
 An Agent can add a distinct `modelAdvisor.reviewModel` to review every final
 candidate turn before `message.assistant` is committed. The reviewer receives
 the current turn prompt, candidate text, and a metadata-only summary of Run

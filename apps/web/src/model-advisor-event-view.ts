@@ -17,8 +17,14 @@ export interface ModelAdvisorEventTraceView {
   verificationToolPassed?: boolean;
   workspaceWriteCompleted?: boolean;
   verificationToolPassedAfterWorkspaceWrite?: boolean;
+  planCompleted?: boolean;
+  planArtifactVerified?: boolean;
+  planCompletedAfterWorkspaceWrite?: boolean;
+  planArtifactVerifiedAfterWorkspaceWrite?: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
+  latestPlanCompletedSeq?: number;
+  latestPlanArtifactVerifiedSeq?: number;
   textSha256?: string;
   candidateTextSha256?: string;
   diagnosticSetSha256?: string;
@@ -90,11 +96,25 @@ export function modelAdvisorEventTraceView(
   const verificationToolPassedAfterWorkspaceWrite = booleanValue(
     evidence["verificationToolPassedAfterWorkspaceWrite"],
   );
+  const planCompleted = booleanValue(evidence["planCompleted"]);
+  const planArtifactVerified = booleanValue(evidence["planArtifactVerified"]);
+  const planCompletedAfterWorkspaceWrite = booleanValue(
+    evidence["planCompletedAfterWorkspaceWrite"],
+  );
+  const planArtifactVerifiedAfterWorkspaceWrite = booleanValue(
+    evidence["planArtifactVerifiedAfterWorkspaceWrite"],
+  );
   const latestWorkspaceWriteSeq = nonNegativeInteger(
     evidence["latestWorkspaceWriteSeq"],
   );
   const latestPassedVerificationSeq = nonNegativeInteger(
     evidence["latestPassedVerificationSeq"],
+  );
+  const latestPlanCompletedSeq = nonNegativeInteger(
+    evidence["latestPlanCompletedSeq"],
+  );
+  const latestPlanArtifactVerifiedSeq = nonNegativeInteger(
+    evidence["latestPlanArtifactVerifiedSeq"],
   );
   const textSha256 = sha256(event.payload["textSha256"]);
   const candidateTextSha256 = sha256(event.payload["candidateTextSha256"]);
@@ -139,11 +159,23 @@ export function modelAdvisorEventTraceView(
     ...(verificationToolPassedAfterWorkspaceWrite !== undefined
       ? { verificationToolPassedAfterWorkspaceWrite }
       : {}),
+    ...(planCompleted !== undefined ? { planCompleted } : {}),
+    ...(planArtifactVerified !== undefined ? { planArtifactVerified } : {}),
+    ...(planCompletedAfterWorkspaceWrite !== undefined
+      ? { planCompletedAfterWorkspaceWrite }
+      : {}),
+    ...(planArtifactVerifiedAfterWorkspaceWrite !== undefined
+      ? { planArtifactVerifiedAfterWorkspaceWrite }
+      : {}),
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
       : {}),
     ...(latestPassedVerificationSeq !== undefined
       ? { latestPassedVerificationSeq }
+      : {}),
+    ...(latestPlanCompletedSeq !== undefined ? { latestPlanCompletedSeq } : {}),
+    ...(latestPlanArtifactVerifiedSeq !== undefined
+      ? { latestPlanArtifactVerifiedSeq }
       : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
     ...(issueSetSha256 ? { issueSetSha256 } : {}),
@@ -216,6 +248,40 @@ export function modelAdvisorEventTraceSummary(
             : view.verificationToolPassed && view.workspaceWriteCompleted
               ? "verification-stale"
               : "verification-not-current",
+        ]
+      : []),
+    ...(view.planCompleted !== undefined
+      ? [view.planCompleted ? "plan-completed" : "plan-not-completed"]
+      : []),
+    ...(view.latestPlanCompletedSeq !== undefined
+      ? [`plan-completed-seq ${view.latestPlanCompletedSeq}`]
+      : []),
+    ...(view.planCompletedAfterWorkspaceWrite !== undefined
+      ? [
+          view.planCompletedAfterWorkspaceWrite
+            ? "plan-completion-current"
+            : view.planCompleted && view.workspaceWriteCompleted
+              ? "plan-completion-stale"
+              : "plan-completion-not-current",
+        ]
+      : []),
+    ...(view.planArtifactVerified !== undefined
+      ? [
+          view.planArtifactVerified
+            ? "artifact-verified"
+            : "artifact-not-verified",
+        ]
+      : []),
+    ...(view.latestPlanArtifactVerifiedSeq !== undefined
+      ? [`artifact-verified-seq ${view.latestPlanArtifactVerifiedSeq}`]
+      : []),
+    ...(view.planArtifactVerifiedAfterWorkspaceWrite !== undefined
+      ? [
+          view.planArtifactVerifiedAfterWorkspaceWrite
+            ? "artifact-verification-current"
+            : view.planArtifactVerified && view.workspaceWriteCompleted
+              ? "artifact-verification-stale"
+              : "artifact-verification-not-current",
         ]
       : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),

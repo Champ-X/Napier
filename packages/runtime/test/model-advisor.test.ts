@@ -188,6 +188,108 @@ describe("model advisor stream lint", () => {
     expect(notice).toBeUndefined();
   });
 
+  it("flags plan completion and artifact verification claims without ledger evidence", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText:
+        "The execution plan is complete and the artifact is verified.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          planCompleted: false,
+          planArtifactVerified: false,
+          planCompletedAfterWorkspaceWrite: false,
+          planArtifactVerifiedAfterWorkspaceWrite: false,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 2,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("suppresses plan and artifact claims when current ledger evidence exists", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText:
+        "The execution plan is complete and the artifact is verified.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        planEvent(1, "plan.artifact.verified", {
+          planId: "plan_1",
+          artifactId: "artifact_1",
+          status: "verified",
+        }),
+        planEvent(2, "plan.step.completed", {
+          planId: "plan_1",
+          stepId: "step_1",
+          status: "completed",
+          planStatus: "completed",
+        }),
+      ],
+    });
+
+    expect(notice).toBeUndefined();
+  });
+
+  it("marks plan and artifact evidence stale after later workspace writes", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText:
+        "The execution plan is complete and the artifact is verified.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        planEvent(1, "plan.artifact.verified", {
+          planId: "plan_1",
+          artifactId: "artifact_1",
+          status: "verified",
+        }),
+        planEvent(2, "plan.step.completed", {
+          planId: "plan_1",
+          stepId: "step_1",
+          status: "completed",
+          planStatus: "completed",
+        }),
+        toolCompleted(3, {
+          callId: "tool_3",
+          toolName: "apply_patch",
+          status: "completed",
+          details: {
+            operation: "replace",
+            afterSha256: "a".repeat(64),
+          },
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          planCompleted: true,
+          planArtifactVerified: true,
+          planCompletedAfterWorkspaceWrite: false,
+          planArtifactVerifiedAfterWorkspaceWrite: false,
+          latestWorkspaceWriteSeq: 3,
+          latestPlanCompletedSeq: 2,
+          latestPlanArtifactVerifiedSeq: 1,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 2,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("flags destructive command references without copying text", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "Never run git reset --hard here.",
@@ -421,6 +523,24 @@ function toolCompleted(
     seq,
     type: "tool.completed",
     category: "tool",
+    visibility: "user",
+    createdAt: "2026-07-27T00:00:00.000Z",
+    payload,
+  };
+}
+
+function planEvent(
+  seq: number,
+  type: "plan.artifact.verified" | "plan.step.completed",
+  payload: Record<string, unknown>,
+): RunEvent {
+  return {
+    id: `evt_${seq}`,
+    threadId: "thread_1",
+    runId: "run_1",
+    seq,
+    type,
+    category: "plan",
     visibility: "user",
     createdAt: "2026-07-27T00:00:00.000Z",
     payload,

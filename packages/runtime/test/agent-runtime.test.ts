@@ -2868,6 +2868,9 @@ describe("AgentRuntime demo path", () => {
         "plan.step.completed",
       ]),
     );
+    expect(events.some((event) => event.type === "model.advisor.notice")).toBe(
+      false,
+    );
     const patchEvent = events.find(
       (event) =>
         event.type === "tool.completed" &&

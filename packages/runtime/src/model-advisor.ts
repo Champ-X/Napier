@@ -58,6 +58,18 @@ const VERIFICATION_CLAIM_PATTERNS = [
   /(?:测试|构建|类型检查|检查|校验).{0,16}(?:通过|成功|全绿)/u,
 ];
 
+const PLAN_COMPLETION_CLAIM_PATTERNS = [
+  /\b(?:execution\s+plan|durable\s+plan|plan|workflow)\b.{0,40}\b(?:completed|complete|done|settled|finished)\b/iu,
+  /\b(?:completed|complete|done|settled|finished)\b.{0,40}\b(?:execution\s+plan|durable\s+plan|plan|workflow)\b/iu,
+  /(?:执行计划|计划|工作流).{0,18}(?:完成|已完成|结清|已结清|闭环)/u,
+];
+
+const ARTIFACT_VERIFICATION_CLAIM_PATTERNS = [
+  /\b(?:artifact|artifacts|deliverable|deliverables|output|outputs|report|file)\b.{0,48}\b(?:verified|validated|hashed|hash-bound|produced\s+and\s+verified)\b/iu,
+  /\b(?:verified|validated|hashed|hash-bound)\b.{0,48}\b(?:artifact|artifacts|deliverable|deliverables|output|outputs|report|file)\b/iu,
+  /(?:产物|交付物|输出|报告|文件).{0,18}(?:验证|已验证|校验|已校验|哈希|已哈希)/u,
+];
+
 const DESTRUCTIVE_COMMAND_PATTERNS = [
   /\bgit\s+reset\s+--hard\b/iu,
   /\bgit\s+checkout\s+--\s+\S+/iu,
@@ -318,11 +330,33 @@ function createVerificationClaimDiagnostic(
   assistantText: string,
   evidence: ModelAdvisorNoticePayload["evidence"],
 ): ModelAdvisorDiagnostic | undefined {
-  const matchCount = countPatternHits(
+  const verificationClaimCount = countPatternHits(
     assistantText,
     VERIFICATION_CLAIM_PATTERNS,
   );
-  if (matchCount === 0 || evidence.verificationToolPassedAfterWorkspaceWrite) {
+  const planCompletionClaimCount = countPatternHits(
+    assistantText,
+    PLAN_COMPLETION_CLAIM_PATTERNS,
+  );
+  const artifactVerificationClaimCount = countPatternHits(
+    assistantText,
+    ARTIFACT_VERIFICATION_CLAIM_PATTERNS,
+  );
+  const unsupportedVerificationClaimCount =
+    evidence.verificationToolPassedAfterWorkspaceWrite
+      ? 0
+      : verificationClaimCount;
+  const unsupportedPlanCompletionClaimCount =
+    evidence.planCompletedAfterWorkspaceWrite ? 0 : planCompletionClaimCount;
+  const unsupportedArtifactVerificationClaimCount =
+    evidence.planArtifactVerifiedAfterWorkspaceWrite
+      ? 0
+      : artifactVerificationClaimCount;
+  const matchCount =
+    unsupportedVerificationClaimCount +
+    unsupportedPlanCompletionClaimCount +
+    unsupportedArtifactVerificationClaimCount;
+  if (matchCount === 0) {
     return undefined;
   }
   return createDiagnostic(
@@ -331,13 +365,27 @@ function createVerificationClaimDiagnostic(
     matchCount,
     {
       matchCount,
+      verificationClaimCount,
+      planCompletionClaimCount,
+      artifactVerificationClaimCount,
+      unsupportedVerificationClaimCount,
+      unsupportedPlanCompletionClaimCount,
+      unsupportedArtifactVerificationClaimCount,
       verificationToolCompleted: evidence.verificationToolCompleted,
       verificationToolPassed: evidence.verificationToolPassed,
       workspaceWriteCompleted: evidence.workspaceWriteCompleted,
       verificationToolPassedAfterWorkspaceWrite:
         evidence.verificationToolPassedAfterWorkspaceWrite,
+      planCompleted: evidence.planCompleted,
+      planArtifactVerified: evidence.planArtifactVerified,
+      planCompletedAfterWorkspaceWrite:
+        evidence.planCompletedAfterWorkspaceWrite,
+      planArtifactVerifiedAfterWorkspaceWrite:
+        evidence.planArtifactVerifiedAfterWorkspaceWrite,
       latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq,
       latestPassedVerificationSeq: evidence.latestPassedVerificationSeq,
+      latestPlanCompletedSeq: evidence.latestPlanCompletedSeq,
+      latestPlanArtifactVerifiedSeq: evidence.latestPlanArtifactVerifiedSeq,
       toolCompletedCount: evidence.toolCompletedCount,
     },
   );

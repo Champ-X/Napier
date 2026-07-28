@@ -370,10 +370,14 @@ deterministic Model Advisor lint pass over the assistant text and the current
 Run evidence. The first rules flag verification claims such as
 tests/build/checks passing without a `verify_workspace` result whose structured
 status is `passed` and whose sequence is later than the latest workspace write,
+Plan-complete claims without a completed Plan event later than the latest
+workspace write, and artifact-verified claims without a `plan.artifact.verified`
+event later than the latest workspace write,
 and destructive command references such as `git reset --hard` or `rm -rf`
 patterns. Failed, timed-out, output-capped, legacy status-less verifier
 completions, or passed verifier completions followed by `apply_patch` do not
-satisfy a passing-check claim.
+satisfy a passing-check claim; similarly, plan and artifact evidence followed
+by `apply_patch` is stale until the Plan or artifact is settled again.
 The Agent profile can switch the advisor `off`, choose the enabled rule set,
 configure a distinct `reviewModel`, or set `enforce` mode with zero to three
 correction attempts. Schema-5 Run configuration fingerprints bind the

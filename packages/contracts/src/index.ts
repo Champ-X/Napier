@@ -247,8 +247,14 @@ export interface ModelAdvisorEvidence {
   verificationToolPassed: boolean;
   workspaceWriteCompleted: boolean;
   verificationToolPassedAfterWorkspaceWrite: boolean;
+  planCompleted: boolean;
+  planArtifactVerified: boolean;
+  planCompletedAfterWorkspaceWrite: boolean;
+  planArtifactVerifiedAfterWorkspaceWrite: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
+  latestPlanCompletedSeq?: number;
+  latestPlanArtifactVerifiedSeq?: number;
 }
 
 export interface ModelAdvisorNoticePayload {
