@@ -207,6 +207,7 @@ export interface IndependentModelAdvisorEvidenceSummary {
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
+  latestPlanInvalidatedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
@@ -266,6 +267,7 @@ export interface ModelAdvisorEvidence {
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
+  latestPlanInvalidatedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;

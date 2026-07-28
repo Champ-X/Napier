@@ -14,6 +14,7 @@ export interface ModelAdvisorVerificationEvidence {
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
+  latestPlanInvalidatedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
@@ -55,6 +56,26 @@ export function isPlanCompletionEvent(event: RunEvent): boolean {
     return false;
   }
   return event.category === "plan";
+}
+
+export function isPlanCompletionInvalidationEvent(event: RunEvent): boolean {
+  if (
+    event.category !== "plan" ||
+    !event.type.startsWith("plan.") ||
+    !isRecord(event.payload)
+  ) {
+    return false;
+  }
+  if (isPlanCompletionEvent(event)) return false;
+  const planStatus = event.payload["planStatus"];
+  if (typeof planStatus === "string") {
+    return planStatus !== "completed";
+  }
+  const status = event.payload["status"];
+  if (typeof status === "string") {
+    return status !== "completed" && status !== "verified";
+  }
+  return false;
 }
 
 export function isPlanArtifactVerificationEvent(event: RunEvent): boolean {
@@ -103,6 +124,10 @@ export function createModelAdvisorVerificationEvidence(
     isPassedVerifyWorkspaceCompletion,
   );
   const latestPlanCompletedSeq = latestSeq(events, isPlanCompletionEvent);
+  const latestPlanInvalidatedSeq = latestSeq(
+    events,
+    isPlanCompletionInvalidationEvent,
+  );
   const latestPlanArtifactVerifiedSeq = latestSeq(
     events,
     isPlanArtifactVerificationEvent,
@@ -118,6 +143,8 @@ export function createModelAdvisorVerificationEvidence(
       latestPassedVerificationSeq > latestWorkspaceWriteSeq);
   const planCompletedAfterWorkspaceWrite =
     latestPlanCompletedSeq !== undefined &&
+    (latestPlanInvalidatedSeq === undefined ||
+      latestPlanCompletedSeq > latestPlanInvalidatedSeq) &&
     (latestWorkspaceWriteSeq === undefined ||
       latestPlanCompletedSeq > latestWorkspaceWriteSeq);
   const planArtifactVerifiedAfterWorkspaceWrite =
@@ -148,6 +175,9 @@ export function createModelAdvisorVerificationEvidence(
       ? { latestPassedVerificationSeq }
       : {}),
     ...(latestPlanCompletedSeq !== undefined ? { latestPlanCompletedSeq } : {}),
+    ...(latestPlanInvalidatedSeq !== undefined
+      ? { latestPlanInvalidatedSeq }
+      : {}),
     ...(latestPlanArtifactVerifiedSeq !== undefined
       ? { latestPlanArtifactVerifiedSeq }
       : {}),

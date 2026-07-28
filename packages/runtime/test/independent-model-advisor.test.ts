@@ -104,6 +104,7 @@ describe("independent Model Advisor", () => {
     );
     expect(prompt.user).toContain('"goalSatisfiedAfterWorkspaceWrite":false');
     expect(prompt.user).toContain('"latestPlanCompletedSeq":2');
+    expect(prompt.user).toContain('"latestPlanInvalidatedSeq":4');
     expect(prompt.user).toContain('"latestPlanArtifactVerifiedSeq":1');
     expect(prompt.user).toContain('"latestGoalSatisfiedSeq":3');
     expect(prompt.user).toContain('"latestPlanArtifactInvalidatedSeq":4');

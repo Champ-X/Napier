@@ -776,9 +776,9 @@ Before any final answer is committed, the deterministic Model Advisor checks
 completion claims against current Run evidence. Passing-check claims require a
 `verify_workspace` result with structured `passed` status after the latest
 workspace write. Plan-complete claims require a completed Plan event after the
-latest workspace write, and artifact-verified claims require a
-`plan.artifact.verified` event after the latest workspace write with no later
-artifact invalidation such as `plan.artifact.missing` or
+latest workspace write with no later Plan invalidation. Artifact-verified
+claims require a `plan.artifact.verified` event after the latest workspace
+write with no later artifact invalidation such as `plan.artifact.missing` or
 `plan.artifact.superseded`. Goal-complete claims require a satisfied
 `goal.evaluated` event after the latest workspace write. Stale or missing
 evidence records a hash-only `model.advisor.notice` before the visible

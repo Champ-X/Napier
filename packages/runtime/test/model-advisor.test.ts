@@ -290,6 +290,44 @@ describe("model advisor stream lint", () => {
     );
   });
 
+  it("marks plan completion evidence stale after later plan invalidation", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The execution plan is complete.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        planEvent(1, "plan.step.completed", {
+          planId: "plan_1",
+          stepId: "step_1",
+          status: "completed",
+          planStatus: "completed",
+        }),
+        planEvent(2, "plan.artifact.missing", {
+          planId: "plan_1",
+          artifactId: "artifact_1",
+          status: "missing",
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          planCompleted: true,
+          planCompletedAfterWorkspaceWrite: false,
+          latestPlanCompletedSeq: 1,
+          latestPlanInvalidatedSeq: 2,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("marks artifact verification evidence stale after later artifact invalidation", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "The artifact is verified.",

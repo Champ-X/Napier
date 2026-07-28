@@ -44,6 +44,7 @@ export interface IndependentModelAdvisorReviewView {
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
+  latestPlanInvalidatedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
@@ -169,6 +170,7 @@ function completionFreshnessParts(
       review.planCompletedAfterWorkspaceWrite,
       review.workspaceWriteCompleted,
       review.latestPlanCompletedSeq,
+      review.latestPlanInvalidatedSeq,
     ),
     ...completionFreshnessPart(
       "artifact",
@@ -250,6 +252,7 @@ function evidenceSummaryView(
       | "latestWorkspaceWriteSeq"
       | "latestPassedVerificationSeq"
       | "latestPlanCompletedSeq"
+      | "latestPlanInvalidatedSeq"
       | "latestPlanArtifactVerifiedSeq"
       | "latestPlanArtifactInvalidatedSeq"
       | "latestGoalSatisfiedSeq"
@@ -304,6 +307,7 @@ function evidenceSummaryView(
     ...numberField(value, "latestWorkspaceWriteSeq"),
     ...numberField(value, "latestPassedVerificationSeq"),
     ...numberField(value, "latestPlanCompletedSeq"),
+    ...numberField(value, "latestPlanInvalidatedSeq"),
     ...numberField(value, "latestPlanArtifactVerifiedSeq"),
     ...numberField(value, "latestPlanArtifactInvalidatedSeq"),
     ...numberField(value, "latestGoalSatisfiedSeq"),
@@ -320,6 +324,7 @@ function numberField(
     | "latestWorkspaceWriteSeq"
     | "latestPassedVerificationSeq"
     | "latestPlanCompletedSeq"
+    | "latestPlanInvalidatedSeq"
     | "latestPlanArtifactVerifiedSeq"
     | "latestPlanArtifactInvalidatedSeq"
     | "latestGoalSatisfiedSeq",

@@ -26,6 +26,7 @@ export interface ModelAdvisorEventTraceView {
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
+  latestPlanInvalidatedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
@@ -121,6 +122,9 @@ export function modelAdvisorEventTraceView(
   const latestPlanCompletedSeq = nonNegativeInteger(
     evidence["latestPlanCompletedSeq"],
   );
+  const latestPlanInvalidatedSeq = nonNegativeInteger(
+    evidence["latestPlanInvalidatedSeq"],
+  );
   const latestPlanArtifactVerifiedSeq = nonNegativeInteger(
     evidence["latestPlanArtifactVerifiedSeq"],
   );
@@ -192,6 +196,9 @@ export function modelAdvisorEventTraceView(
       ? { latestPassedVerificationSeq }
       : {}),
     ...(latestPlanCompletedSeq !== undefined ? { latestPlanCompletedSeq } : {}),
+    ...(latestPlanInvalidatedSeq !== undefined
+      ? { latestPlanInvalidatedSeq }
+      : {}),
     ...(latestPlanArtifactVerifiedSeq !== undefined
       ? { latestPlanArtifactVerifiedSeq }
       : {}),
@@ -278,11 +285,16 @@ export function modelAdvisorEventTraceSummary(
     ...(view.latestPlanCompletedSeq !== undefined
       ? [`plan-completed-seq ${view.latestPlanCompletedSeq}`]
       : []),
+    ...(view.latestPlanInvalidatedSeq !== undefined
+      ? [`plan-invalidated-seq ${view.latestPlanInvalidatedSeq}`]
+      : []),
     ...(view.planCompletedAfterWorkspaceWrite !== undefined
       ? [
           view.planCompletedAfterWorkspaceWrite
             ? "plan-completion-current"
-            : view.planCompleted && view.workspaceWriteCompleted
+            : view.planCompleted &&
+                (view.workspaceWriteCompleted ||
+                  view.latestPlanInvalidatedSeq !== undefined)
               ? "plan-completion-stale"
               : "plan-completion-not-current",
         ]

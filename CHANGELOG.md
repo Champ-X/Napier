@@ -324,6 +324,9 @@ All notable changes to Napier are recorded here.
   events as invalidation evidence. `plan.artifact.missing`, `produced`, or
   `superseded` after the latest verified receipt makes the claim stale until
   the artifact is verified again.
+- Plan-complete claim suppression now also treats later non-completed Plan
+  events as invalidation evidence, so artifact drift or reopened work makes the
+  completion claim stale until the Plan reaches completed again.
 - Trace Model Advisor summaries now expose verification current/stale metadata
   plus plan/artifact/goal completion freshness and the latest evidence
   sequence numbers without rendering diagnostic prose or candidate text.

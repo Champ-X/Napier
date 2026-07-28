@@ -403,6 +403,7 @@ function createVerificationClaimDiagnostic(
       latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq,
       latestPassedVerificationSeq: evidence.latestPassedVerificationSeq,
       latestPlanCompletedSeq: evidence.latestPlanCompletedSeq,
+      latestPlanInvalidatedSeq: evidence.latestPlanInvalidatedSeq,
       latestPlanArtifactVerifiedSeq: evidence.latestPlanArtifactVerifiedSeq,
       latestPlanArtifactInvalidatedSeq:
         evidence.latestPlanArtifactInvalidatedSeq,

@@ -529,6 +529,9 @@ export function createIndependentModelAdvisorEvidenceSummary(
     ...(evidence.latestPlanCompletedSeq !== undefined
       ? { latestPlanCompletedSeq: evidence.latestPlanCompletedSeq }
       : {}),
+    ...(evidence.latestPlanInvalidatedSeq !== undefined
+      ? { latestPlanInvalidatedSeq: evidence.latestPlanInvalidatedSeq }
+      : {}),
     ...(evidence.latestPlanArtifactVerifiedSeq !== undefined
       ? {
           latestPlanArtifactVerifiedSeq: evidence.latestPlanArtifactVerifiedSeq,
@@ -846,6 +849,7 @@ function parseEvidenceSummary(
     "latestWorkspaceWriteSeq",
     "latestPassedVerificationSeq",
     "latestPlanCompletedSeq",
+    "latestPlanInvalidatedSeq",
     "latestPlanArtifactVerifiedSeq",
     "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
@@ -925,6 +929,14 @@ function parseEvidenceSummary(
           latestPlanCompletedSeq: boundedCount(
             summary["latestPlanCompletedSeq"],
             "latestPlanCompletedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestPlanInvalidatedSeq"] !== undefined
+      ? {
+          latestPlanInvalidatedSeq: boundedCount(
+            summary["latestPlanInvalidatedSeq"],
+            "latestPlanInvalidatedSeq",
           ),
         }
       : {}),
