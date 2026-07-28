@@ -35,6 +35,7 @@ import {
   operatorDecisionTraceSummary,
   runControlTraceSummary,
 } from "./control-event-view";
+import { channelEventTraceSummary } from "./channel-event-view";
 import { contextEventTraceSummary } from "./context-event-view";
 import { copy } from "./copy";
 import { evaluationEventTraceSummary } from "./evaluation-event-view";
@@ -55,6 +56,7 @@ import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
 import { planEventTraceSummary } from "./plan-event-view";
 import { runEventTraceSummary } from "./run-event-view";
+import { scheduleEventTraceSummary } from "./schedule-event-view";
 import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import {
@@ -964,6 +966,12 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("agent.")) {
     return agentEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("schedule.")) {
+    return scheduleEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("channel.")) {
+    return channelEventTraceSummary(event) ?? event.category;
   }
   if (event.type.startsWith("context.")) {
     return contextEventTraceSummary(event) ?? event.category;

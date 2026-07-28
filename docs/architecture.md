@@ -1664,6 +1664,9 @@ the token digest, full idempotency digest, queued message, and model override.
 Accepted delivery projections and `channel.delivery.*` events retain only the
 raw inbound body SHA-256 and adapter catalog SHA-256 needed to replay parser
 context without storing the original webhook body.
+The Workbench Trace event list projects schedule and channel receipts through
+metadata-only summaries, so management names, queued prompts, delivery errors,
+and inbound body prose cannot reappear through generic payload keys.
 The GitHub adapter uses `X-GitHub-Delivery` as the source idempotency material
 but emits only a SHA-256 fingerprint in the Agent-facing summary. The Slack
 adapter uses `event_id` as idempotency material. The Linear adapter hashes
@@ -2316,6 +2319,19 @@ not render milestone titles, summaries, completed item text, open-loop text,
 Agent names, descriptions, System Prompts, or arbitrary future Agent payload
 prose. The dedicated Agent Milestone card remains responsible for rendering the
 reviewed milestone projection; the event-list summary stays metadata-only.
+Automation ingress events are bounded too. `schedule.*` summaries may show safe
+schedule/trigger/run IDs, lifecycle status, trigger type, occurrence times,
+revision, changed-field counts, and safe skip reasons. They do not render
+schedule names, scheduled prompts, worker IDs, execution errors, or arbitrary
+future schedule payload prose. `channel.*` summaries may show safe
+channel/delivery/run IDs, adapter/status/policy enums, retry and attempt
+counts, public token/idempotency fingerprints, revision numbers, dead-letter
+qualification counts, and SHA-256 receipts such as body, adapter-catalog,
+export, preview, artifact, and retry-set hashes. They do not render channel
+names, raw tokens, queued message text, inbound body text, delivery errors,
+diagnostics, or arbitrary future channel payload prose. Unknown automation
+ingress events fail closed to their category before the generic fallback can
+inspect `name`, `message`, `error`, `reason`, or `text`.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

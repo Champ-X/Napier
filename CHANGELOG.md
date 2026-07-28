@@ -148,6 +148,11 @@ All notable changes to Napier are recorded here.
   view, so milestone titles/summaries/open-loop text and Agent profile prose
   stay out of the event list while phase, counts, revision IDs, and hashes
   remain visible.
+- Trace event summaries now project `schedule.*` and `channel.*` receipts
+  through bounded automation views, so schedule/channel names, queued prompts,
+  delivery errors, raw inbound body text, and arbitrary payload prose stay out
+  of the event list while IDs, statuses, attempts, revisions, counts,
+  fingerprints, and SHA-256 evidence remain visible.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

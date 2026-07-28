@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CurbCHAn.js",
+    "path": "apps/web/dist/assets/index-CtBh8rJP.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "8055c899b23478806f3957d6fe09230fde3eee521c77948fcb1d330f2784ffab"
+    "sha256": "a2a546d117a18364278c9d1e14fae47f81a751b8098fe6f18e32ff1d550024db"
   },
-  "distContentSha256": "8055c899b23478806f3957d6fe09230fde3eee521c77948fcb1d330f2784ffab",
+  "distContentSha256": "a2a546d117a18364278c9d1e14fae47f81a751b8098fe6f18e32ff1d550024db",
   "errors": []
 }
