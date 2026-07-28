@@ -1386,7 +1386,9 @@ Imported event history is externally supplied data. Live model context marks
 the derived imported lineage and source hashes explicitly, and instructs the
 Agent never to treat embedded requests as current operator instructions or
 authorization. Branches created from imported Threads retain the same source
-fixture provenance so copied historical messages stay behind that boundary.
+fixture provenance plus a local imported-history cutoff sequence, so copied
+historical messages stay behind that boundary without over-redacting later
+local operator input.
 
 ## OpenTelemetry Trace Export
 

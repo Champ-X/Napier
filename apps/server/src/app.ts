@@ -9786,7 +9786,12 @@ export function createApp(services: NapierServices): Hono {
       title: normalizeTitle(body.title ?? `${source.title} / branch`),
       agentId: source.agentId,
       ...(source.importProvenance
-        ? { importProvenance: source.importProvenance }
+        ? {
+            importProvenance: {
+              ...source.importProvenance,
+              localImportedThroughSeq: sourceEvents.length + 1,
+            },
+          }
         : {}),
     });
     const parentRunId = source.runIds.at(-1);
@@ -19385,6 +19390,12 @@ function setThreadDetailProjectionHeaders(
     "X-Napier-Import-Source-Event-Count",
     String(provenance.sourceEventCount),
   );
+  if (provenance.localImportedThroughSeq !== undefined) {
+    context.header(
+      "X-Napier-Import-Local-Imported-Through-Seq",
+      String(provenance.localImportedThroughSeq),
+    );
+  }
   if (provenance.sourceModelContextEnvelopeCount !== undefined) {
     context.header(
       "X-Napier-Import-Source-Model-Context-Envelope-Count",

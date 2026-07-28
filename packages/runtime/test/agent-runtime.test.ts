@@ -1846,6 +1846,9 @@ describe("AgentRuntime demo path", () => {
         expect(context.systemPrompt).toContain(
           `derived from ${bundle.events.length} source replay events`,
         );
+        expect(context.systemPrompt).toContain(
+          `Local imported history through seq: ${imported.events.length}`,
+        );
         expect(context.systemPrompt).toContain(bundle.contentSha256);
         expect(context.systemPrompt).toContain(
           `Source model context envelopes: ${verification.modelContextEnvelopeCount}`,

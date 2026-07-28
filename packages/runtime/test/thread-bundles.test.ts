@@ -1178,6 +1178,7 @@ describe("thread replay bundles", () => {
           sourceContentSha256: bundle.contentSha256,
           sourceEventStreamSha256: bundle.eventStreamSha256,
           sourceEventCount: bundle.events.length,
+          localImportedThroughSeq: imported.events.length,
           sourceModelContextEnvelopeCount:
             verification.modelContextEnvelopeCount,
           sourceEmbeddedModelContextEnvelopeCount:

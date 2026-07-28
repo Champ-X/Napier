@@ -9077,6 +9077,7 @@ describe("Napier HTTP goal flow", () => {
           sourceContentSha256: fixture.contentSha256,
           sourceEventStreamSha256: fixture.eventStreamSha256,
           sourceEventCount: fixture.events.length,
+          localImportedThroughSeq: imported.events.length,
           sourceModelContextEnvelopeCount:
             verification.modelContextEnvelopeCount,
           sourceEmbeddedModelContextEnvelopeCount:
@@ -9105,7 +9106,12 @@ describe("Napier HTTP goal flow", () => {
     expect(importedBranch.thread).toEqual(
       expect.objectContaining({
         title: "Imported branch",
-        importProvenance: imported.thread.importProvenance,
+        importProvenance: {
+          ...imported.thread.importProvenance!,
+          localImportedThroughSeq:
+            imported.events.filter((event) => event.category === "message")
+              .length + 1,
+        },
       }),
     );
     expect(importedBranch.events.map((event) => event.type)).toEqual(
@@ -9761,6 +9767,13 @@ function expectThreadDetailProjectionHeaders(
   ).toBe(provenance?.sourceEventStreamSha256 ?? null);
   expect(response.headers.get("x-napier-import-source-event-count")).toBe(
     provenance ? String(provenance.sourceEventCount) : null,
+  );
+  expect(
+    response.headers.get("x-napier-import-local-imported-through-seq"),
+  ).toBe(
+    provenance?.localImportedThroughSeq === undefined
+      ? null
+      : String(provenance.localImportedThroughSeq),
   );
   expect(
     response.headers.get(

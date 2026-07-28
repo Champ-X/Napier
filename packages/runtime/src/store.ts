@@ -8416,6 +8416,7 @@ export class LocalStore {
           sourceContentSha256: bundle.contentSha256,
           sourceEventStreamSha256: bundle.eventStreamSha256,
           sourceEventCount: bundle.events.length,
+          localImportedThroughSeq: events.length,
           sourceModelContextEnvelopeCount:
             bundleVerification.modelContextEnvelopeCount,
           sourceEmbeddedModelContextEnvelopeCount:
