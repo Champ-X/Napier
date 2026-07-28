@@ -3727,6 +3727,30 @@ export interface RunContextCoverageDelta {
   diagnostics: string[];
 }
 
+export type TraceSummaryBoundarySource = "dedicated" | "generic";
+
+export type RunTraceSummaryBoundaryStatus =
+  | "clean"
+  | "generic_present"
+  | "regressed";
+
+export interface RunTraceSummaryBoundaryCoverage {
+  total: number;
+  dedicated: number;
+  generic: number;
+  genericEventTypes: string[];
+}
+
+export interface RunTraceSummaryBoundaryDelta {
+  status: RunTraceSummaryBoundaryStatus;
+  left: RunTraceSummaryBoundaryCoverage;
+  right: RunTraceSummaryBoundaryCoverage;
+  dedicatedDelta: number;
+  genericDelta: number;
+  diagnostics: string[];
+  genericEventTypes: string[];
+}
+
 export interface RunEvaluationGovernanceBinding {
   kind: "napier.run-evaluation-governance";
   schemaVersion: 1;
@@ -3734,6 +3758,10 @@ export interface RunEvaluationGovernanceBinding {
   contextCoverageRateDelta: number;
   contextCoverageDiagnosticsSha256: string;
   contextCoverageDeltaSha256: string;
+  traceSummaryBoundaryStatus?: RunTraceSummaryBoundaryStatus;
+  traceSummaryBoundaryGenericDelta?: number;
+  traceSummaryBoundaryDiagnosticsSha256?: string;
+  traceSummaryBoundaryDeltaSha256?: string;
   contentSha256: string;
 }
 
@@ -3748,6 +3776,106 @@ export interface RunComparison {
   removedToolNames: string[];
   configurationDelta: RunConfigurationDelta;
   contextCoverageDelta: RunContextCoverageDelta;
+  traceSummaryBoundaryDelta: RunTraceSummaryBoundaryDelta;
+}
+
+const TRACE_SUMMARY_BOUNDARY_EXACT_EVENT_TYPES = new Set([
+  "trace.otlp.exported",
+  "thread.imported",
+  "model.response",
+]);
+
+const TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES = [
+  "message.",
+  "system.",
+  "agent.",
+  "branch.",
+  "schedule.",
+  "channel.",
+  "credential.",
+  "extension.",
+  "skill.",
+  "prompt.",
+  "inspector.",
+  "receipt.",
+  "receipt_trust.",
+  "context.",
+  "evaluation.",
+  "plan.",
+  "tool.",
+  "goal.",
+  "memory.",
+  "operator.decision.",
+  "run.control.",
+  "run.",
+  "subagent.",
+  "model.advisor.",
+  "model.",
+];
+
+export function traceSummaryBoundarySource(
+  event: Pick<RunEvent, "type"> | string,
+): TraceSummaryBoundarySource {
+  const type = typeof event === "string" ? event : event.type;
+  return TRACE_SUMMARY_BOUNDARY_EXACT_EVENT_TYPES.has(type) ||
+    TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES.some((prefix) =>
+      type.startsWith(prefix),
+    )
+    ? "dedicated"
+    : "generic";
+}
+
+export function traceSummaryBoundaryCoverage(
+  events: readonly Pick<RunEvent, "type">[],
+): RunTraceSummaryBoundaryCoverage {
+  const genericTypes = new Set<string>();
+  let dedicated = 0;
+  let generic = 0;
+  for (const event of events) {
+    if (traceSummaryBoundarySource(event) === "dedicated") {
+      dedicated += 1;
+      continue;
+    }
+    generic += 1;
+    genericTypes.add(event.type);
+  }
+  return {
+    total: events.length,
+    dedicated,
+    generic,
+    genericEventTypes: [...genericTypes].sort(),
+  };
+}
+
+export function traceSummaryBoundaryDelta(
+  leftEvents: readonly Pick<RunEvent, "type">[],
+  rightEvents: readonly Pick<RunEvent, "type">[],
+): RunTraceSummaryBoundaryDelta {
+  const left = traceSummaryBoundaryCoverage(leftEvents);
+  const right = traceSummaryBoundaryCoverage(rightEvents);
+  const genericDelta = right.generic - left.generic;
+  const diagnostics = [
+    ...(genericDelta > 0
+      ? ["candidate_trace_summary_generic_fallback_increased"]
+      : []),
+    ...(right.generic > 0
+      ? ["candidate_trace_summary_generic_fallback_present"]
+      : []),
+  ];
+  return {
+    status:
+      genericDelta > 0
+        ? "regressed"
+        : right.generic > 0
+          ? "generic_present"
+          : "clean",
+    left,
+    right,
+    dedicatedDelta: right.dedicated - left.dedicated,
+    genericDelta,
+    diagnostics,
+    genericEventTypes: right.genericEventTypes,
+  };
 }
 
 export interface EvaluationCriterion {

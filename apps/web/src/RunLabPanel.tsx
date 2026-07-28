@@ -104,6 +104,7 @@ export default function RunLabPanel({
         comparison.right.events,
       )
     : undefined;
+  const traceSummaryBoundaryDelta = comparison?.traceSummaryBoundaryDelta;
   const [traceSummaryReceipt, setTraceSummaryReceipt] =
     useState<TraceSummaryCoverageDeltaReceipt>();
   const [traceSummaryReceiptVerification, setTraceSummaryReceiptVerification] =
@@ -358,36 +359,36 @@ export default function RunLabPanel({
               <p>{copy.lab.contextCoverageHealthy}</p>
             )}
           </div>
-          {traceSummaryCoverageDelta ? (
+          {traceSummaryBoundaryDelta ? (
             <div
               className={`configuration-drift ${traceSummaryCoverageClassName(
-                traceSummaryCoverageDelta.status,
+                traceSummaryBoundaryDelta.status,
               )}`}
             >
               <div className="configuration-drift-heading">
                 <span>{copy.lab.traceSummaryCoverage}</span>
                 <strong>
                   {traceSummaryCoverageStatusLabel(
-                    traceSummaryCoverageDelta.status,
+                    traceSummaryBoundaryDelta.status,
                   )}
                 </strong>
               </div>
               <div className="configuration-hashes">
                 <code>
                   {copy.lab.left} {copy.lab.traceSummaryGeneric}{" "}
-                  {traceSummaryCoverageDelta.left.generic}
+                  {traceSummaryBoundaryDelta.left.generic}
                 </code>
                 <code>
                   {copy.lab.right} {copy.lab.traceSummaryGeneric}{" "}
-                  {traceSummaryCoverageDelta.right.generic}
+                  {traceSummaryBoundaryDelta.right.generic}
                 </code>
                 <code>
                   {copy.lab.traceSummaryGenericDelta}{" "}
-                  {formatSignedNumber(traceSummaryCoverageDelta.genericDelta)}
+                  {formatSignedNumber(traceSummaryBoundaryDelta.genericDelta)}
                 </code>
                 <code>
-                  {copy.lab.traceSummaryBoundedDelta}{" "}
-                  {formatSignedNumber(traceSummaryCoverageDelta.boundedDelta)}
+                  {copy.lab.traceSummaryDedicatedDelta}{" "}
+                  {formatSignedNumber(traceSummaryBoundaryDelta.dedicatedDelta)}
                 </code>
                 {traceSummaryReceipt ? (
                   <code title={traceSummaryReceipt.contentSha256}>
@@ -410,16 +411,16 @@ export default function RunLabPanel({
                   </code>
                 ) : null}
               </div>
-              {traceSummaryCoverageDelta.diagnostics.length > 0 ? (
+              {traceSummaryBoundaryDelta.diagnostics.length > 0 ? (
                 <>
                   <p>{copy.lab.traceSummaryDiagnostics}</p>
                   <ul>
-                    {traceSummaryCoverageDelta.diagnostics.map((diagnostic) => (
+                    {traceSummaryBoundaryDelta.diagnostics.map((diagnostic) => (
                       <li key={diagnostic}>
                         <code>{diagnostic}</code>
                       </li>
                     ))}
-                    {traceSummaryCoverageDelta.genericEventTypes.map((type) => (
+                    {traceSummaryBoundaryDelta.genericEventTypes.map((type) => (
                       <li key={type}>
                         <code>{type}</code>
                       </li>

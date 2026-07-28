@@ -19,6 +19,7 @@ import type {
   RunEvaluationVerdict,
   RunReplaySnapshot,
   RunRecord,
+  RunTraceSummaryBoundaryDelta,
   Usage,
 } from "@napier/contracts";
 
@@ -80,6 +81,7 @@ export interface RunEvaluationJudgment {
 
 export interface RunEvaluationGovernanceEvidence {
   contextCoverageDelta?: RunContextCoverageDelta;
+  traceSummaryBoundaryDelta?: RunTraceSummaryBoundaryDelta;
   comparisonGovernance?: RunEvaluationGovernanceBinding;
 }
 
@@ -106,6 +108,7 @@ export class RunEvaluationService {
     this.resolveEvaluatorModel(evaluatorModel);
     const comparisonGovernance = createRunEvaluationGovernanceBinding(
       comparison.contextCoverageDelta,
+      comparison.traceSummaryBoundaryDelta,
     );
     const evaluationRun = await this.store.createRun({
       threadId,
@@ -121,6 +124,7 @@ export class RunEvaluationService {
         evaluatorModel,
         {
           contextCoverageDelta: comparison.contextCoverageDelta,
+          traceSummaryBoundaryDelta: comparison.traceSummaryBoundaryDelta,
           comparisonGovernance,
         },
         { run: evaluationRun },
@@ -163,6 +167,15 @@ export class RunEvaluationService {
           contextCoverageStatus: comparisonGovernance.contextCoverageStatus,
           contextCoverageDiagnosticsSha256:
             comparisonGovernance.contextCoverageDiagnosticsSha256,
+          ...(comparisonGovernance.traceSummaryBoundaryStatus &&
+          comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256
+            ? {
+                traceSummaryBoundaryStatus:
+                  comparisonGovernance.traceSummaryBoundaryStatus,
+                traceSummaryBoundaryDiagnosticsSha256:
+                  comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256,
+              }
+            : {}),
         },
       });
       await this.store.finishRun(evaluationRun.id, "completed", {
@@ -498,6 +511,8 @@ export function buildRunEvaluationMessages(
       "COMPARISON GOVERNANCE:",
       JSON.stringify({
         contextCoverageDelta: governanceEvidence?.contextCoverageDelta ?? null,
+        traceSummaryBoundaryDelta:
+          governanceEvidence?.traceSummaryBoundaryDelta ?? null,
         comparisonGovernance: governanceEvidence?.comparisonGovernance ?? null,
       }),
       "",
@@ -547,6 +562,7 @@ function zeroUsage(): Usage {
 
 export function createRunEvaluationGovernanceBinding(
   contextCoverageDelta: RunContextCoverageDelta,
+  traceSummaryBoundaryDelta?: RunTraceSummaryBoundaryDelta,
 ): RunEvaluationGovernanceBinding {
   const contextCoverageDiagnosticsSha256 = sha256(
     canonicalJson(contextCoverageDelta.diagnostics),
@@ -554,6 +570,12 @@ export function createRunEvaluationGovernanceBinding(
   const contextCoverageDeltaSha256 = sha256(
     canonicalJson(contextCoverageDelta),
   );
+  const traceSummaryBoundaryDiagnosticsSha256 = traceSummaryBoundaryDelta
+    ? sha256(canonicalJson(traceSummaryBoundaryDelta.diagnostics))
+    : undefined;
+  const traceSummaryBoundaryDeltaSha256 = traceSummaryBoundaryDelta
+    ? sha256(canonicalJson(traceSummaryBoundaryDelta))
+    : undefined;
   const content = {
     kind: "napier.run-evaluation-governance" as const,
     schemaVersion: 1 as const,
@@ -561,6 +583,17 @@ export function createRunEvaluationGovernanceBinding(
     contextCoverageRateDelta: contextCoverageDelta.coverageRateDelta,
     contextCoverageDiagnosticsSha256,
     contextCoverageDeltaSha256,
+    ...(traceSummaryBoundaryDelta &&
+    traceSummaryBoundaryDiagnosticsSha256 &&
+    traceSummaryBoundaryDeltaSha256
+      ? {
+          traceSummaryBoundaryStatus: traceSummaryBoundaryDelta.status,
+          traceSummaryBoundaryGenericDelta:
+            traceSummaryBoundaryDelta.genericDelta,
+          traceSummaryBoundaryDiagnosticsSha256,
+          traceSummaryBoundaryDeltaSha256,
+        }
+      : {}),
   };
   return {
     ...content,

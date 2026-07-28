@@ -2208,6 +2208,39 @@ function assertEvaluationGovernanceBinding(
     governance["contextCoverageDeltaSha256"],
     `${label}.contextCoverageDeltaSha256`,
   );
+  const traceSummaryFields = [
+    governance["traceSummaryBoundaryStatus"],
+    governance["traceSummaryBoundaryGenericDelta"],
+    governance["traceSummaryBoundaryDiagnosticsSha256"],
+    governance["traceSummaryBoundaryDeltaSha256"],
+  ];
+  if (traceSummaryFields.some((field) => field !== undefined)) {
+    if (!traceSummaryFields.every((field) => field !== undefined)) {
+      throw new Error(`Thread replay bundle ${label} is invalid`);
+    }
+    assertEnum(
+      governance["traceSummaryBoundaryStatus"],
+      new Set(["clean", "generic_present", "regressed"]),
+      `${label}.traceSummaryBoundaryStatus`,
+    );
+    const genericDelta = governance["traceSummaryBoundaryGenericDelta"];
+    if (
+      typeof genericDelta !== "number" ||
+      !Number.isSafeInteger(genericDelta)
+    ) {
+      throw new Error(
+        `Thread replay bundle ${label}.traceSummaryBoundaryGenericDelta is invalid`,
+      );
+    }
+    assertSha256(
+      governance["traceSummaryBoundaryDiagnosticsSha256"],
+      `${label}.traceSummaryBoundaryDiagnosticsSha256`,
+    );
+    assertSha256(
+      governance["traceSummaryBoundaryDeltaSha256"],
+      `${label}.traceSummaryBoundaryDeltaSha256`,
+    );
+  }
   const contentSha256 = String(governance["contentSha256"]);
   assertSha256(contentSha256, `${label}.contentSha256`);
   const { contentSha256: _contentSha256, ...content } = governance;

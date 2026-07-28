@@ -11735,6 +11735,30 @@ function validatePersistedRunEvaluation(
       !Number.isFinite(governance.contextCoverageRateDelta) ||
       !/^[a-f0-9]{64}$/.test(governance.contextCoverageDiagnosticsSha256) ||
       !/^[a-f0-9]{64}$/.test(governance.contextCoverageDeltaSha256) ||
+      (governance.traceSummaryBoundaryStatus !== undefined &&
+        !["clean", "generic_present", "regressed"].includes(
+          governance.traceSummaryBoundaryStatus,
+        )) ||
+      (governance.traceSummaryBoundaryGenericDelta !== undefined &&
+        !Number.isSafeInteger(governance.traceSummaryBoundaryGenericDelta)) ||
+      (governance.traceSummaryBoundaryDiagnosticsSha256 !== undefined &&
+        !/^[a-f0-9]{64}$/.test(
+          governance.traceSummaryBoundaryDiagnosticsSha256,
+        )) ||
+      (governance.traceSummaryBoundaryDeltaSha256 !== undefined &&
+        !/^[a-f0-9]{64}$/.test(governance.traceSummaryBoundaryDeltaSha256)) ||
+      ([
+        governance.traceSummaryBoundaryStatus,
+        governance.traceSummaryBoundaryGenericDelta,
+        governance.traceSummaryBoundaryDiagnosticsSha256,
+        governance.traceSummaryBoundaryDeltaSha256,
+      ].some((value) => value !== undefined) &&
+        ![
+          governance.traceSummaryBoundaryStatus,
+          governance.traceSummaryBoundaryGenericDelta,
+          governance.traceSummaryBoundaryDiagnosticsSha256,
+          governance.traceSummaryBoundaryDeltaSha256,
+        ].every((value) => value !== undefined)) ||
       !/^[a-f0-9]{64}$/.test(contentSha256) ||
       sha256(canonicalJson(governanceContent)) !== contentSha256
     ) {

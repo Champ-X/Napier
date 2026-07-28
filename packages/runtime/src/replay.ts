@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import {
   emptyUsage,
+  traceSummaryBoundaryDelta,
   type JsonValue,
   type RunContextCoverageDelta,
   type RunContextCoverageSummary,
@@ -202,6 +203,10 @@ export async function compareRuns(
       .sort(),
     configurationDelta,
     contextCoverageDelta: compareContextCoverage(left.metrics, right.metrics),
+    traceSummaryBoundaryDelta: traceSummaryBoundaryDelta(
+      left.events,
+      right.events,
+    ),
   };
 }
 

@@ -11930,6 +11930,28 @@ function expectRunComparisonHeaders(
   expect(
     response.headers.get("x-napier-context-coverage-diagnostics-sha256"),
   ).toBe(responseSha256(comparison.contextCoverageDelta.diagnostics));
+  expect(response.headers.get("x-napier-trace-summary-boundary-status")).toBe(
+    comparison.traceSummaryBoundaryDelta.status,
+  );
+  expect(
+    response.headers.get(
+      "x-napier-trace-summary-boundary-left-generic-count",
+    ),
+  ).toBe(String(comparison.traceSummaryBoundaryDelta.left.generic));
+  expect(
+    response.headers.get(
+      "x-napier-trace-summary-boundary-right-generic-count",
+    ),
+  ).toBe(String(comparison.traceSummaryBoundaryDelta.right.generic));
+  expect(
+    response.headers.get("x-napier-trace-summary-boundary-generic-delta"),
+  ).toBe(String(comparison.traceSummaryBoundaryDelta.genericDelta));
+  expect(
+    response.headers.get("x-napier-trace-summary-boundary-diagnostic-count"),
+  ).toBe(String(comparison.traceSummaryBoundaryDelta.diagnostics.length));
+  expect(
+    response.headers.get("x-napier-trace-summary-boundary-diagnostics-sha256"),
+  ).toBe(responseSha256(comparison.traceSummaryBoundaryDelta.diagnostics));
   expect(response.headers.get("x-napier-event-type-delta-sha256")).toBe(
     responseSha256(comparison.eventTypeDelta),
   );
@@ -12126,6 +12148,22 @@ function expectRunEvaluationRecordHeaders(
     expect(
       response.headers.get("x-napier-context-coverage-diagnostics-sha256"),
     ).toBe(evaluation.comparisonGovernance.contextCoverageDiagnosticsSha256);
+    if (
+      evaluation.comparisonGovernance.traceSummaryBoundaryStatus &&
+      evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256
+    ) {
+      expect(
+        response.headers.get("x-napier-trace-summary-boundary-status"),
+      ).toBe(evaluation.comparisonGovernance.traceSummaryBoundaryStatus);
+      expect(
+        response.headers.get(
+          "x-napier-trace-summary-boundary-diagnostics-sha256",
+        ),
+      ).toBe(
+        evaluation.comparisonGovernance
+          .traceSummaryBoundaryDiagnosticsSha256,
+      );
+    }
   }
 }
 

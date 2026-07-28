@@ -2372,6 +2372,14 @@ sheet shows baseline and candidate generic fallback counts, bounded-summary
 deltas, and diagnostics when the candidate introduces or retains generic
 event-list summaries, so privacy posture can be reviewed alongside context
 coverage, configuration drift, and output changes.
+The generic-fallback boundary itself is also defined in the shared contracts
+package as a `dedicated`/`generic` classifier. Runtime Run comparisons compute
+`traceSummaryBoundaryDelta` from the same classifier, expose the result through
+no-store HTTP headers, and bind its status, generic delta, diagnostic hash, and
+full delta hash into `RunEvaluationGovernanceBinding`. Evaluators therefore see
+summary-boundary governance beside context coverage, and the binding remains
+hash-only: it contains counts, event types, status, diagnostics, and SHA-256
+receipts, but not raw Ledger payload prose.
 Both the single-Run coverage projection and the Run Lab delta projection are
 canonicalized and hashed into Web-side `contentSha256` receipts. Those receipts
 cover only summary source counts, generic event-type sets, deltas, diagnostics,

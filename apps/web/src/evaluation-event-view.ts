@@ -25,6 +25,7 @@ export interface EvaluationEventTraceView {
   status?: string;
   source?: string;
   contextCoverageStatus?: string;
+  traceSummaryBoundaryStatus?: string;
   evaluatorModel?: string;
   agreement?: boolean;
   allowInconclusive?: boolean;
@@ -52,6 +53,7 @@ export interface EvaluationEventTraceView {
   contentSha256?: string;
   comparisonGovernanceSha256?: string;
   contextCoverageDiagnosticsSha256?: string;
+  traceSummaryBoundaryDiagnosticsSha256?: string;
 }
 
 const EVALUATION_EVENT =
@@ -100,6 +102,7 @@ export function evaluationEventTraceView(
     ...safeTokenField(event.payload, "status"),
     ...safeTokenField(event.payload, "source"),
     ...safeTokenField(event.payload, "contextCoverageStatus"),
+    ...safeTokenField(event.payload, "traceSummaryBoundaryStatus"),
     ...(evaluatorModel ? { evaluatorModel } : {}),
     ...booleanField(event.payload, "agreement"),
     ...gateBooleanField(event.payload, "allowInconclusive"),
@@ -127,6 +130,7 @@ export function evaluationEventTraceView(
     ...shaField(event.payload, "contentSha256"),
     ...shaField(event.payload, "comparisonGovernanceSha256"),
     ...shaField(event.payload, "contextCoverageDiagnosticsSha256"),
+    ...shaField(event.payload, "traceSummaryBoundaryDiagnosticsSha256"),
   };
 }
 
@@ -158,6 +162,9 @@ export function evaluationEventTraceSummary(
     ...(view.source ? [`source ${view.source}`] : []),
     ...(view.contextCoverageStatus
       ? [`context ${view.contextCoverageStatus}`]
+      : []),
+    ...(view.traceSummaryBoundaryStatus
+      ? [`trace-summary ${view.traceSummaryBoundaryStatus}`]
       : []),
     ...(view.evaluatorModel ? [`evaluator ${view.evaluatorModel}`] : []),
     ...(view.agreement !== undefined ? [`agreement ${view.agreement}`] : []),
@@ -243,6 +250,10 @@ function hashSummaries(view: EvaluationEventTraceView): string[] {
     ...hashSummary("content", view.contentSha256),
     ...hashSummary("governance", view.comparisonGovernanceSha256),
     ...hashSummary("context-diagnostics", view.contextCoverageDiagnosticsSha256),
+    ...hashSummary(
+      "trace-summary-diagnostics",
+      view.traceSummaryBoundaryDiagnosticsSha256,
+    ),
   ];
 }
 

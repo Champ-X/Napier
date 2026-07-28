@@ -1,4 +1,7 @@
-import type { RunEvent } from "@napier/contracts";
+import {
+  traceSummaryBoundarySource,
+  type RunEvent,
+} from "@napier/contracts";
 
 import { agentEventTraceSummary } from "./agent-event-view";
 import { branchEventTraceSummary } from "./branch-event-view";
@@ -197,7 +200,9 @@ export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
   if (event.type.startsWith("model.")) {
     return classifiedSummary(event, modelEventTraceSummary(event), "fixed");
   }
-  return genericSummary(event);
+  return traceSummaryBoundarySource(event) === "dedicated"
+    ? { text: event.category, source: "category" }
+    : genericSummary(event);
 }
 
 export function traceSummaryCoverageView(

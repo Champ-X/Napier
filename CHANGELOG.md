@@ -180,6 +180,10 @@ All notable changes to Napier are recorded here.
 - Trace Workbench and Run Lab now run those verifiers before presenting coverage
   receipt state, surfacing hash-only verification status and diagnostic codes
   next to the summary-boundary evidence.
+- Trace summary-boundary classification is now shared through contracts and
+  bound into runtime Run comparisons, HTTP no-store headers, and evaluator
+  governance receipts so generic event-list fallback regressions can influence
+  review without relying on Web-only projection state.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

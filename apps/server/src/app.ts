@@ -20110,6 +20110,30 @@ function setRunComparisonHeaders(
     sha256Json(comparison.contextCoverageDelta.diagnostics),
   );
   context.header(
+    "X-Napier-Trace-Summary-Boundary-Status",
+    comparison.traceSummaryBoundaryDelta.status,
+  );
+  context.header(
+    "X-Napier-Trace-Summary-Boundary-Left-Generic-Count",
+    String(comparison.traceSummaryBoundaryDelta.left.generic),
+  );
+  context.header(
+    "X-Napier-Trace-Summary-Boundary-Right-Generic-Count",
+    String(comparison.traceSummaryBoundaryDelta.right.generic),
+  );
+  context.header(
+    "X-Napier-Trace-Summary-Boundary-Generic-Delta",
+    String(comparison.traceSummaryBoundaryDelta.genericDelta),
+  );
+  context.header(
+    "X-Napier-Trace-Summary-Boundary-Diagnostic-Count",
+    String(comparison.traceSummaryBoundaryDelta.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Trace-Summary-Boundary-Diagnostics-SHA256",
+    sha256Json(comparison.traceSummaryBoundaryDelta.diagnostics),
+  );
+  context.header(
     "X-Napier-Event-Type-Delta-SHA256",
     sha256Json(comparison.eventTypeDelta),
   );
@@ -20316,6 +20340,19 @@ function setRunEvaluationRecordHeaders(
       "X-Napier-Context-Coverage-Diagnostics-SHA256",
       evaluation.comparisonGovernance.contextCoverageDiagnosticsSha256,
     );
+    if (
+      evaluation.comparisonGovernance.traceSummaryBoundaryStatus &&
+      evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256
+    ) {
+      context.header(
+        "X-Napier-Trace-Summary-Boundary-Status",
+        evaluation.comparisonGovernance.traceSummaryBoundaryStatus,
+      );
+      context.header(
+        "X-Napier-Trace-Summary-Boundary-Diagnostics-SHA256",
+        evaluation.comparisonGovernance.traceSummaryBoundaryDiagnosticsSha256,
+      );
+    }
   }
 }
 

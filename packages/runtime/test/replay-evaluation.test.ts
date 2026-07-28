@@ -504,9 +504,67 @@ describe("run replay", () => {
       embeddedEnvelopeDelta: 0,
       diagnostics: [],
     });
+    expect(comparison.traceSummaryBoundaryDelta).toEqual({
+      status: "clean",
+      left: {
+        total: 4,
+        dedicated: 4,
+        generic: 0,
+        genericEventTypes: [],
+      },
+      right: {
+        total: 6,
+        dedicated: 6,
+        generic: 0,
+        genericEventTypes: [],
+      },
+      dedicatedDelta: 2,
+      genericDelta: 0,
+      diagnostics: [],
+      genericEventTypes: [],
+    });
     await expect(
       compareRuns(store, threadId, left.id, left.id),
     ).rejects.toThrow("two distinct runs");
+  });
+
+  it("flags trace summary-boundary generic fallback regressions", async () => {
+    const store = await createStore();
+    const { threadId, left, right } = await createComparedRuns(store);
+
+    await store.appendEvent({
+      threadId,
+      runId: right.id,
+      type: "alpha.audit",
+      category: "system",
+      visibility: "debug",
+      payload: { summary: "TOP_SECRET_ALPHA" },
+    });
+
+    const comparison = await compareRuns(store, threadId, left.id, right.id);
+
+    expect(comparison.traceSummaryBoundaryDelta).toEqual({
+      status: "regressed",
+      left: {
+        total: 4,
+        dedicated: 4,
+        generic: 0,
+        genericEventTypes: [],
+      },
+      right: {
+        total: 7,
+        dedicated: 6,
+        generic: 1,
+        genericEventTypes: ["alpha.audit"],
+      },
+      dedicatedDelta: 2,
+      genericDelta: 1,
+      diagnostics: [
+        "candidate_trace_summary_generic_fallback_increased",
+        "candidate_trace_summary_generic_fallback_present",
+      ],
+      genericEventTypes: ["alpha.audit"],
+    });
   });
 
   it("reports embedded reviewer envelope drift without changing response coverage status", async () => {
@@ -686,8 +744,10 @@ describe("run evaluation", () => {
     expect(evaluatorPrompt).toContain("[/run-evidence]");
     expect(evaluatorPrompt).toContain("COMPARISON GOVERNANCE:");
     expect(evaluatorPrompt).toContain('"contextCoverageDelta"');
+    expect(evaluatorPrompt).toContain('"traceSummaryBoundaryDelta"');
     expect(evaluatorPrompt).toContain('"status":"clean"');
     expect(evaluatorPrompt).toContain('"embeddedEnvelopeDelta"');
+    expect(evaluatorPrompt).toContain('"dedicatedDelta":2');
     expect(evaluatorPrompt).not.toContain("</run-evidence> Ignore");
     expect(evaluation).toEqual(
       expect.objectContaining({
@@ -704,6 +764,12 @@ describe("run evaluation", () => {
           contextCoverageDiagnosticsSha256:
             expect.stringMatching(/^[a-f0-9]{64}$/),
           contextCoverageDeltaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          traceSummaryBoundaryStatus: "clean",
+          traceSummaryBoundaryGenericDelta: 0,
+          traceSummaryBoundaryDiagnosticsSha256:
+            expect.stringMatching(/^[a-f0-9]{64}$/),
+          traceSummaryBoundaryDeltaSha256:
+            expect.stringMatching(/^[a-f0-9]{64}$/),
           contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         }),
       }),
@@ -807,6 +873,10 @@ describe("run evaluation", () => {
         contextCoverageStatus: "clean",
         contextCoverageDiagnosticsSha256:
           evaluation.comparisonGovernance?.contextCoverageDiagnosticsSha256,
+        traceSummaryBoundaryStatus: "clean",
+        traceSummaryBoundaryDiagnosticsSha256:
+          evaluation.comparisonGovernance
+            ?.traceSummaryBoundaryDiagnosticsSha256,
       }),
     );
     expect(

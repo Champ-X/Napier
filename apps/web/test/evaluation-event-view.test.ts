@@ -21,6 +21,8 @@ describe("Evaluation event trace view", () => {
       comparisonGovernanceSha256: "c".repeat(64),
       contextCoverageStatus: "clean",
       contextCoverageDiagnosticsSha256: "d".repeat(64),
+      traceSummaryBoundaryStatus: "clean",
+      traceSummaryBoundaryDiagnosticsSha256: "e".repeat(64),
     });
 
     expect(evaluationEventTraceView(event)).toEqual({
@@ -34,9 +36,11 @@ describe("Evaluation event trace view", () => {
       rightSnapshotSha256: "b".repeat(64),
       comparisonGovernanceSha256: "c".repeat(64),
       contextCoverageDiagnosticsSha256: "d".repeat(64),
+      traceSummaryBoundaryStatus: "clean",
+      traceSummaryBoundaryDiagnosticsSha256: "e".repeat(64),
     });
     expect(evaluationEventTraceSummary(event)).toBe(
-      `evaluation / completed / evaluation 1234567890 / left-run 1234567890 / right-run 0987654321 / verdict right_better / context clean / left-snapshot ${"a".repeat(12)} / right-snapshot ${"b".repeat(12)} / governance ${"c".repeat(12)} / context-diagnostics ${"d".repeat(12)}`,
+      `evaluation / completed / evaluation 1234567890 / left-run 1234567890 / right-run 0987654321 / verdict right_better / context clean / trace-summary clean / left-snapshot ${"a".repeat(12)} / right-snapshot ${"b".repeat(12)} / governance ${"c".repeat(12)} / context-diagnostics ${"d".repeat(12)} / trace-summary-diagnostics ${"e".repeat(12)}`,
     );
     expect(evaluationEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
