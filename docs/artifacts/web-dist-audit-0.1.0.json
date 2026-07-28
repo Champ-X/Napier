@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DHgsSDyh.js",
+    "path": "apps/web/dist/assets/index-CubMWju3.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "4ee8869b963333afc11bd5fa6fcf3aa469ba6ded549fbf5df82252109526a643"
+    "sha256": "065d0e07246c3d4bcab99dc091f6065c92bc6686a80acb294bf4651c945a5a58"
   },
-  "distContentSha256": "4ee8869b963333afc11bd5fa6fcf3aa469ba6ded549fbf5df82252109526a643",
+  "distContentSha256": "065d0e07246c3d4bcab99dc091f6065c92bc6686a80acb294bf4651c945a5a58",
   "errors": []
 }

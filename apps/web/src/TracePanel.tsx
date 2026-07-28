@@ -31,6 +31,10 @@ import {
 } from "./agent-milestone-api";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
 import { copy } from "./copy";
+import {
+  goalEventTraceSummary,
+  memoryEventTraceSummary,
+} from "./goal-memory-event-view";
 import { modelContextEnvelopeCopy } from "./model-context-envelope-copy";
 import {
   modelContextEnvelopeViews,
@@ -947,6 +951,12 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("tool.")) {
     return toolEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("goal.")) {
+    return goalEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("memory.")) {
+    return memoryEventTraceSummary(event) ?? event.category;
   }
   if (
     !event.payload ||

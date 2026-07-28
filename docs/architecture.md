@@ -2311,6 +2311,12 @@ Tool lifecycle events use the same rule: `tool.started`, `tool.completed`,
 status, effect, and known hash receipts such as input or loop-guard hashes.
 Raw tool input, output, details, policy prose, and arbitrary payload text never
 drive the event-list summary.
+Goal and memory governance events are similarly bounded. `goal.*` summaries
+show only action, status, blocker, satisfaction, continuation counts, and
+no-progress counters; objectives, evaluator reasons, and evidence text are not
+rendered. `memory.*` summaries show only action, safe memory IDs, status,
+category, scope, confidence, review/count metadata, and safe reason enums;
+memory content and extraction error messages are ignored.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
