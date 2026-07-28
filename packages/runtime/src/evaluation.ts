@@ -63,6 +63,11 @@ export interface RunEvaluationJudgment {
   scores: EvaluationCriterionScore[];
 }
 
+export interface RunEvaluationGovernanceEvidence {
+  contextCoverageDelta?: RunContextCoverageDelta;
+  comparisonGovernance?: RunEvaluationGovernanceBinding;
+}
+
 export class RunEvaluationService {
   constructor(
     private readonly store: LocalStore,
@@ -83,15 +88,18 @@ export class RunEvaluationService {
     );
     const rubric = normalizeRubric(request.rubric ?? DEFAULT_EVALUATION_RUBRIC);
     const evaluatorModel = request.model ?? agent.model;
+    const comparisonGovernance = createRunEvaluationGovernanceBinding(
+      comparison.contextCoverageDelta,
+    );
     const result = await this.judgeSnapshots(
       comparison.left,
       comparison.right,
       rubric,
       evaluatorModel,
-      comparison.contextCoverageDelta,
-    );
-    const comparisonGovernance = createRunEvaluationGovernanceBinding(
-      comparison.contextCoverageDelta,
+      {
+        contextCoverageDelta: comparison.contextCoverageDelta,
+        comparisonGovernance,
+      },
     );
     const record: RunEvaluationRecord = {
       id: createId("evaluation"),
@@ -140,7 +148,7 @@ export class RunEvaluationService {
     right: RunReplaySnapshot,
     rubric: EvaluationRubricSnapshot,
     evaluatorModel: ModelRef,
-    contextCoverageDelta?: RunContextCoverageDelta,
+    governanceEvidence?: RunEvaluationGovernanceEvidence,
   ): Promise<RunEvaluationJudgment> {
     const model =
       evaluatorModel.provider === "napier" && evaluatorModel.id === "demo"
@@ -168,7 +176,7 @@ export class RunEvaluationService {
       left,
       right,
       rubric,
-      contextCoverageDelta,
+      governanceEvidence,
     );
   }
 
@@ -177,13 +185,13 @@ export class RunEvaluationService {
     left: RunReplaySnapshot,
     right: RunReplaySnapshot,
     rubric: EvaluationRubricSnapshot,
-    contextCoverageDelta?: RunContextCoverageDelta,
+    governanceEvidence?: RunEvaluationGovernanceEvidence,
   ): Promise<ParsedEvaluation> {
     const prompt = buildRunEvaluationMessages(
       left,
       right,
       rubric,
-      contextCoverageDelta,
+      governanceEvidence,
     );
     try {
       const response = await this.models.models.completeSimple(
@@ -337,7 +345,7 @@ export function buildRunEvaluationMessages(
   left: RunReplaySnapshot,
   right: RunReplaySnapshot,
   rubric: EvaluationRubricSnapshot,
-  contextCoverageDelta?: RunContextCoverageDelta,
+  governanceEvidence?: RunEvaluationGovernanceEvidence,
 ): { system: string; user: string } {
   return {
     system: [
@@ -354,7 +362,8 @@ export function buildRunEvaluationMessages(
       "",
       "COMPARISON GOVERNANCE:",
       JSON.stringify({
-        contextCoverageDelta: contextCoverageDelta ?? null,
+        contextCoverageDelta: governanceEvidence?.contextCoverageDelta ?? null,
+        comparisonGovernance: governanceEvidence?.comparisonGovernance ?? null,
       }),
       "",
       "LEFT RUN:",

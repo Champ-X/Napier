@@ -26,7 +26,9 @@ All notable changes to Napier are recorded here.
   pairwise evaluator now receives the same governance metadata in a separate
   prompt section so rubric scoring can account for context coverage drift, and
   saved evaluation records bind that governance projection with a hash-only
-  receipt consumed by suite, casebook, and consensus hashes.
+  receipt consumed by suite, casebook, and consensus hashes. Casebook
+  qualification replays the curated hash-only governance binding back into the
+  no-tool evaluator instead of rehydrating raw context.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

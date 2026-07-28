@@ -17,7 +17,10 @@ import {
   validateEvaluationCasebookQualificationExecution,
   validateEvaluationCasebookQualificationReceipt,
 } from "../src/evaluation-casebook-qualification.js";
-import { DEFAULT_EVALUATION_RUBRIC } from "../src/evaluation.js";
+import {
+  DEFAULT_EVALUATION_RUBRIC,
+  createRunEvaluationGovernanceBinding,
+} from "../src/evaluation.js";
 import { ModelRegistry } from "../src/models.js";
 import { createRunReplaySnapshot } from "../src/replay.js";
 import { LocalStore } from "../src/store.js";
@@ -99,6 +102,25 @@ async function createCuratedFixture(): Promise<{
     createRunReplaySnapshot(store, thread.id, left.id),
     createRunReplaySnapshot(store, thread.id, right.id),
   ]);
+  const comparisonGovernance = createRunEvaluationGovernanceBinding({
+    status: "clean",
+    left: {
+      modelResponseCount: 0,
+      envelopeCount: 0,
+      boundResponseCount: 0,
+      unboundResponseCount: 0,
+      coverageRate: 1,
+    },
+    right: {
+      modelResponseCount: 0,
+      envelopeCount: 0,
+      boundResponseCount: 0,
+      unboundResponseCount: 0,
+      coverageRate: 1,
+    },
+    coverageRateDelta: 0,
+    diagnostics: [],
+  });
   const evaluation = await store.saveRunEvaluation({
     id: "evaluation_casebook_qualification_source",
     threadId: thread.id,
@@ -117,6 +139,7 @@ async function createCuratedFixture(): Promise<{
     reason: "The candidate records stronger evidence.",
     evidence: "Compared immutable replay snapshots.",
     evaluatorModel: { provider: "faux-source", id: "judge-1" },
+    comparisonGovernance,
     createdAt: "2026-07-25T10:00:00.000Z",
   });
   await store.reviewRunEvaluation(thread.id, evaluation.id, {
@@ -181,8 +204,16 @@ describe("executable Evaluation Casebook qualification", () => {
     );
 
     const provider = fauxProvider({ provider: "faux-qualification" });
+    let evaluatorPrompt = "";
     provider.setResponses([
-      fauxAssistantMessage(qualificationResponse("right_better")),
+      (context) => {
+        evaluatorPrompt = context.messages
+          .flatMap((message) =>
+            typeof message.content === "string" ? [message.content] : [],
+          )
+          .join("\n");
+        return fauxAssistantMessage(qualificationResponse("right_better"));
+      },
     ]);
     const models = new ModelRegistry();
     models.registerProvider(provider.provider);
@@ -218,6 +249,12 @@ describe("executable Evaluation Casebook qualification", () => {
         observedLeftSnapshotSha256: evaluation.leftSnapshotSha256,
       }),
     ]);
+    expect(evaluatorPrompt).toContain("COMPARISON GOVERNANCE:");
+    expect(evaluatorPrompt).toContain('"comparisonGovernance"');
+    expect(evaluatorPrompt).toContain(
+      evaluation.comparisonGovernance!.contentSha256,
+    );
+    expect(evaluatorPrompt).toContain('"contextCoverageDelta":null');
     expect(store.listRunEvaluations(threadId)).toEqual([evaluation]);
     expect(
       (await store.listEvents(threadId))

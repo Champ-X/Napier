@@ -1996,6 +1996,7 @@ for each case
   -> rebuild left/right replay snapshots from the source Thread
   -> compare observed event-stream hashes with both curated hashes
   -> mark missing or drifted evidence inconclusive without invoking a model
+  -> pass any curated hash-only governance binding back to the evaluator
   -> otherwise call the shared no-tool snapshot judge
   -> bind expected/actual verdict, scores, evidence state, and all hashes
 aggregate

@@ -184,6 +184,9 @@ export class EvaluationCasebookQualificationService {
       right,
       item.evaluation.rubric,
       evaluatorModel,
+      item.evaluation.comparisonGovernance
+        ? { comparisonGovernance: item.evaluation.comparisonGovernance }
+        : undefined,
     );
     return qualificationCaseResult(item, judgment, observed);
   }
