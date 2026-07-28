@@ -8238,6 +8238,9 @@ describe("Napier HTTP goal flow", () => {
       assistantTextSha256: replay.metrics.assistantTextSha256,
       eventCount: replay.events.length,
       subagentCount: replay.subagents.length,
+      modelContextEnvelopeCount: replay.metrics.modelContextEnvelopeCount,
+      embeddedModelContextEnvelopeCount:
+        replay.metrics.embeddedModelContextEnvelopeCount,
     });
 
     const pathMismatchReplayVerifyResponse = await app.request(
@@ -8283,6 +8286,8 @@ describe("Napier HTTP goal flow", () => {
       diagnostics: ["hash_mismatch"],
       eventCount: 0,
       subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
 
     const threadCountBeforeInvalidBranch = services.store.listThreads().length;
@@ -11600,6 +11605,12 @@ function expectRunReplaySnapshotVerificationHeaders(
   expect(response.headers.get("x-napier-subagent-count")).toBe(
     String(verification.subagentCount),
   );
+  expect(response.headers.get("x-napier-model-context-envelope-count")).toBe(
+    String(verification.modelContextEnvelopeCount),
+  );
+  expect(
+    response.headers.get("x-napier-embedded-model-context-envelope-count"),
+  ).toBe(String(verification.embeddedModelContextEnvelopeCount));
   expect(response.headers.get("x-napier-diagnostic-count")).toBe(
     String(verification.diagnostics.length),
   );

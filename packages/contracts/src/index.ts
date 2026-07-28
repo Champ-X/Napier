@@ -3549,6 +3549,8 @@ export interface RunReplaySnapshotVerification {
   diagnostics: string[];
   eventCount: number;
   subagentCount: number;
+  modelContextEnvelopeCount: number;
+  embeddedModelContextEnvelopeCount: number;
   threadId?: string;
   runId?: string;
   contentSha256?: string;

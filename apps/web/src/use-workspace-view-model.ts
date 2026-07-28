@@ -143,6 +143,8 @@ export interface RunReplayVerificationReceipt {
   assistantTextSha256?: string;
   eventCount: number;
   subagentCount: number;
+  modelContextEnvelopeCount: number;
+  embeddedModelContextEnvelopeCount: number;
 }
 
 export interface OpenTelemetryTraceReceipt {
@@ -1801,6 +1803,9 @@ export function useWorkspaceViewModel() {
             : {}),
           eventCount: verification.eventCount,
           subagentCount: verification.subagentCount,
+          modelContextEnvelopeCount: verification.modelContextEnvelopeCount,
+          embeddedModelContextEnvelopeCount:
+            verification.embeddedModelContextEnvelopeCount,
         });
       } catch (verifyError) {
         setError(

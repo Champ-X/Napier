@@ -61,6 +61,10 @@ All notable changes to Napier are recorded here.
 - Thread replay bundle verification now returns and headers-export both
   ledger-backed and embedded Model Context Envelope counts, and Run Lab fixture
   verification renders those counts beside the local replay diagnostics.
+- Run replay snapshot verification now mirrors the same envelope coverage
+  counters in its response body, no-store headers, and Run Lab replay verifier
+  receipt, while embedded-envelope validation scans both ordered events and
+  subagent evidence included in the snapshot.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

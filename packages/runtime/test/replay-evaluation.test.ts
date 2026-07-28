@@ -268,6 +268,9 @@ describe("run replay", () => {
       assistantTextSha256: first.metrics.assistantTextSha256,
       eventCount: first.events.length,
       subagentCount: 0,
+      modelContextEnvelopeCount: first.metrics.modelContextEnvelopeCount,
+      embeddedModelContextEnvelopeCount:
+        first.metrics.embeddedModelContextEnvelopeCount,
     });
     expect(first.metrics).toEqual(
       expect.objectContaining({
@@ -292,6 +295,8 @@ describe("run replay", () => {
       diagnostics: ["hash_mismatch"],
       eventCount: 0,
       subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
     const bindingTampered = structuredClone(first);
     const responseEvent = bindingTampered.events.find(
@@ -313,6 +318,8 @@ describe("run replay", () => {
       diagnostics: ["context_mismatch"],
       eventCount: 0,
       subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
   });
 
@@ -402,6 +409,8 @@ describe("run replay", () => {
         diagnostics: [],
         threadId: thread.id,
         runId: run.id,
+        modelContextEnvelopeCount: 1,
+        embeddedModelContextEnvelopeCount: 1,
       }),
     );
 
@@ -428,6 +437,8 @@ describe("run replay", () => {
       diagnostics: ["context_mismatch"],
       eventCount: 0,
       subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     });
   });
 

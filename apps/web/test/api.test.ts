@@ -367,6 +367,8 @@ describe("Web JSON API wrappers", () => {
       assistantTextSha256: "c".repeat(64),
       eventCount: 0,
       subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe("/api/threads/thread_1/runs/run_1/replay/verify");

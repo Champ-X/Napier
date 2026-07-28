@@ -552,6 +552,12 @@ function RunReplayVerifier({
             {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events} ·{" "}
             {receipt.subagentCount.toLocaleString()} {copy.lab.replay.subagents}
           </small>
+          <small>
+            {receipt.modelContextEnvelopeCount.toLocaleString()}{" "}
+            {copy.lab.fixture.contextEnvelopes} ·{" "}
+            {receipt.embeddedModelContextEnvelopeCount.toLocaleString()}{" "}
+            {copy.lab.fixture.embeddedEnvelopes}
+          </small>
           <small className="fixture-diagnostics">
             {receipt.diagnostics.length > 0
               ? receipt.diagnostics.join(", ")
