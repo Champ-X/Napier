@@ -56,6 +56,7 @@ export type UsageAccountingStrategy =
   | "demo_estimate"
   | "provider_reported"
   | "openai_cache_discounted"
+  | "deepseek_cache_discounted"
   | "anthropic_cache_discounted"
   | "google_cache_discounted";
 export type UsageCostAccountingStrategy =

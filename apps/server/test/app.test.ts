@@ -921,6 +921,7 @@ describe("Napier HTTP goal flow", () => {
     expectUsagePriceTableCatalogHeaders(catalogResponse, catalog);
     expect(catalog.tables.map((table) => table.provider)).toEqual([
       "anthropic",
+      "deepseek",
       "google",
       "napier",
       "openai",
@@ -942,7 +943,7 @@ describe("Napier HTTP goal flow", () => {
     expect(verification).toEqual(
       expect.objectContaining({
         status: "valid",
-        tableCount: 5,
+        tableCount: 6,
         diagnostics: [],
       }),
     );

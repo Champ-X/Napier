@@ -84,6 +84,30 @@ describe("model-aware token accounting", () => {
     );
   });
 
+  it("uses DeepSeek price tables instead of provider-reported zero cost", () => {
+    const accounting = createUsageAccounting(
+      { provider: "deepseek", id: "deepseek-v4-flash" },
+      {
+        ...usage,
+        costUsd: 0,
+      },
+    );
+
+    expect(accounting).toEqual(
+      expect.objectContaining({
+        strategy: "deepseek_cache_discounted",
+        costStrategy: "price_table_estimate",
+        priceTableId: "deepseek-default.v1",
+        reportedCostUsd: 0,
+        estimatedCostUsd: 0.000019824,
+        budgetCostUsd: 0.000019824,
+        rawTotalTokens: 210,
+        budgetTokens: 132,
+        cacheReadWeight: 0.02,
+      }),
+    );
+  });
+
   it("exports and verifies hash-bound provider price table catalogs", () => {
     const catalog = createUsagePriceTableCatalog({
       generatedAt: new Date("2026-07-26T00:00:00.000Z"),
@@ -99,6 +123,7 @@ describe("model-aware token accounting", () => {
     );
     expect(catalog.tables.map((table) => table.provider)).toEqual([
       "anthropic",
+      "deepseek",
       "google",
       "napier",
       "openai",
@@ -114,8 +139,15 @@ describe("model-aware token accounting", () => {
     ).toEqual(
       expect.objectContaining({
         status: "valid",
-        tableCount: 5,
-        providers: ["anthropic", "google", "napier", "openai", "openrouter"],
+        tableCount: 6,
+        providers: [
+          "anthropic",
+          "deepseek",
+          "google",
+          "napier",
+          "openai",
+          "openrouter",
+        ],
         catalogSha256: catalog.contentSha256,
         diagnostics: [],
       }),

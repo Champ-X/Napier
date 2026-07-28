@@ -211,6 +211,10 @@ All notable changes to Napier are recorded here.
 - Plan artifact Ledger events now include runtime-generated `pathSha256` and
   `evidenceSha256` companions, and the bounded Trace summary renders those
   hashes instead of artifact paths or evidence prose.
+- DeepSeek is now registered as a first-class live model provider via
+  `DEEPSEEK_API_KEY`, with built-in price-table accounting for
+  `deepseek-v4-flash`/compatible DeepSeek usage so cost gates do not fall back
+  to provider-reported zero-cost runs.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

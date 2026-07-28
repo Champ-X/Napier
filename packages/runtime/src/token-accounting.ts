@@ -294,6 +294,17 @@ function builtinUsagePriceTableInputs(): Omit<
       source: "napier_builtin",
     },
     {
+      id: "deepseek-default.v1",
+      provider: "deepseek",
+      label: "DeepSeek default",
+      inputUsdPerMillion: 0.14,
+      outputUsdPerMillion: 0.28,
+      cacheReadUsdPerMillion: 0.0028,
+      cacheWriteUsdPerMillion: 0,
+      effectiveAt: "2026-07-29T00:00:00.000Z",
+      source: "pi_ai_deepseek_catalog",
+    },
+    {
       id: "anthropic-default.v1",
       provider: "anthropic",
       label: "Anthropic default",
@@ -446,6 +457,15 @@ function usageWeights(model: ModelRef): UsageWeights {
       inputWeight: 1,
       outputWeight: 1,
       cacheReadWeight: 0.25,
+      cacheWriteWeight: 1,
+    };
+  }
+  if (provider === "deepseek") {
+    return {
+      strategy: "deepseek_cache_discounted",
+      inputWeight: 1,
+      outputWeight: 1,
+      cacheReadWeight: 0.02,
       cacheWriteWeight: 1,
     };
   }

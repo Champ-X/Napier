@@ -1253,12 +1253,13 @@ and aggregate evidence. `usageAccounting` is a separate hash-bound projection
 that records the model, accounting strategy, raw total tokens, calibrated
 `budgetTokens`, and token weights. `maxTotalTokens` uses calibrated
 `budgetTokens` when present and raw totals otherwise. OpenAI/OpenRouter,
-Anthropic, Google, the deterministic demo model, and unknown providers each
-use explicit strategy IDs. The same projection carries reported cost,
-price-table estimated cost, `budgetCostUsd`, cost strategy, price table ID, and
-price table SHA-256. `maxCostUsd` uses `budgetCostUsd` when present and raw
-reported cost otherwise; known providers use a conservative max(reported,
-estimated) value, while unknown providers remain provider-reported. Wall time
+DeepSeek, Anthropic, Google, the deterministic demo model, and unknown
+providers each use explicit strategy IDs. The same projection carries reported
+cost, price-table estimated cost, `budgetCostUsd`, cost strategy, price table
+ID, and price table SHA-256. `maxCostUsd` uses `budgetCostUsd` when present
+and raw reported cost otherwise; known providers use a conservative
+max(reported, estimated) value, while unknown providers remain
+provider-reported. Wall time
 starts at the durable Run timestamp and covers model calls, tools, Subagents,
 auxiliary calls, and lease activity.
 

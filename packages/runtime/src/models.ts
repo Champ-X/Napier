@@ -7,6 +7,7 @@ import {
   type Provider,
 } from "@earendil-works/pi-ai";
 import { anthropicProvider } from "@earendil-works/pi-ai/providers/anthropic";
+import { deepseekProvider } from "@earendil-works/pi-ai/providers/deepseek";
 import { googleProvider } from "@earendil-works/pi-ai/providers/google";
 import { openaiProvider } from "@earendil-works/pi-ai/providers/openai";
 import { openrouterProvider } from "@earendil-works/pi-ai/providers/openrouter";
@@ -21,6 +22,7 @@ export class ModelRegistry {
     const models = createModels(credentials ? { credentials } : undefined);
     models.setProvider(openaiProvider());
     models.setProvider(anthropicProvider());
+    models.setProvider(deepseekProvider());
     models.setProvider(googleProvider());
     models.setProvider(openrouterProvider());
     this.models = models;
