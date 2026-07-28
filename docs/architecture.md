@@ -2346,6 +2346,13 @@ compaction summaries, compaction failure messages, prompt-variable names or
 values, Skill catalog names, embedded Skill bodies, memory text, or arbitrary
 context payload prose. Unknown `context.*` events fail closed to their category
 instead of using `summary`, `message`, or `text` fields.
+Evaluation governance events have the same event-list boundary. `evaluation.*`
+summaries may show verdicts, statuses, consensus/adjudication metadata, bounded
+counts and rates, safe object IDs, model labels, and SHA-256 receipts. They do
+not render evaluator reasons, evidence text, rubric names, criterion score
+reasons, reviewer names or notes, casebook names/descriptions, suite names, or
+arbitrary future evaluation payload prose. Unknown `evaluation.*` events fail
+closed to their category instead of using the generic text fallback.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

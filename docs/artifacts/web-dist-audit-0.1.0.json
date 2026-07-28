@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DUNkVcxH.js",
+    "path": "apps/web/dist/assets/index-CZv-_2rv.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "3fcb8f97b5340ddcc0c03f4aa1452bde4b6aa3f14a43fd52d738e8575e67dc37"
+    "sha256": "a27ab9a85fae52993a0de0deb8f6e2704fc26c175b50051c6f850a153507bc54"
   },
-  "distContentSha256": "3fcb8f97b5340ddcc0c03f4aa1452bde4b6aa3f14a43fd52d738e8575e67dc37",
+  "distContentSha256": "a27ab9a85fae52993a0de0deb8f6e2704fc26c175b50051c6f850a153507bc54",
   "errors": []
 }

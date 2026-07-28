@@ -36,6 +36,7 @@ import {
 } from "./control-event-view";
 import { contextEventTraceSummary } from "./context-event-view";
 import { copy } from "./copy";
+import { evaluationEventTraceSummary } from "./evaluation-event-view";
 import {
   goalEventTraceSummary,
   memoryEventTraceSummary,
@@ -955,6 +956,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("context.")) {
     return contextEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("evaluation.")) {
+    return evaluationEventTraceSummary(event) ?? event.category;
   }
   if (event.type === "model.response") {
     return modelResponseTraceSummary(event) ?? event.category;
