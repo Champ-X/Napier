@@ -218,6 +218,9 @@ All notable changes to Napier are recorded here.
 - The Context credential form now suggests provider-specific labels,
   environment-variable names, and Keychain service names for OpenAI, DeepSeek,
   Anthropic, Google, and OpenRouter without overwriting custom locators.
+- The Context runtime model selectors now group options by provider and show
+  configured/total counts, making unavailable live providers visible before a
+  Run is started.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

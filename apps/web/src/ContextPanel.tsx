@@ -70,6 +70,7 @@ import {
   credentialReferenceDraft,
 } from "./credential-reference-view-model";
 import { formatApiErrorMessage } from "./api-error";
+import { modelProviderGroups } from "./model-selection-view-model";
 
 const copy = { context: contextCopy };
 const DEFAULT_RUN_LIMITS = {
@@ -224,6 +225,7 @@ export default function ContextPanel({
         .filter((provider) => provider !== "napier"),
     ),
   ];
+  const modelGroups = modelProviderGroups(models);
   const promptSigningAnchors = publisherAnchors.filter(
     (anchor) => anchor.status === "trusted" && anchor.signingSource,
   );
@@ -1125,15 +1127,18 @@ export default function ContextPanel({
             value={selectedModelKey}
             onChange={(event) => onModel(event.target.value)}
           >
-            {models.map((model) => (
-              <option
-                key={`${model.provider}/${model.id}`}
-                value={`${model.provider}/${model.id}`}
-                disabled={!model.configured}
-              >
-                {model.provider} / {model.name}
-                {model.configured ? "" : ` · ${copy.context.unavailable}`}
-              </option>
+            {modelGroups.map((group) => (
+              <optgroup key={group.provider} label={group.label}>
+                {group.options.map((option) => (
+                  <option
+                    key={option.key}
+                    value={option.key}
+                    disabled={!option.configured}
+                  >
+                    {option.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </label>
@@ -1536,27 +1541,27 @@ export default function ContextPanel({
               <option value="">
                 {copy.context.modelAdvisorReviewModelDisabled}
               </option>
-              {models
-                .filter(
-                  (model) => `${model.provider}/${model.id}` !== "napier/demo",
-                )
-                .map((model) => {
-                  const key = `${model.provider}/${model.id}`;
-                  return (
-                    <option
-                      key={key}
-                      value={key}
-                      disabled={!model.configured || key === selectedModelKey}
-                    >
-                      {model.provider} / {model.name}
-                      {model.configured
-                        ? key === selectedModelKey
+              {modelGroups
+                .filter((group) => group.provider !== "napier")
+                .map((group) => (
+                  <optgroup key={group.provider} label={group.label}>
+                    {group.options.map((option) => (
+                      <option
+                        key={option.key}
+                        value={option.key}
+                        disabled={
+                          !option.configured || option.key === selectedModelKey
+                        }
+                      >
+                        {option.label}
+                        {option.configured &&
+                        option.key === selectedModelKey
                           ? ` · ${copy.context.modelAdvisorReviewModelPrimary}`
-                          : ""
-                        : ` · ${copy.context.unavailable}`}
-                    </option>
-                  );
-                })}
+                          : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
             </select>
           </label>
           <p className="guardrail-note">
