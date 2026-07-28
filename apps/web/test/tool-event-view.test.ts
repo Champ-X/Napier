@@ -50,6 +50,39 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes search_files hash evidence without match text", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "search_files",
+      status: "completed",
+      output: "TOP_SECRET_MATCH_LINE",
+      details: {
+        count: 2,
+        truncated: true,
+        matchSetSha256: "c".repeat(64),
+        matches: [
+          {
+            path: "TOP_SECRET_PATH",
+            line: 7,
+            lineSha256: "d".repeat(64),
+            fileSha256: "e".repeat(64),
+          },
+        ],
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "search_files",
+      status: "completed",
+      searchMatchCount: 2,
+      searchTruncated: true,
+      searchMatchSetSha256: "c".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / search_files / completed / matches 2 / truncated / match-set ${"c".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("fails closed to a fixed summary for malformed tool receipts", () => {
     const event = toolEvent("tool.failed", {
       toolName: "bad tool name",

@@ -6,6 +6,9 @@ export interface ToolEventTraceView {
   effect?: "read" | "write";
   inputSha256?: string;
   loopGuardTriggerSha256?: string;
+  searchMatchCount?: number;
+  searchTruncated?: boolean;
+  searchMatchSetSha256?: string;
 }
 
 const TOOL_EVENT_PATTERN = /^tool\.(started|completed|failed|blocked)$/u;
@@ -33,12 +36,17 @@ export function toolEventTraceView(
   const loopGuardTriggerSha256 = sha256(
     event.payload["loopGuardTriggerSha256"],
   );
+  const searchEvidence =
+    toolName === "search_files"
+      ? searchFilesEvidence(event.payload["details"])
+      : undefined;
   return {
     toolName,
     status,
     ...(effect ? { effect } : {}),
     ...(inputSha256 ? { inputSha256 } : {}),
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
+    ...(searchEvidence ? searchEvidence : {}),
   };
 }
 
@@ -53,6 +61,13 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.inputSha256 ? [`input ${view.inputSha256.slice(0, 12)}`] : []),
     ...(view.loopGuardTriggerSha256
       ? [`loop ${view.loopGuardTriggerSha256.slice(0, 12)}`]
+      : []),
+    ...(view.searchMatchCount !== undefined
+      ? [`matches ${view.searchMatchCount}`]
+      : []),
+    ...(view.searchTruncated ? ["truncated"] : []),
+    ...(view.searchMatchSetSha256
+      ? [`match-set ${view.searchMatchSetSha256.slice(0, 12)}`]
       : []),
   ].join(" / ");
 }
@@ -79,4 +94,35 @@ function safeEffect(value: unknown): "read" | "write" | undefined {
 
 function sha256(value: unknown): string | undefined {
   return typeof value === "string" && SHA256.test(value) ? value : undefined;
+}
+
+function searchFilesEvidence(
+  value: unknown,
+):
+  | {
+      searchMatchCount: number;
+      searchTruncated?: boolean;
+      searchMatchSetSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const count = record["count"];
+  if (
+    typeof count !== "number" ||
+    !Number.isSafeInteger(count) ||
+    count < 0 ||
+    count > 80
+  ) {
+    return undefined;
+  }
+  const truncated = record["truncated"] === true;
+  const matchSetSha256 = sha256(record["matchSetSha256"]);
+  return {
+    searchMatchCount: count,
+    ...(truncated ? { searchTruncated: true } : {}),
+    ...(matchSetSha256 ? { searchMatchSetSha256: matchSetSha256 } : {}),
+  };
 }

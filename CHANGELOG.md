@@ -254,6 +254,8 @@ All notable changes to Napier are recorded here.
   same `ModelRegistry.resolveConfigured()` executable-model contract.
 - `search_files` now returns complete-file and matched-line SHA-256 evidence so
   literal search results can feed `read_file` and Hashline edits directly.
+- Trace tool summaries now surface `search_files` match counts and match-set
+  hashes without exposing matched text or paths.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

@@ -128,25 +128,29 @@ describe("workspace tools", () => {
         ].join("\n"),
       }),
     );
+    const matches = [
+      {
+        path: "second.txt",
+        line: 1,
+        fileSha256: secondFileSha256,
+        lineSha256: secondLineSha256,
+        sizeBytes: Buffer.byteLength(secondSource),
+      },
+      {
+        path: "src/first.txt",
+        line: 2,
+        fileSha256: firstFileSha256,
+        lineSha256: firstLineSha256,
+        sizeBytes: Buffer.byteLength(firstSource),
+      },
+    ];
     expect(result.details).toEqual({
       count: 2,
       truncated: false,
-      matches: [
-        {
-          path: "second.txt",
-          line: 1,
-          fileSha256: secondFileSha256,
-          lineSha256: secondLineSha256,
-          sizeBytes: Buffer.byteLength(secondSource),
-        },
-        {
-          path: "src/first.txt",
-          line: 2,
-          fileSha256: firstFileSha256,
-          lineSha256: firstLineSha256,
-          sizeBytes: Buffer.byteLength(firstSource),
-        },
-      ],
+      matchSetSha256: createHash("sha256")
+        .update(JSON.stringify(matches))
+        .digest("hex"),
+      matches,
     });
   });
 

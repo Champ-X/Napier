@@ -189,6 +189,13 @@ export interface WorkspaceSearchMatch {
   sizeBytes: number;
 }
 
+export interface WorkspaceSearchDetails {
+  count: number;
+  truncated: boolean;
+  matchSetSha256: string;
+  matches: WorkspaceSearchMatch[];
+}
+
 export interface CreateWorkspaceToolsOptions {
   includeWriteTools?: boolean;
   dataRoot?: string;
@@ -866,11 +873,7 @@ export function createWorkspaceTools(
 
   const searchFiles: AgentTool<
     typeof searchFilesSchema,
-    {
-      count: number;
-      truncated: boolean;
-      matches: WorkspaceSearchMatch[];
-    }
+    WorkspaceSearchDetails
   > = {
     name: "search_files",
     label: "Search files",
@@ -928,6 +931,7 @@ export function createWorkspaceTools(
         details: {
           count: matches.length,
           truncated: matches.length >= MAX_SEARCH_MATCHES,
+          matchSetSha256: sha256(JSON.stringify(matches)),
           matches,
         },
       };

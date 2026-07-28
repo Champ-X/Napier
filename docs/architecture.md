@@ -1494,6 +1494,8 @@ search_files
   -> scan bounded UTF-8 files with the same canonical workspace boundary
   -> return each literal match with path, line number, complete-file SHA-256,
      line-anchor SHA-256, and byte size
+  -> hash the structured match set so Trace can show count/truncation/hash
+     without rendering match text or paths
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require an existing safe parent and a missing target

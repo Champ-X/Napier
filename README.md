@@ -1018,10 +1018,11 @@ digest fails without changing the file.
 
 `search_files` is also hash-aware. Literal matches include the workspace path,
 line number, complete-file SHA-256, matched-line SHA-256, and file byte size in
-the structured tool details, while the text output keeps the matching line for
-human-readable orientation. This lets a follow-up `read_file` or
-`apply_patch hashline_replace` bind work to the same evidence without trusting
-plain grep output.
+the structured tool details, plus a match-set SHA-256 receipt. The text output
+keeps the matching line for human-readable orientation. This lets a follow-up
+`read_file` or `apply_patch hashline_replace` bind work to the same evidence
+without trusting plain grep output, while Trace summaries render only the
+match count, truncation state, and match-set hash.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
