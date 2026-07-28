@@ -122,6 +122,9 @@ All notable changes to Napier are recorded here.
   projection from span events and specialized model spans, requiring the
   projected ledger sequences to match the artifact event range count and
   boundaries without duplicates.
+- Specialized OTLP model spans now carry `napier.ledger.payload_sha256`, and
+  verification binds their `napier.ledger.event_id` back to the deterministic
+  model span ID plus completion-only chat semantics.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,

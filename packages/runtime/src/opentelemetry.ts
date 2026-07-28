@@ -255,6 +255,7 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
   "napier.gen_ai.cost_usd",
   "napier.gen_ai.finish_reason",
   "napier.ledger.event_id",
+  "napier.ledger.payload_sha256",
   "napier.ledger.seq",
   "napier.model_context.envelope.sha256",
   "napier.model_context.envelope.turn_index",
@@ -467,6 +468,7 @@ export function validateOpenTelemetryTraceArtifact(
   }
   validateRootTraceArtifactBinding(artifact, root);
   validateEventSequenceTraceBinding(artifact, spans);
+  validateSpecializedLedgerSpanBindings(artifact, spans);
   validateImportReceiptTraceBinding(root);
   const {
     generatedAt: _generatedAt,
@@ -513,6 +515,9 @@ function openTelemetryTraceArtifactDiagnostic(error: unknown): string {
   if (message.includes("event range")) return "invalid_event_range";
   if (message.includes("event sequence binding")) {
     return "event_sequence_mismatch";
+  }
+  if (message.includes("ledger span binding")) {
+    return "ledger_span_mismatch";
   }
   if (message.includes("redaction")) return "invalid_redaction";
   if (message.includes("root binding")) return "root_binding_mismatch";
@@ -765,6 +770,7 @@ function modelSpan(
       "napier.cache.write_tokens": recordNumber(usage, "cacheWriteTokens") ?? 0,
       "napier.gen_ai.cost_usd": recordNumber(usage, "costUsd") ?? 0,
       "napier.ledger.event_id": event.id,
+      "napier.ledger.payload_sha256": sha256(canonicalJson(event.payload)),
       "napier.ledger.seq": event.seq,
       "napier.timing.precision": "completion_only",
       ...(stopReason ? { "napier.gen_ai.finish_reason": stopReason } : {}),
@@ -1566,6 +1572,45 @@ function validateEventSequenceTraceBinding(
     sequences.some((seq) => seq < 1)
   ) {
     throw new Error("OpenTelemetry trace event sequence binding is invalid");
+  }
+}
+
+function validateSpecializedLedgerSpanBindings(
+  artifact: OpenTelemetryTraceArtifact,
+  spans: OtlpSpan[],
+): void {
+  for (const span of spans) {
+    const eventId = stringAttribute(span.attributes, "napier.ledger.event_id");
+    const eventSeq = integerAttribute(span.attributes, "napier.ledger.seq");
+    const payloadSha256 = stringAttribute(
+      span.attributes,
+      "napier.ledger.payload_sha256",
+    );
+    if (
+      eventId === undefined &&
+      eventSeq === undefined &&
+      payloadSha256 === undefined
+    ) {
+      continue;
+    }
+    if (
+      eventId === undefined ||
+      eventSeq === undefined ||
+      payloadSha256 === undefined ||
+      !RESOURCE_ID_PATTERN.test(eventId) ||
+      eventSeq < 1 ||
+      !SHA256_PATTERN.test(payloadSha256) ||
+      span.spanId !== deterministicId(`model:${eventId}`, 16) ||
+      span.kind !== 3 ||
+      span.events.length !== 0 ||
+      stringAttribute(span.attributes, "gen_ai.conversation.id") !==
+        artifact.threadId ||
+      stringAttribute(span.attributes, "gen_ai.operation.name") !== "chat" ||
+      stringAttribute(span.attributes, "napier.timing.precision") !==
+        "completion_only"
+    ) {
+      throw new Error("OpenTelemetry trace ledger span binding is invalid");
+    }
   }
 }
 

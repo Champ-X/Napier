@@ -456,6 +456,12 @@ describe("OpenTelemetry trace export", () => {
     ).toHaveLength(1);
     const modelSpan = traceSpans.find((span) => span.name === "chat faux-1")!;
     expect(modelSpan.kind).toBe(3);
+    expect(
+      attributeValue(modelSpan.attributes, "napier.ledger.event_id"),
+    ).toEqual(expect.any(String));
+    expect(
+      attributeValue(modelSpan.attributes, "napier.ledger.payload_sha256"),
+    ).toMatch(/^[a-f0-9]{64}$/);
     expect(attributeValue(modelSpan.attributes, "napier.ledger.seq")).toEqual(
       expect.any(Number),
     );
@@ -501,6 +507,25 @@ describe("OpenTelemetry trace export", () => {
     expect(verifyOpenTelemetryTraceArtifact(sequenceTampered)).toEqual({
       status: "invalid",
       diagnostics: ["event_sequence_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
+    const ledgerSpanTampered = structuredClone(first);
+    const tamperedLedgerSpan = spans(ledgerSpanTampered).find(
+      (span) => span.name === "chat faux-1",
+    )!;
+    setAttributeValue(
+      tamperedLedgerSpan.attributes,
+      "napier.ledger.event_id",
+      "event_forged000000000000",
+    );
+    rehashArtifact(ledgerSpanTampered);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(ledgerSpanTampered),
+    ).toThrow("ledger span binding");
+    expect(verifyOpenTelemetryTraceArtifact(ledgerSpanTampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["ledger_span_mismatch"],
       spanCount: 0,
       eventCount: 0,
     });

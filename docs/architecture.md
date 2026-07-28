@@ -2277,6 +2277,12 @@ The verifier also reconstructs a metadata-only event-sequence projection from
 `napier.ledger.seq` attributes. The projected sequence count, minimum, maximum,
 and uniqueness must match the artifact `eventRange`, so a trace cannot drift
 its declared event window away from the span evidence it carries.
+Specialized model spans also carry `napier.ledger.payload_sha256`; their
+`napier.ledger.event_id` must deterministically produce the span ID and their
+operation/timing attributes must remain completion-only chat evidence. This
+keeps model-response events equivalent to ordinary span events for hash-only
+payload receipts without storing prompt, completion, reasoning, or tool-call
+content.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
