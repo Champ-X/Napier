@@ -2488,11 +2488,14 @@ closed to their category instead of using the generic text fallback.
 Plan governance events are also bounded in the event list. `plan.*` summaries
 may show safe plan/step/artifact/replan IDs, statuses, strategy enums, phase
 and ready/blocked counts, revision counters, artifact byte counts, blueprint
-qualification state, and SHA-256 receipts. They do not render plan objectives,
-step titles, step evidence, blockers, artifact evidence, artifact paths,
-replan reasons, or arbitrary future plan payload prose. Unknown `plan.*` events
-fail closed to their category before the generic fallback can inspect
-`objective`, `reason`, `description`, `evidence`, `path`, or `summary`.
+qualification state, and SHA-256 receipts. For `plan.artifact.*` receipts the
+Trace summary consumes runtime-generated `pathSha256` and `evidenceSha256`
+companions instead of rendering the path or evidence fields directly. Plan
+summaries do not render plan objectives, step titles, step evidence, blockers,
+artifact evidence, artifact paths, replan reasons, or arbitrary future plan
+payload prose. Unknown `plan.*` events fail closed to their category before the
+generic fallback can inspect `objective`, `reason`, `description`, `evidence`,
+`path`, or `summary`.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
@@ -3302,11 +3305,13 @@ digest. Verified artifact cards render the server-computed byte count beside a
 short digest while retaining the full SHA-256 as audit context. Every accepted
 state change is appended to the Thread ledger. The HTTP API and internal Agent
 tool share the same
-`plan.artifact.*` payload builder, and validators treat the latest artifact
-event as a projection of the manifest's current state. SQLite restore, Thread
-replay bundle validation, and Plan archive verification all fail closed if the
-event's artifact ID, path, status, evidence, digest, size, source Run, or phase
-projection metadata drifts from the current artifact manifest.
+`plan.artifact.*` payload builder, which also emits `pathSha256` and
+`evidenceSha256` companions for hash-only Trace reading. Validators treat the
+latest artifact event as a projection of the manifest's current state. SQLite
+restore, Thread replay bundle validation, and Plan archive verification all
+fail closed if the event's artifact ID, path, path hash, status, evidence,
+evidence hash, digest, size, source Run, or phase projection metadata drifts
+from the current artifact manifest.
 
 ## Context Compaction Flow
 

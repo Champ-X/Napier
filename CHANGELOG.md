@@ -208,6 +208,9 @@ All notable changes to Napier are recorded here.
   Agent tool and HTTP API, and validation rejects the latest `plan.artifact.*`
   event for an artifact when it drifts from the artifact manifest during
   SQLite restore, Thread replay bundle validation, or Plan archive verification.
+- Plan artifact Ledger events now include runtime-generated `pathSha256` and
+  `evidenceSha256` companions, and the bounded Trace summary renders those
+  hashes instead of artifact paths or evidence prose.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

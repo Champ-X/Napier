@@ -83,6 +83,8 @@ describe("Plan event trace view", () => {
       status: "verified",
       evidence: "TOP_SECRET_ARTIFACT_EVIDENCE",
       sha256: "1".repeat(64),
+      pathSha256: "2".repeat(64),
+      evidenceSha256: "3".repeat(64),
       sizeBytes: 4096,
       criticalPathStepIds: ["step_a"],
       readyStepIds: [],
@@ -93,7 +95,7 @@ describe("Plan event trace view", () => {
       `plan / step.completed / plan 1234567890 / step abcdef1234 / run 1234567890 / status completed / plan-status active / ready 1 / blocked 0 / phase ${"0".repeat(12)}`,
     );
     expect(planEventTraceSummary(artifact)).toBe(
-      `plan / artifact.verified / plan 1234567890 / artifact 0987654321 / source-run 1234567890 / status verified / critical 1 / ready 0 / blocked 0 / size-bytes 4096 / artifact ${"1".repeat(12)}`,
+      `plan / artifact.verified / plan 1234567890 / artifact 0987654321 / source-run 1234567890 / status verified / critical 1 / ready 0 / blocked 0 / size-bytes 4096 / artifact ${"1".repeat(12)} / artifact-path ${"2".repeat(12)} / artifact-evidence ${"3".repeat(12)}`,
     );
     expect(planEventTraceSummary(step)).not.toContain("TOP_SECRET");
     expect(planEventTraceSummary(artifact)).not.toContain("TOP_SECRET");

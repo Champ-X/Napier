@@ -519,8 +519,10 @@ export function createPlanArtifactEventPayload(
     planId: plan.id,
     artifactId: artifact.id,
     path: artifact.path,
+    pathSha256: sha256(artifact.path),
     status: artifact.status,
     evidence: artifact.evidence,
+    evidenceSha256: sha256(artifact.evidence),
     criticalPathStepIds: plan.criticalPathStepIds,
     readyStepIds: plan.readyStepIds,
     blockedStepIds: plan.blockedStepIds,
@@ -610,6 +612,8 @@ const PLAN_ARTIFACT_EVENT_COMMON_KEYS = new Set([
   "sourceRunId",
 ]);
 const PLAN_ARTIFACT_EVENT_PROJECTION_KEYS = new Set([
+  "pathSha256",
+  "evidenceSha256",
   "activePhaseIndex",
   "parallelReadyStepIds",
   "phaseWaveCount",

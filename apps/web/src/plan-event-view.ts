@@ -37,6 +37,8 @@ export interface PlanEventTraceView {
   addedArtifactsSha256?: string;
   dependencyUpdatesSha256?: string;
   artifactSha256?: string;
+  artifactPathSha256?: string;
+  artifactEvidenceSha256?: string;
   blueprintSha256?: string;
   blueprintSourceArchiveSha256?: string;
   blueprintQualificationSha256?: string;
@@ -114,6 +116,12 @@ export function planEventTraceView(
     ...shaField(event.payload, "addedArtifactsSha256"),
     ...shaField(event.payload, "dependencyUpdatesSha256"),
     ...shaAliasField(event.payload, "sha256", "artifactSha256"),
+    ...shaAliasField(event.payload, "pathSha256", "artifactPathSha256"),
+    ...shaAliasField(
+      event.payload,
+      "evidenceSha256",
+      "artifactEvidenceSha256",
+    ),
     ...shaField(event.payload, "blueprintSha256"),
     ...shaField(event.payload, "blueprintSourceArchiveSha256"),
     ...shaField(event.payload, "blueprintQualificationSha256"),
@@ -214,6 +222,8 @@ function hashSummaries(view: PlanEventTraceView): string[] {
     ...hashSummary("added-artifacts", view.addedArtifactsSha256),
     ...hashSummary("dependency-updates", view.dependencyUpdatesSha256),
     ...hashSummary("artifact", view.artifactSha256),
+    ...hashSummary("artifact-path", view.artifactPathSha256),
+    ...hashSummary("artifact-evidence", view.artifactEvidenceSha256),
     ...hashSummary("blueprint", view.blueprintSha256),
     ...hashSummary("blueprint-source-archive", view.blueprintSourceArchiveSha256),
     ...hashSummary("blueprint-qualification", view.blueprintQualificationSha256),

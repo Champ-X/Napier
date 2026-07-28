@@ -1,6 +1,11 @@
+import { createHash } from "node:crypto";
+
+import type { JsonValue, RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
+  assertPlanArtifactEventBindings,
+  createPlanArtifactEventPayload,
   createExecutionPlan,
   interruptPlanRun,
   replanExecutionPlan,
@@ -479,6 +484,49 @@ describe("execution plans", () => {
     ).toEqual(verified);
   });
 
+  it("binds artifact event path and evidence hashes", () => {
+    const plan = createDeliveryPlan();
+    const produced = updateArtifactManifest(plan, "runtime-change", {
+      status: "produced",
+      sourceRunId: "run-3",
+      evidence: "plans.ts was written by run-3.",
+    });
+    const artifact = produced.artifacts[0]!;
+    const payload = createPlanArtifactEventPayload(produced, artifact);
+    expect(payload).toEqual(
+      expect.objectContaining({
+        pathSha256: sha256Text(artifact.path),
+        evidenceSha256: sha256Text(artifact.evidence),
+      }),
+    );
+
+    const event = planArtifactEvent(produced.threadId, "run-3", 1, payload);
+    expect(() =>
+      assertPlanArtifactEventBindings({
+        plans: [produced],
+        events: [event],
+        label: "Plan artifact hash binding",
+      }),
+    ).not.toThrow();
+
+    const tampered = structuredClone(event);
+    if (
+      !tampered.payload ||
+      Array.isArray(tampered.payload) ||
+      typeof tampered.payload !== "object"
+    ) {
+      throw new Error("Artifact event payload fixture is missing");
+    }
+    tampered.payload["evidenceSha256"] = "0".repeat(64);
+    expect(() =>
+      assertPlanArtifactEventBindings({
+        plans: [produced],
+        events: [tampered],
+        label: "Plan artifact hash binding",
+      }),
+    ).toThrow("plan.artifact event binding mismatch");
+  });
+
   it("recommends artifact-drift replanning when required output is missing", () => {
     const completedStep = transitionPlanStep(
       transitionPlanStep(createDeliveryPlan(), "inspect", {
@@ -594,3 +642,26 @@ describe("execution plans", () => {
     ).toThrow("escapes the workspace");
   });
 });
+
+function planArtifactEvent(
+  threadId: string,
+  runId: string,
+  seq: number,
+  payload: { [key: string]: JsonValue },
+): RunEvent {
+  return {
+    id: `event_plan_artifact_${seq}`,
+    threadId,
+    runId,
+    seq,
+    type: `plan.artifact.${String(payload["status"])}`,
+    category: "plan",
+    visibility: "user",
+    payload,
+    createdAt: "2026-07-29T00:00:00.000Z",
+  };
+}
+
+function sha256Text(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
