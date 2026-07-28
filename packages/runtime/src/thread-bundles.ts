@@ -10,9 +10,6 @@ import {
   type EvaluationSuite,
   type EvaluationSuiteExecution,
   type EvaluationRubricSnapshot,
-  traceSummaryBoundaryDelta,
-  type RunContextCoverageDelta,
-  type RunContextCoverageSummary,
   type RunEvent,
   type RunEvaluationRecord,
   type SubagentTask,
@@ -41,10 +38,8 @@ import {
   hashRunEvaluation,
   normalizeEvaluationSuiteGate,
 } from "./evaluation-suites.js";
-import {
-  createRunEvaluationGovernanceBinding,
-  normalizeRubric,
-} from "./evaluation.js";
+import { normalizeRubric } from "./evaluation.js";
+import { assertRunEvaluationGovernanceSourceBinding } from "./evaluation-governance.js";
 import {
   AGENT_MILESTONE_RECORDED_EVENT,
   projectAgentMilestones,
@@ -1038,12 +1033,12 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       `evaluations[${index}].evaluatorModel`,
     );
     assertEvaluationBody(evaluation, `evaluations[${index}]`);
-    assertEvaluationGovernanceSourceBinding(
-      value as RunEvaluationRecord,
-      typedEvents,
+    assertRunEvaluationGovernanceSourceBinding({
+      evaluation: value as RunEvaluationRecord,
+      events: typedEvents,
       subagents,
-      `evaluations[${index}]`,
-    );
+      label: `Thread replay bundle evaluations[${index}]`,
+    });
     evaluationRecords.set(evaluationId, value as RunEvaluationRecord);
   }
 
@@ -2259,154 +2254,6 @@ function assertEvaluationGovernanceBinding(
   if (sha256(canonicalJson(content)) !== contentSha256) {
     throw new Error(`Thread replay bundle ${label} content hash mismatch`);
   }
-}
-
-function assertEvaluationGovernanceSourceBinding(
-  evaluation: RunEvaluationRecord,
-  events: readonly RunEvent[],
-  subagents: readonly unknown[],
-  label: string,
-): void {
-  const governance = evaluation.comparisonGovernance;
-  if (!governance) return;
-  const leftEvents = events.filter(
-    (event) => event.runId === evaluation.leftRunId,
-  );
-  const rightEvents = events.filter(
-    (event) => event.runId === evaluation.rightRunId,
-  );
-  const leftSubagents = subagents.filter((task) =>
-    unknownSubagentBelongsToRun(task, evaluation.leftRunId),
-  );
-  const rightSubagents = subagents.filter((task) =>
-    unknownSubagentBelongsToRun(task, evaluation.rightRunId),
-  );
-  const contextCoverageDelta = compareBundleContextCoverage(
-    runContextCoverageSummary(leftEvents, leftSubagents),
-    runContextCoverageSummary(rightEvents, rightSubagents),
-  );
-  const includesTraceSummaryBoundary =
-    governance.traceSummaryBoundaryStatus !== undefined ||
-    governance.traceSummaryBoundaryGenericDelta !== undefined ||
-    governance.traceSummaryBoundaryDiagnosticsSha256 !== undefined ||
-    governance.traceSummaryBoundaryDeltaSha256 !== undefined;
-  const expected = createRunEvaluationGovernanceBinding(
-    contextCoverageDelta,
-    includesTraceSummaryBoundary
-      ? traceSummaryBoundaryDelta(leftEvents, rightEvents)
-      : undefined,
-  );
-  if (canonicalJson(governance) !== canonicalJson(expected)) {
-    throw new Error(
-      `Thread replay bundle ${label}.comparisonGovernance source binding mismatch`,
-    );
-  }
-}
-
-function runContextCoverageSummary(
-  events: readonly RunEvent[],
-  subagents: readonly unknown[],
-): RunContextCoverageSummary {
-  const modelResponses = events.filter(
-    (event) => event.type === "model.response",
-  );
-  const envelopeCount = events.filter(
-    (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
-  ).length;
-  const embeddedEnvelopeCount = countEmbeddedModelContextEnvelopes({
-    events,
-    subagents,
-  });
-  const boundResponseCount = modelResponses.filter(
-    (event) =>
-      Boolean(payloadString(event.payload, "modelContextEnvelopeSha256")) &&
-      typeof payloadNumber(event.payload, "modelContextEnvelopeTurnIndex") ===
-        "number" &&
-      Boolean(payloadString(event.payload, "modelContextMessageSetSha256")) &&
-      Boolean(
-        payloadString(event.payload, "modelContextToolDefinitionSetSha256"),
-      ),
-  ).length;
-  return {
-    modelResponseCount: modelResponses.length,
-    envelopeCount,
-    embeddedEnvelopeCount,
-    boundResponseCount,
-    unboundResponseCount: modelResponses.length - boundResponseCount,
-    coverageRate:
-      modelResponses.length === 0
-        ? 1
-        : boundResponseCount / modelResponses.length,
-  };
-}
-
-function compareBundleContextCoverage(
-  left: RunContextCoverageSummary,
-  right: RunContextCoverageSummary,
-): RunContextCoverageDelta {
-  const coverageRateDelta = right.coverageRate - left.coverageRate;
-  const diagnostics: string[] = [];
-  const missing =
-    right.modelResponseCount > 0 &&
-    right.envelopeCount === 0 &&
-    right.boundResponseCount === 0;
-  const regressed =
-    coverageRateDelta < 0 ||
-    right.unboundResponseCount > left.unboundResponseCount;
-  const partial =
-    right.unboundResponseCount > 0 ||
-    right.coverageRate < 1 ||
-    right.envelopeCount > right.boundResponseCount;
-  if (missing) diagnostics.push("candidate_context_envelopes_missing");
-  if (right.unboundResponseCount > 0) {
-    diagnostics.push("candidate_context_responses_unbound");
-  }
-  if (right.envelopeCount > right.boundResponseCount) {
-    diagnostics.push("candidate_context_envelopes_unmatched");
-  }
-  if (regressed) diagnostics.push("candidate_context_coverage_regressed");
-  return {
-    status: missing
-      ? "missing"
-      : regressed
-        ? "regressed"
-        : partial
-          ? "partial"
-          : "clean",
-    left,
-    right,
-    coverageRateDelta,
-    embeddedEnvelopeDelta:
-      right.embeddedEnvelopeCount - left.embeddedEnvelopeCount,
-    diagnostics,
-  };
-}
-
-function unknownSubagentBelongsToRun(value: unknown, runId: string): boolean {
-  return Boolean(
-    value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      (value as { runId?: unknown }).runId === runId,
-  );
-}
-
-function payloadString(payload: unknown, key: string): string | undefined {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return undefined;
-  }
-  const value = (payload as Record<string, unknown>)[key];
-  return typeof value === "string" ? value : undefined;
-}
-
-function payloadNumber(payload: unknown, key: string): number | undefined {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return undefined;
-  }
-  const value = (payload as Record<string, unknown>)[key];
-  return typeof value === "number" && Number.isFinite(value)
-    ? value
-    : undefined;
 }
 
 function assertJsonValue(value: unknown, label: string, depth = 0): void {

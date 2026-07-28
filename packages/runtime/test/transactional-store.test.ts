@@ -10,12 +10,17 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import type { RunEvaluationRecord } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
+  canonicalJson,
+  compareRuns,
+  createRunEvaluationGovernanceBinding,
   LEDGER_DATABASE_FILENAME,
   LEDGER_SCHEMA_VERSION,
   LocalStore,
+  sha256,
 } from "../src/index.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
 
@@ -49,6 +54,73 @@ async function openStore(options: {
   openStores.push(store);
   await store.initialize();
   return store;
+}
+
+async function createGovernedEvaluationInput(
+  store: LocalStore,
+  id: string,
+): Promise<RunEvaluationRecord> {
+  const agent = store.listAgents()[0]!;
+  const thread = await store.createThread({
+    title: "Persisted evaluation governance",
+    agentId: agent.id,
+  });
+  const left = await store.createRun({
+    threadId: thread.id,
+    agentId: agent.id,
+  });
+  await store.finishRun(left.id, "completed");
+  const right = await store.createRun({
+    threadId: thread.id,
+    agentId: agent.id,
+  });
+  await store.finishRun(right.id, "completed");
+  const comparison = await compareRuns(store, thread.id, left.id, right.id);
+  return {
+    id,
+    threadId: thread.id,
+    leftRunId: left.id,
+    rightRunId: right.id,
+    leftSnapshotSha256: "a".repeat(64),
+    rightSnapshotSha256: "b".repeat(64),
+    rubric: {
+      name: "Persisted governance",
+      criteria: [
+        {
+          id: "correctness",
+          name: "Correctness",
+          description: "The evaluation governance binds to Run evidence.",
+        },
+      ],
+    },
+    scores: [
+      {
+        criterionId: "correctness",
+        leftScore: 3,
+        rightScore: 4,
+        reason: "The candidate has stronger durable evidence.",
+      },
+    ],
+    verdict: "right_better",
+    reason: "The candidate is better supported.",
+    evidence: "Compared immutable Run snapshots.",
+    evaluatorModel: { provider: "faux", id: "judge-1" },
+    comparisonGovernance: createRunEvaluationGovernanceBinding(
+      comparison.contextCoverageDelta,
+      comparison.traceSummaryBoundaryDelta,
+    ),
+    createdAt: "2026-07-25T08:00:00.000Z",
+  };
+}
+
+function rehashComparisonGovernance(
+  governance: NonNullable<RunEvaluationRecord["comparisonGovernance"]>,
+): NonNullable<RunEvaluationRecord["comparisonGovernance"]> {
+  const { contentSha256: _contentSha256, ...content } = governance;
+  return {
+    ...governance,
+    contentSha256: sha256(canonicalJson(content)),
+  };
 }
 
 describe("transactional LocalStore", () => {
@@ -156,6 +228,70 @@ describe("transactional LocalStore", () => {
       }),
     ]);
     expect(await reopened.listEvents(thread.id)).toHaveLength(3);
+  });
+
+  it("rejects persisted evaluation governance source drift during save", async () => {
+    const options = await createOptions();
+    const store = await openStore(options);
+    const evaluation = await createGovernedEvaluationInput(
+      store,
+      "evaluation_governance_save_drift",
+    );
+    const driftedGovernance = rehashComparisonGovernance({
+      ...evaluation.comparisonGovernance!,
+      contextCoverageDeltaSha256: "1".repeat(64),
+    });
+
+    await expect(
+      store.saveRunEvaluation({
+        ...evaluation,
+        comparisonGovernance: driftedGovernance,
+      }),
+    ).rejects.toThrow("comparisonGovernance source binding mismatch");
+  });
+
+  it("fails closed on persisted evaluation governance source drift during restore", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const evaluation = await first.saveRunEvaluation(
+      await createGovernedEvaluationInput(
+        first,
+        "evaluation_governance_restore_drift",
+      ),
+    );
+    first.close();
+    openStores.splice(openStores.indexOf(first), 1);
+
+    const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
+    const database = new DatabaseSync(databasePath);
+    const row = database
+      .prepare(
+        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
+      )
+      .get() as { revision: number; state_json: string };
+    const state = JSON.parse(row.state_json) as {
+      evaluations: RunEvaluationRecord[];
+    };
+    const persistedEvaluation = state.evaluations.find(
+      (candidate) => candidate.id === evaluation.id,
+    );
+    if (!persistedEvaluation?.comparisonGovernance) {
+      throw new Error("Expected persisted evaluation governance");
+    }
+    persistedEvaluation.comparisonGovernance = rehashComparisonGovernance({
+      ...persistedEvaluation.comparisonGovernance,
+      traceSummaryBoundaryDeltaSha256: "2".repeat(64),
+    });
+    database
+      .prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1")
+      .run(JSON.stringify(state));
+    database.close();
+
+    const reopened = new LocalStore(options);
+    openStores.push(reopened);
+    await expect(reopened.initialize()).rejects.toThrow(
+      "comparisonGovernance source binding mismatch",
+    );
   });
 
   it("fails closed on invalid persisted imported Thread provenance", async () => {

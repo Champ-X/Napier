@@ -2049,7 +2049,11 @@ accepting exported or imported fixtures. The validator recomputes context
 coverage from model response/context-envelope events, recomputes trace
 summary-boundary coverage from event types, rebuilds the governance receipt, and
 rejects the bundle when the stored receipt differs even if its `contentSha256`
-was recalculated.
+was recalculated. LocalStore uses the same source-binding validator when saving
+an evaluation and when restoring SQLite `workspace_state`: restore reads the
+referenced Thread events from `ledger_events`, reprojects the left/right Run
+governance, and rejects forged persisted receipts before any evaluator record
+can influence Casebook, suite, consensus, or Run Lab projections.
 OTLP trace export keeps those evaluation governance signals metadata-only:
 status and SHA-256 attributes are allowed, while evaluator `reason` and
 `evidence` text remain excluded by the redaction policy. The underlying

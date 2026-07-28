@@ -314,6 +314,7 @@ import {
   verifySignedExtensionPackageEnvelope,
 } from "./extension-packages.js";
 import { normalizeRubric } from "./evaluation.js";
+import { assertRunEvaluationGovernanceSourceBinding } from "./evaluation-governance.js";
 import {
   createEvaluationCalibrationReport,
   hashEvaluationAdjudicationRevision,
@@ -970,6 +971,7 @@ export class LocalStore {
           ) as PersistedState;
           this.state = this.validateState(parsed);
           const events = await this.readLegacyEvents();
+          this.state = this.validateState(this.state, events);
           const imported = ledger.bootstrap(JSON.stringify(this.state), events);
           this.restoreSnapshot(imported);
           restored = true;
@@ -6311,6 +6313,8 @@ export class LocalStore {
       evaluation,
       this.state.threads,
       this.state.runs,
+      this.state.subagents,
+      this.requireLedger().listEvents(evaluation.threadId),
     );
     return this.stateQueue.run(async () => {
       if (
@@ -9528,7 +9532,10 @@ export class LocalStore {
     ]);
   }
 
-  private validateState(state: PersistedState): PersistedState {
+  private validateState(
+    state: PersistedState,
+    sourceBindingEvents?: readonly RunEvent[],
+  ): PersistedState {
     if (
       state.version !== 1 ||
       !Array.isArray(state.agents) ||
@@ -10189,7 +10196,13 @@ export class LocalStore {
         throw new Error(`Duplicate persisted Run evaluation: ${evaluation.id}`);
       }
       evaluationIds.add(evaluation.id);
-      validatePersistedRunEvaluation(evaluation, state.threads, state.runs);
+      validatePersistedRunEvaluation(
+        evaluation,
+        state.threads,
+        state.runs,
+        state.subagents,
+        sourceBindingEvents,
+      );
     }
     const adjudicationIds = new Set<string>();
     const adjudicatedEvaluationIds = new Set<string>();
@@ -11318,7 +11331,10 @@ export class LocalStore {
       !Array.isArray(parsed.automaticRecoveryAttempts) ||
       migrateEvaluationCasebooks ||
       migrateExtensionPackageHistory;
-    this.state = this.validateState(parsed);
+    this.state = this.validateState(
+      parsed,
+      this.listPersistedEvaluationEvents(parsed),
+    );
     this.stateRevision = snapshot.revision;
     return requiresStateMigration;
   }
@@ -11326,6 +11342,18 @@ export class LocalStore {
   private requireLedger(): SqliteLedger {
     if (!this.ledger) throw new Error("SQLite ledger is not initialized");
     return this.ledger;
+  }
+
+  private listPersistedEvaluationEvents(state: PersistedState): RunEvent[] {
+    if (!Array.isArray(state.evaluations)) return [];
+    const threadIds = new Set(
+      state.evaluations
+        .map((evaluation) => evaluation.threadId)
+        .filter((threadId): threadId is string => typeof threadId === "string"),
+    );
+    return [...threadIds].flatMap((threadId) =>
+      this.requireLedger().listEvents(threadId),
+    );
   }
 
   private async readLegacyEvents(): Promise<RunEvent[]> {
@@ -11683,6 +11711,8 @@ function validatePersistedRunEvaluation(
   evaluation: RunEvaluationRecord,
   threads: ThreadRecord[],
   runs: PersistedRunRecord[],
+  subagents: SubagentTask[],
+  sourceBindingEvents?: readonly RunEvent[],
 ): void {
   const thread = threads.find(
     (candidate) => candidate.id === evaluation.threadId,
@@ -11765,6 +11795,14 @@ function validatePersistedRunEvaluation(
       throw new Error(
         `Persisted Run evaluation governance is invalid: ${evaluation.id}`,
       );
+    }
+    if (sourceBindingEvents) {
+      assertRunEvaluationGovernanceSourceBinding({
+        evaluation,
+        events: sourceBindingEvents,
+        subagents,
+        label: `Persisted Run evaluation ${evaluation.id}`,
+      });
     }
   }
   if (

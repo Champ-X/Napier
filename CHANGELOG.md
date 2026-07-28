@@ -191,6 +191,10 @@ All notable changes to Napier are recorded here.
   from the referenced left/right Run events, rejecting context coverage or trace
   summary-boundary receipt drift even when the governance `contentSha256` is
   recalculated.
+- LocalStore save and SQLite restore now reuse the same pair-evaluation
+  governance source-binding check, so persisted `comparisonGovernance` must
+  match the referenced left/right Run ledger evidence before it can be accepted
+  from either the live API path or `workspace_state`.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.
