@@ -933,16 +933,15 @@ function eventLabel(type: string): string {
 }
 
 function eventSummary(event: RunEvent): string {
+  if (event.type === "trace.otlp.exported") {
+    return openTelemetryTraceExportSummary(event) ?? event.category;
+  }
   if (
     !event.payload ||
     Array.isArray(event.payload) ||
     typeof event.payload !== "object"
   ) {
     return event.category;
-  }
-  if (event.type === "trace.otlp.exported") {
-    const summary = openTelemetryTraceExportSummary(event);
-    if (summary) return summary;
   }
   for (const key of [
     "text",

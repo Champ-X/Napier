@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-ffZI0BbA.js",
+    "path": "apps/web/dist/assets/index-WoamjqZD.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "a27c16a745d81badb45cfc16e1811e39722f08872da7454d177d1f7e61cf2bcb"
+    "sha256": "0c823c0094da4bba28721ea6e232abc51d4e37c6d7ae90b01aebc21289e20609"
   },
-  "distContentSha256": "a27c16a745d81badb45cfc16e1811e39722f08872da7454d177d1f7e61cf2bcb",
+  "distContentSha256": "0c823c0094da4bba28721ea6e232abc51d4e37c6d7ae90b01aebc21289e20609",
   "errors": []
 }

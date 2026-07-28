@@ -54,6 +54,19 @@ describe("OpenTelemetry trace export view", () => {
       ),
     ).toBeUndefined();
   });
+
+  it("fails closed to a fixed summary for malformed export receipts", () => {
+    const event = traceExportEvent({
+      scope: "TOP_SECRET_SCOPE",
+      spanCount: 4,
+      text: "TOP_SECRET_TEXT",
+      summary: "TOP_SECRET_SUMMARY",
+    });
+
+    expect(openTelemetryTraceExportView(event)).toBeUndefined();
+    expect(openTelemetryTraceExportSummary(event)).toBe("trace export receipt");
+    expect(openTelemetryTraceExportSummary(event)).not.toContain("TOP_SECRET");
+  });
 });
 
 function traceExportEvent(payload: RunEvent["payload"]): RunEvent {

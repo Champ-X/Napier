@@ -2295,7 +2295,8 @@ span tree.
 The Workbench Trace list renders those `trace.otlp.exported` ledger receipts
 through a bounded view helper that exposes only scope, span count, and the
 event-anchor short hash; raw prompt, completion, reasoning, and arbitrary
-payload text are ignored.
+payload text are ignored. Malformed trace export receipts fail closed to a fixed
+summary instead of using the generic payload text fallback.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

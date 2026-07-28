@@ -1,12 +1,15 @@
 import type { RunEvent } from "@napier/contracts";
 
 export interface OpenTelemetryTraceExportView {
-  scope: string;
+  scope: OpenTelemetryTraceExportScope;
   spanCount: number;
   eventAnchorSetSha256?: string;
 }
 
+export type OpenTelemetryTraceExportScope = "run" | "thread";
+
 const SHA256 = /^[a-f0-9]{64}$/u;
+const TRACE_EXPORT_RECEIPT_SUMMARY = "trace export receipt";
 
 export function openTelemetryTraceExportView(
   event: RunEvent,
@@ -23,8 +26,7 @@ export function openTelemetryTraceExportView(
   const spanCount = event.payload["spanCount"];
   const eventAnchorSetSha256 = event.payload["eventAnchorSetSha256"];
   if (
-    typeof scope !== "string" ||
-    !scope ||
+    !isOpenTelemetryTraceExportScope(scope) ||
     !Number.isSafeInteger(spanCount) ||
     Number(spanCount) < 0
   ) {
@@ -43,9 +45,16 @@ export function openTelemetryTraceExportView(
 export function openTelemetryTraceExportSummary(
   event: RunEvent,
 ): string | undefined {
+  if (event.type !== "trace.otlp.exported") return undefined;
   const view = openTelemetryTraceExportView(event);
-  if (!view) return undefined;
+  if (!view) return TRACE_EXPORT_RECEIPT_SUMMARY;
   return view.eventAnchorSetSha256
     ? `${view.scope} / ${view.spanCount} spans / anchor ${view.eventAnchorSetSha256.slice(0, 12)}`
     : `${view.scope} / ${view.spanCount} spans`;
+}
+
+function isOpenTelemetryTraceExportScope(
+  value: unknown,
+): value is OpenTelemetryTraceExportScope {
+  return value === "run" || value === "thread";
 }

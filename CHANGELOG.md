@@ -135,6 +135,8 @@ All notable changes to Napier are recorded here.
 - Trace event summaries now project `trace.otlp.exported` receipts through a
   strict hash-only view that includes the event-anchor short hash without
   rendering any raw prompt, completion, or payload text.
+- Malformed `trace.otlp.exported` receipts now fail closed to a fixed Trace
+  summary instead of falling back to generic payload text fields.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,
