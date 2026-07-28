@@ -67,6 +67,46 @@ describe("independent Model Advisor", () => {
     expect(prompt.user).toContain('"latestWorkspaceWriteSeq":2');
   });
 
+  it("reports plan, artifact, and goal freshness evidence", () => {
+    const prompt = buildIndependentModelAdvisorPrompt({
+      turnPrompt: "Report delivery state.",
+      candidateText:
+        "The plan is complete, the artifact is verified, and the goal is complete.",
+      candidateModel: { provider: "worker", id: "worker-1" },
+      runEvents: [
+        event(1, "plan.artifact.verified", { status: "verified" }, "plan"),
+        event(
+          2,
+          "plan.step.completed",
+          { status: "completed", planStatus: "completed" },
+          "plan",
+        ),
+        event(
+          3,
+          "goal.evaluated",
+          { status: "completed", satisfied: true },
+          "goal",
+        ),
+        event(4, "tool.completed", {
+          toolName: "apply_patch",
+          status: "completed",
+        }),
+      ],
+    });
+
+    expect(prompt.user).toContain('"planCompleted":true');
+    expect(prompt.user).toContain('"planArtifactVerified":true');
+    expect(prompt.user).toContain('"goalSatisfied":true');
+    expect(prompt.user).toContain('"planCompletedAfterWorkspaceWrite":false');
+    expect(prompt.user).toContain(
+      '"planArtifactVerifiedAfterWorkspaceWrite":false',
+    );
+    expect(prompt.user).toContain('"goalSatisfiedAfterWorkspaceWrite":false');
+    expect(prompt.user).toContain('"latestPlanCompletedSeq":2');
+    expect(prompt.user).toContain('"latestPlanArtifactVerifiedSeq":1');
+    expect(prompt.user).toContain('"latestGoalSatisfiedSeq":3');
+  });
+
   it("uses a zero-tool reviewer and persists only hash-bound guidance", async () => {
     const faux = fauxProvider({ provider: "faux-independent-advisor" });
     faux.setResponses([
@@ -118,6 +158,12 @@ describe("independent Model Advisor", () => {
           verificationToolPassed: false,
           workspaceWriteCompleted: false,
           verificationToolPassedAfterWorkspaceWrite: false,
+          planCompleted: false,
+          planArtifactVerified: false,
+          goalSatisfied: false,
+          planCompletedAfterWorkspaceWrite: false,
+          planArtifactVerifiedAfterWorkspaceWrite: false,
+          goalSatisfiedAfterWorkspaceWrite: false,
           milestoneCount: 0,
           operatorDecisionRequested: false,
         }),
@@ -296,6 +342,7 @@ function event(
   seq: number,
   type: string,
   payload: RunEvent["payload"],
+  category = "system",
 ): RunEvent {
   return {
     id: `event_advisor_${seq}`,
@@ -303,7 +350,7 @@ function event(
     runId: "run_advisor",
     seq,
     type,
-    category: "system",
+    category,
     visibility: "debug",
     createdAt: new Date(1_780_000_000_000 + seq * 1_000).toISOString(),
     payload,

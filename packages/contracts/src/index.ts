@@ -198,8 +198,17 @@ export interface IndependentModelAdvisorEvidenceSummary {
   verificationToolPassed: boolean;
   workspaceWriteCompleted: boolean;
   verificationToolPassedAfterWorkspaceWrite: boolean;
+  planCompleted: boolean;
+  planArtifactVerified: boolean;
+  goalSatisfied: boolean;
+  planCompletedAfterWorkspaceWrite: boolean;
+  planArtifactVerifiedAfterWorkspaceWrite: boolean;
+  goalSatisfiedAfterWorkspaceWrite: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
+  latestPlanCompletedSeq?: number;
+  latestPlanArtifactVerifiedSeq?: number;
+  latestGoalSatisfiedSeq?: number;
   milestoneCount: number;
   operatorDecisionRequested: boolean;
 }

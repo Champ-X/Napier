@@ -33,8 +33,17 @@ export interface IndependentModelAdvisorReviewView {
   verificationToolPassed?: boolean;
   workspaceWriteCompleted?: boolean;
   verificationToolPassedAfterWorkspaceWrite?: boolean;
+  planCompleted?: boolean;
+  planArtifactVerified?: boolean;
+  goalSatisfied?: boolean;
+  planCompletedAfterWorkspaceWrite?: boolean;
+  planArtifactVerifiedAfterWorkspaceWrite?: boolean;
+  goalSatisfiedAfterWorkspaceWrite?: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
+  latestPlanCompletedSeq?: number;
+  latestPlanArtifactVerifiedSeq?: number;
+  latestGoalSatisfiedSeq?: number;
   modelContextEnvelopeSha256?: string;
   contentSha256: string;
 }
@@ -133,8 +142,17 @@ function evidenceSummaryView(
       | "verificationToolPassed"
       | "workspaceWriteCompleted"
       | "verificationToolPassedAfterWorkspaceWrite"
+      | "planCompleted"
+      | "planArtifactVerified"
+      | "goalSatisfied"
+      | "planCompletedAfterWorkspaceWrite"
+      | "planArtifactVerifiedAfterWorkspaceWrite"
+      | "goalSatisfiedAfterWorkspaceWrite"
       | "latestWorkspaceWriteSeq"
       | "latestPassedVerificationSeq"
+      | "latestPlanCompletedSeq"
+      | "latestPlanArtifactVerifiedSeq"
+      | "latestGoalSatisfiedSeq"
     >
   | undefined {
   if (!record(value)) return undefined;
@@ -148,6 +166,18 @@ function evidenceSummaryView(
   const verificationToolPassedAfterWorkspaceWrite = booleanValue(
     value["verificationToolPassedAfterWorkspaceWrite"],
   );
+  const planCompleted = booleanValue(value["planCompleted"]);
+  const planArtifactVerified = booleanValue(value["planArtifactVerified"]);
+  const goalSatisfied = booleanValue(value["goalSatisfied"]);
+  const planCompletedAfterWorkspaceWrite = booleanValue(
+    value["planCompletedAfterWorkspaceWrite"],
+  );
+  const planArtifactVerifiedAfterWorkspaceWrite = booleanValue(
+    value["planArtifactVerifiedAfterWorkspaceWrite"],
+  );
+  const goalSatisfiedAfterWorkspaceWrite = booleanValue(
+    value["goalSatisfiedAfterWorkspaceWrite"],
+  );
   return {
     ...(verificationToolCompleted !== undefined
       ? { verificationToolCompleted }
@@ -159,8 +189,23 @@ function evidenceSummaryView(
     ...(verificationToolPassedAfterWorkspaceWrite !== undefined
       ? { verificationToolPassedAfterWorkspaceWrite }
       : {}),
+    ...(planCompleted !== undefined ? { planCompleted } : {}),
+    ...(planArtifactVerified !== undefined ? { planArtifactVerified } : {}),
+    ...(goalSatisfied !== undefined ? { goalSatisfied } : {}),
+    ...(planCompletedAfterWorkspaceWrite !== undefined
+      ? { planCompletedAfterWorkspaceWrite }
+      : {}),
+    ...(planArtifactVerifiedAfterWorkspaceWrite !== undefined
+      ? { planArtifactVerifiedAfterWorkspaceWrite }
+      : {}),
+    ...(goalSatisfiedAfterWorkspaceWrite !== undefined
+      ? { goalSatisfiedAfterWorkspaceWrite }
+      : {}),
     ...numberField(value, "latestWorkspaceWriteSeq"),
     ...numberField(value, "latestPassedVerificationSeq"),
+    ...numberField(value, "latestPlanCompletedSeq"),
+    ...numberField(value, "latestPlanArtifactVerifiedSeq"),
+    ...numberField(value, "latestGoalSatisfiedSeq"),
   };
 }
 
@@ -170,7 +215,12 @@ function booleanValue(value: unknown): boolean | undefined {
 
 function numberField(
   source: Record<string, unknown>,
-  key: "latestWorkspaceWriteSeq" | "latestPassedVerificationSeq",
+  key:
+    | "latestWorkspaceWriteSeq"
+    | "latestPassedVerificationSeq"
+    | "latestPlanCompletedSeq"
+    | "latestPlanArtifactVerifiedSeq"
+    | "latestGoalSatisfiedSeq",
 ): Pick<IndependentModelAdvisorReviewView, typeof key> | undefined {
   const value = source[key];
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0

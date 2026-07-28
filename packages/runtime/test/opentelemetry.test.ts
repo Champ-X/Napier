@@ -289,8 +289,17 @@ describe("OpenTelemetry trace export", () => {
         verificationToolPassed: true,
         workspaceWriteCompleted: true,
         verificationToolPassedAfterWorkspaceWrite: false,
+        planCompleted: true,
+        planArtifactVerified: true,
+        goalSatisfied: true,
+        planCompletedAfterWorkspaceWrite: false,
+        planArtifactVerifiedAfterWorkspaceWrite: false,
+        goalSatisfiedAfterWorkspaceWrite: false,
         latestWorkspaceWriteSeq: 9,
         latestPassedVerificationSeq: 8,
+        latestPlanCompletedSeq: 7,
+        latestPlanArtifactVerifiedSeq: 6,
+        latestGoalSatisfiedSeq: 5,
         milestoneCount: 1,
         operatorDecisionRequested: false,
       },
@@ -654,6 +663,30 @@ describe("OpenTelemetry trace export", () => {
     expect(
       attributeValue(
         advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_plan_completed",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_plan_artifact_verified",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_goal_satisfied",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_goal_satisfied_after_workspace_write",
+      ),
+    ).toBe(false);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
         "napier.event.payload.evidence_summary_latest_workspace_write_seq",
       ),
     ).toBe(9);
@@ -663,6 +696,12 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.evidence_summary_latest_passed_verification_seq",
       ),
     ).toBe(8);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_goal_satisfied_seq",
+      ),
+    ).toBe(5);
     expect(
       attributeValue(
         advisorEvent.attributes,

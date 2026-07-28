@@ -715,7 +715,7 @@ function independentAdvisorVerificationState(
   review: IndependentModelAdvisorReviewView,
 ): string {
   const states = modelAdvisorReviewCopy.verificationStates;
-  const freshness =
+  const checkFreshness =
     review.verificationToolPassedAfterWorkspaceWrite === true
       ? states.current
       : review.verificationToolPassed === true &&
@@ -736,7 +736,64 @@ function independentAdvisorVerificationState(
       ? [`v#${review.latestPassedVerificationSeq}`]
       : []),
   ];
-  return [freshness, passed, ...seqs].join(" / ");
+  return [
+    `checks ${checkFreshness}`,
+    passed,
+    ...seqs,
+    ...completionFreshnessParts(review),
+  ].join(" / ");
+}
+
+function completionFreshnessParts(
+  review: IndependentModelAdvisorReviewView,
+): string[] {
+  return [
+    ...completionFreshnessPart(
+      "plan",
+      review.planCompleted,
+      review.planCompletedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestPlanCompletedSeq,
+    ),
+    ...completionFreshnessPart(
+      "artifact",
+      review.planArtifactVerified,
+      review.planArtifactVerifiedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestPlanArtifactVerifiedSeq,
+    ),
+    ...completionFreshnessPart(
+      "goal",
+      review.goalSatisfied,
+      review.goalSatisfiedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestGoalSatisfiedSeq,
+    ),
+  ];
+}
+
+function completionFreshnessPart(
+  label: string,
+  present: boolean | undefined,
+  current: boolean | undefined,
+  workspaceWriteCompleted: boolean | undefined,
+  seq: number | undefined,
+): string[] {
+  if (present === undefined && current === undefined && seq === undefined) {
+    return [];
+  }
+  const state =
+    current === true
+      ? "current"
+      : present === true && workspaceWriteCompleted === true
+        ? "stale"
+        : present === true
+          ? "not-current"
+          : "missing";
+  return [
+    `${label} ${state}`,
+    ...(seq !== undefined ? [`${label}#${seq}`] : []),
+  ];
 }
 
 function AgentMilestoneLedger({

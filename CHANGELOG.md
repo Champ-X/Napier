@@ -324,9 +324,10 @@ All notable changes to Napier are recorded here.
   plus plan/artifact/goal completion freshness and the latest evidence
   sequence numbers without rendering diagnostic prose or candidate text.
 - Independent Model Advisor review receipts now persist the same metadata-only
-  evidence summary, allowing the Trace review card to explain verification
-  freshness without reopening prompt or candidate text.
-- OTLP export now projects Advisor verification freshness summaries as
+  evidence summary, allowing the Trace review card to explain checks,
+  plan/artifact, and goal completion freshness without reopening prompt or
+  candidate text.
+- OTLP export now projects Advisor checks and completion freshness summaries as
   metadata-only event attributes, preserving candidate text, prompts, guidance,
   and diagnostic prose redaction.
 - Thread replay bundle validation now recomputes Independent Advisor

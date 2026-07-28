@@ -796,10 +796,10 @@ workspace is verified again.
 
 The durable `model.advisor.independent.reviewed` receipt stores model
 identities, issue codes, severities, usage, a low-cardinality evidence summary
-for verification freshness, and SHA-256 bindings for the candidate, prompt,
-evidence, response, issue set, the live request's hash-only model-context
-envelope, and complete review. Candidate text and free-form reviewer guidance
-are never copied into the receipt. In
+for checks, Plan, artifact, and goal completion freshness, and SHA-256 bindings
+for the candidate, prompt, evidence, response, issue set, the live request's
+hash-only model-context envelope, and complete review. Candidate text and
+free-form reviewer guidance are never copied into the receipt. In
 `observe` mode the turn remains visible with an auditable second opinion. In
 `enforce` mode a non-accept verdict joins deterministic blockers in the
 existing correction state machine: at most three subsequent primary-model

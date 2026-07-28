@@ -513,11 +513,29 @@ export function createIndependentModelAdvisorEvidenceSummary(
     workspaceWriteCompleted: evidence.workspaceWriteCompleted,
     verificationToolPassedAfterWorkspaceWrite:
       evidence.verificationToolPassedAfterWorkspaceWrite,
+    planCompleted: evidence.planCompleted,
+    planArtifactVerified: evidence.planArtifactVerified,
+    goalSatisfied: evidence.goalSatisfied,
+    planCompletedAfterWorkspaceWrite: evidence.planCompletedAfterWorkspaceWrite,
+    planArtifactVerifiedAfterWorkspaceWrite:
+      evidence.planArtifactVerifiedAfterWorkspaceWrite,
+    goalSatisfiedAfterWorkspaceWrite: evidence.goalSatisfiedAfterWorkspaceWrite,
     ...(evidence.latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq }
       : {}),
     ...(evidence.latestPassedVerificationSeq !== undefined
       ? { latestPassedVerificationSeq: evidence.latestPassedVerificationSeq }
+      : {}),
+    ...(evidence.latestPlanCompletedSeq !== undefined
+      ? { latestPlanCompletedSeq: evidence.latestPlanCompletedSeq }
+      : {}),
+    ...(evidence.latestPlanArtifactVerifiedSeq !== undefined
+      ? {
+          latestPlanArtifactVerifiedSeq: evidence.latestPlanArtifactVerifiedSeq,
+        }
+      : {}),
+    ...(evidence.latestGoalSatisfiedSeq !== undefined
+      ? { latestGoalSatisfiedSeq: evidence.latestGoalSatisfiedSeq }
       : {}),
     milestoneCount: evidence.milestoneCount,
     operatorDecisionRequested: evidence.operatorDecisionRequested,
@@ -809,12 +827,21 @@ function parseEvidenceSummary(
     "verificationToolPassed",
     "workspaceWriteCompleted",
     "verificationToolPassedAfterWorkspaceWrite",
+    "planCompleted",
+    "planArtifactVerified",
+    "goalSatisfied",
+    "planCompletedAfterWorkspaceWrite",
+    "planArtifactVerifiedAfterWorkspaceWrite",
+    "goalSatisfiedAfterWorkspaceWrite",
     "milestoneCount",
     "operatorDecisionRequested",
   ];
   const optionalKeys = [
     "latestWorkspaceWriteSeq",
     "latestPassedVerificationSeq",
+    "latestPlanCompletedSeq",
+    "latestPlanArtifactVerifiedSeq",
+    "latestGoalSatisfiedSeq",
   ];
   const keys = Object.keys(value);
   if (
@@ -852,6 +879,24 @@ function parseEvidenceSummary(
       summary["verificationToolPassedAfterWorkspaceWrite"],
       "verificationToolPassedAfterWorkspaceWrite",
     ),
+    planCompleted: booleanField(summary["planCompleted"], "planCompleted"),
+    planArtifactVerified: booleanField(
+      summary["planArtifactVerified"],
+      "planArtifactVerified",
+    ),
+    goalSatisfied: booleanField(summary["goalSatisfied"], "goalSatisfied"),
+    planCompletedAfterWorkspaceWrite: booleanField(
+      summary["planCompletedAfterWorkspaceWrite"],
+      "planCompletedAfterWorkspaceWrite",
+    ),
+    planArtifactVerifiedAfterWorkspaceWrite: booleanField(
+      summary["planArtifactVerifiedAfterWorkspaceWrite"],
+      "planArtifactVerifiedAfterWorkspaceWrite",
+    ),
+    goalSatisfiedAfterWorkspaceWrite: booleanField(
+      summary["goalSatisfiedAfterWorkspaceWrite"],
+      "goalSatisfiedAfterWorkspaceWrite",
+    ),
     ...(summary["latestWorkspaceWriteSeq"] !== undefined
       ? {
           latestWorkspaceWriteSeq: boundedCount(
@@ -865,6 +910,30 @@ function parseEvidenceSummary(
           latestPassedVerificationSeq: boundedCount(
             summary["latestPassedVerificationSeq"],
             "latestPassedVerificationSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestPlanCompletedSeq"] !== undefined
+      ? {
+          latestPlanCompletedSeq: boundedCount(
+            summary["latestPlanCompletedSeq"],
+            "latestPlanCompletedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestPlanArtifactVerifiedSeq"] !== undefined
+      ? {
+          latestPlanArtifactVerifiedSeq: boundedCount(
+            summary["latestPlanArtifactVerifiedSeq"],
+            "latestPlanArtifactVerifiedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestGoalSatisfiedSeq"] !== undefined
+      ? {
+          latestGoalSatisfiedSeq: boundedCount(
+            summary["latestGoalSatisfiedSeq"],
+            "latestGoalSatisfiedSeq",
           ),
         }
       : {}),
