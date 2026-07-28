@@ -1390,10 +1390,11 @@ Per-Run replay snapshots are self-contained: they carry the Run, ordered events,
 Subagent task evidence, a stable `contentSha256`, and an ordered
 `eventStreamSha256`. `POST /api/threads/:threadId/runs/:runId/replay/verify`
 recomputes the snapshot content hash, event-stream hash, metrics, assistant
-output hash, and URL thread/run binding without mutating state. Run Lab exposes
-the same verifier as an upload action, binding archived replay JSON to the
-active Thread before an operator trusts it for evidence review or CI regression
-checks. Replay and comparison responses also mirror duration,
+output hash, Independent Advisor `evidenceSummary`, and URL thread/run binding
+without mutating state. Run Lab exposes the same verifier as an upload action,
+binding archived replay JSON to the active Thread before an operator trusts it
+for evidence review or CI regression checks. Replay and comparison responses
+also mirror duration,
 message/model/tool/subagent counts, token/cache counts, cost USD, output-text
 hash, and right-minus-left metric deltas in headers for budget and quality
 regression checks. Comparison headers also include event-type delta hashes,

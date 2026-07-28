@@ -1880,6 +1880,7 @@ select terminal run
 verify replay snapshot (maximum 10 MiB, no mutation)
   -> strictly parse the verify wrapper: only snapshot is accepted
   -> recompute event-stream hash, metrics, assistant-output hash, and content hash
+  -> recompute Independent Advisor evidenceSummary from same-Run predecessor events
   -> bind the verified snapshot to the URL thread/run identity
   -> return valid/invalid plus hash-only diagnostics and counts
 Workbench replay verification

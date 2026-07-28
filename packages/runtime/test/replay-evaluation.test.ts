@@ -11,7 +11,9 @@ import {
   RunEvaluationService,
   parseRunEvaluationResponse,
 } from "../src/evaluation.js";
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { hashRunEvaluation } from "../src/evaluation-suites.js";
+import { reviewIndependentModelAdvisorCandidate } from "../src/independent-model-advisor.js";
 import { createModelContextEnvelopeReceipt } from "../src/model-context-envelope.js";
 import { ModelRegistry } from "../src/models.js";
 import {
@@ -340,17 +342,6 @@ describe("run replay", () => {
       messages: [{ role: "user", content: "Inspect model boundaries." }],
       tools: [],
     });
-    const reviewerEnvelope = createModelContextEnvelopeReceipt({
-      turnIndex: 0,
-      systemPrompt: "Review the candidate without tools.",
-      messages: [
-        {
-          role: "user",
-          content: "Hash-only reviewer request payload.",
-        },
-      ],
-      tools: [],
-    });
     await store.appendEvent({
       threadId: thread.id,
       runId: run.id,
@@ -375,16 +366,39 @@ describe("run replay", () => {
           candidateEnvelope.toolDefinitionSetSha256,
       },
     });
+    const evidenceEvents = (await store.listEvents(thread.id)).filter(
+      (event) => event.runId === run.id,
+    );
+    const reviewer = fauxProvider({
+      provider: "faux-run-replay-envelope-advisor",
+    });
+    reviewer.setResponses([
+      fauxAssistantMessage(
+        JSON.stringify({
+          verdict: "accept",
+          score: 94,
+          risk: "low",
+          issues: [],
+        }),
+      ),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(reviewer.provider);
+    const result = await reviewIndependentModelAdvisorCandidate(registry, {
+      turnSource: "user",
+      turnPrompt: "Inspect model boundaries.",
+      candidateText: "Candidate response.",
+      candidateModel: { provider: "faux", id: "faux-1" },
+      reviewerModel: { provider: reviewer.provider.id, id: "faux-1" },
+      runEvents: evidenceEvents,
+    });
     await store.appendEvent({
       threadId: thread.id,
       runId: run.id,
       type: "model.advisor.independent.reviewed",
       category: "model",
       visibility: "debug",
-      payload: {
-        verdict: "accept",
-        modelContextEnvelope: reviewerEnvelope,
-      },
+      payload: result.review,
     });
     await store.finishRun(run.id, "completed");
 
@@ -421,20 +435,189 @@ describe("run replay", () => {
     if (
       !advisorEvent?.payload ||
       Array.isArray(advisorEvent.payload) ||
-      typeof advisorEvent.payload !== "object"
+      typeof advisorEvent.payload !== "object" ||
+      !advisorEvent.payload["modelContextEnvelope"] ||
+      Array.isArray(advisorEvent.payload["modelContextEnvelope"]) ||
+      typeof advisorEvent.payload["modelContextEnvelope"] !== "object"
     ) {
       throw new Error("Advisor review fixture is missing");
     }
     advisorEvent.payload = {
       ...advisorEvent.payload,
       modelContextEnvelope: {
-        ...reviewerEnvelope,
+        ...advisorEvent.payload["modelContextEnvelope"],
         contentSha256: "b".repeat(64),
       },
     };
     expect(verifyRunReplaySnapshot(tampered)).toEqual({
       status: "invalid",
       diagnostics: ["context_mismatch"],
+      eventCount: 0,
+      subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
+    });
+  });
+
+  it("rejects forged independent advisor evidence summaries in run snapshots", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Run advisor evidence summaries",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "message.user",
+      category: "message",
+      visibility: "user",
+      payload: {
+        role: "user",
+        text: "Patch the workspace and verify it.",
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "debug",
+      payload: {
+        callId: "patch-1",
+        toolName: "apply_patch",
+        status: "completed",
+        details: {
+          status: "completed",
+        },
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "debug",
+      payload: {
+        callId: "verify-1",
+        toolName: "verify_workspace",
+        status: "completed",
+        details: {
+          status: "failed",
+        },
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "model.response",
+      category: "model",
+      visibility: "debug",
+      payload: {
+        text: "The workspace was patched, but verification failed.",
+        model: "faux/faux-1",
+      },
+    });
+    const evidenceEvents = (await store.listEvents(thread.id)).filter(
+      (event) => event.runId === run.id,
+    );
+    const reviewer = fauxProvider({
+      provider: "faux-run-replay-independent-advisor",
+    });
+    reviewer.setResponses([
+      fauxAssistantMessage(
+        JSON.stringify({
+          verdict: "revise",
+          score: 61,
+          risk: "medium",
+          issues: [
+            {
+              code: "evidence",
+              severity: "warning",
+              guidance: "Verification failed; do not claim completion.",
+            },
+          ],
+        }),
+      ),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(reviewer.provider);
+    const result = await reviewIndependentModelAdvisorCandidate(registry, {
+      turnSource: "user",
+      turnPrompt: "Patch the workspace and verify it.",
+      candidateText: "The workspace was patched, but verification failed.",
+      candidateModel: { provider: "faux", id: "faux-1" },
+      reviewerModel: { provider: reviewer.provider.id, id: "faux-1" },
+      runEvents: evidenceEvents,
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "model.advisor.independent.reviewed",
+      category: "model",
+      visibility: "debug",
+      payload: result.review,
+    });
+    await store.finishRun(run.id, "completed");
+
+    const snapshot = await createRunReplaySnapshot(store, thread.id, run.id);
+    expect(verifyRunReplaySnapshot(snapshot)).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        threadId: thread.id,
+        runId: run.id,
+      }),
+    );
+
+    const tampered = structuredClone(snapshot);
+    const advisorEvent = tampered.events.find(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    );
+    if (
+      !advisorEvent?.payload ||
+      Array.isArray(advisorEvent.payload) ||
+      typeof advisorEvent.payload !== "object" ||
+      !advisorEvent.payload["evidenceSummary"] ||
+      Array.isArray(advisorEvent.payload["evidenceSummary"]) ||
+      typeof advisorEvent.payload["evidenceSummary"] !== "object"
+    ) {
+      throw new Error(
+        "Run snapshot advisor evidence summary fixture is missing",
+      );
+    }
+    advisorEvent.payload = {
+      ...advisorEvent.payload,
+      evidenceSummary: {
+        ...advisorEvent.payload["evidenceSummary"],
+        verificationToolPassed: true,
+        latestPassedVerificationSeq: 99,
+      },
+    };
+    {
+      const { contentSha256: _contentSha256, ...reviewContent } =
+        advisorEvent.payload;
+      advisorEvent.payload = {
+        ...reviewContent,
+        contentSha256: sha256(canonicalJson(reviewContent)),
+      };
+    }
+    tampered.eventStreamSha256 = hashEventStream(tampered.events);
+    {
+      const {
+        generatedAt: _generatedAt,
+        contentSha256: _contentSha256,
+        ...snapshotContent
+      } = tampered;
+      tampered.contentSha256 = sha256(canonicalJson(snapshotContent));
+    }
+    expect(verifyRunReplaySnapshot(tampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["advisor_evidence_mismatch"],
       eventCount: 0,
       subagentCount: 0,
       modelContextEnvelopeCount: 0,

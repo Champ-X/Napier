@@ -50,11 +50,7 @@ import {
   AGENT_MILESTONE_RECORDED_EVENT,
   projectAgentMilestones,
 } from "./agent-milestones.js";
-import {
-  createIndependentModelAdvisorEvidenceSummary,
-  INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
-  projectIndependentModelAdvisorReviews,
-} from "./independent-model-advisor.js";
+import { assertIndependentModelAdvisorReviewEvidenceBindings } from "./independent-model-advisor.js";
 import {
   assertModelContextEnvelopeEventBindings,
   MODEL_CONTEXT_ENVELOPE_EVENT,
@@ -731,27 +727,10 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       );
     }
   }
-  const advisorReviewEvents = typedEvents.filter(
-    (event) => event.type === INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
+  assertIndependentModelAdvisorReviewEvidenceBindings(
+    typedEvents,
+    "Thread replay bundle",
   );
-  const advisorReviews = projectIndependentModelAdvisorReviews(typedEvents);
-  if (advisorReviews.length !== advisorReviewEvents.length) {
-    throw new Error(
-      "Thread replay bundle independent Model Advisor review is invalid",
-    );
-  }
-  advisorReviews.forEach((review, index) => {
-    if (!review.evidenceSummary) return;
-    const event = advisorReviewEvents[index]!;
-    const expected = createIndependentModelAdvisorEvidenceSummary(
-      independentAdvisorReviewEvidenceEvents(typedEvents, event),
-    );
-    if (canonicalJson(review.evidenceSummary) !== canonicalJson(expected)) {
-      throw new Error(
-        "Thread replay bundle independent Model Advisor evidence summary is invalid",
-      );
-    }
-  });
   const promptVariableEvents = typedEvents.filter(
     (event) => event.type === PROMPT_VARIABLES_RESOLVED_EVENT,
   );
@@ -1737,26 +1716,6 @@ function assertRecord(value: unknown, label: string): Record<string, unknown> {
     throw new Error(`Thread replay bundle ${label} must be an object`);
   }
   return value as Record<string, unknown>;
-}
-
-function independentAdvisorReviewEvidenceEvents(
-  events: RunEvent[],
-  reviewEvent: RunEvent,
-): RunEvent[] {
-  const priorSameRunEvents = events.filter(
-    (event) => event.runId === reviewEvent.runId && event.seq < reviewEvent.seq,
-  );
-  const latestCandidateResponseSeq = priorSameRunEvents.findLast(
-    (event) => event.type === "model.response",
-  )?.seq;
-  if (latestCandidateResponseSeq !== undefined) {
-    return priorSameRunEvents.filter(
-      (event) => event.seq <= latestCandidateResponseSeq,
-    );
-  }
-  return priorSameRunEvents.filter(
-    (event) => !event.type.startsWith("model.advisor."),
-  );
 }
 
 function assertBoundedArray(

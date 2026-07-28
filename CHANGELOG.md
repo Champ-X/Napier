@@ -283,6 +283,9 @@ All notable changes to Napier are recorded here.
 - Thread replay bundle validation now recomputes Independent Advisor
   `evidenceSummary` from predecessor Run events, so a forged current/stale
   summary fails even if review and bundle hashes are recalculated.
+- Run replay snapshot validation now applies the same Independent Advisor
+  `evidenceSummary` binding, so single-Run archives cannot forge verification
+  freshness after recalculating review, event-stream, and snapshot hashes.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

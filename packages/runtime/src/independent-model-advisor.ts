@@ -524,6 +524,51 @@ export function createIndependentModelAdvisorEvidenceSummary(
   };
 }
 
+export function assertIndependentModelAdvisorReviewEvidenceBindings(
+  events: RunEvent[],
+  label: string,
+): void {
+  const reviewEvents = events.filter(
+    (event) => event.type === INDEPENDENT_MODEL_ADVISOR_REVIEWED_EVENT,
+  );
+  const reviews = projectIndependentModelAdvisorReviews(events);
+  if (reviews.length !== reviewEvents.length) {
+    throw new Error(`${label} independent Model Advisor review is invalid`);
+  }
+  reviews.forEach((review, index) => {
+    if (!review.evidenceSummary) return;
+    const event = reviewEvents[index]!;
+    const expected = createIndependentModelAdvisorEvidenceSummary(
+      independentModelAdvisorReviewEvidenceEvents(events, event),
+    );
+    if (canonicalJson(review.evidenceSummary) !== canonicalJson(expected)) {
+      throw new Error(
+        `${label} independent Model Advisor evidence summary is invalid`,
+      );
+    }
+  });
+}
+
+function independentModelAdvisorReviewEvidenceEvents(
+  events: RunEvent[],
+  reviewEvent: RunEvent,
+): RunEvent[] {
+  const priorSameRunEvents = events.filter(
+    (event) => event.runId === reviewEvent.runId && event.seq < reviewEvent.seq,
+  );
+  const latestCandidateResponseSeq = priorSameRunEvents.findLast(
+    (event) => event.type === "model.response",
+  )?.seq;
+  if (latestCandidateResponseSeq !== undefined) {
+    return priorSameRunEvents.filter(
+      (event) => event.seq <= latestCandidateResponseSeq,
+    );
+  }
+  return priorSameRunEvents.filter(
+    (event) => !event.type.startsWith("model.advisor."),
+  );
+}
+
 function toolNames(events: RunEvent[], type: string): string[] {
   return [
     ...new Set(

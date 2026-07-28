@@ -25,6 +25,7 @@ import {
   MODEL_CONTEXT_ENVELOPE_EVENT,
   validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
+import { assertIndependentModelAdvisorReviewEvidenceBindings } from "./independent-model-advisor.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { createThreadReplayBundle as buildThreadReplayBundle } from "./thread-bundles.js";
 
@@ -330,6 +331,10 @@ function validateRunReplaySnapshot(input: unknown): RunReplaySnapshot {
     label: "Run replay snapshot Model Context Envelope",
   });
   assertEmbeddedModelContextEnvelopeReceipts({ events, subagents }, "snapshot");
+  assertIndependentModelAdvisorReviewEvidenceBindings(
+    events,
+    "Run replay snapshot",
+  );
   for (const task of subagents) {
     assertReplaySubagent(task, threadId, runId);
   }
@@ -413,6 +418,9 @@ function runReplaySnapshotDiagnostic(error: unknown): string {
   if (message.includes("content hash mismatch")) return "hash_mismatch";
   if (message.includes("metrics hash mismatch")) return "metrics_mismatch";
   if (message.includes("Model Context Envelope")) return "context_mismatch";
+  if (message.includes("independent Model Advisor evidence summary")) {
+    return "advisor_evidence_mismatch";
+  }
   if (message.includes("configuration hash mismatch")) {
     return "configuration_mismatch";
   }
