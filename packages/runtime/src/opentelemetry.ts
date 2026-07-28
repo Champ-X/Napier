@@ -465,6 +465,7 @@ export function validateOpenTelemetryTraceArtifact(
   ) {
     throw new Error("OpenTelemetry trace root span is invalid");
   }
+  validateRootTraceArtifactBinding(artifact, root);
   validateImportReceiptTraceBinding(root);
   const {
     generatedAt: _generatedAt,
@@ -510,6 +511,7 @@ function openTelemetryTraceArtifactDiagnostic(error: unknown): string {
   if (message.includes("header is invalid")) return "invalid_header";
   if (message.includes("event range")) return "invalid_event_range";
   if (message.includes("redaction")) return "invalid_redaction";
+  if (message.includes("root binding")) return "root_binding_mismatch";
   if (message.includes("import provenance binding")) {
     return "import_provenance_mismatch";
   }
@@ -1496,6 +1498,35 @@ function validateSpanGraph(spans: OtlpSpan[]): void {
         (candidate) => candidate.spanId === cursor?.parentSpanId,
       );
     }
+  }
+}
+
+function validateRootTraceArtifactBinding(
+  artifact: OpenTelemetryTraceArtifact,
+  root: OtlpSpan,
+): void {
+  const expectedScope = artifact.runId ? "run" : "thread";
+  if (
+    root.name !==
+      (artifact.runId ? "napier.thread.run_trace" : "napier.thread") ||
+    root.kind !== 1 ||
+    stringAttribute(root.attributes, "gen_ai.conversation.id") !==
+      artifact.threadId ||
+    stringAttribute(root.attributes, "napier.thread.id") !== artifact.threadId ||
+    integerAttribute(root.attributes, "napier.event.count") !==
+      artifact.eventRange.eventCount ||
+    stringAttribute(root.attributes, "napier.event_stream.sha256") !==
+      artifact.eventRange.eventStreamSha256 ||
+    stringAttribute(root.attributes, "napier.export.scope") !== expectedScope
+  ) {
+    throw new Error("OpenTelemetry trace root binding is invalid");
+  }
+  const rootRunId = stringAttribute(root.attributes, "napier.run.id");
+  if (
+    (artifact.runId && rootRunId !== artifact.runId) ||
+    (!artifact.runId && rootRunId !== undefined)
+  ) {
+    throw new Error("OpenTelemetry trace root binding is invalid");
   }
 }
 

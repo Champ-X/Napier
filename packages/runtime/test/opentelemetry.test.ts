@@ -648,6 +648,13 @@ describe("OpenTelemetry trace export", () => {
       run.id,
     );
     expect(runOnly.runId).toBe(run.id);
+    const runOnlyRoot = spans(runOnly).find((span) => !span.parentSpanId)!;
+    expect(attributeValue(runOnlyRoot.attributes, "napier.export.scope")).toBe(
+      "run",
+    );
+    expect(attributeValue(runOnlyRoot.attributes, "napier.run.id")).toBe(
+      run.id,
+    );
     expect(
       spans(runOnly)
         .flatMap((span) => span.events)
@@ -949,6 +956,24 @@ describe("OpenTelemetry trace export", () => {
     expect(verifyOpenTelemetryTraceArtifact(hashTampered)).toEqual({
       status: "invalid",
       diagnostics: ["span_count_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
+
+    const rootBindingTampered = structuredClone(artifact);
+    const root = spans(rootBindingTampered).find((span) => !span.parentSpanId)!;
+    setAttributeValue(
+      root.attributes,
+      "napier.event_stream.sha256",
+      "0".repeat(64),
+    );
+    rehashArtifact(rootBindingTampered);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(rootBindingTampered),
+    ).toThrow("root binding");
+    expect(verifyOpenTelemetryTraceArtifact(rootBindingTampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["root_binding_mismatch"],
       spanCount: 0,
       eventCount: 0,
     });
