@@ -409,19 +409,7 @@ export class AgentRuntime {
         );
       }
 
-      const isDemoModel =
-        modelRef.provider === "napier" && modelRef.id === "demo";
-      const model = isDemoModel
-        ? undefined
-        : this.modelRegistry.resolve(modelRef);
-      if (!isDemoModel && !model) {
-        throw new Error(`Model not found: ${modelRef.provider}/${modelRef.id}`);
-      }
-      if (!isDemoModel && !(await this.modelRegistry.isConfigured(modelRef))) {
-        throw new Error(
-          `Model provider is not configured: ${modelRef.provider}`,
-        );
-      }
+      const model = await this.modelRegistry.resolveConfigured(modelRef);
       const subagents =
         model && !safeReadOnlyRecovery
           ? new SubagentCoordinator({

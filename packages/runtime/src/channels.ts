@@ -308,13 +308,7 @@ export class ChannelService {
     const thread = this.store.getThread(delivery.threadId);
     const agent = this.store.getAgent(thread.agentId);
     const model = deliveryModel ?? agent.model;
-    if (model.provider === "napier" && model.id === "demo") return;
-    if (!this.runtime.modelRegistry.resolve(model)) {
-      throw new Error(`Model not found: ${model.provider}/${model.id}`);
-    }
-    if (!(await this.runtime.modelRegistry.isConfigured(model))) {
-      throw new Error(`Model provider is not configured: ${model.provider}`);
-    }
+    await this.runtime.modelRegistry.resolveConfigured(model);
   }
 
   private async record(

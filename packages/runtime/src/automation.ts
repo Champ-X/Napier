@@ -227,13 +227,7 @@ export class AutomationService {
     const thread = this.store.getThread(schedule.threadId);
     const agent = this.store.getAgent(thread.agentId);
     const model = schedule.model ?? agent.model;
-    if (model.provider === "napier" && model.id === "demo") return;
-    if (!this.runtime.modelRegistry.resolve(model)) {
-      throw new Error(`Model not found: ${model.provider}/${model.id}`);
-    }
-    if (!(await this.runtime.modelRegistry.isConfigured(model))) {
-      throw new Error(`Model provider is not configured: ${model.provider}`);
-    }
+    await this.runtime.modelRegistry.resolveConfigured(model);
   }
 }
 

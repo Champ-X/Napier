@@ -49,6 +49,18 @@ export class ModelRegistry {
     }
   }
 
+  async resolveConfigured(ref: ModelRef): Promise<Model<Api> | undefined> {
+    if (ref.provider === "napier" && ref.id === "demo") return undefined;
+    const model = this.resolve(ref);
+    if (!model) {
+      throw new Error(`Model not found: ${ref.provider}/${ref.id}`);
+    }
+    if (!(await this.isConfigured(ref))) {
+      throw new Error(`Model provider is not configured: ${ref.provider}`);
+    }
+    return model;
+  }
+
   async list(): Promise<ModelSummary[]> {
     const providers = this.models.getProviders();
     const configuredEntries = await Promise.all(

@@ -5196,17 +5196,8 @@ export function createApp(services: NapierServices): Hono {
           id: body.model.id.trim(),
         }
       : undefined;
-    if (
-      requestedModel &&
-      !(await services.models.isConfigured(requestedModel))
-    ) {
-      return jsonError(
-        context,
-        modelUnavailableMessage(services, requestedModel),
-        400,
-      );
-    }
     try {
+      if (requestedModel) await assertAvailableModel(services, requestedModel);
       await assertAdvisorReviewModel(
         services,
         requestedModel ?? before.model,
@@ -13080,12 +13071,7 @@ async function assertAvailableModel(
   const id = model.id.trim();
   if (provider === "napier" && id === "demo") return;
   const ref = { provider, id };
-  if (!services.models.resolve(ref)) {
-    throw new Error(`Model not found: ${provider}/${id}`);
-  }
-  if (!(await services.models.isConfigured(ref))) {
-    throw new Error(modelUnavailableMessage(services, ref));
-  }
+  await services.models.resolveConfigured(ref);
 }
 
 async function assertAdvisorReviewModel(
@@ -13110,15 +13096,6 @@ async function assertAdvisorReviewModel(
     provider: reviewerProvider,
     id: reviewerId,
   });
-}
-
-function modelUnavailableMessage(
-  services: NapierServices,
-  model: { provider: string; id: string },
-): string {
-  return services.models.resolve(model)
-    ? `Model provider is not configured: ${model.provider}`
-    : `Model not found: ${model.provider}/${model.id}`;
 }
 
 function scheduleChangedFields(

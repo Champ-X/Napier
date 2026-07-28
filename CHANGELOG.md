@@ -250,6 +250,8 @@ All notable changes to Napier are recorded here.
   a Run, routing credential drift through retry or dead-letter evidence.
 - Direct runtime prompt calls now fail known-but-unconfigured live providers
   with stable `run.failed` evidence before invoking the provider stream.
+- Runtime, schedule, inbound delivery, and server model checks now share the
+  same `ModelRegistry.resolveConfigured()` executable-model contract.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
