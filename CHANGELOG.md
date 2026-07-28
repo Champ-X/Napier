@@ -224,10 +224,10 @@ All notable changes to Napier are recorded here.
 - Evaluation Suite creation now uses the same provider-grouped evaluator model
   selector, and executable Casebook qualification filters that catalog to
   configured candidates before replaying gold-set evidence.
-- The composer, resume, Run Lab evaluation, and Plan Workbench model-review
-  actions now consume the same selected-model availability projection,
-  disabling model-call paths before an unconfigured provider can trigger a
-  server request.
+- The composer, resume, Run Lab evaluation, Evaluation Suite gate, and Plan
+  Workbench model-review actions now consume the same model-availability
+  projection, disabling model-call paths before an unconfigured provider can
+  trigger a server request.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

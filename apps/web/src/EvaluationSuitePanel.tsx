@@ -48,7 +48,10 @@ import {
   listReceiptTrustAnchors,
 } from "./receipt-trust-api";
 import { formatApiErrorMessage } from "./api-error";
-import { modelProviderGroups } from "./model-selection-view-model";
+import {
+  modelProviderGroups,
+  selectedModelAvailability,
+} from "./model-selection-view-model";
 
 export default function EvaluationSuitePanel({
   threadId,
@@ -93,6 +96,10 @@ export default function EvaluationSuitePanel({
   const evaluatorModelGroups = useMemo(
     () => modelProviderGroups(models),
     [models],
+  );
+  const evaluatorModel = useMemo(
+    () => selectedModelAvailability(models, evaluatorModelKey),
+    [evaluatorModelKey, models],
   );
   useEffect(() => {
     if (runs.some((run) => run.id === baselineRunId)) return;
@@ -146,6 +153,7 @@ export default function EvaluationSuitePanel({
     candidateRunIds.length > 0 &&
     candidateRunIds.length <= 8 &&
     !candidateRunIds.includes(baselineRunId) &&
+    evaluatorModel.configured &&
     !busyId;
 
   function resetForm(): void {
@@ -190,6 +198,10 @@ export default function EvaluationSuitePanel({
   }
 
   async function submit(): Promise<void> {
+    if (!evaluatorModel.configured) {
+      setError(copy.modelUnavailableHint);
+      return;
+    }
     if (!canSubmit) {
       setError(copy.lab.suite.errors.candidates);
       return;
@@ -223,6 +235,17 @@ export default function EvaluationSuitePanel({
   }
 
   async function execute(suiteId: string): Promise<void> {
+    const suite = suites.find((candidate) => candidate.id === suiteId);
+    const suiteEvaluator = suite
+      ? selectedModelAvailability(
+          models,
+          `${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`,
+        )
+      : undefined;
+    if (!suiteEvaluator?.configured) {
+      setError(copy.modelUnavailableHint);
+      return;
+    }
     setBusyId(suiteId);
     setError(undefined);
     try {
@@ -355,6 +378,11 @@ export default function EvaluationSuitePanel({
             ))}
           </select>
         </label>
+        {!evaluatorModel.configured ? (
+          <p className="suite-error" role="status">
+            {copy.modelUnavailableHint}
+          </p>
+        ) : null}
         <label>
           <span>{copy.lab.suite.baseline}</span>
           <select
@@ -471,6 +499,10 @@ export default function EvaluationSuitePanel({
           const latestExecution = executionHistory.find(
             (execution) => execution.suiteRevision === suite.revision,
           );
+          const suiteEvaluator = selectedModelAvailability(
+            models,
+            `${suite.evaluatorModel.provider}/${suite.evaluatorModel.id}`,
+          );
           return (
             <article key={suite.id} className="suite-docket">
               <header>
@@ -508,6 +540,11 @@ export default function EvaluationSuitePanel({
                   </dd>
                 </div>
               </dl>
+              {!suiteEvaluator.configured ? (
+                <p className="suite-error" role="status">
+                  {copy.modelUnavailableHint}
+                </p>
+              ) : null}
               {latestExecution ? (
                 <div className="suite-result">
                   <div>
@@ -677,7 +714,7 @@ export default function EvaluationSuitePanel({
                 <button
                   className="suite-run-button"
                   type="button"
-                  disabled={Boolean(busyId)}
+                  disabled={Boolean(busyId) || !suiteEvaluator.configured}
                   onClick={() => void execute(suite.id)}
                 >
                   <Play size={11} aria-hidden="true" />
