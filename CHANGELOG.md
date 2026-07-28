@@ -77,6 +77,10 @@ All notable changes to Napier are recorded here.
   ledger-backed and embedded Model Context Envelope counts, verifies the bundle
   before import, and reinjects those counts into the imported-ledger boundary
   plus Run Lab fixture card as metadata-only evidence.
+- Run Lab fixture receipts now show the same event/run/plan/evaluation and
+  ledger-backed/embedded envelope coverage after export, verify, and import, so
+  operators do not have to run a separate preflight just to inspect portable
+  replay coverage.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

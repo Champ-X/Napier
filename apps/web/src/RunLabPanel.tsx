@@ -717,16 +717,18 @@ function FixtureLedgerCard({
             <code>{receipt.contentSha256.slice(0, 12)}</code>
           ) : null}
           <small>
-            {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events}
+            {receipt.eventCount.toLocaleString()} {copy.lab.fixture.events} ·{" "}
+            {receipt.runCount.toLocaleString()} {copy.lab.fixture.runs} ·{" "}
+            {receipt.planCount.toLocaleString()} {copy.lab.fixture.plans} ·{" "}
+            {receipt.evaluationCount.toLocaleString()}{" "}
+            {copy.lab.fixture.evaluations}
           </small>
-          {receipt.action === "verified" ? (
-            <small>
-              {receipt.modelContextEnvelopeCount.toLocaleString()}{" "}
-              {copy.lab.fixture.contextEnvelopes} ·{" "}
-              {receipt.embeddedModelContextEnvelopeCount.toLocaleString()}{" "}
-              {copy.lab.fixture.embeddedEnvelopes}
-            </small>
-          ) : null}
+          <small>
+            {receipt.modelContextEnvelopeCount.toLocaleString()}{" "}
+            {copy.lab.fixture.contextEnvelopes} ·{" "}
+            {receipt.embeddedModelContextEnvelopeCount.toLocaleString()}{" "}
+            {copy.lab.fixture.embeddedEnvelopes}
+          </small>
           {receipt.action === "verified" ? (
             <small className="fixture-diagnostics">
               {receipt.diagnostics.length > 0

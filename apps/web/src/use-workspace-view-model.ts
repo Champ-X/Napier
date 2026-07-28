@@ -114,25 +114,27 @@ export interface MessageView {
   createdAt: string;
 }
 
+export interface FixtureCoverageSummary {
+  eventCount: number;
+  runCount: number;
+  planCount: number;
+  evaluationCount: number;
+  modelContextEnvelopeCount: number;
+  embeddedModelContextEnvelopeCount: number;
+}
+
 export type FixtureTransferReceipt =
-  | {
+  | ({
       action: "exported" | "imported";
       contentSha256: string;
-      eventCount: number;
-    }
-  | {
+    } & FixtureCoverageSummary)
+  | ({
       action: "verified";
       status: ThreadReplayBundleVerification["status"];
       diagnostics: string[];
       contentSha256?: string;
       eventStreamSha256?: string;
-      eventCount: number;
-      runCount: number;
-      planCount: number;
-      evaluationCount: number;
-      modelContextEnvelopeCount: number;
-      embeddedModelContextEnvelopeCount: number;
-    };
+    } & FixtureCoverageSummary);
 
 export interface RunReplayVerificationReceipt {
   status: RunReplaySnapshotVerification["status"];
@@ -174,6 +176,51 @@ const MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES = 16 * 1024 * 1024;
 const MAX_EXTENSION_PACKAGE_LOCKFILE_FILE_BYTES =
   MAX_EXTENSION_PACKAGE_DEPLOYMENT_FILE_BYTES + 256 * 1024;
 const MAX_EXTENSION_PACKAGE_CHANNEL_INDEX_FILE_BYTES = 1 * 1024 * 1024;
+const MODEL_CONTEXT_ENVELOPE_EVENT = "context.model_envelope";
+
+type FixtureCoverageSource = {
+  events: readonly { type: string }[];
+  runs: readonly unknown[];
+  plans: readonly unknown[];
+  evaluations: readonly unknown[];
+};
+
+export function summarizeThreadReplayBundleCoverage(
+  bundle: FixtureCoverageSource,
+): FixtureCoverageSummary {
+  return {
+    eventCount: bundle.events.length,
+    runCount: bundle.runs.length,
+    planCount: bundle.plans.length,
+    evaluationCount: bundle.evaluations.length,
+    modelContextEnvelopeCount: bundle.events.filter(
+      (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
+    ).length,
+    embeddedModelContextEnvelopeCount:
+      countEmbeddedModelContextEnvelopes(bundle),
+  };
+}
+
+function countEmbeddedModelContextEnvelopes(value: unknown): number {
+  if (!value || typeof value !== "object") return 0;
+  if (Array.isArray(value)) {
+    return value.reduce(
+      (total, item) => total + countEmbeddedModelContextEnvelopes(item),
+      0,
+    );
+  }
+  const record = value as Record<string, unknown>;
+  const current = Object.prototype.hasOwnProperty.call(
+    record,
+    "modelContextEnvelope",
+  )
+    ? 1
+    : 0;
+  return Object.entries(record).reduce((total, [key, child]) => {
+    if (key === "modelContextEnvelope") return total;
+    return total + countEmbeddedModelContextEnvelopes(child);
+  }, current);
+}
 
 export function useWorkspaceViewModel() {
   const [bootstrap, setBootstrap] = useState<BootstrapResponse>();
@@ -1826,6 +1873,7 @@ export function useWorkspaceViewModel() {
     setError(undefined);
     try {
       const bundle = await getThreadReplayBundle(detail.thread.id);
+      const coverage = summarizeThreadReplayBundleCoverage(bundle);
       downloadJson(
         bundle,
         `napier-thread-${bundle.thread.id}-${bundle.contentSha256.slice(0, 12)}.json`,
@@ -1833,7 +1881,7 @@ export function useWorkspaceViewModel() {
       setLabFixtureReceipt({
         action: "exported",
         contentSha256: bundle.contentSha256,
-        eventCount: bundle.events.length,
+        ...coverage,
       });
     } catch (exportError) {
       setError(toErrorMessage(exportError));
@@ -1854,7 +1902,9 @@ export function useWorkspaceViewModel() {
     setError(undefined);
     try {
       const bundle = JSON.parse(await file.text()) as ThreadReplayBundle;
+      const sourceCoverage = summarizeThreadReplayBundleCoverage(bundle);
       const imported = await importThreadReplayBundle({ bundle });
+      const provenance = imported.thread.importProvenance;
       setDetail(imported);
       setSelectedThreadId(imported.thread.id);
       setSelectedModelKey(modelKey(imported.agent.model));
@@ -1872,10 +1922,15 @@ export function useWorkspaceViewModel() {
       );
       setLabFixtureReceipt({
         action: "imported",
-        contentSha256:
-          imported.thread.importProvenance?.sourceContentSha256 ??
-          bundle.contentSha256,
-        eventCount: imported.events.length,
+        contentSha256: provenance?.sourceContentSha256 ?? bundle.contentSha256,
+        ...sourceCoverage,
+        eventCount: provenance?.sourceEventCount ?? sourceCoverage.eventCount,
+        modelContextEnvelopeCount:
+          provenance?.sourceModelContextEnvelopeCount ??
+          sourceCoverage.modelContextEnvelopeCount,
+        embeddedModelContextEnvelopeCount:
+          provenance?.sourceEmbeddedModelContextEnvelopeCount ??
+          sourceCoverage.embeddedModelContextEnvelopeCount,
       });
     } catch (importError) {
       setError(
