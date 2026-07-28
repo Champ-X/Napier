@@ -22,6 +22,8 @@ export const planCopy = {
   modelReview: "Model review",
   score: "Score",
   risk: "Risk",
+  envelope: "Envelope",
+  receipt: "Receipt",
   hash: "Hash",
   response: "Response",
   reviewVerdicts: {

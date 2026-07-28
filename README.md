@@ -218,9 +218,10 @@ Version `0.1.0` includes:
   blocked critical paths and missing artifacts, generated replacement-plan
   drafts that can be fed back through replan CAS, deterministic draft
   evaluation scores with risk and evidence hashes, no-store hash-bound model
-  review artifacts for active drafts with hash-only request envelopes plus
-  explicit draft application from the Plan Workbench, model/thinking-specific
-  replan policy templates in Agent tool output, hash-bound Plan archive export
+  review artifacts for active drafts with Workbench-visible hash-only request
+  envelopes plus explicit draft application from the Plan Workbench,
+  model/thinking-specific replan policy templates in Agent tool output,
+  hash-bound Plan archive export
   plus no-store archive
   verification, no-store Plan REST response hashes and plan/replan count
   headers, reusable workflow blueprint export/upload verification, a local
@@ -1194,8 +1195,9 @@ model-context envelope; `napier/demo` fails closed as `inconclusive`. The
 review input uses only aggregate counts, replay statuses, Plan projection
 hashes, outcome hashes, and policy evidence, so objective text, artifact paths,
 blockers, and evidence prose are not copied into the review artifact. The same
-review artifact can be passed back into outcome baseline promotion. Reviewed
-promotion re-verifies the review hash, current outcomes,
+review artifact can be passed back into outcome baseline promotion. The Plan
+Workbench receipt displays the review request envelope hash beside the review
+hash. Reviewed promotion re-verifies the review hash, current outcomes,
 source qualification, outcome qualification status, and a gate that defaults
 to score >= 80 with risk <= medium before appending review input/response/model
 hash evidence into the superseding baseline and response headers. The Plan

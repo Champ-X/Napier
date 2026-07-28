@@ -212,7 +212,8 @@ All notable changes to Napier are recorded here.
   hashes, plus the live request's hash-only model-context envelope, while
   keeping objective text, artifact paths, blockers, and evidence prose out of
   the artifact. `napier/demo` fails closed as inconclusive, and the Template
-  shelf exposes Review outcomes through a ViewModel receipt.
+  shelf exposes Review outcomes through a ViewModel receipt that includes the
+  review request envelope hash.
 - Reviewed blueprint outcome baseline promotion. Outcome baseline promotion can
   now carry a current outcome review artifact plus an optional score/risk gate.
   The Store rehashes the review, verifies it against current replay outcomes,
@@ -1724,8 +1725,9 @@ write:management-openapi-compatibility` now emits
   deterministic evaluation hash, prompt hash, response hash, and final review
   hash without mutating Plan state or bypassing replan CAS. Live review
   artifacts also bind the request's hash-only model-context envelope without
-  copying plan or draft text. They are exposed from the Plan Workbench beside
-  explicit draft application through normal replan revision CAS.
+  copying plan or draft text. The Plan Workbench renders the request envelope,
+  review receipt, and response hashes beside explicit draft application through
+  normal replan revision CAS.
 - Plan list, create, replan, step transition, artifact settlement, and replan
   draft review responses now expose no-store hashes, plan status/revision
   headers, step/artifact/replan counts, scheduling projection counts, and active

@@ -5954,6 +5954,17 @@ button:disabled {
   color: #80362f;
 }
 
+.plan-replan-review .plan-review-hashes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+}
+
+.plan-replan-review .plan-review-hashes span {
+  display: inline-flex;
+  gap: 3px;
+}
+
 .plan-replan-review p {
   margin: 0;
   font-size: 11px;

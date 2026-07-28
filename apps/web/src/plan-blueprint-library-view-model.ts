@@ -152,6 +152,7 @@ export interface PlanBlueprintLibraryOutcomeReviewReceipt {
   risk: ExecutionPlanBlueprintRecordOutcomeReview["risk"];
   score: number;
   reviewSha256: string;
+  reviewEnvelopeSha256?: string;
   inputSha256: string;
   responseSha256: string;
   replayOutcomesSha256: string;
@@ -596,6 +597,9 @@ export function planBlueprintOutcomeReviewReceipt(
     risk: review.risk,
     score: review.score,
     reviewSha256: review.reviewSha256,
+    ...(review.modelContextEnvelope
+      ? { reviewEnvelopeSha256: review.modelContextEnvelope.contentSha256 }
+      : {}),
     inputSha256: review.inputSha256,
     responseSha256: review.responseSha256,
     replayOutcomesSha256: review.replayOutcomesSha256,
@@ -892,7 +896,9 @@ export function planBlueprintRecommendationPolicyOverrideRetirementHistoryVerifi
     observedCurrentOverrideSetSha256:
       verification.observedCurrentOverrideSetSha256,
     ...(verification.declaredRetirementSetSha256
-      ? { declaredRetirementSetSha256: verification.declaredRetirementSetSha256 }
+      ? {
+          declaredRetirementSetSha256: verification.declaredRetirementSetSha256,
+        }
       : {}),
     ...(verification.recomputedRetirementSetSha256
       ? {
@@ -935,12 +941,12 @@ export function planBlueprintRecommendationPolicyOverrideRetirementProofBundleRe
     invalidHistoryCount: proofBundle.invalidHistoryCount,
     distinctHistoryCount: proofBundle.distinctHistoryCount,
     distinctPortfolioSetCount: proofBundle.distinctPortfolioSetCount,
-    distinctCurrentOverrideSetCount: proofBundle.distinctCurrentOverrideSetCount,
+    distinctCurrentOverrideSetCount:
+      proofBundle.distinctCurrentOverrideSetCount,
     distinctRetirementSetCount: proofBundle.distinctRetirementSetCount,
     historySetSha256: proofBundle.historySetSha256,
     portfolioSetBundleSha256: proofBundle.portfolioSetBundleSha256,
-    currentOverrideSetBundleSha256:
-      proofBundle.currentOverrideSetBundleSha256,
+    currentOverrideSetBundleSha256: proofBundle.currentOverrideSetBundleSha256,
     retirementSetBundleSha256: proofBundle.retirementSetBundleSha256,
     ...(highlighted
       ? {
@@ -948,7 +954,10 @@ export function planBlueprintRecommendationPolicyOverrideRetirementProofBundleRe
           highlightedHistoryStatus: highlighted.status,
           highlightedHistoryDiagnostics: highlighted.diagnostics,
           ...(highlighted.declaredContentSha256
-            ? { highlightedHistoryContentSha256: highlighted.declaredContentSha256 }
+            ? {
+                highlightedHistoryContentSha256:
+                  highlighted.declaredContentSha256,
+              }
             : {}),
           ...(highlighted.declaredRetirementSetSha256
             ? {

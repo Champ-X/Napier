@@ -1388,11 +1388,34 @@ export default function PlanPanel({
                       {planCopy.score} {draftReview.score} / {planCopy.risk}{" "}
                       {planCopy.replanRisks[draftReview.risk]}
                     </strong>
-                    <small>
-                      {planCopy.hash}: {draftReview.reviewSha256.slice(0, 12)}
-                      {" / "}
-                      {planCopy.response}:{" "}
-                      {draftReview.responseSha256.slice(0, 12)}
+                    <small className="plan-review-hashes">
+                      {draftReview.modelContextEnvelope ? (
+                        <span>
+                          {planCopy.envelope}:{" "}
+                          <code
+                            title={
+                              draftReview.modelContextEnvelope.contentSha256
+                            }
+                          >
+                            {draftReview.modelContextEnvelope.contentSha256.slice(
+                              0,
+                              12,
+                            )}
+                          </code>
+                        </span>
+                      ) : null}
+                      <span>
+                        {planCopy.receipt}:{" "}
+                        <code title={draftReview.reviewSha256}>
+                          {draftReview.reviewSha256.slice(0, 12)}
+                        </code>
+                      </span>
+                      <span>
+                        {planCopy.response}:{" "}
+                        <code title={draftReview.responseSha256}>
+                          {draftReview.responseSha256.slice(0, 12)}
+                        </code>
+                      </span>
                     </small>
                     <p>{draftReview.reason}</p>
                     {draftReview.concerns.length > 0 ? (
@@ -2816,6 +2839,13 @@ function PlanBlueprintLibraryReceiptView({
             {planCopy.blueprint.library.response}:{" "}
             {receipt.responseSha256.slice(0, 16)}
           </small>
+          {receipt.reviewEnvelopeSha256 ? (
+            <small className="fixture-diagnostics">
+              {planCopy.envelope}: {receipt.reviewEnvelopeSha256.slice(0, 16)}
+              {" / "}
+              {planCopy.receipt}: {receipt.reviewSha256.slice(0, 16)}
+            </small>
+          ) : null}
           {receipt.concerns.length > 0 ? (
             <small className="fixture-diagnostics">
               {receipt.concerns.join(", ")}
