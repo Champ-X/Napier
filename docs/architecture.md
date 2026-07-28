@@ -2272,7 +2272,9 @@ runtime prompt can consume it. The import action itself is ledger-backed by a
 local `thread.imported` lifecycle event appended after the source fixture
 events; the event carries only the source Thread/API identifiers, content and
 event-stream SHA-256 hashes, event/envelope counts, import time, and the local
-cutoff sequence.
+cutoff sequence. Restore treats this receipt as optional for older imported
+Threads, but if it is present its payload, timestamp, category, visibility, and
+sequence must match the persisted Thread provenance exactly.
 
 ## Delegation Flow
 

@@ -102,6 +102,10 @@ All notable changes to Napier are recorded here.
   hashes, event/envelope counts, import time, and the local cutoff sequence, so
   the Work Ledger itself explains why imported history is untrusted without
   persisting the raw replay bundle again.
+- SQLite restore now cross-checks any persisted `thread.imported` ledger
+  receipt against `ThreadRecord.importProvenance`, failing closed on payload,
+  timestamp, category, visibility, or cutoff drift while remaining compatible
+  with older imported Threads that predate the ledger receipt.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

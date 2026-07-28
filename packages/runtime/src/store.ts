@@ -591,6 +591,7 @@ const MAX_INBOUND_RETRY_BASE_MS = 60_000;
 const MIN_INBOUND_SIGNATURE_TOLERANCE_SECONDS = 30;
 const MAX_INBOUND_SIGNATURE_TOLERANCE_SECONDS = 900;
 const MAX_INBOUND_RETRY_DELAY_MS = 24 * 60 * 60 * 1_000;
+const THREAD_IMPORTED_EVENT = "thread.imported";
 const MEMORY_STATUSES = new Set([
   "proposed",
   "active",
@@ -8416,7 +8417,7 @@ export class LocalStore {
         threadId,
         runId: createId("runctl"),
         seq: localImportedThroughSeq,
-        type: "thread.imported",
+        type: THREAD_IMPORTED_EVENT,
         category: "lifecycle",
         visibility: "debug",
         createdAt: importedAt,
@@ -11397,6 +11398,12 @@ export class LocalStore {
       if (count !== thread.eventCount || maxSeq !== thread.eventCount) {
         throw new Error(
           `SQLite ledger projection mismatch for ${thread.id}: state=${thread.eventCount}, events=${count}, maxSeq=${maxSeq}`,
+        );
+      }
+      if (thread.importProvenance) {
+        validateThreadImportProvenanceLedgerReceipt(
+          thread,
+          this.requireLedger().listEvents(thread.id),
         );
       }
       stats.delete(thread.id);
@@ -15176,6 +15183,32 @@ function validateThreadImportProvenance(
   };
 }
 
+function validateThreadImportProvenanceLedgerReceipt(
+  thread: ThreadRecord,
+  events: RunEvent[],
+): void {
+  const provenance = thread.importProvenance;
+  if (!provenance) return;
+  const receipts = events.filter(
+    (event) => event.type === THREAD_IMPORTED_EVENT,
+  );
+  if (receipts.length === 0) return;
+  const receipt = receipts[0]!;
+  const expectedPayload = threadImportProvenanceEventPayload(provenance);
+  if (
+    receipts.length !== 1 ||
+    receipt.seq !== threadImportProvenanceLocalCutoff(provenance) ||
+    receipt.category !== "lifecycle" ||
+    receipt.visibility !== "debug" ||
+    receipt.createdAt !== provenance.importedAt ||
+    canonicalJson(receipt.payload) !== canonicalJson(expectedPayload)
+  ) {
+    throw new Error(
+      `Persisted Thread import provenance receipt is invalid: ${thread.id}`,
+    );
+  }
+}
+
 function threadImportProvenanceEventPayload(
   provenance: ThreadImportProvenance,
 ): JsonValue {
@@ -15186,13 +15219,19 @@ function threadImportProvenanceEventPayload(
     sourceContentSha256: provenance.sourceContentSha256,
     sourceEventStreamSha256: provenance.sourceEventStreamSha256,
     sourceEventCount: provenance.sourceEventCount,
-    localImportedThroughSeq: provenance.localImportedThroughSeq ?? 0,
+    localImportedThroughSeq: threadImportProvenanceLocalCutoff(provenance),
     sourceModelContextEnvelopeCount:
       provenance.sourceModelContextEnvelopeCount ?? 0,
     sourceEmbeddedModelContextEnvelopeCount:
       provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0,
     importedAt: provenance.importedAt,
   };
+}
+
+function threadImportProvenanceLocalCutoff(
+  provenance: ThreadImportProvenance,
+): number {
+  return provenance.localImportedThroughSeq ?? provenance.sourceEventCount;
 }
 
 function isSha256(value: unknown): value is string {

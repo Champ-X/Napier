@@ -17,6 +17,7 @@ import {
   LEDGER_SCHEMA_VERSION,
   LocalStore,
 } from "../src/index.js";
+import { exportThreadReplayBundle } from "../src/replay.js";
 
 const temporaryRoots: string[] = [];
 const openStores: LocalStore[] = [];
@@ -206,6 +207,49 @@ describe("transactional LocalStore", () => {
     openStores.push(reopened);
     await expect(reopened.initialize()).rejects.toThrow(
       "Persisted Thread import provenance is invalid",
+    );
+  });
+
+  it("fails closed on mismatched imported Thread provenance ledger receipts", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const sourceThread = first.listThreads()[0]!;
+    const bundle = await exportThreadReplayBundle(first, sourceThread.id);
+    const imported = await first.importThreadReplayBundle(
+      bundle,
+      "Imported receipt validation",
+    );
+    const importEvent = imported.events.find(
+      (event) => event.type === "thread.imported",
+    );
+    if (!importEvent) {
+      throw new Error("Expected imported Thread provenance event");
+    }
+    first.close();
+    openStores.splice(openStores.indexOf(first), 1);
+
+    const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
+    const database = new DatabaseSync(databasePath);
+    const row = database
+      .prepare(
+        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
+      )
+      .get(imported.thread.id, importEvent.seq) as { event_json: string };
+    const event = JSON.parse(row.event_json) as {
+      payload: Record<string, unknown>;
+    };
+    event.payload.sourceContentSha256 = "0".repeat(64);
+    database
+      .prepare(
+        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
+      )
+      .run(JSON.stringify(event), imported.thread.id, importEvent.seq);
+    database.close();
+
+    const reopened = new LocalStore(options);
+    openStores.push(reopened);
+    await expect(reopened.initialize()).rejects.toThrow(
+      "Persisted Thread import provenance receipt is invalid",
     );
   });
 
