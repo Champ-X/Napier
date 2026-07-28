@@ -404,6 +404,8 @@ function createVerificationClaimDiagnostic(
       latestPassedVerificationSeq: evidence.latestPassedVerificationSeq,
       latestPlanCompletedSeq: evidence.latestPlanCompletedSeq,
       latestPlanArtifactVerifiedSeq: evidence.latestPlanArtifactVerifiedSeq,
+      latestPlanArtifactInvalidatedSeq:
+        evidence.latestPlanArtifactInvalidatedSeq,
       latestGoalSatisfiedSeq: evidence.latestGoalSatisfiedSeq,
       toolCompletedCount: evidence.toolCompletedCount,
     },

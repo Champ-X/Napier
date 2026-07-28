@@ -45,6 +45,7 @@ export interface IndependentModelAdvisorReviewView {
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
+  latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
   modelContextEnvelopeSha256?: string;
   contentSha256: string;
@@ -175,6 +176,7 @@ function completionFreshnessParts(
       review.planArtifactVerifiedAfterWorkspaceWrite,
       review.workspaceWriteCompleted,
       review.latestPlanArtifactVerifiedSeq,
+      review.latestPlanArtifactInvalidatedSeq,
     ),
     ...completionFreshnessPart(
       "goal",
@@ -192,14 +194,21 @@ function completionFreshnessPart(
   current: boolean | undefined,
   workspaceWriteCompleted: boolean | undefined,
   seq: number | undefined,
+  invalidatedSeq?: number,
 ): string[] {
-  if (present === undefined && current === undefined && seq === undefined) {
+  if (
+    present === undefined &&
+    current === undefined &&
+    seq === undefined &&
+    invalidatedSeq === undefined
+  ) {
     return [];
   }
   const state =
     current === true
       ? "current"
-      : present === true && workspaceWriteCompleted === true
+      : present === true &&
+          (workspaceWriteCompleted === true || invalidatedSeq !== undefined)
         ? "stale"
         : present === true
           ? "not-current"
@@ -207,6 +216,9 @@ function completionFreshnessPart(
   return [
     `${label} ${state}`,
     ...(seq !== undefined ? [`${label}#${seq}`] : []),
+    ...(invalidatedSeq !== undefined
+      ? [`${label}-invalidated#${invalidatedSeq}`]
+      : []),
   ];
 }
 
@@ -239,6 +251,7 @@ function evidenceSummaryView(
       | "latestPassedVerificationSeq"
       | "latestPlanCompletedSeq"
       | "latestPlanArtifactVerifiedSeq"
+      | "latestPlanArtifactInvalidatedSeq"
       | "latestGoalSatisfiedSeq"
     >
   | undefined {
@@ -292,6 +305,7 @@ function evidenceSummaryView(
     ...numberField(value, "latestPassedVerificationSeq"),
     ...numberField(value, "latestPlanCompletedSeq"),
     ...numberField(value, "latestPlanArtifactVerifiedSeq"),
+    ...numberField(value, "latestPlanArtifactInvalidatedSeq"),
     ...numberField(value, "latestGoalSatisfiedSeq"),
   };
 }
@@ -307,6 +321,7 @@ function numberField(
     | "latestPassedVerificationSeq"
     | "latestPlanCompletedSeq"
     | "latestPlanArtifactVerifiedSeq"
+    | "latestPlanArtifactInvalidatedSeq"
     | "latestGoalSatisfiedSeq",
 ): Pick<IndependentModelAdvisorReviewView, typeof key> | undefined {
   const value = source[key];

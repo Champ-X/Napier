@@ -339,6 +339,7 @@ const SAFE_EVENT_EVIDENCE_SUMMARY_ATTRIBUTE_KEYS = new Set(
     "latestPassedVerificationSeq",
     "latestPlanCompletedSeq",
     "latestPlanArtifactVerifiedSeq",
+    "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
     "milestoneCount",
     "operatorDecisionRequested",
@@ -1179,6 +1180,7 @@ function evidenceSummaryPayloadAttributes(
     "latestPassedVerificationSeq",
     "latestPlanCompletedSeq",
     "latestPlanArtifactVerifiedSeq",
+    "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
     "milestoneCount",
   ]) {

@@ -290,6 +290,43 @@ describe("model advisor stream lint", () => {
     );
   });
 
+  it("marks artifact verification evidence stale after later artifact invalidation", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The artifact is verified.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        planEvent(1, "plan.artifact.verified", {
+          planId: "plan_1",
+          artifactId: "artifact_1",
+          status: "verified",
+        }),
+        planEvent(2, "plan.artifact.missing", {
+          planId: "plan_1",
+          artifactId: "artifact_1",
+          status: "missing",
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          planArtifactVerified: true,
+          planArtifactVerifiedAfterWorkspaceWrite: false,
+          latestPlanArtifactVerifiedSeq: 1,
+          latestPlanArtifactInvalidatedSeq: 2,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("flags goal completion claims without a satisfied goal evaluation", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "The active goal is complete.",
@@ -613,7 +650,10 @@ function toolCompleted(
 
 function planEvent(
   seq: number,
-  type: "plan.artifact.verified" | "plan.step.completed",
+  type:
+    | "plan.artifact.verified"
+    | "plan.artifact.missing"
+    | "plan.step.completed",
   payload: Record<string, unknown>,
 ): RunEvent {
   return {

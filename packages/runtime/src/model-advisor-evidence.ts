@@ -15,6 +15,7 @@ export interface ModelAdvisorVerificationEvidence {
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
+  latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
 }
 
@@ -65,6 +66,24 @@ export function isPlanArtifactVerificationEvent(event: RunEvent): boolean {
   );
 }
 
+export function isPlanArtifactInvalidationEvent(event: RunEvent): boolean {
+  if (
+    event.category !== "plan" ||
+    !event.type.startsWith("plan.artifact.") ||
+    event.type === "plan.artifact.verified" ||
+    !isRecord(event.payload)
+  ) {
+    return false;
+  }
+  const status = event.payload["status"];
+  return (
+    status === "expected" ||
+    status === "produced" ||
+    status === "missing" ||
+    status === "superseded"
+  );
+}
+
 export function isGoalSatisfiedEvent(event: RunEvent): boolean {
   return (
     event.type === "goal.evaluated" &&
@@ -88,6 +107,10 @@ export function createModelAdvisorVerificationEvidence(
     events,
     isPlanArtifactVerificationEvent,
   );
+  const latestPlanArtifactInvalidatedSeq = latestSeq(
+    events,
+    isPlanArtifactInvalidationEvent,
+  );
   const latestGoalSatisfiedSeq = latestSeq(events, isGoalSatisfiedEvent);
   const verificationToolPassedAfterWorkspaceWrite =
     latestPassedVerificationSeq !== undefined &&
@@ -99,6 +122,8 @@ export function createModelAdvisorVerificationEvidence(
       latestPlanCompletedSeq > latestWorkspaceWriteSeq);
   const planArtifactVerifiedAfterWorkspaceWrite =
     latestPlanArtifactVerifiedSeq !== undefined &&
+    (latestPlanArtifactInvalidatedSeq === undefined ||
+      latestPlanArtifactVerifiedSeq > latestPlanArtifactInvalidatedSeq) &&
     (latestWorkspaceWriteSeq === undefined ||
       latestPlanArtifactVerifiedSeq > latestWorkspaceWriteSeq);
   const goalSatisfiedAfterWorkspaceWrite =
@@ -125,6 +150,9 @@ export function createModelAdvisorVerificationEvidence(
     ...(latestPlanCompletedSeq !== undefined ? { latestPlanCompletedSeq } : {}),
     ...(latestPlanArtifactVerifiedSeq !== undefined
       ? { latestPlanArtifactVerifiedSeq }
+      : {}),
+    ...(latestPlanArtifactInvalidatedSeq !== undefined
+      ? { latestPlanArtifactInvalidatedSeq }
       : {}),
     ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
   };

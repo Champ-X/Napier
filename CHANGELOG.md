@@ -320,6 +320,10 @@ All notable changes to Napier are recorded here.
   `plan.step.*`, `plan.artifact.verified`, or satisfied `goal.evaluated`
   Ledger evidence after the latest workspace write before the final answer can
   claim those states without a deterministic notice.
+- Artifact-verified claim suppression now treats later non-verified artifact
+  events as invalidation evidence. `plan.artifact.missing`, `produced`, or
+  `superseded` after the latest verified receipt makes the claim stale until
+  the artifact is verified again.
 - Trace Model Advisor summaries now expose verification current/stale metadata
   plus plan/artifact/goal completion freshness and the latest evidence
   sequence numbers without rendering diagnostic prose or candidate text.

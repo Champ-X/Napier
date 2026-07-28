@@ -534,6 +534,12 @@ export function createIndependentModelAdvisorEvidenceSummary(
           latestPlanArtifactVerifiedSeq: evidence.latestPlanArtifactVerifiedSeq,
         }
       : {}),
+    ...(evidence.latestPlanArtifactInvalidatedSeq !== undefined
+      ? {
+          latestPlanArtifactInvalidatedSeq:
+            evidence.latestPlanArtifactInvalidatedSeq,
+        }
+      : {}),
     ...(evidence.latestGoalSatisfiedSeq !== undefined
       ? { latestGoalSatisfiedSeq: evidence.latestGoalSatisfiedSeq }
       : {}),
@@ -841,6 +847,7 @@ function parseEvidenceSummary(
     "latestPassedVerificationSeq",
     "latestPlanCompletedSeq",
     "latestPlanArtifactVerifiedSeq",
+    "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
   ];
   const keys = Object.keys(value);
@@ -926,6 +933,14 @@ function parseEvidenceSummary(
           latestPlanArtifactVerifiedSeq: boundedCount(
             summary["latestPlanArtifactVerifiedSeq"],
             "latestPlanArtifactVerifiedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestPlanArtifactInvalidatedSeq"] !== undefined
+      ? {
+          latestPlanArtifactInvalidatedSeq: boundedCount(
+            summary["latestPlanArtifactInvalidatedSeq"],
+            "latestPlanArtifactInvalidatedSeq",
           ),
         }
       : {}),

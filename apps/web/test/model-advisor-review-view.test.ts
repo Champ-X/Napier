@@ -32,6 +32,7 @@ describe("independent Model Advisor review views", () => {
           latestPassedVerificationSeq: 12,
           latestPlanCompletedSeq: 11,
           latestPlanArtifactVerifiedSeq: 10,
+          latestPlanArtifactInvalidatedSeq: 14,
           latestGoalSatisfiedSeq: 9,
         },
         modelContextEnvelope: {
@@ -75,6 +76,7 @@ describe("independent Model Advisor review views", () => {
         latestPassedVerificationSeq: 12,
         latestPlanCompletedSeq: 11,
         latestPlanArtifactVerifiedSeq: 10,
+        latestPlanArtifactInvalidatedSeq: 14,
         latestGoalSatisfiedSeq: 9,
         modelContextEnvelopeSha256: "c".repeat(64),
         contentSha256: "b".repeat(64),
@@ -86,7 +88,7 @@ describe("independent Model Advisor review views", () => {
       }),
     ]);
     expect(independentModelAdvisorVerificationState(views[0]!)).toBe(
-      "checks stale / passed / w#13 / v#12 / plan stale / plan#11 / artifact stale / artifact#10 / goal stale / goal#9",
+      "checks stale / passed / w#13 / v#12 / plan stale / plan#11 / artifact stale / artifact#10 / artifact-invalidated#14 / goal stale / goal#9",
     );
     expect(views[1]).not.toHaveProperty("modelContextEnvelopeSha256");
   });

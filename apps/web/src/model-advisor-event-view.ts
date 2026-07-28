@@ -27,6 +27,7 @@ export interface ModelAdvisorEventTraceView {
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
+  latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
   textSha256?: string;
   candidateTextSha256?: string;
@@ -123,6 +124,9 @@ export function modelAdvisorEventTraceView(
   const latestPlanArtifactVerifiedSeq = nonNegativeInteger(
     evidence["latestPlanArtifactVerifiedSeq"],
   );
+  const latestPlanArtifactInvalidatedSeq = nonNegativeInteger(
+    evidence["latestPlanArtifactInvalidatedSeq"],
+  );
   const latestGoalSatisfiedSeq = nonNegativeInteger(
     evidence["latestGoalSatisfiedSeq"],
   );
@@ -190,6 +194,9 @@ export function modelAdvisorEventTraceView(
     ...(latestPlanCompletedSeq !== undefined ? { latestPlanCompletedSeq } : {}),
     ...(latestPlanArtifactVerifiedSeq !== undefined
       ? { latestPlanArtifactVerifiedSeq }
+      : {}),
+    ...(latestPlanArtifactInvalidatedSeq !== undefined
+      ? { latestPlanArtifactInvalidatedSeq }
       : {}),
     ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
@@ -290,11 +297,16 @@ export function modelAdvisorEventTraceSummary(
     ...(view.latestPlanArtifactVerifiedSeq !== undefined
       ? [`artifact-verified-seq ${view.latestPlanArtifactVerifiedSeq}`]
       : []),
+    ...(view.latestPlanArtifactInvalidatedSeq !== undefined
+      ? [`artifact-invalidated-seq ${view.latestPlanArtifactInvalidatedSeq}`]
+      : []),
     ...(view.planArtifactVerifiedAfterWorkspaceWrite !== undefined
       ? [
           view.planArtifactVerifiedAfterWorkspaceWrite
             ? "artifact-verification-current"
-            : view.planArtifactVerified && view.workspaceWriteCompleted
+            : view.planArtifactVerified &&
+                (view.workspaceWriteCompleted ||
+                  view.latestPlanArtifactInvalidatedSeq !== undefined)
               ? "artifact-verification-stale"
               : "artifact-verification-not-current",
         ]

@@ -208,6 +208,7 @@ export interface IndependentModelAdvisorEvidenceSummary {
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
+  latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
   milestoneCount: number;
   operatorDecisionRequested: boolean;
@@ -266,6 +267,7 @@ export interface ModelAdvisorEvidence {
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
+  latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
 }
 
