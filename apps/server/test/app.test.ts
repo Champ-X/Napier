@@ -1037,6 +1037,37 @@ describe("Napier HTTP goal flow", () => {
       expect.objectContaining({ error: "Prompt request is invalid" }),
     );
 
+    const unconfiguredProvider = fauxProvider({
+      provider: "faux-prompt-unconfigured",
+    });
+    services.models.registerProvider({
+      ...unconfiguredProvider.provider,
+      auth: {
+        apiKey: {
+          name: "Unavailable",
+          resolve: async () => undefined,
+        },
+      },
+    });
+    const unconfiguredPrompt = await app.request(
+      `/api/threads/${created.thread.id}/messages`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          text: "This should fail before a Run starts.",
+          model: { provider: "faux-prompt-unconfigured", id: "faux-1" },
+        }),
+      },
+    );
+    expect(unconfiguredPrompt.status).toBe(400);
+    expect(await unconfiguredPrompt.json()).toEqual(
+      expect.objectContaining({
+        error: "Model provider is not configured: faux-prompt-unconfigured",
+      }),
+    );
+    expect(services.store.listRuns(created.thread.id)).toHaveLength(0);
+
     const invalidResume = await app.request(
       `/api/threads/${created.thread.id}/resume`,
       {
@@ -1048,6 +1079,24 @@ describe("Napier HTTP goal flow", () => {
     expect(invalidResume.status).toBe(400);
     expect(await invalidResume.json()).toEqual(
       expect.objectContaining({ error: "Resume request is invalid" }),
+    );
+    expect(services.store.listRuns(created.thread.id)).toHaveLength(0);
+
+    const unconfiguredResume = await app.request(
+      `/api/threads/${created.thread.id}/resume`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model: { provider: "faux-prompt-unconfigured", id: "faux-1" },
+        }),
+      },
+    );
+    expect(unconfiguredResume.status).toBe(400);
+    expect(await unconfiguredResume.json()).toEqual(
+      expect.objectContaining({
+        error: "Model provider is not configured: faux-prompt-unconfigured",
+      }),
     );
     expect(services.store.listRuns(created.thread.id)).toHaveLength(0);
 

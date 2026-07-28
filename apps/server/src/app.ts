@@ -10103,6 +10103,13 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Resume request is invalid", 400);
     }
+    if (body.model) {
+      try {
+        await assertAvailableModel(services, body.model);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    }
     setThreadResumeStreamHeaders(context, threadId, body.runId, body.model);
     return streamSSE(context, async (stream) => {
       const writeFrame = async (
@@ -10162,6 +10169,13 @@ export function createApp(services: NapierServices): Hono {
     const body = parsePromptRequest(input);
     if (!body) {
       return jsonError(context, "Prompt request is invalid", 400);
+    }
+    if (body.model) {
+      try {
+        await assertAvailableModel(services, body.model);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
     }
     setThreadPromptStreamHeaders(context, threadId, body.model);
 
