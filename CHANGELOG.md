@@ -1131,7 +1131,8 @@ write:management-openapi-compatibility` now emits
   alignment, evidence grounding, uncertainty honesty, and actionability,
   returning accept/revise/reject/inconclusive, score, risk, reason, concerns,
   usage, and hashes binding both models, the outcome receipt, criteria, input,
-  prompt, response, and schema. Provider or parse failures become
+  prompt, response, schema, and the live review request's hash-only
+  model-context envelope. Provider or parse failures become
   `inconclusive` without exposing raw errors. The operation is no-store,
   promoted into OpenAPI, and available from Trace using the globally selected
   model; it cannot mutate or stall the settled delegation.

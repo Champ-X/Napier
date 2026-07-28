@@ -6,6 +6,7 @@ import {
 } from "@earendil-works/pi-ai";
 import {
   emptyUsage,
+  type ModelContextEnvelopeReceipt,
   type ModelRef,
   type SubagentOutcomeReview,
   type SubagentOutcomeReviewRisk,
@@ -16,6 +17,7 @@ import {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
+import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import type { ModelRegistry } from "./models.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 
@@ -79,6 +81,7 @@ interface ParsedSubagentOutcomeReview {
   concerns: string[];
   responseSha256: string;
   usage: Usage;
+  modelContextEnvelope?: ModelContextEnvelopeReceipt;
 }
 
 export async function reviewSubagentOutcome(
@@ -257,33 +260,37 @@ async function completeSubagentOutcomeReview(
 ): Promise<ParsedSubagentOutcomeReview> {
   let responseText = "";
   let usage = emptyUsage();
+  const requestContext = {
+    systemPrompt: prompt.system,
+    messages: [
+      {
+        role: "user" as const,
+        content: prompt.user,
+        timestamp: Date.now(),
+      },
+    ],
+    tools: [],
+  };
+  const modelContextEnvelope = createModelContextEnvelopeReceipt({
+    turnIndex: 0,
+    systemPrompt: requestContext.systemPrompt,
+    messages: requestContext.messages,
+    tools: requestContext.tools,
+  });
   try {
-    const response = await models.models.completeSimple(
-      model,
-      {
-        systemPrompt: prompt.system,
-        messages: [
-          {
-            role: "user",
-            content: prompt.user,
-            timestamp: Date.now(),
-          },
-        ],
-        tools: [],
-      },
-      {
-        maxTokens: 1_000,
-        temperature: 0,
-        timeoutMs: 30_000,
-        maxRetries: 0,
-      },
-    );
+    const response = await models.models.completeSimple(model, requestContext, {
+      maxTokens: 1_000,
+      temperature: 0,
+      timeoutMs: 30_000,
+      maxRetries: 0,
+    });
     responseText = contentText(response.content);
     usage = normalizeUsage(response.usage);
     return {
       ...parseSubagentOutcomeReviewResponse(responseText),
       responseSha256: sha256(responseText),
       usage,
+      modelContextEnvelope,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -295,6 +302,7 @@ async function completeSubagentOutcomeReview(
       concerns: ["review_failed_closed"],
       responseSha256: sha256(responseText || message),
       usage,
+      modelContextEnvelope,
     };
   }
 }
@@ -335,6 +343,9 @@ function createSubagentOutcomeReview(input: {
     promptSha256: input.prompt.promptSha256,
     responseSha256: input.response.responseSha256,
     reviewSchemaSha256: input.prompt.reviewSchemaSha256,
+    ...(input.response.modelContextEnvelope
+      ? { modelContextEnvelope: input.response.modelContextEnvelope }
+      : {}),
     createdAt: nowIso(),
   } satisfies Omit<SubagentOutcomeReview, "reviewSha256">;
   return {

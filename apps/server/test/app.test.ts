@@ -7091,6 +7091,9 @@ describe("Napier HTTP goal flow", () => {
         verdict: "accept",
         score: 94,
         risk: "low",
+        modelContextEnvelope: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
         reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
@@ -7104,6 +7107,11 @@ describe("Napier HTTP goal flow", () => {
     );
     expect(response.headers.get("x-napier-subagent-review-score")).toBe("94");
     expect(response.headers.get("x-napier-subagent-review-risk")).toBe("low");
+    expect(
+      response.headers.get(
+        "x-napier-subagent-review-model-context-envelope-sha256",
+      ),
+    ).toBe(review.modelContextEnvelope?.contentSha256);
     expect(await services.store.listEvents(thread.id)).toHaveLength(eventCount);
     expect(reviewer.state.callCount).toBe(1);
     expect(worker.state.callCount).toBe(0);

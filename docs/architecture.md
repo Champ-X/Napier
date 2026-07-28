@@ -2293,6 +2293,7 @@ operator verifies stored outcome
 operator requests independent review
   -> require a reviewer model different from the Subagent worker
   -> send the task + typed outcome to one zero-tool passive reviewer
+  -> bind the request to a hash-only model-context envelope
   -> strictly parse accept / revise / reject / inconclusive
   -> bind criteria, input, prompt, response, usage, models, and outcome hashes
   -> return a no-store review artifact; never mutate or stall the delegation

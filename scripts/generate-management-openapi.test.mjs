@@ -214,6 +214,25 @@ describe("management OpenAPI generator", () => {
           "reviewSha256",
         ]),
         additionalProperties: false,
+        properties: expect.objectContaining({
+          modelContextEnvelope: {
+            $ref: "#/components/schemas/ModelContextEnvelopeReceipt",
+          },
+        }),
+      }),
+    );
+    expect(
+      generated.artifact.components.schemas.ModelContextEnvelopeReceipt,
+    ).toEqual(
+      expect.objectContaining({
+        type: "object",
+        required: expect.arrayContaining([
+          "kind",
+          "messageSetSha256",
+          "toolDefinitionSetSha256",
+          "contentSha256",
+        ]),
+        additionalProperties: false,
       }),
     );
     expect(generated.artifact.paths["/api/receipt-trust/anchors"].get).toEqual(

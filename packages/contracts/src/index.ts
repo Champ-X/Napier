@@ -1748,6 +1748,7 @@ export interface SubagentOutcomeReview {
   promptSha256: string;
   responseSha256: string;
   reviewSchemaSha256: string;
+  modelContextEnvelope?: ModelContextEnvelopeReceipt;
   createdAt: string;
   reviewSha256: string;
 }

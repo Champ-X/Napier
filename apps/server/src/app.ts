@@ -19400,6 +19400,12 @@ function setSubagentOutcomeReviewHeaders(
     "X-Napier-Subagent-Review-Cost-USD",
     String(review.usage.costUsd),
   );
+  if (review.modelContextEnvelope) {
+    context.header(
+      "X-Napier-Subagent-Review-Model-Context-Envelope-SHA256",
+      review.modelContextEnvelope.contentSha256,
+    );
+  }
 }
 
 function setRunControlMessageHeaders(

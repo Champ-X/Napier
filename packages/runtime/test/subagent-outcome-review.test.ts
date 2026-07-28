@@ -118,9 +118,23 @@ describe("Subagent outcome review", () => {
         promptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         responseSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         reviewSchemaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        modelContextEnvelope: expect.objectContaining({
+          kind: "napier.model-context-envelope",
+          schemaVersion: 1,
+          turnIndex: 0,
+          messageCount: 1,
+          toolCount: 0,
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
         createdAt: expect.any(String),
         reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
+    );
+    expect(JSON.stringify(review.modelContextEnvelope)).not.toContain(
+      task.prompt,
+    );
+    expect(JSON.stringify(review.modelContextEnvelope)).not.toContain(
+      task.outcome?.summary,
     );
     expect(faux.state.callCount).toBe(1);
   });
@@ -144,6 +158,9 @@ describe("Subagent outcome review", () => {
         reason: "The independent Subagent outcome reviewer failed closed.",
         concerns: ["review_failed_closed"],
         responseSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        modelContextEnvelope: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
       }),
     );
     expect(JSON.stringify(review)).not.toContain("Not JSON.");
@@ -169,6 +186,7 @@ describe("Subagent outcome review", () => {
         usage: emptyUsage(),
       }),
     );
+    expect(review).not.toHaveProperty("modelContextEnvelope");
   });
 
   it("strictly parses one exact review object and rejects wrappers", () => {

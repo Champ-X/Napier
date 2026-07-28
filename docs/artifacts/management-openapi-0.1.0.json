@@ -10523,6 +10523,82 @@
           }
         }
       },
+      "ModelContextEnvelopeReceipt": {
+        "type": "object",
+        "required": [
+          "kind",
+          "schemaVersion",
+          "turnIndex",
+          "systemPromptSha256",
+          "systemPromptBytes",
+          "messageCount",
+          "userMessageCount",
+          "assistantMessageCount",
+          "toolResultMessageCount",
+          "otherMessageCount",
+          "messageSetSha256",
+          "toolCount",
+          "toolNameSetSha256",
+          "toolDefinitionSetSha256",
+          "contentSha256"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "const": "napier.model-context-envelope"
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "turnIndex": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "systemPromptSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "systemPromptBytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "messageCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "userMessageCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "assistantMessageCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "toolResultMessageCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "otherMessageCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "messageSetSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "toolCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "toolNameSetSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "toolDefinitionSetSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "contentSha256": {
+            "$ref": "#/components/schemas/Sha256Hex"
+          }
+        }
+      },
       "ReviewSubagentOutcomeRequest": {
         "type": "object",
         "required": [
@@ -11173,6 +11249,9 @@
           },
           "reviewSchemaSha256": {
             "$ref": "#/components/schemas/Sha256Hex"
+          },
+          "modelContextEnvelope": {
+            "$ref": "#/components/schemas/ModelContextEnvelopeReceipt"
           },
           "createdAt": {
             "type": "string",
@@ -13021,7 +13100,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "f11b9c25b39c75cdab6b3c6d45b971697951563a803e5c4a1205847ec6bd0ad6",
+  "x-napier-source-sha256": "a946736c010538a8c525a21d6837daf8a24a4a610b222ae9b3233bb0c6d03a4f",
   "x-napier-route-count": 229,
   "x-napier-route-set-sha256": "b43d3ecd8d0eafaba14e4e04ef1c5fd0a9c07b1356049f31e257149601e42096"
 }

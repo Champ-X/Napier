@@ -1034,10 +1034,12 @@ An operator can also run `POST
 from the worker. This no-store, zero-tool reviewer scores task alignment,
 evidence grounding, uncertainty honesty, and actionability, returning
 `accept`, `revise`, `reject`, or `inconclusive` with score, risk, reason,
-concerns, usage, and a stable review SHA-256. Reviewer failures become
-inconclusive artifacts and never rewrite the task, append Ledger events, or
-stall the completed delegation. The Trace card uses the globally selected
-model as the reviewer candidate and disables review until it is independent.
+concerns, usage, and a stable review SHA-256. Live reviewer artifacts also
+carry the hash-only model-context envelope for the no-tool request without
+copying the task prompt or outcome text. Reviewer failures become inconclusive
+artifacts and never rewrite the task, append Ledger events, or stall the
+completed delegation. The Trace card uses the globally selected model as the
+reviewer candidate and disables review until it is independent.
 Every parent model request also receives a freshly derived, bounded
 `napier.delegation-ledger-projection` system block. It prioritizes active and
 recent terminal tasks, binds both the selected projection and complete task
