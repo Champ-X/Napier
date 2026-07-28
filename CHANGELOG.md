@@ -207,9 +207,10 @@ All notable changes to Napier are recorded here.
   replay outcomes against reusable delivery criteria with an explicit evaluator
   model. The review binds verdict, score, risk, criteria scores,
   input/prompt/response/schema hashes, current outcome hashes, and baseline
-  hashes while keeping objective text, artifact paths, blockers, and evidence
-  prose out of the artifact. `napier/demo` fails closed as inconclusive, and
-  the Template shelf exposes Review outcomes through a ViewModel receipt.
+  hashes, plus the live request's hash-only model-context envelope, while
+  keeping objective text, artifact paths, blockers, and evidence prose out of
+  the artifact. `napier/demo` fails closed as inconclusive, and the Template
+  shelf exposes Review outcomes through a ViewModel receipt.
 - Reviewed blueprint outcome baseline promotion. Outcome baseline promotion can
   now carry a current outcome review artifact plus an optional score/risk gate.
   The Store rehashes the review, verifies it against current replay outcomes,

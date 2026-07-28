@@ -6,12 +6,14 @@ import type {
   ExecutionPlanBlueprintOutcomeReviewVerdict,
   ExecutionPlanBlueprintRecordOutcomeReview,
   ExecutionPlanBlueprintRecordReplayOutcomes,
+  ModelContextEnvelopeReceipt,
   ModelRef,
   ReviewExecutionPlanBlueprintRecordOutcomesRequest,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
+import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import type { ModelRegistry } from "./models.js";
 import type { LocalStore } from "./store.js";
 
@@ -172,6 +174,7 @@ interface ParsedBlueprintOutcomeReview {
   concerns: string[];
   scores: ExecutionPlanBlueprintOutcomeReviewScore[];
   responseSha256: string;
+  modelContextEnvelope?: ModelContextEnvelopeReceipt;
 }
 
 async function completeBlueprintOutcomeReview(
@@ -180,26 +183,33 @@ async function completeBlueprintOutcomeReview(
   prompt: BlueprintOutcomeReviewPrompt,
   criteria: ExecutionPlanBlueprintOutcomeReviewCriteria,
 ): Promise<ParsedBlueprintOutcomeReview> {
-  try {
-    const response = await models.models.completeSimple(
-      model,
+  const requestContext = {
+    systemPrompt: prompt.system,
+    messages: [
       {
-        systemPrompt: prompt.system,
-        messages: [
-          {
-            role: "user",
-            content: prompt.user,
-            timestamp: Date.now(),
-          },
-        ],
-        tools: [],
+        role: "user" as const,
+        content: prompt.user,
+        timestamp: Date.now(),
       },
-      { maxTokens: 1_200, temperature: 0 },
-    );
+    ],
+    tools: [],
+  };
+  const modelContextEnvelope = createModelContextEnvelopeReceipt({
+    turnIndex: 0,
+    systemPrompt: requestContext.systemPrompt,
+    messages: requestContext.messages,
+    tools: requestContext.tools,
+  });
+  try {
+    const response = await models.models.completeSimple(model, requestContext, {
+      maxTokens: 1_200,
+      temperature: 0,
+    });
     const text = contentText(response.content);
     return {
       ...parseBlueprintOutcomeReviewResponse(text, criteria),
       responseSha256: sha256(text),
+      modelContextEnvelope,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -211,6 +221,7 @@ async function completeBlueprintOutcomeReview(
       concerns: ["review_failed_closed"],
       scores: [],
       responseSha256: sha256(message),
+      modelContextEnvelope,
     };
   }
 }
@@ -451,6 +462,9 @@ function createBlueprintOutcomeReview(input: {
     promptSha256: input.prompt.promptSha256,
     responseSha256: input.response.responseSha256,
     reviewSchemaSha256: input.prompt.reviewSchemaSha256,
+    ...(input.response.modelContextEnvelope
+      ? { modelContextEnvelope: input.response.modelContextEnvelope }
+      : {}),
     createdAt: nowIso(),
   } satisfies Omit<ExecutionPlanBlueprintRecordOutcomeReview, "reviewSha256">;
   return {

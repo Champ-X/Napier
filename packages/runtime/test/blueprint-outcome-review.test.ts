@@ -217,6 +217,14 @@ describe("blueprint outcome model review", () => {
         promptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         responseSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         reviewSchemaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        modelContextEnvelope: expect.objectContaining({
+          kind: "napier.model-context-envelope",
+          schemaVersion: 1,
+          turnIndex: 0,
+          messageCount: 1,
+          toolCount: 0,
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
         reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
@@ -232,6 +240,12 @@ describe("blueprint outcome model review", () => {
     );
     expect(serialized).not.toContain("private/release-note.md");
     expect(serialized).not.toContain("Sensitive preparation evidence");
+    expect(JSON.stringify(review.modelContextEnvelope)).not.toContain(
+      "Create a reusable release review workflow",
+    );
+    expect(JSON.stringify(review.modelContextEnvelope)).not.toContain(
+      "private/release-note.md",
+    );
     expect(review.reviewSha256).not.toBe(review.responseSha256);
     const reviewedBaseline =
       await store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
@@ -269,6 +283,24 @@ describe("blueprint outcome model review", () => {
         },
       ),
     ).rejects.toThrow("Execution plan blueprint outcome review hash mismatch");
+    const envelope = review.modelContextEnvelope;
+    expect(envelope).toBeDefined();
+    if (!envelope) throw new Error("Expected blueprint review envelope");
+    await expect(
+      store.promoteExecutionPlanBlueprintRecordOutcomeBaseline(
+        saved.record.id,
+        {
+          outcomes,
+          review: {
+            ...review,
+            modelContextEnvelope: {
+              ...envelope,
+              contentSha256: "b".repeat(64),
+            },
+          },
+        },
+      ),
+    ).rejects.toThrow("Model context envelope hash mismatch");
   });
 
   it("fails closed for demo or malformed reviewer output", async () => {
@@ -342,7 +374,34 @@ describe("blueprint outcome model review", () => {
         concerns: ["live_model_required"],
       }),
     );
+    expect(demoReview).not.toHaveProperty("modelContextEnvelope");
     expect(demoReview.reviewSha256).toMatch(/^[a-f0-9]{64}$/);
+
+    const provider = fauxProvider({ provider: "faux-outcome-review-failure" });
+    provider.setResponses([fauxAssistantMessage("not json")]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+    const malformedReview = await reviewExecutionPlanBlueprintRecordOutcomes(
+      store,
+      models,
+      saved.record.id,
+      {
+        model: { provider: "faux-outcome-review-failure", id: "faux-1" },
+      },
+    );
+    expect(malformedReview).toEqual(
+      expect.objectContaining({
+        verdict: "inconclusive",
+        score: 0,
+        risk: "high",
+        concerns: ["review_failed_closed"],
+        modelContextEnvelope: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(JSON.stringify(malformedReview)).not.toContain("not json");
+
     const outcomes = await store.getExecutionPlanBlueprintRecordReplayOutcomes(
       saved.record.id,
     );

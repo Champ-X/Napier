@@ -2882,7 +2882,8 @@ promote blueprint record outcome baseline
   -> append a hash-only baseline containing outcome receipt hash,
      replay-history hash, outcome-set hash, counts, policy, and supersession ID
   -> optionally accept a napier.execution-plan-blueprint-outcome-review
-     artifact; rehash the review, require it to match current outcomes, current
+     artifact whose live request can be bound to a hash-only model-context
+     envelope; rehash the review, require it to match current outcomes, current
      source qualification, and current outcome qualification status, then gate
      verdict=promote, score, and risk before persisting review hash/model
      evidence into the append-only baseline

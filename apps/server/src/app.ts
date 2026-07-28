@@ -18211,6 +18211,12 @@ function setExecutionPlanBlueprintRecordOutcomeReviewHeaders(
     "X-Napier-Blueprint-Outcome-Review-Schema-SHA256",
     review.reviewSchemaSha256,
   );
+  if (review.modelContextEnvelope) {
+    context.header(
+      "X-Napier-Blueprint-Outcome-Review-Model-Context-Envelope-SHA256",
+      review.modelContextEnvelope.contentSha256,
+    );
+  }
   context.header("X-Napier-Model-Provider", review.model.provider);
   context.header("X-Napier-Model-Id", review.model.id);
   context.header(

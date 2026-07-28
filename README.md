@@ -1184,12 +1184,13 @@ through `POST /api/plan-blueprints/:recordId/replays/outcomes/review`. The
 review is no-store and returns a
 `napier.execution-plan-blueprint-outcome-review` artifact with verdict, score,
 risk, criteria scores, model, input/prompt/response hashes, review schema hash,
-and the current outcome/baseline hashes; `napier/demo` fails closed as
-`inconclusive`. The review input uses only aggregate counts, replay statuses,
-Plan projection hashes, outcome hashes, and policy evidence, so objective text,
-artifact paths, blockers, and evidence prose are not copied into the review
-artifact. The same review artifact can be passed back into outcome baseline
-promotion. Reviewed promotion re-verifies the review hash, current outcomes,
+the current outcome/baseline hashes, and the live request's hash-only
+model-context envelope; `napier/demo` fails closed as `inconclusive`. The
+review input uses only aggregate counts, replay statuses, Plan projection
+hashes, outcome hashes, and policy evidence, so objective text, artifact paths,
+blockers, and evidence prose are not copied into the review artifact. The same
+review artifact can be passed back into outcome baseline promotion. Reviewed
+promotion re-verifies the review hash, current outcomes,
 source qualification, outcome qualification status, and a gate that defaults
 to score >= 80 with risk <= medium before appending review input/response/model
 hash evidence into the superseding baseline and response headers. The Plan

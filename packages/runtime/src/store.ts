@@ -350,6 +350,7 @@ import {
   normalizeEvaluationSuiteGate,
   updateEvaluationSuiteRecord,
 } from "./evaluation-suites.js";
+import { validateModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import {
   MAX_QUALIFICATION_BASELINES_PER_CASEBOOK,
   MAX_RECEIPT_TRUST_ANCHORS,
@@ -12943,6 +12944,9 @@ function validateExecutionPlanBlueprintOutcomeReview(
     !Number.isFinite(Date.parse(review.createdAt))
   ) {
     throw new Error("Execution plan blueprint outcome review is invalid");
+  }
+  if (review.modelContextEnvelope !== undefined) {
+    validateModelContextEnvelopeReceipt(review.modelContextEnvelope);
   }
   const { reviewSha256: _reviewSha256, ...content } = review;
   if (sha256(canonicalJson(content)) !== review.reviewSha256) {

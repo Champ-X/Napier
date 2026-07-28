@@ -5446,6 +5446,7 @@ describe("Napier HTTP goal flow", () => {
         reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    expect(outcomeReview).not.toHaveProperty("modelContextEnvelope");
     expect(JSON.stringify(outcomeReview)).not.toContain(recordPlan.objective);
     expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(
       outcomeReviewResponse,
@@ -5638,11 +5639,19 @@ describe("Napier HTTP goal flow", () => {
         outcomeQualificationStatus: "qualified",
         baselineId: outcomeBaselineResult.baseline.id,
         baselineSha256: outcomeBaselineResult.baseline.contentSha256,
+        modelContextEnvelope: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
       }),
     );
     expect(JSON.stringify(promotedOutcomeReview)).not.toContain(
       recordPlan.objective,
     );
+    expect(
+      promotedOutcomeReviewResponse.headers.get(
+        "x-napier-blueprint-outcome-review-model-context-envelope-sha256",
+      ),
+    ).toBe(promotedOutcomeReview.modelContextEnvelope?.contentSha256);
     expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(
       promotedOutcomeReviewResponse,
       promotedOutcomeReview,
@@ -10767,6 +10776,11 @@ function expectExecutionPlanBlueprintRecordOutcomeReviewHeaders(
   expect(
     response.headers.get("x-napier-blueprint-outcome-review-schema-sha256"),
   ).toBe(review.reviewSchemaSha256);
+  expect(
+    response.headers.get(
+      "x-napier-blueprint-outcome-review-model-context-envelope-sha256",
+    ),
+  ).toBe(review.modelContextEnvelope?.contentSha256 ?? null);
   expect(response.headers.get("x-napier-model-provider")).toBe(
     review.model.provider,
   );
