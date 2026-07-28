@@ -290,6 +290,88 @@ describe("model advisor stream lint", () => {
     );
   });
 
+  it("flags goal completion claims without a satisfied goal evaluation", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The active goal is complete.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          goalSatisfied: false,
+          goalSatisfiedAfterWorkspaceWrite: false,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("suppresses goal completion claims after a current satisfied evaluation", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The active goal is complete.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        goalEvent(1, {
+          status: "completed",
+          satisfied: true,
+          blocker: "none",
+        }),
+      ],
+    });
+
+    expect(notice).toBeUndefined();
+  });
+
+  it("marks satisfied goal evidence stale after later workspace writes", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The active goal is complete.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        goalEvent(1, {
+          status: "completed",
+          satisfied: true,
+          blocker: "none",
+        }),
+        toolCompleted(2, {
+          callId: "tool_2",
+          toolName: "apply_patch",
+          status: "completed",
+          details: {
+            operation: "replace",
+            afterSha256: "a".repeat(64),
+          },
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          goalSatisfied: true,
+          goalSatisfiedAfterWorkspaceWrite: false,
+          latestGoalSatisfiedSeq: 1,
+          latestWorkspaceWriteSeq: 2,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("flags destructive command references without copying text", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "Never run git reset --hard here.",
@@ -541,6 +623,20 @@ function planEvent(
     seq,
     type,
     category: "plan",
+    visibility: "user",
+    createdAt: "2026-07-27T00:00:00.000Z",
+    payload,
+  };
+}
+
+function goalEvent(seq: number, payload: Record<string, unknown>): RunEvent {
+  return {
+    id: `evt_${seq}`,
+    threadId: "thread_1",
+    runId: "run_1",
+    seq,
+    type: "goal.evaluated",
+    category: "goal",
     visibility: "user",
     createdAt: "2026-07-27T00:00:00.000Z",
     payload,

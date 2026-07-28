@@ -19,12 +19,15 @@ export interface ModelAdvisorEventTraceView {
   verificationToolPassedAfterWorkspaceWrite?: boolean;
   planCompleted?: boolean;
   planArtifactVerified?: boolean;
+  goalSatisfied?: boolean;
   planCompletedAfterWorkspaceWrite?: boolean;
   planArtifactVerifiedAfterWorkspaceWrite?: boolean;
+  goalSatisfiedAfterWorkspaceWrite?: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
+  latestGoalSatisfiedSeq?: number;
   textSha256?: string;
   candidateTextSha256?: string;
   diagnosticSetSha256?: string;
@@ -98,11 +101,15 @@ export function modelAdvisorEventTraceView(
   );
   const planCompleted = booleanValue(evidence["planCompleted"]);
   const planArtifactVerified = booleanValue(evidence["planArtifactVerified"]);
+  const goalSatisfied = booleanValue(evidence["goalSatisfied"]);
   const planCompletedAfterWorkspaceWrite = booleanValue(
     evidence["planCompletedAfterWorkspaceWrite"],
   );
   const planArtifactVerifiedAfterWorkspaceWrite = booleanValue(
     evidence["planArtifactVerifiedAfterWorkspaceWrite"],
+  );
+  const goalSatisfiedAfterWorkspaceWrite = booleanValue(
+    evidence["goalSatisfiedAfterWorkspaceWrite"],
   );
   const latestWorkspaceWriteSeq = nonNegativeInteger(
     evidence["latestWorkspaceWriteSeq"],
@@ -115,6 +122,9 @@ export function modelAdvisorEventTraceView(
   );
   const latestPlanArtifactVerifiedSeq = nonNegativeInteger(
     evidence["latestPlanArtifactVerifiedSeq"],
+  );
+  const latestGoalSatisfiedSeq = nonNegativeInteger(
+    evidence["latestGoalSatisfiedSeq"],
   );
   const textSha256 = sha256(event.payload["textSha256"]);
   const candidateTextSha256 = sha256(event.payload["candidateTextSha256"]);
@@ -161,11 +171,15 @@ export function modelAdvisorEventTraceView(
       : {}),
     ...(planCompleted !== undefined ? { planCompleted } : {}),
     ...(planArtifactVerified !== undefined ? { planArtifactVerified } : {}),
+    ...(goalSatisfied !== undefined ? { goalSatisfied } : {}),
     ...(planCompletedAfterWorkspaceWrite !== undefined
       ? { planCompletedAfterWorkspaceWrite }
       : {}),
     ...(planArtifactVerifiedAfterWorkspaceWrite !== undefined
       ? { planArtifactVerifiedAfterWorkspaceWrite }
+      : {}),
+    ...(goalSatisfiedAfterWorkspaceWrite !== undefined
+      ? { goalSatisfiedAfterWorkspaceWrite }
       : {}),
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
@@ -177,6 +191,7 @@ export function modelAdvisorEventTraceView(
     ...(latestPlanArtifactVerifiedSeq !== undefined
       ? { latestPlanArtifactVerifiedSeq }
       : {}),
+    ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
     ...(issueSetSha256 ? { issueSetSha256 } : {}),
     ...(evidenceSha256 ? { evidenceSha256 } : {}),
@@ -282,6 +297,21 @@ export function modelAdvisorEventTraceSummary(
             : view.planArtifactVerified && view.workspaceWriteCompleted
               ? "artifact-verification-stale"
               : "artifact-verification-not-current",
+        ]
+      : []),
+    ...(view.goalSatisfied !== undefined
+      ? [view.goalSatisfied ? "goal-satisfied" : "goal-not-satisfied"]
+      : []),
+    ...(view.latestGoalSatisfiedSeq !== undefined
+      ? [`goal-satisfied-seq ${view.latestGoalSatisfiedSeq}`]
+      : []),
+    ...(view.goalSatisfiedAfterWorkspaceWrite !== undefined
+      ? [
+          view.goalSatisfiedAfterWorkspaceWrite
+            ? "goal-satisfaction-current"
+            : view.goalSatisfied && view.workspaceWriteCompleted
+              ? "goal-satisfaction-stale"
+              : "goal-satisfaction-not-current",
         ]
       : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),

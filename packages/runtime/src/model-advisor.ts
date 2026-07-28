@@ -70,6 +70,12 @@ const ARTIFACT_VERIFICATION_CLAIM_PATTERNS = [
   /(?:产物|交付物|输出|报告|文件).{0,18}(?:验证|已验证|校验|已校验|哈希|已哈希)/u,
 ];
 
+const GOAL_COMPLETION_CLAIM_PATTERNS = [
+  /\b(?:goal|objective)\b.{0,32}\b(?:is|was|has been|now)\s+(?:complete|completed|satisfied|met|achieved|done)\b/iu,
+  /\b(?:completed|satisfied|met|achieved)\b.{0,32}\b(?:goal|objective)\b/iu,
+  /(?:目标|任务目标).{0,18}(?:完成|已完成|满足|已满足|达成|已达成)/u,
+];
+
 const DESTRUCTIVE_COMMAND_PATTERNS = [
   /\bgit\s+reset\s+--hard\b/iu,
   /\bgit\s+checkout\s+--\s+\S+/iu,
@@ -342,6 +348,10 @@ function createVerificationClaimDiagnostic(
     assistantText,
     ARTIFACT_VERIFICATION_CLAIM_PATTERNS,
   );
+  const goalCompletionClaimCount = countPatternHits(
+    assistantText,
+    GOAL_COMPLETION_CLAIM_PATTERNS,
+  );
   const unsupportedVerificationClaimCount =
     evidence.verificationToolPassedAfterWorkspaceWrite
       ? 0
@@ -352,10 +362,13 @@ function createVerificationClaimDiagnostic(
     evidence.planArtifactVerifiedAfterWorkspaceWrite
       ? 0
       : artifactVerificationClaimCount;
+  const unsupportedGoalCompletionClaimCount =
+    evidence.goalSatisfiedAfterWorkspaceWrite ? 0 : goalCompletionClaimCount;
   const matchCount =
     unsupportedVerificationClaimCount +
     unsupportedPlanCompletionClaimCount +
-    unsupportedArtifactVerificationClaimCount;
+    unsupportedArtifactVerificationClaimCount +
+    unsupportedGoalCompletionClaimCount;
   if (matchCount === 0) {
     return undefined;
   }
@@ -368,9 +381,11 @@ function createVerificationClaimDiagnostic(
       verificationClaimCount,
       planCompletionClaimCount,
       artifactVerificationClaimCount,
+      goalCompletionClaimCount,
       unsupportedVerificationClaimCount,
       unsupportedPlanCompletionClaimCount,
       unsupportedArtifactVerificationClaimCount,
+      unsupportedGoalCompletionClaimCount,
       verificationToolCompleted: evidence.verificationToolCompleted,
       verificationToolPassed: evidence.verificationToolPassed,
       workspaceWriteCompleted: evidence.workspaceWriteCompleted,
@@ -378,14 +393,18 @@ function createVerificationClaimDiagnostic(
         evidence.verificationToolPassedAfterWorkspaceWrite,
       planCompleted: evidence.planCompleted,
       planArtifactVerified: evidence.planArtifactVerified,
+      goalSatisfied: evidence.goalSatisfied,
       planCompletedAfterWorkspaceWrite:
         evidence.planCompletedAfterWorkspaceWrite,
       planArtifactVerifiedAfterWorkspaceWrite:
         evidence.planArtifactVerifiedAfterWorkspaceWrite,
+      goalSatisfiedAfterWorkspaceWrite:
+        evidence.goalSatisfiedAfterWorkspaceWrite,
       latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq,
       latestPassedVerificationSeq: evidence.latestPassedVerificationSeq,
       latestPlanCompletedSeq: evidence.latestPlanCompletedSeq,
       latestPlanArtifactVerifiedSeq: evidence.latestPlanArtifactVerifiedSeq,
+      latestGoalSatisfiedSeq: evidence.latestGoalSatisfiedSeq,
       toolCompletedCount: evidence.toolCompletedCount,
     },
   );

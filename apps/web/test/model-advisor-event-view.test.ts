@@ -112,11 +112,14 @@ describe("Model Advisor event trace view", () => {
         workspaceWriteCompleted: true,
         planCompleted: true,
         planArtifactVerified: true,
+        goalSatisfied: true,
         planCompletedAfterWorkspaceWrite: false,
         planArtifactVerifiedAfterWorkspaceWrite: false,
+        goalSatisfiedAfterWorkspaceWrite: false,
         latestWorkspaceWriteSeq: 17,
         latestPlanCompletedSeq: 12,
         latestPlanArtifactVerifiedSeq: 11,
+        latestGoalSatisfiedSeq: 10,
       },
       contentSha256: "c".repeat(64),
     });
@@ -130,17 +133,20 @@ describe("Model Advisor event trace view", () => {
       workspaceWriteCompleted: true,
       planCompleted: true,
       planArtifactVerified: true,
+      goalSatisfied: true,
       planCompletedAfterWorkspaceWrite: false,
       planArtifactVerifiedAfterWorkspaceWrite: false,
+      goalSatisfiedAfterWorkspaceWrite: false,
       latestWorkspaceWriteSeq: 17,
       latestPlanCompletedSeq: 12,
       latestPlanArtifactVerifiedSeq: 11,
+      latestGoalSatisfiedSeq: 10,
       textSha256: "a".repeat(64),
       diagnosticSetSha256: "b".repeat(64),
       contentSha256: "c".repeat(64),
     });
     expect(modelAdvisorEventTraceSummary(event)).toBe(
-      `advisor / notice / status notice / source deterministic_stream_lint / turn user / diagnostics 1 / workspace-write / workspace-write-seq 17 / plan-completed / plan-completed-seq 12 / plan-completion-stale / artifact-verified / artifact-verified-seq 11 / artifact-verification-stale / text ${"a".repeat(12)} / diagnostics ${"b".repeat(12)} / receipt ${"c".repeat(12)}`,
+      `advisor / notice / status notice / source deterministic_stream_lint / turn user / diagnostics 1 / workspace-write / workspace-write-seq 17 / plan-completed / plan-completed-seq 12 / plan-completion-stale / artifact-verified / artifact-verified-seq 11 / artifact-verification-stale / goal-satisfied / goal-satisfied-seq 10 / goal-satisfaction-stale / text ${"a".repeat(12)} / diagnostics ${"b".repeat(12)} / receipt ${"c".repeat(12)}`,
     );
     expect(modelAdvisorEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

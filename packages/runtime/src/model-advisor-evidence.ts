@@ -7,12 +7,15 @@ export interface ModelAdvisorVerificationEvidence {
   verificationToolPassedAfterWorkspaceWrite: boolean;
   planCompleted: boolean;
   planArtifactVerified: boolean;
+  goalSatisfied: boolean;
   planCompletedAfterWorkspaceWrite: boolean;
   planArtifactVerifiedAfterWorkspaceWrite: boolean;
+  goalSatisfiedAfterWorkspaceWrite: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
   latestPlanArtifactVerifiedSeq?: number;
+  latestGoalSatisfiedSeq?: number;
 }
 
 export function isVerifyWorkspaceCompletion(event: RunEvent): boolean {
@@ -62,6 +65,16 @@ export function isPlanArtifactVerificationEvent(event: RunEvent): boolean {
   );
 }
 
+export function isGoalSatisfiedEvent(event: RunEvent): boolean {
+  return (
+    event.type === "goal.evaluated" &&
+    event.category === "goal" &&
+    isRecord(event.payload) &&
+    event.payload["satisfied"] === true &&
+    event.payload["status"] === "completed"
+  );
+}
+
 export function createModelAdvisorVerificationEvidence(
   events: RunEvent[],
 ): ModelAdvisorVerificationEvidence {
@@ -75,6 +88,7 @@ export function createModelAdvisorVerificationEvidence(
     events,
     isPlanArtifactVerificationEvent,
   );
+  const latestGoalSatisfiedSeq = latestSeq(events, isGoalSatisfiedEvent);
   const verificationToolPassedAfterWorkspaceWrite =
     latestPassedVerificationSeq !== undefined &&
     (latestWorkspaceWriteSeq === undefined ||
@@ -87,6 +101,10 @@ export function createModelAdvisorVerificationEvidence(
     latestPlanArtifactVerifiedSeq !== undefined &&
     (latestWorkspaceWriteSeq === undefined ||
       latestPlanArtifactVerifiedSeq > latestWorkspaceWriteSeq);
+  const goalSatisfiedAfterWorkspaceWrite =
+    latestGoalSatisfiedSeq !== undefined &&
+    (latestWorkspaceWriteSeq === undefined ||
+      latestGoalSatisfiedSeq > latestWorkspaceWriteSeq);
   return {
     verificationToolCompleted: events.some(isVerifyWorkspaceCompletion),
     verificationToolPassed: latestPassedVerificationSeq !== undefined,
@@ -94,8 +112,10 @@ export function createModelAdvisorVerificationEvidence(
     verificationToolPassedAfterWorkspaceWrite,
     planCompleted: latestPlanCompletedSeq !== undefined,
     planArtifactVerified: latestPlanArtifactVerifiedSeq !== undefined,
+    goalSatisfied: latestGoalSatisfiedSeq !== undefined,
     planCompletedAfterWorkspaceWrite,
     planArtifactVerifiedAfterWorkspaceWrite,
+    goalSatisfiedAfterWorkspaceWrite,
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
       : {}),
@@ -106,6 +126,7 @@ export function createModelAdvisorVerificationEvidence(
     ...(latestPlanArtifactVerifiedSeq !== undefined
       ? { latestPlanArtifactVerifiedSeq }
       : {}),
+    ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
   };
 }
 
