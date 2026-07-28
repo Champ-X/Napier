@@ -140,6 +140,9 @@ All notable changes to Napier are recorded here.
 - Trace event summaries now project `thread.imported` receipts through a
   bounded import provenance view that shows only source hashes, event counts,
   local cutoff, and envelope coverage counts.
+- Trace event summaries now project `model.response` receipts through a
+  metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
+  and malformed payload text cannot leak through the event-list fallback.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,

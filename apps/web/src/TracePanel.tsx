@@ -37,6 +37,7 @@ import {
   type ModelContextEnvelopeView,
 } from "./model-context-envelope-view";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
+import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import {
@@ -939,6 +940,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type === "thread.imported") {
     return threadImportedSummary(event) ?? event.category;
+  }
+  if (event.type === "model.response") {
+    return modelResponseTraceSummary(event) ?? event.category;
   }
   if (
     !event.payload ||

@@ -2301,6 +2301,11 @@ It applies the same bounded projection pattern to `thread.imported` receipts:
 the Trace list shows source content hash, source event-stream hash, imported
 source event count, local cutoff, and envelope coverage counts, while ignoring
 source IDs, API version strings, arbitrary text fields, and raw replay content.
+`model.response` summaries are also rendered through a metadata/hash-only view:
+the list may show model, stop reason, model-call purpose, envelope turn index,
+tool-call count, token counts, and response/error hashes, but not assistant
+text, reasoning, or tool-call arguments. Malformed model response receipts fail
+closed to a fixed summary before the generic payload text fallback runs.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
