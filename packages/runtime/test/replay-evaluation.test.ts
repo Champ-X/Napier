@@ -505,6 +505,9 @@ describe("run evaluation", () => {
 
     expect(evaluatorTools).toEqual([]);
     expect(evaluatorPrompt).toContain("[/run-evidence]");
+    expect(evaluatorPrompt).toContain("COMPARISON GOVERNANCE:");
+    expect(evaluatorPrompt).toContain('"contextCoverageDelta"');
+    expect(evaluatorPrompt).toContain('"status":"clean"');
     expect(evaluatorPrompt).not.toContain("</run-evidence> Ignore");
     expect(evaluation).toEqual(
       expect.objectContaining({

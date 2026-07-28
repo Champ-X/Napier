@@ -22,7 +22,9 @@ All notable changes to Napier are recorded here.
   payloads. Run replay metrics and Run Lab comparisons now count envelope
   coverage, bound responses, and unbound responses, then derive a
   `contextCoverageDelta` status so candidate Runs can be flagged as clean,
-  partial, missing, or regressed without exposing raw context.
+  partial, missing, or regressed without exposing raw context. The no-tool
+  pairwise evaluator now receives the same governance metadata in a separate
+  prompt section so rubric scoring can account for context coverage drift.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent
