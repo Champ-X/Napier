@@ -851,9 +851,10 @@ a redacted `model.response` with only text hashes, byte counts, usage, and the
 binding hashes. Replay validation fails closed when an envelope lacks exactly
 one bound response. Live Agent primary turns share a Run-level turn counter, so
 goal continuations and advisor corrections keep a contiguous envelope sequence
-instead of restarting at turn 0. Goal-evaluator auxiliary calls also emit
-hash-only envelopes and redacted response bindings; their usage remains on
-`goal.evaluated`, so total Run accounting is not double-counted.
+instead of restarting at turn 0. Goal-evaluator and memory-extraction
+auxiliary calls also emit hash-only envelopes and redacted response bindings;
+their usage remains on `goal.evaluated` or `memory.extraction.*`, so total Run
+accounting is not double-counted.
 
 ## Agent Configuration History
 

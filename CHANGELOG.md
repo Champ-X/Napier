@@ -41,9 +41,9 @@ All notable changes to Napier are recorded here.
   turn-indexed envelope/response binding. Live Agent primary turns now share a
   Run-level envelope turn counter, so goal continuations and advisor
   corrections cannot restart at turn 0 inside the same Run. Live goal-evaluator
-  auxiliary calls now also record hash-only envelopes plus redacted response
-  bindings, while token/cost accounting remains on `goal.evaluated` to avoid
-  double counting.
+  auxiliary calls and memory extraction now also record hash-only envelopes
+  plus redacted response bindings, while token/cost accounting remains on
+  `goal.evaluated` or `memory.extraction.*` to avoid double counting.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

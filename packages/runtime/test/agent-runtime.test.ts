@@ -671,7 +671,7 @@ describe("AgentRuntime demo path", () => {
           typeof payload === "object",
       )
       .map((payload) => payload["turnIndex"]);
-    expect(envelopeTurnIndexes).toEqual([0, 1, 2, 3]);
+    expect(envelopeTurnIndexes).toEqual([0, 1, 2, 3, 4]);
     const responseTurnIndexes = detail.events
       .filter((event) => event.type === "model.response")
       .map((event) => event.payload)
@@ -682,7 +682,7 @@ describe("AgentRuntime demo path", () => {
           typeof payload === "object",
       )
       .map((payload) => payload["modelContextEnvelopeTurnIndex"]);
-    expect(responseTurnIndexes).toEqual([0, 1, 2, 3]);
+    expect(responseTurnIndexes).toEqual([0, 1, 2, 3, 4]);
     expect(
       detail.events
         .filter((event) => event.type === "model.response")
@@ -692,10 +692,18 @@ describe("AgentRuntime demo path", () => {
             Boolean(payload) &&
             !Array.isArray(payload) &&
             typeof payload === "object" &&
-            payload["modelCallPurpose"] === "goal_evaluation",
+            (payload["modelCallPurpose"] === "goal_evaluation" ||
+              payload["modelCallPurpose"] === "memory_extraction"),
         )
-        .map((payload) => payload["usage"]),
-    ).toEqual([undefined, undefined]);
+        .map((payload) => ({
+          purpose: payload["modelCallPurpose"],
+          usage: payload["usage"],
+        })),
+    ).toEqual([
+      { purpose: "goal_evaluation", usage: undefined },
+      { purpose: "goal_evaluation", usage: undefined },
+      { purpose: "memory_extraction", usage: undefined },
+    ]);
     await expect(exportThreadReplayBundle(store, thread.id)).resolves.toEqual(
       expect.objectContaining({
         thread: expect.objectContaining({ id: thread.id }),
@@ -1152,16 +1160,17 @@ describe("AgentRuntime demo path", () => {
         .every((usage) => usage.inputTokens > 0 && usage.outputTokens > 0),
     ).toBe(true);
     const accountedUsage = events
-      .filter((event) =>
-        [
-          "model.response",
-          "context.compaction.completed",
-          "context.compaction.failed",
-          "goal.evaluated",
-          "memory.extraction.completed",
-          "memory.extraction.failed",
-          "model.advisor.independent.reviewed",
-        ].includes(event.type),
+      .filter(
+        (event) =>
+          (event.type === "model.response" && hasLedgerEventUsage(event)) ||
+          [
+            "context.compaction.completed",
+            "context.compaction.failed",
+            "goal.evaluated",
+            "memory.extraction.completed",
+            "memory.extraction.failed",
+            "model.advisor.independent.reviewed",
+          ].includes(event.type),
       )
       .map(ledgerEventUsage)
       .reduce(
