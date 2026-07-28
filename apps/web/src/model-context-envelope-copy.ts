@@ -1,0 +1,18 @@
+export const modelContextEnvelopeCopy = {
+  eyebrow: "MODEL CONTEXT",
+  title: "Provider request envelopes",
+  empty: "No model context envelope has been recorded for this Thread.",
+  turn: "Turn",
+  messages: "Messages",
+  users: "Users",
+  assistants: "Assistants",
+  tools: "Tool results",
+  other: "Other",
+  promptBytes: "Prompt bytes",
+  toolCount: "Tools",
+  prompt: "Prompt",
+  messageSet: "Messages",
+  toolNames: "Tool names",
+  toolDefinitions: "Tool definitions",
+  receipt: "Receipt",
+} as const;

@@ -6347,6 +6347,20 @@ button:disabled {
   border-top: 1px dotted var(--rule);
 }
 
+.model-context-envelope-ledger > header div > span {
+  color: var(--ledger);
+}
+
+.model-context-envelope-card {
+  background:
+    linear-gradient(rgb(255 255 255 / 34%), rgb(255 255 255 / 34%)), #f3efe4;
+  border-left-color: var(--ledger);
+}
+
+.model-context-envelope-card > header svg {
+  color: var(--ledger);
+}
+
 .independent-advisor-ledger > header,
 .independent-advisor-card > header,
 .independent-advisor-card > footer,

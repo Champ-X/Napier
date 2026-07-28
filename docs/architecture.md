@@ -159,9 +159,9 @@ replaced by the final server snapshot.
 The UI has ten primary projections:
 
 - **Ledger**: user-visible messages;
-- **Trace**: lifecycle, model, tool, goal, subagent, and system evidence plus
-  metadata-only OpenTelemetry export and archived-artifact verification for a
-  complete Thread or one Run;
+- **Trace**: lifecycle, model, tool, goal, subagent, and system evidence,
+  hash-only Model Context Envelope registers, plus metadata-only OpenTelemetry
+  export and archived-artifact verification for a complete Thread or one Run;
 - **Run Lab**: immutable per-run replay, portable full-thread fixtures,
   configuration drift, run deltas, snapshot-bound verdicts, and revisioned
   multi-candidate quality gates with case evidence, append-only human truth,
