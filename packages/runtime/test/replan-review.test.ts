@@ -104,8 +104,22 @@ describe("replan draft model review", () => {
         promptSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         responseSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         reviewSchemaSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        modelContextEnvelope: expect.objectContaining({
+          kind: "napier.model-context-envelope",
+          schemaVersion: 1,
+          turnIndex: 0,
+          messageCount: 1,
+          toolCount: 0,
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
         reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
+    );
+    expect(JSON.stringify(review.modelContextEnvelope)).not.toContain(
+      plan.objective,
+    );
+    expect(JSON.stringify(review.modelContextEnvelope)).not.toContain(
+      plan.replanRecommendation?.reason,
     );
     expect(review.reviewSha256).not.toBe(review.responseSha256);
   });
@@ -125,6 +139,28 @@ describe("replan draft model review", () => {
         concerns: ["live_model_required"],
       }),
     );
+    expect(demoReview).not.toHaveProperty("modelContextEnvelope");
+
+    const provider = fauxProvider({ provider: "faux-replan-review-failure" });
+    provider.setResponses([fauxAssistantMessage("not json")]);
+    const models = new ModelRegistry();
+    models.registerProvider(provider.provider);
+    const malformedReview = await reviewExecutionPlanReplanDraft(models, plan, {
+      provider: "faux-replan-review-failure",
+      id: "faux-1",
+    });
+    expect(malformedReview).toEqual(
+      expect.objectContaining({
+        verdict: "inconclusive",
+        score: 0,
+        risk: "high",
+        concerns: ["review_failed_closed"],
+        modelContextEnvelope: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(JSON.stringify(malformedReview)).not.toContain("not json");
     expect(() => parseReplanDraftReviewResponse("not json")).toThrow(
       "did not contain JSON",
     );

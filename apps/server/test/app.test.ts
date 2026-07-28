@@ -6793,9 +6793,17 @@ describe("Napier HTTP goal flow", () => {
         verdict: "approve",
         score: 88,
         risk: "low",
+        modelContextEnvelope: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
         reviewSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+    expect(
+      reviewResponse.headers.get(
+        "x-napier-replan-review-model-context-envelope-sha256",
+      ),
+    ).toBe(review.modelContextEnvelope?.contentSha256);
     expect(services.store.getPlan(plan.id).revision).toBe(blocked.revision);
     expect(
       (await services.store.listEvents(created.thread.id)).map(
@@ -10019,6 +10027,11 @@ function expectExecutionPlanReplanDraftReviewHeaders(
   expect(response.headers.get("x-napier-replan-review-score")).toBe(
     String(review.score),
   );
+  expect(
+    response.headers.get(
+      "x-napier-replan-review-model-context-envelope-sha256",
+    ),
+  ).toBe(review.modelContextEnvelope?.contentSha256 ?? null);
 }
 
 function expectExecutionPlanArchiveHeaders(

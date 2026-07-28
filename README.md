@@ -218,9 +218,10 @@ Version `0.1.0` includes:
   blocked critical paths and missing artifacts, generated replacement-plan
   drafts that can be fed back through replan CAS, deterministic draft
   evaluation scores with risk and evidence hashes, no-store hash-bound model
-  review artifacts for active drafts plus explicit draft application from the
-  Plan Workbench, model/thinking-specific replan policy templates in Agent
-  tool output, hash-bound Plan archive export plus no-store archive
+  review artifacts for active drafts with hash-only request envelopes plus
+  explicit draft application from the Plan Workbench, model/thinking-specific
+  replan policy templates in Agent tool output, hash-bound Plan archive export
+  plus no-store archive
   verification, no-store Plan REST response hashes and plan/replan count
   headers, reusable workflow blueprint export/upload verification, a local
   Workflow Blueprint Library with active/archived template replay, hash-only

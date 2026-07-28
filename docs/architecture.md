@@ -2750,8 +2750,9 @@ An active recommendation can also be reviewed from the Plan Workbench by a
 live model through a no-store
 `napier.execution-plan-replan-draft-review` artifact. That review hashes the
 model-review input, prompt, parsed response, deterministic evaluation,
-recommendation, and draft; `napier/demo` fails closed as inconclusive. The
-Agent or operator still has to submit the draft through the normal
+recommendation, draft, and the live request's hash-only model-context envelope;
+`napier/demo` fails closed as inconclusive. The Agent or operator still has to
+submit the draft through the normal
 revision-CAS replan flow before state changes; the Plan Workbench exposes that
 application as an explicit action beside model review. Replans are bounded
 history entries on the same ExecutionPlan: they record the strategy, revision
@@ -2775,6 +2776,7 @@ review replan draft
   -> expose reviewSha256 as the content digest
   -> mirror thread ID, plan ID, expected revision, recommendation/draft/
      deterministic-evaluation hashes, verdict, risk, and score
+  -> mirror the live review request's model-context envelope hash when present
 export plan archive
   -> build napier.execution-plan-archive from the current ExecutionPlan plus
      ordered plan-scoped Ledger events

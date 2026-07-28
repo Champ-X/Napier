@@ -1718,9 +1718,10 @@ write:management-openapi-compatibility` now emits
 - No-store replan draft model-review artifacts for active recommendations,
   binding model score/risk/verdict to the recommendation SHA-256, draft hash,
   deterministic evaluation hash, prompt hash, response hash, and final review
-  hash without mutating Plan state or bypassing replan CAS, now exposed from
-  the Plan Workbench beside explicit draft application through normal replan
-  revision CAS.
+  hash without mutating Plan state or bypassing replan CAS. Live review
+  artifacts also bind the request's hash-only model-context envelope without
+  copying plan or draft text. They are exposed from the Plan Workbench beside
+  explicit draft application through normal replan revision CAS.
 - Plan list, create, replan, step transition, artifact settlement, and replan
   draft review responses now expose no-store hashes, plan status/revision
   headers, step/artifact/replan counts, scheduling projection counts, and active

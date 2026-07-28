@@ -17514,6 +17514,12 @@ function setExecutionPlanReplanDraftReviewHeaders(
   context.header("X-Napier-Replan-Review-Verdict", review.verdict);
   context.header("X-Napier-Replan-Review-Risk", review.risk);
   context.header("X-Napier-Replan-Review-Score", String(review.score));
+  if (review.modelContextEnvelope) {
+    context.header(
+      "X-Napier-Replan-Review-Model-Context-Envelope-SHA256",
+      review.modelContextEnvelope.contentSha256,
+    );
+  }
 }
 
 function setExecutionPlanArchiveHeaders(

@@ -494,6 +494,7 @@ export interface ExecutionPlanReplanDraftModelReview {
   promptSha256: string;
   responseSha256: string;
   reviewSchemaSha256: string;
+  modelContextEnvelope?: ModelContextEnvelopeReceipt;
   reviewSha256: string;
   createdAt: string;
 }

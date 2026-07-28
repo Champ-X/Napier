@@ -3,11 +3,13 @@ import type {
   ExecutionPlan,
   ExecutionPlanReplanDraftModelReview,
   ExecutionPlanReplanDraftReviewVerdict,
+  ModelContextEnvelopeReceipt,
   ModelRef,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { nowIso } from "./ids.js";
+import { createModelContextEnvelopeReceipt } from "./model-context-envelope.js";
 import type { ModelRegistry } from "./models.js";
 
 const REPLAN_DRAFT_REVIEW_POLICY_ID = "napier.replan-draft-model-review.v1";
@@ -69,6 +71,7 @@ interface ParsedReplanDraftReview {
   reason: string;
   concerns: string[];
   responseSha256: string;
+  modelContextEnvelope?: ModelContextEnvelopeReceipt;
 }
 
 async function completeReview(
@@ -76,26 +79,33 @@ async function completeReview(
   model: Model<Api>,
   prompt: ReplanDraftReviewPrompt,
 ): Promise<ParsedReplanDraftReview> {
-  try {
-    const response = await models.models.completeSimple(
-      model,
+  const requestContext = {
+    systemPrompt: prompt.system,
+    messages: [
       {
-        systemPrompt: prompt.system,
-        messages: [
-          {
-            role: "user",
-            content: prompt.user,
-            timestamp: Date.now(),
-          },
-        ],
-        tools: [],
+        role: "user" as const,
+        content: prompt.user,
+        timestamp: Date.now(),
       },
-      { maxTokens: 1_000, temperature: 0 },
-    );
+    ],
+    tools: [],
+  };
+  const modelContextEnvelope = createModelContextEnvelopeReceipt({
+    turnIndex: 0,
+    systemPrompt: requestContext.systemPrompt,
+    messages: requestContext.messages,
+    tools: requestContext.tools,
+  });
+  try {
+    const response = await models.models.completeSimple(model, requestContext, {
+      maxTokens: 1_000,
+      temperature: 0,
+    });
     const text = contentText(response.content);
     return {
       ...parseReplanDraftReviewResponse(text),
       responseSha256: sha256(text),
+      modelContextEnvelope,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -106,6 +116,7 @@ async function completeReview(
       reason: `Replan draft reviewer failed closed: ${normalizeText(message, 920)}`,
       concerns: ["review_failed_closed"],
       responseSha256: sha256(message),
+      modelContextEnvelope,
     };
   }
 }
@@ -255,6 +266,9 @@ function createReplanDraftModelReview(
     promptSha256: prompt.promptSha256,
     responseSha256: response.responseSha256,
     reviewSchemaSha256: prompt.reviewSchemaSha256,
+    ...(response.modelContextEnvelope
+      ? { modelContextEnvelope: response.modelContextEnvelope }
+      : {}),
     createdAt: nowIso(),
   } satisfies Omit<ExecutionPlanReplanDraftModelReview, "reviewSha256">;
   return {
