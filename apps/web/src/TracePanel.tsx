@@ -41,11 +41,12 @@ import {
   goalEventTraceSummary,
   memoryEventTraceSummary,
 } from "./goal-memory-event-view";
-import { modelContextEnvelopeCopy } from "./model-context-envelope-copy";
+import { messageEventTraceSummary } from "./message-event-view";
 import {
   modelContextEnvelopeViews,
   type ModelContextEnvelopeView,
 } from "./model-context-envelope-view";
+import { modelContextEnvelopeCopy } from "./model-context-envelope-copy";
 import { modelAdvisorEventTraceSummary } from "./model-advisor-event-view";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import { modelEventTraceSummary } from "./model-event-view";
@@ -956,6 +957,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type === "thread.imported") {
     return threadImportedSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("message.") || event.type.startsWith("system.")) {
+    return messageEventTraceSummary(event) ?? event.category;
   }
   if (event.type.startsWith("context.")) {
     return contextEventTraceSummary(event) ?? event.category;

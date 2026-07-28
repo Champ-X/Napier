@@ -140,6 +140,10 @@ All notable changes to Napier are recorded here.
 - Trace event summaries now project `thread.imported` receipts through a
   bounded import provenance view that shows only source hashes, event counts,
   local cutoff, and envelope coverage counts.
+- Trace event summaries now project `message.*` and `system.note` receipts
+  through a bounded message view, so user prompts, assistant answers/reasoning,
+  run-control text, and system note text stay out of the event list while role,
+  model, token/cost counts, text byte counts, and optional hashes remain visible.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

@@ -2301,6 +2301,14 @@ It applies the same bounded projection pattern to `thread.imported` receipts:
 the Trace list shows source content hash, source event-stream hash, imported
 source event count, local cutoff, and envelope coverage counts, while ignoring
 source IDs, API version strings, arbitrary text fields, and raw replay content.
+Conversation and system-note events are bounded in the Trace list even though
+their full text remains available in the conversation-oriented Workbench
+surface. `message.*` and `system.note` summaries may show role, model, usage
+counts, text byte counts, control-message IDs, and existing text hashes. They
+do not render user prompts, assistant answers, reasoning text, run-control
+message text, system-note text, or arbitrary future message payload prose.
+Unknown `message.*` and `system.*` events fail closed to their category before
+the generic fallback can inspect `text` or `message`.
 `model.response` summaries are also rendered through a metadata/hash-only view:
 the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Bkysp8Dj.js",
+    "path": "apps/web/dist/assets/index-CD8hsviA.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "3b0d0e75b6cf1bd1882723b2f796265da053cc2bf41c7c0e38e97d746ff92d9b"
+    "sha256": "d186ec53c8ae4bc7aac9a56d42ad7924f4b0da5f25bc778a7786f151461388c3"
   },
-  "distContentSha256": "3b0d0e75b6cf1bd1882723b2f796265da053cc2bf41c7c0e38e97d746ff92d9b",
+  "distContentSha256": "d186ec53c8ae4bc7aac9a56d42ad7924f4b0da5f25bc778a7786f151461388c3",
   "errors": []
 }
