@@ -7,6 +7,14 @@ export interface ArtifactManifestEvidenceProjection {
   hasEvidence: boolean;
 }
 
+export interface ArtifactManifestActionsProjection {
+  canProduce: boolean;
+  canVerify: boolean;
+  canMarkMissing: boolean;
+  verifyMode: "verify" | "recheck";
+  hasActions: boolean;
+}
+
 export function projectArtifactManifestEvidence(
   artifact: ArtifactManifestEntry,
 ): ArtifactManifestEvidenceProjection {
@@ -23,6 +31,27 @@ export function projectArtifactManifestEvidence(
     hasEvidence: Boolean(
       digestFull || sizeBytesLabel || artifact.sourceRunId,
     ),
+  };
+}
+
+export function projectArtifactManifestActions(
+  artifact: ArtifactManifestEntry,
+): ArtifactManifestActionsProjection {
+  const canProduce =
+    artifact.status === "expected" || artifact.status === "missing";
+  const canVerify =
+    (artifact.status === "produced" || artifact.status === "verified") &&
+    (artifact.kind === "file" || artifact.kind === "directory");
+  const canMarkMissing =
+    artifact.status === "expected" || artifact.status === "produced";
+  return {
+    canProduce,
+    canVerify,
+    canMarkMissing,
+    verifyMode: artifact.status === "verified" ? "recheck" : "verify",
+    hasActions:
+      artifact.status !== "superseded" &&
+      (canProduce || canVerify || canMarkMissing),
   };
 }
 

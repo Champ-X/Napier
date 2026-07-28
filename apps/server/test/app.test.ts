@@ -4687,6 +4687,75 @@ describe("Napier HTTP goal flow", () => {
         ]),
       }),
     );
+    const recheckArtifactResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "verified",
+          observeWorkspace: true,
+          sourceRunId: run.id,
+          evidence: "Workbench rechecked the report bytes from the workspace.",
+        }),
+      },
+    );
+    expect(recheckArtifactResponse.status).toBe(200);
+    const recheckedArtifactPlan =
+      (await recheckArtifactResponse.json()) as ExecutionPlan;
+    expect(recheckedArtifactPlan.revision).toBe(artifactPlan.revision + 1);
+    expect(recheckedArtifactPlan).toEqual(
+      expect.objectContaining({
+        artifacts: expect.arrayContaining([
+          expect.objectContaining({
+            id: "report",
+            status: "verified",
+            sha256: expectedReportSha256,
+            sizeBytes: Buffer.byteLength(reportContents),
+            evidence: "Workbench rechecked the report bytes from the workspace.",
+          }),
+        ]),
+      }),
+    );
+    await writeFile(
+      path.join(services.store.workspaceRoot, "report.md"),
+      "# Drifted report\n\nThis no longer matches the verified digest.\n",
+      "utf8",
+    );
+    const driftedArtifactResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "verified",
+          observeWorkspace: true,
+          evidence: "Workbench rechecked the drifted report bytes.",
+        }),
+      },
+    );
+    expect(driftedArtifactResponse.status).toBe(400);
+    await expect(driftedArtifactResponse.json()).resolves.toEqual({
+      error: "Verified artifact digest drifted; replan before replacing it",
+    });
+    expect(
+      services.store
+        .getPlan(plan.id)
+        .artifacts.find((artifact) => artifact.id === "report"),
+    ).toEqual(
+      expect.objectContaining({
+        status: "verified",
+        sha256: expectedReportSha256,
+        evidence: "Workbench rechecked the report bytes from the workspace.",
+      }),
+    );
+    expect(
+      (await services.store.listEvents(created.thread.id)).filter(
+        (event) =>
+          event.type === "plan.artifact.verified" &&
+          event.payload["artifactId"] === "report",
+      ),
+    ).toHaveLength(2);
     await services.store.finishRun(run.id, "completed");
 
     const listResponse = await app.request(

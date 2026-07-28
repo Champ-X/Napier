@@ -473,7 +473,10 @@ export function updateArtifactManifest(
     (candidate) => candidate.id === artifactId,
   );
   if (!artifact) throw new Error(`Artifact not found: ${artifactId}`);
-  if (artifact.status === "verified" || artifact.status === "superseded") {
+  if (artifact.status === "superseded") {
+    return next;
+  }
+  if (artifact.status === "verified" && request.status !== "verified") {
     return next;
   }
   assertArtifactTransition(artifact.status, request.status);

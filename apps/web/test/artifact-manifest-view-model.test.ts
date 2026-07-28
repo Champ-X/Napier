@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatArtifactSizeBytes,
+  projectArtifactManifestActions,
   projectArtifactManifestEvidence,
 } from "../src/artifact-manifest-view-model";
 
@@ -30,6 +31,53 @@ describe("artifact manifest view model", () => {
       ),
     ).toEqual({
       hasEvidence: true,
+    });
+  });
+
+  it("projects artifact actions including verified-byte rechecks", () => {
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({ status: "expected", kind: "file" }),
+      ),
+    ).toEqual({
+      canProduce: true,
+      canVerify: false,
+      canMarkMissing: true,
+      verifyMode: "verify",
+      hasActions: true,
+    });
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({ status: "produced", kind: "directory" }),
+      ),
+    ).toEqual({
+      canProduce: false,
+      canVerify: true,
+      canMarkMissing: true,
+      verifyMode: "verify",
+      hasActions: true,
+    });
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({ status: "verified", kind: "file" }),
+      ),
+    ).toEqual({
+      canProduce: false,
+      canVerify: true,
+      canMarkMissing: false,
+      verifyMode: "recheck",
+      hasActions: true,
+    });
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({ status: "superseded", kind: "file" }),
+      ),
+    ).toEqual({
+      canProduce: false,
+      canVerify: false,
+      canMarkMissing: false,
+      verifyMode: "verify",
+      hasActions: false,
     });
   });
 

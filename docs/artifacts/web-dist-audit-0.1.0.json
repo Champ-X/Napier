@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DHmiegT-.js",
+    "path": "apps/web/dist/assets/index-TuZpdigN.js",
     "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "813b48a1177b8dbad45bb1ea2bb2d685d00c8bbdc74de2604d81dc9788b4153d"
+    "sha256": "b2eaae33bcc57f09d988bff4efa74e54a6f17066da8a791d1dc52228e6067157"
   },
-  "distContentSha256": "813b48a1177b8dbad45bb1ea2bb2d685d00c8bbdc74de2604d81dc9788b4153d",
+  "distContentSha256": "b2eaae33bcc57f09d988bff4efa74e54a6f17066da8a791d1dc52228e6067157",
   "errors": []
 }

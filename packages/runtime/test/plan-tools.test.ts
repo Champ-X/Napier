@@ -106,6 +106,25 @@ describe("plan tools", () => {
       action: "verify",
       evidence: "The runtime hashed the report bytes.",
     });
+    await updateArtifact.execute("reverify-artifact", {
+      planId,
+      artifactId: "report",
+      action: "verify",
+      evidence: "The runtime rechecked the report bytes.",
+    });
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "report.txt"),
+      "drifted durable artifact evidence\n",
+      "utf8",
+    );
+    await expect(
+      updateArtifact.execute("drifted-artifact", {
+        planId,
+        artifactId: "report",
+        action: "verify",
+        evidence: "The runtime rechecked the report bytes after drift.",
+      }),
+    ).rejects.toThrow("Verified artifact digest drifted");
 
     const plan = store.getPlan(planId);
     expect(plan.status).toBe("completed");
@@ -130,6 +149,7 @@ describe("plan tools", () => {
       "plan.step.started",
       "plan.step.completed",
       "plan.artifact.produced",
+      "plan.artifact.verified",
       "plan.artifact.verified",
     ]);
     const events = await store.listEvents(thread.id);

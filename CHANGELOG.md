@@ -340,6 +340,10 @@ All notable changes to Napier are recorded here.
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
   appending `plan.artifact.*` evidence.
+- Verified Plan artifacts can now be rechecked from the Workbench or Agent tool:
+  matching workspace bytes append a fresh `plan.artifact.verified` receipt,
+  while digest drift fails closed and leaves the manifest unchanged so the
+  operator must replan before replacing delivered bytes.
 - Verified Plan artifact cards now show the server-computed byte count beside
   the digest while retaining the full SHA-256 as hoverable audit context.
 - Trace event summaries now project `model.response` receipts through a

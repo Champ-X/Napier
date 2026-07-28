@@ -59,7 +59,10 @@ import {
   verifyExecutionPlanBlueprintRecordReplays,
 } from "./api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
-import { projectArtifactManifestEvidence } from "./artifact-manifest-view-model";
+import {
+  projectArtifactManifestActions,
+  projectArtifactManifestEvidence,
+} from "./artifact-manifest-view-model";
 import { planCopy } from "./plan-copy";
 import {
   planBlueprintCreatedReceipt,
@@ -400,7 +403,7 @@ export default function PlanPanel({
     try {
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
         status: action,
-        evidence: planCopy.artifactActions.evidence[action],
+        evidence: artifactActionEvidence(artifact, action),
         ...(action === "verified" ? { observeWorkspace: true } : {}),
       });
       await onDraftApplied();
@@ -1646,6 +1649,15 @@ export default function PlanPanel({
               </header>
               {plan.artifacts.map((artifact) => {
                 const evidence = projectArtifactManifestEvidence(artifact);
+                const actions = projectArtifactManifestActions(artifact);
+                const verifyLabel =
+                  actions.verifyMode === "recheck"
+                    ? planCopy.artifactActions.recheck
+                    : planCopy.artifactActions.verify;
+                const verifyingLabel =
+                  actions.verifyMode === "recheck"
+                    ? planCopy.artifactActions.rechecking
+                    : planCopy.artifactActions.verifying;
                 return (
                   <article key={artifact.id}>
                     <header>
@@ -1684,10 +1696,9 @@ export default function PlanPanel({
                         ) : null}
                       </dl>
                     ) : null}
-                    {artifact.status !== "verified" &&
-                    artifact.status !== "superseded" ? (
+                    {actions.hasActions ? (
                       <div className="artifact-actions">
-                        {canProduceArtifact(artifact) ? (
+                        {actions.canProduce ? (
                           <button
                             type="button"
                             aria-label={`${planCopy.artifactActions.produce}: ${artifact.path}`}
@@ -1701,21 +1712,21 @@ export default function PlanPanel({
                               : planCopy.artifactActions.produce}
                           </button>
                         ) : null}
-                        {canVerifyArtifact(artifact) ? (
+                        {actions.canVerify ? (
                           <button
                             type="button"
-                            aria-label={`${planCopy.artifactActions.verify}: ${artifact.path}`}
+                            aria-label={`${verifyLabel}: ${artifact.path}`}
                             disabled={Boolean(artifactBusyId)}
                             onClick={() =>
                               void updateArtifact(artifact, "verified")
                             }
                           >
                             {artifactBusyId === `${artifact.id}:verified`
-                              ? planCopy.artifactActions.verifying
-                              : planCopy.artifactActions.verify}
+                              ? verifyingLabel
+                              : verifyLabel}
                           </button>
                         ) : null}
-                        {canMarkArtifactMissing(artifact) ? (
+                        {actions.canMarkMissing ? (
                           <button
                             type="button"
                             aria-label={`${planCopy.artifactActions.markMissing}: ${artifact.path}`}
@@ -3593,19 +3604,14 @@ function isSha256(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
-function canProduceArtifact(artifact: ArtifactManifestEntry): boolean {
-  return artifact.status === "expected" || artifact.status === "missing";
-}
-
-function canVerifyArtifact(artifact: ArtifactManifestEntry): boolean {
-  return (
-    artifact.status === "produced" &&
-    (artifact.kind === "file" || artifact.kind === "directory")
-  );
-}
-
-function canMarkArtifactMissing(artifact: ArtifactManifestEntry): boolean {
-  return artifact.status === "expected" || artifact.status === "produced";
+function artifactActionEvidence(
+  artifact: ArtifactManifestEntry,
+  action: "produced" | "verified" | "missing",
+): string {
+  if (action === "verified" && artifact.status === "verified") {
+    return planCopy.artifactActions.evidence.rechecked;
+  }
+  return planCopy.artifactActions.evidence[action];
 }
 
 function compareBlueprintRecords(

@@ -390,6 +390,7 @@ async function buildArtifactUpdate(
   }
   if (artifact.kind === "directory") {
     const digest = await hashWorkspaceDirectory(observedTarget);
+    assertVerifiedArtifactDigestMatches(artifact, digest.sha256);
     return {
       status: "verified",
       sourceRunId: run.id,
@@ -404,10 +405,12 @@ async function buildArtifactUpdate(
     );
   }
   const contents = await readFile(observedTarget);
+  const observedSha256 = sha256(contents);
+  assertVerifiedArtifactDigestMatches(artifact, observedSha256);
   return {
     status: "verified",
     sourceRunId: run.id,
-    sha256: sha256(contents),
+    sha256: observedSha256,
     sizeBytes: info.size,
     evidence,
   };
@@ -430,6 +433,7 @@ export async function createWorkspaceArtifactVerificationRequest(
   );
   if (artifact.kind === "directory") {
     const digest = await hashWorkspaceDirectory(target);
+    assertVerifiedArtifactDigestMatches(artifact, digest.sha256);
     return {
       status: "verified",
       sha256: digest.sha256,
@@ -444,13 +448,30 @@ export async function createWorkspaceArtifactVerificationRequest(
     );
   }
   const contents = await readFile(target);
+  const observedSha256 = sha256(contents);
+  assertVerifiedArtifactDigestMatches(artifact, observedSha256);
   return {
     status: "verified",
-    sha256: sha256(contents),
+    sha256: observedSha256,
     sizeBytes: info.size,
     ...(input.sourceRunId ? { sourceRunId: input.sourceRunId } : {}),
     ...(input.evidence ? { evidence: input.evidence } : {}),
   };
+}
+
+function assertVerifiedArtifactDigestMatches(
+  artifact: ExecutionPlan["artifacts"][number],
+  observedSha256: string,
+): void {
+  if (artifact.status !== "verified") return;
+  if (!artifact.sha256) {
+    throw new Error("Verified artifact is missing its stored digest");
+  }
+  if (artifact.sha256 !== observedSha256) {
+    throw new Error(
+      "Verified artifact digest drifted; replan before replacing it",
+    );
+  }
 }
 
 async function inspectWorkspaceArtifactTarget(

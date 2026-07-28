@@ -476,12 +476,29 @@ describe("execution plans", () => {
         sizeBytes: 4_096,
       }),
     );
+    const reverified = updateArtifactManifest(verified, "runtime-change", {
+      status: "verified",
+      sha256: digest,
+      sizeBytes: 4_096,
+      sourceRunId: "run-4",
+      evidence: "The artifact bytes were rechecked.",
+    });
+    expect(reverified.revision).toBe(verified.revision + 1);
+    expect(reverified.artifacts[0]).toEqual(
+      expect.objectContaining({
+        status: "verified",
+        sha256: digest,
+        sizeBytes: 4_096,
+        sourceRunId: "run-4",
+        evidence: "The artifact bytes were rechecked.",
+      }),
+    );
     expect(
-      updateArtifactManifest(verified, "runtime-change", {
+      updateArtifactManifest(reverified, "runtime-change", {
         status: "missing",
         evidence: "Late stale callback.",
       }),
-    ).toEqual(verified);
+    ).toEqual(reverified);
   });
 
   it("binds artifact event path and evidence hashes", () => {
