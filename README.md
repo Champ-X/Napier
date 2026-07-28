@@ -1018,6 +1018,13 @@ approval.
 
 ## Controlled Workspace Editing
 
+When workspace tools are available, the Runtime injects a concise
+`workspace_tool_protocol` into the live system prompt. It tells the Agent to
+treat tool output as evidence, inspect before editing, prefer symbol/range
+hashes for code changes, pass complete-file SHA-256 preconditions to
+`apply_patch`, and rerun `verify_workspace` after relevant writes before
+claiming checks passed.
+
 `read_file` reports the SHA-256 and byte size of the complete UTF-8 file even
 when only a line range is returned. A write-capable Agent must pass that digest
 back to `apply_patch`; creation instead requires `expectedSha256: null` to

@@ -281,6 +281,11 @@ All notable changes to Napier are recorded here.
   multi-line source replacement by `read_symbol` range SHA-256 while retaining
   complete-file preconditions, overlap checks, atomic writes, and hash-only
   Trace summaries.
+- Runtime prompts now inject a concise `workspace_tool_protocol` whenever
+  workspace tools are enabled, guiding Agents to inspect current evidence,
+  prefer symbol/range hashes for code edits, use complete-file SHA-256
+  preconditions, and re-run `verify_workspace` after relevant writes before
+  claiming checks passed.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
 - `verify_workspace` results now include a hash-only scope receipt over cwd and

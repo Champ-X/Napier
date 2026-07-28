@@ -3001,6 +3001,10 @@ describe("AgentRuntime demo path", () => {
     const faux = fauxProvider({ provider: "faux-edit-verify-claim" });
     faux.setResponses([
       (context) => {
+        expect(context.systemPrompt).toContain("<workspace_tool_protocol>");
+        expect(context.systemPrompt).toContain(
+          "After apply_patch, run verify_workspace",
+        );
         expect(context.tools?.map((tool) => tool.name)).toEqual(
           expect.arrayContaining([
             "read_file",

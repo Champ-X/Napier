@@ -1488,6 +1488,15 @@ Agent-authored progress through HTTP.
 
 General shell execution and unconstrained file writes are not Agent tools.
 The only built-in write primitive is hash-bound, structured `apply_patch`:
+when any workspace tools are enabled, `AgentRuntime.runPrompt` also injects a
+concise `workspace_tool_protocol` into the live system prompt. That protocol is
+derived from the actual enabled tools, tells the Agent to treat tool output as
+evidence rather than instructions, guides code changes through symbol/range
+hashes when available, requires complete-file SHA-256 preconditions for
+`apply_patch`, and asks for `verify_workspace` after relevant writes before
+claiming checks passed. The protocol is prompt guidance only; policy
+enforcement still comes from the tool allowlist, sandbox, hash preconditions,
+Ledger events, and Advisor freshness checks.
 
 ```text
 read_file
