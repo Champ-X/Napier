@@ -2306,6 +2306,13 @@ the list may show model, stop reason, model-call purpose, envelope turn index,
 tool-call count, token counts, and response/error hashes, but not assistant
 text, reasoning, or tool-call arguments. Malformed model response receipts fail
 closed to a fixed summary before the generic payload text fallback runs.
+Other known model events are bounded before the fallback as well.
+`model.text.delta` and `model.thinking.delta` summaries show only redaction
+state, byte counts, and SHA-256 receipts when present; raw streaming text and
+reasoning deltas are ignored even if they exist in hidden debug payloads.
+`model.tool_loop.detected` summaries show only safe tool name, threshold,
+attempt count, event range, and hash receipts. Unknown `model.*` events fail
+closed to their category instead of using `text`, `summary`, or `result`.
 Tool lifecycle events use the same rule: `tool.started`, `tool.completed`,
 `tool.failed`, and `tool.blocked` summaries show only the bounded tool name,
 status, effect, and known hash receipts such as input or loop-guard hashes.

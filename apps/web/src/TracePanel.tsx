@@ -48,6 +48,7 @@ import {
 } from "./model-context-envelope-view";
 import { modelAdvisorEventTraceSummary } from "./model-advisor-event-view";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
+import { modelEventTraceSummary } from "./model-event-view";
 import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
 import { subagentEventTraceSummary } from "./subagent-event-view";
@@ -983,6 +984,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("model.advisor.")) {
     return modelAdvisorEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("model.")) {
+    return modelEventTraceSummary(event) ?? event.category;
   }
   if (
     !event.payload ||

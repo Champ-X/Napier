@@ -143,6 +143,10 @@ All notable changes to Napier are recorded here.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.
+- Trace event summaries now project non-response `model.*` receipts through a
+  bounded model view, so hidden text/thinking deltas and future model payload
+  text stay out of the event list while byte counts, redaction flags, tool-loop
+  counters, and hashes remain auditable.
 - Trace event summaries now project `tool.*` receipts through a bounded
   metadata view, so raw tool input, output, details, policy prose, and malformed
   text fields cannot leak through the event-list fallback.
