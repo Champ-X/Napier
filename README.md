@@ -1442,6 +1442,9 @@ export projects only the governance status and SHA-256 fields while excluding
 evaluator reason and evidence text. The evaluator call itself is preserved as a
 completed evaluation Run with hash-only context envelope evidence, while the
 normalized reason and evidence remain on the user-visible evaluation event.
+Casebook qualification uses the same trace discipline: a qualification
+execution owns a completed qualification Run, and each real model re-judgment
+records a turn-indexed hash-only envelope plus redacted response binding.
 
 Every case stores the pair-evaluation ID and SHA-256 alongside both replay
 snapshot hashes. The execution stores a canonical batch SHA-256 over the suite
@@ -1565,7 +1568,10 @@ verdicts, rubric scores, reason, source state, and all expected/observed hashes.
 The aggregate binds case order, evaluator, gate, counts, agreement rate, final
 status, audit Thread, and Casebook revision to one canonical SHA-256. It is
 stored separately from ordinary `RunEvaluationRecord` history and emits only a
-hash-level `evaluation.casebook.qualification.completed` Ledger event.
+hash-level `evaluation.casebook.qualification.completed` Ledger event. The
+event is attached to the execution's qualification Run; verified model-backed
+cases also leave `context.model_envelope` and redacted `model.response` debug
+events on that Run, while demo-only executions keep just the completion event.
 
 The workspace retains the latest 20 executions per Casebook. A
 `napier.evaluation-casebook-qualification-receipt` includes the complete

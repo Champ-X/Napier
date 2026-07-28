@@ -17,6 +17,7 @@ import {
 import {
   RunEvaluationService,
   type RunEvaluationJudgment,
+  type RunEvaluationTraceOptions,
 } from "./evaluation.js";
 import {
   MAX_EVALUATION_CASEBOOK_ARTIFACT_BYTES,
@@ -25,7 +26,7 @@ import {
 } from "./evaluation-casebooks.js";
 import { createId, nowIso } from "./ids.js";
 import type { ModelRegistry } from "./models.js";
-import { createRunReplaySnapshot } from "./replay.js";
+import { aggregateRunUsage, createRunReplaySnapshot } from "./replay.js";
 import type { LocalStore } from "./store.js";
 
 export const DEFAULT_EVALUATION_CASEBOOK_QUALIFICATION_GATE: EvaluationCasebookQualificationGate =
@@ -56,91 +57,121 @@ export class EvaluationCasebookQualificationService {
     casebookId: string,
     request: ExecuteEvaluationCasebookRequest,
   ): Promise<EvaluationCasebookQualificationExecution> {
-    this.store.getThread(request.threadId);
+    const auditThread = this.store.getThread(request.threadId);
     const casebook = this.store.getEvaluationCasebook(casebookId);
     const revision = currentCasebookRevision(casebook);
     const evaluatorModel = normalizeModel(request.model);
     assertAvailableEvaluator(this.models, evaluatorModel);
     const gate = normalizeEvaluationCasebookQualificationGate(request.gate);
-    const casesById = new Map(casebook.cases.map((item) => [item.id, item]));
-    const startedAt = nowIso();
-    const results: EvaluationCasebookQualificationCaseResult[] = [];
-    for (const caseId of revision.caseIds) {
-      const item = casesById.get(caseId)!;
-      results.push(await this.evaluateCase(item, evaluatorModel));
-    }
-    const sampleCount = results.length;
-    const agreementCount = results.filter((item) => item.agreement).length;
-    const inconclusiveCount = results.filter(
-      (item) => item.actualVerdict === "inconclusive",
-    ).length;
-    const unverifiedCount = results.filter(
-      (item) => item.evidenceState !== "verified",
-    ).length;
-    const agreementRate =
-      sampleCount > 0 ? Number((agreementCount / sampleCount).toFixed(4)) : 0;
-    const status = qualificationStatus(
-      gate,
-      sampleCount,
-      agreementRate,
-      inconclusiveCount,
-      unverifiedCount,
-    );
-    const evidence = {
-      casebookId: casebook.id,
-      casebookRevision: revision.revision,
-      casebookRevisionSha256: revision.contentSha256,
-      auditThreadId: request.threadId,
-      name: revision.name,
-      evaluatorModel,
-      gate,
-      caseIds: revision.caseIds,
-      results,
-      sampleCount,
-      agreementCount,
-      inconclusiveCount,
-      unverifiedCount,
-      agreementRate,
-      status,
-    };
-    const execution: EvaluationCasebookQualificationExecution = {
-      id: createId("casequal"),
-      ...evidence,
-      contentSha256: hashEvaluationCasebookQualificationExecution(evidence),
-      startedAt,
-      finishedAt: nowIso(),
-    };
-    const saved =
-      await this.store.saveEvaluationCasebookQualificationExecution(execution);
-    await this.store.appendEvent({
+    const qualificationRun = await this.store.createRun({
       threadId: request.threadId,
-      runId: createId("evalrun"),
-      type: "evaluation.casebook.qualification.completed",
-      category: "evaluation",
-      visibility: "user",
-      payload: {
-        casebookId: saved.casebookId,
-        casebookRevision: saved.casebookRevision,
-        executionId: saved.id,
-        evaluatorModel: {
-          provider: saved.evaluatorModel.provider,
-          id: saved.evaluatorModel.id,
-        },
-        sampleCount: saved.sampleCount,
-        agreementCount: saved.agreementCount,
-        inconclusiveCount: saved.inconclusiveCount,
-        unverifiedCount: saved.unverifiedCount,
-        agreementRate: saved.agreementRate,
-        status: saved.status,
-        contentSha256: saved.contentSha256,
-      },
+      agentId: auditThread.agentId,
+      model: evaluatorModel,
     });
-    return saved;
+    try {
+      const casesById = new Map(casebook.cases.map((item) => [item.id, item]));
+      const startedAt = nowIso();
+      const results: EvaluationCasebookQualificationCaseResult[] = [];
+      let nextModelTurnIndex = 0;
+      const nextTrace = (): RunEvaluationTraceOptions => ({
+        run: qualificationRun,
+        turnIndex: nextModelTurnIndex++,
+      });
+      for (const caseId of revision.caseIds) {
+        const item = casesById.get(caseId)!;
+        results.push(await this.evaluateCase(item, evaluatorModel, nextTrace));
+      }
+      const sampleCount = results.length;
+      const agreementCount = results.filter((item) => item.agreement).length;
+      const inconclusiveCount = results.filter(
+        (item) => item.actualVerdict === "inconclusive",
+      ).length;
+      const unverifiedCount = results.filter(
+        (item) => item.evidenceState !== "verified",
+      ).length;
+      const agreementRate =
+        sampleCount > 0 ? Number((agreementCount / sampleCount).toFixed(4)) : 0;
+      const status = qualificationStatus(
+        gate,
+        sampleCount,
+        agreementRate,
+        inconclusiveCount,
+        unverifiedCount,
+      );
+      const evidence = {
+        casebookId: casebook.id,
+        casebookRevision: revision.revision,
+        casebookRevisionSha256: revision.contentSha256,
+        auditThreadId: request.threadId,
+        name: revision.name,
+        evaluatorModel,
+        gate,
+        caseIds: revision.caseIds,
+        results,
+        sampleCount,
+        agreementCount,
+        inconclusiveCount,
+        unverifiedCount,
+        agreementRate,
+        status,
+      };
+      const execution: EvaluationCasebookQualificationExecution = {
+        id: createId("casequal"),
+        ...evidence,
+        contentSha256: hashEvaluationCasebookQualificationExecution(evidence),
+        startedAt,
+        finishedAt: nowIso(),
+      };
+      const saved =
+        await this.store.saveEvaluationCasebookQualificationExecution(
+          execution,
+        );
+      await this.store.appendEvent({
+        threadId: request.threadId,
+        runId: qualificationRun.id,
+        type: "evaluation.casebook.qualification.completed",
+        category: "evaluation",
+        visibility: "user",
+        payload: {
+          casebookId: saved.casebookId,
+          casebookRevision: saved.casebookRevision,
+          executionId: saved.id,
+          evaluatorModel: {
+            provider: saved.evaluatorModel.provider,
+            id: saved.evaluatorModel.id,
+          },
+          sampleCount: saved.sampleCount,
+          agreementCount: saved.agreementCount,
+          inconclusiveCount: saved.inconclusiveCount,
+          unverifiedCount: saved.unverifiedCount,
+          agreementRate: saved.agreementRate,
+          status: saved.status,
+          contentSha256: saved.contentSha256,
+        },
+      });
+      await this.store.finishRun(qualificationRun.id, "completed", {
+        usage: await this.collectRunUsage(
+          request.threadId,
+          qualificationRun.id,
+        ),
+      });
+      return saved;
+    } catch (error) {
+      await this.store.finishRun(qualificationRun.id, "failed", {
+        error: safeErrorMessage(error),
+        usage: await this.collectRunUsage(
+          request.threadId,
+          qualificationRun.id,
+        ),
+      });
+      throw error;
+    }
   }
 
   private async evaluateCase(
     item: EvaluationCasebookCase,
     evaluatorModel: ModelRef,
+    nextTrace: () => RunEvaluationTraceOptions,
   ): Promise<EvaluationCasebookQualificationCaseResult> {
     let left;
     let right;
@@ -187,8 +218,18 @@ export class EvaluationCasebookQualificationService {
       item.evaluation.comparisonGovernance
         ? { comparisonGovernance: item.evaluation.comparisonGovernance }
         : undefined,
+      nextTrace(),
     );
     return qualificationCaseResult(item, judgment, observed);
+  }
+
+  private async collectRunUsage(threadId: string, runId: string) {
+    return aggregateRunUsage(
+      (await this.store.listEvents(threadId)).filter(
+        (event) => event.runId === runId,
+      ),
+      [],
+    );
   }
 }
 

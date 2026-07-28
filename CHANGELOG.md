@@ -35,7 +35,10 @@ All notable changes to Napier are recorded here.
   evaluator model calls now run inside a completed evaluation Run with their
   own `context.model_envelope` and redacted, envelope-bound `model.response`
   evidence, and replay validation requires every envelope to have exactly one
-  bound response.
+  bound response. Casebook qualification executions now allocate their own
+  completed qualification Run, attach the hash-level completion event to it,
+  and trace every real qualification evaluator call through the same
+  turn-indexed envelope/response binding.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent
@@ -1594,6 +1597,8 @@ write:management-openapi-compatibility` now emits
 - Executable Casebook qualification over the current revision, with selectable
   evaluator, minimum exact-agreement gate, explicit inconclusive policy, and
   no-tool re-judging that does not create ordinary pair-evaluation history.
+  Each execution is still represented as a completed qualification Run, so its
+  model calls and final hash-level completion event remain replayable.
 - Per-case source replay reconstruction and dual snapshot-hash verification;
   missing or drifted evidence bypasses the evaluator and forces the
   qualification execution to fail closed as `inconclusive`.

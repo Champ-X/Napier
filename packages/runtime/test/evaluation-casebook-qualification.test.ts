@@ -22,7 +22,10 @@ import {
   createRunEvaluationGovernanceBinding,
 } from "../src/evaluation.js";
 import { ModelRegistry } from "../src/models.js";
-import { createRunReplaySnapshot } from "../src/replay.js";
+import {
+  createRunReplaySnapshot,
+  exportThreadReplayBundle,
+} from "../src/replay.js";
 import { LocalStore } from "../src/store.js";
 
 const temporaryRoots: string[] = [];
@@ -186,7 +189,7 @@ function qualificationResponse(
 
 describe("executable Evaluation Casebook qualification", () => {
   it("re-judges frozen evidence without creating ordinary evaluations", async () => {
-    const { store, options, threadId, evaluation, casebook } =
+    const { store, options, threadId, left, right, evaluation, casebook } =
       await createCuratedFixture();
     const notRun = createEvaluationCasebookQualificationReceipt(
       store,
@@ -256,8 +259,83 @@ describe("executable Evaluation Casebook qualification", () => {
     );
     expect(evaluatorPrompt).toContain('"contextCoverageDelta":null');
     expect(store.listRunEvaluations(threadId)).toEqual([evaluation]);
+    const qualificationRun = store
+      .listRuns(threadId)
+      .find((run) => run.id !== left.id && run.id !== right.id);
+    expect(qualificationRun).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        configuration: expect.objectContaining({
+          model: { provider: "faux-qualification", id: "faux-1" },
+        }),
+      }),
+    );
+    const qualificationRunEvents = (await store.listEvents(threadId)).filter(
+      (event) => event.runId === qualificationRun!.id,
+    );
+    expect(qualificationRunEvents.map((event) => event.type)).toEqual([
+      "context.model_envelope",
+      "model.response",
+      "evaluation.casebook.qualification.completed",
+    ]);
+    const envelopeEvent = qualificationRunEvents.find(
+      (event) => event.type === "context.model_envelope",
+    );
+    const responseEvent = qualificationRunEvents.find(
+      (event) => event.type === "model.response",
+    );
+    if (
+      !envelopeEvent?.payload ||
+      Array.isArray(envelopeEvent.payload) ||
+      typeof envelopeEvent.payload !== "object" ||
+      !responseEvent?.payload ||
+      Array.isArray(responseEvent.payload) ||
+      typeof responseEvent.payload !== "object"
+    ) {
+      throw new Error("Qualification trace fixture is missing");
+    }
+    expect(responseEvent.payload).toEqual(
+      expect.objectContaining({
+        contentRedacted: true,
+        model: "faux-qualification/faux-1",
+        textSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        textBytes: expect.any(Number),
+        modelContextEnvelopeSha256: envelopeEvent.payload["contentSha256"],
+        modelContextEnvelopeTurnIndex: 0,
+        modelContextMessageSetSha256: envelopeEvent.payload["messageSetSha256"],
+        modelContextToolDefinitionSetSha256:
+          envelopeEvent.payload["toolDefinitionSetSha256"],
+      }),
+    );
+    expect(responseEvent.payload).not.toHaveProperty("text");
+    expect(JSON.stringify(responseEvent.payload)).not.toContain(
+      "Compared the frozen replay evidence.",
+    );
+    const qualificationSnapshot = await createRunReplaySnapshot(
+      store,
+      threadId,
+      qualificationRun!.id,
+    );
+    expect(qualificationSnapshot.metrics).toEqual(
+      expect.objectContaining({
+        modelResponseCount: 1,
+        modelContextEnvelopeCount: 1,
+        modelContextBoundResponseCount: 1,
+        modelContextUnboundResponseCount: 0,
+      }),
+    );
+    const bundle = await exportThreadReplayBundle(store, threadId);
     expect(
-      (await store.listEvents(threadId))
+      bundle.events
+        .filter((event) => event.runId === qualificationRun!.id)
+        .map((event) => event.type),
+    ).toEqual([
+      "context.model_envelope",
+      "model.response",
+      "evaluation.casebook.qualification.completed",
+    ]);
+    expect(
+      qualificationRunEvents
         .filter(
           (event) =>
             event.type === "evaluation.casebook.qualification.completed",

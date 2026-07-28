@@ -526,6 +526,10 @@ as a hash-only `context.model_envelope`, and bind the resulting
 `model.response` back to that envelope. The evaluator response body is redacted
 to `textSha256` plus byte count in the debug event; the normalized reason and
 evidence remain on the user-visible `evaluation.completed` event.
+Casebook qualification uses a sibling path: each execution allocates one
+qualification Run, every verified model-backed case consumes the next envelope
+turn index on that Run, and the final hash-level qualification event is bound
+to the same Run.
 
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
@@ -2015,7 +2019,8 @@ aggregate
   -> reject save if the Casebook changed while evaluation was in flight
   -> mirror no-store execution hash, status, audit Thread, sample/agreement/
      inconclusive/unverified counts, and agreement-rate headers
-  -> persist before appending a hash-only qualification.completed event
+  -> persist before appending a hash-only qualification.completed event on the
+     completed qualification Run
 ```
 
 Execution validation recomputes aggregates and the canonical hash, enforces
@@ -2031,8 +2036,8 @@ fixtures.
 OTLP trace export keeps those evaluation governance signals metadata-only:
 status and SHA-256 attributes are allowed, while evaluator `reason` and
 `evidence` text remain excluded by the redaction policy. The underlying
-evaluator model call is still replayable through its evaluation Run envelope
-and redacted response binding.
+evaluator model call is still replayable through its evaluation or
+qualification Run envelope and redacted response binding.
 
 Casebook read projections are machine-checkable without parsing the full
 artifact:

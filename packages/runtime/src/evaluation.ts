@@ -252,7 +252,7 @@ export class RunEvaluationService {
     const envelope =
       trace &&
       createModelContextEnvelopeReceipt({
-        turnIndex: 0,
+        turnIndex: trace.turnIndex ?? 0,
         systemPrompt: requestContext.systemPrompt,
         messages: requestContext.messages,
         tools: requestContext.tools,
@@ -512,8 +512,9 @@ export function buildRunEvaluationMessages(
 
 type ParsedEvaluation = RunEvaluationJudgment;
 
-interface RunEvaluationTraceOptions {
+export interface RunEvaluationTraceOptions {
   run: RunRecord;
+  turnIndex?: number;
 }
 
 interface EvaluationModelResponseInput {

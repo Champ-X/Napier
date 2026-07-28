@@ -8945,9 +8945,15 @@ describe("Napier HTTP goal flow", () => {
         eventStreamSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    expect(fixture.runs).toHaveLength(3);
+    expect(fixture.runs).toHaveLength(4);
     const fixtureEvaluationRun = fixture.runs.find(
-      (run) => run.id !== left!.id && run.id !== right!.id,
+      (run) =>
+        run.id !== left!.id &&
+        run.id !== right!.id &&
+        fixture.events.some(
+          (event) =>
+            event.runId === run.id && event.type === "evaluation.completed",
+        ),
     );
     expect(fixtureEvaluationRun).toEqual(
       expect.objectContaining({
@@ -8962,6 +8968,25 @@ describe("Napier HTTP goal flow", () => {
         .filter((event) => event.runId === fixtureEvaluationRun!.id)
         .map((event) => event.type),
     ).toEqual(["evaluation.completed"]);
+    const fixtureQualificationRun = fixture.runs.find(
+      (run) =>
+        run.id !== left!.id &&
+        run.id !== right!.id &&
+        run.id !== fixtureEvaluationRun!.id,
+    );
+    expect(fixtureQualificationRun).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        configuration: expect.objectContaining({
+          model: { provider: "napier", id: "demo" },
+        }),
+      }),
+    );
+    expect(
+      fixture.events
+        .filter((event) => event.runId === fixtureQualificationRun!.id)
+        .map((event) => event.type),
+    ).toEqual(["evaluation.casebook.qualification.completed"]);
     expect(fixture.evaluations).toEqual([evaluation]);
     expect(fixture.evaluationAdjudications).toEqual([revisedReview]);
 
