@@ -92,6 +92,64 @@ describe("workspace tools", () => {
     ).toEqual(["list_files", "read_file", "search_files", "apply_patch"]);
   });
 
+  it("returns hash anchors for literal search matches", async () => {
+    const { workspaceRoot } = await createFixture();
+    await mkdir(path.join(workspaceRoot, "src"));
+    const firstSource = "alpha\nneedle one\nomega\n";
+    const secondSource = "needle two\n";
+    await writeFile(path.join(workspaceRoot, "src/first.txt"), firstSource);
+    await writeFile(path.join(workspaceRoot, "second.txt"), secondSource);
+    const firstFileSha256 = createHash("sha256")
+      .update(firstSource)
+      .digest("hex");
+    const secondFileSha256 = createHash("sha256")
+      .update(secondSource)
+      .digest("hex");
+    const firstLineSha256 = createHash("sha256")
+      .update("needle one")
+      .digest("hex");
+    const secondLineSha256 = createHash("sha256")
+      .update("needle two")
+      .digest("hex");
+    const search = createWorkspaceTools(workspaceRoot).find(
+      (tool) => tool.name === "search_files",
+    )!;
+
+    const result = await search.execute("search-needle", {
+      query: "needle",
+    });
+
+    expect(result.content[0]).toEqual(
+      expect.objectContaining({
+        type: "text",
+        text: [
+          `second.txt:1 [lineSha256=${secondLineSha256} fileSha256=${secondFileSha256}]: needle two`,
+          `src/first.txt:2 [lineSha256=${firstLineSha256} fileSha256=${firstFileSha256}]: needle one`,
+        ].join("\n"),
+      }),
+    );
+    expect(result.details).toEqual({
+      count: 2,
+      truncated: false,
+      matches: [
+        {
+          path: "second.txt",
+          line: 1,
+          fileSha256: secondFileSha256,
+          lineSha256: secondLineSha256,
+          sizeBytes: Buffer.byteLength(secondSource),
+        },
+        {
+          path: "src/first.txt",
+          line: 2,
+          fileSha256: firstFileSha256,
+          lineSha256: firstLineSha256,
+          sizeBytes: Buffer.byteLength(firstSource),
+        },
+      ],
+    });
+  });
+
   it("creates and exact-replaces UTF-8 files with hash preconditions", async () => {
     const { workspaceRoot, dataRoot } = await createFixture();
     const created = await applyWorkspacePatch(workspaceRoot, dataRoot, {

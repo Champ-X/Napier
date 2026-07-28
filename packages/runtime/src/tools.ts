@@ -181,6 +181,14 @@ export interface WorkspacePatchResult {
   editCount: number;
 }
 
+export interface WorkspaceSearchMatch {
+  path: string;
+  line: number;
+  fileSha256: string;
+  lineSha256: string;
+  sizeBytes: number;
+}
+
 export interface CreateWorkspaceToolsOptions {
   includeWriteTools?: boolean;
   dataRoot?: string;
@@ -858,7 +866,11 @@ export function createWorkspaceTools(
 
   const searchFiles: AgentTool<
     typeof searchFilesSchema,
-    { count: number; truncated: boolean }
+    {
+      count: number;
+      truncated: boolean;
+      matches: WorkspaceSearchMatch[];
+    }
   > = {
     name: "search_files",
     label: "Search files",
@@ -871,38 +883,52 @@ export function createWorkspaceTools(
       );
       const target = resolved.target;
       const files = await walkFiles(target, 8);
-      const matches: string[] = [];
+      const lines: string[] = [];
+      const matches: WorkspaceSearchMatch[] = [];
       for (const file of files) {
         if (matches.length >= MAX_SEARCH_MATCHES) break;
         const info = await stat(file);
         if (!info.isFile() || info.size > MAX_READ_BYTES) continue;
+        let buffer: Buffer;
         let source: string;
         try {
-          source = await readFile(file, "utf8");
+          buffer = await readFile(file);
+          source = decodeUtf8(buffer, "search_files target");
         } catch {
           continue;
         }
-        source.split("\n").forEach((line, index) => {
+        const fileSha256 = sha256(buffer);
+        const relativePath = path.relative(resolved.root, file);
+        for (const [index, line] of source.split("\n").entries()) {
           if (
             matches.length >= MAX_SEARCH_MATCHES ||
             !line.includes(input.query)
           )
-            return;
-          matches.push(
-            `${path.relative(resolved.root, file)}:${index + 1}: ${line.trim()}`,
+            continue;
+          const lineSha256 = sha256(line);
+          matches.push({
+            path: relativePath,
+            line: index + 1,
+            fileSha256,
+            lineSha256,
+            sizeBytes: buffer.byteLength,
+          });
+          lines.push(
+            `${relativePath}:${index + 1} [lineSha256=${lineSha256} fileSha256=${fileSha256}]: ${line.trim()}`,
           );
-        });
+        }
       }
       return {
         content: [
           {
             type: "text",
-            text: matches.length > 0 ? matches.join("\n") : "No matches found.",
+            text: lines.length > 0 ? lines.join("\n") : "No matches found.",
           },
         ],
         details: {
           count: matches.length,
           truncated: matches.length >= MAX_SEARCH_MATCHES,
+          matches,
         },
       };
     },

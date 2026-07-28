@@ -59,7 +59,7 @@ Version `0.1.0` includes:
   predecessor-linked and automatically binds the actual same-Run Ledger events
   since the prior milestone before being reinjected on the next Pi turn;
 - workspace-confined read, list, and literal search tools with canonical
-  realpath checks and complete-file SHA-256 evidence;
+  realpath checks plus complete-file and line-anchor SHA-256 evidence;
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
   replacement, and Hashline-style line-anchor replacement under the explicit
   `workspace` policy, without general shell or file deletion;
@@ -1015,6 +1015,13 @@ when only a line range is returned. A write-capable Agent must pass that digest
 back to `apply_patch`; creation instead requires `expectedSha256: null` to
 assert non-existence. Every replacement must match exactly once, and a stale
 digest fails without changing the file.
+
+`search_files` is also hash-aware. Literal matches include the workspace path,
+line number, complete-file SHA-256, matched-line SHA-256, and file byte size in
+the structured tool details, while the text output keeps the matching line for
+human-readable orientation. This lets a follow-up `read_file` or
+`apply_patch hashline_replace` bind work to the same evidence without trusting
+plain grep output.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

@@ -45,8 +45,9 @@ removal is a versioned contract change.
 
 - Pi model registration and agent-loop execution;
 - conversion from Pi events to Napier events;
-- tool assembly, canonical workspace-path checks, hash-bound atomic editing
-  with Hashline-style line anchors, sandboxed structured verification, and
+- tool assembly, canonical workspace-path checks, hash-aware literal search,
+  hash-bound atomic editing with Hashline-style line anchors, sandboxed
+  structured verification, and
   last-moment policy checks;
 - configurable Model Advisor gates that combine deterministic output checks
   with an optional distinct zero-tool review model before the user-visible
@@ -1489,6 +1490,10 @@ read_file
   -> reject external symlinks, non-files, invalid UTF-8, and oversized input
   -> return requested lines plus complete-file size, SHA-256, and bounded line
      anchors
+search_files
+  -> scan bounded UTF-8 files with the same canonical workspace boundary
+  -> return each literal match with path, line number, complete-file SHA-256,
+     line-anchor SHA-256, and byte size
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require an existing safe parent and a missing target
