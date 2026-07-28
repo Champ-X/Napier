@@ -15,6 +15,15 @@ export interface ModelProviderGroup {
   options: ModelSelectOption[];
 }
 
+export interface SelectedModelAvailability {
+  key: string;
+  provider: string;
+  id: string;
+  label: string;
+  configured: boolean;
+  known: boolean;
+}
+
 export function modelProviderGroups(
   models: readonly ModelSummary[],
 ): ModelProviderGroup[] {
@@ -62,6 +71,34 @@ export function modelSelectOption(model: ModelSummary): ModelSelectOption {
   };
 }
 
+export function selectedModelAvailability(
+  models: readonly ModelSummary[],
+  selectedKey: string,
+): SelectedModelAvailability {
+  const model = models.find(
+    (candidate) => `${candidate.provider}/${candidate.id}` === selectedKey,
+  );
+  if (model) {
+    return {
+      key: selectedKey,
+      provider: model.provider,
+      id: model.id,
+      label: `${model.provider} / ${model.name}`,
+      configured: model.configured,
+      known: true,
+    };
+  }
+  const parsed = parseModelKeyParts(selectedKey);
+  return {
+    key: selectedKey,
+    provider: parsed.provider,
+    id: parsed.id,
+    label: selectedKey,
+    configured: false,
+    known: false,
+  };
+}
+
 function providerGroupLabel(
   provider: string,
   configuredCount: number,
@@ -81,4 +118,15 @@ function compareModelProviderGroups(
   const rightRank =
     right.provider === "napier" ? 0 : right.configuredCount > 0 ? 1 : 2;
   return leftRank - rightRank || left.provider.localeCompare(right.provider);
+}
+
+function parseModelKeyParts(key: string): { provider: string; id: string } {
+  const slash = key.indexOf("/");
+  if (slash <= 0 || slash === key.length - 1) {
+    return { provider: "napier", id: "demo" };
+  }
+  return {
+    provider: key.slice(0, slash),
+    id: key.slice(slash + 1),
+  };
 }

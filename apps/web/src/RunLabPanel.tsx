@@ -23,6 +23,7 @@ import type {
   RunReplayVerificationReceipt,
 } from "./use-workspace-view-model";
 import { importProvenanceReceiptView } from "./use-workspace-view-model";
+import { selectedModelAvailability } from "./model-selection-view-model";
 import {
   traceSummaryCoverageDeltaReceipt,
   traceSummaryCoverageDeltaView,
@@ -83,6 +84,8 @@ export default function RunLabPanel({
     Boolean(leftRunId) &&
     Boolean(rightRunId) &&
     leftRunId !== rightRunId;
+  const selectedModel = selectedModelAvailability(models, selectedModelKey);
+  const canEvaluate = canCompare && selectedModel.configured;
   const latestEvaluation = evaluations
     .slice()
     .reverse()
@@ -217,7 +220,7 @@ export default function RunLabPanel({
             <button
               className="lab-evaluate"
               type="button"
-              disabled={!canCompare || Boolean(busyAction)}
+              disabled={!canEvaluate || Boolean(busyAction)}
               onClick={onEvaluate}
             >
               <Scale size={12} aria-hidden="true" />
@@ -227,7 +230,9 @@ export default function RunLabPanel({
             </button>
           </div>
 
-          {selectedModelKey === "napier/demo" ? (
+          {!selectedModel.configured ? (
+            <p className="lab-demo-note">{copy.modelUnavailableHint}</p>
+          ) : selectedModelKey === "napier/demo" ? (
             <p className="lab-demo-note">{copy.lab.demoNotice}</p>
           ) : null}
         </>

@@ -437,6 +437,15 @@ button:disabled {
   border-right: 1px solid var(--rule);
 }
 
+.model-chip.is-unavailable .model-glyph {
+  color: var(--danger);
+  background: #f5dfd8;
+}
+
+.model-chip.is-unavailable small {
+  color: var(--danger);
+}
+
 .model-glyph {
   display: grid;
   width: 26px;
@@ -573,6 +582,21 @@ button:disabled {
   white-space: nowrap;
 }
 
+.recovery-actions {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.recovery-actions p {
+  max-width: 180px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--danger);
+  text-align: right;
+}
+
 .recovery-banner button {
   display: inline-flex;
   gap: 5px;
@@ -596,6 +620,10 @@ button:disabled {
 .recovery-banner button:disabled {
   cursor: wait;
   opacity: 0.55;
+}
+
+.recovery-actions button:disabled {
+  cursor: not-allowed;
 }
 
 .conversation {
@@ -853,6 +881,14 @@ button:disabled {
   border-color: var(--rule-strong);
   box-shadow: 0 9px 25px rgb(65 55 44 / 8%);
   transform: translateY(-2px);
+}
+
+.prompt-card:disabled,
+.prompt-card:disabled:hover {
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.55;
+  transform: none;
 }
 
 .prompt-card > span {
@@ -1245,6 +1281,13 @@ button:disabled {
   color: var(--ink-faint);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.composer-model-warning {
+  margin: 8px 0 0;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--danger);
 }
 
 .control-mode,

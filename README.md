@@ -305,7 +305,10 @@ the revisioned persistent default. Runtime model selectors group models by
 provider and show configured/total counts, so a provider like DeepSeek remains
 visible but disabled until its credential reference is available. Evaluation
 Suite creation uses the same grouped catalog selector; executable Casebook
-qualification only offers configured evaluator candidates.
+qualification only offers configured evaluator candidates. The main Run,
+resume, and Run Lab evaluation actions are disabled client-side when the
+selected model is not configured, matching the server-side fail-closed
+credential boundary.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source

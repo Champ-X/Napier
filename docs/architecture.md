@@ -1138,6 +1138,7 @@ render Runtime and Evaluation model selectors
   -> group model options by provider with configured/total counts
   -> keep unavailable live models visible but disabled until credentials pass
   -> restrict executable Casebook qualification selectors to configured models
+  -> disable Run, resume, and Run Lab evaluation actions for unconfigured models
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1158,7 +1159,10 @@ or writes secrets. The model selector grouping is likewise a projection over
 the server-returned model catalog and credential availability; it does not
 perform an authentication attempt. Evaluation Suite creation uses the same
 full catalog projection, while Casebook qualification filters that projection
-to executable configured candidates before replaying a gold set. Credential
+to executable configured candidates before replaying a gold set. The composer,
+resume banner, and Run Lab evaluation actions also consume that selected-model
+projection so unavailable providers fail closed before a request leaves the
+browser. Credential
 ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are

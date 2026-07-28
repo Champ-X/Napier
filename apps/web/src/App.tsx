@@ -57,10 +57,14 @@ export function App() {
     return <FatalState message={vm.error ?? copy.notices.disconnected} />;
 
   const activeAgent = vm.detail?.agent ?? vm.bootstrap.agents[0];
-  const activeModel =
-    vm.bootstrap.models.find(
-      (model) => `${model.provider}/${model.id}` === vm.selectedModelKey,
-    ) ?? vm.bootstrap.models[0];
+  const activeModel = vm.selectedModel;
+  const canStartRun = Boolean(
+    vm.composer.trim() &&
+      vm.detail &&
+      !vm.openOperatorDecision &&
+      activeModel.configured,
+  );
+  const modelWarningId = "composer-model-unavailable";
 
   return (
     <div className="app-shell">
@@ -137,19 +141,27 @@ export function App() {
           </div>
           <div className="run-meta">
             <div
-              className="model-chip"
-              title={`${activeModel?.provider}/${activeModel?.id}`}
+              className={`model-chip ${
+                activeModel.configured ? "" : "is-unavailable"
+              }`}
+              title={
+                activeModel.configured
+                  ? activeModel.key
+                  : `${activeModel.key} · ${copy.modelUnavailable}`
+              }
             >
               <span className="model-glyph" aria-hidden="true">
-                {activeModel?.provider === "napier" ? "D" : "L"}
+                {activeModel.provider === "napier" ? "D" : "L"}
               </span>
               <span>
                 <small>
-                  {activeModel?.provider === "napier"
+                  {!activeModel.configured
+                    ? copy.modelUnavailable
+                    : activeModel.provider === "napier"
                     ? copy.context.demoProvider
                     : copy.context.liveProvider}
                 </small>
-                <strong>{activeModel?.id ?? "demo"}</strong>
+                <strong>{activeModel.id}</strong>
               </span>
             </div>
             <div
@@ -177,6 +189,7 @@ export function App() {
             <RecoveryBanner
               run={vm.resumableRun}
               running={vm.isRunning}
+              modelConfigured={activeModel.configured}
               onResume={() => void vm.resume()}
             />
           ) : null}
@@ -184,7 +197,10 @@ export function App() {
 
         <section className="conversation" aria-label="Conversation">
           {vm.messages.length === 0 ? (
-            <WelcomePanel onPrompt={(prompt) => void vm.submit(prompt)} />
+            <WelcomePanel
+              canStart={activeModel.configured}
+              onPrompt={(prompt) => void vm.submit(prompt)}
+            />
           ) : (
             <div className="message-ledger">
               {vm.messages.map((message) => (
@@ -306,10 +322,9 @@ export function App() {
               <button
                 className="run-button"
                 type="submit"
-                disabled={
-                  !vm.composer.trim() ||
-                  !vm.detail ||
-                  Boolean(vm.openOperatorDecision)
+                disabled={!canStartRun}
+                aria-describedby={
+                  !activeModel.configured ? modelWarningId : undefined
                 }
               >
                 <Send size={14} aria-hidden="true" />
@@ -317,6 +332,15 @@ export function App() {
               </button>
             )}
           </div>
+          {!vm.isRunning && !activeModel.configured ? (
+            <p
+              id={modelWarningId}
+              className="composer-model-warning"
+              role="status"
+            >
+              {copy.modelUnavailableHint}
+            </p>
+          ) : null}
         </form>
       </main>
 
@@ -410,14 +434,10 @@ export function App() {
                 exportReceipt={vm.traceExportReceipt}
                 verifyBusy={vm.traceVerifyBusy}
                 verificationReceipt={vm.traceVerificationReceipt}
-                reviewerModel={
-                  activeModel
-                    ? {
-                        provider: activeModel.provider,
-                        id: activeModel.id,
-                      }
-                    : undefined
-                }
+                reviewerModel={{
+                  provider: activeModel.provider,
+                  id: activeModel.id,
+                }}
                 onExport={(runId) => void vm.exportOpenTelemetryTrace(runId)}
                 onVerify={(file) =>
                   void vm.verifyOpenTelemetryTraceArtifactFile(file)
@@ -669,12 +689,15 @@ export function App() {
 function RecoveryBanner({
   run,
   running,
+  modelConfigured,
   onResume,
 }: {
   run: RunRecord;
   running: boolean;
+  modelConfigured: boolean;
   onResume: () => void;
 }) {
+  const resumeWarningId = "recovery-model-unavailable";
   return (
     <section className="recovery-banner" aria-labelledby="recovery-title">
       <div className="recovery-mark" aria-hidden="true">
@@ -688,15 +711,31 @@ function RecoveryBanner({
           {copy.recovery.run}: {run.id}
         </code>
       </div>
-      <button type="button" disabled={running} onClick={onResume}>
-        <RotateCcw size={12} aria-hidden="true" />
-        {copy.recovery.action}
-      </button>
+      <div className="recovery-actions">
+        {!modelConfigured ? (
+          <p id={resumeWarningId}>{copy.modelUnavailableHint}</p>
+        ) : null}
+        <button
+          type="button"
+          disabled={running || !modelConfigured}
+          aria-describedby={!modelConfigured ? resumeWarningId : undefined}
+          onClick={onResume}
+        >
+          <RotateCcw size={12} aria-hidden="true" />
+          {copy.recovery.action}
+        </button>
+      </div>
     </section>
   );
 }
 
-function WelcomePanel({ onPrompt }: { onPrompt: (prompt: string) => void }) {
+function WelcomePanel({
+  canStart,
+  onPrompt,
+}: {
+  canStart: boolean;
+  onPrompt: (prompt: string) => void;
+}) {
   return (
     <div className="welcome-panel">
       <div className="welcome-seal" aria-hidden="true">
@@ -708,6 +747,7 @@ function WelcomePanel({ onPrompt }: { onPrompt: (prompt: string) => void }) {
       <button
         type="button"
         className="prompt-card"
+        disabled={!canStart}
         onClick={() => onPrompt(copy.welcome.firstPrompt)}
       >
         <span>01</span>

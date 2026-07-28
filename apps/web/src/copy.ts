@@ -16,6 +16,9 @@ export const copy = {
   composerPlaceholder: "Give Napier a task, question, or durable goal...",
   steeringPlaceholder: "Redirect the active run without losing its ledger...",
   send: "Run",
+  modelUnavailable: "Model unavailable",
+  modelUnavailableHint:
+    "Configure this provider in Context before starting a run or evaluation.",
   steer: "Steer",
   queueFollowUp: "Queue next",
   controlMode: "Run input mode",

@@ -5,6 +5,7 @@ import {
   configuredModelProviderGroups,
   modelProviderGroups,
   modelSelectOption,
+  selectedModelAvailability,
 } from "../src/model-selection-view-model";
 
 describe("model selection view model", () => {
@@ -61,6 +62,40 @@ describe("model selection view model", () => {
       label: "deepseek / DeepSeek V4 Flash · unavailable",
       configured: false,
       provider: "deepseek",
+    });
+  });
+
+  it("projects selected model run availability", () => {
+    const models = [
+      model("napier", "demo", "Deterministic demo", true),
+      model("deepseek", "deepseek-v4-flash", "DeepSeek V4 Flash", false),
+    ];
+
+    expect(selectedModelAvailability(models, "napier/demo")).toEqual({
+      key: "napier/demo",
+      provider: "napier",
+      id: "demo",
+      label: "napier / Deterministic demo",
+      configured: true,
+      known: true,
+    });
+    expect(
+      selectedModelAvailability(models, "deepseek/deepseek-v4-flash"),
+    ).toEqual({
+      key: "deepseek/deepseek-v4-flash",
+      provider: "deepseek",
+      id: "deepseek-v4-flash",
+      label: "deepseek / DeepSeek V4 Flash",
+      configured: false,
+      known: true,
+    });
+    expect(selectedModelAvailability(models, "missing/model")).toEqual({
+      key: "missing/model",
+      provider: "missing",
+      id: "model",
+      label: "missing/model",
+      configured: false,
+      known: false,
     });
   });
 });

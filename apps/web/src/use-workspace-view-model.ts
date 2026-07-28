@@ -93,6 +93,7 @@ import type {
   ExtensionPublisherDraft,
 } from "./extension-package-types";
 import { formatApiErrorMessage } from "./api-error";
+import { selectedModelAvailability } from "./model-selection-view-model";
 
 export type InspectorTab =
   | "trace"
@@ -397,6 +398,11 @@ export function useWorkspaceViewModel() {
       ),
     [detail?.runs],
   );
+  const selectedModel = useMemo(
+    () =>
+      selectedModelAvailability(bootstrap?.models ?? [], selectedModelKey),
+    [bootstrap?.models, selectedModelKey],
+  );
   const contextCheckpoint = useMemo(
     () =>
       (detail?.events ?? [])
@@ -592,6 +598,10 @@ export function useWorkspaceViewModel() {
         }
         return;
       }
+      if (!selectedModel.configured) {
+        setError(copy.modelUnavailableHint);
+        return;
+      }
       setComposer("");
       startRunUi();
       try {
@@ -617,6 +627,7 @@ export function useWorkspaceViewModel() {
       isRunning,
       openOperatorDecision,
       refreshBootstrap,
+      selectedModel.configured,
       selectedModelKey,
       startRunUi,
     ],
@@ -624,6 +635,10 @@ export function useWorkspaceViewModel() {
 
   const resume = useCallback(async () => {
     if (!detail || !resumableRun || isRunning) return;
+    if (!selectedModel.configured) {
+      setError(copy.modelUnavailableHint);
+      return;
+    }
     startRunUi();
     try {
       await resumeRunApi(
@@ -647,6 +662,7 @@ export function useWorkspaceViewModel() {
     isRunning,
     refreshBootstrap,
     resumableRun,
+    selectedModel.configured,
     selectedModelKey,
     startRunUi,
   ]);
@@ -1737,6 +1753,10 @@ export function useWorkspaceViewModel() {
       setError(copy.lab.errors.distinct);
       return;
     }
+    if (!selectedModel.configured) {
+      setError(copy.modelUnavailableHint);
+      return;
+    }
     setLabBusyAction("evaluate");
     setError(undefined);
     try {
@@ -1762,7 +1782,13 @@ export function useWorkspaceViewModel() {
     } finally {
       setLabBusyAction(undefined);
     }
-  }, [detail, labLeftRunId, labRightRunId, selectedModelKey]);
+  }, [
+    detail,
+    labLeftRunId,
+    labRightRunId,
+    selectedModel.configured,
+    selectedModelKey,
+  ]);
 
   const exportOpenTelemetryTrace = useCallback(
     async (runId?: string): Promise<void> => {
@@ -2074,6 +2100,7 @@ export function useWorkspaceViewModel() {
     selectedThreadId,
     inspectorTab,
     selectedModelKey,
+    selectedModel,
     composer,
     activeRunId,
     controlMessageMode,
