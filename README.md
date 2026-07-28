@@ -845,7 +845,11 @@ payloads or payloads containing raw fields. Run replay snapshots and Run Lab
 comparisons expose envelope coverage plus bound/unbound response counts as
 ordinary metrics, then derive a metadata-only `contextCoverageDelta` status so
 operators can see whether a candidate Run is clean, partial, missing, or
-regressed.
+regressed. The same envelope binding now covers pairwise evaluator model calls:
+each service-created evaluation Run records the evaluator request envelope and
+a redacted `model.response` with only text hashes, byte counts, usage, and the
+binding hashes. Replay validation fails closed when an envelope lacks exactly
+one bound response.
 
 ## Agent Configuration History
 
@@ -1435,7 +1439,9 @@ no-tool evaluator as metadata, so replayed judgments preserve the governance
 context without reconstructing raw model input. Thread replay bundle validation
 recomputes the binding hash during export/import verification. OTLP trace
 export projects only the governance status and SHA-256 fields while excluding
-evaluator reason and evidence text.
+evaluator reason and evidence text. The evaluator call itself is preserved as a
+completed evaluation Run with hash-only context envelope evidence, while the
+normalized reason and evidence remain on the user-visible evaluation event.
 
 Every case stores the pair-evaluation ID and SHA-256 alongside both replay
 snapshot hashes. The execution stores a canonical batch SHA-256 over the suite

@@ -8945,7 +8945,23 @@ describe("Napier HTTP goal flow", () => {
         eventStreamSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
-    expect(fixture.runs).toHaveLength(2);
+    expect(fixture.runs).toHaveLength(3);
+    const fixtureEvaluationRun = fixture.runs.find(
+      (run) => run.id !== left!.id && run.id !== right!.id,
+    );
+    expect(fixtureEvaluationRun).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        configuration: expect.objectContaining({
+          model: { provider: "napier", id: "demo" },
+        }),
+      }),
+    );
+    expect(
+      fixture.events
+        .filter((event) => event.runId === fixtureEvaluationRun!.id)
+        .map((event) => event.type),
+    ).toEqual(["evaluation.completed"]);
     expect(fixture.evaluations).toEqual([evaluation]);
     expect(fixture.evaluationAdjudications).toEqual([revisedReview]);
 

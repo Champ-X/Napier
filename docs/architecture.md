@@ -507,17 +507,25 @@ Run. Duplicated, reordered, or content-mutated context claims fail closed during
 bundle construction and import verification. New `model.response` events bind
 back to the envelope content hash, turn index, message-set hash, and
 tool-definition-set hash; portable replay verifies any declared binding against
-the corresponding same-Run envelope and rejects partial binding coverage. Run
-replay snapshot validation calls the same binding verifier before accepting an
-uploaded snapshot. OTLP projects those response bindings onto the chat span and
-allows only scalar counts plus SHA-256 keys. The lazy Trace projection joins
-matching response bindings back into the envelope card as response sequence,
-model, and stop reason; mismatched bindings remain unrendered. Run replay
-metrics count context envelopes, bound model responses, and unbound model
-responses so Run Lab comparisons can surface context-governance coverage.
+the corresponding same-Run envelope and requires every envelope to have exactly
+one bound response. Run replay snapshot validation calls the same binding
+verifier before accepting an uploaded snapshot. OTLP projects those response
+bindings onto the chat span and allows only scalar counts plus SHA-256 keys.
+The lazy Trace projection joins matching response bindings back into the
+envelope card as response sequence, model, and stop reason; mismatched bindings
+remain unrendered. Run replay metrics count context envelopes, bound model
+responses, and unbound model responses so Run Lab comparisons can surface
+context-governance coverage.
 Comparison snapshots also derive a metadata-only `contextCoverageDelta` with
 left/right rates, diagnostics, and a clean/partial/missing/regressed status for
 candidate governance review.
+
+The pairwise evaluator uses the same governance path. Service-created
+evaluations allocate a short-lived evaluation Run, record the evaluator prompt
+as a hash-only `context.model_envelope`, and bind the resulting
+`model.response` back to that envelope. The evaluator response body is redacted
+to `textSha256` plus byte count in the debug event; the normalized reason and
+evidence remain on the user-visible `evaluation.completed` event.
 
 When an SSE `event:` name is present, it must match the JSON `frame.type`; event
 frames must carry an SSE `id:` equal to `frame.event.seq`, while non-event
@@ -2022,7 +2030,9 @@ Thread replay bundle validation also recomputes any saved pair-evaluation
 fixtures.
 OTLP trace export keeps those evaluation governance signals metadata-only:
 status and SHA-256 attributes are allowed, while evaluator `reason` and
-`evidence` text remain excluded by the redaction policy.
+`evidence` text remain excluded by the redaction policy. The underlying
+evaluator model call is still replayable through its evaluation Run envelope
+and redacted response binding.
 
 Casebook read projections are machine-checkable without parsing the full
 artifact:

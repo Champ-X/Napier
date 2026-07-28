@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import type { RunEvent } from "@napier/contracts";
+
 import {
+  assertModelContextEnvelopeEventBindings,
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
   validateModelContextEnvelopeReceipt,
@@ -97,5 +100,47 @@ describe("model context envelope", () => {
         contentSha256: "0".repeat(64),
       }),
     ).toThrow("hash mismatch");
+  });
+
+  it("requires each envelope to have exactly one bound model response", () => {
+    const receipt = createModelContextEnvelopeReceipt({
+      turnIndex: 0,
+      systemPrompt: "System",
+      messages: [{ role: "user", content: "Hello" }],
+      tools: [],
+    });
+    const envelopeEvent: RunEvent = {
+      id: "event_envelope",
+      threadId: "thread_context",
+      runId: "run_context",
+      seq: 1,
+      type: MODEL_CONTEXT_ENVELOPE_EVENT,
+      category: "model",
+      visibility: "debug",
+      createdAt: "2026-07-25T00:00:00.000Z",
+      payload: receipt,
+    };
+    expect(() =>
+      assertModelContextEnvelopeEventBindings([envelopeEvent]),
+    ).toThrow("response binding count is invalid");
+
+    expect(() =>
+      assertModelContextEnvelopeEventBindings([
+        envelopeEvent,
+        {
+          ...envelopeEvent,
+          id: "event_response",
+          seq: 2,
+          type: "model.response",
+          payload: {
+            modelContextEnvelopeSha256: receipt.contentSha256,
+            modelContextEnvelopeTurnIndex: receipt.turnIndex,
+            modelContextMessageSetSha256: receipt.messageSetSha256,
+            modelContextToolDefinitionSetSha256:
+              receipt.toolDefinitionSetSha256,
+          },
+        },
+      ]),
+    ).not.toThrow();
   });
 });

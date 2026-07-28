@@ -31,7 +31,11 @@ All notable changes to Napier are recorded here.
   no-tool evaluator instead of rehydrating raw context. Portable Thread replay
   bundle verification now also recomputes the governance binding hash. OTLP
   trace export surfaces evaluation governance only as status plus SHA-256
-  attributes while continuing to drop evaluator reason/evidence text.
+  attributes while continuing to drop evaluator reason/evidence text. Pairwise
+  evaluator model calls now run inside a completed evaluation Run with their
+  own `context.model_envelope` and redacted, envelope-bound `model.response`
+  evidence, and replay validation requires every envelope to have exactly one
+  bound response.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

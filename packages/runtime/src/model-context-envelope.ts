@@ -216,8 +216,8 @@ export function assertModelContextEnvelopeEventBindings(
       (responseBindingsByRun.get(event.runId) ?? 0) + 1,
     );
   }
-  for (const [runId, bindingCount] of responseBindingsByRun) {
-    const envelopeCount = envelopeCountsByRun.get(runId) ?? 0;
+  for (const [runId, envelopeCount] of envelopeCountsByRun) {
+    const bindingCount = responseBindingsByRun.get(runId) ?? 0;
     if (bindingCount !== envelopeCount) {
       throw new Error(`${label} response binding count is invalid: ${runId}`);
     }

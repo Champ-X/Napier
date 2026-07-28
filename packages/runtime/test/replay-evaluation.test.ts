@@ -17,6 +17,7 @@ import { ModelRegistry } from "../src/models.js";
 import {
   compareRuns,
   createRunReplaySnapshot,
+  exportThreadReplayBundle,
   hashEventStream,
   verifyRunReplaySnapshot,
 } from "../src/replay.js";
@@ -530,7 +531,95 @@ describe("run evaluation", () => {
       }),
     );
     expect(store.listRunEvaluations(threadId)).toEqual([evaluation]);
-    const completedEvent = (await store.listEvents(threadId)).at(-1);
+    const runs = store.listRuns(threadId);
+    const evaluationRun = runs.find(
+      (run) => run.id !== left.id && run.id !== right.id,
+    );
+    expect(evaluationRun).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        configuration: expect.objectContaining({
+          model: { provider: "faux-evaluator", id: "faux-1" },
+        }),
+      }),
+    );
+    const events = await store.listEvents(threadId);
+    const evaluationRunEvents = events.filter(
+      (event) => event.runId === evaluationRun!.id,
+    );
+    expect(evaluationRunEvents.map((event) => event.type)).toEqual([
+      "context.model_envelope",
+      "model.response",
+      "evaluation.completed",
+    ]);
+    const envelopeEvent = evaluationRunEvents.find(
+      (event) => event.type === "context.model_envelope",
+    );
+    const responseEvent = evaluationRunEvents.find(
+      (event) => event.type === "model.response",
+    );
+    if (
+      !envelopeEvent?.payload ||
+      Array.isArray(envelopeEvent.payload) ||
+      typeof envelopeEvent.payload !== "object" ||
+      !responseEvent?.payload ||
+      Array.isArray(responseEvent.payload) ||
+      typeof responseEvent.payload !== "object"
+    ) {
+      throw new Error("Evaluation trace fixture is missing");
+    }
+    expect(responseEvent.payload).toEqual(
+      expect.objectContaining({
+        contentRedacted: true,
+        model: "faux-evaluator/faux-1",
+        textSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        textBytes: expect.any(Number),
+        modelContextEnvelopeSha256: envelopeEvent.payload["contentSha256"],
+        modelContextEnvelopeTurnIndex: 0,
+        modelContextMessageSetSha256: envelopeEvent.payload["messageSetSha256"],
+        modelContextToolDefinitionSetSha256:
+          envelopeEvent.payload["toolDefinitionSetSha256"],
+        usageAccounting: expect.objectContaining({
+          contentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(responseEvent.payload).not.toHaveProperty("text");
+    expect(JSON.stringify(responseEvent.payload)).not.toContain(
+      "The right run records verification evidence.",
+    );
+    const evaluationSnapshot = await createRunReplaySnapshot(
+      store,
+      threadId,
+      evaluationRun!.id,
+    );
+    expect(evaluationSnapshot.metrics).toEqual(
+      expect.objectContaining({
+        modelResponseCount: 1,
+        modelContextEnvelopeCount: 1,
+        modelContextBoundResponseCount: 1,
+        modelContextUnboundResponseCount: 0,
+      }),
+    );
+    const bundle = await exportThreadReplayBundle(store, threadId);
+    expect(bundle.runs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: evaluationRun!.id,
+          status: "completed",
+        }),
+      ]),
+    );
+    expect(
+      bundle.events
+        .filter((event) => event.runId === evaluationRun!.id)
+        .map((event) => event.type),
+    ).toEqual([
+      "context.model_envelope",
+      "model.response",
+      "evaluation.completed",
+    ]);
+    const completedEvent = evaluationRunEvents.at(-1);
     expect(completedEvent?.type).toBe("evaluation.completed");
     expect(completedEvent?.payload).toEqual(
       expect.objectContaining({
