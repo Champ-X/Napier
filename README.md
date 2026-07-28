@@ -1127,9 +1127,12 @@ outlive the check.
 non-zero exit is preserved as failed verification evidence rather than a tool
 transport error. Trace records the sandbox, target, duration, exit status,
 signal, output sizes, truncation flags, and independent stdout/stderr SHA-256
-digests. Workbench summaries expose only verifier kind/status, exit code,
-output hashes, and truncation flags; output text, cwd, target paths, and
-sandbox labels remain outside the bounded summary.
+digests. Each result also carries a `scopeSha256` receipt over the verifier
+kind, cwd/target path hashes, workspace-local verifier file hash, and a bounded
+cwd snapshot hash that excludes `.git`, `.napier`, and `node_modules`.
+Workbench summaries expose only verifier kind/status, exit code, scope and
+snapshot hashes, counts, output hashes, and truncation flags; output text, cwd,
+target paths, and sandbox labels remain outside the bounded summary.
 
 ## Durable Plan Archives
 

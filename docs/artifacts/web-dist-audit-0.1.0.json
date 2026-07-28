@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-B4b5Dnsk.js",
+    "path": "apps/web/dist/assets/index-Cebr_mY_.js",
     "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "eee25c5e7d5c219f0ddedb66ec874ca4cb128b473de784f1aee1faa560f679bf"
+    "sha256": "fcee9f0262cf4e95654e1e653e30b1b87af5db9e564a738aef170624f3435dd3"
   },
-  "distContentSha256": "eee25c5e7d5c219f0ddedb66ec874ca4cb128b473de784f1aee1faa560f679bf",
+  "distContentSha256": "fcee9f0262cf4e95654e1e653e30b1b87af5db9e564a738aef170624f3435dd3",
   "errors": []
 }

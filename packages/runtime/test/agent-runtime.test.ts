@@ -2896,6 +2896,13 @@ describe("AgentRuntime demo path", () => {
           status: "passed",
           sandbox: "fake-agent-verifier",
           exitCode: 0,
+          scopeSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          workspaceSnapshotSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          workspaceSnapshotFileCount: 1,
+          workspaceSnapshotTruncated: false,
+          verifierSha256: createHash("sha256")
+            .update("// fixture verifier\n")
+            .digest("hex"),
           stdoutSha256: createHash("sha256")
             .update("Found 0 type errors.\n")
             .digest("hex"),

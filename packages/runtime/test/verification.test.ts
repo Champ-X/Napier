@@ -165,6 +165,26 @@ describe("sandboxed workspace verification", () => {
         sandbox: "fake-verification-sandbox",
         cwd: "packages/example",
         target: "packages/example/tsconfig.json",
+        cwdPathSha256: createHash("sha256")
+          .update("packages/example")
+          .digest("hex"),
+        targetPathSha256: createHash("sha256")
+          .update("packages/example/tsconfig.json")
+          .digest("hex"),
+        targetKind: "file",
+        targetSnapshotSha256: createHash("sha256").update("{}\n").digest("hex"),
+        targetSnapshotFileCount: 1,
+        targetSnapshotBytes: 3,
+        targetSnapshotTruncated: false,
+        verifierPathSha256: createHash("sha256")
+          .update("node_modules/typescript/bin/tsc")
+          .digest("hex"),
+        verifierSha256: createHash("sha256")
+          .update("// fixture\n")
+          .digest("hex"),
+        workspaceSnapshotFileCount: 2,
+        workspaceSnapshotBytes: 14,
+        workspaceSnapshotTruncated: false,
         exitCode: 0,
         signal: null,
         stdoutSha256: createHash("sha256")
@@ -172,6 +192,8 @@ describe("sandboxed workspace verification", () => {
           .digest("hex"),
       }),
     );
+    expect(result.details.scopeSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(result.details.workspaceSnapshotSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(fake.launchRequests).toHaveLength(1);
     const request = fake.launchRequests[0]!;
     expect(request.command).toBe(await realpath(process.execPath));
@@ -230,6 +252,8 @@ describe("sandboxed workspace verification", () => {
         text: expect.stringContaining("Verification FAILED: typecheck"),
       }),
     );
+    expect(result.content[0]?.text).toContain("Scope SHA-256:");
+    expect(result.content[0]?.text).toContain("Workspace snapshot SHA-256:");
     expect(result.content[0]?.text).toContain("error TS1000");
   });
 

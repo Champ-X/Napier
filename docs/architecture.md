@@ -1546,12 +1546,13 @@ model requests typecheck / test / format
   -> require non-observe policy + enabled verify_workspace tool
   -> validate a workspace-relative cwd, optional target, and 1-120 second budget
   -> canonicalize cwd, target, current Node, and the fixed workspace-local CLI
+  -> hash cwd/target paths, verifier bytes, and a bounded cwd snapshot
   -> construct Napier-owned arguments without consulting package scripts
   -> launch with process.spawn + workspace.read only
   -> keep the workspace read-only and networking disabled in the OS sandbox
   -> cap stdout and stderr independently at 32,000 characters
   -> terminate the isolated process group on timeout, cancellation, or output cap
-  -> append structured status and output digests to tool.completed
+  -> append structured status, scope receipt, and output digests to tool.completed
 ```
 
 The fixed entrypoints are TypeScript's `tsc`, Vitest's `vitest.mjs`, and
@@ -1563,12 +1564,16 @@ successful check or a hidden transport exception. `timed_out` and
 `output_capped` remain separately queryable outcomes.
 
 The result records kind, sandbox, workspace-relative cwd and target, duration,
-exit code, signal, character counts, truncation flags, and independent
-stdout/stderr SHA-256 digests. Full bounded output is returned to the Agent;
-the structured details are retained in Trace. Workbench summaries expose only
-kind/status, exit code, output hashes, and truncation flags; output text,
-cwd/target paths, and sandbox labels stay out of the bounded summary. Subagents
-remain read-only and never receive the verifier.
+exit code, signal, character counts, truncation flags, independent
+stdout/stderr SHA-256 digests, and a `scopeSha256` over the verifier kind,
+cwd/target path hashes, workspace-local verifier file hash, target snapshot,
+and bounded cwd snapshot. The snapshot excludes `.git`, `.napier`, and
+`node_modules`, caps at 2,000 files or 16 MiB, and marks truncated evidence
+explicitly. Full bounded output is returned to the Agent; the structured
+details are retained in Trace. Workbench summaries expose only kind/status,
+exit code, scope/snapshot hashes, counts, output hashes, and truncation flags;
+output text, cwd/target paths, and sandbox labels stay out of the bounded
+summary. Subagents remain read-only and never receive the verifier.
 
 ## Background Automation And Channel Flow
 

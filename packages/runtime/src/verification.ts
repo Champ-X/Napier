@@ -1,17 +1,20 @@
-import { createHash } from "node:crypto";
-import { realpath, stat } from "node:fs/promises";
+import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import type { Readable } from "node:stream";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
 
+import { canonicalJson, sha256 } from "./ed25519.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 120_000;
 const MAX_OUTPUT_CHARS = 32_000;
+const MAX_SCOPE_SNAPSHOT_FILES = 2_000;
+const MAX_SCOPE_SNAPSHOT_BYTES = 16 * 1024 * 1024;
+const SNAPSHOT_EXCLUDED_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 const VERIFICATION_CLIS = {
   typecheck: "node_modules/typescript/bin/tsc",
   test: "node_modules/vitest/vitest.mjs",
@@ -73,6 +76,20 @@ export interface VerificationDetails {
   sandbox: string;
   cwd: string;
   target?: string;
+  scopeSha256: string;
+  cwdPathSha256: string;
+  targetPathSha256?: string;
+  targetKind?: "file" | "directory";
+  targetSnapshotSha256?: string;
+  targetSnapshotFileCount?: number;
+  targetSnapshotBytes?: number;
+  targetSnapshotTruncated?: boolean;
+  verifierPathSha256: string;
+  verifierSha256: string;
+  workspaceSnapshotSha256: string;
+  workspaceSnapshotFileCount: number;
+  workspaceSnapshotBytes: number;
+  workspaceSnapshotTruncated: boolean;
   durationMs: number;
   exitCode: number | null;
   signal: NodeJS.Signals | null;
@@ -100,6 +117,14 @@ interface OutputCollector {
   readonly completion: Promise<void>;
   readonly text: string;
   readonly truncated: boolean;
+}
+
+interface PathSnapshotReceipt {
+  kind: "file" | "directory";
+  sha256: string;
+  fileCount: number;
+  bytes: number;
+  truncated: boolean;
 }
 
 export class VerificationRunner {
@@ -136,6 +161,36 @@ export class VerificationRunner {
       path.resolve(this.options.nodeExecutable ?? process.execPath),
     );
     const target = await resolveVerificationTarget(workspaceRoot, cwd, input);
+    const cwdPath = path.relative(workspaceRoot, cwd) || ".";
+    const targetPath = target
+      ? path.relative(workspaceRoot, target) || "."
+      : undefined;
+    const verifierPath = path.relative(workspaceRoot, cli) || ".";
+    const workspaceSnapshot = await createPathSnapshot(workspaceRoot, cwd);
+    const targetSnapshot = target
+      ? await createPathSnapshot(workspaceRoot, target)
+      : undefined;
+    const verifierSha256 = sha256(await readFile(cli));
+    const scopeReceipt = {
+      kind: input.kind,
+      cwdPathSha256: sha256(cwdPath),
+      ...(targetPath ? { targetPathSha256: sha256(targetPath) } : {}),
+      ...(targetSnapshot
+        ? {
+            targetKind: targetSnapshot.kind,
+            targetSnapshotSha256: targetSnapshot.sha256,
+            targetSnapshotFileCount: targetSnapshot.fileCount,
+            targetSnapshotBytes: targetSnapshot.bytes,
+            targetSnapshotTruncated: targetSnapshot.truncated,
+          }
+        : {}),
+      verifierPathSha256: sha256(verifierPath),
+      verifierSha256,
+      workspaceSnapshotSha256: workspaceSnapshot.sha256,
+      workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
+      workspaceSnapshotBytes: workspaceSnapshot.bytes,
+      workspaceSnapshotTruncated: workspaceSnapshot.truncated,
+    };
     const child = await this.options.sandbox.launch({
       command: nodeExecutable,
       args: verificationArgs(input.kind, cli, target),
@@ -191,10 +246,28 @@ export class VerificationRunner {
           kind: input.kind,
           status,
           sandbox: this.options.sandbox.id,
-          cwd: path.relative(workspaceRoot, cwd) || ".",
-          ...(target
-            ? { target: path.relative(workspaceRoot, target) || "." }
+          cwd: cwdPath,
+          ...(targetPath ? { target: targetPath } : {}),
+          scopeSha256: sha256(canonicalJson(scopeReceipt)),
+          cwdPathSha256: scopeReceipt.cwdPathSha256,
+          ...(scopeReceipt.targetPathSha256
+            ? { targetPathSha256: scopeReceipt.targetPathSha256 }
             : {}),
+          ...(targetSnapshot
+            ? {
+                targetKind: targetSnapshot.kind,
+                targetSnapshotSha256: targetSnapshot.sha256,
+                targetSnapshotFileCount: targetSnapshot.fileCount,
+                targetSnapshotBytes: targetSnapshot.bytes,
+                targetSnapshotTruncated: targetSnapshot.truncated,
+              }
+            : {}),
+          verifierPathSha256: scopeReceipt.verifierPathSha256,
+          verifierSha256,
+          workspaceSnapshotSha256: workspaceSnapshot.sha256,
+          workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
+          workspaceSnapshotBytes: workspaceSnapshot.bytes,
+          workspaceSnapshotTruncated: workspaceSnapshot.truncated,
           durationMs: Math.max(0, Date.now() - startedAt),
           exitCode: exit.code,
           signal: exit.signal,
@@ -337,6 +410,114 @@ function verificationArgs(
   return [cli, "--check", target ?? "."];
 }
 
+async function createPathSnapshot(
+  workspaceRoot: string,
+  target: string,
+): Promise<PathSnapshotReceipt> {
+  const info = await stat(target);
+  if (info.isFile()) {
+    return createFileSnapshot(workspaceRoot, target, info.size);
+  }
+  if (info.isDirectory()) {
+    return createDirectorySnapshot(workspaceRoot, target);
+  }
+  throw new Error("verification scope must be a file or directory");
+}
+
+async function createFileSnapshot(
+  workspaceRoot: string,
+  target: string,
+  sizeBytes: number,
+): Promise<PathSnapshotReceipt> {
+  const relative = path.relative(workspaceRoot, target) || ".";
+  if (sizeBytes > MAX_SCOPE_SNAPSHOT_BYTES) {
+    return {
+      kind: "file",
+      sha256: sha256(
+        canonicalJson({
+          kind: "file",
+          path: relative,
+          sizeBytes,
+          truncated: true,
+        }),
+      ),
+      fileCount: 1,
+      bytes: 0,
+      truncated: true,
+    };
+  }
+  const buffer = await readFile(target);
+  return {
+    kind: "file",
+    sha256: sha256(buffer),
+    fileCount: 1,
+    bytes: buffer.byteLength,
+    truncated: false,
+  };
+}
+
+async function createDirectorySnapshot(
+  workspaceRoot: string,
+  directory: string,
+): Promise<PathSnapshotReceipt> {
+  const files: Array<{
+    path: string;
+    sha256?: string;
+    sizeBytes: number;
+    truncated?: boolean;
+  }> = [];
+  let bytes = 0;
+  let truncated = false;
+
+  const visit = async (current: string): Promise<void> => {
+    if (truncated) return;
+    const entries = await readdir(current, { withFileTypes: true });
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      if (truncated) return;
+      if (
+        entry.isSymbolicLink() ||
+        SNAPSHOT_EXCLUDED_SEGMENTS.has(entry.name)
+      ) {
+        continue;
+      }
+      const absolute = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        await visit(absolute);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      const info = await stat(absolute);
+      if (!info.isFile()) continue;
+      const relative = path.relative(workspaceRoot, absolute) || ".";
+      if (
+        files.length >= MAX_SCOPE_SNAPSHOT_FILES ||
+        bytes + info.size > MAX_SCOPE_SNAPSHOT_BYTES
+      ) {
+        truncated = true;
+        files.push({ path: relative, sizeBytes: info.size, truncated: true });
+        return;
+      }
+      const buffer = await readFile(absolute);
+      bytes += buffer.byteLength;
+      files.push({
+        path: relative,
+        sha256: sha256(buffer),
+        sizeBytes: buffer.byteLength,
+      });
+    }
+  };
+
+  await visit(directory);
+  return {
+    kind: "directory",
+    sha256: sha256(canonicalJson(files)),
+    fileCount: files.length,
+    bytes,
+    truncated,
+  };
+}
+
 function collectOutput(stream: Readable, onLimit: () => void): OutputCollector {
   let text = "";
   let truncated = false;
@@ -376,6 +557,24 @@ function formatVerificationResult(result: VerificationResult): string {
     `Sandbox: ${details.sandbox}`,
     `CWD: ${details.cwd}`,
     ...(details.target ? [`Target: ${details.target}`] : []),
+    `Scope SHA-256: ${details.scopeSha256}`,
+    `CWD path SHA-256: ${details.cwdPathSha256}`,
+    ...(details.targetPathSha256
+      ? [`Target path SHA-256: ${details.targetPathSha256}`]
+      : []),
+    ...(details.targetSnapshotSha256
+      ? [
+          `Target snapshot SHA-256: ${details.targetSnapshotSha256}`,
+          `Target snapshot: ${details.targetSnapshotFileCount ?? 0} files / ${details.targetSnapshotBytes ?? 0} bytes${
+            details.targetSnapshotTruncated ? " / truncated" : ""
+          }`,
+        ]
+      : []),
+    `Verifier SHA-256: ${details.verifierSha256}`,
+    `Workspace snapshot SHA-256: ${details.workspaceSnapshotSha256}`,
+    `Workspace snapshot: ${details.workspaceSnapshotFileCount} files / ${details.workspaceSnapshotBytes} bytes${
+      details.workspaceSnapshotTruncated ? " / truncated" : ""
+    }`,
     `Exit: ${String(details.exitCode)} / ${String(details.signal)}`,
     `Duration: ${details.durationMs} ms`,
     `stdout SHA-256: ${details.stdoutSha256}`,
@@ -398,10 +597,6 @@ function isPathInside(candidate: string, root: string): boolean {
       relative !== ".." &&
       !path.isAbsolute(relative))
   );
-}
-
-function sha256(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
 }
 
 function errorCode(error: unknown): string | undefined {

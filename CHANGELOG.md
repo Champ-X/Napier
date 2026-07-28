@@ -258,6 +258,10 @@ All notable changes to Napier are recorded here.
   hashes without exposing matched text or paths.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
+- `verify_workspace` results now include a hash-only scope receipt over cwd and
+  target path hashes, verifier bytes, target snapshot, and a bounded cwd
+  snapshot, so passing-check claims can be tied to the code state that was
+  actually verified.
 - Trace tool summaries now surface `apply_patch` operation, edit/byte counts,
   path hash, and before/after hashes without exposing path or patch text.
 - Trace tool summaries now surface `list_files` and `read_file` hash receipts

@@ -12,6 +12,16 @@ export interface ToolEventTraceView {
   verificationKind?: "typecheck" | "test" | "format";
   verificationStatus?: "passed" | "failed" | "timed_out" | "output_capped";
   verificationExitCode?: number;
+  verificationScopeSha256?: string;
+  verificationCwdPathSha256?: string;
+  verificationTargetPathSha256?: string;
+  verificationTargetSnapshotSha256?: string;
+  verificationTargetSnapshotTruncated?: boolean;
+  verificationVerifierSha256?: string;
+  verificationWorkspaceSnapshotSha256?: string;
+  verificationWorkspaceSnapshotFileCount?: number;
+  verificationWorkspaceSnapshotBytes?: number;
+  verificationWorkspaceSnapshotTruncated?: boolean;
   verificationStdoutSha256?: string;
   verificationStderrSha256?: string;
   verificationStdoutTruncated?: boolean;
@@ -122,6 +132,40 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.verificationExitCode !== undefined
       ? [`exit ${view.verificationExitCode}`]
       : []),
+    ...(view.verificationScopeSha256
+      ? [`scope ${view.verificationScopeSha256.slice(0, 12)}`]
+      : []),
+    ...(view.verificationCwdPathSha256
+      ? [`cwd ${view.verificationCwdPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.verificationTargetPathSha256
+      ? [`target ${view.verificationTargetPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.verificationTargetSnapshotSha256
+      ? [
+          `target-snapshot ${view.verificationTargetSnapshotSha256.slice(0, 12)}`,
+        ]
+      : []),
+    ...(view.verificationTargetSnapshotTruncated
+      ? ["target-snapshot-truncated"]
+      : []),
+    ...(view.verificationVerifierSha256
+      ? [`verifier ${view.verificationVerifierSha256.slice(0, 12)}`]
+      : []),
+    ...(view.verificationWorkspaceSnapshotFileCount !== undefined
+      ? [`snapshot-files ${view.verificationWorkspaceSnapshotFileCount}`]
+      : []),
+    ...(view.verificationWorkspaceSnapshotBytes !== undefined
+      ? [`snapshot-bytes ${view.verificationWorkspaceSnapshotBytes}`]
+      : []),
+    ...(view.verificationWorkspaceSnapshotTruncated
+      ? ["snapshot-truncated"]
+      : []),
+    ...(view.verificationWorkspaceSnapshotSha256
+      ? [
+          `workspace-snapshot ${view.verificationWorkspaceSnapshotSha256.slice(0, 12)}`,
+        ]
+      : []),
     ...(view.verificationStdoutSha256
       ? [`stdout ${view.verificationStdoutSha256.slice(0, 12)}`]
       : []),
@@ -134,7 +178,8 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.patchEditCount !== undefined
       ? [`edits ${view.patchEditCount}`]
       : []),
-    ...(view.patchBeforeBytes !== undefined && view.patchAfterBytes !== undefined
+    ...(view.patchBeforeBytes !== undefined &&
+    view.patchAfterBytes !== undefined
       ? [`bytes ${view.patchBeforeBytes}->${view.patchAfterBytes}`]
       : []),
     ...(view.patchPathSha256
@@ -159,10 +204,10 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.readStartLine !== undefined && view.readEndLine !== undefined
       ? [`range ${view.readStartLine}-${view.readEndLine}`]
       : []),
-    ...(view.readTotalLines !== undefined ? [`lines ${view.readTotalLines}`] : []),
-    ...(view.readSizeBytes !== undefined
-      ? [`size ${view.readSizeBytes}`]
+    ...(view.readTotalLines !== undefined
+      ? [`lines ${view.readTotalLines}`]
       : []),
+    ...(view.readSizeBytes !== undefined ? [`size ${view.readSizeBytes}`] : []),
     ...(view.readTruncated ? ["read-truncated"] : []),
     ...(view.readLineAnchorsTruncated ? ["anchors-truncated"] : []),
     ...(view.readPathSha256
@@ -201,9 +246,7 @@ function sha256(value: unknown): string | undefined {
   return typeof value === "string" && SHA256.test(value) ? value : undefined;
 }
 
-function searchFilesEvidence(
-  value: unknown,
-):
+function searchFilesEvidence(value: unknown):
   | {
       searchMatchCount: number;
       searchTruncated?: boolean;
@@ -232,13 +275,21 @@ function searchFilesEvidence(
   };
 }
 
-function verificationEvidenceView(
-  value: unknown,
-):
+function verificationEvidenceView(value: unknown):
   | {
       verificationKind: "typecheck" | "test" | "format";
       verificationStatus: "passed" | "failed" | "timed_out" | "output_capped";
       verificationExitCode?: number;
+      verificationScopeSha256?: string;
+      verificationCwdPathSha256?: string;
+      verificationTargetPathSha256?: string;
+      verificationTargetSnapshotSha256?: string;
+      verificationTargetSnapshotTruncated?: boolean;
+      verificationVerifierSha256?: string;
+      verificationWorkspaceSnapshotSha256?: string;
+      verificationWorkspaceSnapshotFileCount?: number;
+      verificationWorkspaceSnapshotBytes?: number;
+      verificationWorkspaceSnapshotTruncated?: boolean;
       verificationStdoutSha256?: string;
       verificationStderrSha256?: string;
       verificationStdoutTruncated?: boolean;
@@ -253,12 +304,52 @@ function verificationEvidenceView(
   const status = verificationStatus(record["status"]);
   if (!kind || !status) return undefined;
   const exitCode = integerInRange(record["exitCode"], -1, 255);
+  const workspaceSnapshotFileCount = integerInRange(
+    record["workspaceSnapshotFileCount"],
+    0,
+    2_001,
+  );
+  const workspaceSnapshotBytes = integerInRange(
+    record["workspaceSnapshotBytes"],
+    0,
+    16 * 1024 * 1024,
+  );
+  const scopeSha256 = sha256(record["scopeSha256"]);
+  const cwdPathSha256 = sha256(record["cwdPathSha256"]);
+  const targetPathSha256 = sha256(record["targetPathSha256"]);
+  const targetSnapshotSha256 = sha256(record["targetSnapshotSha256"]);
+  const verifierSha256 = sha256(record["verifierSha256"]);
+  const workspaceSnapshotSha256 = sha256(record["workspaceSnapshotSha256"]);
   const stdoutSha256 = sha256(record["stdoutSha256"]);
   const stderrSha256 = sha256(record["stderrSha256"]);
   return {
     verificationKind: kind,
     verificationStatus: status,
     ...(exitCode !== undefined ? { verificationExitCode: exitCode } : {}),
+    ...(scopeSha256 ? { verificationScopeSha256: scopeSha256 } : {}),
+    ...(cwdPathSha256 ? { verificationCwdPathSha256: cwdPathSha256 } : {}),
+    ...(targetPathSha256
+      ? { verificationTargetPathSha256: targetPathSha256 }
+      : {}),
+    ...(targetSnapshotSha256
+      ? { verificationTargetSnapshotSha256: targetSnapshotSha256 }
+      : {}),
+    ...(record["targetSnapshotTruncated"] === true
+      ? { verificationTargetSnapshotTruncated: true }
+      : {}),
+    ...(verifierSha256 ? { verificationVerifierSha256: verifierSha256 } : {}),
+    ...(workspaceSnapshotSha256
+      ? { verificationWorkspaceSnapshotSha256: workspaceSnapshotSha256 }
+      : {}),
+    ...(workspaceSnapshotFileCount !== undefined
+      ? { verificationWorkspaceSnapshotFileCount: workspaceSnapshotFileCount }
+      : {}),
+    ...(workspaceSnapshotBytes !== undefined
+      ? { verificationWorkspaceSnapshotBytes: workspaceSnapshotBytes }
+      : {}),
+    ...(record["workspaceSnapshotTruncated"] === true
+      ? { verificationWorkspaceSnapshotTruncated: true }
+      : {}),
     ...(stdoutSha256 ? { verificationStdoutSha256: stdoutSha256 } : {}),
     ...(stderrSha256 ? { verificationStderrSha256: stderrSha256 } : {}),
     ...(record["stdoutTruncated"] === true
@@ -302,9 +393,7 @@ function integerInRange(
     : undefined;
 }
 
-function applyPatchEvidence(
-  value: unknown,
-):
+function applyPatchEvidence(value: unknown):
   | {
       patchOperation: "create" | "replace" | "hashline_replace";
       patchPathSha256?: string;
@@ -348,9 +437,7 @@ function patchOperation(
     : undefined;
 }
 
-function listFilesEvidence(
-  value: unknown,
-):
+function listFilesEvidence(value: unknown):
   | {
       listCount: number;
       listTruncated?: boolean;
@@ -374,9 +461,7 @@ function listFilesEvidence(
   };
 }
 
-function readFileEvidence(
-  value: unknown,
-):
+function readFileEvidence(value: unknown):
   | {
       readStartLine?: number;
       readEndLine?: number;
@@ -395,11 +480,7 @@ function readFileEvidence(
   const record = value as Record<string, unknown>;
   const startLine = integerInRange(record["startLine"], 1, 1_000_000);
   const endLine = integerInRange(record["endLine"], 1, 1_000_000);
-  if (
-    startLine !== undefined &&
-    endLine !== undefined &&
-    endLine < startLine
-  ) {
+  if (startLine !== undefined && endLine !== undefined && endLine < startLine) {
     return undefined;
   }
   const totalLines = integerInRange(record["totalLines"], 1, 1_000_000);
