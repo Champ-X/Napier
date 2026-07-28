@@ -690,7 +690,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     assertJsonValue(event["payload"], `events[${index}].payload`);
     typedEvents.push(value as RunEvent);
   }
-  assertEmbeddedModelContextEnvelopeReceipts(typedEvents);
+  assertEmbeddedModelContextEnvelopeReceipts(record, "bundle");
   const runsById = new Map(
     runRecords.map((run) => [String(run["id"]), run] as const),
   );
@@ -1530,9 +1530,8 @@ export function verifyThreadReplayBundle(
       modelContextEnvelopeCount: bundle.events.filter(
         (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
       ).length,
-      embeddedModelContextEnvelopeCount: bundle.events.filter((event) =>
-        hasEmbeddedModelContextEnvelope(event.payload),
-      ).length,
+      embeddedModelContextEnvelopeCount:
+        countEmbeddedModelContextEnvelopes(bundle),
     };
   } catch (error) {
     return {
@@ -1572,32 +1571,50 @@ function threadReplayBundleDiagnostic(error: unknown): string {
 }
 
 function assertEmbeddedModelContextEnvelopeReceipts(
-  events: readonly RunEvent[],
+  value: unknown,
+  path: string,
 ): void {
-  for (const event of events) {
-    const envelope = embeddedModelContextEnvelope(event.payload);
-    if (envelope === undefined) continue;
+  walkEmbeddedModelContextEnvelopes(value, path, (envelope, envelopePath) => {
     try {
       validateModelContextEnvelopeReceipt(envelope);
     } catch (error) {
       throw new Error(
-        `Thread replay bundle embedded Model Context Envelope is invalid for event ${event.id}: ${
+        `Thread replay bundle embedded Model Context Envelope is invalid at ${envelopePath}: ${
           error instanceof Error ? error.message : String(error)
         }`,
       );
     }
-  }
+  });
 }
 
-function hasEmbeddedModelContextEnvelope(payload: unknown): boolean {
-  return embeddedModelContextEnvelope(payload) !== undefined;
+function countEmbeddedModelContextEnvelopes(value: unknown): number {
+  let count = 0;
+  walkEmbeddedModelContextEnvelopes(value, "bundle", () => {
+    count += 1;
+  });
+  return count;
 }
 
-function embeddedModelContextEnvelope(payload: unknown): unknown {
-  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
-    return undefined;
+function walkEmbeddedModelContextEnvelopes(
+  value: unknown,
+  path: string,
+  visit: (envelope: unknown, path: string) => void,
+): void {
+  if (!value || typeof value !== "object") return;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) =>
+      walkEmbeddedModelContextEnvelopes(item, `${path}[${index}]`, visit),
+    );
+    return;
   }
-  return (payload as Record<string, unknown>)["modelContextEnvelope"];
+  const record = value as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(record, "modelContextEnvelope")) {
+    visit(record["modelContextEnvelope"], `${path}.modelContextEnvelope`);
+  }
+  for (const [key, child] of Object.entries(record)) {
+    if (key === "modelContextEnvelope") continue;
+    walkEmbeddedModelContextEnvelopes(child, `${path}.${key}`, visit);
+  }
 }
 
 function bundleContent(bundle: ThreadReplayBundle) {

@@ -311,7 +311,7 @@ describe("thread replay bundles", () => {
       },
     };
     expect(() => createThreadReplayBundle(invalidEnvelopeDetail)).toThrow(
-      "embedded Model Context Envelope is invalid",
+      "bundle.events",
     );
 
     const tamperedBundle = structuredClone(bundle);

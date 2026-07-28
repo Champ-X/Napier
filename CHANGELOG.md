@@ -54,7 +54,10 @@ All notable changes to Napier are recorded here.
 - Thread replay bundle validation now fail-closes on malformed embedded
   `modelContextEnvelope` receipts before import, and verification classifies
   those failures as `context_mismatch` even when the forged bundle's top-level
-  event/content hashes are internally consistent.
+  event/content hashes are internally consistent. The scan now walks the full
+  bundle content tree, so future non-event artifacts with embedded envelope
+  receipts inherit the same portable replay guard without adding one-off
+  validators.
 - Thread replay bundle verification now returns and headers-export both
   ledger-backed and embedded Model Context Envelope counts, and Run Lab fixture
   verification renders those counts beside the local replay diagnostics.
