@@ -653,6 +653,7 @@ export interface UpdateArtifactManifestRequest {
   sourceRunId?: string;
   evidence?: string;
   observeWorkspace?: boolean;
+  confirmedDrift?: boolean;
 }
 
 export interface ExecutionPlanArchive {

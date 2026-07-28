@@ -404,7 +404,10 @@ export default function PlanPanel({
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
         status: action,
         evidence: artifactActionEvidence(artifact, action),
-        ...(action === "verified" ? { observeWorkspace: true } : {}),
+        ...(action === "verified" ||
+        (action === "missing" && artifact.status === "verified")
+          ? { observeWorkspace: true }
+          : {}),
       });
       await onDraftApplied();
     } catch (error) {
@@ -1658,6 +1661,14 @@ export default function PlanPanel({
                   actions.verifyMode === "recheck"
                     ? planCopy.artifactActions.rechecking
                     : planCopy.artifactActions.verifying;
+                const missingLabel =
+                  actions.missingMode === "drifted"
+                    ? planCopy.artifactActions.markDrifted
+                    : planCopy.artifactActions.markMissing;
+                const markingMissingLabel =
+                  actions.missingMode === "drifted"
+                    ? planCopy.artifactActions.markingDrifted
+                    : planCopy.artifactActions.markingMissing;
                 return (
                   <article key={artifact.id}>
                     <header>
@@ -1729,15 +1740,15 @@ export default function PlanPanel({
                         {actions.canMarkMissing ? (
                           <button
                             type="button"
-                            aria-label={`${planCopy.artifactActions.markMissing}: ${artifact.path}`}
+                            aria-label={`${missingLabel}: ${artifact.path}`}
                             disabled={Boolean(artifactBusyId)}
                             onClick={() =>
                               void updateArtifact(artifact, "missing")
                             }
                           >
                             {artifactBusyId === `${artifact.id}:missing`
-                              ? planCopy.artifactActions.markingMissing
-                              : planCopy.artifactActions.markMissing}
+                              ? markingMissingLabel
+                              : missingLabel}
                           </button>
                         ) : null}
                       </div>
@@ -3610,6 +3621,9 @@ function artifactActionEvidence(
 ): string {
   if (action === "verified" && artifact.status === "verified") {
     return planCopy.artifactActions.evidence.rechecked;
+  }
+  if (action === "missing" && artifact.status === "verified") {
+    return planCopy.artifactActions.evidence.drifted;
   }
   return planCopy.artifactActions.evidence[action];
 }

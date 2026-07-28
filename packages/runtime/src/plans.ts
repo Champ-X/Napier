@@ -477,7 +477,9 @@ export function updateArtifactManifest(
     return next;
   }
   if (artifact.status === "verified" && request.status !== "verified") {
-    return next;
+    if (request.status !== "missing" || request.confirmedDrift !== true) {
+      return next;
+    }
   }
   assertArtifactTransition(artifact.status, request.status);
   const evidence = normalizeText(request.evidence, 2_000);
@@ -1309,7 +1311,7 @@ function assertArtifactTransition(
   > = {
     expected: ["produced", "missing", "superseded"],
     produced: ["verified", "missing", "superseded"],
-    verified: [],
+    verified: ["missing"],
     missing: ["produced", "superseded"],
     superseded: [],
   };

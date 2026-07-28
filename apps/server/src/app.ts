@@ -346,6 +346,7 @@ import {
   createExecutionPlanBlueprint,
   createPlanArtifactEventPayload,
   createRunReplaySnapshot,
+  createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
   createInboundDeadLetterRetryHistory,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
@@ -7154,11 +7155,18 @@ export function createApp(services: NapierServices): Hono {
           return jsonError(context, "Plan artifact request is invalid", 400);
         }
         try {
-          artifactRequest = await createWorkspaceArtifactVerificationRequest(
-            services.store.workspaceRoot,
-            artifact,
-            body,
-          );
+          artifactRequest =
+            body.status === "missing"
+              ? await createWorkspaceArtifactDriftRequest(
+                  services.store.workspaceRoot,
+                  artifact,
+                  body,
+                )
+              : await createWorkspaceArtifactVerificationRequest(
+                  services.store.workspaceRoot,
+                  artifact,
+                  body,
+                );
         } catch (error) {
           return jsonError(context, errorMessage(error), 400);
         }
@@ -13023,7 +13031,7 @@ function parseUpdateArtifactManifestRequest(
     (evidence !== undefined && !boundedString(evidence, 0, 2_000)) ||
     (observeWorkspace !== undefined && typeof observeWorkspace !== "boolean") ||
     (observeWorkspace === true &&
-      (status !== "verified" ||
+      ((status !== "verified" && status !== "missing") ||
         sha256 !== undefined ||
         sizeBytes !== undefined))
   ) {

@@ -64,10 +64,14 @@ export const planCopy = {
     rechecking: "Rechecking...",
     markMissing: "Mark missing",
     markingMissing: "Marking...",
+    markDrifted: "Mark drifted",
+    markingDrifted: "Marking drift...",
     evidence: {
       produced: "Operator marked the artifact as produced from Workbench.",
       verified: "Workbench verified the artifact bytes from the workspace.",
       rechecked: "Workbench rechecked the artifact bytes from the workspace.",
+      drifted:
+        "Workbench confirmed the verified artifact bytes drifted from the workspace.",
       missing: "Operator marked the artifact as missing from Workbench.",
     },
   },

@@ -3475,19 +3475,22 @@ and rejects simultaneous self-reported `sha256` or `sizeBytes` values. Its
 REST boundary rejects unknown fields, malformed IDs, oversized JSON, invalid
 replan strategies, invalid status values, and invalid SHA-256 values before
 the runtime state machine is called. The Plan Workbench exposes the same
-operator path as Mark produced, Verify bytes, Recheck bytes, and Mark missing
-actions; Verify/Recheck bytes always uses `observeWorkspace` and never accepts
-a browser-supplied digest. Rechecking a verified artifact appends a fresh
-`plan.artifact.verified` receipt only when the current workspace digest still
-matches the stored digest. Drift fails closed and leaves the manifest unchanged,
-so operators must replan before replacing already verified bytes. Verified
-artifact cards render the server-computed byte count beside a short digest
-while retaining the full SHA-256 as audit context. Every accepted state change
-is appended to the Thread ledger. The HTTP API and internal Agent tool share the same
-`plan.artifact.*` payload builder, which also emits `pathSha256` and
-`evidenceSha256` companions for hash-only Trace reading. Validators treat the
-latest artifact event's artifact fields as a projection of the manifest's
-current state. SQLite restore, Thread replay bundle validation, and Plan
+operator path as Mark produced, Verify bytes, Recheck bytes, Mark drifted, and
+Mark missing actions; Verify/Recheck bytes always uses `observeWorkspace` and
+never accepts a browser-supplied digest. Rechecking a verified artifact appends
+a fresh `plan.artifact.verified` receipt only when the current workspace digest
+still matches the stored digest. A digest mismatch fails closed without changing
+the manifest; Mark drifted then asks the server to re-observe the workspace and
+only a confirmed missing file or digest mismatch can append `plan.artifact.missing`
+evidence, mark the Plan blocked, and surface the existing `artifact_drift`
+replan recommendation. Verified artifact cards render the server-computed byte
+count beside a short digest while retaining the full SHA-256 as audit context.
+Every accepted state change is appended to the Thread ledger. The HTTP API and
+internal Agent tool share the same `plan.artifact.*` payload builder, which
+also emits `pathSha256` and `evidenceSha256` companions for hash-only Trace
+reading. Validators treat the latest artifact event's artifact fields as a
+projection of the manifest's current state. SQLite restore, Thread replay
+bundle validation, and Plan
 archive verification all fail closed if the event's artifact ID, path, path
 hash, status, evidence, evidence hash, digest, size, or source Run drifts from
 the current artifact manifest. Phase and ready/blocked projection metadata is

@@ -499,6 +499,21 @@ describe("execution plans", () => {
         evidence: "Late stale callback.",
       }),
     ).toEqual(reverified);
+    const drifted = updateArtifactManifest(reverified, "runtime-change", {
+      status: "missing",
+      confirmedDrift: true,
+      sourceRunId: "run-5",
+      evidence: "The verified artifact bytes drifted during recheck.",
+    });
+    expect(drifted.artifacts[0]).toEqual(
+      expect.objectContaining({
+        status: "missing",
+        sha256: digest,
+        sizeBytes: 4_096,
+        sourceRunId: "run-5",
+        evidence: "The verified artifact bytes drifted during recheck.",
+      }),
+    );
   });
 
   it("binds artifact event path and evidence hashes", () => {

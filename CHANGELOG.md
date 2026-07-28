@@ -337,13 +337,15 @@ All notable changes to Napier are recorded here.
   `evidenceSummary` binding, so single-Run archives cannot forge verification
   freshness after recalculating review, event-stream, and snapshot hashes.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
-  Verify bytes, and Mark missing. Verify bytes calls the existing
+  Verify bytes, Recheck bytes, Mark drifted, and Mark missing. Verify/Recheck
+  bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before
   appending `plan.artifact.*` evidence.
 - Verified Plan artifacts can now be rechecked from the Workbench or Agent tool:
   matching workspace bytes append a fresh `plan.artifact.verified` receipt,
-  while digest drift fails closed and leaves the manifest unchanged so the
-  operator must replan before replacing delivered bytes.
+  while digest drift first fails closed and then Mark drifted can append
+  server-confirmed `plan.artifact.missing` evidence, mark the Plan blocked, and
+  surface the existing `artifact_drift` recovery recommendation.
 - Verified Plan artifact cards now show the server-computed byte count beside
   the digest while retaining the full SHA-256 as hoverable audit context.
 - Trace event summaries now project `model.response` receipts through a

@@ -362,6 +362,12 @@ async function buildArtifactUpdate(
   }
   const target = path.resolve(workspaceRoot, artifact.path);
   if (action === "missing") {
+    if (artifact.status === "verified") {
+      return createWorkspaceArtifactDriftRequest(workspaceRoot, artifact, {
+        sourceRunId: run.id,
+        evidence,
+      });
+    }
     try {
       await stat(target);
     } catch (error) {
@@ -459,6 +465,59 @@ export async function createWorkspaceArtifactVerificationRequest(
   };
 }
 
+export async function createWorkspaceArtifactDriftRequest(
+  workspaceRoot: string,
+  artifact: ExecutionPlan["artifacts"][number],
+  input: Pick<UpdateArtifactManifestRequest, "evidence" | "sourceRunId">,
+): Promise<UpdateArtifactManifestRequest> {
+  if (artifact.status !== "verified") {
+    throw new Error("Only verified artifacts can be drift-checked");
+  }
+  if (artifact.kind !== "file" && artifact.kind !== "directory") {
+    throw new Error("Only workspace files and directories can be drift-checked");
+  }
+  if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
+    throw new Error("Artifact path escapes the configured workspace");
+  }
+  let observed: { target: string; info: Stats };
+  try {
+    observed = await inspectWorkspaceArtifactTarget(workspaceRoot, artifact);
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return {
+        status: "missing",
+        confirmedDrift: true,
+        ...(input.sourceRunId ? { sourceRunId: input.sourceRunId } : {}),
+        ...(input.evidence ? { evidence: input.evidence } : {}),
+      };
+    }
+    throw error;
+  }
+  if (artifact.kind === "directory") {
+    const digest = await hashWorkspaceDirectory(observed.target);
+    assertVerifiedArtifactDigestDrifted(artifact, digest.sha256);
+    return {
+      status: "missing",
+      confirmedDrift: true,
+      ...(input.sourceRunId ? { sourceRunId: input.sourceRunId } : {}),
+      ...(input.evidence ? { evidence: input.evidence } : {}),
+    };
+  }
+  if (observed.info.size > MAX_ARTIFACT_HASH_BYTES) {
+    throw new Error(
+      `Artifact exceeds the ${MAX_ARTIFACT_HASH_BYTES / 1024 / 1024} MB verification limit`,
+    );
+  }
+  const contents = await readFile(observed.target);
+  assertVerifiedArtifactDigestDrifted(artifact, sha256(contents));
+  return {
+    status: "missing",
+    confirmedDrift: true,
+    ...(input.sourceRunId ? { sourceRunId: input.sourceRunId } : {}),
+    ...(input.evidence ? { evidence: input.evidence } : {}),
+  };
+}
+
 function assertVerifiedArtifactDigestMatches(
   artifact: ExecutionPlan["artifacts"][number],
   observedSha256: string,
@@ -471,6 +530,18 @@ function assertVerifiedArtifactDigestMatches(
     throw new Error(
       "Verified artifact digest drifted; replan before replacing it",
     );
+  }
+}
+
+function assertVerifiedArtifactDigestDrifted(
+  artifact: ExecutionPlan["artifacts"][number],
+  observedSha256: string,
+): void {
+  if (!artifact.sha256) {
+    throw new Error("Verified artifact is missing its stored digest");
+  }
+  if (artifact.sha256 === observedSha256) {
+    throw new Error("Verified artifact still matches its stored digest");
   }
 }
 

@@ -125,9 +125,22 @@ describe("plan tools", () => {
         evidence: "The runtime rechecked the report bytes after drift.",
       }),
     ).rejects.toThrow("Verified artifact digest drifted");
+    await updateArtifact.execute("confirm-drifted-artifact", {
+      planId,
+      artifactId: "report",
+      action: "missing",
+      evidence: "The runtime confirmed the verified artifact bytes drifted.",
+    });
 
     const plan = store.getPlan(planId);
-    expect(plan.status).toBe("completed");
+    expect(plan.status).toBe("blocked");
+    expect(plan.replanRecommendation).toEqual(
+      expect.objectContaining({
+        strategy: "artifact_drift",
+        supersedeArtifactIds: ["report"],
+        affectedArtifactIds: ["report"],
+      }),
+    );
     expect(plan.steps[0]).toEqual(
       expect.objectContaining({
         status: "completed",
@@ -136,10 +149,11 @@ describe("plan tools", () => {
     );
     expect(plan.artifacts[0]).toEqual(
       expect.objectContaining({
-        status: "verified",
+        status: "missing",
         sha256: createHash("sha256").update(contents).digest("hex"),
         sizeBytes: Buffer.byteLength(contents),
         sourceRunId: run.id,
+        evidence: "The runtime confirmed the verified artifact bytes drifted.",
       }),
     );
     expect(
@@ -151,6 +165,7 @@ describe("plan tools", () => {
       "plan.artifact.produced",
       "plan.artifact.verified",
       "plan.artifact.verified",
+      "plan.artifact.missing",
     ]);
     const events = await store.listEvents(thread.id);
     expect(events[0]?.payload).toEqual(

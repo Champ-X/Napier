@@ -44,6 +44,7 @@ describe("artifact manifest view model", () => {
       canVerify: false,
       canMarkMissing: true,
       verifyMode: "verify",
+      missingMode: "missing",
       hasActions: true,
     });
     expect(
@@ -55,6 +56,7 @@ describe("artifact manifest view model", () => {
       canVerify: true,
       canMarkMissing: true,
       verifyMode: "verify",
+      missingMode: "missing",
       hasActions: true,
     });
     expect(
@@ -64,8 +66,9 @@ describe("artifact manifest view model", () => {
     ).toEqual({
       canProduce: false,
       canVerify: true,
-      canMarkMissing: false,
+      canMarkMissing: true,
       verifyMode: "recheck",
+      missingMode: "drifted",
       hasActions: true,
     });
     expect(
@@ -77,6 +80,7 @@ describe("artifact manifest view model", () => {
       canVerify: false,
       canMarkMissing: false,
       verifyMode: "verify",
+      missingMode: "missing",
       hasActions: false,
     });
   });

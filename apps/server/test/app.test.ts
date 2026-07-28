@@ -6926,6 +6926,189 @@ describe("Napier HTTP goal flow", () => {
     );
   });
 
+  it("confirms verified artifact drift into recoverable plan evidence", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
+    temporaryRoots.push(root);
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await mkdir(services.store.workspaceRoot, { recursive: true });
+    const initialContents = "# Artifact\n\nVerified bytes.\n";
+    await writeFile(
+      path.join(services.store.workspaceRoot, "artifact.md"),
+      initialContents,
+      "utf8",
+    );
+    const app = createApp(services);
+    const created = (await (
+      await app.request("/api/threads", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Artifact drift recovery" }),
+      })
+    ).json()) as ThreadDetail;
+    const run = await services.store.createRun({
+      threadId: created.thread.id,
+      agentId: created.agent.id,
+    });
+    const createPlanResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          objective: "Deliver a verified artifact.",
+          steps: [
+            {
+              id: "deliver",
+              title: "Deliver",
+              description: "Deliver the artifact.",
+              verification: "The artifact digest is verified.",
+            },
+          ],
+          artifacts: [
+            {
+              id: "artifact",
+              path: "artifact.md",
+              description: "The delivered artifact.",
+            },
+          ],
+        }),
+      },
+    );
+    expect(createPlanResponse.status).toBe(201);
+    const plan = (await createPlanResponse.json()) as ExecutionPlan;
+    const startResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/steps/deliver`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "start", runId: run.id }),
+      },
+    );
+    expect(startResponse.status).toBe(200);
+    const completeResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/steps/deliver`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "complete",
+          evidence: "The artifact was delivered.",
+        }),
+      },
+    );
+    expect(completeResponse.status).toBe(200);
+    const producedResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/artifact`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "produced",
+          sourceRunId: run.id,
+          evidence: "The artifact exists in the workspace.",
+        }),
+      },
+    );
+    expect(producedResponse.status).toBe(200);
+    const verifiedResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/artifact`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "verified",
+          observeWorkspace: true,
+          sourceRunId: run.id,
+          evidence: "The server verified the artifact bytes.",
+        }),
+      },
+    );
+    expect(verifiedResponse.status).toBe(200);
+    const verified = (await verifiedResponse.json()) as ExecutionPlan;
+    const expectedSha256 = createHash("sha256")
+      .update(initialContents)
+      .digest("hex");
+    expect(verified).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        artifacts: expect.arrayContaining([
+          expect.objectContaining({
+            id: "artifact",
+            status: "verified",
+            sha256: expectedSha256,
+          }),
+        ]),
+      }),
+    );
+
+    await writeFile(
+      path.join(services.store.workspaceRoot, "artifact.md"),
+      "# Artifact\n\nDrifted bytes.\n",
+      "utf8",
+    );
+    const staleRecheckResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/artifact`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "verified",
+          observeWorkspace: true,
+          evidence: "The artifact was rechecked after drift.",
+        }),
+      },
+    );
+    expect(staleRecheckResponse.status).toBe(400);
+    await expect(staleRecheckResponse.json()).resolves.toEqual({
+      error: "Verified artifact digest drifted; replan before replacing it",
+    });
+
+    const driftResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/artifact`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "missing",
+          observeWorkspace: true,
+          sourceRunId: run.id,
+          evidence: "The server confirmed the verified artifact bytes drifted.",
+        }),
+      },
+    );
+    expect(driftResponse.status).toBe(200);
+    const drifted = (await driftResponse.json()) as ExecutionPlan;
+    expect(drifted).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        replanRecommendation: expect.objectContaining({
+          strategy: "artifact_drift",
+          supersedeArtifactIds: ["artifact"],
+          affectedArtifactIds: ["artifact"],
+        }),
+        artifacts: expect.arrayContaining([
+          expect.objectContaining({
+            id: "artifact",
+            status: "missing",
+            sha256: expectedSha256,
+            evidence:
+              "The server confirmed the verified artifact bytes drifted.",
+          }),
+        ]),
+      }),
+    );
+    expect(
+      (await services.store.listEvents(created.thread.id)).filter(
+        (event) =>
+          event.type === "plan.artifact.missing" &&
+          event.payload["artifactId"] === "artifact",
+      ),
+    ).toHaveLength(1);
+  });
+
   it("reviews active replan drafts through a hash-bound public API", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
     temporaryRoots.push(root);

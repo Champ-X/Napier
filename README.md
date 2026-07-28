@@ -232,7 +232,8 @@ Version `0.1.0` includes:
   tools, and file or directory artifact verification against actual workspace
   bytes, including public `observeWorkspace` Plan artifact updates that reject
   self-reported digests and fail closed when rechecking a verified artifact
-  whose workspace bytes have drifted;
+  whose workspace bytes have drifted, plus server-confirmed drift marking that
+  turns the artifact into recoverable replan evidence;
 - revisioned Agent profiles for the default model, thinking level, tool policy,
   workspace tools, skills, delegation roles, parent-Run limits, bounded
   subagent budgets, and snapshot-bound interruption policy;
