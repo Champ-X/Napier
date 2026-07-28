@@ -222,6 +222,7 @@ export default function PlanPanel({
   plans,
   running,
   selectedModelKey,
+  selectedModelConfigured,
   onContinue,
   onDraftApplied,
 }: {
@@ -229,6 +230,7 @@ export default function PlanPanel({
   plans: ExecutionPlan[];
   running: boolean;
   selectedModelKey: string;
+  selectedModelConfigured: boolean;
   onContinue: () => void;
   onDraftApplied: () => void | Promise<void>;
 }) {
@@ -351,6 +353,10 @@ export default function PlanPanel({
 
   const reviewDraft = async (): Promise<void> => {
     if (!plan || !replanRecommendation || draftReviewBusy) return;
+    if (!selectedModelConfigured) {
+      setDraftReviewError(planCopy.modelUnavailableHint);
+      return;
+    }
     setDraftReviewBusy(true);
     setDraftReviewError(undefined);
     try {
@@ -887,6 +893,10 @@ export default function PlanPanel({
     record: ExecutionPlanBlueprintRecord,
   ): Promise<void> => {
     if (blueprintLibraryBusyAction) return;
+    if (!selectedModelConfigured) {
+      setBlueprintLibraryError(planCopy.modelUnavailableHint);
+      return;
+    }
     setBlueprintLibraryBusyAction("reviewOutcomes");
     setBlueprintLibraryReceipt(undefined);
     setBlueprintLibraryError(undefined);
@@ -1389,7 +1399,16 @@ export default function PlanPanel({
                 <button
                   className="plan-review-action"
                   type="button"
-                  disabled={draftReviewBusy || draftApplyBusy}
+                  disabled={
+                    draftReviewBusy ||
+                    draftApplyBusy ||
+                    !selectedModelConfigured
+                  }
+                  aria-describedby={
+                    !selectedModelConfigured
+                      ? "plan-replan-model-unavailable"
+                      : undefined
+                  }
                   onClick={() => void reviewDraft()}
                 >
                   <Brain size={12} aria-hidden="true" />
@@ -1408,6 +1427,15 @@ export default function PlanPanel({
                     ? planCopy.applyingDraft
                     : planCopy.applyDraft}
                 </button>
+                {!selectedModelConfigured ? (
+                  <p
+                    id="plan-replan-model-unavailable"
+                    className="plan-review-error"
+                    role="status"
+                  >
+                    {planCopy.modelUnavailableHint}
+                  </p>
+                ) : null}
                 {draftReview ? (
                   <div className="plan-replan-review">
                     <span>{planCopy.modelReview}</span>
@@ -1543,6 +1571,7 @@ export default function PlanPanel({
         receipt={blueprintLibraryReceipt}
         latestOutcomeReview={blueprintLibraryOutcomeReview}
         error={blueprintLibraryError}
+        selectedModelConfigured={selectedModelConfigured}
         onRefresh={() => void refreshBlueprintLibrary()}
         onSave={() => void saveBlueprintRecord()}
         onSelect={() => void selectBestBlueprintRecord()}
@@ -2000,6 +2029,7 @@ function PlanBlueprintLibraryCard({
   receipt,
   latestOutcomeReview,
   error,
+  selectedModelConfigured,
   onRefresh,
   onSave,
   onSelect,
@@ -2037,6 +2067,7 @@ function PlanBlueprintLibraryCard({
   receipt: PlanBlueprintLibraryReceipt | undefined;
   latestOutcomeReview: ExecutionPlanBlueprintRecordOutcomeReview | undefined;
   error: string | undefined;
+  selectedModelConfigured: boolean;
   onRefresh: () => void;
   onSave: () => void;
   onSelect: () => void;
@@ -2076,6 +2107,7 @@ function PlanBlueprintLibraryCard({
   const activeCount = records.filter(
     (record) => record.status === "active",
   ).length;
+  const modelReviewWarningId = "plan-blueprint-model-unavailable";
   const archivedCount = records.length - activeCount;
   const canApplyPolicyOverride =
     receipt?.action === "policyBacktested" &&
@@ -2099,6 +2131,15 @@ function PlanBlueprintLibraryCard({
         <BookGlyph />
       </header>
       <p>{planCopy.blueprint.library.body}</p>
+      {!selectedModelConfigured ? (
+        <p
+          id={modelReviewWarningId}
+          className="plan-review-error"
+          role="status"
+        >
+          {planCopy.modelUnavailableHint}
+        </p>
+      ) : null}
       <div className="fixture-actions">
         <button type="button" disabled={busy} onClick={onRefresh}>
           <Download size={12} aria-hidden="true" />
@@ -2470,7 +2511,12 @@ function PlanBlueprintLibraryCard({
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || !selectedModelConfigured}
+                  aria-describedby={
+                    !selectedModelConfigured
+                      ? modelReviewWarningId
+                      : undefined
+                  }
                   onClick={() => onReviewOutcomes(record)}
                 >
                   {busyAction === "reviewOutcomes"

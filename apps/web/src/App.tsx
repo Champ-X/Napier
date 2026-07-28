@@ -493,6 +493,7 @@ export function App() {
                 plans={vm.detail?.plans ?? []}
                 running={vm.isRunning}
                 selectedModelKey={vm.selectedModelKey}
+                selectedModelConfigured={activeModel.configured}
                 onContinue={() => void vm.submit(copy.planNextPrompt)}
                 onDraftApplied={() => void vm.refreshActiveThread()}
               />

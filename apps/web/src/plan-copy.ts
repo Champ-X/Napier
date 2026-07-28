@@ -17,6 +17,8 @@ export const planCopy = {
   draft: "Draft",
   reviewDraft: "Review draft",
   reviewingDraft: "Reviewing",
+  modelUnavailableHint:
+    "Configure this provider in Context before using model review actions.",
   applyDraft: "Apply draft",
   applyingDraft: "Applying",
   modelReview: "Model review",
