@@ -11745,6 +11745,13 @@ button:disabled {
   gap: 5px;
 }
 
+.context-model-warning {
+  margin: -4px 0 0;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--danger);
+}
+
 .context-form-note svg,
 .credential-safety svg {
   flex: 0 0 auto;

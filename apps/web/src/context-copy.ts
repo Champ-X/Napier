@@ -7,6 +7,8 @@ export const contextCopy = {
   chooseModel: "Model for the next run",
   runModelHint:
     "This choice applies immediately to the next run. Save the profile below to make it the Agent default.",
+  modelUnavailableHint:
+    "Configure this provider before using it for runs or saving it as the Agent default.",
   unavailable: "unavailable",
   profileEyebrow: "PERSISTENT PROFILE",
   profile: "Agent configuration",

@@ -70,7 +70,10 @@ import {
   credentialReferenceDraft,
 } from "./credential-reference-view-model";
 import { formatApiErrorMessage } from "./api-error";
-import { modelProviderGroups } from "./model-selection-view-model";
+import {
+  modelProviderGroups,
+  selectedModelAvailability,
+} from "./model-selection-view-model";
 
 const copy = { context: contextCopy };
 const DEFAULT_RUN_LIMITS = {
@@ -226,6 +229,7 @@ export default function ContextPanel({
     ),
   ];
   const modelGroups = modelProviderGroups(models);
+  const selectedModel = selectedModelAvailability(models, selectedModelKey);
   const promptSigningAnchors = publisherAnchors.filter(
     (anchor) => anchor.status === "trusted" && anchor.signingSource,
   );
@@ -548,6 +552,10 @@ export default function ContextPanel({
 
   const saveAgent = async (): Promise<void> => {
     if (configurationBusy) return;
+    if (!selectedModel.configured) {
+      setError(copy.context.modelUnavailableHint);
+      return;
+    }
     setConfigurationBusy(true);
     setError(undefined);
     try {
@@ -1060,6 +1068,7 @@ export default function ContextPanel({
     agentName.trim().length > 0 &&
     agentDescription.trim().length > 0 &&
     agentSystemPrompt.trim().length > 0 &&
+    selectedModel.configured &&
     validPromptVariables(agentPromptVariables) &&
     Number.isSafeInteger(agentToolLoopGuardThreshold) &&
     agentToolLoopGuardThreshold >= 2 &&
@@ -1142,6 +1151,15 @@ export default function ContextPanel({
             ))}
           </select>
         </label>
+        {!selectedModel.configured ? (
+          <p
+            className="context-model-warning"
+            id="context-model-unavailable"
+            role="status"
+          >
+            {copy.context.modelUnavailableHint}
+          </p>
+        ) : null}
         <p>{copy.context.runModelHint}</p>
       </section>
 
@@ -1741,6 +1759,9 @@ export default function ContextPanel({
           className="primary-wide context-save"
           type="submit"
           disabled={configurationBusy || !canSaveAgent}
+          aria-describedby={
+            !selectedModel.configured ? "context-model-unavailable" : undefined
+          }
         >
           <Save size={13} aria-hidden="true" />
           {configurationBusy ? copy.context.saving : copy.context.saveProfile}

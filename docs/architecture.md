@@ -1140,6 +1140,7 @@ render Runtime and Evaluation model selectors
   -> restrict executable Casebook qualification selectors to configured models
   -> disable Run, resume, Run Lab evaluation, Evaluation Suite gate, and Plan
      model-review actions for unconfigured models
+  -> reject Agent profile saves that would persist an unconfigured default model
 register provider + label + locator
   -> accept ENV variable name or macOS Keychain service/account
   -> persist reference as active / availability unknown
@@ -1163,7 +1164,10 @@ full catalog projection, while Casebook qualification filters that projection
 to executable configured candidates before replaying a gold set. The composer,
 resume banner, Run Lab evaluation, Evaluation Suite gate, and Plan Workbench
 model-review actions also consume that model-availability projection, so
-unavailable providers fail closed before a request leaves the browser. Credential
+unavailable providers fail closed before a request leaves the browser. The
+Agent profile save path uses the same projection before making a revisioned
+default-model update.
+Credential
 ledger events contain only
 reference ID, provider, label, source type, status, availability, revision, and
 a sanitized error. Environment-variable names and Keychain locators are

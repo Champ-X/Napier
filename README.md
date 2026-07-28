@@ -308,8 +308,9 @@ Suite creation uses the same grouped catalog selector; executable Casebook
 qualification only offers configured evaluator candidates. The main Run,
 resume, Run Lab evaluation, Evaluation Suite gate, and Plan Workbench
 model-review actions are disabled client-side when the selected or suite
-evaluator model is not configured, matching the server-side fail-closed
-credential boundary.
+evaluator model is not configured. Saving an Agent profile likewise refuses to
+persist an unconfigured runtime model as the default, matching the server-side
+fail-closed credential boundary.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source
