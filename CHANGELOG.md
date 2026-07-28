@@ -187,6 +187,10 @@ All notable changes to Napier are recorded here.
 - Trace summary-boundary governance now appears in OTLP event attributes and
   the Run Lab evaluation hash strip as status plus SHA-256 evidence, closing the
   observability loop without exposing evaluation prose or raw event payloads.
+- Thread Replay Bundle validation now recomputes pair-evaluation governance
+  from the referenced left/right Run events, rejecting context coverage or trace
+  summary-boundary receipt drift even when the governance `contentSha256` is
+  recalculated.
 - Trace event summaries now project `model.response` receipts through a
   metadata/hash-only view, so raw assistant text, reasoning, tool arguments,
   and malformed payload text cannot leak through the event-list fallback.

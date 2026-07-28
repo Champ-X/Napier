@@ -13,6 +13,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   AgentRuntime,
   canonicalJson,
+  compareRuns,
   createRunEvaluationGovernanceBinding,
   createSubagentOutcome,
   createSubagentOutcomeRepairOutcome,
@@ -956,25 +957,11 @@ describe("thread replay bundles", () => {
       },
     });
     await store.finishRun(right.id, "completed");
-    const comparisonGovernance = createRunEvaluationGovernanceBinding({
-      status: "clean",
-      left: {
-        modelResponseCount: 0,
-        envelopeCount: 0,
-        boundResponseCount: 0,
-        unboundResponseCount: 0,
-        coverageRate: 1,
-      },
-      right: {
-        modelResponseCount: 0,
-        envelopeCount: 0,
-        boundResponseCount: 0,
-        unboundResponseCount: 0,
-        coverageRate: 1,
-      },
-      coverageRateDelta: 0,
-      diagnostics: [],
-    });
+    const comparison = await compareRuns(store, thread.id, left.id, right.id);
+    const comparisonGovernance = createRunEvaluationGovernanceBinding(
+      comparison.contextCoverageDelta,
+      comparison.traceSummaryBoundaryDelta,
+    );
     const evaluation = await store.saveRunEvaluation({
       id: "evaluation_fixture_source",
       threadId: thread.id,
@@ -1129,6 +1116,31 @@ describe("thread replay bundles", () => {
     expect(() => validateThreadReplayBundle(tamperedGovernance)).toThrow(
       "comparisonGovernance content hash mismatch",
     );
+    const tamperedGovernanceSourceBinding = structuredClone(bundle);
+    const driftedGovernance =
+      tamperedGovernanceSourceBinding.evaluations[0]!.comparisonGovernance!;
+    driftedGovernance.contextCoverageDeltaSha256 = "1".repeat(64);
+    const { contentSha256: _driftedContentSha256, ...driftedContent } =
+      driftedGovernance;
+    driftedGovernance.contentSha256 = sha256(canonicalJson(driftedContent));
+    expect(() =>
+      validateThreadReplayBundle(tamperedGovernanceSourceBinding),
+    ).toThrow("comparisonGovernance source binding mismatch");
+    const tamperedTraceGovernanceSourceBinding = structuredClone(bundle);
+    const driftedTraceGovernance =
+      tamperedTraceGovernanceSourceBinding.evaluations[0]!
+        .comparisonGovernance!;
+    driftedTraceGovernance.traceSummaryBoundaryDeltaSha256 = "2".repeat(64);
+    const {
+      contentSha256: _driftedTraceContentSha256,
+      ...driftedTraceContent
+    } = driftedTraceGovernance;
+    driftedTraceGovernance.contentSha256 = sha256(
+      canonicalJson(driftedTraceContent),
+    );
+    expect(() =>
+      validateThreadReplayBundle(tamperedTraceGovernanceSourceBinding),
+    ).toThrow("comparisonGovernance source binding mismatch");
     const tamperedHistory = structuredClone(bundle);
     tamperedHistory.agentRevisions![0]!.profile.systemPrompt =
       "Tampered historical prompt.";

@@ -23,6 +23,7 @@ import {
 } from "../src/evaluation.js";
 import { ModelRegistry } from "../src/models.js";
 import {
+  compareRuns,
   createRunReplaySnapshot,
   exportThreadReplayBundle,
 } from "../src/replay.js";
@@ -105,25 +106,7 @@ async function createCuratedFixture(): Promise<{
     createRunReplaySnapshot(store, thread.id, left.id),
     createRunReplaySnapshot(store, thread.id, right.id),
   ]);
-  const comparisonGovernance = createRunEvaluationGovernanceBinding({
-    status: "clean",
-    left: {
-      modelResponseCount: 0,
-      envelopeCount: 0,
-      boundResponseCount: 0,
-      unboundResponseCount: 0,
-      coverageRate: 1,
-    },
-    right: {
-      modelResponseCount: 0,
-      envelopeCount: 0,
-      boundResponseCount: 0,
-      unboundResponseCount: 0,
-      coverageRate: 1,
-    },
-    coverageRateDelta: 0,
-    diagnostics: [],
-  });
+  const comparison = await compareRuns(store, thread.id, left.id, right.id);
   const evaluation = await store.saveRunEvaluation({
     id: "evaluation_casebook_qualification_source",
     threadId: thread.id,
@@ -142,7 +125,10 @@ async function createCuratedFixture(): Promise<{
     reason: "The candidate records stronger evidence.",
     evidence: "Compared immutable replay snapshots.",
     evaluatorModel: { provider: "faux-source", id: "judge-1" },
-    comparisonGovernance,
+    comparisonGovernance: createRunEvaluationGovernanceBinding(
+      comparison.contextCoverageDelta,
+      comparison.traceSummaryBoundaryDelta,
+    ),
     createdAt: "2026-07-25T10:00:00.000Z",
   });
   await store.reviewRunEvaluation(thread.id, evaluation.id, {

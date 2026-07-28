@@ -2043,9 +2043,13 @@ verified evidence but returns an inconclusive judgment. A qualification
 receipt includes the complete Casebook plus only the latest execution for its
 current revision; after any Casebook revision it emits `not_run` rather than
 borrowing history. The receipt is integrity evidence, not a signature.
-Thread replay bundle validation also recomputes any saved pair-evaluation
-`comparisonGovernance` binding hash before accepting exported or imported
-fixtures.
+Thread replay bundle validation also reprojects any saved pair-evaluation
+`comparisonGovernance` from the referenced left/right Run evidence before
+accepting exported or imported fixtures. The validator recomputes context
+coverage from model response/context-envelope events, recomputes trace
+summary-boundary coverage from event types, rebuilds the governance receipt, and
+rejects the bundle when the stored receipt differs even if its `contentSha256`
+was recalculated.
 OTLP trace export keeps those evaluation governance signals metadata-only:
 status and SHA-256 attributes are allowed, while evaluator `reason` and
 `evidence` text remain excluded by the redaction policy. The underlying
