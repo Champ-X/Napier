@@ -250,13 +250,17 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
   "napier.cache.read_tokens",
   "napier.cache.write_tokens",
   "napier.event.count",
+  "napier.event_anchor_set.sha256",
   "napier.event_stream.sha256",
   "napier.export.scope",
   "napier.gen_ai.cost_usd",
   "napier.gen_ai.finish_reason",
+  "napier.ledger.category",
   "napier.ledger.event_id",
+  "napier.ledger.event_type",
   "napier.ledger.payload_sha256",
   "napier.ledger.seq",
+  "napier.ledger.visibility",
   "napier.model_context.envelope.sha256",
   "napier.model_context.envelope.turn_index",
   "napier.model_context.message_set.sha256",
@@ -319,6 +323,15 @@ interface ToolTrace {
   events: RunEvent[];
   started?: RunEvent;
   terminal?: RunEvent;
+}
+
+interface EventAnchor {
+  id: string;
+  seq: number;
+  type: string;
+  category: string;
+  visibility: string;
+  payloadSha256: string;
 }
 
 export async function createOpenTelemetryTraceArtifact(
@@ -470,6 +483,7 @@ export function validateOpenTelemetryTraceArtifact(
   validateEventSequenceTraceBinding(artifact, spans);
   validateSpecializedLedgerSpanBindings(artifact, spans);
   validateImportReceiptTraceBinding(root);
+  validateEventAnchorSetTraceBinding(root, spans);
   const {
     generatedAt: _generatedAt,
     contentSha256: _contentSha256,
@@ -518,6 +532,9 @@ function openTelemetryTraceArtifactDiagnostic(error: unknown): string {
   }
   if (message.includes("ledger span binding")) {
     return "ledger_span_mismatch";
+  }
+  if (message.includes("event anchor set binding")) {
+    return "event_anchor_mismatch";
   }
   if (message.includes("redaction")) return "invalid_redaction";
   if (message.includes("root binding")) return "root_binding_mismatch";
@@ -575,6 +592,9 @@ function buildOtlpRequest(
         "gen_ai.conversation.id": detail.thread.id,
         "napier.agent.id": detail.agent.id,
         "napier.event.count": events.length,
+        "napier.event_anchor_set.sha256": eventAnchorSetSha256(
+          events.map(eventAnchorFromRunEvent),
+        ),
         "napier.event_stream.sha256": hashEventStream(events),
         "napier.export.scope": runId ? "run" : "thread",
         "napier.thread.id": detail.thread.id,
@@ -769,10 +789,13 @@ function modelSpan(
       "napier.cache.read_tokens": recordNumber(usage, "cacheReadTokens") ?? 0,
       "napier.cache.write_tokens": recordNumber(usage, "cacheWriteTokens") ?? 0,
       "napier.gen_ai.cost_usd": recordNumber(usage, "costUsd") ?? 0,
+      "napier.ledger.category": event.category,
       "napier.ledger.event_id": event.id,
+      "napier.ledger.event_type": event.type,
       "napier.ledger.payload_sha256": sha256(canonicalJson(event.payload)),
       "napier.ledger.seq": event.seq,
       "napier.timing.precision": "completion_only",
+      "napier.ledger.visibility": event.visibility,
       ...(stopReason ? { "napier.gen_ai.finish_reason": stopReason } : {}),
       ...(modelContextEnvelopeSha256
         ? {
@@ -1586,10 +1609,22 @@ function validateSpecializedLedgerSpanBindings(
       span.attributes,
       "napier.ledger.payload_sha256",
     );
+    const eventType = stringAttribute(
+      span.attributes,
+      "napier.ledger.event_type",
+    );
+    const category = stringAttribute(span.attributes, "napier.ledger.category");
+    const visibility = stringAttribute(
+      span.attributes,
+      "napier.ledger.visibility",
+    );
     if (
       eventId === undefined &&
       eventSeq === undefined &&
-      payloadSha256 === undefined
+      payloadSha256 === undefined &&
+      eventType === undefined &&
+      category === undefined &&
+      visibility === undefined
     ) {
       continue;
     }
@@ -1597,6 +1632,9 @@ function validateSpecializedLedgerSpanBindings(
       eventId === undefined ||
       eventSeq === undefined ||
       payloadSha256 === undefined ||
+      eventType !== "model.response" ||
+      category !== "model" ||
+      visibility !== "debug" ||
       !RESOURCE_ID_PATTERN.test(eventId) ||
       eventSeq < 1 ||
       !SHA256_PATTERN.test(payloadSha256) ||
@@ -1612,6 +1650,135 @@ function validateSpecializedLedgerSpanBindings(
       throw new Error("OpenTelemetry trace ledger span binding is invalid");
     }
   }
+}
+
+function validateEventAnchorSetTraceBinding(
+  root: OtlpSpan,
+  spans: OtlpSpan[],
+): void {
+  const expected = stringAttribute(
+    root.attributes,
+    "napier.event_anchor_set.sha256",
+  );
+  if (!expected || !SHA256_PATTERN.test(expected)) {
+    throw new Error("OpenTelemetry trace event anchor set binding is invalid");
+  }
+  const anchors = spans.flatMap(eventAnchorsFromSpan);
+  if (eventAnchorSetSha256(anchors) !== expected) {
+    throw new Error("OpenTelemetry trace event anchor set binding is invalid");
+  }
+}
+
+function eventAnchorsFromSpan(span: OtlpSpan): EventAnchor[] {
+  const anchors = span.events.map(eventAnchorFromSpanEvent);
+  const ledgerAnchor = eventAnchorFromLedgerSpan(span);
+  return ledgerAnchor ? [...anchors, ledgerAnchor] : anchors;
+}
+
+function eventAnchorFromSpanEvent(event: OtlpSpanEvent): EventAnchor {
+  const id = stringAttribute(event.attributes, "napier.event.id");
+  const seq = integerAttribute(event.attributes, "napier.event.seq");
+  const type = stringAttribute(event.attributes, "napier.event.type");
+  const category = stringAttribute(event.attributes, "napier.event.category");
+  const visibility = stringAttribute(event.attributes, "napier.event.visibility");
+  const payloadSha256 = stringAttribute(
+    event.attributes,
+    "napier.event.payload_sha256",
+  );
+  return validateEventAnchor({
+    id,
+    seq,
+    type,
+    category,
+    visibility,
+    payloadSha256,
+  });
+}
+
+function eventAnchorFromLedgerSpan(span: OtlpSpan): EventAnchor | undefined {
+  const id = stringAttribute(span.attributes, "napier.ledger.event_id");
+  const seq = integerAttribute(span.attributes, "napier.ledger.seq");
+  const type = stringAttribute(span.attributes, "napier.ledger.event_type");
+  const category = stringAttribute(span.attributes, "napier.ledger.category");
+  const visibility = stringAttribute(span.attributes, "napier.ledger.visibility");
+  const payloadSha256 = stringAttribute(
+    span.attributes,
+    "napier.ledger.payload_sha256",
+  );
+  if (
+    id === undefined &&
+    seq === undefined &&
+    type === undefined &&
+    category === undefined &&
+    visibility === undefined &&
+    payloadSha256 === undefined
+  ) {
+    return undefined;
+  }
+  return validateEventAnchor({
+    id,
+    seq,
+    type,
+    category,
+    visibility,
+    payloadSha256,
+  });
+}
+
+function eventAnchorFromRunEvent(event: RunEvent): EventAnchor {
+  return {
+    id: event.id,
+    seq: event.seq,
+    type: event.type,
+    category: event.category,
+    visibility: event.visibility,
+    payloadSha256: sha256(canonicalJson(event.payload)),
+  };
+}
+
+function validateEventAnchor(input: {
+  id: string | undefined;
+  seq: number | undefined;
+  type: string | undefined;
+  category: string | undefined;
+  visibility: string | undefined;
+  payloadSha256: string | undefined;
+}): EventAnchor {
+  if (
+    !input.id ||
+    !RESOURCE_ID_PATTERN.test(input.id) ||
+    input.seq === undefined ||
+    input.seq < 1 ||
+    !input.type ||
+    !input.category ||
+    !input.visibility ||
+    !input.payloadSha256 ||
+    !SHA256_PATTERN.test(input.payloadSha256)
+  ) {
+    throw new Error("OpenTelemetry trace event anchor set binding is invalid");
+  }
+  return {
+    id: input.id,
+    seq: input.seq,
+    type: input.type,
+    category: input.category,
+    visibility: input.visibility,
+    payloadSha256: input.payloadSha256,
+  };
+}
+
+function eventAnchorSetSha256(anchors: EventAnchor[]): string {
+  return sha256(
+    canonicalJson(
+      anchors
+        .map((anchor) => ({ ...anchor }))
+        .sort((left, right) =>
+          left.seq === right.seq
+            ? left.id.localeCompare(right.id)
+            : left.seq - right.seq,
+        ),
+    ),
+  );
 }
 
 function validateImportReceiptTraceBinding(root: OtlpSpan): void {

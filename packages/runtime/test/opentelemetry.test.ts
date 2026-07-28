@@ -454,6 +454,10 @@ describe("OpenTelemetry trace export", () => {
     expect(
       traceSpans.filter((span) => span.parentSpanId === undefined),
     ).toHaveLength(1);
+    const rootSpan = traceSpans.find((span) => !span.parentSpanId)!;
+    expect(
+      attributeValue(rootSpan.attributes, "napier.event_anchor_set.sha256"),
+    ).toEqual(expect.stringMatching(/^[a-f0-9]{64}$/));
     const modelSpan = traceSpans.find((span) => span.name === "chat faux-1")!;
     expect(modelSpan.kind).toBe(3);
     expect(
@@ -526,6 +530,25 @@ describe("OpenTelemetry trace export", () => {
     expect(verifyOpenTelemetryTraceArtifact(ledgerSpanTampered)).toEqual({
       status: "invalid",
       diagnostics: ["ledger_span_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
+    const anchorTampered = structuredClone(first);
+    const tamperedAnchorSpan = spans(anchorTampered).find(
+      (span) => span.name === "chat faux-1",
+    )!;
+    setAttributeValue(
+      tamperedAnchorSpan.attributes,
+      "napier.ledger.payload_sha256",
+      "0".repeat(64),
+    );
+    rehashArtifact(anchorTampered);
+    expect(() => validateOpenTelemetryTraceArtifact(anchorTampered)).toThrow(
+      "event anchor set binding",
+    );
+    expect(verifyOpenTelemetryTraceArtifact(anchorTampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["event_anchor_mismatch"],
       spanCount: 0,
       eventCount: 0,
     });

@@ -2283,6 +2283,11 @@ operation/timing attributes must remain completion-only chat evidence. This
 keeps model-response events equivalent to ordinary span events for hash-only
 payload receipts without storing prompt, completion, reasoning, or tool-call
 content.
+The root span carries `napier.event_anchor_set.sha256`, computed over the
+projected event ID, sequence, type, category, visibility, and payload hash for
+ordinary span events and specialized ledger spans. Verification recomputes that
+set from the OTLP body, so changing a span-level event anchor while recomputing
+the artifact hash fails without needing raw Ledger payloads.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
