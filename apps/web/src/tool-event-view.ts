@@ -16,6 +16,13 @@ export interface ToolEventTraceView {
   verificationStderrSha256?: string;
   verificationStdoutTruncated?: boolean;
   verificationStderrTruncated?: boolean;
+  patchOperation?: "create" | "replace" | "hashline_replace";
+  patchPathSha256?: string;
+  patchBeforeSha256?: string;
+  patchAfterSha256?: string;
+  patchBeforeBytes?: number;
+  patchAfterBytes?: number;
+  patchEditCount?: number;
 }
 
 const TOOL_EVENT_PATTERN = /^tool\.(started|completed|failed|blocked)$/u;
@@ -51,6 +58,10 @@ export function toolEventTraceView(
     toolName === "verify_workspace"
       ? verificationEvidenceView(event.payload["details"])
       : undefined;
+  const patchEvidence =
+    toolName === "apply_patch"
+      ? applyPatchEvidence(event.payload["details"])
+      : undefined;
   return {
     toolName,
     status,
@@ -59,6 +70,7 @@ export function toolEventTraceView(
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
     ...(searchEvidence ? searchEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
+    ...(patchEvidence ? patchEvidence : {}),
   };
 }
 
@@ -95,6 +107,24 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.verificationStdoutTruncated ? ["stdout-truncated"] : []),
     ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
+    ...(view.patchOperation ? [`patch ${view.patchOperation}`] : []),
+    ...(view.patchEditCount !== undefined
+      ? [`edits ${view.patchEditCount}`]
+      : []),
+    ...(view.patchBeforeBytes !== undefined && view.patchAfterBytes !== undefined
+      ? [`bytes ${view.patchBeforeBytes}->${view.patchAfterBytes}`]
+      : []),
+    ...(view.patchPathSha256
+      ? [`path ${view.patchPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.patchBeforeSha256
+      ? [`before ${view.patchBeforeSha256.slice(0, 12)}`]
+      : view.patchOperation === "create"
+        ? ["before absent"]
+        : []),
+    ...(view.patchAfterSha256
+      ? [`after ${view.patchAfterSha256.slice(0, 12)}`]
+      : []),
   ].join(" / ");
 }
 
@@ -219,6 +249,52 @@ function integerInRange(
     Number.isSafeInteger(value) &&
     value >= minimum &&
     value <= maximum
+    ? value
+    : undefined;
+}
+
+function applyPatchEvidence(
+  value: unknown,
+):
+  | {
+      patchOperation: "create" | "replace" | "hashline_replace";
+      patchPathSha256?: string;
+      patchBeforeSha256?: string;
+      patchAfterSha256?: string;
+      patchBeforeBytes?: number;
+      patchAfterBytes?: number;
+      patchEditCount?: number;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const operation = patchOperation(record["operation"]);
+  if (!operation) return undefined;
+  const pathSha256 = sha256(record["pathSha256"]);
+  const beforeSha256 = sha256(record["beforeSha256"]);
+  const afterSha256 = sha256(record["afterSha256"]);
+  const beforeBytes = integerInRange(record["beforeBytes"], 0, 262_144);
+  const afterBytes = integerInRange(record["afterBytes"], 0, 262_144);
+  const editCount = integerInRange(record["editCount"], 0, 32);
+  return {
+    patchOperation: operation,
+    ...(pathSha256 ? { patchPathSha256: pathSha256 } : {}),
+    ...(beforeSha256 ? { patchBeforeSha256: beforeSha256 } : {}),
+    ...(afterSha256 ? { patchAfterSha256: afterSha256 } : {}),
+    ...(beforeBytes !== undefined ? { patchBeforeBytes: beforeBytes } : {}),
+    ...(afterBytes !== undefined ? { patchAfterBytes: afterBytes } : {}),
+    ...(editCount !== undefined ? { patchEditCount: editCount } : {}),
+  };
+}
+
+function patchOperation(
+  value: unknown,
+): "create" | "replace" | "hashline_replace" | undefined {
+  return value === "create" ||
+    value === "replace" ||
+    value === "hashline_replace"
     ? value
     : undefined;
 }

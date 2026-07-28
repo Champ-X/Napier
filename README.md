@@ -1036,8 +1036,10 @@ Edits are limited to 256 KiB and cannot target `.git`, `.napier`, or
 create parent directories. Local runtimes serialize each target with a
 recoverable PID lock, write and fsync a same-directory temporary file, recheck
 the precondition, and commit with an atomic link or rename. Trace records the
-operation, path, byte counts, and before/after hashes. Researcher, reviewer,
-and general subagents remain read-only. New delegations must return a bounded
+operation, path, byte counts, before/after hashes, and a path SHA-256 receipt;
+Workbench summaries show only the operation, byte/edit counts, path hash, and
+content hashes. Researcher, reviewer, and general subagents remain read-only.
+New delegations must return a bounded
 JSON outcome containing a summary, typed findings/risks/recommendations,
 workspace-relative line evidence, and explicit unknowns. Napier normalizes that
 result into a receipt bound to the task, role, model, prompt SHA-256, raw result

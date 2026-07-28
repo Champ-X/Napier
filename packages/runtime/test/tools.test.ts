@@ -166,6 +166,7 @@ describe("workspace tools", () => {
       expect.objectContaining({
         operation: "create",
         path: "report.md",
+        pathSha256: createHash("sha256").update("report.md").digest("hex"),
         beforeSha256: null,
         beforeBytes: 0,
         editCount: 0,

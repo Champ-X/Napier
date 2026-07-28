@@ -1514,7 +1514,10 @@ all operations
   -> fsync a same-directory temporary file
   -> atomically link a new file or rename over an existing file
   -> fsync the parent directory
-  -> append tool.completed with path, byte counts, and both content hashes
+  -> append tool.completed with path, path SHA-256, byte counts, and both
+     content hashes
+  -> render Workbench Trace summaries with only operation, edit/byte counts,
+     path hash, and content hashes
 ```
 
 This lock serializes Napier runtimes on one host; the second writer fails or

@@ -173,6 +173,7 @@ export type WorkspacePatchInput =
 
 export interface WorkspacePatchResult {
   path: string;
+  pathSha256: string;
   operation: WorkspacePatchInput["operation"];
   beforeSha256: string | null;
   afterSha256: string;
@@ -699,6 +700,7 @@ export async function applyWorkspacePatch(
     }
     return {
       path: relativePath,
+      pathSha256: sha256(relativePath),
       operation: input.operation,
       beforeSha256,
       afterSha256,

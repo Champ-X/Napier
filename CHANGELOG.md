@@ -258,6 +258,8 @@ All notable changes to Napier are recorded here.
   hashes without exposing matched text or paths.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
+- Trace tool summaries now surface `apply_patch` operation, edit/byte counts,
+  path hash, and before/after hashes without exposing path or patch text.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

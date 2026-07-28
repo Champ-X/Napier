@@ -118,6 +118,40 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes apply_patch write evidence without path or patch text", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "apply_patch",
+      status: "completed",
+      output: "Updated TOP_SECRET_PATH with TOP_SECRET_PATCH",
+      details: {
+        path: "TOP_SECRET_PATH",
+        pathSha256: "1".repeat(64),
+        operation: "hashline_replace",
+        beforeSha256: "2".repeat(64),
+        afterSha256: "3".repeat(64),
+        beforeBytes: 42,
+        afterBytes: 45,
+        editCount: 1,
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "apply_patch",
+      status: "completed",
+      patchOperation: "hashline_replace",
+      patchPathSha256: "1".repeat(64),
+      patchBeforeSha256: "2".repeat(64),
+      patchAfterSha256: "3".repeat(64),
+      patchBeforeBytes: 42,
+      patchAfterBytes: 45,
+      patchEditCount: 1,
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / apply_patch / completed / patch hashline_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("fails closed to a fixed summary for malformed tool receipts", () => {
     const event = toolEvent("tool.failed", {
       toolName: "bad tool name",
