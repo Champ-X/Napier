@@ -38,6 +38,7 @@ import {
 } from "./model-context-envelope-view";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
+import { threadImportedSummary } from "./thread-imported-view";
 import {
   independentModelAdvisorReviewViews,
   type IndependentModelAdvisorReviewView,
@@ -935,6 +936,9 @@ function eventLabel(type: string): string {
 function eventSummary(event: RunEvent): string {
   if (event.type === "trace.otlp.exported") {
     return openTelemetryTraceExportSummary(event) ?? event.category;
+  }
+  if (event.type === "thread.imported") {
+    return threadImportedSummary(event) ?? event.category;
   }
   if (
     !event.payload ||

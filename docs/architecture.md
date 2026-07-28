@@ -2297,6 +2297,10 @@ through a bounded view helper that exposes only scope, span count, and the
 event-anchor short hash; raw prompt, completion, reasoning, and arbitrary
 payload text are ignored. Malformed trace export receipts fail closed to a fixed
 summary instead of using the generic payload text fallback.
+It applies the same bounded projection pattern to `thread.imported` receipts:
+the Trace list shows source content hash, source event-stream hash, imported
+source event count, local cutoff, and envelope coverage counts, while ignoring
+source IDs, API version strings, arbitrary text fields, and raw replay content.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,
