@@ -2331,6 +2331,14 @@ option labels/descriptions, and custom answer text are ignored.
 `run.control.*` summaries show safe control IDs, mode, byte counts, sequence
 numbers, reasons, and SHA-256 receipts; live control text is never used as the
 event-list summary.
+Other `run.*` lifecycle and recovery events are bounded separately. Run
+summaries may show status, source, mode, model label, safe run/agent/attempt
+IDs, agent revision, budget limits and observations, automatic recovery counts,
+timestamps, and SHA-256 receipts. They do not render failure messages, recovery
+prompt text, interruption reasons, automatic recovery errors, or arbitrary
+future run payload prose. Unknown non-control `run.*` events fail closed to
+their category before `message`, `error`, `reason`, or `text` can drive the
+summary.
 Subagent lifecycle and outcome events also use bounded summaries. `subagent.*`
 events can show safe task IDs, role/status/kind, counts, stop reason, and
 hash-only receipts for text, repair requests, diagnostics, outcomes, item sets,

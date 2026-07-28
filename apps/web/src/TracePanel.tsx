@@ -52,6 +52,7 @@ import { modelEventTraceSummary } from "./model-event-view";
 import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
 import { planEventTraceSummary } from "./plan-event-view";
+import { runEventTraceSummary } from "./run-event-view";
 import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import {
@@ -982,6 +983,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("run.control.")) {
     return runControlTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("run.")) {
+    return runEventTraceSummary(event) ?? event.category;
   }
   if (event.type.startsWith("subagent.")) {
     return subagentEventTraceSummary(event) ?? event.category;

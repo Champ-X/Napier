@@ -156,6 +156,10 @@ All notable changes to Napier are recorded here.
 - Trace event summaries now project `operator.decision.*` and `run.control.*`
   receipts through bounded control views, so decision questions/options,
   custom answers, and live control text stay out of the event list.
+- Trace event summaries now project non-control `run.*` receipts through a
+  bounded run view, so failure messages, recovery prompts, interruption
+  reasons, and automatic recovery errors stay out of the event list while run
+  status, source/mode, budget numbers, safe IDs, and hashes remain visible.
 - Trace event summaries now project `subagent.*` receipts through a bounded
   delegation view, so subagent prompts, step text, tool arguments, final
   results, diagnostics, and errors stay out of the event list.
