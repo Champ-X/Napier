@@ -630,6 +630,15 @@ function FixtureLedgerCard({
             {provenance.sourceContentSha256.slice(0, 12)}
           </code>
           <small>
+            {provenance.sourceEventCount.toLocaleString()}{" "}
+            {copy.lab.fixture.sourceEvents} ·{" "}
+            {(
+              provenance.localImportedThroughSeq ??
+              provenance.sourceEventCount
+            ).toLocaleString()}{" "}
+            {copy.lab.fixture.localImportedCutoff}
+          </small>
+          <small>
             {(provenance.sourceModelContextEnvelopeCount ?? 0).toLocaleString()}{" "}
             {copy.lab.fixture.contextEnvelopes} ·{" "}
             {(

@@ -15,6 +15,7 @@ import {
   type RunRecord,
   type SubagentTask,
   type ThreadDetail,
+  type ThreadImportProvenance,
 } from "@napier/contracts";
 
 import { hashEventStream } from "./replay.js";
@@ -180,6 +181,7 @@ const SAFE_NUMBER_PAYLOAD_KEYS = new Set([
   "sampleCount",
   "score",
   "sizeBytes",
+  "localImportedThroughSeq",
   "sourceEventCount",
   "spanCount",
   "stepCount",
@@ -263,6 +265,15 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
   "napier.subagent.stop_reason",
   "napier.subagent.turn_count",
   "napier.thread.id",
+  "napier.thread.import.imported_at",
+  "napier.thread.import.local_imported_through_seq",
+  "napier.thread.import.source_api_version",
+  "napier.thread.import.source_content_sha256",
+  "napier.thread.import.source_embedded_model_context_envelope_count",
+  "napier.thread.import.source_event_count",
+  "napier.thread.import.source_event_stream_sha256",
+  "napier.thread.import.source_model_context_envelope_count",
+  "napier.thread.import.source_thread_id",
   "napier.timing.precision",
   "napier.tool.call_id",
   "napier.tool.duration_ms",
@@ -540,6 +551,7 @@ function buildOtlpRequest(
         "napier.event_stream.sha256": hashEventStream(events),
         "napier.export.scope": runId ? "run" : "thread",
         "napier.thread.id": detail.thread.id,
+        ...importProvenanceAttributes(detail.thread.importProvenance),
         ...(runId ? { "napier.run.id": runId } : {}),
       }),
       events: rootEvents,
@@ -1305,6 +1317,40 @@ function isAllowedEventAttributeKey(key: string): boolean {
     SAFE_EVENT_PAYLOAD_ATTRIBUTE_KEYS.has(key) ||
     /^napier\.event\.payload\.[a-z0-9_.-]+_(sha256|fingerprint)$/.test(key)
   );
+}
+
+function importProvenanceAttributes(
+  provenance: ThreadImportProvenance | undefined,
+): Record<string, string | number> {
+  if (!provenance) return {};
+  return {
+    "napier.thread.import.source_thread_id": provenance.sourceThreadId,
+    "napier.thread.import.source_api_version": provenance.sourceApiVersion,
+    "napier.thread.import.source_content_sha256":
+      provenance.sourceContentSha256,
+    "napier.thread.import.source_event_stream_sha256":
+      provenance.sourceEventStreamSha256,
+    "napier.thread.import.source_event_count": provenance.sourceEventCount,
+    ...(provenance.localImportedThroughSeq !== undefined
+      ? {
+          "napier.thread.import.local_imported_through_seq":
+            provenance.localImportedThroughSeq,
+        }
+      : {}),
+    ...(provenance.sourceModelContextEnvelopeCount !== undefined
+      ? {
+          "napier.thread.import.source_model_context_envelope_count":
+            provenance.sourceModelContextEnvelopeCount,
+        }
+      : {}),
+    ...(provenance.sourceEmbeddedModelContextEnvelopeCount !== undefined
+      ? {
+          "napier.thread.import.source_embedded_model_context_envelope_count":
+            provenance.sourceEmbeddedModelContextEnvelopeCount,
+        }
+      : {}),
+    "napier.thread.import.imported_at": provenance.importedAt,
+  };
 }
 
 function validateAttributes(

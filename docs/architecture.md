@@ -2261,9 +2261,10 @@ coverage counts. Claims of tool effects and embedded requests require current
 verification. Branches created from imported Threads inherit the same source
 fixture provenance plus a local imported-history cutoff sequence, so
 branch-copied historical messages remain behind that boundary without
-over-redacting later local operator input. Imported provenance is also an
-unconditional automatic-recovery blocker; an imported interrupted Run can only
-continue through explicit operator action.
+over-redacting later local operator input. Run Lab and metadata-only OTLP root
+span attributes expose the same source event count and local cutoff for audit.
+Imported provenance is also an unconditional automatic-recovery blocker; an
+imported interrupted Run can only continue through explicit operator action.
 
 ## Delegation Flow
 

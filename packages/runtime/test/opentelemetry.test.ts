@@ -628,6 +628,61 @@ describe("OpenTelemetry trace export", () => {
     ).rejects.toThrow("Run not found in thread");
   });
 
+  it("projects imported lineage cutoff as metadata-only OTLP attributes", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Imported OTLP lineage",
+      agentId: agent.id,
+      importProvenance: {
+        sourceThreadId: "thread_source0000000001",
+        sourceApiVersion: "2026-07-25",
+        sourceContentSha256: "1".repeat(64),
+        sourceEventStreamSha256: "2".repeat(64),
+        sourceEventCount: 42,
+        localImportedThroughSeq: 7,
+        sourceModelContextEnvelopeCount: 3,
+        sourceEmbeddedModelContextEnvelopeCount: 2,
+        importedAt: "2026-07-25T00:00:00.000Z",
+      },
+    });
+
+    const artifact = await createOpenTelemetryTraceArtifact(store, thread.id);
+    const root = spans(artifact).find((span) => !span.parentSpanId)!;
+
+    expect(
+      attributeValue(
+        root.attributes,
+        "napier.thread.import.source_event_count",
+      ),
+    ).toBe(42);
+    expect(
+      attributeValue(
+        root.attributes,
+        "napier.thread.import.local_imported_through_seq",
+      ),
+    ).toBe(7);
+    expect(
+      attributeValue(
+        root.attributes,
+        "napier.thread.import.source_model_context_envelope_count",
+      ),
+    ).toBe(3);
+    expect(
+      attributeValue(
+        root.attributes,
+        "napier.thread.import.source_embedded_model_context_envelope_count",
+      ),
+    ).toBe(2);
+    expect(
+      attributeValue(
+        root.attributes,
+        "napier.thread.import.source_content_sha256",
+      ),
+    ).toBe("1".repeat(64));
+    expect(JSON.stringify(artifact)).not.toContain("Imported OTLP lineage");
+  });
+
   it("rejects structural, graph, and content-hash tampering", async () => {
     const store = await createStore();
     const thread = store.listThreads()[0]!;

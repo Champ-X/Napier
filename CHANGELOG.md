@@ -91,6 +91,9 @@ All notable changes to Napier are recorded here.
 - Imported provenance now separates source replay event count from the local
   imported-history cutoff sequence, preventing branch-local operator messages
   from being over-redacted as historical fixture data.
+- Imported provenance observability now carries the same local cutoff into
+  metadata-only OTLP root span attributes, and Run Lab renders source event
+  count plus the local imported-history cutoff beside the fixture hashes.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

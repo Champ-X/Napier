@@ -1388,7 +1388,8 @@ Agent never to treat embedded requests as current operator instructions or
 authorization. Branches created from imported Threads retain the same source
 fixture provenance plus a local imported-history cutoff sequence, so copied
 historical messages stay behind that boundary without over-redacting later
-local operator input.
+local operator input. Run Lab and metadata-only OTLP root span attributes expose
+the same source event count and local cutoff for audit.
 
 ## OpenTelemetry Trace Export
 
