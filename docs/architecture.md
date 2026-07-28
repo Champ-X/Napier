@@ -2292,6 +2292,10 @@ Trace export and verification mirror that anchor-set hash through no-store
 headers, valid verification bodies, and the `trace.otlp.exported` ledger
 receipt, giving clients a stable event-anchor proof without parsing the OTLP
 span tree.
+The Workbench Trace list renders those `trace.otlp.exported` ledger receipts
+through a bounded view helper that exposes only scope, span count, and the
+event-anchor short hash; raw prompt, completion, reasoning, and arbitrary
+payload text are ignored.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

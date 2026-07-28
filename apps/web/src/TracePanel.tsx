@@ -37,6 +37,7 @@ import {
   type ModelContextEnvelopeView,
 } from "./model-context-envelope-view";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
+import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
 import {
   independentModelAdvisorReviewViews,
   type IndependentModelAdvisorReviewView,
@@ -940,11 +941,8 @@ function eventSummary(event: RunEvent): string {
     return event.category;
   }
   if (event.type === "trace.otlp.exported") {
-    const scope = event.payload["scope"];
-    const spanCount = event.payload["spanCount"];
-    if (typeof scope === "string" && typeof spanCount === "number") {
-      return `${scope} / ${spanCount} spans`;
-    }
+    const summary = openTelemetryTraceExportSummary(event);
+    if (summary) return summary;
   }
   for (const key of [
     "text",

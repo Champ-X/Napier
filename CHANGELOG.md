@@ -132,6 +132,9 @@ All notable changes to Napier are recorded here.
 - OTLP export and verification APIs now mirror that event-anchor-set hash in
   no-store headers and verification bodies, and `trace.otlp.exported` ledger
   receipts persist the same hash-only event-anchor evidence.
+- Trace event summaries now project `trace.otlp.exported` receipts through a
+  strict hash-only view that includes the event-anchor short hash without
+  rendering any raw prompt, completion, or payload text.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,
