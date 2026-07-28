@@ -218,6 +218,12 @@ export default function RunLabPanel({
               )}
             />
             <MetricDelta
+              label={copy.lab.embeddedContextEnvelopes}
+              value={formatSignedNumber(
+                comparison.metricDelta.embeddedModelContextEnvelopeCount,
+              )}
+            />
+            <MetricDelta
               label={copy.lab.contextBindings}
               value={formatSignedNumber(
                 comparison.metricDelta.modelContextBoundResponseCount,

@@ -11846,6 +11846,9 @@ function expectRunMetricsHeaders(
     String(metrics.modelContextEnvelopeCount),
   );
   expect(
+    response.headers.get(`${prefix}-embedded-model-context-envelope-count`),
+  ).toBe(String(metrics.embeddedModelContextEnvelopeCount));
+  expect(
     response.headers.get(`${prefix}-model-context-bound-response-count`),
   ).toBe(String(metrics.modelContextBoundResponseCount));
   expect(

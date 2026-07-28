@@ -3509,6 +3509,7 @@ export interface RunMetrics {
   messageCount: number;
   modelResponseCount: number;
   modelContextEnvelopeCount: number;
+  embeddedModelContextEnvelopeCount: number;
   modelContextBoundResponseCount: number;
   modelContextUnboundResponseCount: number;
   toolCallCount: number;

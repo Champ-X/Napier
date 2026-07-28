@@ -20095,6 +20095,10 @@ function setRunMetricsHeaders(
     String(metrics.modelContextEnvelopeCount),
   );
   context.header(
+    `${prefix}-Embedded-Model-Context-Envelope-Count`,
+    String(metrics.embeddedModelContextEnvelopeCount),
+  );
+  context.header(
     `${prefix}-Model-Context-Bound-Response-Count`,
     String(metrics.modelContextBoundResponseCount),
   );

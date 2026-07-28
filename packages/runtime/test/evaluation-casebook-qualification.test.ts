@@ -320,6 +320,7 @@ describe("executable Evaluation Casebook qualification", () => {
       expect.objectContaining({
         modelResponseCount: 1,
         modelContextEnvelopeCount: 1,
+        embeddedModelContextEnvelopeCount: 0,
         modelContextBoundResponseCount: 1,
         modelContextUnboundResponseCount: 0,
       }),

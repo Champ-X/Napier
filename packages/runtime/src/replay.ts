@@ -22,6 +22,7 @@ import { compareRunConfigurations } from "./run-config.js";
 import {
   assertModelContextEnvelopeEventBindings,
   MODEL_CONTEXT_ENVELOPE_EVENT,
+  validateModelContextEnvelopeReceipt,
 } from "./model-context-envelope.js";
 import { assertSubagentOutcomeBinding } from "./subagent-outcomes.js";
 import { createThreadReplayBundle as buildThreadReplayBundle } from "./thread-bundles.js";
@@ -32,6 +33,7 @@ const METRIC_KEYS: Array<keyof RunMetricDelta> = [
   "messageCount",
   "modelResponseCount",
   "modelContextEnvelopeCount",
+  "embeddedModelContextEnvelopeCount",
   "modelContextBoundResponseCount",
   "modelContextUnboundResponseCount",
   "toolCallCount",
@@ -317,6 +319,7 @@ function validateRunReplaySnapshot(input: unknown): RunReplaySnapshot {
     knownRunIds: new Set([runId]),
     label: "Run replay snapshot Model Context Envelope",
   });
+  assertEmbeddedModelContextEnvelopeReceipts(events);
   for (const task of subagents) {
     assertReplaySubagent(task, threadId, runId);
   }
@@ -516,6 +519,9 @@ function buildRunMetrics(
   const modelContextEnvelopeCount = events.filter(
     (event) => event.type === MODEL_CONTEXT_ENVELOPE_EVENT,
   ).length;
+  const embeddedModelContextEnvelopeCount = events.filter((event) =>
+    hasEmbeddedModelContextEnvelope(event.payload),
+  ).length;
   const modelContextBoundResponseCount = modelResponses.filter(
     (event) =>
       Boolean(payloadString(event.payload, "modelContextEnvelopeSha256")) &&
@@ -535,6 +541,7 @@ function buildRunMetrics(
     ).length,
     modelResponseCount: modelResponses.length,
     modelContextEnvelopeCount,
+    embeddedModelContextEnvelopeCount,
     modelContextBoundResponseCount,
     modelContextUnboundResponseCount:
       modelResponses.length - modelContextBoundResponseCount,
@@ -592,6 +599,42 @@ function addUsage(left: Usage, right: Usage): Usage {
     cacheWriteTokens: left.cacheWriteTokens + right.cacheWriteTokens,
     costUsd: left.costUsd + right.costUsd,
   };
+}
+
+function assertEmbeddedModelContextEnvelopeReceipts(
+  events: readonly RunEvent[],
+): void {
+  for (const event of events) {
+    const envelope = embeddedModelContextEnvelope(event.payload);
+    if (envelope === undefined) continue;
+    try {
+      validateModelContextEnvelopeReceipt(envelope);
+    } catch (error) {
+      throw new Error(
+        `Run replay snapshot embedded Model Context Envelope is invalid for event ${event.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+  }
+}
+
+function hasEmbeddedModelContextEnvelope(payload: JsonValue): boolean {
+  const envelope = embeddedModelContextEnvelope(payload);
+  if (envelope === undefined) return false;
+  try {
+    validateModelContextEnvelopeReceipt(envelope);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function embeddedModelContextEnvelope(payload: JsonValue): unknown {
+  if (!payload || Array.isArray(payload) || typeof payload !== "object") {
+    return undefined;
+  }
+  return payload["modelContextEnvelope"];
 }
 
 function compareContextCoverage(

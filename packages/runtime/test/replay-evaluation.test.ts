@@ -275,6 +275,7 @@ describe("run replay", () => {
         messageCount: 2,
         modelResponseCount: 1,
         modelContextEnvelopeCount: 1,
+        embeddedModelContextEnvelopeCount: 0,
         modelContextBoundResponseCount: 1,
         modelContextUnboundResponseCount: 0,
         inputTokens: 20,
@@ -315,6 +316,121 @@ describe("run replay", () => {
     });
   });
 
+  it("tracks embedded reviewer envelopes without changing candidate response coverage", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Embedded reviewer envelopes",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const candidateEnvelope = createModelContextEnvelopeReceipt({
+      turnIndex: 0,
+      systemPrompt: "You are Napier.",
+      messages: [{ role: "user", content: "Inspect model boundaries." }],
+      tools: [],
+    });
+    const reviewerEnvelope = createModelContextEnvelopeReceipt({
+      turnIndex: 0,
+      systemPrompt: "Review the candidate without tools.",
+      messages: [
+        {
+          role: "user",
+          content: "Hash-only reviewer request payload.",
+        },
+      ],
+      tools: [],
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "context.model_envelope",
+      category: "model",
+      visibility: "debug",
+      payload: candidateEnvelope,
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "model.response",
+      category: "model",
+      visibility: "debug",
+      payload: {
+        text: "Candidate response.",
+        model: "faux/faux-1",
+        modelContextEnvelopeSha256: candidateEnvelope.contentSha256,
+        modelContextEnvelopeTurnIndex: candidateEnvelope.turnIndex,
+        modelContextMessageSetSha256: candidateEnvelope.messageSetSha256,
+        modelContextToolDefinitionSetSha256:
+          candidateEnvelope.toolDefinitionSetSha256,
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "model.advisor.independent.reviewed",
+      category: "model",
+      visibility: "debug",
+      payload: {
+        verdict: "accept",
+        modelContextEnvelope: reviewerEnvelope,
+      },
+    });
+    await store.finishRun(run.id, "completed");
+
+    const snapshot = await createRunReplaySnapshot(store, thread.id, run.id);
+
+    expect(snapshot.metrics).toEqual(
+      expect.objectContaining({
+        eventCount: 3,
+        modelResponseCount: 1,
+        modelContextEnvelopeCount: 1,
+        embeddedModelContextEnvelopeCount: 1,
+        modelContextBoundResponseCount: 1,
+        modelContextUnboundResponseCount: 0,
+      }),
+    );
+    expect(snapshot.metrics.modelContextEnvelopeCount).toBe(
+      snapshot.metrics.modelContextBoundResponseCount,
+    );
+    expect(verifyRunReplaySnapshot(snapshot)).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        diagnostics: [],
+        threadId: thread.id,
+        runId: run.id,
+      }),
+    );
+
+    const tampered = structuredClone(snapshot);
+    const advisorEvent = tampered.events.find(
+      (event) => event.type === "model.advisor.independent.reviewed",
+    );
+    if (
+      !advisorEvent?.payload ||
+      Array.isArray(advisorEvent.payload) ||
+      typeof advisorEvent.payload !== "object"
+    ) {
+      throw new Error("Advisor review fixture is missing");
+    }
+    advisorEvent.payload = {
+      ...advisorEvent.payload,
+      modelContextEnvelope: {
+        ...reviewerEnvelope,
+        contentSha256: "b".repeat(64),
+      },
+    };
+    expect(verifyRunReplaySnapshot(tampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["context_mismatch"],
+      eventCount: 0,
+      subagentCount: 0,
+    });
+  });
+
   it("reports right-minus-left metrics, tool changes, and output changes", async () => {
     const store = await createStore();
     const { threadId, left, right } = await createComparedRuns(store);
@@ -325,6 +441,7 @@ describe("run replay", () => {
       expect.objectContaining({
         eventCount: 2,
         modelContextEnvelopeCount: 0,
+        embeddedModelContextEnvelopeCount: 0,
         modelContextBoundResponseCount: 0,
         modelContextUnboundResponseCount: 0,
         toolCallCount: 1,
@@ -400,6 +517,7 @@ describe("run replay", () => {
       expect.objectContaining({
         modelResponseCount: 1,
         modelContextEnvelopeCount: 0,
+        embeddedModelContextEnvelopeCount: 0,
         modelContextBoundResponseCount: 0,
         modelContextUnboundResponseCount: 1,
       }),
@@ -597,6 +715,7 @@ describe("run evaluation", () => {
       expect.objectContaining({
         modelResponseCount: 1,
         modelContextEnvelopeCount: 1,
+        embeddedModelContextEnvelopeCount: 0,
         modelContextBoundResponseCount: 1,
         modelContextUnboundResponseCount: 0,
       }),

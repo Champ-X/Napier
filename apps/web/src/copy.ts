@@ -91,6 +91,7 @@ export const copy = {
     tokens: "Tokens",
     tools: "Tool calls",
     contextEnvelopes: "Context envelopes",
+    embeddedContextEnvelopes: "Embedded envelopes",
     contextBindings: "Context binds",
     contextMisses: "Context misses",
     contextCoverage: "Context coverage",

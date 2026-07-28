@@ -45,6 +45,12 @@ All notable changes to Napier are recorded here.
   hash-only envelopes plus redacted response bindings, while token/cost
   accounting remains on `context.compaction.*`, `goal.evaluated`, or
   `memory.extraction.*` to avoid double counting.
+- Embedded reviewer envelopes now have first-class replay metrics. Run metrics
+  expose `embeddedModelContextEnvelopeCount` separately from candidate
+  `model.response` coverage, replay verification fail-closes on malformed
+  embedded receipts, Run comparison headers export the delta, and Run Lab shows
+  the same count without mixing auxiliary reviewer calls into primary response
+  binding coverage.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent
