@@ -159,6 +159,10 @@ All notable changes to Napier are recorded here.
   bounded advisor view, so deterministic diagnostics, independent reviewer
   guidance, correction prompts, and correction responses stay out of the event
   list while verdict/status, counts, and hashes remain auditable.
+- Trace event summaries now project known `context.*` receipts through a
+  bounded context view, so compaction summaries, failure messages, prompt
+  variable names/values, and Skill catalog names stay out of the event list
+  while counts, sequence ranges, and SHA-256 receipts remain visible.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,

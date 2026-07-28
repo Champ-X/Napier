@@ -2337,6 +2337,15 @@ evidence, request/response hashes, embedded envelope hashes, and receipt
 content. Deterministic diagnostic prose, independent reviewer guidance,
 correction prompts, correction responses, and arbitrary advisor payload text
 never drive the event-list summary.
+Known `context.*` receipts are also routed through a bounded summary before the
+generic fallback runs. Context summaries may show schema/version metadata,
+message/tool/Skill counts, prompt-variable counts, compaction sequence ranges,
+checkpoint IDs, delegation/milestone counters, booleans such as redaction or
+Skill-catalog injection, and SHA-256 receipts. They do not render context
+compaction summaries, compaction failure messages, prompt-variable names or
+values, Skill catalog names, embedded Skill bodies, memory text, or arbitrary
+context payload prose. Unknown `context.*` events fail closed to their category
+instead of using `summary`, `message`, or `text` fields.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

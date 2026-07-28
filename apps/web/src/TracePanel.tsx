@@ -34,6 +34,7 @@ import {
   operatorDecisionTraceSummary,
   runControlTraceSummary,
 } from "./control-event-view";
+import { contextEventTraceSummary } from "./context-event-view";
 import { copy } from "./copy";
 import {
   goalEventTraceSummary,
@@ -951,6 +952,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type === "thread.imported") {
     return threadImportedSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("context.")) {
+    return contextEventTraceSummary(event) ?? event.category;
   }
   if (event.type === "model.response") {
     return modelResponseTraceSummary(event) ?? event.category;

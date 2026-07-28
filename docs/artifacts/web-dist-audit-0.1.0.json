@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-B4WdkfAI.js",
+    "path": "apps/web/dist/assets/index-DUNkVcxH.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "33534d8c3332b79b0c0af2de4f92f7a402999defac28790446c05c13a9f09113"
+    "sha256": "3fcb8f97b5340ddcc0c03f4aa1452bde4b6aa3f14a43fd52d738e8575e67dc37"
   },
-  "distContentSha256": "33534d8c3332b79b0c0af2de4f92f7a402999defac28790446c05c13a9f09113",
+  "distContentSha256": "3fcb8f97b5340ddcc0c03f4aa1452bde4b6aa3f14a43fd52d738e8575e67dc37",
   "errors": []
 }
