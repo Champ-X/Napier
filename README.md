@@ -1044,7 +1044,8 @@ carry the hash-only model-context envelope for the no-tool request without
 copying the task prompt or outcome text. Reviewer failures become inconclusive
 artifacts and never rewrite the task, append Ledger events, or stall the
 completed delegation. The Trace card uses the globally selected model as the
-reviewer candidate and disables review until it is independent.
+reviewer candidate, shows both the request envelope hash and review receipt
+hash, and disables review until it is independent.
 Every parent model request also receives a freshly derived, bounded
 `napier.delegation-ledger-projection` system block. It prioritizes active and
 recent terminal tasks, binds both the selected projection and complete task

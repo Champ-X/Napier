@@ -100,6 +100,23 @@ describe("subagent API", () => {
       promptSha256: "d".repeat(64),
       responseSha256: "e".repeat(64),
       reviewSchemaSha256: "f".repeat(64),
+      modelContextEnvelope: {
+        kind: "napier.model-context-envelope" as const,
+        schemaVersion: 1 as const,
+        turnIndex: 0,
+        systemPromptSha256: "1".repeat(64),
+        systemPromptBytes: 120,
+        messageCount: 1,
+        userMessageCount: 1,
+        assistantMessageCount: 0,
+        toolResultMessageCount: 0,
+        otherMessageCount: 0,
+        messageSetSha256: "2".repeat(64),
+        toolCount: 0,
+        toolNameSetSha256: "3".repeat(64),
+        toolDefinitionSetSha256: "4".repeat(64),
+        contentSha256: "5".repeat(64),
+      },
       createdAt: "2026-07-28T00:00:00.000Z",
     };
     const review: SubagentOutcomeReview = {

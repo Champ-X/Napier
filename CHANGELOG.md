@@ -1138,7 +1138,8 @@ write:management-openapi-compatibility` now emits
   model-context envelope. Provider or parse failures become
   `inconclusive` without exposing raw errors. The operation is no-store,
   promoted into OpenAPI, and available from Trace using the globally selected
-  model; it cannot mutate or stall the settled delegation.
+  model. Trace shows the request envelope hash beside the review receipt hash;
+  the operation cannot mutate or stall the settled delegation.
 - Compaction-immune delegation ledger projection. Every parent provider
   request now receives a freshly derived bounded system block from durable
   Thread Subagent tasks, including sanitized task labels, state/model/counter

@@ -700,6 +700,7 @@ export const copy = {
     items: "Items",
     evidence: "Evidence",
     unknowns: "Unknowns",
+    envelope: "Envelope",
     receipt: "Receipt",
     verifyEvidence: "Verify evidence",
     verifyingEvidence: "Verifying...",

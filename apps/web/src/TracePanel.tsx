@@ -837,9 +837,22 @@ function DelegationCard({
                 {copy.delegation.risk} {review.risk}
               </span>
               <small title={review.reason}>{review.reason}</small>
-              <code title={review.reviewSha256}>
-                {review.reviewSha256.slice(0, 12)}
-              </code>
+              <span className="delegation-review-hashes">
+                {review.modelContextEnvelope ? (
+                  <span>
+                    {copy.delegation.envelope}{" "}
+                    <code title={review.modelContextEnvelope.contentSha256}>
+                      {review.modelContextEnvelope.contentSha256.slice(0, 12)}
+                    </code>
+                  </span>
+                ) : null}
+                <span>
+                  {copy.delegation.receipt}{" "}
+                  <code title={review.reviewSha256}>
+                    {review.reviewSha256.slice(0, 12)}
+                  </code>
+                </span>
+              </span>
             </output>
           ) : null}
           {reviewFailed ? (

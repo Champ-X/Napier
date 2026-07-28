@@ -6939,6 +6939,19 @@ button:disabled {
   grid-column: 1 / -1;
 }
 
+.delegation-review-receipt .delegation-review-hashes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  grid-column: 1 / -1;
+}
+
+.delegation-review-receipt .delegation-review-hashes span {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
 .delegation-review-receipt small {
   color: var(--ink-soft);
 }
