@@ -190,6 +190,20 @@ export interface IndependentModelAdvisorIssue {
   guidanceSha256: string;
 }
 
+export interface IndependentModelAdvisorEvidenceSummary {
+  eventCount: number;
+  toolCompletedNameCount: number;
+  toolFailedNameCount: number;
+  verificationToolCompleted: boolean;
+  verificationToolPassed: boolean;
+  workspaceWriteCompleted: boolean;
+  verificationToolPassedAfterWorkspaceWrite: boolean;
+  latestWorkspaceWriteSeq?: number;
+  latestPassedVerificationSeq?: number;
+  milestoneCount: number;
+  operatorDecisionRequested: boolean;
+}
+
 export interface IndependentModelAdvisorReview {
   kind: "napier.independent-model-advisor-review";
   schemaVersion: 1;
@@ -206,6 +220,7 @@ export interface IndependentModelAdvisorReview {
   candidateTextBytes: number;
   turnPromptSha256: string;
   evidenceSha256: string;
+  evidenceSummary?: IndependentModelAdvisorEvidenceSummary;
   criteriaSha256: string;
   inputSha256: string;
   promptSha256: string;

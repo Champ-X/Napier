@@ -29,6 +29,12 @@ export interface IndependentModelAdvisorReviewView {
   reviewerModel: string;
   issueCodes: IndependentModelAdvisorIssueCode[];
   diagnosticCodes: string[];
+  verificationToolCompleted?: boolean;
+  verificationToolPassed?: boolean;
+  workspaceWriteCompleted?: boolean;
+  verificationToolPassedAfterWorkspaceWrite?: boolean;
+  latestWorkspaceWriteSeq?: number;
+  latestPassedVerificationSeq?: number;
   modelContextEnvelopeSha256?: string;
   contentSha256: string;
 }
@@ -51,6 +57,7 @@ export function independentModelAdvisorReviewViews(
       const reviewerModel = payload["reviewerModel"];
       const issues = payload["issues"];
       const diagnosticCodes = payload["diagnosticCodes"];
+      const evidenceSummary = payload["evidenceSummary"];
       const modelContextEnvelope = payload["modelContextEnvelope"];
       const contentSha256 = payload["contentSha256"];
       if (
@@ -83,6 +90,7 @@ export function independentModelAdvisorReviewViews(
         typeof code === "string" ? [code] : [],
       );
       if (diagnostics.length !== diagnosticCodes.length) return [];
+      const evidenceView = evidenceSummaryView(evidenceSummary);
       const modelContextEnvelopeSha256 = hash(
         record(modelContextEnvelope)
           ? modelContextEnvelope["contentSha256"]
@@ -97,6 +105,7 @@ export function independentModelAdvisorReviewViews(
           reviewerModel: `${reviewerModel["provider"]}/${reviewerModel["id"]}`,
           issueCodes,
           diagnosticCodes: diagnostics,
+          ...evidenceView,
           ...(modelContextEnvelopeSha256 ? { modelContextEnvelopeSha256 } : {}),
           contentSha256,
         },
@@ -112,5 +121,59 @@ function record(value: unknown): value is Record<string, unknown> {
 function hash(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
     ? value
+    : undefined;
+}
+
+function evidenceSummaryView(
+  value: unknown,
+):
+  | Pick<
+      IndependentModelAdvisorReviewView,
+      | "verificationToolCompleted"
+      | "verificationToolPassed"
+      | "workspaceWriteCompleted"
+      | "verificationToolPassedAfterWorkspaceWrite"
+      | "latestWorkspaceWriteSeq"
+      | "latestPassedVerificationSeq"
+    >
+  | undefined {
+  if (!record(value)) return undefined;
+  const verificationToolCompleted = booleanValue(
+    value["verificationToolCompleted"],
+  );
+  const verificationToolPassed = booleanValue(value["verificationToolPassed"]);
+  const workspaceWriteCompleted = booleanValue(
+    value["workspaceWriteCompleted"],
+  );
+  const verificationToolPassedAfterWorkspaceWrite = booleanValue(
+    value["verificationToolPassedAfterWorkspaceWrite"],
+  );
+  return {
+    ...(verificationToolCompleted !== undefined
+      ? { verificationToolCompleted }
+      : {}),
+    ...(verificationToolPassed !== undefined ? { verificationToolPassed } : {}),
+    ...(workspaceWriteCompleted !== undefined
+      ? { workspaceWriteCompleted }
+      : {}),
+    ...(verificationToolPassedAfterWorkspaceWrite !== undefined
+      ? { verificationToolPassedAfterWorkspaceWrite }
+      : {}),
+    ...numberField(value, "latestWorkspaceWriteSeq"),
+    ...numberField(value, "latestPassedVerificationSeq"),
+  };
+}
+
+function booleanValue(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function numberField(
+  source: Record<string, unknown>,
+  key: "latestWorkspaceWriteSeq" | "latestPassedVerificationSeq",
+): Pick<IndependentModelAdvisorReviewView, typeof key> | undefined {
+  const value = source[key];
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? { [key]: value }
     : undefined;
 }

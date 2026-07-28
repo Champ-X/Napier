@@ -344,9 +344,7 @@ function TraceSummaryCoverageCard({
       <header>
         <div>
           <span>{copy.trace.summary.eyebrow}</span>
-          <h3 id="trace-summary-coverage-title">
-            {copy.trace.summary.title}
-          </h3>
+          <h3 id="trace-summary-coverage-title">{copy.trace.summary.title}</h3>
         </div>
         <code>{coverage.total}</code>
       </header>
@@ -666,6 +664,12 @@ function IndependentAdvisorLedger({
                   <dt>{modelAdvisorReviewCopy.issues}</dt>
                   <dd>{review.issueCodes.length}</dd>
                 </div>
+                {review.verificationToolCompleted !== undefined ? (
+                  <div>
+                    <dt>{modelAdvisorReviewCopy.verification}</dt>
+                    <dd>{independentAdvisorVerificationState(review)}</dd>
+                  </div>
+                ) : null}
               </dl>
               <p>
                 <span>{modelAdvisorReviewCopy.reviewer}</span>
@@ -705,6 +709,34 @@ function IndependentAdvisorLedger({
       )}
     </section>
   );
+}
+
+function independentAdvisorVerificationState(
+  review: IndependentModelAdvisorReviewView,
+): string {
+  const states = modelAdvisorReviewCopy.verificationStates;
+  const freshness =
+    review.verificationToolPassedAfterWorkspaceWrite === true
+      ? states.current
+      : review.verificationToolPassed === true &&
+          review.workspaceWriteCompleted === true
+        ? states.stale
+        : states.notCurrent;
+  const passed =
+    review.verificationToolPassed === true
+      ? states.passed
+      : review.verificationToolCompleted
+        ? states.notPassed
+        : states.missing;
+  const seqs = [
+    ...(review.latestWorkspaceWriteSeq !== undefined
+      ? [`w#${review.latestWorkspaceWriteSeq}`]
+      : []),
+    ...(review.latestPassedVerificationSeq !== undefined
+      ? [`v#${review.latestPassedVerificationSeq}`]
+      : []),
+  ];
+  return [freshness, passed, ...seqs].join(" / ");
 }
 
 function AgentMilestoneLedger({
@@ -944,9 +976,7 @@ function DelegationCard({
             </button>
           </div>
           {reviewBlockedReason ? (
-            <p className="delegation-evidence-hint">
-              {reviewBlockedReason}
-            </p>
+            <p className="delegation-evidence-hint">{reviewBlockedReason}</p>
           ) : null}
           {verification ? (
             <output

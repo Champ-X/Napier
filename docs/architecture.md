@@ -390,11 +390,12 @@ prompt, candidate, frozen model identities, typed criteria, and metadata-only
 counts/names for completed or failed tools, milestones, and operator decisions.
 Its strict response is limited to verdict, score, risk, and six unique typed
 issues. `model.advisor.independent.reviewed` persists only model identities,
-issue codes/severities, usage, diagnostics, and SHA-256 bindings for candidate,
-turn prompt, evidence, criteria, input, prompt, response, issue set, the live
-request's hash-only model-context envelope, and receipt. Free-form reviewer
-guidance exists only long enough to build a correction prompt and is never
-copied to the Ledger.
+issue codes/severities, usage, diagnostics, low-cardinality evidence summary
+fields such as verification current/stale status, and SHA-256 bindings for
+candidate, turn prompt, evidence, criteria, input, prompt, response, issue set,
+the live request's hash-only model-context envelope, and receipt. Free-form
+reviewer guidance exists only long enough to build a correction prompt and is
+never copied to the Ledger.
 
 Enforce mode replaces candidate text, reasoning, and delta content in model
 debug events with SHA-256 and byte-count evidence, and withholds deltas from the

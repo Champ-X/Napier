@@ -6,6 +6,7 @@ import {
 } from "@earendil-works/pi-ai";
 import {
   emptyUsage,
+  type IndependentModelAdvisorEvidenceSummary,
   type IndependentModelAdvisorIssue,
   type IndependentModelAdvisorIssueCode,
   type IndependentModelAdvisorReview,
@@ -110,6 +111,7 @@ export interface IndependentModelAdvisorPrompt {
   candidateTextSha256: string;
   candidateTextBytes: number;
   evidenceSha256: string;
+  evidenceSummary: IndependentModelAdvisorEvidenceSummary;
   criteriaSha256: string;
   inputSha256: string;
   promptSha256: string;
@@ -198,6 +200,7 @@ export function buildIndependentModelAdvisorPrompt(input: {
   runEvents: RunEvent[];
 }): IndependentModelAdvisorPrompt {
   const evidence = createEvidence(input.runEvents);
+  const evidenceSummary = createEvidenceSummary(evidence);
   const evidenceSha256 = sha256(canonicalJson(evidence));
   const criteriaSha256 = sha256(canonicalJson(REVIEW_CRITERIA));
   const reviewSchemaSha256 = sha256(canonicalJson(REVIEW_SCHEMA));
@@ -232,6 +235,7 @@ export function buildIndependentModelAdvisorPrompt(input: {
     candidateTextSha256: sha256(input.candidateText),
     candidateTextBytes: Buffer.byteLength(input.candidateText, "utf8"),
     evidenceSha256,
+    evidenceSummary,
     criteriaSha256,
     inputSha256: sha256(inputJson),
     promptSha256: sha256(
@@ -456,6 +460,7 @@ function createReviewResult(input: {
     candidateTextBytes: input.prompt.candidateTextBytes,
     turnPromptSha256: input.prompt.turnPromptSha256,
     evidenceSha256: input.prompt.evidenceSha256,
+    evidenceSummary: input.prompt.evidenceSummary,
     criteriaSha256: input.prompt.criteriaSha256,
     inputSha256: input.prompt.inputSha256,
     promptSha256: input.prompt.promptSha256,
@@ -490,6 +495,29 @@ function createEvidence(events: RunEvent[]) {
     operatorDecisionRequested: events.some(
       (event) => event.type === "operator.decision.requested",
     ),
+  };
+}
+
+function createEvidenceSummary(
+  evidence: ReturnType<typeof createEvidence>,
+): IndependentModelAdvisorEvidenceSummary {
+  return {
+    eventCount: evidence.eventCount,
+    toolCompletedNameCount: evidence.toolCompletedNames.length,
+    toolFailedNameCount: evidence.toolFailedNames.length,
+    verificationToolCompleted: evidence.verificationToolCompleted,
+    verificationToolPassed: evidence.verificationToolPassed,
+    workspaceWriteCompleted: evidence.workspaceWriteCompleted,
+    verificationToolPassedAfterWorkspaceWrite:
+      evidence.verificationToolPassedAfterWorkspaceWrite,
+    ...(evidence.latestWorkspaceWriteSeq !== undefined
+      ? { latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq }
+      : {}),
+    ...(evidence.latestPassedVerificationSeq !== undefined
+      ? { latestPassedVerificationSeq: evidence.latestPassedVerificationSeq }
+      : {}),
+    milestoneCount: evidence.milestoneCount,
+    operatorDecisionRequested: evidence.operatorDecisionRequested,
   };
 }
 
@@ -556,7 +584,7 @@ function parseReviewPayload(
     "usage",
     "contentSha256",
   ];
-  const optionalKeys = ["modelContextEnvelope"];
+  const optionalKeys = ["evidenceSummary", "modelContextEnvelope"];
   const keys = Object.keys(input);
   if (
     requiredKeys.some((key) => !(key in input)) ||
@@ -578,6 +606,10 @@ function parseReviewPayload(
     const issues = parsePersistedIssues(input["issues"]);
     const diagnosticCodes = parseDiagnostics(input["diagnosticCodes"]);
     const usage = parseUsage(input["usage"]);
+    const evidenceSummary =
+      input["evidenceSummary"] === undefined
+        ? undefined
+        : parseEvidenceSummary(input["evidenceSummary"]);
     const modelContextEnvelope =
       input["modelContextEnvelope"] === undefined
         ? undefined
@@ -648,6 +680,7 @@ function parseReviewPayload(
       candidateTextBytes: Number(candidateTextBytes),
       turnPromptSha256: String(input["turnPromptSha256"]),
       evidenceSha256: String(input["evidenceSha256"]),
+      ...(evidenceSummary ? { evidenceSummary } : {}),
       criteriaSha256: String(input["criteriaSha256"]),
       inputSha256: String(input["inputSha256"]),
       promptSha256: String(input["promptSha256"]),
@@ -712,6 +745,106 @@ function parseDiagnostics(value: unknown): string[] {
       return entry;
     }),
   );
+}
+
+function parseEvidenceSummary(
+  value: unknown,
+): IndependentModelAdvisorEvidenceSummary {
+  if (!record(value)) {
+    throw new Error("Independent Model Advisor evidence summary is invalid");
+  }
+  const requiredKeys = [
+    "eventCount",
+    "toolCompletedNameCount",
+    "toolFailedNameCount",
+    "verificationToolCompleted",
+    "verificationToolPassed",
+    "workspaceWriteCompleted",
+    "verificationToolPassedAfterWorkspaceWrite",
+    "milestoneCount",
+    "operatorDecisionRequested",
+  ];
+  const optionalKeys = [
+    "latestWorkspaceWriteSeq",
+    "latestPassedVerificationSeq",
+  ];
+  const keys = Object.keys(value);
+  if (
+    requiredKeys.some((key) => !(key in value)) ||
+    keys.some(
+      (key) => !requiredKeys.includes(key) && !optionalKeys.includes(key),
+    )
+  ) {
+    throw new Error("Independent Model Advisor evidence summary is invalid");
+  }
+  const summary = value;
+  return {
+    eventCount: boundedCount(summary["eventCount"], "eventCount"),
+    toolCompletedNameCount: boundedCount(
+      summary["toolCompletedNameCount"],
+      "toolCompletedNameCount",
+    ),
+    toolFailedNameCount: boundedCount(
+      summary["toolFailedNameCount"],
+      "toolFailedNameCount",
+    ),
+    verificationToolCompleted: booleanField(
+      summary["verificationToolCompleted"],
+      "verificationToolCompleted",
+    ),
+    verificationToolPassed: booleanField(
+      summary["verificationToolPassed"],
+      "verificationToolPassed",
+    ),
+    workspaceWriteCompleted: booleanField(
+      summary["workspaceWriteCompleted"],
+      "workspaceWriteCompleted",
+    ),
+    verificationToolPassedAfterWorkspaceWrite: booleanField(
+      summary["verificationToolPassedAfterWorkspaceWrite"],
+      "verificationToolPassedAfterWorkspaceWrite",
+    ),
+    ...(summary["latestWorkspaceWriteSeq"] !== undefined
+      ? {
+          latestWorkspaceWriteSeq: boundedCount(
+            summary["latestWorkspaceWriteSeq"],
+            "latestWorkspaceWriteSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestPassedVerificationSeq"] !== undefined
+      ? {
+          latestPassedVerificationSeq: boundedCount(
+            summary["latestPassedVerificationSeq"],
+            "latestPassedVerificationSeq",
+          ),
+        }
+      : {}),
+    milestoneCount: boundedCount(summary["milestoneCount"], "milestoneCount"),
+    operatorDecisionRequested: booleanField(
+      summary["operatorDecisionRequested"],
+      "operatorDecisionRequested",
+    ),
+  };
+}
+
+function boundedCount(value: unknown, label: string): number {
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < 0 ||
+    value > 1_000_000
+  ) {
+    throw new Error(`Independent Model Advisor ${label} is invalid`);
+  }
+  return value;
+}
+
+function booleanField(value: unknown, label: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new Error(`Independent Model Advisor ${label} is invalid`);
+  }
+  return value;
 }
 
 function parseUsage(value: unknown): Usage {

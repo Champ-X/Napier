@@ -55,7 +55,9 @@ export function modelAdvisorEventTraceView(
     : {};
   const evidence = record(event.payload["evidence"])
     ? event.payload["evidence"]
-    : {};
+    : record(event.payload["evidenceSummary"])
+      ? event.payload["evidenceSummary"]
+      : {};
   const diagnostics = Array.isArray(event.payload["diagnostics"])
     ? event.payload["diagnostics"]
     : undefined;

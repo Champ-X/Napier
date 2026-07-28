@@ -274,6 +274,9 @@ All notable changes to Napier are recorded here.
 - Trace Model Advisor summaries now expose verification current/stale metadata
   and the latest write/verification sequence numbers without rendering
   diagnostic prose or candidate text.
+- Independent Model Advisor review receipts now persist the same metadata-only
+  evidence summary, allowing the Trace review card to explain verification
+  freshness without reopening prompt or candidate text.
 - The Plan Workbench now exposes artifact manifest actions for Mark produced,
   Verify bytes, and Mark missing. Verify bytes calls the existing
   `observeWorkspace` path so the server computes the digest and size before

@@ -785,18 +785,20 @@ so a later `apply_patch` invalidates earlier passing-check evidence until the
 workspace is verified again.
 
 The durable `model.advisor.independent.reviewed` receipt stores model
-identities, issue codes, severities, usage, and SHA-256 bindings for the
-candidate, prompt, evidence, response, issue set, the live request's hash-only
-model-context envelope, and complete review. Candidate text and free-form
-reviewer guidance are never copied into the receipt. In
+identities, issue codes, severities, usage, a low-cardinality evidence summary
+for verification freshness, and SHA-256 bindings for the candidate, prompt,
+evidence, response, issue set, the live request's hash-only model-context
+envelope, and complete review. Candidate text and free-form reviewer guidance
+are never copied into the receipt. In
 `observe` mode the turn remains visible with an auditable second opinion. In
 `enforce` mode a non-accept verdict joins deterministic blockers in the
 existing correction state machine: at most three subsequent primary-model
 turns run without tools, and only a candidate accepted by every configured
 advisor is persisted as the visible answer.
 Trace renders each independent review with both the request envelope hash and
-the review receipt hash, so the second opinion can be inspected without opening
-raw event JSON. OTLP exports the same envelope hash as metadata-only telemetry.
+the review receipt hash plus verification current/stale metadata, so the
+second opinion can be inspected without opening raw event JSON. OTLP exports
+the same envelope hash as metadata-only telemetry.
 
 Reviewer usage participates in the same frozen Run token, cost, and time
 budgets and in final Run settlement. Schema-6 Run fingerprints bind the review

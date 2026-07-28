@@ -110,6 +110,17 @@ describe("independent Model Advisor", () => {
         verdict: "revise",
         score: 68,
         risk: "medium",
+        evidenceSummary: expect.objectContaining({
+          eventCount: 1,
+          toolCompletedNameCount: 1,
+          toolFailedNameCount: 0,
+          verificationToolCompleted: false,
+          verificationToolPassed: false,
+          workspaceWriteCompleted: false,
+          verificationToolPassedAfterWorkspaceWrite: false,
+          milestoneCount: 0,
+          operatorDecisionRequested: false,
+        }),
         issues: [
           {
             code: "evidence",
