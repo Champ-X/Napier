@@ -259,6 +259,7 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
   "napier.ledger.category",
   "napier.ledger.event_id",
   "napier.ledger.event_type",
+  "napier.ledger.payload_projection_sha256",
   "napier.ledger.payload_sha256",
   "napier.ledger.seq",
   "napier.ledger.visibility",
@@ -297,6 +298,7 @@ const SPAN_ATTRIBUTE_KEYS = new Set([
 const BASE_EVENT_ATTRIBUTE_KEYS = new Set([
   "napier.event.category",
   "napier.event.id",
+  "napier.event.payload_projection_sha256",
   "napier.event.payload_sha256",
   "napier.event.seq",
   "napier.event.type",
@@ -348,6 +350,7 @@ interface EventAnchor {
   type: string;
   category: string;
   visibility: string;
+  payloadProjectionSha256: string;
   payloadSha256: string;
 }
 
@@ -783,6 +786,45 @@ function modelSpan(
   parentSpanId: string,
   threadId: string,
 ): OtlpSpan {
+  const payloadProjectionValues = modelLedgerPayloadProjectionValues(event);
+  const modelId = String(payloadProjectionValues["gen_ai.request.model"]);
+  const stopReason = payloadString(event.payload, "stopReason");
+  return createSpan({
+    traceId,
+    spanId: deterministicId(`model:${event.id}`, 16),
+    parentSpanId,
+    name: `chat ${boundedName(modelId)}`,
+    kind: 3,
+    startAt: event.createdAt,
+    endAt: event.createdAt,
+    attributes: attributes({
+      ...payloadProjectionValues,
+      "gen_ai.conversation.id": threadId,
+      "gen_ai.operation.name": "chat",
+      "napier.ledger.category": event.category,
+      "napier.ledger.event_id": event.id,
+      "napier.ledger.event_type": event.type,
+      "napier.ledger.payload_projection_sha256": payloadProjectionSha256(
+        payloadProjectionValues,
+      ),
+      "napier.ledger.payload_sha256": sha256(canonicalJson(event.payload)),
+      "napier.ledger.seq": event.seq,
+      "napier.timing.precision": "completion_only",
+      "napier.ledger.visibility": event.visibility,
+    }),
+    events: [],
+    status:
+      stopReason === "error"
+        ? { code: 2 }
+        : stopReason
+          ? { code: 1 }
+          : { code: 0 },
+  });
+}
+
+function modelLedgerPayloadProjectionValues(
+  event: RunEvent,
+): Record<string, string | number | boolean> {
   const model = payloadString(event.payload, "model") ?? "unknown/unknown";
   const separator = model.indexOf("/");
   const provider = separator > 0 ? model.slice(0, separator) : "unknown";
@@ -805,64 +847,37 @@ function modelSpan(
     event.payload,
     "modelContextToolDefinitionSetSha256",
   );
-  return createSpan({
-    traceId,
-    spanId: deterministicId(`model:${event.id}`, 16),
-    parentSpanId,
-    name: `chat ${boundedName(modelId)}`,
-    kind: 3,
-    startAt: event.createdAt,
-    endAt: event.createdAt,
-    attributes: attributes({
-      "gen_ai.conversation.id": threadId,
-      "gen_ai.operation.name": "chat",
-      "gen_ai.provider.name": provider,
-      "gen_ai.request.model": modelId,
-      "gen_ai.usage.input_tokens": recordNumber(usage, "inputTokens") ?? 0,
-      "gen_ai.usage.output_tokens": recordNumber(usage, "outputTokens") ?? 0,
-      "napier.cache.read_tokens": recordNumber(usage, "cacheReadTokens") ?? 0,
-      "napier.cache.write_tokens": recordNumber(usage, "cacheWriteTokens") ?? 0,
-      "napier.gen_ai.cost_usd": recordNumber(usage, "costUsd") ?? 0,
-      "napier.ledger.category": event.category,
-      "napier.ledger.event_id": event.id,
-      "napier.ledger.event_type": event.type,
-      "napier.ledger.payload_sha256": sha256(canonicalJson(event.payload)),
-      "napier.ledger.seq": event.seq,
-      "napier.timing.precision": "completion_only",
-      "napier.ledger.visibility": event.visibility,
-      ...(stopReason ? { "napier.gen_ai.finish_reason": stopReason } : {}),
-      ...(modelContextEnvelopeSha256
-        ? {
-            "napier.model_context.envelope.sha256": modelContextEnvelopeSha256,
-          }
-        : {}),
-      ...(modelContextEnvelopeTurnIndex !== undefined
-        ? {
-            "napier.model_context.envelope.turn_index":
-              modelContextEnvelopeTurnIndex,
-          }
-        : {}),
-      ...(modelContextMessageSetSha256
-        ? {
-            "napier.model_context.message_set.sha256":
-              modelContextMessageSetSha256,
-          }
-        : {}),
-      ...(modelContextToolDefinitionSetSha256
-        ? {
-            "napier.model_context.tool_definition_set.sha256":
-              modelContextToolDefinitionSetSha256,
-          }
-        : {}),
-    }),
-    events: [],
-    status:
-      stopReason === "error"
-        ? { code: 2 }
-        : stopReason
-          ? { code: 1 }
-          : { code: 0 },
-  });
+  return {
+    "gen_ai.provider.name": provider,
+    "gen_ai.request.model": modelId,
+    "gen_ai.usage.input_tokens": recordNumber(usage, "inputTokens") ?? 0,
+    "gen_ai.usage.output_tokens": recordNumber(usage, "outputTokens") ?? 0,
+    "napier.cache.read_tokens": recordNumber(usage, "cacheReadTokens") ?? 0,
+    "napier.cache.write_tokens": recordNumber(usage, "cacheWriteTokens") ?? 0,
+    "napier.gen_ai.cost_usd": recordNumber(usage, "costUsd") ?? 0,
+    ...(stopReason ? { "napier.gen_ai.finish_reason": stopReason } : {}),
+    ...(modelContextEnvelopeSha256
+      ? { "napier.model_context.envelope.sha256": modelContextEnvelopeSha256 }
+      : {}),
+    ...(modelContextEnvelopeTurnIndex !== undefined
+      ? {
+          "napier.model_context.envelope.turn_index":
+            modelContextEnvelopeTurnIndex,
+        }
+      : {}),
+    ...(modelContextMessageSetSha256
+      ? {
+          "napier.model_context.message_set.sha256":
+            modelContextMessageSetSha256,
+        }
+      : {}),
+    ...(modelContextToolDefinitionSetSha256
+      ? {
+          "napier.model_context.tool_definition_set.sha256":
+            modelContextToolDefinitionSetSha256,
+        }
+      : {}),
+  };
 }
 
 function collectToolTraces(events: RunEvent[]): ToolTrace[] {
@@ -1040,6 +1055,7 @@ function toOtlpSpanEvent(event: RunEvent): OtlpSpanEvent {
     attributes: attributes({
       "napier.event.category": event.category,
       "napier.event.id": event.id,
+      "napier.event.payload_projection_sha256": payloadProjectionSha256(values),
       "napier.event.payload_sha256": sha256(canonicalJson(event.payload)),
       "napier.event.seq": event.seq,
       "napier.event.type": event.type,
@@ -1178,6 +1194,12 @@ function evidenceSummaryPayloadAttributes(
     }
   }
   return values;
+}
+
+function payloadProjectionSha256(
+  values: Record<string, string | number | boolean>,
+): string {
+  return sha256(canonicalJson(values));
 }
 
 function attributes(
@@ -1688,6 +1710,10 @@ function validateSpecializedLedgerSpanBindings(
   for (const span of spans) {
     const eventId = stringAttribute(span.attributes, "napier.ledger.event_id");
     const eventSeq = integerAttribute(span.attributes, "napier.ledger.seq");
+    const payloadProjectionSha256 = stringAttribute(
+      span.attributes,
+      "napier.ledger.payload_projection_sha256",
+    );
     const payloadSha256 = stringAttribute(
       span.attributes,
       "napier.ledger.payload_sha256",
@@ -1704,6 +1730,7 @@ function validateSpecializedLedgerSpanBindings(
     if (
       eventId === undefined &&
       eventSeq === undefined &&
+      payloadProjectionSha256 === undefined &&
       payloadSha256 === undefined &&
       eventType === undefined &&
       category === undefined &&
@@ -1714,12 +1741,16 @@ function validateSpecializedLedgerSpanBindings(
     if (
       eventId === undefined ||
       eventSeq === undefined ||
+      payloadProjectionSha256 === undefined ||
       payloadSha256 === undefined ||
       eventType !== "model.response" ||
       category !== "model" ||
       visibility !== "debug" ||
       !RESOURCE_ID_PATTERN.test(eventId) ||
       eventSeq < 1 ||
+      payloadProjectionSha256 !==
+        payloadProjectionSha256FromLedgerSpanAttributes(span.attributes) ||
+      !SHA256_PATTERN.test(payloadProjectionSha256) ||
       !SHA256_PATTERN.test(payloadSha256) ||
       span.spanId !== deterministicId(`model:${eventId}`, 16) ||
       span.kind !== 3 ||
@@ -1767,16 +1798,27 @@ function eventAnchorFromSpanEvent(event: OtlpSpanEvent): EventAnchor {
     event.attributes,
     "napier.event.visibility",
   );
+  const payloadProjectionSha256 = stringAttribute(
+    event.attributes,
+    "napier.event.payload_projection_sha256",
+  );
   const payloadSha256 = stringAttribute(
     event.attributes,
     "napier.event.payload_sha256",
   );
+  if (
+    payloadProjectionSha256 !==
+    payloadProjectionSha256FromSpanEventAttributes(event.attributes)
+  ) {
+    throw new Error("OpenTelemetry trace event anchor set binding is invalid");
+  }
   return validateEventAnchor({
     id,
     seq,
     type,
     category,
     visibility,
+    payloadProjectionSha256,
     payloadSha256,
   });
 }
@@ -1790,6 +1832,10 @@ function eventAnchorFromLedgerSpan(span: OtlpSpan): EventAnchor | undefined {
     span.attributes,
     "napier.ledger.visibility",
   );
+  const payloadProjectionSha256 = stringAttribute(
+    span.attributes,
+    "napier.ledger.payload_projection_sha256",
+  );
   const payloadSha256 = stringAttribute(
     span.attributes,
     "napier.ledger.payload_sha256",
@@ -1800,6 +1846,7 @@ function eventAnchorFromLedgerSpan(span: OtlpSpan): EventAnchor | undefined {
     type === undefined &&
     category === undefined &&
     visibility === undefined &&
+    payloadProjectionSha256 === undefined &&
     payloadSha256 === undefined
   ) {
     return undefined;
@@ -1810,17 +1857,23 @@ function eventAnchorFromLedgerSpan(span: OtlpSpan): EventAnchor | undefined {
     type,
     category,
     visibility,
+    payloadProjectionSha256,
     payloadSha256,
   });
 }
 
 function eventAnchorFromRunEvent(event: RunEvent): EventAnchor {
+  const values =
+    event.type === "model.response"
+      ? modelLedgerPayloadProjectionValues(event)
+      : safePayloadAttributes(event.payload).values;
   return {
     id: event.id,
     seq: event.seq,
     type: event.type,
     category: event.category,
     visibility: event.visibility,
+    payloadProjectionSha256: payloadProjectionSha256(values),
     payloadSha256: sha256(canonicalJson(event.payload)),
   };
 }
@@ -1831,6 +1884,7 @@ function validateEventAnchor(input: {
   type: string | undefined;
   category: string | undefined;
   visibility: string | undefined;
+  payloadProjectionSha256: string | undefined;
   payloadSha256: string | undefined;
 }): EventAnchor {
   if (
@@ -1841,6 +1895,8 @@ function validateEventAnchor(input: {
     !input.type ||
     !input.category ||
     !input.visibility ||
+    !input.payloadProjectionSha256 ||
+    !SHA256_PATTERN.test(input.payloadProjectionSha256) ||
     !input.payloadSha256 ||
     !SHA256_PATTERN.test(input.payloadSha256)
   ) {
@@ -1852,8 +1908,54 @@ function validateEventAnchor(input: {
     type: input.type,
     category: input.category,
     visibility: input.visibility,
+    payloadProjectionSha256: input.payloadProjectionSha256,
     payloadSha256: input.payloadSha256,
   };
+}
+
+function payloadProjectionSha256FromSpanEventAttributes(
+  attributes: OtlpKeyValue[],
+): string {
+  const values: Record<string, string | number | boolean> = {};
+  for (const attribute of attributes) {
+    if (!isEventPayloadProjectionAttributeKey(attribute.key)) continue;
+    const value = primitiveAttribute(attributes, attribute.key);
+    if (value !== undefined) values[attribute.key] = value;
+  }
+  return payloadProjectionSha256(values);
+}
+
+function isEventPayloadProjectionAttributeKey(key: string): boolean {
+  return (
+    key.startsWith("napier.event.payload.") ||
+    key.startsWith("napier.event.usage.")
+  );
+}
+
+function payloadProjectionSha256FromLedgerSpanAttributes(
+  attributes: OtlpKeyValue[],
+): string {
+  const values: Record<string, string | number | boolean> = {};
+  for (const attribute of attributes) {
+    if (!isLedgerPayloadProjectionAttributeKey(attribute.key)) continue;
+    const value = primitiveAttribute(attributes, attribute.key);
+    if (value !== undefined) values[attribute.key] = value;
+  }
+  return payloadProjectionSha256(values);
+}
+
+function isLedgerPayloadProjectionAttributeKey(key: string): boolean {
+  return (
+    key === "gen_ai.provider.name" ||
+    key === "gen_ai.request.model" ||
+    key === "gen_ai.usage.input_tokens" ||
+    key === "gen_ai.usage.output_tokens" ||
+    key === "napier.cache.read_tokens" ||
+    key === "napier.cache.write_tokens" ||
+    key === "napier.gen_ai.cost_usd" ||
+    key === "napier.gen_ai.finish_reason" ||
+    key.startsWith("napier.model_context.")
+  );
 }
 
 function eventAnchorSetSha256(anchors: EventAnchor[]): string {

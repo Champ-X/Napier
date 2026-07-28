@@ -114,6 +114,11 @@ All notable changes to Napier are recorded here.
   and the trace verifier binds any exported import receipt back to the root
   `thread.imported` span event, failing closed on hidden or drifting receipt
   evidence even after the artifact hash is recomputed.
+- OTLP span events and specialized model ledger spans now also carry
+  `payload_projection_sha256`, a hash-only digest of the safe public attributes
+  projected from the payload. The root event-anchor set covers that digest, so
+  Advisor verification freshness metadata cannot be changed independently of
+  the anchored Trace receipt.
 - OTLP artifact verification now also binds top-level trace headers back to the
   root span, covering Thread ID, Run scope, event count, and event-stream
   SHA-256, so a recomputed artifact hash cannot hide root/header projection

@@ -1936,6 +1936,7 @@ select complete Thread or one Run
   -> map durable Subagent tasks to `invoke_agent {role}` spans
   -> attach remaining Ledger records as metadata-only span events
   -> project Advisor verification freshness as boolean/count/seq attributes
+  -> hash the safe payload projection on span events and model ledger spans
   -> encode timestamps as decimal nanoseconds and scalar AnyValue attributes
   -> validate IDs, parent graph, temporal containment, schema, and counts
   -> bind source range/hash + redaction policy + OTLP request to content SHA-256
@@ -1961,7 +1962,10 @@ Advisor review evidence summaries are exported only as metadata attributes:
 verification completed/passed/current booleans, workspace-write booleans, and
 latest write/verification sequence numbers. Candidate text, review prompts,
 diagnostic prose, and reviewer guidance remain excluded by the redaction
-policy.
+policy. Those public summary attributes are included in
+`napier.event.payload_projection_sha256`, which is itself covered by the root
+event-anchor set, so partial Trace artifact edits cannot make stale
+verification metadata look current without changing the anchored receipt.
 
 The Workbench Trace card exposes the verification path as a file upload. The
 browser parses the selected JSON locally, submits only `{ artifact }` through
@@ -2395,17 +2399,18 @@ The verifier also reconstructs a metadata-only event-sequence projection from
 `napier.ledger.seq` attributes. The projected sequence count, minimum, maximum,
 and uniqueness must match the artifact `eventRange`, so a trace cannot drift
 its declared event window away from the span evidence it carries.
-Specialized model spans also carry `napier.ledger.payload_sha256`; their
-`napier.ledger.event_id` must deterministically produce the span ID and their
-operation/timing attributes must remain completion-only chat evidence. This
-keeps model-response events equivalent to ordinary span events for hash-only
-payload receipts without storing prompt, completion, reasoning, or tool-call
-content.
+Specialized model spans also carry `napier.ledger.payload_sha256` and
+`napier.ledger.payload_projection_sha256`; their `napier.ledger.event_id` must
+deterministically produce the span ID and their operation/timing attributes
+must remain completion-only chat evidence. This keeps model-response events
+equivalent to ordinary span events for hash-only payload receipts without
+storing prompt, completion, reasoning, or tool-call content.
 The root span carries `napier.event_anchor_set.sha256`, computed over the
-projected event ID, sequence, type, category, visibility, and payload hash for
-ordinary span events and specialized ledger spans. Verification recomputes that
-set from the OTLP body, so changing a span-level event anchor while recomputing
-the artifact hash fails without needing raw Ledger payloads.
+projected event ID, sequence, type, category, visibility, payload hash, and
+safe payload-projection hash for ordinary span events and specialized ledger
+spans. Verification recomputes that set from the OTLP body, so changing a
+span-level event anchor while recomputing the artifact hash fails without
+needing raw Ledger payloads.
 Trace export and verification mirror that anchor-set hash through no-store
 headers, valid verification bodies, and the `trace.otlp.exported` ledger
 receipt, giving clients a stable event-anchor proof without parsing the OTLP

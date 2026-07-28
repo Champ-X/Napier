@@ -1476,7 +1476,10 @@ durations, sequence numbers, evidence hashes, and metadata-only Advisor
 verification freshness fields remain. The artifact binds the selected
 source-event range, its SHA-256, explicit redaction policy, complete OTLP
 request, and span count to a stable content SHA-256 independent of
-`generatedAt`.
+`generatedAt`. Span events and specialized model ledger spans also carry a
+hash-only `payload_projection_sha256` over the safe public attributes derived
+from the payload, so metadata-only Advisor freshness fields are covered by the
+root event-anchor receipt without exposing raw payloads.
 
 Every export appends a `trace.otlp.exported` Ledger event containing only
 scope, source Run ID when applicable, trace ID, counts, source hash, and

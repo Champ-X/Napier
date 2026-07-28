@@ -488,6 +488,12 @@ describe("OpenTelemetry trace export", () => {
     expect(attributeValue(modelSpan.attributes, "napier.ledger.seq")).toEqual(
       expect.any(Number),
     );
+    expect(
+      attributeValue(
+        modelSpan.attributes,
+        "napier.ledger.payload_projection_sha256",
+      ),
+    ).toMatch(/^[a-f0-9]{64}$/);
     expect(attributeValue(modelSpan.attributes, "gen_ai.provider.name")).toBe(
       "faux-secure",
     );
@@ -552,6 +558,25 @@ describe("OpenTelemetry trace export", () => {
       spanCount: 0,
       eventCount: 0,
     });
+    const ledgerProjectionTampered = structuredClone(first);
+    const tamperedLedgerProjectionSpan = spans(ledgerProjectionTampered).find(
+      (span) => span.name === "chat faux-1",
+    )!;
+    setAttributeValue(
+      tamperedLedgerProjectionSpan.attributes,
+      "gen_ai.usage.input_tokens",
+      999,
+    );
+    rehashArtifact(ledgerProjectionTampered);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(ledgerProjectionTampered),
+    ).toThrow("ledger span binding");
+    expect(verifyOpenTelemetryTraceArtifact(ledgerProjectionTampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["ledger_span_mismatch"],
+      spanCount: 0,
+      eventCount: 0,
+    });
     const anchorTampered = structuredClone(first);
     const tamperedAnchorSpan = spans(anchorTampered).find(
       (span) => span.name === "chat faux-1",
@@ -581,6 +606,12 @@ describe("OpenTelemetry trace export", () => {
     const advisorEvent = traceSpans
       .flatMap((span) => span.events)
       .find((event) => event.name === "model.advisor.independent.reviewed")!;
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload_projection_sha256",
+      ),
+    ).toMatch(/^[a-f0-9]{64}$/);
     expect(
       attributeValue(
         advisorEvent.attributes,
@@ -638,6 +669,28 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.model_context_envelope_sha256",
       ),
     ).toBe(advisorEnvelope.contentSha256);
+
+    const advisorProjectionTampered = structuredClone(first);
+    const tamperedAdvisorEvent = spans(advisorProjectionTampered)
+      .flatMap((span) => span.events)
+      .find((event) => event.name === "model.advisor.independent.reviewed")!;
+    setAttributeValue(
+      tamperedAdvisorEvent.attributes,
+      "napier.event.payload.evidence_summary_verification_tool_passed",
+      false,
+    );
+    rehashArtifact(advisorProjectionTampered);
+    expect(() =>
+      validateOpenTelemetryTraceArtifact(advisorProjectionTampered),
+    ).toThrow("event anchor set binding");
+    expect(verifyOpenTelemetryTraceArtifact(advisorProjectionTampered)).toEqual(
+      {
+        status: "invalid",
+        diagnostics: ["event_anchor_mismatch"],
+        spanCount: 0,
+        eventCount: 0,
+      },
+    );
     const evaluationEvent = traceSpans
       .flatMap((span) => span.events)
       .find((event) => event.name === "evaluation.completed")!;
