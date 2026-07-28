@@ -30,6 +30,10 @@ import {
   listAgentMilestones,
 } from "./agent-milestone-api";
 import { agentMilestoneCopy } from "./agent-milestone-copy";
+import {
+  operatorDecisionTraceSummary,
+  runControlTraceSummary,
+} from "./control-event-view";
 import { copy } from "./copy";
 import {
   goalEventTraceSummary,
@@ -957,6 +961,12 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("memory.")) {
     return memoryEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("operator.decision.")) {
+    return operatorDecisionTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("run.control.")) {
+    return runControlTraceSummary(event) ?? event.category;
   }
   if (
     !event.payload ||

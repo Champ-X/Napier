@@ -2317,6 +2317,13 @@ no-progress counters; objectives, evaluator reasons, and evidence text are not
 rendered. `memory.*` summaries show only action, safe memory IDs, status,
 category, scope, confidence, review/count metadata, and safe reason enums;
 memory content and extraction error messages are ignored.
+Operator decision and live Run-control events follow the same pattern.
+`operator.decision.*` summaries show action, safe decision IDs, option/selection
+counts, safe reasons, continuation Run IDs, and SHA-256 receipts; questions,
+option labels/descriptions, and custom answer text are ignored.
+`run.control.*` summaries show safe control IDs, mode, byte counts, sequence
+numbers, reasons, and SHA-256 receipts; live control text is never used as the
+event-list summary.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

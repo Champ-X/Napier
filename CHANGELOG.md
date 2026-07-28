@@ -149,6 +149,9 @@ All notable changes to Napier are recorded here.
 - Trace event summaries now project `goal.*` and `memory.*` receipts through
   bounded governance views, so goal objectives, evaluation reason/evidence,
   memory content, and extraction error text stay out of the event list.
+- Trace event summaries now project `operator.decision.*` and `run.control.*`
+  receipts through bounded control views, so decision questions/options,
+  custom answers, and live control text stay out of the event list.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,
