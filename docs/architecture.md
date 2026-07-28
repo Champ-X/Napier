@@ -2272,6 +2272,10 @@ under `X-Napier-Import-Receipt-*`, so API clients get the same proof without
 parsing the event stream. Run Lab consumes that header-backed projection and
 renders the receipt sequence plus payload hash on imported fixture cards,
 without recomputing hashes in the browser or exposing replay content.
+Portable replay validation applies the same binding check inside exported
+Thread fixtures: if a `thread.imported` receipt is present, it must match
+`thread.importProvenance` exactly, and unknown provenance fields are rejected
+before the fixture can be imported.
 Imported provenance is also an unconditional automatic-recovery blocker; an
 imported interrupted Run can only continue through explicit operator action.
 SQLite state restore validates imported provenance hashes, counts, timestamps,

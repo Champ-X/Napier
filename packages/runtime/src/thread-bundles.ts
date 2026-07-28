@@ -14,6 +14,7 @@ import {
   type RunEvaluationRecord,
   type SubagentTask,
   type ThreadDetail,
+  type ThreadImportProvenance,
   type ThreadReplayBundle,
   type ThreadReplayBundleVerification,
 } from "@napier/contracts";
@@ -93,6 +94,7 @@ const MAX_EVALUATION_SUITE_EXECUTIONS = 5_000;
 const MAX_AUTOMATIC_RECOVERY_ASSESSMENTS = 10_000;
 const MAX_AUTOMATIC_RECOVERY_ATTEMPTS = 10_000;
 const MAX_SUBAGENTS = 10_000;
+const THREAD_IMPORTED_EVENT = "thread.imported";
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/;
 const THREAD_STATUSES = new Set(["idle", "running", "waiting", "failed"]);
 const RUN_STATUSES = new Set([
@@ -392,17 +394,27 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
   assertIsoDate(thread["createdAt"], "thread.createdAt");
   assertIsoDate(thread["updatedAt"], "thread.updatedAt");
   assertText(thread["lastMessage"], "thread.lastMessage", 200_000);
-  assertNonNegativeInteger(thread["eventCount"], "thread.eventCount");
+  const threadEventCount = assertNonNegativeInteger(
+    thread["eventCount"],
+    "thread.eventCount",
+  );
   const goal =
     thread["goal"] === undefined
       ? undefined
       : assertGoal(thread["goal"], "thread.goal");
-  if (thread["eventCount"] !== events.length) {
+  if (threadEventCount !== events.length) {
     throw new Error(
       `Thread replay bundle event count mismatch: thread=${String(thread["eventCount"])}, events=${events.length}`,
     );
   }
   const threadRunIds = assertStringArray(thread["runIds"], "thread.runIds");
+  const threadImportProvenance =
+    thread["importProvenance"] === undefined
+      ? undefined
+      : assertThreadImportProvenance(
+          thread["importProvenance"],
+          threadEventCount,
+        );
   assertString(agent["name"], "agent.name", 200);
   assertString(agent["description"], "agent.description", 500);
   assertString(agent["systemPrompt"], "agent.systemPrompt", 200_000);
@@ -690,6 +702,7 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     assertJsonValue(event["payload"], `events[${index}].payload`);
     typedEvents.push(value as RunEvent);
   }
+  assertThreadImportProvenanceReceipt(threadImportProvenance, typedEvents);
   assertEmbeddedModelContextEnvelopeReceipts(record, "bundle");
   const runsById = new Map(
     runRecords.map((run) => [String(run["id"]), run] as const),
@@ -1712,6 +1725,146 @@ function assertText(value: unknown, label: string, maximum: number): string {
     throw new Error(`Thread replay bundle ${label} is invalid`);
   }
   return value;
+}
+
+function assertThreadImportProvenance(
+  value: unknown,
+  threadEventCount: number,
+): ThreadImportProvenance {
+  const provenance = assertRecord(value, "thread.importProvenance");
+  const allowed = new Set([
+    "sourceThreadId",
+    "sourceApiVersion",
+    "sourceContentSha256",
+    "sourceEventStreamSha256",
+    "sourceEventCount",
+    "localImportedThroughSeq",
+    "sourceModelContextEnvelopeCount",
+    "sourceEmbeddedModelContextEnvelopeCount",
+    "importedAt",
+  ]);
+  if (Object.keys(provenance).some((key) => !allowed.has(key))) {
+    throw new Error(
+      "Thread replay bundle thread.importProvenance is invalid",
+    );
+  }
+  const sourceThreadId = assertResourceId(
+    provenance["sourceThreadId"],
+    "thread.importProvenance.sourceThreadId",
+  );
+  const sourceApiVersion = assertString(
+    provenance["sourceApiVersion"],
+    "thread.importProvenance.sourceApiVersion",
+    64,
+  );
+  assertSha256(
+    provenance["sourceContentSha256"],
+    "thread.importProvenance.sourceContentSha256",
+  );
+  assertSha256(
+    provenance["sourceEventStreamSha256"],
+    "thread.importProvenance.sourceEventStreamSha256",
+  );
+  const sourceEventCount = assertNonNegativeInteger(
+    provenance["sourceEventCount"],
+    "thread.importProvenance.sourceEventCount",
+  );
+  const localImportedThroughSeq =
+    provenance["localImportedThroughSeq"] === undefined
+      ? undefined
+      : assertNonNegativeInteger(
+          provenance["localImportedThroughSeq"],
+          "thread.importProvenance.localImportedThroughSeq",
+        );
+  if (
+    localImportedThroughSeq !== undefined &&
+    localImportedThroughSeq > threadEventCount
+  ) {
+    throw new Error(
+      "Thread replay bundle thread.importProvenance.localImportedThroughSeq is invalid",
+    );
+  }
+  const sourceModelContextEnvelopeCount =
+    provenance["sourceModelContextEnvelopeCount"] === undefined
+      ? undefined
+      : assertNonNegativeInteger(
+          provenance["sourceModelContextEnvelopeCount"],
+          "thread.importProvenance.sourceModelContextEnvelopeCount",
+        );
+  const sourceEmbeddedModelContextEnvelopeCount =
+    provenance["sourceEmbeddedModelContextEnvelopeCount"] === undefined
+      ? undefined
+      : assertNonNegativeInteger(
+          provenance["sourceEmbeddedModelContextEnvelopeCount"],
+          "thread.importProvenance.sourceEmbeddedModelContextEnvelopeCount",
+        );
+  assertIsoDate(provenance["importedAt"], "thread.importProvenance.importedAt");
+  return {
+    sourceThreadId,
+    sourceApiVersion,
+    sourceContentSha256: provenance["sourceContentSha256"] as string,
+    sourceEventStreamSha256: provenance["sourceEventStreamSha256"] as string,
+    sourceEventCount,
+    ...(localImportedThroughSeq !== undefined
+      ? { localImportedThroughSeq }
+      : {}),
+    ...(sourceModelContextEnvelopeCount !== undefined
+      ? { sourceModelContextEnvelopeCount }
+      : {}),
+    ...(sourceEmbeddedModelContextEnvelopeCount !== undefined
+      ? { sourceEmbeddedModelContextEnvelopeCount }
+      : {}),
+    importedAt: provenance["importedAt"] as string,
+  };
+}
+
+function assertThreadImportProvenanceReceipt(
+  provenance: ThreadImportProvenance | undefined,
+  events: RunEvent[],
+): void {
+  const receipts = events.filter(
+    (event) => event.type === THREAD_IMPORTED_EVENT,
+  );
+  if (receipts.length === 0) return;
+  if (!provenance || receipts.length !== 1) {
+    throw new Error("Thread replay bundle import provenance receipt is invalid");
+  }
+  const receipt = receipts[0]!;
+  if (
+    receipt.seq !== threadImportProvenanceLocalCutoff(provenance) ||
+    receipt.category !== "lifecycle" ||
+    receipt.visibility !== "debug" ||
+    receipt.createdAt !== provenance.importedAt ||
+    canonicalJson(receipt.payload) !==
+      canonicalJson(threadImportProvenanceEventPayload(provenance))
+  ) {
+    throw new Error("Thread replay bundle import provenance receipt is invalid");
+  }
+}
+
+function threadImportProvenanceEventPayload(
+  provenance: ThreadImportProvenance,
+): Record<string, string | number> {
+  return {
+    kind: "napier.thread-import-provenance",
+    sourceThreadId: provenance.sourceThreadId,
+    sourceApiVersion: provenance.sourceApiVersion,
+    sourceContentSha256: provenance.sourceContentSha256,
+    sourceEventStreamSha256: provenance.sourceEventStreamSha256,
+    sourceEventCount: provenance.sourceEventCount,
+    localImportedThroughSeq: threadImportProvenanceLocalCutoff(provenance),
+    sourceModelContextEnvelopeCount:
+      provenance.sourceModelContextEnvelopeCount ?? 0,
+    sourceEmbeddedModelContextEnvelopeCount:
+      provenance.sourceEmbeddedModelContextEnvelopeCount ?? 0,
+    importedAt: provenance.importedAt,
+  };
+}
+
+function threadImportProvenanceLocalCutoff(
+  provenance: ThreadImportProvenance,
+): number {
+  return provenance.localImportedThroughSeq ?? provenance.sourceEventCount;
 }
 
 function assertTextArray(

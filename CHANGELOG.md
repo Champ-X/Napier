@@ -117,6 +117,10 @@ All notable changes to Napier are recorded here.
 - Run Lab now surfaces the aligned import receipt sequence and payload hash on
   imported Thread fixture cards, using the no-store ThreadDetail header
   projection instead of recomputing or exposing replay content in the browser.
+- Portable Thread replay validation now cross-checks `thread.importProvenance`
+  and any `thread.imported` receipt inside exported fixtures, failing closed on
+  unknown provenance fields or receipt/projection drift even when the bundle's
+  top-level content and event-stream hashes are self-consistent.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

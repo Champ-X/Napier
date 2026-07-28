@@ -1209,6 +1209,67 @@ describe("thread replay bundles", () => {
         },
       }),
     );
+    const importedBundle = await exportThreadReplayBundle(
+      store,
+      imported.thread.id,
+    );
+    const tamperedImportProvenance = structuredClone(importedBundle);
+    (
+      tamperedImportProvenance.thread.importProvenance as unknown as Record<
+        string,
+        unknown
+      >
+    )["rawReplayBundle"] = "forbidden";
+    const {
+      generatedAt: _tamperedProvenanceGeneratedAt,
+      contentSha256: _tamperedProvenanceContentSha256,
+      ...tamperedProvenanceContent
+    } = tamperedImportProvenance;
+    tamperedImportProvenance.contentSha256 = sha256(
+      canonicalJson(tamperedProvenanceContent),
+    );
+    expect(() => validateThreadReplayBundle(tamperedImportProvenance)).toThrow(
+      "thread.importProvenance is invalid",
+    );
+    const tamperedImportReceipt = structuredClone(importedBundle);
+    const importReceiptEvent = tamperedImportReceipt.events.find(
+      (event) => event.type === "thread.imported",
+    );
+    if (
+      !importReceiptEvent?.payload ||
+      Array.isArray(importReceiptEvent.payload) ||
+      typeof importReceiptEvent.payload !== "object"
+    ) {
+      throw new Error("Thread import provenance receipt fixture is missing");
+    }
+    importReceiptEvent.payload = {
+      ...importReceiptEvent.payload,
+      sourceContentSha256: "0".repeat(64),
+    };
+    tamperedImportReceipt.eventStreamSha256 = hashThreadEventStream(
+      tamperedImportReceipt.events,
+    );
+    const {
+      generatedAt: _tamperedImportGeneratedAt,
+      contentSha256: _tamperedImportContentSha256,
+      ...tamperedImportContent
+    } = tamperedImportReceipt;
+    tamperedImportReceipt.contentSha256 = sha256(
+      canonicalJson(tamperedImportContent),
+    );
+    expect(() => validateThreadReplayBundle(tamperedImportReceipt)).toThrow(
+      "import provenance receipt is invalid",
+    );
+    expect(verifyThreadReplayBundle(tamperedImportReceipt)).toEqual({
+      status: "invalid",
+      diagnostics: ["invalid_shape"],
+      eventCount: 0,
+      runCount: 0,
+      planCount: 0,
+      evaluationCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
+    });
     expect(imported.thread).not.toHaveProperty("currentRunId");
     expect(imported.agent.id).not.toBe(agent.id);
     expect(imported.agent).toEqual(
