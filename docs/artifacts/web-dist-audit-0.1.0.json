@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-B1wveS8u.js",
+    "path": "apps/web/dist/assets/index-LosZyHIx.js",
     "sizeBytes": 150025,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "98b23b625141682554babdc7004dc4bec966ce5d953b7163a7b175bbf3a9b304"
+    "sha256": "bc112ec157658cd46dd63e485bf9c111dd8f20ee0e8ca3eff07babf727427d8e"
   },
-  "distContentSha256": "98b23b625141682554babdc7004dc4bec966ce5d953b7163a7b175bbf3a9b304",
+  "distContentSha256": "bc112ec157658cd46dd63e485bf9c111dd8f20ee0e8ca3eff07babf727427d8e",
   "errors": []
 }

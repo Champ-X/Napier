@@ -53,6 +53,7 @@ describe("workspace tools", () => {
       "list_files",
       "read_file",
       "search_files",
+      "list_symbols",
       "inspect_data",
       "inspect_code",
     ]);
@@ -100,6 +101,7 @@ describe("workspace tools", () => {
       "list_files",
       "read_file",
       "search_files",
+      "list_symbols",
       "inspect_data",
       "inspect_code",
       "apply_patch",
@@ -254,6 +256,151 @@ describe("workspace tools", () => {
       }),
     );
     expect(jsonlResult.content[0]!.text).toContain('"status": "open"');
+  });
+
+  it("lists code symbols across a bounded workspace directory", async () => {
+    const { workspaceRoot } = await createFixture();
+    await mkdir(path.join(workspaceRoot, "src"));
+    const python = [
+      "class Notebook:",
+      "    def run(self):",
+      "        pass",
+    ].join("\n");
+    const source = [
+      "export class Planner {",
+      "  plan(): void {",
+      "    return;",
+      "  }",
+      "}",
+    ].join("\n");
+    await writeFile(path.join(workspaceRoot, "bad.ts"), Buffer.from([0xff]));
+    await writeFile(path.join(workspaceRoot, "notebook.py"), python);
+    await writeFile(path.join(workspaceRoot, "notes.txt"), "not code\n");
+    await writeFile(path.join(workspaceRoot, "src/planner.ts"), source);
+    const listSymbols = createWorkspaceTools(workspaceRoot).find(
+      (tool) => tool.name === "list_symbols",
+    )!;
+
+    const result = await listSymbols.execute("list-symbols", {
+      path: ".",
+      maxFiles: 10,
+      maxSymbols: 10,
+    });
+
+    const pythonSha256 = createHash("sha256").update(python).digest("hex");
+    const sourceSha256 = createHash("sha256").update(source).digest("hex");
+    const languageCounts = {
+      typescript: 1,
+      javascript: 0,
+      python: 1,
+      go: 0,
+      unknown: 0,
+    };
+    const indexedFiles = [
+      {
+        path: "notebook.py",
+        pathSha256: createHash("sha256").update("notebook.py").digest("hex"),
+        language: "python",
+        sha256: pythonSha256,
+        sizeBytes: Buffer.byteLength(python),
+        totalLines: 3,
+        symbolCount: 2,
+      },
+      {
+        path: "src/planner.ts",
+        pathSha256: createHash("sha256").update("src/planner.ts").digest("hex"),
+        language: "typescript",
+        sha256: sourceSha256,
+        sizeBytes: Buffer.byteLength(source),
+        totalLines: 5,
+        symbolCount: 2,
+      },
+    ];
+    const symbolReceipts = [
+      {
+        path: "notebook.py",
+        language: "python",
+        kind: "class",
+        name: "Notebook",
+        line: 1,
+        fileSha256: pythonSha256,
+        lineSha256: createHash("sha256")
+          .update("class Notebook:")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("class Notebook:")
+          .digest("hex"),
+      },
+      {
+        path: "notebook.py",
+        language: "python",
+        kind: "function",
+        name: "run",
+        line: 2,
+        fileSha256: pythonSha256,
+        lineSha256: createHash("sha256")
+          .update("    def run(self):")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("def run(self):")
+          .digest("hex"),
+      },
+      {
+        path: "src/planner.ts",
+        language: "typescript",
+        kind: "class",
+        name: "Planner",
+        line: 1,
+        fileSha256: sourceSha256,
+        lineSha256: createHash("sha256")
+          .update("export class Planner {")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("export class Planner {")
+          .digest("hex"),
+      },
+      {
+        path: "src/planner.ts",
+        language: "typescript",
+        kind: "method",
+        name: "plan",
+        line: 2,
+        fileSha256: sourceSha256,
+        lineSha256: createHash("sha256")
+          .update("  plan(): void {")
+          .digest("hex"),
+        signatureSha256: createHash("sha256")
+          .update("plan(): void {")
+          .digest("hex"),
+      },
+    ];
+    expect(result.content[0]!.text).toContain("Napier symbol index metadata");
+    expect(result.content[0]!.text).toContain(
+      "notebook.py:2 python function run",
+    );
+    expect(result.content[0]!.text).toContain(
+      "src/planner.ts:2 typescript method plan",
+    );
+    expect(result.details).toEqual({
+      path: ".",
+      pathSha256: createHash("sha256").update(".").digest("hex"),
+      fileCount: 2,
+      skippedFileCount: 1,
+      symbolCount: 4,
+      totalLines: 8,
+      sizeBytes: Buffer.byteLength(python) + Buffer.byteLength(source),
+      truncated: false,
+      languageCounts,
+      languageCountsSha256: createHash("sha256")
+        .update(JSON.stringify(languageCounts))
+        .digest("hex"),
+      fileSetSha256: createHash("sha256")
+        .update(JSON.stringify(indexedFiles))
+        .digest("hex"),
+      symbolSetSha256: createHash("sha256")
+        .update(JSON.stringify(symbolReceipts))
+        .digest("hex"),
+    });
   });
 
   it("inspects code files with bounded symbol receipts", async () => {

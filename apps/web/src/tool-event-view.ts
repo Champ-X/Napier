@@ -9,6 +9,16 @@ export interface ToolEventTraceView {
   searchMatchCount?: number;
   searchTruncated?: boolean;
   searchMatchSetSha256?: string;
+  symbolIndexFileCount?: number;
+  symbolIndexSkippedFileCount?: number;
+  symbolIndexSymbolCount?: number;
+  symbolIndexTotalLines?: number;
+  symbolIndexSizeBytes?: number;
+  symbolIndexTruncated?: boolean;
+  symbolIndexPathSha256?: string;
+  symbolIndexLanguageCountsSha256?: string;
+  symbolIndexFileSetSha256?: string;
+  symbolIndexSymbolSetSha256?: string;
   dataFormat?: "json" | "jsonl" | "csv";
   dataRowCount?: number;
   dataColumnCount?: number;
@@ -94,6 +104,10 @@ export function toolEventTraceView(
     toolName === "search_files"
       ? searchFilesEvidence(event.payload["details"])
       : undefined;
+  const symbolIndexEvidence =
+    toolName === "list_symbols"
+      ? listSymbolsEvidence(event.payload["details"])
+      : undefined;
   const dataEvidence =
     toolName === "inspect_data"
       ? inspectDataEvidence(event.payload["details"])
@@ -125,6 +139,7 @@ export function toolEventTraceView(
     ...(inputSha256 ? { inputSha256 } : {}),
     ...(loopGuardTriggerSha256 ? { loopGuardTriggerSha256 } : {}),
     ...(searchEvidence ? searchEvidence : {}),
+    ...(symbolIndexEvidence ? symbolIndexEvidence : {}),
     ...(dataEvidence ? dataEvidence : {}),
     ...(codeEvidence ? codeEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
@@ -152,6 +167,34 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.searchTruncated ? ["truncated"] : []),
     ...(view.searchMatchSetSha256
       ? [`match-set ${view.searchMatchSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolIndexFileCount !== undefined
+      ? [`indexed-files ${view.symbolIndexFileCount}`]
+      : []),
+    ...(view.symbolIndexSkippedFileCount !== undefined
+      ? [`skipped-files ${view.symbolIndexSkippedFileCount}`]
+      : []),
+    ...(view.symbolIndexSymbolCount !== undefined
+      ? [`indexed-symbols ${view.symbolIndexSymbolCount}`]
+      : []),
+    ...(view.symbolIndexTotalLines !== undefined
+      ? [`indexed-lines ${view.symbolIndexTotalLines}`]
+      : []),
+    ...(view.symbolIndexSizeBytes !== undefined
+      ? [`indexed-size ${view.symbolIndexSizeBytes}`]
+      : []),
+    ...(view.symbolIndexTruncated ? ["symbol-index-truncated"] : []),
+    ...(view.symbolIndexPathSha256
+      ? [`symbol-root ${view.symbolIndexPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolIndexLanguageCountsSha256
+      ? [`language-counts ${view.symbolIndexLanguageCountsSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolIndexFileSetSha256
+      ? [`symbol-files ${view.symbolIndexFileSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.symbolIndexSymbolSetSha256
+      ? [`symbol-set ${view.symbolIndexSymbolSetSha256.slice(0, 12)}`]
       : []),
     ...(view.dataFormat ? [`data ${view.dataFormat}`] : []),
     ...(view.dataRowCount !== undefined ? [`rows ${view.dataRowCount}`] : []),
@@ -377,6 +420,56 @@ function inspectDataEvidence(value: unknown):
     ...(fileSha256 ? { dataFileSha256: fileSha256 } : {}),
     ...(columnSetSha256 ? { dataColumnSetSha256: columnSetSha256 } : {}),
     ...(sampleSha256 ? { dataSampleSha256: sampleSha256 } : {}),
+  };
+}
+
+function listSymbolsEvidence(value: unknown):
+  | {
+      symbolIndexFileCount: number;
+      symbolIndexSkippedFileCount: number;
+      symbolIndexSymbolCount: number;
+      symbolIndexTotalLines?: number;
+      symbolIndexSizeBytes?: number;
+      symbolIndexTruncated?: boolean;
+      symbolIndexPathSha256?: string;
+      symbolIndexLanguageCountsSha256?: string;
+      symbolIndexFileSetSha256?: string;
+      symbolIndexSymbolSetSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const fileCount = integerInRange(record["fileCount"], 0, 120);
+  const skippedFileCount = integerInRange(record["skippedFileCount"], 0, 120);
+  const symbolCount = integerInRange(record["symbolCount"], 0, 240);
+  if (
+    fileCount === undefined ||
+    skippedFileCount === undefined ||
+    symbolCount === undefined
+  ) {
+    return undefined;
+  }
+  const totalLines = integerInRange(record["totalLines"], 0, 10_000_000);
+  const sizeBytes = integerInRange(record["sizeBytes"], 0, 256 * 1024 * 1024);
+  const pathSha256 = sha256(record["pathSha256"]);
+  const languageCountsSha256 = sha256(record["languageCountsSha256"]);
+  const fileSetSha256 = sha256(record["fileSetSha256"]);
+  const symbolSetSha256 = sha256(record["symbolSetSha256"]);
+  return {
+    symbolIndexFileCount: fileCount,
+    symbolIndexSkippedFileCount: skippedFileCount,
+    symbolIndexSymbolCount: symbolCount,
+    ...(totalLines !== undefined ? { symbolIndexTotalLines: totalLines } : {}),
+    ...(sizeBytes !== undefined ? { symbolIndexSizeBytes: sizeBytes } : {}),
+    ...(record["truncated"] === true ? { symbolIndexTruncated: true } : {}),
+    ...(pathSha256 ? { symbolIndexPathSha256: pathSha256 } : {}),
+    ...(languageCountsSha256
+      ? { symbolIndexLanguageCountsSha256: languageCountsSha256 }
+      : {}),
+    ...(fileSetSha256 ? { symbolIndexFileSetSha256: fileSetSha256 } : {}),
+    ...(symbolSetSha256 ? { symbolIndexSymbolSetSha256: symbolSetSha256 } : {}),
   };
 }
 

@@ -1037,6 +1037,15 @@ keeps the matching line for human-readable orientation. This lets a follow-up
 without trusting plain grep output, while Trace summaries render only the
 match count, truncation state, and match-set hash.
 
+`list_symbols` gives the Agent a bounded directory-level code map for
+TypeScript, JavaScript, Python, and Go files without starting LSP,
+subprocesses, or network capabilities. It returns symbol paths, names, lines,
+signature previews, and line/signature/file hashes to the model, skips
+oversized or invalid UTF-8 code files with a count-only receipt, and records
+root path, language counts, file-set, and symbol-set SHA-256 receipts. Trace
+summaries show only file/symbol/skipped counts, line/byte counts, truncation,
+and hashes, never paths, symbol names, or signatures.
+
 `inspect_data` gives the Agent a bounded local preview for UTF-8 JSON, JSONL,
 and CSV files without adding a shell or network dependency. It resolves through
 the same workspace realpath boundary, rejects oversized or malformed input,

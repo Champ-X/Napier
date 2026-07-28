@@ -2976,6 +2976,133 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("lists workspace symbols through the parent Agent ledger", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    const workerSource = [
+      "export class Worker {",
+      "  run(input: string): string {",
+      "    return input;",
+      "  }",
+      "}",
+    ].join("\n");
+    const factorySource = [
+      "export function createWorker(): Worker {",
+      "  return new Worker();",
+      "}",
+    ].join("\n");
+    await writeFile(
+      path.join(workspaceRoot, "src/worker.ts"),
+      workerSource,
+      "utf8",
+    );
+    await writeFile(
+      path.join(workspaceRoot, "src/factory.ts"),
+      factorySource,
+      "utf8",
+    );
+    const workerSha256 = createHash("sha256")
+      .update(workerSource)
+      .digest("hex");
+    const factorySha256 = createHash("sha256")
+      .update(factorySource)
+      .digest("hex");
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const originalAgent = store.listAgents()[0]!;
+    const agent = await store.updateAgent(originalAgent.id, {
+      toolPolicy: "observe",
+      enabledTools: ["list_symbols"],
+    });
+    const thread = await store.createThread({
+      title: "Workspace symbol listing",
+      agentId: agent.id,
+    });
+
+    const faux = fauxProvider({ provider: "faux-symbol-listing" });
+    faux.setResponses([
+      (context) => {
+        const toolNames = context.tools?.map((tool) => tool.name) ?? [];
+        expect(toolNames).toContain("list_symbols");
+        expect(toolNames).not.toContain("apply_patch");
+        return fauxAssistantMessage(
+          fauxToolCall("list_symbols", {
+            path: "src",
+            maxFiles: 10,
+            maxSymbols: 10,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const serialized = JSON.stringify(context.messages);
+        expect(serialized).toContain("Napier symbol index metadata");
+        expect(serialized).toContain("class Worker");
+        expect(serialized).toContain("function createWorker");
+        expect(serialized).toContain(workerSha256);
+        expect(serialized).toContain(factorySha256);
+        return fauxAssistantMessage(
+          "The src directory exposes Worker and createWorker symbols.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Map the local code symbols.",
+      model: { provider: "faux-symbol-listing", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(faux.state.callCount).toBe(3);
+    const events = await store.listEvents(thread.id);
+    const toolEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "list_symbols",
+    );
+    expect(toolEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          path: "src",
+          pathSha256: createHash("sha256").update("src").digest("hex"),
+          fileCount: 2,
+          skippedFileCount: 0,
+          symbolCount: 3,
+          totalLines: 8,
+          sizeBytes:
+            Buffer.byteLength(workerSource) + Buffer.byteLength(factorySource),
+          truncated: false,
+          languageCountsSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          fileSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          symbolSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        }),
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("runs read-only sandboxed verification through the parent Agent", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

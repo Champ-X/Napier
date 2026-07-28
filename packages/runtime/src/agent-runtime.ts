@@ -3228,6 +3228,7 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     toolName === "list_files" ||
     toolName === "read_file" ||
     toolName === "search_files" ||
+    toolName === "list_symbols" ||
     toolName === "inspect_data" ||
     toolName === "inspect_code" ||
     toolName === "verify_workspace" ||

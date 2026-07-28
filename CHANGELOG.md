@@ -261,6 +261,10 @@ All notable changes to Napier are recorded here.
   literal search results can feed `read_file` and Hashline edits directly.
 - Trace tool summaries now surface `search_files` match counts and match-set
   hashes without exposing matched text or paths.
+- Added a read-only `list_symbols` workspace tool for bounded directory-level
+  TypeScript, JavaScript, Python, and Go symbol maps. It returns symbols to the
+  Agent while Trace renders only file/symbol/skipped counts, line/byte counts,
+  truncation state, and root/language/file-set/symbol-set hashes.
 - Added a read-only `inspect_data` workspace tool for JSON, JSONL, and CSV
   files. It returns bounded schema/sample evidence to the Agent while Trace
   renders only format, row/column counts, truncation state, and path/file/

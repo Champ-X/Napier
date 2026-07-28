@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "4bef7a64cc9a9e971ea9484ac5bf7093c7a340530773878ad0a2fe98a54e25fe",
+    "sha256": "bbc8ec13d96fcf9dc53f059ff5fca4cc9aa3a0aa709e874d9cfea693d3ebffff",
     "routeCount": 229,
     "routeSetSha256": "b43d3ecd8d0eafaba14e4e04ef1c5fd0a9c07b1356049f31e257149601e42096"
   },

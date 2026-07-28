@@ -148,6 +148,54 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes list_symbols receipts without paths or symbol names", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "list_symbols",
+      status: "completed",
+      output: "TOP_SECRET_SYMBOL_NAME TOP_SECRET_SIGNATURE",
+      details: {
+        path: "TOP_SECRET_ROOT",
+        pathSha256: "a".repeat(64),
+        fileCount: 3,
+        skippedFileCount: 1,
+        symbolCount: 9,
+        totalLines: 128,
+        sizeBytes: 4096,
+        truncated: true,
+        languageCounts: { typescript: 2, python: 1 },
+        languageCountsSha256: "b".repeat(64),
+        fileSetSha256: "c".repeat(64),
+        symbolSetSha256: "d".repeat(64),
+        symbols: [
+          {
+            path: "TOP_SECRET_PATH",
+            name: "TOP_SECRET_SYMBOL",
+            signaturePreview: "TOP_SECRET_SIGNATURE",
+          },
+        ],
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "list_symbols",
+      status: "completed",
+      symbolIndexFileCount: 3,
+      symbolIndexSkippedFileCount: 1,
+      symbolIndexSymbolCount: 9,
+      symbolIndexTotalLines: 128,
+      symbolIndexSizeBytes: 4096,
+      symbolIndexTruncated: true,
+      symbolIndexPathSha256: "a".repeat(64),
+      symbolIndexLanguageCountsSha256: "b".repeat(64),
+      symbolIndexFileSetSha256: "c".repeat(64),
+      symbolIndexSymbolSetSha256: "d".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / list_symbols / completed / indexed-files 3 / skipped-files 1 / indexed-symbols 9 / indexed-lines 128 / indexed-size 4096 / symbol-index-truncated / symbol-root ${"a".repeat(12)} / language-counts ${"b".repeat(12)} / symbol-files ${"c".repeat(12)} / symbol-set ${"d".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes inspect_data receipts without columns or sample rows", () => {
     const event = toolEvent("tool.completed", {
       toolName: "inspect_data",

@@ -50,6 +50,7 @@ describe("Agent profile updates", () => {
       toolPolicy: "workspace",
       enabledTools: [
         "search_files",
+        "list_symbols",
         "inspect_data",
         "inspect_code",
         "read_file",
@@ -102,6 +103,7 @@ describe("Agent profile updates", () => {
           "apply_patch",
           "inspect_code",
           "inspect_data",
+          "list_symbols",
           "read_file",
           "search_files",
           "verify_workspace",

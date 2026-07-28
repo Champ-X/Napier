@@ -28,6 +28,8 @@ const MAX_DATA_SAMPLE_ROWS = 25;
 const MAX_DATA_COLUMNS = 80;
 const MAX_DATA_PREVIEW_BYTES = 4_096;
 const MAX_CODE_SYMBOLS = 120;
+const MAX_CODE_INDEX_FILES = 120;
+const MAX_CODE_INDEX_SYMBOLS = 240;
 const MAX_CODE_SIGNATURE_BYTES = 512;
 const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;
@@ -55,6 +57,28 @@ const searchFilesSchema = Type.Object({
   path: Type.Optional(
     Type.String({
       description: "Workspace-relative directory. Defaults to '.'.",
+    }),
+  ),
+});
+
+const listSymbolsSchema = Type.Object({
+  path: Type.Optional(
+    Type.String({
+      description: "Workspace-relative directory. Defaults to '.'.",
+    }),
+  ),
+  maxFiles: Type.Optional(
+    Type.Integer({
+      minimum: 1,
+      maximum: MAX_CODE_INDEX_FILES,
+      description: "Maximum code files to inspect.",
+    }),
+  ),
+  maxSymbols: Type.Optional(
+    Type.Integer({
+      minimum: 1,
+      maximum: MAX_CODE_INDEX_SYMBOLS,
+      description: "Maximum symbols to return across inspected files.",
     }),
   ),
 });
@@ -278,6 +302,21 @@ export interface WorkspaceCodeInspectDetails {
   totalLines: number;
   symbolCount: number;
   truncated: boolean;
+  symbolSetSha256: string;
+}
+
+export interface WorkspaceSymbolIndexDetails {
+  path: string;
+  pathSha256: string;
+  fileCount: number;
+  skippedFileCount: number;
+  symbolCount: number;
+  totalLines: number;
+  sizeBytes: number;
+  truncated: boolean;
+  languageCounts: Record<WorkspaceCodeLanguage, number>;
+  languageCountsSha256: string;
+  fileSetSha256: string;
   symbolSetSha256: string;
 }
 
@@ -825,6 +864,44 @@ const CONTROL_KEYWORDS = new Set([
   "catch",
   "function",
 ]);
+
+interface WorkspaceCodeFileIndex {
+  path: string;
+  pathSha256: string;
+  language: WorkspaceCodeLanguage;
+  sha256: string;
+  sizeBytes: number;
+  totalLines: number;
+  symbolCount: number;
+}
+
+interface WorkspaceCodeSymbolIndex {
+  path: string;
+  language: WorkspaceCodeLanguage;
+  kind: WorkspaceCodeSymbolKind;
+  name: string;
+  line: number;
+  fileSha256: string;
+  lineSha256: string;
+  signatureSha256: string;
+  signaturePreview: string;
+}
+
+function emptyLanguageCounts(): Record<WorkspaceCodeLanguage, number> {
+  return {
+    typescript: 0,
+    javascript: 0,
+    python: 0,
+    go: 0,
+    unknown: 0,
+  };
+}
+
+function isInspectableCodeLanguage(
+  language: WorkspaceCodeLanguage,
+): language is Exclude<WorkspaceCodeLanguage, "unknown"> {
+  return language !== "unknown";
+}
 
 export interface WorkspaceTextEvidence {
   path: string;
@@ -1452,6 +1529,161 @@ export function createWorkspaceTools(
     },
   };
 
+  const listSymbols: AgentTool<
+    typeof listSymbolsSchema,
+    WorkspaceSymbolIndexDetails
+  > = {
+    name: "list_symbols",
+    label: "List symbols",
+    description:
+      "List a bounded TypeScript, JavaScript, Python, and Go symbol index for a workspace directory.",
+    parameters: listSymbolsSchema,
+    async execute(_toolCallId, input) {
+      const resolved = await resolveWorkspacePath(
+        workspaceRoot,
+        input.path ?? ".",
+      );
+      const target = resolved.target;
+      const info = await stat(target);
+      if (!info.isDirectory()) {
+        throw new Error("list_symbols path must be a directory");
+      }
+      const maxFiles = input.maxFiles ?? MAX_CODE_INDEX_FILES;
+      const maxSymbols = input.maxSymbols ?? MAX_CODE_INDEX_SYMBOLS;
+      const files = await walkFiles(target, 8);
+      const indexedFiles: WorkspaceCodeFileIndex[] = [];
+      const symbols: WorkspaceCodeSymbolIndex[] = [];
+      const outputLines: string[] = [];
+      const languageCounts = emptyLanguageCounts();
+      let skippedFileCount = 0;
+      let totalLines = 0;
+      let sizeBytes = 0;
+      let truncated = files.length >= MAX_LIST_ENTRIES;
+
+      for (const file of files) {
+        if (indexedFiles.length >= maxFiles || symbols.length >= maxSymbols) {
+          truncated = true;
+          break;
+        }
+        const fileInfo = await stat(file);
+        if (!fileInfo.isFile()) continue;
+        const relativePath = path.relative(resolved.root, file);
+        const language = detectCodeLanguage(relativePath);
+        if (!isInspectableCodeLanguage(language)) continue;
+        if (fileInfo.size > MAX_HASHABLE_TEXT_BYTES) {
+          skippedFileCount += 1;
+          continue;
+        }
+        let buffer: Buffer;
+        let source: string;
+        try {
+          buffer = await readFile(file);
+          source = decodeUtf8(buffer, "list_symbols target");
+        } catch {
+          skippedFileCount += 1;
+          continue;
+        }
+        const remainingSymbols = maxSymbols - symbols.length;
+        const inspected = inspectCodeSymbols(
+          source,
+          relativePath,
+          remainingSymbols,
+        );
+        const fileSha256 = sha256(buffer);
+        const fileReceipt: WorkspaceCodeFileIndex = {
+          path: relativePath,
+          pathSha256: sha256(relativePath),
+          language,
+          sha256: fileSha256,
+          sizeBytes: buffer.byteLength,
+          totalLines: inspected.totalLines,
+          symbolCount: inspected.symbols.length,
+        };
+        indexedFiles.push(fileReceipt);
+        languageCounts[language] += 1;
+        totalLines += inspected.totalLines;
+        sizeBytes += buffer.byteLength;
+        if (inspected.truncated) truncated = true;
+
+        for (const symbol of inspected.symbols) {
+          const receipt: WorkspaceCodeSymbolIndex = {
+            path: relativePath,
+            language,
+            kind: symbol.kind,
+            name: symbol.name,
+            line: symbol.line,
+            fileSha256,
+            lineSha256: symbol.lineSha256,
+            signatureSha256: symbol.signatureSha256,
+            signaturePreview: symbol.signaturePreview,
+          };
+          symbols.push(receipt);
+          outputLines.push(
+            [
+              `${relativePath}:${symbol.line}`,
+              language,
+              symbol.kind,
+              symbol.name,
+              `[fileSha256=${fileSha256} lineSha256=${symbol.lineSha256} signatureSha256=${symbol.signatureSha256}]`,
+              symbol.signaturePreview,
+            ].join(" "),
+          );
+        }
+      }
+
+      const relativeTarget = path.relative(resolved.root, target) || ".";
+      const symbolReceipts = symbols.map(
+        ({
+          path,
+          language,
+          kind,
+          name,
+          line,
+          fileSha256,
+          lineSha256,
+          signatureSha256,
+        }) => ({
+          path,
+          language,
+          kind,
+          name,
+          line,
+          fileSha256,
+          lineSha256,
+          signatureSha256,
+        }),
+      );
+      const details: WorkspaceSymbolIndexDetails = {
+        path: relativeTarget,
+        pathSha256: sha256(relativeTarget),
+        fileCount: indexedFiles.length,
+        skippedFileCount,
+        symbolCount: symbols.length,
+        totalLines,
+        sizeBytes,
+        truncated,
+        languageCounts,
+        languageCountsSha256: sha256(JSON.stringify(languageCounts)),
+        fileSetSha256: sha256(JSON.stringify(indexedFiles)),
+        symbolSetSha256: sha256(JSON.stringify(symbolReceipts)),
+      };
+      return {
+        content: [
+          {
+            type: "text",
+            text: [
+              `Napier symbol index metadata: ${JSON.stringify(details)}`,
+              outputLines.length > 0
+                ? outputLines.join("\n")
+                : "No symbols found.",
+            ].join("\n"),
+          },
+        ],
+        details,
+      };
+    },
+  };
+
   const inspectData: AgentTool<
     typeof inspectDataSchema,
     WorkspaceDataInspectDetails
@@ -1593,6 +1825,7 @@ export function createWorkspaceTools(
     listFiles,
     readTextFile,
     searchFiles,
+    listSymbols,
     inspectData,
     inspectCode,
   ];

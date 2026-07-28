@@ -1507,6 +1507,15 @@ search_files
      line-anchor SHA-256, and byte size
   -> hash the structured match set so Trace can show count/truncation/hash
      without rendering match text or paths
+list_symbols
+  -> scan a bounded directory-level code map for TypeScript / JavaScript /
+     Python / Go files through the same read-only workspace boundary
+  -> return symbol paths, names, lines, signature previews, and hashes to the
+     Agent without starting LSP, subprocess, or network capabilities
+  -> skip oversized or invalid UTF-8 code files with a count-only receipt
+  -> hash the root path, language counts, indexed file set, and symbol set so
+     Trace can show file/symbol/skipped counts, line/byte counts, truncation,
+     and hashes without rendering paths, symbol names, or signatures
 inspect_data
   -> resolve JSON / JSONL / CSV files through the same read-only realpath and
      UTF-8 boundary as read_file
