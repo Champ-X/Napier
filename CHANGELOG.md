@@ -94,6 +94,9 @@ All notable changes to Napier are recorded here.
 - Imported provenance observability now carries the same local cutoff into
   metadata-only OTLP root span attributes, and Run Lab renders source event
   count plus the local imported-history cutoff beside the fixture hashes.
+- Persisted imported Thread provenance is now validated during SQLite state
+  restore, including source hashes, optional envelope counts, and the local
+  imported-history cutoff bound against the Thread event count.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

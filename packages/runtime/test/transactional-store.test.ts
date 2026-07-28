@@ -157,6 +157,58 @@ describe("transactional LocalStore", () => {
     expect(await reopened.listEvents(thread.id)).toHaveLength(3);
   });
 
+  it("fails closed on invalid persisted imported Thread provenance", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const agent = first.listAgents()[0]!;
+    const thread = await first.createThread({
+      title: "Imported state validation",
+      agentId: agent.id,
+      importProvenance: {
+        sourceThreadId: "thread_source0000000001",
+        sourceApiVersion: "2026-07-25",
+        sourceContentSha256: "1".repeat(64),
+        sourceEventStreamSha256: "2".repeat(64),
+        sourceEventCount: 0,
+        localImportedThroughSeq: 0,
+        sourceModelContextEnvelopeCount: 0,
+        sourceEmbeddedModelContextEnvelopeCount: 0,
+        importedAt: "2026-07-25T00:00:00.000Z",
+      },
+    });
+    first.close();
+    openStores.splice(openStores.indexOf(first), 1);
+
+    const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
+    const database = new DatabaseSync(databasePath);
+    const row = database
+      .prepare(
+        "SELECT revision, state_json FROM workspace_state WHERE singleton = 1",
+      )
+      .get() as { revision: number; state_json: string };
+    const state = JSON.parse(row.state_json) as {
+      threads: Array<{ id: string; importProvenance?: Record<string, unknown> }>;
+    };
+    const persistedThread = state.threads.find(
+      (candidate) => candidate.id === thread.id,
+    );
+    if (!persistedThread?.importProvenance) {
+      throw new Error("Expected imported Thread provenance");
+    }
+    persistedThread.importProvenance.localImportedThroughSeq =
+      thread.eventCount + 1;
+    database
+      .prepare("UPDATE workspace_state SET state_json = ? WHERE singleton = 1")
+      .run(JSON.stringify(state));
+    database.close();
+
+    const reopened = new LocalStore(options);
+    openStores.push(reopened);
+    await expect(reopened.initialize()).rejects.toThrow(
+      "Persisted Thread import provenance is invalid",
+    );
+  });
+
   it("persists Agent and Casebook migrations when upgrading existing SQLite state", async () => {
     const options = await createOptions();
     const first = await openStore(options);

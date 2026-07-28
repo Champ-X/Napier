@@ -2265,6 +2265,9 @@ over-redacting later local operator input. Run Lab and metadata-only OTLP root
 span attributes expose the same source event count and local cutoff for audit.
 Imported provenance is also an unconditional automatic-recovery blocker; an
 imported interrupted Run can only continue through explicit operator action.
+SQLite state restore validates imported provenance hashes, counts, timestamps,
+and the local cutoff against the persisted Thread event count before any
+runtime prompt can consume it.
 
 ## Delegation Flow
 

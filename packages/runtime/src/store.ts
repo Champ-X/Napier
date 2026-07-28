@@ -9663,6 +9663,19 @@ export class LocalStore {
     const extensionPublisherAnchorIds = new Set<string>();
     const extensionPublisherKeyIds = new Set<string>();
     const extensionPublisherSigningSources = new Set<string>();
+    const threadIds = new Set<string>();
+    for (const thread of state.threads) {
+      if (threadIds.has(thread.id)) {
+        throw new Error(`Duplicate persisted Thread: ${thread.id}`);
+      }
+      threadIds.add(thread.id);
+      if (thread.importProvenance !== undefined) {
+        thread.importProvenance = validateThreadImportProvenance(
+          thread,
+          thread.importProvenance,
+        );
+      }
+    }
     for (const input of state.extensionPublisherTrustAnchors) {
       const anchor = validateExtensionPublisherTrustAnchor(input);
       const signingSource = anchor.signingSource?.variable;
@@ -15076,6 +15089,78 @@ function retirementHistoryHashContent(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validateThreadImportProvenance(
+  thread: ThreadRecord,
+  value: unknown,
+): ThreadImportProvenance {
+  if (!isRecord(value)) {
+    throw new Error(
+      `Persisted Thread import provenance is invalid: ${thread.id}`,
+    );
+  }
+  const allowed = new Set([
+    "sourceThreadId",
+    "sourceApiVersion",
+    "sourceContentSha256",
+    "sourceEventStreamSha256",
+    "sourceEventCount",
+    "localImportedThroughSeq",
+    "sourceModelContextEnvelopeCount",
+    "sourceEmbeddedModelContextEnvelopeCount",
+    "importedAt",
+  ]);
+  if (Object.keys(value).some((key) => !allowed.has(key))) {
+    throw new Error(
+      `Persisted Thread import provenance is invalid: ${thread.id}`,
+    );
+  }
+  const sourceEventCount = value["sourceEventCount"];
+  const localImportedThroughSeq = value["localImportedThroughSeq"];
+  const sourceModelContextEnvelopeCount =
+    value["sourceModelContextEnvelopeCount"];
+  const sourceEmbeddedModelContextEnvelopeCount =
+    value["sourceEmbeddedModelContextEnvelopeCount"];
+  if (
+    typeof value["sourceThreadId"] !== "string" ||
+    !/^[a-z][a-z0-9_]{2,80}$/.test(value["sourceThreadId"]) ||
+    typeof value["sourceApiVersion"] !== "string" ||
+    value["sourceApiVersion"].length > 64 ||
+    !isSha256(value["sourceContentSha256"]) ||
+    !isSha256(value["sourceEventStreamSha256"]) ||
+    !isNonNegativeInteger(sourceEventCount) ||
+    (localImportedThroughSeq !== undefined &&
+      (!isNonNegativeInteger(localImportedThroughSeq) ||
+        localImportedThroughSeq > thread.eventCount)) ||
+    (sourceModelContextEnvelopeCount !== undefined &&
+      !isNonNegativeInteger(sourceModelContextEnvelopeCount)) ||
+    (sourceEmbeddedModelContextEnvelopeCount !== undefined &&
+      !isNonNegativeInteger(sourceEmbeddedModelContextEnvelopeCount)) ||
+    typeof value["importedAt"] !== "string" ||
+    !Number.isFinite(Date.parse(value["importedAt"]))
+  ) {
+    throw new Error(
+      `Persisted Thread import provenance is invalid: ${thread.id}`,
+    );
+  }
+  return {
+    sourceThreadId: value["sourceThreadId"],
+    sourceApiVersion: value["sourceApiVersion"],
+    sourceContentSha256: value["sourceContentSha256"],
+    sourceEventStreamSha256: value["sourceEventStreamSha256"],
+    sourceEventCount,
+    ...(localImportedThroughSeq !== undefined
+      ? { localImportedThroughSeq }
+      : {}),
+    ...(sourceModelContextEnvelopeCount !== undefined
+      ? { sourceModelContextEnvelopeCount }
+      : {}),
+    ...(sourceEmbeddedModelContextEnvelopeCount !== undefined
+      ? { sourceEmbeddedModelContextEnvelopeCount }
+      : {}),
+    importedAt: value["importedAt"],
+  };
 }
 
 function isSha256(value: unknown): value is string {
