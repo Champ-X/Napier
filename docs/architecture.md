@@ -2329,6 +2329,14 @@ events can show safe task IDs, role/status/kind, counts, stop reason, and
 hash-only receipts for text, repair requests, diagnostics, outcomes, item sets,
 and evidence sets. Delegated prompts, step text, tool arguments, final results,
 diagnostics, and error strings do not drive Trace list summaries.
+Model Advisor governance events use an equivalent bounded projection.
+`model.advisor.*` summaries may show action, status/source, turn source,
+verdict, risk, score, diagnostic/issue/blocker counts, correction attempt
+counts, and SHA-256 receipts for candidate text, diagnostic sets, issue sets,
+evidence, request/response hashes, embedded envelope hashes, and receipt
+content. Deterministic diagnostic prose, independent reviewer guidance,
+correction prompts, correction responses, and arbitrary advisor payload text
+never drive the event-list summary.
 Every OTLP span event carries a generic `napier.event.payload_sha256` hash-only
 projection, and the trace verifier binds the root import receipt attributes
 back to the root `thread.imported` span event. Hiding that root receipt,

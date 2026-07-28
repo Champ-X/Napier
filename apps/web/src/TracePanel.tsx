@@ -44,6 +44,7 @@ import {
   modelContextEnvelopeViews,
   type ModelContextEnvelopeView,
 } from "./model-context-envelope-view";
+import { modelAdvisorEventTraceSummary } from "./model-advisor-event-view";
 import { modelAdvisorReviewCopy } from "./model-advisor-review-copy";
 import { modelResponseTraceSummary } from "./model-response-view";
 import { openTelemetryTraceExportSummary } from "./otel-trace-export-view";
@@ -971,6 +972,9 @@ function eventSummary(event: RunEvent): string {
   }
   if (event.type.startsWith("subagent.")) {
     return subagentEventTraceSummary(event) ?? event.category;
+  }
+  if (event.type.startsWith("model.advisor.")) {
+    return modelAdvisorEventTraceSummary(event) ?? event.category;
   }
   if (
     !event.payload ||

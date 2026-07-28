@@ -155,6 +155,10 @@ All notable changes to Napier are recorded here.
 - Trace event summaries now project `subagent.*` receipts through a bounded
   delegation view, so subagent prompts, step text, tool arguments, final
   results, diagnostics, and errors stay out of the event list.
+- Trace event summaries now project `model.advisor.*` receipts through a
+  bounded advisor view, so deterministic diagnostics, independent reviewer
+  guidance, correction prompts, and correction responses stay out of the event
+  list while verdict/status, counts, and hashes remain auditable.
 - Import provenance fields that appear on the OTLP root span are now mirrored
   through the `thread.imported` span event's safe payload projection and
   verified field-by-field, so source IDs, source hashes, cutoff sequence,

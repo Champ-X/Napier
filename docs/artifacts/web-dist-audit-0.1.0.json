@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 50,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-Bty-L2ud.js",
+    "path": "apps/web/dist/assets/index-B4WdkfAI.js",
     "sizeBytes": 146190,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "3ad50983fb8b50aa507fc2cc16ded57b8ebd847eb2af86257708bcceb9dba483"
+    "sha256": "33534d8c3332b79b0c0af2de4f92f7a402999defac28790446c05c13a9f09113"
   },
-  "distContentSha256": "3ad50983fb8b50aa507fc2cc16ded57b8ebd847eb2af86257708bcceb9dba483",
+  "distContentSha256": "33534d8c3332b79b0c0af2de4f92f7a402999defac28790446c05c13a9f09113",
   "errors": []
 }
