@@ -11771,6 +11771,19 @@ function expectRunComparisonHeaders(
     String(comparison.contextCoverageDelta.coverageRateDelta),
   );
   expect(
+    response.headers.get(
+      "x-napier-context-coverage-left-embedded-envelope-count",
+    ),
+  ).toBe(String(comparison.contextCoverageDelta.left.embeddedEnvelopeCount));
+  expect(
+    response.headers.get(
+      "x-napier-context-coverage-right-embedded-envelope-count",
+    ),
+  ).toBe(String(comparison.contextCoverageDelta.right.embeddedEnvelopeCount));
+  expect(
+    response.headers.get("x-napier-context-coverage-embedded-envelope-delta"),
+  ).toBe(String(comparison.contextCoverageDelta.embeddedEnvelopeDelta));
+  expect(
     response.headers.get("x-napier-context-coverage-diagnostic-count"),
   ).toBe(String(comparison.contextCoverageDelta.diagnostics.length));
   expect(

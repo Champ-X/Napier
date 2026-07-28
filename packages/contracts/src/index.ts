@@ -3708,6 +3708,7 @@ export type RunContextCoverageStatus =
 export interface RunContextCoverageSummary {
   modelResponseCount: number;
   envelopeCount: number;
+  embeddedEnvelopeCount: number;
   boundResponseCount: number;
   unboundResponseCount: number;
   coverageRate: number;
@@ -3718,6 +3719,7 @@ export interface RunContextCoverageDelta {
   left: RunContextCoverageSummary;
   right: RunContextCoverageSummary;
   coverageRateDelta: number;
+  embeddedEnvelopeDelta: number;
   diagnostics: string[];
 }
 

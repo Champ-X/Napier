@@ -696,6 +696,8 @@ function compareContextCoverage(
     left,
     right,
     coverageRateDelta,
+    embeddedEnvelopeDelta:
+      right.embeddedEnvelopeCount - left.embeddedEnvelopeCount,
     diagnostics,
   };
 }
@@ -706,6 +708,7 @@ function runContextCoverageSummary(
   return {
     modelResponseCount: metrics.modelResponseCount,
     envelopeCount: metrics.modelContextEnvelopeCount,
+    embeddedEnvelopeCount: metrics.embeddedModelContextEnvelopeCount,
     boundResponseCount: metrics.modelContextBoundResponseCount,
     unboundResponseCount: metrics.modelContextUnboundResponseCount,
     coverageRate:

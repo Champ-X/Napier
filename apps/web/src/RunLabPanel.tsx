@@ -272,6 +272,12 @@ export default function RunLabPanel({
                   comparison.contextCoverageDelta.coverageRateDelta,
                 )}
               </code>
+              <code>
+                {copy.lab.embeddedContextEnvelopes}{" "}
+                {formatSignedNumber(
+                  comparison.contextCoverageDelta.embeddedEnvelopeDelta,
+                )}
+              </code>
             </div>
             {comparison.contextCoverageDelta.diagnostics.length > 0 ? (
               <>

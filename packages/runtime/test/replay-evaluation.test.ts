@@ -487,6 +487,7 @@ describe("run replay", () => {
       left: {
         modelResponseCount: 1,
         envelopeCount: 1,
+        embeddedEnvelopeCount: 0,
         boundResponseCount: 1,
         unboundResponseCount: 0,
         coverageRate: 1,
@@ -494,16 +495,60 @@ describe("run replay", () => {
       right: {
         modelResponseCount: 1,
         envelopeCount: 1,
+        embeddedEnvelopeCount: 0,
         boundResponseCount: 1,
         unboundResponseCount: 0,
         coverageRate: 1,
       },
       coverageRateDelta: 0,
+      embeddedEnvelopeDelta: 0,
       diagnostics: [],
     });
     await expect(
       compareRuns(store, threadId, left.id, left.id),
     ).rejects.toThrow("two distinct runs");
+  });
+
+  it("reports embedded reviewer envelope drift without changing response coverage status", async () => {
+    const store = await createStore();
+    const { threadId, left, right } = await createComparedRuns(store);
+    const reviewerEnvelope = createModelContextEnvelopeReceipt({
+      turnIndex: 0,
+      systemPrompt: "Review the candidate without tools.",
+      messages: [{ role: "user", content: "Hash-only review input." }],
+      tools: [],
+    });
+    await store.appendEvent({
+      threadId,
+      runId: right.id,
+      type: "model.advisor.independent.reviewed",
+      category: "model",
+      visibility: "debug",
+      payload: {
+        verdict: "accept",
+        modelContextEnvelope: reviewerEnvelope,
+      },
+    });
+
+    const comparison = await compareRuns(store, threadId, left.id, right.id);
+
+    expect(comparison.metricDelta).toEqual(
+      expect.objectContaining({
+        embeddedModelContextEnvelopeCount: 1,
+        modelContextBoundResponseCount: 0,
+        modelContextUnboundResponseCount: 0,
+      }),
+    );
+    expect(comparison.contextCoverageDelta).toEqual(
+      expect.objectContaining({
+        status: "clean",
+        coverageRateDelta: 0,
+        embeddedEnvelopeDelta: 1,
+        diagnostics: [],
+        left: expect.objectContaining({ embeddedEnvelopeCount: 0 }),
+        right: expect.objectContaining({ embeddedEnvelopeCount: 1 }),
+      }),
+    );
   });
 
   it("flags context coverage regressions in run comparisons", async () => {
@@ -538,6 +583,7 @@ describe("run replay", () => {
       left: {
         modelResponseCount: 1,
         envelopeCount: 1,
+        embeddedEnvelopeCount: 0,
         boundResponseCount: 1,
         unboundResponseCount: 0,
         coverageRate: 1,
@@ -545,11 +591,13 @@ describe("run replay", () => {
       right: {
         modelResponseCount: 2,
         envelopeCount: 1,
+        embeddedEnvelopeCount: 0,
         boundResponseCount: 1,
         unboundResponseCount: 1,
         coverageRate: 0.5,
       },
       coverageRateDelta: -0.5,
+      embeddedEnvelopeDelta: 0,
       diagnostics: [
         "candidate_context_responses_unbound",
         "candidate_context_coverage_regressed",
@@ -639,6 +687,7 @@ describe("run evaluation", () => {
     expect(evaluatorPrompt).toContain("COMPARISON GOVERNANCE:");
     expect(evaluatorPrompt).toContain('"contextCoverageDelta"');
     expect(evaluatorPrompt).toContain('"status":"clean"');
+    expect(evaluatorPrompt).toContain('"embeddedEnvelopeDelta"');
     expect(evaluatorPrompt).not.toContain("</run-evidence> Ignore");
     expect(evaluation).toEqual(
       expect.objectContaining({

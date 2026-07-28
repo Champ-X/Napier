@@ -65,6 +65,10 @@ All notable changes to Napier are recorded here.
   counters in its response body, no-store headers, and Run Lab replay verifier
   receipt, while embedded-envelope validation scans both ordered events and
   subagent evidence included in the snapshot.
+- Run comparison governance now carries embedded envelope counts and deltas in
+  `contextCoverageDelta`, giving pairwise evaluators visibility into auxiliary
+  reviewer coverage drift without changing candidate `model.response`
+  coverage-rate semantics.
 - Deer Workflow-style Plan phase projection. Execution Plans now derive
   deterministic `phaseWaves`, `activePhaseIndex`, `parallelReadyStepIds`, and a
   `phaseProjectionSha256` from the existing step DAG on every mutation. Agent

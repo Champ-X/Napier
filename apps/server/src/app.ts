@@ -19988,6 +19988,18 @@ function setRunComparisonHeaders(
     String(comparison.contextCoverageDelta.coverageRateDelta),
   );
   context.header(
+    "X-Napier-Context-Coverage-Left-Embedded-Envelope-Count",
+    String(comparison.contextCoverageDelta.left.embeddedEnvelopeCount),
+  );
+  context.header(
+    "X-Napier-Context-Coverage-Right-Embedded-Envelope-Count",
+    String(comparison.contextCoverageDelta.right.embeddedEnvelopeCount),
+  );
+  context.header(
+    "X-Napier-Context-Coverage-Embedded-Envelope-Delta",
+    String(comparison.contextCoverageDelta.embeddedEnvelopeDelta),
+  );
+  context.header(
     "X-Napier-Context-Coverage-Diagnostic-Count",
     String(comparison.contextCoverageDelta.diagnostics.length),
   );
