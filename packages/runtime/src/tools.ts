@@ -244,6 +244,47 @@ const applyPatchSchema = Type.Union([
     },
     { additionalProperties: false },
   ),
+  Type.Object(
+    {
+      operation: Type.Literal("hashrange_replace"),
+      path: Type.String({
+        minLength: 1,
+        description: "Workspace-relative path for an existing UTF-8 file.",
+      }),
+      expectedSha256: Type.String({
+        pattern: SHA256_PATTERN,
+        description:
+          "SHA-256 of the complete current file, obtained from read_file or read_symbol.",
+      }),
+      edits: Type.Array(
+        Type.Object(
+          {
+            startLine: Type.Integer({
+              minimum: 1,
+              description: "1-based inclusive start line from read_symbol.",
+            }),
+            endLine: Type.Integer({
+              minimum: 1,
+              description: "1-based inclusive end line from read_symbol.",
+            }),
+            rangeSha256: Type.String({
+              pattern: SHA256_PATTERN,
+              description:
+                "SHA-256 of the exact source range from read_symbol.",
+            }),
+            newText: Type.String({
+              maxLength: MAX_PATCH_BYTES,
+              description:
+                "Replacement range content. Empty text removes the range.",
+            }),
+          },
+          { additionalProperties: false },
+        ),
+        { minItems: 1, maxItems: MAX_PATCH_EDITS },
+      ),
+    },
+    { additionalProperties: false },
+  ),
 ]);
 
 export type WorkspacePatchInput =
@@ -266,6 +307,17 @@ export type WorkspacePatchInput =
       edits: Array<{
         line?: number;
         anchorSha256: string;
+        newText: string;
+      }>;
+    }
+  | {
+      operation: "hashrange_replace";
+      path: string;
+      expectedSha256: string;
+      edits: Array<{
+        startLine: number;
+        endLine: number;
+        rangeSha256: string;
         newText: string;
       }>;
     };
@@ -1209,6 +1261,74 @@ function applyHashlineEdits(
   return lines.join("\n");
 }
 
+function applyHashRangeEdits(
+  source: string,
+  edits: Array<{
+    startLine: number;
+    endLine: number;
+    rangeSha256: string;
+    newText: string;
+  }>,
+): string {
+  const lines = source.split("\n");
+  const resolvedEdits = edits.map((edit, index) => {
+    const label = `apply_patch hashrange edit ${index + 1}`;
+    if (
+      !Number.isSafeInteger(edit.startLine) ||
+      !Number.isSafeInteger(edit.endLine) ||
+      edit.startLine < 1 ||
+      edit.endLine < edit.startLine
+    ) {
+      throw new Error(`${label} line range is invalid`);
+    }
+    if (!SHA256_PATTERN_RE.test(edit.rangeSha256)) {
+      throw new Error(`${label} rangeSha256 is invalid`);
+    }
+    if (edit.newText.includes("\u0000")) {
+      throw new Error(`${label} contains a null byte`);
+    }
+    const startIndex = edit.startLine - 1;
+    const endIndex = edit.endLine - 1;
+    if (endIndex >= lines.length) {
+      throw new Error(`${label} line range exceeds ${lines.length} lines`);
+    }
+    const selected = lines.slice(startIndex, endIndex + 1).join("\n");
+    if (sha256(selected) !== edit.rangeSha256) {
+      throw new Error(`${label} rangeSha256 precondition failed`);
+    }
+    return {
+      startIndex,
+      endIndex,
+      newText: edit.newText,
+    };
+  });
+
+  const ordered = resolvedEdits
+    .slice()
+    .sort((left, right) => left.startIndex - right.startIndex);
+  for (let index = 1; index < ordered.length; index += 1) {
+    const previous = ordered[index - 1]!;
+    const current = ordered[index]!;
+    if (current.startIndex <= previous.endIndex) {
+      throw new Error(
+        `apply_patch hashrange edit ${index + 1} overlaps an earlier range`,
+      );
+    }
+  }
+
+  for (const edit of resolvedEdits
+    .slice()
+    .sort((left, right) => right.startIndex - left.startIndex)) {
+    const replacement = edit.newText.length > 0 ? edit.newText.split("\n") : [];
+    lines.splice(
+      edit.startIndex,
+      edit.endIndex - edit.startIndex + 1,
+      ...replacement,
+    );
+  }
+  return lines.join("\n");
+}
+
 async function withEditLock<T>(
   dataRoot: string,
   target: string,
@@ -1344,7 +1464,9 @@ export async function applyWorkspacePatch(
         ? input.content
         : input.operation === "replace"
           ? applyExactEdits(source, input.edits)
-          : applyHashlineEdits(source, input.edits);
+          : input.operation === "hashline_replace"
+            ? applyHashlineEdits(source, input.edits)
+            : applyHashRangeEdits(source, input.edits);
     if (updated.includes("\u0000")) {
       throw new Error("apply_patch output contains a null byte");
     }
@@ -2055,7 +2177,7 @@ export function createWorkspaceTools(
         name: "apply_patch",
         label: "Apply patch",
         description:
-          "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file, and replacements can match exact text or read_file line hash anchors. Deletion is not supported.",
+          "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file or read_symbol, and replacements can match exact text, read_file line anchors, or read_symbol range hashes. Deletion is not supported.",
         parameters: applyPatchSchema,
         async execute(_toolCallId, input) {
           const result = await applyWorkspacePatch(

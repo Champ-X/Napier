@@ -1080,6 +1080,11 @@ provided, and the complete-file SHA-256 is still checked before and immediately
 before the atomic commit. Workbench summaries render only the line range,
 line/file counts, path hash, content hash, and anchor-set hash.
 
+`apply_patch hashrange_replace` does the same for a multi-line source range:
+the caller supplies 1-based `startLine`, `endLine`, and the exact `rangeSha256`
+from `read_symbol`. Stale or overlapping ranges fail before mutation, making
+whole-symbol replacement possible without retyping the old source block.
+
 Edits are limited to 256 KiB and cannot target `.git`, `.napier`, or
 `node_modules`, follow a symlink outside the workspace, delete a file, or
 create parent directories. Local runtimes serialize each target with a

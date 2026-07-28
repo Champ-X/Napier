@@ -1553,6 +1553,11 @@ apply_patch hashline_replace
   -> require workspace policy + enabled tool + complete expected SHA-256
   -> replace lines by read_file anchor SHA-256 and optional line number
   -> reject missing, stale, duplicate, or ambiguous anchors before mutation
+apply_patch hashrange_replace
+  -> require workspace policy + enabled tool + complete expected SHA-256
+  -> replace multi-line source ranges by read_symbol range SHA-256 and
+     start/end lines
+  -> reject stale, out-of-bounds, or overlapping ranges before mutation
 all operations
   -> reject .git / .napier / node_modules and symlink path components
   -> cap output at 256 KiB and reject null bytes or no-op output

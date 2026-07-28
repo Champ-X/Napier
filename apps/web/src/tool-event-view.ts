@@ -75,7 +75,11 @@ export interface ToolEventTraceView {
   verificationStderrSha256?: string;
   verificationStdoutTruncated?: boolean;
   verificationStderrTruncated?: boolean;
-  patchOperation?: "create" | "replace" | "hashline_replace";
+  patchOperation?:
+    | "create"
+    | "replace"
+    | "hashline_replace"
+    | "hashrange_replace";
   patchPathSha256?: string;
   patchBeforeSha256?: string;
   patchAfterSha256?: string;
@@ -813,7 +817,11 @@ function integerInRange(
 
 function applyPatchEvidence(value: unknown):
   | {
-      patchOperation: "create" | "replace" | "hashline_replace";
+      patchOperation:
+        | "create"
+        | "replace"
+        | "hashline_replace"
+        | "hashrange_replace";
       patchPathSha256?: string;
       patchBeforeSha256?: string;
       patchAfterSha256?: string;
@@ -847,10 +855,11 @@ function applyPatchEvidence(value: unknown):
 
 function patchOperation(
   value: unknown,
-): "create" | "replace" | "hashline_replace" | undefined {
+): "create" | "replace" | "hashline_replace" | "hashrange_replace" | undefined {
   return value === "create" ||
     value === "replace" ||
-    value === "hashline_replace"
+    value === "hashline_replace" ||
+    value === "hashrange_replace"
     ? value
     : undefined;
 }

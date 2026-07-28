@@ -688,6 +688,66 @@ describe("workspace tools", () => {
     ).toBe("title: Draft\nstatus: verified\nnotes: keep\n");
   });
 
+  it("replaces source ranges by read_symbol range hashes", async () => {
+    const { workspaceRoot, dataRoot } = await createFixture();
+    await mkdir(path.join(workspaceRoot, "src"));
+    const target = path.join(workspaceRoot, "src/service.ts");
+    const source = [
+      "export class Service {",
+      "  run(): string {",
+      '    return "old";',
+      "  }",
+      "}",
+      "",
+      "export const untouched = true;",
+    ].join("\n");
+    await writeFile(target, source, "utf8");
+    const digest = createHash("sha256").update(source).digest("hex");
+    const range = [
+      "export class Service {",
+      "  run(): string {",
+      '    return "old";',
+      "  }",
+      "}",
+    ].join("\n");
+    const replacement = [
+      "export class Service {",
+      "  run(): string {",
+      '    return "new";',
+      "  }",
+      "",
+      "  status(): string {",
+      '    return "ok";',
+      "  }",
+      "}",
+    ].join("\n");
+
+    const updated = await applyWorkspacePatch(workspaceRoot, dataRoot, {
+      operation: "hashrange_replace",
+      path: "src/service.ts",
+      expectedSha256: digest,
+      edits: [
+        {
+          startLine: 1,
+          endLine: 5,
+          rangeSha256: createHash("sha256").update(range).digest("hex"),
+          newText: replacement,
+        },
+      ],
+    });
+
+    expect(updated).toEqual(
+      expect.objectContaining({
+        operation: "hashrange_replace",
+        beforeSha256: digest,
+        editCount: 1,
+      }),
+    );
+    expect(await readFile(target, "utf8")).toBe(
+      `${replacement}\n\nexport const untouched = true;`,
+    );
+  });
+
   it("rejects stale or ambiguous edits without changing the target", async () => {
     const { workspaceRoot, dataRoot } = await createFixture();
     const target = path.join(workspaceRoot, "state.txt");
@@ -764,6 +824,59 @@ describe("workspace tools", () => {
     );
 
     expect(await readFile(target, "utf8")).toBe("same\nchanged\nsame\n");
+  });
+
+  it("rejects stale or overlapping hashrange edits without changing the target", async () => {
+    const { workspaceRoot, dataRoot } = await createFixture();
+    const target = path.join(workspaceRoot, "range-state.ts");
+    const source = ["one", "two", "three", "four"].join("\n");
+    await writeFile(target, source, "utf8");
+    const digest = createHash("sha256").update(source).digest("hex");
+    const firstRangeSha256 = createHash("sha256")
+      .update(["one", "two"].join("\n"))
+      .digest("hex");
+    const secondRangeSha256 = createHash("sha256")
+      .update(["two", "three"].join("\n"))
+      .digest("hex");
+
+    await expect(
+      applyWorkspacePatch(workspaceRoot, dataRoot, {
+        operation: "hashrange_replace",
+        path: "range-state.ts",
+        expectedSha256: digest,
+        edits: [
+          {
+            startLine: 1,
+            endLine: 2,
+            rangeSha256: "0".repeat(64),
+            newText: "changed",
+          },
+        ],
+      }),
+    ).rejects.toThrow("rangeSha256 precondition failed");
+    await expect(
+      applyWorkspacePatch(workspaceRoot, dataRoot, {
+        operation: "hashrange_replace",
+        path: "range-state.ts",
+        expectedSha256: digest,
+        edits: [
+          {
+            startLine: 1,
+            endLine: 2,
+            rangeSha256: firstRangeSha256,
+            newText: "changed",
+          },
+          {
+            startLine: 2,
+            endLine: 3,
+            rangeSha256: secondRangeSha256,
+            newText: "also changed",
+          },
+        ],
+      }),
+    ).rejects.toThrow("overlaps");
+
+    expect(await readFile(target, "utf8")).toBe(source);
   });
 
   it("serializes concurrent writers so only one matching hash can commit", async () => {

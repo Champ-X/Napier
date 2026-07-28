@@ -392,7 +392,7 @@ describe("Tool event trace view", () => {
       details: {
         path: "TOP_SECRET_PATH",
         pathSha256: "1".repeat(64),
-        operation: "hashline_replace",
+        operation: "hashrange_replace",
         beforeSha256: "2".repeat(64),
         afterSha256: "3".repeat(64),
         beforeBytes: 42,
@@ -404,7 +404,7 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceView(event)).toEqual({
       toolName: "apply_patch",
       status: "completed",
-      patchOperation: "hashline_replace",
+      patchOperation: "hashrange_replace",
       patchPathSha256: "1".repeat(64),
       patchBeforeSha256: "2".repeat(64),
       patchAfterSha256: "3".repeat(64),
@@ -413,7 +413,7 @@ describe("Tool event trace view", () => {
       patchEditCount: 1,
     });
     expect(toolEventTraceSummary(event)).toBe(
-      `tool / apply_patch / completed / patch hashline_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)}`,
+      `tool / apply_patch / completed / patch hashrange_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)}`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

@@ -277,6 +277,10 @@ All notable changes to Napier are recorded here.
   symbol line into a bounded source range with line anchors for follow-up
   Hashline edits. Trace renders only kind, range/count metadata, truncation
   state, and path/file/name/line/signature/range/anchor hashes.
+- Added `apply_patch hashrange_replace`, allowing whole-symbol or other
+  multi-line source replacement by `read_symbol` range SHA-256 while retaining
+  complete-file preconditions, overlap checks, atomic writes, and hash-only
+  Trace summaries.
 - Trace tool summaries now surface `verify_workspace` kind/status, exit code,
   output hashes, and truncation flags without exposing verifier output or paths.
 - `verify_workspace` results now include a hash-only scope receipt over cwd and
