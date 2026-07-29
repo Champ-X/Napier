@@ -360,6 +360,9 @@ All notable changes to Napier are recorded here.
   directory artifacts. The server observes workspace bytes, returns
   `current`/`drifted`/`missing`, and records a hash-only
   `artifact.drift_checked` event before the operator chooses Mark drifted.
+- Drift check result cards now offer the next safe recovery action inline:
+  `current` results can recheck bytes, while `drifted` and `missing` results
+  can mark the artifact drifted without leaving the evidence card.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`, and `artifact.drift_checked`
   receipts remain hash-only, so recomputed portable replay hashes cannot hide

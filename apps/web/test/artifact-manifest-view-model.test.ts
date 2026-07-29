@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatArtifactSizeBytes,
+  projectArtifactDriftCheckAction,
   projectArtifactManifestActions,
   projectArtifactManifestEvidence,
 } from "../src/artifact-manifest-view-model";
@@ -111,6 +112,67 @@ describe("artifact manifest view model", () => {
   it("formats exact byte counts", () => {
     expect(formatArtifactSizeBytes(1)).toBe("1 byte");
     expect(formatArtifactSizeBytes(1024)).toBe("1,024 bytes");
+  });
+
+  it("projects drift check follow-up actions only for the matching verified artifact", () => {
+    const artifact = artifactFixture({ status: "verified", kind: "file" });
+
+    expect(
+      projectArtifactDriftCheckAction(artifact, {
+        artifactId: artifact.id,
+        result: "current",
+      }),
+    ).toEqual({
+      canRecheck: true,
+      canMarkDrifted: false,
+      nextAction: "verified",
+      hasAction: true,
+    });
+    expect(
+      projectArtifactDriftCheckAction(artifact, {
+        artifactId: artifact.id,
+        result: "drifted",
+      }),
+    ).toEqual({
+      canRecheck: false,
+      canMarkDrifted: true,
+      nextAction: "missing",
+      hasAction: true,
+    });
+    expect(
+      projectArtifactDriftCheckAction(artifact, {
+        artifactId: artifact.id,
+        result: "missing",
+      }),
+    ).toEqual({
+      canRecheck: false,
+      canMarkDrifted: true,
+      nextAction: "missing",
+      hasAction: true,
+    });
+    expect(
+      projectArtifactDriftCheckAction(artifact, {
+        artifactId: "artifact_other",
+        result: "drifted",
+      }),
+    ).toEqual({
+      canRecheck: false,
+      canMarkDrifted: false,
+      hasAction: false,
+    });
+    expect(
+      projectArtifactDriftCheckAction(
+        artifactFixture({ status: "missing", kind: "file" }),
+        {
+          artifactId: artifact.id,
+          result: "drifted",
+        },
+      ),
+    ).toEqual({
+      canRecheck: false,
+      canMarkDrifted: false,
+      hasAction: false,
+    });
   });
 });
 

@@ -19,6 +19,18 @@ export interface ArtifactManifestActionsProjection {
   hasActions: boolean;
 }
 
+export interface ArtifactDriftCheckProjectionInput {
+  artifactId: string;
+  result: "current" | "drifted" | "missing";
+}
+
+export interface ArtifactDriftCheckActionProjection {
+  canRecheck: boolean;
+  canMarkDrifted: boolean;
+  nextAction?: "verified" | "missing";
+  hasAction: boolean;
+}
+
 export function projectArtifactManifestEvidence(
   artifact: ArtifactManifestEntry,
 ): ArtifactManifestEvidenceProjection {
@@ -28,13 +40,9 @@ export function projectArtifactManifestEvidence(
       ? formatArtifactSizeBytes(artifact.sizeBytes)
       : undefined;
   return {
-    ...(digestFull
-      ? { digestFull, digestShort: digestFull.slice(0, 16) }
-      : {}),
+    ...(digestFull ? { digestFull, digestShort: digestFull.slice(0, 16) } : {}),
     ...(sizeBytesLabel ? { sizeBytesLabel } : {}),
-    hasEvidence: Boolean(
-      digestFull || sizeBytesLabel || artifact.sourceRunId,
-    ),
+    hasEvidence: Boolean(digestFull || sizeBytesLabel || artifact.sourceRunId),
   };
 }
 
@@ -75,6 +83,38 @@ export function projectArtifactManifestActions(
         canDownload ||
         canPreview ||
         canCheckDrift),
+  };
+}
+
+export function projectArtifactDriftCheckAction(
+  artifact: ArtifactManifestEntry,
+  driftCheck: ArtifactDriftCheckProjectionInput | undefined,
+): ArtifactDriftCheckActionProjection {
+  if (
+    !driftCheck ||
+    driftCheck.artifactId !== artifact.id ||
+    artifact.status !== "verified" ||
+    (artifact.kind !== "file" && artifact.kind !== "directory")
+  ) {
+    return {
+      canRecheck: false,
+      canMarkDrifted: false,
+      hasAction: false,
+    };
+  }
+  if (driftCheck.result === "current") {
+    return {
+      canRecheck: true,
+      canMarkDrifted: false,
+      nextAction: "verified",
+      hasAction: true,
+    };
+  }
+  return {
+    canRecheck: false,
+    canMarkDrifted: true,
+    nextAction: "missing",
+    hasAction: true,
   };
 }
 

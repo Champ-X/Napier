@@ -68,6 +68,7 @@ import {
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import {
   formatArtifactSizeBytes,
+  projectArtifactDriftCheckAction,
   projectArtifactManifestActions,
   projectArtifactManifestEvidence,
 } from "./artifact-manifest-view-model";
@@ -414,6 +415,7 @@ export default function PlanPanel({
     if (!threadId || !plan || artifactBusyId) return;
     setArtifactBusyId(`${artifact.id}:${action}`);
     setArtifactError(undefined);
+    setArtifactPreview(undefined);
     try {
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
         status: action,
@@ -424,6 +426,7 @@ export default function PlanPanel({
           : {}),
       });
       await onDraftApplied();
+      setArtifactDriftCheck(undefined);
     } catch (error) {
       setArtifactError(formatApiErrorMessage(error));
     } finally {
@@ -1742,6 +1745,10 @@ export default function PlanPanel({
                   actions.verifyMode === "recheck"
                     ? planCopy.artifactActions.rechecking
                     : planCopy.artifactActions.verifying;
+                const driftCheckAction = projectArtifactDriftCheckAction(
+                  artifact,
+                  artifactDriftCheck,
+                );
                 const missingLabel =
                   actions.missingMode === "drifted"
                     ? planCopy.artifactActions.markDrifted
@@ -1926,9 +1933,7 @@ export default function PlanPanel({
                             <>
                               {" / "}
                               {planCopy.observed}:{" "}
-                              <code
-                                title={artifactDriftCheck.observedSha256}
-                              >
+                              <code title={artifactDriftCheck.observedSha256}>
                                 {artifactDriftCheck.observedSha256.slice(0, 16)}
                               </code>
                             </>
@@ -1943,6 +1948,34 @@ export default function PlanPanel({
                             </>
                           ) : null}
                         </small>
+                        {driftCheckAction.hasAction ? (
+                          <div className="artifact-drift-check__actions">
+                            <button
+                              type="button"
+                              aria-label={`${
+                                driftCheckAction.canRecheck
+                                  ? verifyLabel
+                                  : missingLabel
+                              }: ${artifact.path}`}
+                              disabled={Boolean(artifactBusyId)}
+                              onClick={() =>
+                                void updateArtifact(
+                                  artifact,
+                                  driftCheckAction.nextAction ?? "missing",
+                                )
+                              }
+                            >
+                              {artifactBusyId ===
+                              `${artifact.id}:${driftCheckAction.nextAction}`
+                                ? driftCheckAction.canRecheck
+                                  ? verifyingLabel
+                                  : markingMissingLabel
+                                : driftCheckAction.canRecheck
+                                  ? verifyLabel
+                                  : missingLabel}
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </article>
@@ -2727,9 +2760,7 @@ function PlanBlueprintLibraryCard({
                   type="button"
                   disabled={busy || !selectedModelConfigured}
                   aria-describedby={
-                    !selectedModelConfigured
-                      ? modelReviewWarningId
-                      : undefined
+                    !selectedModelConfigured ? modelReviewWarningId : undefined
                   }
                   onClick={() => onReviewOutcomes(record)}
                 >
