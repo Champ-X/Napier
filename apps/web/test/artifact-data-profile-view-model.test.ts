@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { PlanArtifactDataProfile } from "../src/artifact-file-api";
-import { projectArtifactDataProfileView } from "../src/artifact-data-profile-view-model";
+import {
+  artifactDataProfileFilename,
+  projectArtifactDataProfileView,
+} from "../src/artifact-data-profile-view-model";
 
 describe("artifact data profile view model", () => {
   it("projects user-facing labels, short hashes, and stable duplicate column ids", () => {
@@ -50,6 +53,26 @@ describe("artifact data profile view model", () => {
       ],
       rows: [],
     });
+  });
+
+  it("builds path-free content-addressed download filenames", () => {
+    expect(
+      artifactDataProfileFilename(
+        dataProfileFixture({
+          artifactId: "artifact:secret/path",
+          pathSha256: "e".repeat(64),
+          sha256: "f".repeat(64),
+          sampleSha256: "1".repeat(64),
+        }),
+      ),
+    ).toBe(
+      `napier-artifact-data-profile-artifact_secret_path-${"f".repeat(12)}-${"1".repeat(12)}.json`,
+    );
+    expect(
+      artifactDataProfileFilename(dataProfileFixture({ artifactId: "." })),
+    ).toBe(
+      `napier-artifact-data-profile-artifact-${"d".repeat(12)}-${"b".repeat(12)}.json`,
+    );
   });
 });
 

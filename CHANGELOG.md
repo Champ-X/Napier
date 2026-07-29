@@ -286,6 +286,8 @@ All notable changes to Napier are recorded here.
 - `inspect_data` and Plan artifact data profiles now parse the first Markdown
   table in `.md` / `.markdown` artifacts through the same no-store sample and
   hash-only Ledger receipt boundary.
+- Plan artifact data profiles can now be downloaded from Workbench as
+  path-free JSON using artifact and sample SHA-256 evidence in the filename.
 - Added a read-only `inspect_code` workspace tool for TypeScript, JavaScript,
   Python, and Go files. It returns bounded symbol outlines to the Agent while
   Trace renders only language, symbol/line/byte counts, truncation state, and

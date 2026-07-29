@@ -77,7 +77,10 @@ import {
   projectArtifactManifestActions,
   projectArtifactManifestEvidence,
 } from "./artifact-manifest-view-model";
-import { projectArtifactDataProfileView } from "./artifact-data-profile-view-model";
+import {
+  artifactDataProfileFilename,
+  projectArtifactDataProfileView,
+} from "./artifact-data-profile-view-model";
 import {
   executionPlanArchiveFilename,
   executionPlanBlueprintFilename,
@@ -2350,6 +2353,22 @@ export default function PlanPanel({
                           <strong>
                             {planCopy.artifactActions.dataProfileTitle}
                           </strong>
+                          <button
+                            type="button"
+                            aria-label={
+                              planCopy.artifactActions.downloadDataProfile
+                            }
+                            onClick={() =>
+                              downloadJson(
+                                artifactDataProfile,
+                                artifactDataProfileFilename(
+                                  artifactDataProfile,
+                                ),
+                              )
+                            }
+                          >
+                            {planCopy.artifactActions.downloadDataProfile}
+                          </button>
                           <button
                             type="button"
                             aria-label={planCopy.artifactActions.closePreview}

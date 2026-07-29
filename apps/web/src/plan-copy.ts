@@ -106,6 +106,7 @@ export const planCopy = {
     dataProfile: "Inspect data",
     dataProfiling: "Inspecting...",
     dataProfileTitle: "Data profile",
+    downloadDataProfile: "Download profile",
     dataFormat: "Format",
     rows: "Rows",
     columns: "Columns",

@@ -54,8 +54,20 @@ export function projectArtifactDataProfileView(
   };
 }
 
+export function artifactDataProfileFilename(
+  profile: PlanArtifactDataProfile,
+): string {
+  const safeArtifactId = safeFilenameSegment(profile.artifactId, "artifact");
+  return `napier-artifact-data-profile-${safeArtifactId}-${profile.sha256.slice(0, 12)}-${profile.sampleSha256.slice(0, 12)}.json`;
+}
+
 function formatArtifactDataCell(value: ArtifactDataCell): string {
   if (value === undefined) return "";
   if (value === null) return "null";
   return String(value);
+}
+
+function safeFilenameSegment(value: string, fallback: string): string {
+  const safe = value.replace(/[^A-Za-z0-9._-]/g, "_");
+  return safe.length > 0 && safe !== "." && safe !== ".." ? safe : fallback;
 }
