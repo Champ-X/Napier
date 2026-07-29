@@ -278,6 +278,12 @@ export default function PlanPanel({
     plan && latestReplan
       ? projectReplanRecoveryProgress(plan, latestReplan)
       : undefined;
+  const canContinueLatestReplanRecovery = Boolean(
+    plan?.status === "active" &&
+    readyStep &&
+    !running &&
+    latestReplanRecoveryProgress?.readyStepIds.includes(readyStep.id),
+  );
   const replanHistorySummary =
     plan && plan.replans.length > 0
       ? projectReplanHistorySummary(plan.replans)
@@ -1609,6 +1615,16 @@ export default function PlanPanel({
                       {planCopy.statuses.missing}:{" "}
                       {latestReplanRecoveryProgress.missingArtifactCount.toLocaleString()}
                     </small>
+                    {canContinueLatestReplanRecovery ? (
+                      <button
+                        className="plan-review-action plan-apply-action"
+                        type="button"
+                        onClick={onContinue}
+                      >
+                        <ChevronRight size={12} aria-hidden="true" />
+                        {planCopy.runRecoveryStep}
+                      </button>
+                    ) : null}
                   </div>
                 ) : null}
               </div>

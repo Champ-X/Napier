@@ -279,6 +279,7 @@ describe("replan draft view model", () => {
     expect(projectReplanRecoveryProgress(plan, record)).toEqual({
       addedStepCount: 3,
       settledStepCount: 1,
+      readyStepIds: ["verify_step"],
       readyStepCount: 1,
       runningStepCount: 0,
       blockedStepCount: 1,

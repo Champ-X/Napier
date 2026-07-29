@@ -21,6 +21,7 @@ export const planCopy = {
   recoveryProgress: "Recovery progress",
   recoveryComplete: "Recovery complete",
   recoveryInProgress: "Recovery in progress",
+  runRecoveryStep: "Run recovery step",
   recoveryStepsSettled: "recovery steps settled",
   recoveryArtifactsVerified: "recovery artifacts verified",
   changes: "changes",

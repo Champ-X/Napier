@@ -378,6 +378,8 @@ All notable changes to Napier are recorded here.
 - Latest replan cards now include recovery progress for replacement work,
   counting settled added steps and verified added artifacts from current Plan
   state without introducing a second recovery status source.
+- When that recovery progress has the active ready step, the card now offers
+  `Run recovery step` inline while still using the existing Plan continue path.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`, and `artifact.drift_checked`
   receipts remain hash-only, so recomputed portable replay hashes cannot hide

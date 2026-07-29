@@ -70,6 +70,7 @@ export type ReplanArtifactRole = "added" | "superseded";
 export interface ReplanRecoveryProgressProjection {
   addedStepCount: number;
   settledStepCount: number;
+  readyStepIds: string[];
   readyStepCount: number;
   runningStepCount: number;
   blockedStepCount: number;
@@ -216,7 +217,10 @@ export function projectReplanRecoveryProgress(
   const settledStepCount = steps.filter(
     (step) => step.status === "completed" || step.status === "skipped",
   ).length;
-  const readyStepCount = steps.filter((step) => step.status === "ready").length;
+  const readyStepIds = steps
+    .filter((step) => step.status === "ready")
+    .map((step) => step.id);
+  const readyStepCount = readyStepIds.length;
   const runningStepCount = steps.filter(
     (step) => step.status === "running",
   ).length;
@@ -238,6 +242,7 @@ export function projectReplanRecoveryProgress(
   return {
     addedStepCount: record.addedStepIds.length,
     settledStepCount,
+    readyStepIds,
     readyStepCount,
     runningStepCount,
     blockedStepCount,

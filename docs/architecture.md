@@ -3248,8 +3248,11 @@ impact badges for added, superseded, and dependency-updated entities, so the
 operator can find the replacement path directly in the executable Plan surface.
 The same latest-replan card derives recovery progress from current Plan state,
 counting settled added steps and verified added artifacts without introducing a
-second recovery status source. A stale expected revision fails as a conflict
-before any plan mutation is committed.
+second recovery status source. If the active ready step is one of the latest
+replan's added recovery steps, the card exposes an inline Run recovery step
+action that reuses the normal Plan continue path rather than creating a separate
+execution route. A stale expected revision fails as a conflict before any plan
+mutation is committed.
 
 Plan REST responses are no-store and response-hash-bound:
 
