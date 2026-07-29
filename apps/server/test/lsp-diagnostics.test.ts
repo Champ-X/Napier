@@ -218,6 +218,104 @@ describe("LSP diagnostics HTTP Agent path", () => {
       "Type 'number' is not assignable to type 'string'.",
     );
   }, 30_000);
+
+  it("streams a real workspace-confined definition with hash-only evidence", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-lsp-definition-test-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const targetPath = "src/private-definition.ts";
+    const privatePreview = "privateDefinition";
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    await writeFile(
+      path.join(workspaceRoot, targetPath),
+      [
+        `function ${privatePreview}(value: string): string {`,
+        "  return value.trim();",
+        "}",
+        "",
+        `const result = ${privatePreview}(" value ");`,
+        "",
+      ].join("\n"),
+    );
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: directSandbox(),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agentId = services.store.listAgents()[0]!.id;
+    expect(
+      (
+        await app.request(`/api/agents/${agentId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolPolicy: "workspace",
+            enabledTools: ["lsp_definition"],
+          }),
+        })
+      ).status,
+    ).toBe(200);
+    const thread = await services.store.createThread({
+      title: "Server LSP definition",
+      agentId,
+    });
+    const provider = fauxProvider({ provider: "faux-server-definition" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_definition", {
+          path: targetPath,
+          line: 5,
+          character: 16,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(targetPath);
+        expect(messages).toContain(privatePreview);
+        return fauxAssistantMessage(
+          "The standard language server located the definition.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    services.models.registerProvider(provider.provider);
+
+    const response = await app.request(`/api/threads/${thread.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Locate the workspace definition.",
+        model: { provider: "faux-server-definition", id: "faux-1" },
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('"status":"completed"');
+    const events = await services.store.listEvents(thread.id);
+    const definitionEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_definition",
+    );
+    expect(definitionEvent?.payload["details"]).toEqual(
+      expect.objectContaining({
+        kind: "napier.lsp-definition",
+        status: "found",
+        definitionCount: 1,
+        omittedDefinitionCount: 0,
+      }),
+    );
+    expect(JSON.stringify(events)).not.toContain(targetPath);
+    expect(JSON.stringify(events)).not.toContain(privatePreview);
+  }, 30_000);
 });
 
 function directSandbox(): OsSandboxAdapter {

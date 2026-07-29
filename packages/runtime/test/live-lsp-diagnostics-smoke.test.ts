@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   fauxAssistantMessage,
@@ -115,6 +116,94 @@ describeLive("live LSP diagnostics smoke", () => {
     expect(JSON.stringify(toolEvents)).not.toContain(
       "Type 'number' is not assignable to type 'string'.",
     );
+    store.close();
+  }, 30_000);
+
+  it("resolves the fixed cross-file definition through the Agent sandbox", async () => {
+    const workspaceRoot = await realpath(
+      fileURLToPath(
+        new URL("../../../examples/lsp-definition/", import.meta.url),
+      ),
+    );
+    const stateRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-definition-"),
+    );
+    temporaryRoots.push(stateRoot);
+    const sourcePath = "usage.ts";
+    const targetPath = "definition.ts";
+    const sourcePreview = "formatTitle";
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(stateRoot, "data"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_definition"],
+    });
+    const thread = await store.createThread({
+      title: "Live LSP definition smoke",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "live-lsp-definition-smoke" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_definition", {
+          path: sourcePath,
+          line: 3,
+          character: 22,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(targetPath);
+        expect(messages).toContain(sourcePreview);
+        return fauxAssistantMessage(
+          "The real language server resolved the workspace definition.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Resolve the TypeScript definition through standard LSP.",
+      model: { provider: "live-lsp-definition-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const events = await store.listEvents(thread.id);
+    const completed = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_definition",
+    );
+    expect(completed?.payload["details"]).toEqual(
+      expect.objectContaining({
+        status: "found",
+        definitionCount: 1,
+        omittedDefinitionCount: 0,
+        sandbox: "macos-sandbox-exec",
+        languageServerVersion: "5.3.0",
+        typescriptVersion: "5.9.3",
+      }),
+    );
+    const durable = JSON.stringify(events);
+    expect(durable).not.toContain(sourcePath);
+    expect(durable).not.toContain(targetPath);
+    expect(durable).not.toContain(sourcePreview);
     store.close();
   }, 30_000);
 

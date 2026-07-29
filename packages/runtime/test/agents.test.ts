@@ -246,11 +246,13 @@ describe("Agent profile updates", () => {
         enabledTools: [
           "read_file",
           "lsp_diagnostics",
+          "lsp_definition",
           "run_command",
           "workspace_process",
         ],
       }).enabledTools,
     ).toEqual([
+      "lsp_definition",
       "lsp_diagnostics",
       "read_file",
       "run_command",

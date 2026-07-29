@@ -522,12 +522,77 @@ Observed result:
   original erroneous file, so the boundary failed closed and is not claimed as
   a passed live smoke in this environment.
 
-## Next Candidate
+## Completed Slice: Workspace-confined LSP Definition
 
-Re-audit P2 from the new HEAD. The next highest coding outcome is likely
-symbol/test association for edits: bind the changed symbol set and the most
-relevant bounded verification command to the same patch result, without
-inventing a TypeScript-only write primitive or claiming project-wide test
-selection before a repeatable benchmark exists. Persistent LSP
-definition/reference navigation remains a competing slice if its session
-lifecycle can be introduced without slowing one-shot Agent work.
+User scenario: an Agent that finds a TypeScript/JavaScript usage can ask the
+real language server for its definition and receive the exact workspace file,
+range, file hash, and a bounded source preview before deciding what to read or
+edit. This replaces regex-only guessing without requiring a persistent editor
+session.
+
+Acceptance:
+
+- add one opt-in `lsp_definition` Agent tool using the standard
+  `textDocument/definition` request through the existing read-only, offline OS
+  Sandbox and exact language-server/TypeScript runtime binding;
+- accept one canonical workspace TypeScript/JavaScript source path plus
+  1-based line and character, validate the position against current UTF-8
+  source bytes, and bind the request to source/file hashes;
+- share the LSP initialize/didOpen/shutdown, process termination, protocol,
+  stderr, timeout, and client-request denial infrastructure with diagnostics
+  rather than copying a second JSON-RPC lifecycle;
+- parse Location and LocationLink responses, cap results, reject malformed
+  ranges, and expose only canonical workspace-confined regular files; external,
+  protected, missing, symlinked, or oversized targets are omitted and counted;
+- return relative paths, ranges, and bounded source previews only to the live
+  Agent; durable model-call, tool, Trace, Replay, and OTLP projections retain
+  counts, hashes, versions, latency, and truncation only;
+- expose the tool through the shared Agent tool catalog, Context, Server SSE,
+  policy gate, Tool Loop Guard, automatic-recovery effect classification,
+  workspace guidance, and existing Trace surface;
+- cover cross-file definition, same-file definition, not-found, multiple and
+  malformed results, external/protected targets, position/path escape,
+  timeout, cancellation, target/runtime drift, concurrency, redaction, Replay,
+  Server SSE, and Web projection;
+- provide an opt-in real OS-Sandbox smoke and a fixed two-file example; do not
+  claim references, rename, Code Actions, persistent synchronization, or
+  external dependency navigation.
+
+Threat boundary:
+
+- A definition response is untrusted language-server output. It cannot grant
+  read/write scope, and every returned URI is independently canonicalized
+  against the workspace before source is read.
+- Standard-library, dependency, virtual, non-file, and out-of-workspace
+  definitions are omitted rather than exposing host/runtime paths.
+- Source previews are live-only and bounded. Definition paths, previews, and
+  exact symbol positions do not enter durable evidence.
+- The operation is a read effect. It does not run when the Agent omits the tool,
+  in advisor correction, or in safe automatic recovery.
+
+Observed result:
+
+- the fixed `examples/lsp-definition/` import resolves through the real
+  TypeScript language server from `usage.ts:3:22` to `definition.ts` in about
+  1.3 seconds on the current machine; a separate real fixture proves same-file
+  lookup in about 0.8 seconds;
+- the public Server SSE path resolves a real workspace-confined definition in
+  about 0.9 seconds, gives the live Agent the target path/range/preview, and
+  persists only hash/count/version/latency evidence;
+- Location, LocationLink, not-found, truncation, stable response ordering,
+  malformed ranges, external/virtual/protected/symlinked/missing/oversized/
+  invalid UTF-8 targets, path/position rejection, source/runtime drift,
+  concurrency, timeout, and cancellation are covered explicitly;
+- Agent and Replay tests prove source/target paths and preview text do not enter
+  model-call or tool evidence, while Web Trace renders only bounded counts,
+  latency, truncation, and hash prefixes;
+- the Workbench Context exposes `LSP definition` alongside diagnostics and the
+  browser console remains error-free;
+- the complete repository gate passed 910 tests with seven opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget;
+- all three opt-in OS-Sandbox LSP cases remain blocked from this IDE-launched
+  process because macOS rejects nested `sandbox-exec`. Definition produced no
+  completed tool event and write-linked diagnostics preserved the original
+  file, so the boundary failed closed and is not claimed as a passed live
+  smoke in this environment.

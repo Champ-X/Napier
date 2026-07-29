@@ -6,6 +6,19 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added workspace-confined TypeScript/JavaScript definition lookup. The opt-in
+  `lsp_definition` Agent tool sends standard `textDocument/definition`
+  requests through the existing exact-version, read-only, offline LSP Sandbox
+  lifecycle and accepts bounded Location or LocationLink results. Every target
+  URI is independently canonicalized; external, virtual, protected, missing,
+  symlinked, oversized, and invalid UTF-8 targets are omitted. Relative paths,
+  ranges, file hashes, and bounded previews remain live-only, while model-call,
+  Ledger, Replay, and Trace projections retain counts, versions, latency, and
+  stable set/result hashes. The shared Agent catalog, policy, Tool Loop Guard,
+  Context, Server SSE, Web Trace, fixed cross-file example, and opt-in real
+  OS-Sandbox smoke expose the same capability. This slice does not claim
+  references, rename, Code Actions, persistent synchronization, or external
+  dependency navigation.
 - Added write-linked TypeScript diagnostics for `apply_patch`. When a frozen
   Agent revision enables both `apply_patch` and `lsp_diagnostics`, supported
   TypeScript and JavaScript files receive automatic pre-write and post-write
@@ -28,9 +41,9 @@ All notable changes to Napier are recorded here.
   logs remain live-only; Ledger and Trace retain language, version, count,
   severity, latency, bounded protocol, runtime, file, diagnostic-set, and
   result hashes. Agent profiles, Context configuration, policy, Server SSE,
-  Tool Loop Guard, and the Web Trace projection consume the same tool. This
-  slice does not claim definitions, references, rename, Code Actions, or a
-  persistent editor session.
+  Tool Loop Guard, and the Web Trace projection consume the same tool. The
+  diagnostics operation remains one-shot and does not claim references,
+  rename, Code Actions, or a persistent editor session.
 - Added bounded input streams for explicitly interactive Workspace Process
   Sessions. Agent and operator paths can send serialized UTF-8 messages, append
   a newline, and close stdin while preserving the existing explicit-argv,

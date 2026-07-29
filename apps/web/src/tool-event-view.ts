@@ -85,6 +85,22 @@ export interface ToolEventTraceView extends CommandToolEventTraceView {
   lspDiagnosticSetSha256?: string;
   lspCodeSetSha256?: string;
   lspResultSha256?: string;
+  lspDefinitionStatus?: "found" | "not_found";
+  lspDefinitionLanguage?:
+    | "typescript"
+    | "typescriptreact"
+    | "javascript"
+    | "javascriptreact";
+  lspDefinitionCount?: number;
+  lspDefinitionOmittedCount?: number;
+  lspDefinitionTruncated?: boolean;
+  lspDefinitionDurationMs?: number;
+  lspDefinitionProtocolBytes?: number;
+  lspDefinitionSourcePathSha256?: string;
+  lspDefinitionSourceFileSha256?: string;
+  lspDefinitionSetSha256?: string;
+  lspDefinitionTargetFileSetSha256?: string;
+  lspDefinitionResultSha256?: string;
   verificationKind?: "typecheck" | "test" | "format";
   verificationStatus?: "passed" | "failed" | "timed_out" | "output_capped";
   verificationExitCode?: number;
@@ -207,6 +223,10 @@ export function toolEventTraceView(
     toolName === "lsp_diagnostics"
       ? lspDiagnosticsEvidence(event.payload["details"])
       : undefined;
+  const lspDefinition =
+    toolName === "lsp_definition"
+      ? lspDefinitionEvidence(event.payload["details"])
+      : undefined;
   const verificationEvidence =
     toolName === "verify_workspace"
       ? verificationEvidenceView(event.payload["details"])
@@ -243,6 +263,7 @@ export function toolEventTraceView(
     ...(codeEvidence ? codeEvidence : {}),
     ...(symbolSourceEvidence ? symbolSourceEvidence : {}),
     ...(lspEvidence ? lspEvidence : {}),
+    ...(lspDefinition ? lspDefinition : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
@@ -408,6 +429,46 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.lspResultSha256
       ? [`lsp-result ${view.lspResultSha256.slice(0, 12)}`]
+      : []),
+    ...(view.lspDefinitionStatus
+      ? [`definition ${view.lspDefinitionStatus}`]
+      : []),
+    ...(view.lspDefinitionLanguage
+      ? [`definition-language ${view.lspDefinitionLanguage}`]
+      : []),
+    ...(view.lspDefinitionCount !== undefined
+      ? [`definitions ${view.lspDefinitionCount}`]
+      : []),
+    ...(view.lspDefinitionOmittedCount !== undefined
+      ? [`definition-omitted ${view.lspDefinitionOmittedCount}`]
+      : []),
+    ...(view.lspDefinitionDurationMs !== undefined
+      ? [`definition-ms ${view.lspDefinitionDurationMs}`]
+      : []),
+    ...(view.lspDefinitionProtocolBytes !== undefined
+      ? [`definition-protocol ${view.lspDefinitionProtocolBytes}`]
+      : []),
+    ...(view.lspDefinitionTruncated ? ["definition-truncated"] : []),
+    ...(view.lspDefinitionSourcePathSha256
+      ? [
+          `definition-source-path ${view.lspDefinitionSourcePathSha256.slice(0, 12)}`,
+        ]
+      : []),
+    ...(view.lspDefinitionSourceFileSha256
+      ? [
+          `definition-source-file ${view.lspDefinitionSourceFileSha256.slice(0, 12)}`,
+        ]
+      : []),
+    ...(view.lspDefinitionSetSha256
+      ? [`definition-set ${view.lspDefinitionSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.lspDefinitionTargetFileSetSha256
+      ? [
+          `definition-files ${view.lspDefinitionTargetFileSetSha256.slice(0, 12)}`,
+        ]
+      : []),
+    ...(view.lspDefinitionResultSha256
+      ? [`definition-result ${view.lspDefinitionResultSha256.slice(0, 12)}`]
       : []),
     ...(view.verificationKind && view.verificationStatus
       ? [`verification ${view.verificationKind} ${view.verificationStatus}`]
@@ -943,6 +1004,89 @@ function lspDiagnosticsEvidence(value: unknown):
       : {}),
     ...(codeSetSha256 ? { lspCodeSetSha256: codeSetSha256 } : {}),
     ...(resultSha256 ? { lspResultSha256: resultSha256 } : {}),
+  };
+}
+
+function lspDefinitionEvidence(value: unknown):
+  | {
+      lspDefinitionStatus: "found" | "not_found";
+      lspDefinitionLanguage:
+        | "typescript"
+        | "typescriptreact"
+        | "javascript"
+        | "javascriptreact";
+      lspDefinitionCount: number;
+      lspDefinitionOmittedCount: number;
+      lspDefinitionTruncated?: boolean;
+      lspDefinitionDurationMs?: number;
+      lspDefinitionProtocolBytes?: number;
+      lspDefinitionSourcePathSha256?: string;
+      lspDefinitionSourceFileSha256?: string;
+      lspDefinitionSetSha256?: string;
+      lspDefinitionTargetFileSetSha256?: string;
+      lspDefinitionResultSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  if (
+    record["kind"] !== "napier.lsp-definition" ||
+    record["schemaVersion"] !== 1 ||
+    (record["status"] !== "found" && record["status"] !== "not_found") ||
+    (record["language"] !== "typescript" &&
+      record["language"] !== "typescriptreact" &&
+      record["language"] !== "javascript" &&
+      record["language"] !== "javascriptreact")
+  ) {
+    return undefined;
+  }
+  const definitionCount = integerInRange(record["definitionCount"], 0, 32);
+  const omittedCount = integerInRange(
+    record["omittedDefinitionCount"],
+    0,
+    100_000,
+  );
+  if (definitionCount === undefined || omittedCount === undefined) {
+    return undefined;
+  }
+  const durationMs = integerInRange(record["durationMs"], 0, 30_000);
+  const protocolBytes = integerInRange(
+    record["protocolBytes"],
+    0,
+    2 * 1024 * 1024,
+  );
+  const sourcePathSha256 = sha256(record["sourcePathSha256"]);
+  const sourceFileSha256 = sha256(record["sourceFileSha256"]);
+  const definitionSetSha256 = sha256(record["definitionSetSha256"]);
+  const targetFileSetSha256 = sha256(record["targetFileSetSha256"]);
+  const resultSha256 = sha256(record["resultSha256"]);
+  return {
+    lspDefinitionStatus: record["status"],
+    lspDefinitionLanguage: record["language"],
+    lspDefinitionCount: definitionCount,
+    lspDefinitionOmittedCount: omittedCount,
+    ...(record["truncated"] === true ? { lspDefinitionTruncated: true } : {}),
+    ...(durationMs !== undefined
+      ? { lspDefinitionDurationMs: durationMs }
+      : {}),
+    ...(protocolBytes !== undefined
+      ? { lspDefinitionProtocolBytes: protocolBytes }
+      : {}),
+    ...(sourcePathSha256
+      ? { lspDefinitionSourcePathSha256: sourcePathSha256 }
+      : {}),
+    ...(sourceFileSha256
+      ? { lspDefinitionSourceFileSha256: sourceFileSha256 }
+      : {}),
+    ...(definitionSetSha256
+      ? { lspDefinitionSetSha256: definitionSetSha256 }
+      : {}),
+    ...(targetFileSetSha256
+      ? { lspDefinitionTargetFileSetSha256: targetFileSetSha256 }
+      : {}),
+    ...(resultSha256 ? { lspDefinitionResultSha256: resultSha256 } : {}),
   };
 }
 

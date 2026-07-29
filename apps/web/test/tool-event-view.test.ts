@@ -225,6 +225,54 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes LSP definition evidence without paths or source previews", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_definition",
+      status: "completed",
+      effect: "read",
+      output: "TOP_SECRET_DEFINITION_SOURCE",
+      details: {
+        kind: "napier.lsp-definition",
+        schemaVersion: 1,
+        status: "found",
+        language: "typescript",
+        definitionCount: 2,
+        omittedDefinitionCount: 1,
+        truncated: true,
+        durationMs: 720,
+        protocolBytes: 2600,
+        sourcePath: "TOP_SECRET_PATH",
+        sourcePathSha256: "1".repeat(64),
+        sourceFileSha256: "2".repeat(64),
+        definitionSetSha256: "3".repeat(64),
+        targetFileSetSha256: "4".repeat(64),
+        resultSha256: "5".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "lsp_definition",
+      status: "completed",
+      effect: "read",
+      lspDefinitionStatus: "found",
+      lspDefinitionLanguage: "typescript",
+      lspDefinitionCount: 2,
+      lspDefinitionOmittedCount: 1,
+      lspDefinitionTruncated: true,
+      lspDefinitionDurationMs: 720,
+      lspDefinitionProtocolBytes: 2600,
+      lspDefinitionSourcePathSha256: "1".repeat(64),
+      lspDefinitionSourceFileSha256: "2".repeat(64),
+      lspDefinitionSetSha256: "3".repeat(64),
+      lspDefinitionTargetFileSetSha256: "4".repeat(64),
+      lspDefinitionResultSha256: "5".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / lsp_definition / completed / effect read / definition found / definition-language typescript / definitions 2 / definition-omitted 1 / definition-ms 720 / definition-protocol 2600 / definition-truncated / definition-source-path ${"1".repeat(12)} / definition-source-file ${"2".repeat(12)} / definition-set ${"3".repeat(12)} / definition-files ${"4".repeat(12)} / definition-result ${"5".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes search_files hash evidence without match text", () => {
     const event = toolEvent("tool.completed", {
       toolName: "search_files",

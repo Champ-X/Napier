@@ -1620,6 +1620,16 @@ lsp_diagnostics
   -> return source locations, codes, and messages only to the live Agent
   -> persist only language/version/count/latency plus runtime, file,
      diagnostic-set, code-set, stderr, limit, and result hashes
+lsp_definition
+  -> validate a 1-based TypeScript or JavaScript usage position
+  -> reuse the bound read-only/offline LSP process lifecycle
+  -> issue standard textDocument/definition after semantic project readiness
+  -> parse bounded Location and LocationLink results
+  -> independently canonicalize every target URI against the workspace
+  -> omit external, virtual, protected, missing, symlinked, oversized, or
+     invalid UTF-8 targets
+  -> return relative paths, ranges, hashes, and source previews live-only
+  -> persist only counts, versions, latency, truncation, and set/result hashes
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require a missing target
@@ -1663,12 +1673,13 @@ workspace, protected-segment, and symlink checks; file deletion, arbitrary
 directory operations, and permission changes remain outside this tool.
 Subagents call the read-only tool factory and never receive `apply_patch`.
 
-## TypeScript LSP Diagnostics Flow
+## TypeScript LSP Code Intelligence Flow
 
-`lsp_diagnostics` is implemented outside the oversized workspace-tool module.
-`lsp-diagnostics.ts` owns target/runtime preparation and result projection,
-`lsp-protocol-session.ts` owns the bounded JSON-RPC lifecycle, and
-`lsp-diagnostics-tool.ts` owns the Agent schema plus Ledger redaction:
+The LSP tools are implemented outside the oversized workspace-tool module.
+`lsp-diagnostics.ts` owns shared target/runtime preparation plus diagnostic
+projection, `lsp-protocol-session.ts` owns the generic bounded JSON-RPC
+lifecycle, and the diagnostic/definition tool adapters own Agent schemas plus
+Ledger redaction:
 
 ```text
 Agent selects lsp_diagnostics + workspace-relative source path
@@ -1691,6 +1702,25 @@ Agent selects lsp_diagnostics + workspace-relative source path
   -> retain counts, versions, latency, and hashes in tool.completed and Trace
 ```
 
+Definition lookup reuses that lifecycle without adding a second process or
+state system:
+
+```text
+Agent selects lsp_definition + source path + 1-based UTF-16 position
+  -> apply the same policy, path, source, runtime, Sandbox, and wall-time gates
+  -> wait for the opened target's diagnostic stream to become quiet
+  -> issue standard textDocument/definition
+  -> accept Location or LocationLink and cap the response at 32 candidates
+  -> canonicalize each file URI independently; omit every target outside the
+     current workspace or under .git / .napier / node_modules
+  -> reject malformed in-workspace ranges; read at most 1 MiB of valid UTF-8
+  -> sort canonical receipts so definition-set hashes ignore server ordering
+  -> rehash the source and bound runtime assets after protocol settlement
+  -> return relative paths, exact ranges, file hashes, and <=1,000-character
+     source previews only to the current Agent
+  -> retain counts, versions, latency, truncation, and hashes in Ledger/Trace
+```
+
 The Sandbox launch contract supports at most eight explicit absolute
 non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
 adds read-only binds, and OCI adds read-only mounts. Existing command and
@@ -1701,9 +1731,10 @@ is defined.
 The language server runs as untrusted code output inside the Capability Plane:
 diagnostic prose is not treated as instructions, related-information paths are
 discarded, workspace edits are rejected, and no package/plugin installation or
-network access is available. This first slice does not keep a persistent LSP
-session and does not expose definitions, references, symbols, rename, Code
-Actions, or project-wide synchronization.
+network access is available. Definition URIs and previews receive the same
+treatment and cannot expand read/write scope. The implementation remains
+one-shot and does not expose references, rename, Code Actions, persistent
+synchronization, external dependency navigation, or project-wide indexing.
 
 ## Write-linked Diagnostics Flow
 

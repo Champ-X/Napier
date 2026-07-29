@@ -11,6 +11,8 @@ import { sha256File } from "./command-execution.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   type LspDiagnostic,
+  type LspProtocolSessionRequest,
+  type LspProtocolSessionResult,
   MAX_LSP_DIAGNOSTICS,
   MAX_LSP_DIAGNOSTIC_MESSAGE_CHARS,
   MAX_LSP_PROTOCOL_BYTES,
@@ -18,7 +20,7 @@ import {
   runLspDiagnosticsSession,
 } from "./lsp-protocol-session.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
-import type { OsSandboxAdapter } from "./sandbox.js";
+import type { OsSandboxAdapter, SandboxedProcess } from "./sandbox.js";
 
 export {
   type LspDiagnostic,
@@ -35,7 +37,7 @@ export const MAX_LSP_DIAGNOSTIC_FILE_BYTES = 1024 * 1024;
 const MIN_LSP_DIAGNOSTICS_TIMEOUT_MS = 1_000;
 const MAX_TYPESCRIPT_RUNTIME_FILES = 512;
 const MAX_TYPESCRIPT_RUNTIME_BYTES = 64 * 1024 * 1024;
-const FIXED_ENVIRONMENT = {
+export const LSP_FIXED_ENVIRONMENT = {
   CI: "1",
   FORCE_COLOR: "0",
   LANG: "C",
@@ -84,13 +86,14 @@ export class LspDiagnosticsTargetDriftError extends Error {
   constructor(
     readonly expectedFileSha256: string,
     readonly observedFileSha256?: string,
+    label = "LSP diagnostics",
   ) {
-    super("LSP diagnostics target changed during execution");
+    super(`${label} target changed during execution`);
     this.name = "LspDiagnosticsTargetDriftError";
   }
 }
 
-interface LspRuntimeAssets {
+export interface LspRuntimeAssets {
   nodeExecutable: string;
   nodeExecutableSha256: string;
   languageServerPath: string;
@@ -109,7 +112,7 @@ interface LspRuntimeAssetOptions {
   typescriptServerPath?: string;
 }
 
-interface PreparedLspDiagnostics {
+export interface PreparedLspSource {
   workspaceRoot: string;
   target: string;
   relativePath: string;
@@ -125,44 +128,32 @@ export class LspDiagnosticsRunner {
   constructor(private readonly options: LspDiagnosticsRunnerOptions) {}
 
   async run(request: LspDiagnosticsRequest): Promise<LspDiagnosticsResult> {
-    if (request.signal?.aborted) {
-      throw new Error("LSP diagnostics were aborted");
-    }
-    const prepared = await prepareLspDiagnostics(this.options, request);
-    if (this.options.sandbox.id === "oci-container") {
-      throw new Error(
-        "LSP diagnostics require a local OS sandbox until container runtime asset identity binding is available",
-      );
-    }
-    const startedAt = Date.now();
-    const child = await this.options.sandbox.launch({
-      command: prepared.assets.nodeExecutable,
-      args: [prepared.assets.languageServerPath, "--stdio", "--log-level", "1"],
-      cwd: prepared.workspaceRoot,
-      env: { ...FIXED_ENVIRONMENT },
-      workspaceRoot: prepared.workspaceRoot,
-      approvedCapabilities: ["process.spawn", "workspace.read"],
-      runtimeReadPaths: [
-        prepared.assets.languageServerRoot,
-        prepared.assets.typescriptRoot,
-      ],
-    });
-    const execution = await runLspDiagnosticsSession(
-      child,
+    const bound = await runBoundLspSourceSession(
+      this.options,
+      request,
       {
-        workspaceRoot: prepared.workspaceRoot,
-        target: prepared.target,
-        language: prepared.language,
-        source: prepared.source,
-        timeoutMs: prepared.timeoutMs,
-        typescriptServerPath: prepared.assets.typescriptServerPath,
+        label: "LSP diagnostics",
+        abortedMessage: "LSP diagnostics were aborted",
       },
-      request.signal,
+      async (child, protocolRequest, signal) => {
+        const execution = await runLspDiagnosticsSession(
+          child,
+          protocolRequest,
+          signal,
+        );
+        return {
+          value: {
+            diagnostics: execution.diagnostics,
+            truncated: execution.truncated,
+          },
+          protocolBytes: execution.protocolBytes,
+          stderr: execution.stderr,
+          stderrTruncated: execution.stderrTruncated,
+        };
+      },
     );
-    await assertLspTargetStable(prepared.target, prepared.fileSha256);
-    await assertLspRuntimeStable(prepared.assets);
-    const durationMs = Math.max(0, Date.now() - startedAt);
-    const diagnostics = execution.diagnostics;
+    const { prepared, execution, durationMs } = bound;
+    const diagnostics = execution.value.diagnostics;
     const codeSet = [
       ...new Set(
         diagnostics
@@ -189,7 +180,7 @@ export class LspDiagnosticsRunner {
       fileBytes: prepared.fileBytes,
       diagnosticCount: diagnostics.length,
       ...counts,
-      truncated: execution.truncated,
+      truncated: execution.value.truncated,
       diagnosticSetSha256,
       codeSetSha256: sha256(canonicalJson(codeSet)),
       nodeExecutableSha256: prepared.assets.nodeExecutableSha256,
@@ -197,7 +188,7 @@ export class LspDiagnosticsRunner {
       languageServerSha256: prepared.assets.languageServerSha256,
       typescriptVersion: prepared.assets.typescriptVersion,
       typescriptServerSha256: prepared.assets.typescriptServerSha256,
-      environmentSha256: sha256(canonicalJson(FIXED_ENVIRONMENT)),
+      environmentSha256: sha256(canonicalJson(LSP_FIXED_ENVIRONMENT)),
       resourceLimitsSha256: sha256(
         canonicalJson({
           timeoutMs: prepared.timeoutMs,
@@ -227,17 +218,82 @@ export class LspDiagnosticsRunner {
   }
 }
 
-async function prepareLspDiagnostics(
+export async function runBoundLspSourceSession<T>(
   options: LspDiagnosticsRunnerOptions,
   request: LspDiagnosticsRequest,
-): Promise<PreparedLspDiagnostics> {
+  labels: { label: string; abortedMessage: string },
+  operation: (
+    child: SandboxedProcess,
+    request: LspProtocolSessionRequest,
+    signal?: AbortSignal,
+  ) => Promise<LspProtocolSessionResult<T>>,
+  validatePrepared?: (prepared: PreparedLspSource) => void,
+): Promise<{
+  prepared: PreparedLspSource;
+  execution: LspProtocolSessionResult<T>;
+  durationMs: number;
+}> {
+  if (request.signal?.aborted) {
+    throw new Error(labels.abortedMessage);
+  }
+  const prepared = await prepareLspSource(options, request, labels.label);
+  validatePrepared?.(prepared);
+  if (options.sandbox.id === "oci-container") {
+    throw new Error(
+      `${labels.label} requires a local OS sandbox until container runtime asset identity binding is available`,
+    );
+  }
+  const startedAt = Date.now();
+  const child = await options.sandbox.launch({
+    command: prepared.assets.nodeExecutable,
+    args: [prepared.assets.languageServerPath, "--stdio", "--log-level", "1"],
+    cwd: prepared.workspaceRoot,
+    env: { ...LSP_FIXED_ENVIRONMENT },
+    workspaceRoot: prepared.workspaceRoot,
+    approvedCapabilities: ["process.spawn", "workspace.read"],
+    runtimeReadPaths: [
+      prepared.assets.languageServerRoot,
+      prepared.assets.typescriptRoot,
+    ],
+  });
+  const execution = await operation(
+    child,
+    {
+      ...labels,
+      workspaceRoot: prepared.workspaceRoot,
+      target: prepared.target,
+      language: prepared.language,
+      source: prepared.source,
+      timeoutMs: prepared.timeoutMs,
+      typescriptServerPath: prepared.assets.typescriptServerPath,
+    },
+    request.signal,
+  );
+  await assertLspTargetStable(
+    prepared.target,
+    prepared.fileSha256,
+    labels.label,
+  );
+  await assertLspRuntimeStable(prepared.assets, labels.label);
+  return {
+    prepared,
+    execution,
+    durationMs: Math.max(0, Date.now() - startedAt),
+  };
+}
+
+async function prepareLspSource(
+  options: LspDiagnosticsRunnerOptions,
+  request: LspDiagnosticsRequest,
+  label: string,
+): Promise<PreparedLspSource> {
   if (
     !request.path ||
     path.isAbsolute(request.path) ||
     request.path.length > 500 ||
     /[\u0000-\u001f\u007f]/u.test(request.path)
   ) {
-    throw new Error("LSP diagnostics path must be workspace-relative");
+    throw new Error(`${label} path must be workspace-relative`);
   }
   const timeoutMs = request.timeoutMs ?? DEFAULT_LSP_DIAGNOSTICS_TIMEOUT_MS;
   if (
@@ -246,13 +302,13 @@ async function prepareLspDiagnostics(
     timeoutMs > MAX_LSP_DIAGNOSTICS_TIMEOUT_MS
   ) {
     throw new Error(
-      `LSP diagnostics timeoutMs must be ${MIN_LSP_DIAGNOSTICS_TIMEOUT_MS}-${MAX_LSP_DIAGNOSTICS_TIMEOUT_MS}`,
+      `${label} timeoutMs must be ${MIN_LSP_DIAGNOSTICS_TIMEOUT_MS}-${MAX_LSP_DIAGNOSTICS_TIMEOUT_MS}`,
     );
   }
   const workspaceRoot = await realpath(path.resolve(options.workspaceRoot));
   const lexicalTarget = path.resolve(workspaceRoot, request.path);
   if (!isPathInside(lexicalTarget, workspaceRoot)) {
-    throw new Error("LSP diagnostics path escapes the workspace");
+    throw new Error(`${label} path escapes the workspace`);
   }
   const relativePath = path.relative(workspaceRoot, lexicalTarget);
   if (
@@ -261,34 +317,32 @@ async function prepareLspDiagnostics(
       .filter(Boolean)
       .some(isProtectedWorkspacePathSegment)
   ) {
-    throw new Error("LSP diagnostics path targets a protected workspace root");
+    throw new Error(`${label} path targets a protected workspace root`);
   }
   const target = await realpath(lexicalTarget);
   if (path.resolve(target) !== path.resolve(lexicalTarget)) {
-    throw new Error("LSP diagnostics path must not traverse a symlink");
+    throw new Error(`${label} path must not traverse a symlink`);
   }
   if (!isPathInside(target, workspaceRoot)) {
-    throw new Error("LSP diagnostics path resolves outside the workspace");
+    throw new Error(`${label} path resolves outside the workspace`);
   }
   const info = await stat(target);
-  if (!info.isFile()) throw new Error("LSP diagnostics path must be a file");
+  if (!info.isFile()) throw new Error(`${label} path must be a file`);
   if (info.size > MAX_LSP_DIAGNOSTIC_FILE_BYTES) {
     throw new Error(
-      `LSP diagnostics supports files up to ${MAX_LSP_DIAGNOSTIC_FILE_BYTES} bytes`,
+      `${label} supports files up to ${MAX_LSP_DIAGNOSTIC_FILE_BYTES} bytes`,
     );
   }
   const language = lspDiagnosticLanguageForPath(relativePath);
   if (!language) {
-    throw new Error(
-      "LSP diagnostics supports TypeScript and JavaScript source files",
-    );
+    throw new Error(`${label} supports TypeScript and JavaScript source files`);
   }
   const buffer = await readFile(target);
   let source: string;
   try {
     source = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
   } catch {
-    throw new Error("LSP diagnostics target must be valid UTF-8");
+    throw new Error(`${label} target must be valid UTF-8`);
   }
   return {
     workspaceRoot,
@@ -359,7 +413,10 @@ async function resolveLspRuntimeAssets(
   };
 }
 
-async function assertLspRuntimeStable(assets: LspRuntimeAssets): Promise<void> {
+async function assertLspRuntimeStable(
+  assets: LspRuntimeAssets,
+  label: string,
+): Promise<void> {
   const current = await resolveLspRuntimeAssets({
     nodeExecutable: assets.nodeExecutable,
     languageServerPath: assets.languageServerPath,
@@ -372,24 +429,30 @@ async function assertLspRuntimeStable(assets: LspRuntimeAssets): Promise<void> {
     current.typescriptVersion !== assets.typescriptVersion ||
     current.typescriptServerSha256 !== assets.typescriptServerSha256
   ) {
-    throw new Error("LSP diagnostics runtime assets changed during execution");
+    throw new Error(`${label} runtime assets changed during execution`);
   }
 }
 
 async function assertLspTargetStable(
   target: string,
   expectedFileSha256: string,
+  label: string,
 ): Promise<void> {
   let observedFileSha256: string | undefined;
   try {
     observedFileSha256 = await sha256File(target);
   } catch {
-    throw new LspDiagnosticsTargetDriftError(expectedFileSha256);
+    throw new LspDiagnosticsTargetDriftError(
+      expectedFileSha256,
+      undefined,
+      label,
+    );
   }
   if (observedFileSha256 !== expectedFileSha256) {
     throw new LspDiagnosticsTargetDriftError(
       expectedFileSha256,
       observedFileSha256,
+      label,
     );
   }
 }

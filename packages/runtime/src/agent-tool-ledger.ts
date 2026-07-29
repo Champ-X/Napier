@@ -6,6 +6,11 @@ import {
   lspDiagnosticsToolOutputLedgerProjection,
 } from "./lsp-diagnostics-tool.js";
 import {
+  lspDefinitionToolCallArgumentsLedgerProjection,
+  lspDefinitionToolInputLedgerProjection,
+  lspDefinitionToolOutputLedgerProjection,
+} from "./lsp-definition-tool.js";
+import {
   commandToolCallArgumentsLedgerProjection,
   commandToolInputLedgerProjection,
   commandToolOutputLedgerProjection,
@@ -36,6 +41,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "lsp_definition") {
+    return lspDefinitionToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "apply_patch") {
     return workspacePatchToolCallArgumentsLedgerProjection(args);
   }
@@ -60,6 +68,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolInputLedgerProjection(args);
+  }
+  if (toolName === "lsp_definition") {
+    return lspDefinitionToolInputLedgerProjection(args);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolInputLedgerProjection(args);
@@ -86,6 +97,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "lsp_definition") {
+    return lspDefinitionToolOutputLedgerProjection(output, result);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolOutputLedgerProjection(output, result);

@@ -27,6 +27,8 @@ export * from "./independent-model-advisor.js";
 export * from "./inspector-packages.js";
 export * from "./lsp-diagnostics.js";
 export * from "./lsp-diagnostics-tool.js";
+export * from "./lsp-definition.js";
+export * from "./lsp-definition-tool.js";
 export * from "./lsp-patch-diagnostics.js";
 export * from "./memory.js";
 export * from "./model-advisor.js";

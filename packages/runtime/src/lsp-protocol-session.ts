@@ -31,6 +31,8 @@ export interface LspDiagnostic {
 }
 
 export interface LspProtocolSessionRequest {
+  label: string;
+  abortedMessage: string;
   workspaceRoot: string;
   target: string;
   language: LspDiagnosticLanguage;
@@ -39,17 +41,24 @@ export interface LspProtocolSessionRequest {
   typescriptServerPath: string;
 }
 
-export async function runLspDiagnosticsSession(
-  child: SandboxedProcess,
-  request: LspProtocolSessionRequest,
-  signal?: AbortSignal,
-): Promise<{
-  diagnostics: LspDiagnostic[];
-  truncated: boolean;
+export interface LspProtocolSessionResult<T> {
+  value: T;
   protocolBytes: number;
   stderr: string;
   stderrTruncated: boolean;
-}> {
+}
+
+export type PrepareLspProtocolOperation<T> = (
+  connection: MessageConnection,
+  targetUri: string,
+) => () => Promise<T>;
+
+export async function runLspProtocolSession<T>(
+  child: SandboxedProcess,
+  request: LspProtocolSessionRequest,
+  prepareOperation: PrepareLspProtocolOperation<T>,
+  signal?: AbortSignal,
+): Promise<LspProtocolSessionResult<T>> {
   let protocolBytes = 0;
   let stderr = "";
   let stderrTruncated = false;
@@ -68,7 +77,7 @@ export async function runLspDiagnosticsSession(
   const onStdoutData = (chunk: Buffer | string): void => {
     protocolBytes += Buffer.byteLength(chunk);
     if (protocolBytes > MAX_LSP_PROTOCOL_BYTES) {
-      fail("LSP diagnostics exceeded its protocol output limit");
+      fail(`${request.label} exceeded its protocol output limit`);
     }
   };
   const onStderrData = (chunk: Buffer | string): void => {
@@ -78,7 +87,7 @@ export async function runLspDiagnosticsSession(
     stderr += text.slice(0, Math.max(0, remaining));
     if (text.length > remaining) {
       stderrTruncated = true;
-      fail("LSP diagnostics exceeded its stderr limit");
+      fail(`${request.label} exceeded its stderr limit`);
     }
   };
   child.stdout.on("data", onStdoutData);
@@ -87,29 +96,29 @@ export async function runLspDiagnosticsSession(
     new StreamMessageReader(child.stdout),
     new StreamMessageWriter(child.stdin),
   );
-  connection.onError(() => fail("LSP diagnostics protocol failed"));
+  connection.onError(() => fail(`${request.label} protocol failed`));
   connection.onClose(() => {
-    if (!shuttingDown) fail("LSP diagnostics server closed unexpectedly");
+    if (!shuttingDown) fail(`${request.label} server closed unexpectedly`);
   });
   registerClientHandlers(connection, request.workspaceRoot);
-  const diagnostics = diagnosticsNotification(
+  const collect = prepareOperation(
     connection,
     pathToFileURL(request.target).href,
   );
   connection.listen();
-  const abort = (): void => fail("LSP diagnostics were aborted");
+  const abort = (): void => fail(request.abortedMessage);
   signal?.addEventListener("abort", abort, { once: true });
   if (signal?.aborted) abort();
   const timeout = setTimeout(
-    () => fail("LSP diagnostics timed out"),
+    () => fail(`${request.label} timed out`),
     request.timeoutMs,
   );
   void child.exit.then((exit) => {
     if (!shuttingDown) {
       fail(
         exit.code === 0
-          ? "LSP diagnostics server exited before publishing diagnostics"
-          : "LSP diagnostics server failed",
+          ? `${request.label} server exited before completing the request`
+          : `${request.label} server failed`,
       );
     }
   });
@@ -122,6 +131,7 @@ export async function runLspDiagnosticsSession(
         capabilities: {
           workspace: { configuration: false, workspaceFolders: true },
           textDocument: {
+            definition: { linkSupport: true },
             publishDiagnostics: {
               relatedInformation: false,
               tagSupport: { valueSet: [1, 2] },
@@ -152,7 +162,7 @@ export async function runLspDiagnosticsSession(
         text: request.source,
       },
     });
-    const published = await raceFailure(diagnostics, failure);
+    const value = await raceFailure(collect(), failure);
     shuttingDown = true;
     await raceFailure(connection.sendRequest("shutdown"), failure);
     await connection.sendNotification("exit");
@@ -165,11 +175,11 @@ export async function runLspDiagnosticsSession(
     if (!exit) {
       await child.terminate();
     } else if (exit.code !== 0) {
-      throw new Error("LSP diagnostics server failed during shutdown");
+      throw new Error(`${request.label} server failed during shutdown`);
     }
     completed = true;
     return {
-      ...published,
+      value,
       protocolBytes,
       stderr,
       stderrTruncated,
@@ -183,6 +193,34 @@ export async function runLspDiagnosticsSession(
     child.stderr.off("data", onStderrData);
     await child.terminate().catch(() => undefined);
   }
+}
+
+export async function runLspDiagnosticsSession(
+  child: SandboxedProcess,
+  request: LspProtocolSessionRequest,
+  signal?: AbortSignal,
+): Promise<{
+  diagnostics: LspDiagnostic[];
+  truncated: boolean;
+  protocolBytes: number;
+  stderr: string;
+  stderrTruncated: boolean;
+}> {
+  const result = await runLspProtocolSession(
+    child,
+    request,
+    (connection, targetUri) => {
+      const diagnostics = diagnosticsNotification(connection, targetUri);
+      return () => diagnostics;
+    },
+    signal,
+  );
+  return {
+    ...result.value,
+    protocolBytes: result.protocolBytes,
+    stderr: result.stderr,
+    stderrTruncated: result.stderrTruncated,
+  };
 }
 
 function registerClientHandlers(

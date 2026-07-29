@@ -90,6 +90,7 @@ import {
   parseMemoryProposalResponse,
 } from "./memory.js";
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
+import { createLspDefinitionTool } from "./lsp-definition-tool.js";
 import { LspWorkspacePatchObserver } from "./lsp-patch-diagnostics.js";
 import {
   createModelContextEnvelopeReceipt,
@@ -1199,6 +1200,19 @@ export class AgentRuntime {
     ) {
       tools.push(
         createLspDiagnosticsTool({
+          workspaceRoot: this.store.workspaceRoot,
+          sandbox: this.verificationSandbox,
+        }),
+      );
+    }
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("lsp_definition")
+    ) {
+      tools.push(
+        createLspDefinitionTool({
           workspaceRoot: this.store.workspaceRoot,
           sandbox: this.verificationSandbox,
         }),
@@ -3341,6 +3355,7 @@ function builtInToolEffect(
     toolName === "inspect_code" ||
     toolName === "read_symbol" ||
     toolName === "lsp_diagnostics" ||
+    toolName === "lsp_definition" ||
     toolName === "workspace_file_preview" ||
     toolName === "run_command" ||
     toolName === "verify_workspace" ||
