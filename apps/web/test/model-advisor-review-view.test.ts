@@ -25,9 +25,11 @@ describe("independent Model Advisor review views", () => {
           planCompleted: true,
           planArtifactVerified: true,
           goalSatisfied: true,
+          recoveryCompleted: true,
           planCompletedAfterWorkspaceWrite: false,
           planArtifactVerifiedAfterWorkspaceWrite: false,
           goalSatisfiedAfterWorkspaceWrite: false,
+          recoveryCompletedAfterInterruption: false,
           latestWorkspaceWriteSeq: 13,
           latestPassedVerificationSeq: 12,
           latestPlanCompletedSeq: 11,
@@ -36,6 +38,9 @@ describe("independent Model Advisor review views", () => {
           latestPlanArtifactInvalidatedSeq: 14,
           latestGoalSatisfiedSeq: 9,
           latestGoalInvalidatedSeq: 15,
+          latestRecoveryCompletedSeq: 8,
+          latestRunInterruptedSeq: 16,
+          latestRecoveryInvalidatedSeq: 17,
         },
         modelContextEnvelope: {
           contentSha256: "c".repeat(64),
@@ -71,9 +76,11 @@ describe("independent Model Advisor review views", () => {
         planCompleted: true,
         planArtifactVerified: true,
         goalSatisfied: true,
+        recoveryCompleted: true,
         planCompletedAfterWorkspaceWrite: false,
         planArtifactVerifiedAfterWorkspaceWrite: false,
         goalSatisfiedAfterWorkspaceWrite: false,
+        recoveryCompletedAfterInterruption: false,
         latestWorkspaceWriteSeq: 13,
         latestPassedVerificationSeq: 12,
         latestPlanCompletedSeq: 11,
@@ -82,6 +89,9 @@ describe("independent Model Advisor review views", () => {
         latestPlanArtifactInvalidatedSeq: 14,
         latestGoalSatisfiedSeq: 9,
         latestGoalInvalidatedSeq: 15,
+        latestRecoveryCompletedSeq: 8,
+        latestRunInterruptedSeq: 16,
+        latestRecoveryInvalidatedSeq: 17,
         modelContextEnvelopeSha256: "c".repeat(64),
         contentSha256: "b".repeat(64),
       },
@@ -92,7 +102,7 @@ describe("independent Model Advisor review views", () => {
       }),
     ]);
     expect(independentModelAdvisorVerificationState(views[0]!)).toBe(
-      "checks stale / passed / w#13 / v#12 / plan stale / plan#11 / plan-invalidated#14 / artifact stale / artifact#10 / artifact-invalidated#14 / goal stale / goal#9 / goal-invalidated#15",
+      "checks stale / passed / w#13 / v#12 / plan stale / plan#11 / plan-invalidated#14 / artifact stale / artifact#10 / artifact-invalidated#14 / goal stale / goal#9 / goal-invalidated#15 / recovery stale / recovery#8 / run-interrupted#16 / recovery-invalidated#17",
     );
     expect(views[1]).not.toHaveProperty("modelContextEnvelopeSha256");
   });

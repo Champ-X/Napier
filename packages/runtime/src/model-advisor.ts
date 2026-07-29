@@ -76,6 +76,13 @@ const GOAL_COMPLETION_CLAIM_PATTERNS = [
   /(?:目标|任务目标).{0,18}(?:完成|已完成|满足|已满足|达成|已达成)/u,
 ];
 
+const RECOVERY_COMPLETION_CLAIM_PATTERNS = [
+  /\b(?:recovery|recover|restoration|resume|resumption)\b.{0,40}\b(?:completed|complete|done|succeeded|successful|finished)\b/iu,
+  /\b(?:completed|complete|done|succeeded|successful|finished)\b.{0,40}\b(?:recovery|recover|restoration|resume|resumption)\b/iu,
+  /\b(?:recovered|resumed)\s+(?:successfully|cleanly)\b/iu,
+  /(?:恢复|自动恢复|故障恢复).{0,18}(?:完成|已完成|成功|已成功|闭环)/u,
+];
+
 const DESTRUCTIVE_COMMAND_PATTERNS = [
   /\bgit\s+reset\s+--hard\b/iu,
   /\bgit\s+checkout\s+--\s+\S+/iu,
@@ -352,6 +359,10 @@ function createVerificationClaimDiagnostic(
     assistantText,
     GOAL_COMPLETION_CLAIM_PATTERNS,
   );
+  const recoveryCompletionClaimCount = countPatternHits(
+    assistantText,
+    RECOVERY_COMPLETION_CLAIM_PATTERNS,
+  );
   const unsupportedVerificationClaimCount =
     evidence.verificationToolPassedAfterWorkspaceWrite
       ? 0
@@ -364,11 +375,16 @@ function createVerificationClaimDiagnostic(
       : artifactVerificationClaimCount;
   const unsupportedGoalCompletionClaimCount =
     evidence.goalSatisfiedAfterWorkspaceWrite ? 0 : goalCompletionClaimCount;
+  const unsupportedRecoveryCompletionClaimCount =
+    evidence.recoveryCompletedAfterInterruption
+      ? 0
+      : recoveryCompletionClaimCount;
   const matchCount =
     unsupportedVerificationClaimCount +
     unsupportedPlanCompletionClaimCount +
     unsupportedArtifactVerificationClaimCount +
-    unsupportedGoalCompletionClaimCount;
+    unsupportedGoalCompletionClaimCount +
+    unsupportedRecoveryCompletionClaimCount;
   if (matchCount === 0) {
     return undefined;
   }
@@ -382,10 +398,12 @@ function createVerificationClaimDiagnostic(
       planCompletionClaimCount,
       artifactVerificationClaimCount,
       goalCompletionClaimCount,
+      recoveryCompletionClaimCount,
       unsupportedVerificationClaimCount,
       unsupportedPlanCompletionClaimCount,
       unsupportedArtifactVerificationClaimCount,
       unsupportedGoalCompletionClaimCount,
+      unsupportedRecoveryCompletionClaimCount,
       verificationToolCompleted: evidence.verificationToolCompleted,
       verificationToolPassed: evidence.verificationToolPassed,
       workspaceWriteCompleted: evidence.workspaceWriteCompleted,
@@ -394,12 +412,15 @@ function createVerificationClaimDiagnostic(
       planCompleted: evidence.planCompleted,
       planArtifactVerified: evidence.planArtifactVerified,
       goalSatisfied: evidence.goalSatisfied,
+      recoveryCompleted: evidence.recoveryCompleted,
       planCompletedAfterWorkspaceWrite:
         evidence.planCompletedAfterWorkspaceWrite,
       planArtifactVerifiedAfterWorkspaceWrite:
         evidence.planArtifactVerifiedAfterWorkspaceWrite,
       goalSatisfiedAfterWorkspaceWrite:
         evidence.goalSatisfiedAfterWorkspaceWrite,
+      recoveryCompletedAfterInterruption:
+        evidence.recoveryCompletedAfterInterruption,
       latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq,
       latestPassedVerificationSeq: evidence.latestPassedVerificationSeq,
       latestPlanCompletedSeq: evidence.latestPlanCompletedSeq,
@@ -409,6 +430,9 @@ function createVerificationClaimDiagnostic(
         evidence.latestPlanArtifactInvalidatedSeq,
       latestGoalSatisfiedSeq: evidence.latestGoalSatisfiedSeq,
       latestGoalInvalidatedSeq: evidence.latestGoalInvalidatedSeq,
+      latestRecoveryCompletedSeq: evidence.latestRecoveryCompletedSeq,
+      latestRunInterruptedSeq: evidence.latestRunInterruptedSeq,
+      latestRecoveryInvalidatedSeq: evidence.latestRecoveryInvalidatedSeq,
       toolCompletedCount: evidence.toolCompletedCount,
     },
   );

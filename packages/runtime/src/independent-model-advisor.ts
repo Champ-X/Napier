@@ -516,10 +516,13 @@ export function createIndependentModelAdvisorEvidenceSummary(
     planCompleted: evidence.planCompleted,
     planArtifactVerified: evidence.planArtifactVerified,
     goalSatisfied: evidence.goalSatisfied,
+    recoveryCompleted: evidence.recoveryCompleted,
     planCompletedAfterWorkspaceWrite: evidence.planCompletedAfterWorkspaceWrite,
     planArtifactVerifiedAfterWorkspaceWrite:
       evidence.planArtifactVerifiedAfterWorkspaceWrite,
     goalSatisfiedAfterWorkspaceWrite: evidence.goalSatisfiedAfterWorkspaceWrite,
+    recoveryCompletedAfterInterruption:
+      evidence.recoveryCompletedAfterInterruption,
     ...(evidence.latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq }
       : {}),
@@ -548,6 +551,15 @@ export function createIndependentModelAdvisorEvidenceSummary(
       : {}),
     ...(evidence.latestGoalInvalidatedSeq !== undefined
       ? { latestGoalInvalidatedSeq: evidence.latestGoalInvalidatedSeq }
+      : {}),
+    ...(evidence.latestRecoveryCompletedSeq !== undefined
+      ? { latestRecoveryCompletedSeq: evidence.latestRecoveryCompletedSeq }
+      : {}),
+    ...(evidence.latestRunInterruptedSeq !== undefined
+      ? { latestRunInterruptedSeq: evidence.latestRunInterruptedSeq }
+      : {}),
+    ...(evidence.latestRecoveryInvalidatedSeq !== undefined
+      ? { latestRecoveryInvalidatedSeq: evidence.latestRecoveryInvalidatedSeq }
       : {}),
     milestoneCount: evidence.milestoneCount,
     operatorDecisionRequested: evidence.operatorDecisionRequested,
@@ -842,9 +854,11 @@ function parseEvidenceSummary(
     "planCompleted",
     "planArtifactVerified",
     "goalSatisfied",
+    "recoveryCompleted",
     "planCompletedAfterWorkspaceWrite",
     "planArtifactVerifiedAfterWorkspaceWrite",
     "goalSatisfiedAfterWorkspaceWrite",
+    "recoveryCompletedAfterInterruption",
     "milestoneCount",
     "operatorDecisionRequested",
   ];
@@ -857,6 +871,9 @@ function parseEvidenceSummary(
     "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
     "latestGoalInvalidatedSeq",
+    "latestRecoveryCompletedSeq",
+    "latestRunInterruptedSeq",
+    "latestRecoveryInvalidatedSeq",
   ];
   const keys = Object.keys(value);
   if (
@@ -900,6 +917,10 @@ function parseEvidenceSummary(
       "planArtifactVerified",
     ),
     goalSatisfied: booleanField(summary["goalSatisfied"], "goalSatisfied"),
+    recoveryCompleted: booleanField(
+      summary["recoveryCompleted"],
+      "recoveryCompleted",
+    ),
     planCompletedAfterWorkspaceWrite: booleanField(
       summary["planCompletedAfterWorkspaceWrite"],
       "planCompletedAfterWorkspaceWrite",
@@ -911,6 +932,10 @@ function parseEvidenceSummary(
     goalSatisfiedAfterWorkspaceWrite: booleanField(
       summary["goalSatisfiedAfterWorkspaceWrite"],
       "goalSatisfiedAfterWorkspaceWrite",
+    ),
+    recoveryCompletedAfterInterruption: booleanField(
+      summary["recoveryCompletedAfterInterruption"],
+      "recoveryCompletedAfterInterruption",
     ),
     ...(summary["latestWorkspaceWriteSeq"] !== undefined
       ? {
@@ -973,6 +998,30 @@ function parseEvidenceSummary(
           latestGoalInvalidatedSeq: boundedCount(
             summary["latestGoalInvalidatedSeq"],
             "latestGoalInvalidatedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestRecoveryCompletedSeq"] !== undefined
+      ? {
+          latestRecoveryCompletedSeq: boundedCount(
+            summary["latestRecoveryCompletedSeq"],
+            "latestRecoveryCompletedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestRunInterruptedSeq"] !== undefined
+      ? {
+          latestRunInterruptedSeq: boundedCount(
+            summary["latestRunInterruptedSeq"],
+            "latestRunInterruptedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestRecoveryInvalidatedSeq"] !== undefined
+      ? {
+          latestRecoveryInvalidatedSeq: boundedCount(
+            summary["latestRecoveryInvalidatedSeq"],
+            "latestRecoveryInvalidatedSeq",
           ),
         }
       : {}),

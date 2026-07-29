@@ -201,9 +201,11 @@ export interface IndependentModelAdvisorEvidenceSummary {
   planCompleted: boolean;
   planArtifactVerified: boolean;
   goalSatisfied: boolean;
+  recoveryCompleted: boolean;
   planCompletedAfterWorkspaceWrite: boolean;
   planArtifactVerifiedAfterWorkspaceWrite: boolean;
   goalSatisfiedAfterWorkspaceWrite: boolean;
+  recoveryCompletedAfterInterruption: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
@@ -212,6 +214,9 @@ export interface IndependentModelAdvisorEvidenceSummary {
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
   latestGoalInvalidatedSeq?: number;
+  latestRecoveryCompletedSeq?: number;
+  latestRunInterruptedSeq?: number;
+  latestRecoveryInvalidatedSeq?: number;
   milestoneCount: number;
   operatorDecisionRequested: boolean;
 }
@@ -262,9 +267,11 @@ export interface ModelAdvisorEvidence {
   planCompleted: boolean;
   planArtifactVerified: boolean;
   goalSatisfied: boolean;
+  recoveryCompleted: boolean;
   planCompletedAfterWorkspaceWrite: boolean;
   planArtifactVerifiedAfterWorkspaceWrite: boolean;
   goalSatisfiedAfterWorkspaceWrite: boolean;
+  recoveryCompletedAfterInterruption: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
@@ -273,6 +280,9 @@ export interface ModelAdvisorEvidence {
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
   latestGoalInvalidatedSeq?: number;
+  latestRecoveryCompletedSeq?: number;
+  latestRunInterruptedSeq?: number;
+  latestRecoveryInvalidatedSeq?: number;
 }
 
 export interface ModelAdvisorNoticePayload {

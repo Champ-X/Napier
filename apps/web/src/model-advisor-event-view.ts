@@ -20,9 +20,11 @@ export interface ModelAdvisorEventTraceView {
   planCompleted?: boolean;
   planArtifactVerified?: boolean;
   goalSatisfied?: boolean;
+  recoveryCompleted?: boolean;
   planCompletedAfterWorkspaceWrite?: boolean;
   planArtifactVerifiedAfterWorkspaceWrite?: boolean;
   goalSatisfiedAfterWorkspaceWrite?: boolean;
+  recoveryCompletedAfterInterruption?: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
@@ -31,6 +33,9 @@ export interface ModelAdvisorEventTraceView {
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
   latestGoalInvalidatedSeq?: number;
+  latestRecoveryCompletedSeq?: number;
+  latestRunInterruptedSeq?: number;
+  latestRecoveryInvalidatedSeq?: number;
   textSha256?: string;
   candidateTextSha256?: string;
   diagnosticSetSha256?: string;
@@ -105,6 +110,7 @@ export function modelAdvisorEventTraceView(
   const planCompleted = booleanValue(evidence["planCompleted"]);
   const planArtifactVerified = booleanValue(evidence["planArtifactVerified"]);
   const goalSatisfied = booleanValue(evidence["goalSatisfied"]);
+  const recoveryCompleted = booleanValue(evidence["recoveryCompleted"]);
   const planCompletedAfterWorkspaceWrite = booleanValue(
     evidence["planCompletedAfterWorkspaceWrite"],
   );
@@ -113,6 +119,9 @@ export function modelAdvisorEventTraceView(
   );
   const goalSatisfiedAfterWorkspaceWrite = booleanValue(
     evidence["goalSatisfiedAfterWorkspaceWrite"],
+  );
+  const recoveryCompletedAfterInterruption = booleanValue(
+    evidence["recoveryCompletedAfterInterruption"],
   );
   const latestWorkspaceWriteSeq = nonNegativeInteger(
     evidence["latestWorkspaceWriteSeq"],
@@ -137,6 +146,15 @@ export function modelAdvisorEventTraceView(
   );
   const latestGoalInvalidatedSeq = nonNegativeInteger(
     evidence["latestGoalInvalidatedSeq"],
+  );
+  const latestRecoveryCompletedSeq = nonNegativeInteger(
+    evidence["latestRecoveryCompletedSeq"],
+  );
+  const latestRunInterruptedSeq = nonNegativeInteger(
+    evidence["latestRunInterruptedSeq"],
+  );
+  const latestRecoveryInvalidatedSeq = nonNegativeInteger(
+    evidence["latestRecoveryInvalidatedSeq"],
   );
   const textSha256 = sha256(event.payload["textSha256"]);
   const candidateTextSha256 = sha256(event.payload["candidateTextSha256"]);
@@ -184,6 +202,7 @@ export function modelAdvisorEventTraceView(
     ...(planCompleted !== undefined ? { planCompleted } : {}),
     ...(planArtifactVerified !== undefined ? { planArtifactVerified } : {}),
     ...(goalSatisfied !== undefined ? { goalSatisfied } : {}),
+    ...(recoveryCompleted !== undefined ? { recoveryCompleted } : {}),
     ...(planCompletedAfterWorkspaceWrite !== undefined
       ? { planCompletedAfterWorkspaceWrite }
       : {}),
@@ -192,6 +211,9 @@ export function modelAdvisorEventTraceView(
       : {}),
     ...(goalSatisfiedAfterWorkspaceWrite !== undefined
       ? { goalSatisfiedAfterWorkspaceWrite }
+      : {}),
+    ...(recoveryCompletedAfterInterruption !== undefined
+      ? { recoveryCompletedAfterInterruption }
       : {}),
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
@@ -212,6 +234,13 @@ export function modelAdvisorEventTraceView(
     ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
     ...(latestGoalInvalidatedSeq !== undefined
       ? { latestGoalInvalidatedSeq }
+      : {}),
+    ...(latestRecoveryCompletedSeq !== undefined
+      ? { latestRecoveryCompletedSeq }
+      : {}),
+    ...(latestRunInterruptedSeq !== undefined ? { latestRunInterruptedSeq } : {}),
+    ...(latestRecoveryInvalidatedSeq !== undefined
+      ? { latestRecoveryInvalidatedSeq }
       : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
     ...(issueSetSha256 ? { issueSetSha256 } : {}),
@@ -348,6 +377,33 @@ export function modelAdvisorEventTraceSummary(
                   view.latestGoalInvalidatedSeq !== undefined)
               ? "goal-satisfaction-stale"
               : "goal-satisfaction-not-current",
+        ]
+      : []),
+    ...(view.recoveryCompleted !== undefined
+      ? [
+          view.recoveryCompleted
+            ? "recovery-completed"
+            : "recovery-not-completed",
+        ]
+      : []),
+    ...(view.latestRecoveryCompletedSeq !== undefined
+      ? [`recovery-completed-seq ${view.latestRecoveryCompletedSeq}`]
+      : []),
+    ...(view.latestRunInterruptedSeq !== undefined
+      ? [`run-interrupted-seq ${view.latestRunInterruptedSeq}`]
+      : []),
+    ...(view.latestRecoveryInvalidatedSeq !== undefined
+      ? [`recovery-invalidated-seq ${view.latestRecoveryInvalidatedSeq}`]
+      : []),
+    ...(view.recoveryCompletedAfterInterruption !== undefined
+      ? [
+          view.recoveryCompletedAfterInterruption
+            ? "recovery-completion-current"
+            : view.recoveryCompleted &&
+                (view.latestRunInterruptedSeq !== undefined ||
+                  view.latestRecoveryInvalidatedSeq !== undefined)
+              ? "recovery-completion-stale"
+              : "recovery-completion-not-current",
         ]
       : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),

@@ -332,9 +332,11 @@ const SAFE_EVENT_EVIDENCE_SUMMARY_ATTRIBUTE_KEYS = new Set(
     "planCompleted",
     "planArtifactVerified",
     "goalSatisfied",
+    "recoveryCompleted",
     "planCompletedAfterWorkspaceWrite",
     "planArtifactVerifiedAfterWorkspaceWrite",
     "goalSatisfiedAfterWorkspaceWrite",
+    "recoveryCompletedAfterInterruption",
     "latestWorkspaceWriteSeq",
     "latestPassedVerificationSeq",
     "latestPlanCompletedSeq",
@@ -343,6 +345,9 @@ const SAFE_EVENT_EVIDENCE_SUMMARY_ATTRIBUTE_KEYS = new Set(
     "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
     "latestGoalInvalidatedSeq",
+    "latestRecoveryCompletedSeq",
+    "latestRunInterruptedSeq",
+    "latestRecoveryInvalidatedSeq",
     "milestoneCount",
     "operatorDecisionRequested",
   ].map((key) => `napier.event.payload.evidence_summary_${camelToSnake(key)}`),
@@ -1186,6 +1191,9 @@ function evidenceSummaryPayloadAttributes(
     "latestPlanArtifactInvalidatedSeq",
     "latestGoalSatisfiedSeq",
     "latestGoalInvalidatedSeq",
+    "latestRecoveryCompletedSeq",
+    "latestRunInterruptedSeq",
+    "latestRecoveryInvalidatedSeq",
     "milestoneCount",
   ]) {
     const value = evidence[key];
@@ -1206,9 +1214,11 @@ function evidenceSummaryPayloadAttributes(
     "planCompleted",
     "planArtifactVerified",
     "goalSatisfied",
+    "recoveryCompleted",
     "planCompletedAfterWorkspaceWrite",
     "planArtifactVerifiedAfterWorkspaceWrite",
     "goalSatisfiedAfterWorkspaceWrite",
+    "recoveryCompletedAfterInterruption",
     "operatorDecisionRequested",
   ]) {
     const value = evidence[key];

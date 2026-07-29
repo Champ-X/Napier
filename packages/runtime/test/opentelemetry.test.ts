@@ -292,9 +292,11 @@ describe("OpenTelemetry trace export", () => {
         planCompleted: true,
         planArtifactVerified: true,
         goalSatisfied: true,
+        recoveryCompleted: true,
         planCompletedAfterWorkspaceWrite: false,
         planArtifactVerifiedAfterWorkspaceWrite: false,
         goalSatisfiedAfterWorkspaceWrite: false,
+        recoveryCompletedAfterInterruption: false,
         latestWorkspaceWriteSeq: 9,
         latestPassedVerificationSeq: 8,
         latestPlanCompletedSeq: 7,
@@ -303,6 +305,9 @@ describe("OpenTelemetry trace export", () => {
         latestPlanArtifactInvalidatedSeq: 4,
         latestGoalSatisfiedSeq: 5,
         latestGoalInvalidatedSeq: 10,
+        latestRecoveryCompletedSeq: 11,
+        latestRunInterruptedSeq: 12,
+        latestRecoveryInvalidatedSeq: 13,
         milestoneCount: 1,
         operatorDecisionRequested: false,
       },
@@ -723,6 +728,36 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.evidence_summary_latest_goal_invalidated_seq",
       ),
     ).toBe(10);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_recovery_completed",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_recovery_completed_after_interruption",
+      ),
+    ).toBe(false);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_recovery_completed_seq",
+      ),
+    ).toBe(11);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_run_interrupted_seq",
+      ),
+    ).toBe(12);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_recovery_invalidated_seq",
+      ),
+    ).toBe(13);
     expect(
       attributeValue(
         advisorEvent.attributes,

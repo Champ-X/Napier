@@ -484,6 +484,88 @@ describe("model advisor stream lint", () => {
     );
   });
 
+  it("flags recovery completion claims without recovery ledger evidence", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The automatic recovery completed successfully.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          recoveryCompleted: false,
+          recoveryCompletedAfterInterruption: false,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("suppresses recovery completion claims after current recovery completion", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The automatic recovery completed successfully.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        runEvent(1, "run.interrupted", {
+          status: "interrupted",
+        }),
+        runEvent(2, "run.recovery.auto.completed", {
+          status: "completed",
+          recoveryAttemptId: "recovery_1",
+        }),
+      ],
+    });
+
+    expect(notice).toBeUndefined();
+  });
+
+  it("marks recovery completion evidence stale after later interruption or failed recovery", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The recovery completed successfully.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        runEvent(1, "run.recovery.auto.completed", {
+          status: "completed",
+          recoveryAttemptId: "recovery_1",
+        }),
+        runEvent(2, "run.interrupted", {
+          status: "interrupted",
+        }),
+        runEvent(3, "run.recovery.auto.failed", {
+          status: "failed",
+          recoveryAttemptId: "recovery_2",
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          recoveryCompleted: true,
+          recoveryCompletedAfterInterruption: false,
+          latestRecoveryCompletedSeq: 1,
+          latestRunInterruptedSeq: 2,
+          latestRecoveryInvalidatedSeq: 3,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("flags destructive command references without copying text", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "Never run git reset --hard here.",
@@ -752,6 +834,27 @@ function goalEvent(seq: number, payload: Record<string, unknown>): RunEvent {
     seq,
     type: "goal.evaluated",
     category: "goal",
+    visibility: "user",
+    createdAt: "2026-07-27T00:00:00.000Z",
+    payload,
+  };
+}
+
+function runEvent(
+  seq: number,
+  type:
+    | "run.interrupted"
+    | "run.recovery.auto.completed"
+    | "run.recovery.auto.failed",
+  payload: Record<string, unknown>,
+): RunEvent {
+  return {
+    id: `evt_${seq}`,
+    threadId: "thread_1",
+    runId: "run_1",
+    seq,
+    type,
+    category: "lifecycle",
     visibility: "user",
     createdAt: "2026-07-27T00:00:00.000Z",
     payload,

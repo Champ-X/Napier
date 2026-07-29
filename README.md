@@ -781,8 +781,11 @@ claims require a `plan.artifact.verified` event after the latest workspace
 write with no later artifact invalidation such as `plan.artifact.missing` or
 `plan.artifact.superseded`. Goal-complete claims require a satisfied
 `goal.evaluated` event after the latest workspace write with no later
-unsatisfied goal evaluation. Stale or missing evidence records a hash-only
-`model.advisor.notice` before the visible assistant message.
+unsatisfied goal evaluation. Recovery-complete claims require a
+`run.recovery.completed` or `run.recovery.auto.completed` event after the
+latest interruption or recovery invalidation. Stale or missing evidence
+records a hash-only `model.advisor.notice` before the visible assistant
+message.
 
 An Agent can add a distinct `modelAdvisor.reviewModel` to review every final
 candidate turn before `message.assistant` is committed. The reviewer receives

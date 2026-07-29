@@ -8,9 +8,11 @@ export interface ModelAdvisorVerificationEvidence {
   planCompleted: boolean;
   planArtifactVerified: boolean;
   goalSatisfied: boolean;
+  recoveryCompleted: boolean;
   planCompletedAfterWorkspaceWrite: boolean;
   planArtifactVerifiedAfterWorkspaceWrite: boolean;
   goalSatisfiedAfterWorkspaceWrite: boolean;
+  recoveryCompletedAfterInterruption: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
@@ -19,6 +21,9 @@ export interface ModelAdvisorVerificationEvidence {
   latestPlanArtifactInvalidatedSeq?: number;
   latestGoalSatisfiedSeq?: number;
   latestGoalInvalidatedSeq?: number;
+  latestRecoveryCompletedSeq?: number;
+  latestRunInterruptedSeq?: number;
+  latestRecoveryInvalidatedSeq?: number;
 }
 
 export function isVerifyWorkspaceCompletion(event: RunEvent): boolean {
@@ -130,6 +135,31 @@ export function isGoalInvalidationEvent(event: RunEvent): boolean {
   );
 }
 
+export function isRecoveryCompletionEvent(event: RunEvent): boolean {
+  return (
+    event.type === "run.recovery.completed" ||
+    event.type === "run.recovery.auto.completed"
+  );
+}
+
+export function isRunInterruptionEvent(event: RunEvent): boolean {
+  return event.type === "run.interrupted";
+}
+
+export function isRecoveryInvalidationEvent(event: RunEvent): boolean {
+  return (
+    event.type === "run.recovery.started" ||
+    event.type === "run.recovery.failed" ||
+    event.type === "run.recovery.prompt" ||
+    event.type === "run.recovery.auto.skipped" ||
+    event.type === "run.recovery.auto.claimed" ||
+    event.type === "run.recovery.auto.started" ||
+    event.type === "run.recovery.auto.failed" ||
+    event.type === "run.recovery.auto.interrupted" ||
+    event.type === "run.recovery.auto.abandoned"
+  );
+}
+
 export function createModelAdvisorVerificationEvidence(
   events: RunEvent[],
 ): ModelAdvisorVerificationEvidence {
@@ -153,6 +183,15 @@ export function createModelAdvisorVerificationEvidence(
   );
   const latestGoalSatisfiedSeq = latestSeq(events, isGoalSatisfiedEvent);
   const latestGoalInvalidatedSeq = latestSeq(events, isGoalInvalidationEvent);
+  const latestRecoveryCompletedSeq = latestSeq(
+    events,
+    isRecoveryCompletionEvent,
+  );
+  const latestRunInterruptedSeq = latestSeq(events, isRunInterruptionEvent);
+  const latestRecoveryInvalidatedSeq = latestSeq(
+    events,
+    isRecoveryInvalidationEvent,
+  );
   const verificationToolPassedAfterWorkspaceWrite =
     latestPassedVerificationSeq !== undefined &&
     (latestWorkspaceWriteSeq === undefined ||
@@ -175,6 +214,12 @@ export function createModelAdvisorVerificationEvidence(
       latestGoalSatisfiedSeq > latestGoalInvalidatedSeq) &&
     (latestWorkspaceWriteSeq === undefined ||
       latestGoalSatisfiedSeq > latestWorkspaceWriteSeq);
+  const recoveryCompletedAfterInterruption =
+    latestRecoveryCompletedSeq !== undefined &&
+    (latestRunInterruptedSeq === undefined ||
+      latestRecoveryCompletedSeq > latestRunInterruptedSeq) &&
+    (latestRecoveryInvalidatedSeq === undefined ||
+      latestRecoveryCompletedSeq > latestRecoveryInvalidatedSeq);
   return {
     verificationToolCompleted: events.some(isVerifyWorkspaceCompletion),
     verificationToolPassed: latestPassedVerificationSeq !== undefined,
@@ -183,9 +228,11 @@ export function createModelAdvisorVerificationEvidence(
     planCompleted: latestPlanCompletedSeq !== undefined,
     planArtifactVerified: latestPlanArtifactVerifiedSeq !== undefined,
     goalSatisfied: latestGoalSatisfiedSeq !== undefined,
+    recoveryCompleted: latestRecoveryCompletedSeq !== undefined,
     planCompletedAfterWorkspaceWrite,
     planArtifactVerifiedAfterWorkspaceWrite,
     goalSatisfiedAfterWorkspaceWrite,
+    recoveryCompletedAfterInterruption,
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
       : {}),
@@ -205,6 +252,15 @@ export function createModelAdvisorVerificationEvidence(
     ...(latestGoalSatisfiedSeq !== undefined ? { latestGoalSatisfiedSeq } : {}),
     ...(latestGoalInvalidatedSeq !== undefined
       ? { latestGoalInvalidatedSeq }
+      : {}),
+    ...(latestRecoveryCompletedSeq !== undefined
+      ? { latestRecoveryCompletedSeq }
+      : {}),
+    ...(latestRunInterruptedSeq !== undefined
+      ? { latestRunInterruptedSeq }
+      : {}),
+    ...(latestRecoveryInvalidatedSeq !== undefined
+      ? { latestRecoveryInvalidatedSeq }
       : {}),
   };
 }
