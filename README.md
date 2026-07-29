@@ -1503,7 +1503,9 @@ recomputes the snapshot content hash, event-stream hash, metrics, assistant
 output hash, Independent Advisor `evidenceSummary`, and URL thread/run binding
 without mutating state. Run Lab exposes the same verifier as an upload action,
 binding archived replay JSON to the active Thread before an operator trusts it
-for evidence review or CI regression checks. Replay and comparison responses
+for evidence review or CI regression checks. Downloaded replay filenames include
+the stable content hash prefix so local archives remain content-addressable
+outside the browser. Replay and comparison responses
 also mirror duration,
 message/model/tool/subagent counts, token/cache counts, cost USD, output-text
 hash, and right-minus-left metric deltas in headers for budget and quality

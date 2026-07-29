@@ -1974,6 +1974,7 @@ select terminal run
   -> hash the ordered event stream with SHA-256
   -> hash stable snapshot content independently of generatedAt
   -> return a schema-versioned self-contained replay snapshot
+  -> Run Lab downloads the JSON as napier-<runId>-replay-<content-hash>.json
   -> mirror no-store response content hash, stable snapshot hash,
      event-stream hash, run/thread IDs, event count, first/last event sequence,
      usage/cost, duration, model/tool/message/subagent counts, and output-text

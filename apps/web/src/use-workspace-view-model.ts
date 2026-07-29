@@ -94,6 +94,7 @@ import type {
 } from "./extension-package-types";
 import { formatApiErrorMessage } from "./api-error";
 import { selectedModelAvailability } from "./model-selection-view-model";
+import { runReplaySnapshotFilename } from "./run-replay-view-model";
 
 export type InspectorTab =
   | "trace"
@@ -399,8 +400,7 @@ export function useWorkspaceViewModel() {
     [detail?.runs],
   );
   const selectedModel = useMemo(
-    () =>
-      selectedModelAvailability(bootstrap?.models ?? [], selectedModelKey),
+    () => selectedModelAvailability(bootstrap?.models ?? [], selectedModelKey),
     [bootstrap?.models, selectedModelKey],
   );
   const contextCheckpoint = useMemo(
@@ -1805,8 +1805,7 @@ export function useWorkspaceViewModel() {
           artifact,
           `napier-otel-${runId ?? detail.thread.id}-${artifact.contentSha256.slice(0, 12)}.json`,
         );
-        const eventAnchorSetSha256 =
-          eventAnchorSetSha256FromArtifact(artifact);
+        const eventAnchorSetSha256 = eventAnchorSetSha256FromArtifact(artifact);
         setTraceExportReceipt({
           scope: runId ? "run" : "thread",
           traceId: artifact.traceId,
@@ -1884,7 +1883,7 @@ export function useWorkspaceViewModel() {
       setError(undefined);
       try {
         const snapshot = await getRunReplay(detail.thread.id, runId);
-        downloadJson(snapshot, `napier-${runId}-replay.json`);
+        downloadJson(snapshot, runReplaySnapshotFilename(snapshot));
       } catch (exportError) {
         setError(toErrorMessage(exportError));
       } finally {
