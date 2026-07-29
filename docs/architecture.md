@@ -3531,6 +3531,9 @@ receipt shape, so raw preview text or paths in the event payload fail closed.
 Thread replay bundle and Run replay snapshot validation apply the same
 hash-only artifact receipt boundary, preventing recomputed portable replay
 hashes from smuggling preview text or raw artifact paths into exported evidence.
+SQLite restore also checks the same boundary for every persisted Thread event,
+so a locally modified ledger row cannot reintroduce raw preview content on
+startup.
 Every accepted state change is appended to the Thread ledger. The HTTP API and
 internal Agent tool share the same `plan.artifact.*` payload builder, which
 also emits `pathSha256` and `evidenceSha256` companions for hash-only Trace

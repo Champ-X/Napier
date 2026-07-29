@@ -521,6 +521,71 @@ describe("transactional LocalStore", () => {
     );
   });
 
+  it("fails closed on raw persisted artifact preview text during restore", async () => {
+    const options = await createOptions();
+    const first = await openStore(options);
+    const agent = first.listAgents()[0]!;
+    const thread = await first.createThread({
+      title: "Artifact receipt restore validation",
+      agentId: agent.id,
+    });
+    const run = await first.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const previewText = "# Report\n\nDo not restore this raw text.\n";
+    const previewSha256 = sha256(previewText);
+    const event = await first.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.previewed",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: "plan_restore_preview",
+        artifactId: "artifact_restore_report",
+        planRevision: 1,
+        status: "verified",
+        kind: "file",
+        pathSha256: sha256("report.md"),
+        sha256: previewSha256,
+        sizeBytes: Buffer.byteLength(previewText),
+        lineCount: previewText.split(/\r\n|\r|\n/u).length,
+        textSha256: previewSha256,
+      },
+    });
+    first.close();
+    openStores.splice(openStores.indexOf(first), 1);
+
+    const clean = await openStore(options);
+    clean.close();
+    openStores.splice(openStores.indexOf(clean), 1);
+
+    const databasePath = path.join(options.dataRoot, LEDGER_DATABASE_FILENAME);
+    const database = new DatabaseSync(databasePath);
+    const row = database
+      .prepare(
+        "SELECT event_json FROM ledger_events WHERE thread_id = ? AND seq = ?",
+      )
+      .get(thread.id, event.seq) as { event_json: string };
+    const persistedEvent = JSON.parse(row.event_json) as {
+      payload: Record<string, unknown>;
+    };
+    persistedEvent.payload.text = previewText;
+    database
+      .prepare(
+        "UPDATE ledger_events SET event_json = ? WHERE thread_id = ? AND seq = ?",
+      )
+      .run(JSON.stringify(persistedEvent), thread.id, event.seq);
+    database.close();
+
+    const reopened = new LocalStore(options);
+    openStores.push(reopened);
+    await expect(reopened.initialize()).rejects.toThrow(
+      "hash-only artifact receipt is invalid",
+    );
+  });
+
   it("fails closed on invalid persisted imported Thread provenance", async () => {
     const options = await createOptions();
     const first = await openStore(options);

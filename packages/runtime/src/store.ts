@@ -469,6 +469,7 @@ import {
   transitionPlanStep,
   updateArtifactManifest,
 } from "./plans.js";
+import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import {
   createExecutionPlanBlueprintRecord,
   executionPlanRequestFromBlueprint,
@@ -11439,6 +11440,12 @@ export class LocalStore {
       }
       if (thread.importProvenance) {
         validateThreadImportProvenanceLedgerReceipt(thread, threadEvents);
+      }
+      for (const [index, event] of threadEvents.entries()) {
+        assertArtifactReceiptEventBoundary(
+          event,
+          `Persisted Thread ${thread.id} events[${index}]`,
+        );
       }
       assertRunEvaluationCompletedEventBindings({
         evaluations: this.state.evaluations.filter(

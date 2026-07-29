@@ -360,6 +360,9 @@ All notable changes to Napier are recorded here.
   `artifact.exported` and `artifact.previewed` receipts remain hash-only, so
   recomputed portable replay hashes cannot hide raw artifact paths or preview
   text in exported evidence.
+- SQLite restore now applies the same hash-only artifact receipt boundary to
+  persisted Thread events, rejecting locally modified ledger rows that smuggle
+  raw preview text back into startup state.
 - Thread replay bundle validation now recomputes Independent Advisor
   `evidenceSummary` from predecessor Run events, so a forged current/stale
   summary fails even if review and bundle hashes are recalculated.
