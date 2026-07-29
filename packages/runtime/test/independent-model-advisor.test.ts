@@ -67,11 +67,11 @@ describe("independent Model Advisor", () => {
     expect(prompt.user).toContain('"latestWorkspaceWriteSeq":2');
   });
 
-  it("reports plan, artifact, goal, and recovery freshness evidence", () => {
+  it("reports plan, artifact, goal, recovery, and evaluation freshness evidence", () => {
     const prompt = buildIndependentModelAdvisorPrompt({
       turnPrompt: "Report delivery state.",
       candidateText:
-        "The plan is complete, the artifact is verified, the goal is complete, and recovery completed successfully.",
+        "The plan is complete, the artifact is verified, the goal is complete, recovery completed successfully, and the evaluation suite passed.",
       candidateModel: { provider: "worker", id: "worker-1" },
       runEvents: [
         event(1, "plan.artifact.verified", { status: "verified" }, "plan"),
@@ -107,7 +107,19 @@ describe("independent Model Advisor", () => {
           { status: "failed" },
           "lifecycle",
         ),
-        event(9, "tool.completed", {
+        event(
+          9,
+          "evaluation.suite.completed",
+          { status: "passed" },
+          "evaluation",
+        ),
+        event(
+          10,
+          "evaluation.suite.completed",
+          { status: "failed" },
+          "evaluation",
+        ),
+        event(11, "tool.completed", {
           toolName: "apply_patch",
           status: "completed",
         }),
@@ -118,6 +130,8 @@ describe("independent Model Advisor", () => {
     expect(prompt.user).toContain('"planArtifactVerified":true');
     expect(prompt.user).toContain('"goalSatisfied":true');
     expect(prompt.user).toContain('"recoveryCompleted":true');
+    expect(prompt.user).toContain('"evaluationCompleted":true');
+    expect(prompt.user).toContain('"evaluationPassed":true');
     expect(prompt.user).toContain('"planCompletedAfterWorkspaceWrite":false');
     expect(prompt.user).toContain(
       '"planArtifactVerifiedAfterWorkspaceWrite":false',
@@ -126,6 +140,10 @@ describe("independent Model Advisor", () => {
     expect(prompt.user).toContain(
       '"recoveryCompletedAfterInterruption":false',
     );
+    expect(prompt.user).toContain(
+      '"evaluationCompletedAfterWorkspaceWrite":false',
+    );
+    expect(prompt.user).toContain('"evaluationPassedAfterWorkspaceWrite":false');
     expect(prompt.user).toContain('"latestPlanCompletedSeq":2');
     expect(prompt.user).toContain('"latestPlanInvalidatedSeq":4');
     expect(prompt.user).toContain('"latestPlanArtifactVerifiedSeq":1');
@@ -135,6 +153,9 @@ describe("independent Model Advisor", () => {
     expect(prompt.user).toContain('"latestRunInterruptedSeq":6');
     expect(prompt.user).toContain('"latestRecoveryCompletedSeq":7');
     expect(prompt.user).toContain('"latestRecoveryInvalidatedSeq":8');
+    expect(prompt.user).toContain('"latestEvaluationPassedSeq":9');
+    expect(prompt.user).toContain('"latestEvaluationCompletedSeq":10');
+    expect(prompt.user).toContain('"latestEvaluationPassInvalidatedSeq":10');
   });
 
   it("uses a zero-tool reviewer and persists only hash-bound guidance", async () => {
@@ -192,10 +213,14 @@ describe("independent Model Advisor", () => {
           planArtifactVerified: false,
           goalSatisfied: false,
           recoveryCompleted: false,
+          evaluationCompleted: false,
+          evaluationPassed: false,
           planCompletedAfterWorkspaceWrite: false,
           planArtifactVerifiedAfterWorkspaceWrite: false,
           goalSatisfiedAfterWorkspaceWrite: false,
           recoveryCompletedAfterInterruption: false,
+          evaluationCompletedAfterWorkspaceWrite: false,
+          evaluationPassedAfterWorkspaceWrite: false,
           milestoneCount: 0,
           operatorDecisionRequested: false,
         }),

@@ -293,10 +293,14 @@ describe("OpenTelemetry trace export", () => {
         planArtifactVerified: true,
         goalSatisfied: true,
         recoveryCompleted: true,
+        evaluationCompleted: true,
+        evaluationPassed: true,
         planCompletedAfterWorkspaceWrite: false,
         planArtifactVerifiedAfterWorkspaceWrite: false,
         goalSatisfiedAfterWorkspaceWrite: false,
         recoveryCompletedAfterInterruption: false,
+        evaluationCompletedAfterWorkspaceWrite: false,
+        evaluationPassedAfterWorkspaceWrite: false,
         latestWorkspaceWriteSeq: 9,
         latestPassedVerificationSeq: 8,
         latestPlanCompletedSeq: 7,
@@ -308,6 +312,9 @@ describe("OpenTelemetry trace export", () => {
         latestRecoveryCompletedSeq: 11,
         latestRunInterruptedSeq: 12,
         latestRecoveryInvalidatedSeq: 13,
+        latestEvaluationPassedSeq: 14,
+        latestEvaluationPassInvalidatedSeq: 15,
+        latestEvaluationCompletedSeq: 16,
         milestoneCount: 1,
         operatorDecisionRequested: false,
       },
@@ -758,6 +765,48 @@ describe("OpenTelemetry trace export", () => {
         "napier.event.payload.evidence_summary_latest_recovery_invalidated_seq",
       ),
     ).toBe(13);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_evaluation_completed",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_evaluation_passed",
+      ),
+    ).toBe(true);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_evaluation_completed_after_workspace_write",
+      ),
+    ).toBe(false);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_evaluation_passed_after_workspace_write",
+      ),
+    ).toBe(false);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_evaluation_completed_seq",
+      ),
+    ).toBe(16);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_evaluation_passed_seq",
+      ),
+    ).toBe(14);
+    expect(
+      attributeValue(
+        advisorEvent.attributes,
+        "napier.event.payload.evidence_summary_latest_evaluation_pass_invalidated_seq",
+      ),
+    ).toBe(15);
     expect(
       attributeValue(
         advisorEvent.attributes,

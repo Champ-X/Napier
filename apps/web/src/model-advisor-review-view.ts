@@ -39,10 +39,14 @@ export interface IndependentModelAdvisorReviewView {
   planArtifactVerified?: boolean;
   goalSatisfied?: boolean;
   recoveryCompleted?: boolean;
+  evaluationCompleted?: boolean;
+  evaluationPassed?: boolean;
   planCompletedAfterWorkspaceWrite?: boolean;
   planArtifactVerifiedAfterWorkspaceWrite?: boolean;
   goalSatisfiedAfterWorkspaceWrite?: boolean;
   recoveryCompletedAfterInterruption?: boolean;
+  evaluationCompletedAfterWorkspaceWrite?: boolean;
+  evaluationPassedAfterWorkspaceWrite?: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
@@ -54,6 +58,9 @@ export interface IndependentModelAdvisorReviewView {
   latestRecoveryCompletedSeq?: number;
   latestRunInterruptedSeq?: number;
   latestRecoveryInvalidatedSeq?: number;
+  latestEvaluationCompletedSeq?: number;
+  latestEvaluationPassedSeq?: number;
+  latestEvaluationPassInvalidatedSeq?: number;
   modelContextEnvelopeSha256?: string;
   contentSha256: string;
 }
@@ -195,6 +202,21 @@ function completionFreshnessParts(
       review.latestGoalInvalidatedSeq,
     ),
     ...recoveryFreshnessPart(review),
+    ...completionFreshnessPart(
+      "evaluation",
+      review.evaluationCompleted,
+      review.evaluationCompletedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestEvaluationCompletedSeq,
+    ),
+    ...completionFreshnessPart(
+      "evaluation-pass",
+      review.evaluationPassed,
+      review.evaluationPassedAfterWorkspaceWrite,
+      review.workspaceWriteCompleted,
+      review.latestEvaluationPassedSeq,
+      review.latestEvaluationPassInvalidatedSeq,
+    ),
   ];
 }
 
@@ -291,10 +313,14 @@ function evidenceSummaryView(
       | "planArtifactVerified"
       | "goalSatisfied"
       | "recoveryCompleted"
+      | "evaluationCompleted"
+      | "evaluationPassed"
       | "planCompletedAfterWorkspaceWrite"
       | "planArtifactVerifiedAfterWorkspaceWrite"
       | "goalSatisfiedAfterWorkspaceWrite"
       | "recoveryCompletedAfterInterruption"
+      | "evaluationCompletedAfterWorkspaceWrite"
+      | "evaluationPassedAfterWorkspaceWrite"
       | "latestWorkspaceWriteSeq"
       | "latestPassedVerificationSeq"
       | "latestPlanCompletedSeq"
@@ -306,6 +332,9 @@ function evidenceSummaryView(
       | "latestRecoveryCompletedSeq"
       | "latestRunInterruptedSeq"
       | "latestRecoveryInvalidatedSeq"
+      | "latestEvaluationCompletedSeq"
+      | "latestEvaluationPassedSeq"
+      | "latestEvaluationPassInvalidatedSeq"
     >
   | undefined {
   if (!record(value)) return undefined;
@@ -323,6 +352,8 @@ function evidenceSummaryView(
   const planArtifactVerified = booleanValue(value["planArtifactVerified"]);
   const goalSatisfied = booleanValue(value["goalSatisfied"]);
   const recoveryCompleted = booleanValue(value["recoveryCompleted"]);
+  const evaluationCompleted = booleanValue(value["evaluationCompleted"]);
+  const evaluationPassed = booleanValue(value["evaluationPassed"]);
   const planCompletedAfterWorkspaceWrite = booleanValue(
     value["planCompletedAfterWorkspaceWrite"],
   );
@@ -334,6 +365,12 @@ function evidenceSummaryView(
   );
   const recoveryCompletedAfterInterruption = booleanValue(
     value["recoveryCompletedAfterInterruption"],
+  );
+  const evaluationCompletedAfterWorkspaceWrite = booleanValue(
+    value["evaluationCompletedAfterWorkspaceWrite"],
+  );
+  const evaluationPassedAfterWorkspaceWrite = booleanValue(
+    value["evaluationPassedAfterWorkspaceWrite"],
   );
   return {
     ...(verificationToolCompleted !== undefined
@@ -350,6 +387,8 @@ function evidenceSummaryView(
     ...(planArtifactVerified !== undefined ? { planArtifactVerified } : {}),
     ...(goalSatisfied !== undefined ? { goalSatisfied } : {}),
     ...(recoveryCompleted !== undefined ? { recoveryCompleted } : {}),
+    ...(evaluationCompleted !== undefined ? { evaluationCompleted } : {}),
+    ...(evaluationPassed !== undefined ? { evaluationPassed } : {}),
     ...(planCompletedAfterWorkspaceWrite !== undefined
       ? { planCompletedAfterWorkspaceWrite }
       : {}),
@@ -362,6 +401,12 @@ function evidenceSummaryView(
     ...(recoveryCompletedAfterInterruption !== undefined
       ? { recoveryCompletedAfterInterruption }
       : {}),
+    ...(evaluationCompletedAfterWorkspaceWrite !== undefined
+      ? { evaluationCompletedAfterWorkspaceWrite }
+      : {}),
+    ...(evaluationPassedAfterWorkspaceWrite !== undefined
+      ? { evaluationPassedAfterWorkspaceWrite }
+      : {}),
     ...numberField(value, "latestWorkspaceWriteSeq"),
     ...numberField(value, "latestPassedVerificationSeq"),
     ...numberField(value, "latestPlanCompletedSeq"),
@@ -373,6 +418,9 @@ function evidenceSummaryView(
     ...numberField(value, "latestRecoveryCompletedSeq"),
     ...numberField(value, "latestRunInterruptedSeq"),
     ...numberField(value, "latestRecoveryInvalidatedSeq"),
+    ...numberField(value, "latestEvaluationCompletedSeq"),
+    ...numberField(value, "latestEvaluationPassedSeq"),
+    ...numberField(value, "latestEvaluationPassInvalidatedSeq"),
   };
 }
 
@@ -393,7 +441,10 @@ function numberField(
     | "latestGoalInvalidatedSeq"
     | "latestRecoveryCompletedSeq"
     | "latestRunInterruptedSeq"
-    | "latestRecoveryInvalidatedSeq",
+    | "latestRecoveryInvalidatedSeq"
+    | "latestEvaluationCompletedSeq"
+    | "latestEvaluationPassedSeq"
+    | "latestEvaluationPassInvalidatedSeq",
 ): Pick<IndependentModelAdvisorReviewView, typeof key> | undefined {
   const value = source[key];
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0

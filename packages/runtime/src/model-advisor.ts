@@ -83,6 +83,18 @@ const RECOVERY_COMPLETION_CLAIM_PATTERNS = [
   /(?:恢复|自动恢复|故障恢复).{0,18}(?:完成|已完成|成功|已成功|闭环)/u,
 ];
 
+const EVALUATION_COMPLETION_CLAIM_PATTERNS = [
+  /\b(?:evaluation|evaluations|eval|evals|benchmark|benchmarks|assessment|assessments)\b.{0,40}\b(?:completed|complete|done|finished|settled)\b/iu,
+  /\b(?:completed|complete|done|finished|settled)\b.{0,40}\b(?:evaluation|evaluations|eval|evals|benchmark|benchmarks|assessment|assessments)\b/iu,
+  /(?:评测|评估|基准测试).{0,18}(?:完成|已完成|结清|已结清|闭环)/u,
+];
+
+const EVALUATION_PASS_CLAIM_PATTERNS = [
+  /\b(?:evaluation|evaluations|eval|evals|benchmark|benchmarks|assessment|assessments|suite|qualification|gate)\b.{0,40}\b(?:passed|green|qualified|succeeded|successful)\b/iu,
+  /\b(?:passed|green|qualified|succeeded|successful)\b.{0,40}\b(?:evaluation|evaluations|eval|evals|benchmark|benchmarks|assessment|assessments|suite|qualification|gate)\b/iu,
+  /(?:评测|评估|基准测试|套件|资格赛|门禁).{0,18}(?:通过|已通过|成功|全绿|合格)/u,
+];
+
 const DESTRUCTIVE_COMMAND_PATTERNS = [
   /\bgit\s+reset\s+--hard\b/iu,
   /\bgit\s+checkout\s+--\s+\S+/iu,
@@ -363,6 +375,14 @@ function createVerificationClaimDiagnostic(
     assistantText,
     RECOVERY_COMPLETION_CLAIM_PATTERNS,
   );
+  const evaluationCompletionClaimCount = countPatternHits(
+    assistantText,
+    EVALUATION_COMPLETION_CLAIM_PATTERNS,
+  );
+  const evaluationPassClaimCount = countPatternHits(
+    assistantText,
+    EVALUATION_PASS_CLAIM_PATTERNS,
+  );
   const unsupportedVerificationClaimCount =
     evidence.verificationToolPassedAfterWorkspaceWrite
       ? 0
@@ -379,12 +399,22 @@ function createVerificationClaimDiagnostic(
     evidence.recoveryCompletedAfterInterruption
       ? 0
       : recoveryCompletionClaimCount;
+  const unsupportedEvaluationCompletionClaimCount =
+    evidence.evaluationCompletedAfterWorkspaceWrite
+      ? 0
+      : evaluationCompletionClaimCount;
+  const unsupportedEvaluationPassClaimCount =
+    evidence.evaluationPassedAfterWorkspaceWrite
+      ? 0
+      : evaluationPassClaimCount;
   const matchCount =
     unsupportedVerificationClaimCount +
     unsupportedPlanCompletionClaimCount +
     unsupportedArtifactVerificationClaimCount +
     unsupportedGoalCompletionClaimCount +
-    unsupportedRecoveryCompletionClaimCount;
+    unsupportedRecoveryCompletionClaimCount +
+    unsupportedEvaluationCompletionClaimCount +
+    unsupportedEvaluationPassClaimCount;
   if (matchCount === 0) {
     return undefined;
   }
@@ -399,11 +429,15 @@ function createVerificationClaimDiagnostic(
       artifactVerificationClaimCount,
       goalCompletionClaimCount,
       recoveryCompletionClaimCount,
+      evaluationCompletionClaimCount,
+      evaluationPassClaimCount,
       unsupportedVerificationClaimCount,
       unsupportedPlanCompletionClaimCount,
       unsupportedArtifactVerificationClaimCount,
       unsupportedGoalCompletionClaimCount,
       unsupportedRecoveryCompletionClaimCount,
+      unsupportedEvaluationCompletionClaimCount,
+      unsupportedEvaluationPassClaimCount,
       verificationToolCompleted: evidence.verificationToolCompleted,
       verificationToolPassed: evidence.verificationToolPassed,
       workspaceWriteCompleted: evidence.workspaceWriteCompleted,
@@ -413,6 +447,8 @@ function createVerificationClaimDiagnostic(
       planArtifactVerified: evidence.planArtifactVerified,
       goalSatisfied: evidence.goalSatisfied,
       recoveryCompleted: evidence.recoveryCompleted,
+      evaluationCompleted: evidence.evaluationCompleted,
+      evaluationPassed: evidence.evaluationPassed,
       planCompletedAfterWorkspaceWrite:
         evidence.planCompletedAfterWorkspaceWrite,
       planArtifactVerifiedAfterWorkspaceWrite:
@@ -421,6 +457,10 @@ function createVerificationClaimDiagnostic(
         evidence.goalSatisfiedAfterWorkspaceWrite,
       recoveryCompletedAfterInterruption:
         evidence.recoveryCompletedAfterInterruption,
+      evaluationCompletedAfterWorkspaceWrite:
+        evidence.evaluationCompletedAfterWorkspaceWrite,
+      evaluationPassedAfterWorkspaceWrite:
+        evidence.evaluationPassedAfterWorkspaceWrite,
       latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq,
       latestPassedVerificationSeq: evidence.latestPassedVerificationSeq,
       latestPlanCompletedSeq: evidence.latestPlanCompletedSeq,
@@ -433,6 +473,10 @@ function createVerificationClaimDiagnostic(
       latestRecoveryCompletedSeq: evidence.latestRecoveryCompletedSeq,
       latestRunInterruptedSeq: evidence.latestRunInterruptedSeq,
       latestRecoveryInvalidatedSeq: evidence.latestRecoveryInvalidatedSeq,
+      latestEvaluationCompletedSeq: evidence.latestEvaluationCompletedSeq,
+      latestEvaluationPassedSeq: evidence.latestEvaluationPassedSeq,
+      latestEvaluationPassInvalidatedSeq:
+        evidence.latestEvaluationPassInvalidatedSeq,
       toolCompletedCount: evidence.toolCompletedCount,
     },
   );

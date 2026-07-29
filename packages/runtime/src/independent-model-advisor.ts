@@ -517,12 +517,18 @@ export function createIndependentModelAdvisorEvidenceSummary(
     planArtifactVerified: evidence.planArtifactVerified,
     goalSatisfied: evidence.goalSatisfied,
     recoveryCompleted: evidence.recoveryCompleted,
+    evaluationCompleted: evidence.evaluationCompleted,
+    evaluationPassed: evidence.evaluationPassed,
     planCompletedAfterWorkspaceWrite: evidence.planCompletedAfterWorkspaceWrite,
     planArtifactVerifiedAfterWorkspaceWrite:
       evidence.planArtifactVerifiedAfterWorkspaceWrite,
     goalSatisfiedAfterWorkspaceWrite: evidence.goalSatisfiedAfterWorkspaceWrite,
     recoveryCompletedAfterInterruption:
       evidence.recoveryCompletedAfterInterruption,
+    evaluationCompletedAfterWorkspaceWrite:
+      evidence.evaluationCompletedAfterWorkspaceWrite,
+    evaluationPassedAfterWorkspaceWrite:
+      evidence.evaluationPassedAfterWorkspaceWrite,
     ...(evidence.latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq: evidence.latestWorkspaceWriteSeq }
       : {}),
@@ -560,6 +566,18 @@ export function createIndependentModelAdvisorEvidenceSummary(
       : {}),
     ...(evidence.latestRecoveryInvalidatedSeq !== undefined
       ? { latestRecoveryInvalidatedSeq: evidence.latestRecoveryInvalidatedSeq }
+      : {}),
+    ...(evidence.latestEvaluationCompletedSeq !== undefined
+      ? { latestEvaluationCompletedSeq: evidence.latestEvaluationCompletedSeq }
+      : {}),
+    ...(evidence.latestEvaluationPassedSeq !== undefined
+      ? { latestEvaluationPassedSeq: evidence.latestEvaluationPassedSeq }
+      : {}),
+    ...(evidence.latestEvaluationPassInvalidatedSeq !== undefined
+      ? {
+          latestEvaluationPassInvalidatedSeq:
+            evidence.latestEvaluationPassInvalidatedSeq,
+        }
       : {}),
     milestoneCount: evidence.milestoneCount,
     operatorDecisionRequested: evidence.operatorDecisionRequested,
@@ -855,10 +873,14 @@ function parseEvidenceSummary(
     "planArtifactVerified",
     "goalSatisfied",
     "recoveryCompleted",
+    "evaluationCompleted",
+    "evaluationPassed",
     "planCompletedAfterWorkspaceWrite",
     "planArtifactVerifiedAfterWorkspaceWrite",
     "goalSatisfiedAfterWorkspaceWrite",
     "recoveryCompletedAfterInterruption",
+    "evaluationCompletedAfterWorkspaceWrite",
+    "evaluationPassedAfterWorkspaceWrite",
     "milestoneCount",
     "operatorDecisionRequested",
   ];
@@ -874,6 +896,9 @@ function parseEvidenceSummary(
     "latestRecoveryCompletedSeq",
     "latestRunInterruptedSeq",
     "latestRecoveryInvalidatedSeq",
+    "latestEvaluationCompletedSeq",
+    "latestEvaluationPassedSeq",
+    "latestEvaluationPassInvalidatedSeq",
   ];
   const keys = Object.keys(value);
   if (
@@ -921,6 +946,14 @@ function parseEvidenceSummary(
       summary["recoveryCompleted"],
       "recoveryCompleted",
     ),
+    evaluationCompleted: booleanField(
+      summary["evaluationCompleted"],
+      "evaluationCompleted",
+    ),
+    evaluationPassed: booleanField(
+      summary["evaluationPassed"],
+      "evaluationPassed",
+    ),
     planCompletedAfterWorkspaceWrite: booleanField(
       summary["planCompletedAfterWorkspaceWrite"],
       "planCompletedAfterWorkspaceWrite",
@@ -936,6 +969,14 @@ function parseEvidenceSummary(
     recoveryCompletedAfterInterruption: booleanField(
       summary["recoveryCompletedAfterInterruption"],
       "recoveryCompletedAfterInterruption",
+    ),
+    evaluationCompletedAfterWorkspaceWrite: booleanField(
+      summary["evaluationCompletedAfterWorkspaceWrite"],
+      "evaluationCompletedAfterWorkspaceWrite",
+    ),
+    evaluationPassedAfterWorkspaceWrite: booleanField(
+      summary["evaluationPassedAfterWorkspaceWrite"],
+      "evaluationPassedAfterWorkspaceWrite",
     ),
     ...(summary["latestWorkspaceWriteSeq"] !== undefined
       ? {
@@ -1022,6 +1063,30 @@ function parseEvidenceSummary(
           latestRecoveryInvalidatedSeq: boundedCount(
             summary["latestRecoveryInvalidatedSeq"],
             "latestRecoveryInvalidatedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestEvaluationCompletedSeq"] !== undefined
+      ? {
+          latestEvaluationCompletedSeq: boundedCount(
+            summary["latestEvaluationCompletedSeq"],
+            "latestEvaluationCompletedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestEvaluationPassedSeq"] !== undefined
+      ? {
+          latestEvaluationPassedSeq: boundedCount(
+            summary["latestEvaluationPassedSeq"],
+            "latestEvaluationPassedSeq",
+          ),
+        }
+      : {}),
+    ...(summary["latestEvaluationPassInvalidatedSeq"] !== undefined
+      ? {
+          latestEvaluationPassInvalidatedSeq: boundedCount(
+            summary["latestEvaluationPassInvalidatedSeq"],
+            "latestEvaluationPassInvalidatedSeq",
           ),
         }
       : {}),

@@ -26,10 +26,14 @@ describe("independent Model Advisor review views", () => {
           planArtifactVerified: true,
           goalSatisfied: true,
           recoveryCompleted: true,
+          evaluationCompleted: true,
+          evaluationPassed: true,
           planCompletedAfterWorkspaceWrite: false,
           planArtifactVerifiedAfterWorkspaceWrite: false,
           goalSatisfiedAfterWorkspaceWrite: false,
           recoveryCompletedAfterInterruption: false,
+          evaluationCompletedAfterWorkspaceWrite: false,
+          evaluationPassedAfterWorkspaceWrite: false,
           latestWorkspaceWriteSeq: 13,
           latestPassedVerificationSeq: 12,
           latestPlanCompletedSeq: 11,
@@ -41,6 +45,9 @@ describe("independent Model Advisor review views", () => {
           latestRecoveryCompletedSeq: 8,
           latestRunInterruptedSeq: 16,
           latestRecoveryInvalidatedSeq: 17,
+          latestEvaluationCompletedSeq: 7,
+          latestEvaluationPassedSeq: 6,
+          latestEvaluationPassInvalidatedSeq: 18,
         },
         modelContextEnvelope: {
           contentSha256: "c".repeat(64),
@@ -77,10 +84,14 @@ describe("independent Model Advisor review views", () => {
         planArtifactVerified: true,
         goalSatisfied: true,
         recoveryCompleted: true,
+        evaluationCompleted: true,
+        evaluationPassed: true,
         planCompletedAfterWorkspaceWrite: false,
         planArtifactVerifiedAfterWorkspaceWrite: false,
         goalSatisfiedAfterWorkspaceWrite: false,
         recoveryCompletedAfterInterruption: false,
+        evaluationCompletedAfterWorkspaceWrite: false,
+        evaluationPassedAfterWorkspaceWrite: false,
         latestWorkspaceWriteSeq: 13,
         latestPassedVerificationSeq: 12,
         latestPlanCompletedSeq: 11,
@@ -92,6 +103,9 @@ describe("independent Model Advisor review views", () => {
         latestRecoveryCompletedSeq: 8,
         latestRunInterruptedSeq: 16,
         latestRecoveryInvalidatedSeq: 17,
+        latestEvaluationCompletedSeq: 7,
+        latestEvaluationPassedSeq: 6,
+        latestEvaluationPassInvalidatedSeq: 18,
         modelContextEnvelopeSha256: "c".repeat(64),
         contentSha256: "b".repeat(64),
       },
@@ -102,7 +116,7 @@ describe("independent Model Advisor review views", () => {
       }),
     ]);
     expect(independentModelAdvisorVerificationState(views[0]!)).toBe(
-      "checks stale / passed / w#13 / v#12 / plan stale / plan#11 / plan-invalidated#14 / artifact stale / artifact#10 / artifact-invalidated#14 / goal stale / goal#9 / goal-invalidated#15 / recovery stale / recovery#8 / run-interrupted#16 / recovery-invalidated#17",
+      "checks stale / passed / w#13 / v#12 / plan stale / plan#11 / plan-invalidated#14 / artifact stale / artifact#10 / artifact-invalidated#14 / goal stale / goal#9 / goal-invalidated#15 / recovery stale / recovery#8 / run-interrupted#16 / recovery-invalidated#17 / evaluation stale / evaluation#7 / evaluation-pass stale / evaluation-pass#6 / evaluation-pass-invalidated#18",
     );
     expect(views[1]).not.toHaveProperty("modelContextEnvelopeSha256");
   });

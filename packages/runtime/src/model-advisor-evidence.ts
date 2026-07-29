@@ -9,10 +9,14 @@ export interface ModelAdvisorVerificationEvidence {
   planArtifactVerified: boolean;
   goalSatisfied: boolean;
   recoveryCompleted: boolean;
+  evaluationCompleted: boolean;
+  evaluationPassed: boolean;
   planCompletedAfterWorkspaceWrite: boolean;
   planArtifactVerifiedAfterWorkspaceWrite: boolean;
   goalSatisfiedAfterWorkspaceWrite: boolean;
   recoveryCompletedAfterInterruption: boolean;
+  evaluationCompletedAfterWorkspaceWrite: boolean;
+  evaluationPassedAfterWorkspaceWrite: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
@@ -24,6 +28,9 @@ export interface ModelAdvisorVerificationEvidence {
   latestRecoveryCompletedSeq?: number;
   latestRunInterruptedSeq?: number;
   latestRecoveryInvalidatedSeq?: number;
+  latestEvaluationCompletedSeq?: number;
+  latestEvaluationPassedSeq?: number;
+  latestEvaluationPassInvalidatedSeq?: number;
 }
 
 export function isVerifyWorkspaceCompletion(event: RunEvent): boolean {
@@ -160,6 +167,38 @@ export function isRecoveryInvalidationEvent(event: RunEvent): boolean {
   );
 }
 
+export function isEvaluationCompletionEvent(event: RunEvent): boolean {
+  return (
+    event.type === "evaluation.completed" ||
+    event.type === "evaluation.suite.completed" ||
+    event.type === "evaluation.casebook.qualification.completed"
+  );
+}
+
+export function isEvaluationPassEvent(event: RunEvent): boolean {
+  if (!isRecord(event.payload)) return false;
+  return (
+    (event.type === "evaluation.suite.completed" ||
+      event.type === "evaluation.casebook.qualification.completed") &&
+    event.payload["status"] === "passed"
+  );
+}
+
+export function isEvaluationPassInvalidationEvent(event: RunEvent): boolean {
+  if (!isRecord(event.payload)) return false;
+  if (
+    (event.type === "evaluation.suite.completed" ||
+      event.type === "evaluation.casebook.qualification.completed") &&
+    event.payload["status"] !== "passed"
+  ) {
+    return true;
+  }
+  return (
+    event.type === "evaluation.suite.updated" ||
+    event.type === "evaluation.casebook.updated"
+  );
+}
+
 export function createModelAdvisorVerificationEvidence(
   events: RunEvent[],
 ): ModelAdvisorVerificationEvidence {
@@ -192,6 +231,15 @@ export function createModelAdvisorVerificationEvidence(
     events,
     isRecoveryInvalidationEvent,
   );
+  const latestEvaluationCompletedSeq = latestSeq(
+    events,
+    isEvaluationCompletionEvent,
+  );
+  const latestEvaluationPassedSeq = latestSeq(events, isEvaluationPassEvent);
+  const latestEvaluationPassInvalidatedSeq = latestSeq(
+    events,
+    isEvaluationPassInvalidationEvent,
+  );
   const verificationToolPassedAfterWorkspaceWrite =
     latestPassedVerificationSeq !== undefined &&
     (latestWorkspaceWriteSeq === undefined ||
@@ -220,6 +268,16 @@ export function createModelAdvisorVerificationEvidence(
       latestRecoveryCompletedSeq > latestRunInterruptedSeq) &&
     (latestRecoveryInvalidatedSeq === undefined ||
       latestRecoveryCompletedSeq > latestRecoveryInvalidatedSeq);
+  const evaluationCompletedAfterWorkspaceWrite =
+    latestEvaluationCompletedSeq !== undefined &&
+    (latestWorkspaceWriteSeq === undefined ||
+      latestEvaluationCompletedSeq > latestWorkspaceWriteSeq);
+  const evaluationPassedAfterWorkspaceWrite =
+    latestEvaluationPassedSeq !== undefined &&
+    (latestEvaluationPassInvalidatedSeq === undefined ||
+      latestEvaluationPassedSeq > latestEvaluationPassInvalidatedSeq) &&
+    (latestWorkspaceWriteSeq === undefined ||
+      latestEvaluationPassedSeq > latestWorkspaceWriteSeq);
   return {
     verificationToolCompleted: events.some(isVerifyWorkspaceCompletion),
     verificationToolPassed: latestPassedVerificationSeq !== undefined,
@@ -229,10 +287,14 @@ export function createModelAdvisorVerificationEvidence(
     planArtifactVerified: latestPlanArtifactVerifiedSeq !== undefined,
     goalSatisfied: latestGoalSatisfiedSeq !== undefined,
     recoveryCompleted: latestRecoveryCompletedSeq !== undefined,
+    evaluationCompleted: latestEvaluationCompletedSeq !== undefined,
+    evaluationPassed: latestEvaluationPassedSeq !== undefined,
     planCompletedAfterWorkspaceWrite,
     planArtifactVerifiedAfterWorkspaceWrite,
     goalSatisfiedAfterWorkspaceWrite,
     recoveryCompletedAfterInterruption,
+    evaluationCompletedAfterWorkspaceWrite,
+    evaluationPassedAfterWorkspaceWrite,
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
       : {}),
@@ -261,6 +323,15 @@ export function createModelAdvisorVerificationEvidence(
       : {}),
     ...(latestRecoveryInvalidatedSeq !== undefined
       ? { latestRecoveryInvalidatedSeq }
+      : {}),
+    ...(latestEvaluationCompletedSeq !== undefined
+      ? { latestEvaluationCompletedSeq }
+      : {}),
+    ...(latestEvaluationPassedSeq !== undefined
+      ? { latestEvaluationPassedSeq }
+      : {}),
+    ...(latestEvaluationPassInvalidatedSeq !== undefined
+      ? { latestEvaluationPassInvalidatedSeq }
       : {}),
   };
 }

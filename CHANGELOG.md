@@ -333,13 +333,18 @@ All notable changes to Napier are recorded here.
 - Recovery-complete claim suppression now requires fresh
   `run.recovery.completed` or `run.recovery.auto.completed` Ledger evidence
   after the latest interruption or recovery invalidation.
+- Evaluation-complete and evaluation-pass claim suppression now distinguishes
+  completed pairwise evaluations from passed suite or casebook qualification
+  gates, and treats later workspace writes or failed/inconclusive gate evidence
+  as stale.
 - Trace Model Advisor summaries now expose verification current/stale metadata
-  plus plan/artifact/goal/recovery completion freshness and the latest evidence
-  sequence numbers without rendering diagnostic prose or candidate text.
+  plus plan/artifact/goal/recovery/evaluation completion freshness and the
+  latest evidence sequence numbers without rendering diagnostic prose or
+  candidate text.
 - Independent Model Advisor review receipts now persist the same metadata-only
   evidence summary, allowing the Trace review card to explain checks,
-  plan/artifact, goal, and recovery completion freshness without reopening
-  prompt or candidate text.
+  plan/artifact, goal, recovery, and evaluation completion freshness without
+  reopening prompt or candidate text.
 - OTLP export now projects Advisor checks and completion freshness summaries as
   metadata-only event attributes, preserving candidate text, prompts, guidance,
   and diagnostic prose redaction.

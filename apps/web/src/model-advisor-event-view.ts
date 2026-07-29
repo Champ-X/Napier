@@ -21,10 +21,14 @@ export interface ModelAdvisorEventTraceView {
   planArtifactVerified?: boolean;
   goalSatisfied?: boolean;
   recoveryCompleted?: boolean;
+  evaluationCompleted?: boolean;
+  evaluationPassed?: boolean;
   planCompletedAfterWorkspaceWrite?: boolean;
   planArtifactVerifiedAfterWorkspaceWrite?: boolean;
   goalSatisfiedAfterWorkspaceWrite?: boolean;
   recoveryCompletedAfterInterruption?: boolean;
+  evaluationCompletedAfterWorkspaceWrite?: boolean;
+  evaluationPassedAfterWorkspaceWrite?: boolean;
   latestWorkspaceWriteSeq?: number;
   latestPassedVerificationSeq?: number;
   latestPlanCompletedSeq?: number;
@@ -36,6 +40,9 @@ export interface ModelAdvisorEventTraceView {
   latestRecoveryCompletedSeq?: number;
   latestRunInterruptedSeq?: number;
   latestRecoveryInvalidatedSeq?: number;
+  latestEvaluationCompletedSeq?: number;
+  latestEvaluationPassedSeq?: number;
+  latestEvaluationPassInvalidatedSeq?: number;
   textSha256?: string;
   candidateTextSha256?: string;
   diagnosticSetSha256?: string;
@@ -111,6 +118,8 @@ export function modelAdvisorEventTraceView(
   const planArtifactVerified = booleanValue(evidence["planArtifactVerified"]);
   const goalSatisfied = booleanValue(evidence["goalSatisfied"]);
   const recoveryCompleted = booleanValue(evidence["recoveryCompleted"]);
+  const evaluationCompleted = booleanValue(evidence["evaluationCompleted"]);
+  const evaluationPassed = booleanValue(evidence["evaluationPassed"]);
   const planCompletedAfterWorkspaceWrite = booleanValue(
     evidence["planCompletedAfterWorkspaceWrite"],
   );
@@ -122,6 +131,12 @@ export function modelAdvisorEventTraceView(
   );
   const recoveryCompletedAfterInterruption = booleanValue(
     evidence["recoveryCompletedAfterInterruption"],
+  );
+  const evaluationCompletedAfterWorkspaceWrite = booleanValue(
+    evidence["evaluationCompletedAfterWorkspaceWrite"],
+  );
+  const evaluationPassedAfterWorkspaceWrite = booleanValue(
+    evidence["evaluationPassedAfterWorkspaceWrite"],
   );
   const latestWorkspaceWriteSeq = nonNegativeInteger(
     evidence["latestWorkspaceWriteSeq"],
@@ -155,6 +170,15 @@ export function modelAdvisorEventTraceView(
   );
   const latestRecoveryInvalidatedSeq = nonNegativeInteger(
     evidence["latestRecoveryInvalidatedSeq"],
+  );
+  const latestEvaluationCompletedSeq = nonNegativeInteger(
+    evidence["latestEvaluationCompletedSeq"],
+  );
+  const latestEvaluationPassedSeq = nonNegativeInteger(
+    evidence["latestEvaluationPassedSeq"],
+  );
+  const latestEvaluationPassInvalidatedSeq = nonNegativeInteger(
+    evidence["latestEvaluationPassInvalidatedSeq"],
   );
   const textSha256 = sha256(event.payload["textSha256"]);
   const candidateTextSha256 = sha256(event.payload["candidateTextSha256"]);
@@ -203,6 +227,8 @@ export function modelAdvisorEventTraceView(
     ...(planArtifactVerified !== undefined ? { planArtifactVerified } : {}),
     ...(goalSatisfied !== undefined ? { goalSatisfied } : {}),
     ...(recoveryCompleted !== undefined ? { recoveryCompleted } : {}),
+    ...(evaluationCompleted !== undefined ? { evaluationCompleted } : {}),
+    ...(evaluationPassed !== undefined ? { evaluationPassed } : {}),
     ...(planCompletedAfterWorkspaceWrite !== undefined
       ? { planCompletedAfterWorkspaceWrite }
       : {}),
@@ -214,6 +240,12 @@ export function modelAdvisorEventTraceView(
       : {}),
     ...(recoveryCompletedAfterInterruption !== undefined
       ? { recoveryCompletedAfterInterruption }
+      : {}),
+    ...(evaluationCompletedAfterWorkspaceWrite !== undefined
+      ? { evaluationCompletedAfterWorkspaceWrite }
+      : {}),
+    ...(evaluationPassedAfterWorkspaceWrite !== undefined
+      ? { evaluationPassedAfterWorkspaceWrite }
       : {}),
     ...(latestWorkspaceWriteSeq !== undefined
       ? { latestWorkspaceWriteSeq }
@@ -241,6 +273,15 @@ export function modelAdvisorEventTraceView(
     ...(latestRunInterruptedSeq !== undefined ? { latestRunInterruptedSeq } : {}),
     ...(latestRecoveryInvalidatedSeq !== undefined
       ? { latestRecoveryInvalidatedSeq }
+      : {}),
+    ...(latestEvaluationCompletedSeq !== undefined
+      ? { latestEvaluationCompletedSeq }
+      : {}),
+    ...(latestEvaluationPassedSeq !== undefined
+      ? { latestEvaluationPassedSeq }
+      : {}),
+    ...(latestEvaluationPassInvalidatedSeq !== undefined
+      ? { latestEvaluationPassInvalidatedSeq }
       : {}),
     ...(diagnosticSetSha256 ? { diagnosticSetSha256 } : {}),
     ...(issueSetSha256 ? { issueSetSha256 } : {}),
@@ -404,6 +445,47 @@ export function modelAdvisorEventTraceSummary(
                   view.latestRecoveryInvalidatedSeq !== undefined)
               ? "recovery-completion-stale"
               : "recovery-completion-not-current",
+        ]
+      : []),
+    ...(view.evaluationCompleted !== undefined
+      ? [
+          view.evaluationCompleted
+            ? "evaluation-completed"
+            : "evaluation-not-completed",
+        ]
+      : []),
+    ...(view.latestEvaluationCompletedSeq !== undefined
+      ? [`evaluation-completed-seq ${view.latestEvaluationCompletedSeq}`]
+      : []),
+    ...(view.evaluationCompletedAfterWorkspaceWrite !== undefined
+      ? [
+          view.evaluationCompletedAfterWorkspaceWrite
+            ? "evaluation-completion-current"
+            : view.evaluationCompleted && view.workspaceWriteCompleted
+              ? "evaluation-completion-stale"
+              : "evaluation-completion-not-current",
+        ]
+      : []),
+    ...(view.evaluationPassed !== undefined
+      ? [view.evaluationPassed ? "evaluation-passed" : "evaluation-not-passed"]
+      : []),
+    ...(view.latestEvaluationPassedSeq !== undefined
+      ? [`evaluation-passed-seq ${view.latestEvaluationPassedSeq}`]
+      : []),
+    ...(view.latestEvaluationPassInvalidatedSeq !== undefined
+      ? [
+          `evaluation-pass-invalidated-seq ${view.latestEvaluationPassInvalidatedSeq}`,
+        ]
+      : []),
+    ...(view.evaluationPassedAfterWorkspaceWrite !== undefined
+      ? [
+          view.evaluationPassedAfterWorkspaceWrite
+            ? "evaluation-pass-current"
+            : view.evaluationPassed &&
+                (view.workspaceWriteCompleted ||
+                  view.latestEvaluationPassInvalidatedSeq !== undefined)
+              ? "evaluation-pass-stale"
+              : "evaluation-pass-not-current",
         ]
       : []),
     ...(view.textSha256 ? [`text ${view.textSha256.slice(0, 12)}`] : []),

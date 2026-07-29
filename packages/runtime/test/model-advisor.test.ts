@@ -566,6 +566,115 @@ describe("model advisor stream lint", () => {
     );
   });
 
+  it("flags evaluation completion and pass claims without ledger evidence", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "Benchmark completed. The gate passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          evaluationCompleted: false,
+          evaluationPassed: false,
+          evaluationCompletedAfterWorkspaceWrite: false,
+          evaluationPassedAfterWorkspaceWrite: false,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 2,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("suppresses evaluation completion claims after current evaluation evidence", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The evaluation completed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        evaluationEvent(1, "evaluation.completed", {
+          evaluationId: "evaluation_1",
+          verdict: "right_better",
+        }),
+      ],
+    });
+
+    expect(notice).toBeUndefined();
+  });
+
+  it("suppresses evaluation pass claims after a current passed suite gate", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The evaluation suite passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        evaluationEvent(1, "evaluation.suite.completed", {
+          suiteId: "suite_1",
+          executionId: "evalsuite_1",
+          status: "passed",
+        }),
+      ],
+    });
+
+    expect(notice).toBeUndefined();
+  });
+
+  it("marks evaluation pass evidence stale after later failed suite or workspace write", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The evaluation suite passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        evaluationEvent(1, "evaluation.suite.completed", {
+          suiteId: "suite_1",
+          executionId: "evalsuite_1",
+          status: "passed",
+        }),
+        evaluationEvent(2, "evaluation.suite.completed", {
+          suiteId: "suite_1",
+          executionId: "evalsuite_2",
+          status: "failed",
+        }),
+        toolCompleted(3, {
+          callId: "tool_3",
+          toolName: "apply_patch",
+          status: "completed",
+          details: {
+            operation: "replace",
+            afterSha256: "a".repeat(64),
+          },
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          evaluationCompleted: true,
+          evaluationPassed: true,
+          evaluationCompletedAfterWorkspaceWrite: false,
+          evaluationPassedAfterWorkspaceWrite: false,
+          latestEvaluationCompletedSeq: 2,
+          latestEvaluationPassedSeq: 1,
+          latestEvaluationPassInvalidatedSeq: 2,
+          latestWorkspaceWriteSeq: 3,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+            matchCount: 1,
+          }),
+        ],
+      }),
+    );
+  });
+
   it("flags destructive command references without copying text", () => {
     const notice = createModelAdvisorNotice({
       assistantText: "Never run git reset --hard here.",
@@ -855,6 +964,27 @@ function runEvent(
     seq,
     type,
     category: "lifecycle",
+    visibility: "user",
+    createdAt: "2026-07-27T00:00:00.000Z",
+    payload,
+  };
+}
+
+function evaluationEvent(
+  seq: number,
+  type:
+    | "evaluation.completed"
+    | "evaluation.suite.completed"
+    | "evaluation.suite.updated",
+  payload: Record<string, unknown>,
+): RunEvent {
+  return {
+    id: `evt_${seq}`,
+    threadId: "thread_1",
+    runId: "run_1",
+    seq,
+    type,
+    category: "evaluation",
     visibility: "user",
     createdAt: "2026-07-27T00:00:00.000Z",
     payload,
