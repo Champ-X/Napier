@@ -204,6 +204,7 @@ describe("workspace tools", () => {
     const { workspaceRoot } = await createFixture();
     const csv = "name,score\nAda,98\nLinus,87\n";
     const duplicateCsv = "name,name,\nAda,Lovelace,98\n";
+    const wideCsv = "name\nAda,98\n";
     const tsv = "name\tscore\nAda\t98\nLinus\t87\n";
     const jsonl = [
       JSON.stringify({ id: 1, status: "open", hidden: "alpha" }),
@@ -232,8 +233,13 @@ describe("workspace tools", () => {
       columns: ["name", "name", ""],
       rows: [["Ada", "Lovelace", 98]],
     });
+    const wideEnvelopeJson = JSON.stringify({
+      columns: ["name"],
+      rows: [["Ada", 98]],
+    });
     await writeFile(path.join(workspaceRoot, "scores.csv"), csv);
     await writeFile(path.join(workspaceRoot, "duplicate.csv"), duplicateCsv);
+    await writeFile(path.join(workspaceRoot, "wide.csv"), wideCsv);
     await writeFile(path.join(workspaceRoot, "scores.tsv"), tsv);
     await writeFile(path.join(workspaceRoot, "items.jsonl"), jsonl);
     await writeFile(path.join(workspaceRoot, "matrix.json"), matrixJson);
@@ -242,6 +248,10 @@ describe("workspace tools", () => {
     await writeFile(
       path.join(workspaceRoot, "duplicate-envelope.json"),
       duplicateEnvelopeJson,
+    );
+    await writeFile(
+      path.join(workspaceRoot, "wide-envelope.json"),
+      wideEnvelopeJson,
     );
     const inspect = createWorkspaceTools(workspaceRoot).find(
       (tool) => tool.name === "inspect_data",
@@ -303,6 +313,30 @@ describe("workspace tools", () => {
         .digest("hex"),
     });
     expect(duplicateCsvResult.content[0]!.text).toContain('"name_2"');
+
+    const wideCsvResult = await inspect.execute("inspect-wide-csv", {
+      path: "wide.csv",
+      maxRows: 1,
+    });
+    const wideColumns = ["name", "column_2"];
+    const wideCsvSample = [{ name: "Ada", column_2: "98" }];
+    expect(wideCsvResult.details).toEqual({
+      path: "wide.csv",
+      pathSha256: createHash("sha256").update("wide.csv").digest("hex"),
+      format: "csv",
+      sha256: createHash("sha256").update(wideCsv).digest("hex"),
+      sizeBytes: Buffer.byteLength(wideCsv),
+      rowCount: 1,
+      columnCount: 2,
+      truncated: false,
+      columnSetSha256: createHash("sha256")
+        .update(JSON.stringify(wideColumns))
+        .digest("hex"),
+      sampleSha256: createHash("sha256")
+        .update(JSON.stringify(wideCsvSample))
+        .digest("hex"),
+    });
+    expect(wideCsvResult.content[0]!.text).toContain('"column_2": "98"');
 
     const jsonlResult = await inspect.execute("inspect-jsonl", {
       path: "items.jsonl",
@@ -450,6 +484,26 @@ describe("workspace tools", () => {
       }),
     );
     expect(duplicateEnvelopeResult.content[0]!.text).toContain('"name_2"');
+
+    const wideEnvelopeResult = await inspect.execute("inspect-wide-envelope", {
+      path: "wide-envelope.json",
+      maxRows: 1,
+    });
+    const wideEnvelopeSample = [{ name: "Ada", column_2: 98 }];
+    expect(wideEnvelopeResult.details).toEqual(
+      expect.objectContaining({
+        format: "json",
+        rowCount: 1,
+        columnCount: 2,
+        columnSetSha256: createHash("sha256")
+          .update(JSON.stringify(wideColumns))
+          .digest("hex"),
+        sampleSha256: createHash("sha256")
+          .update(JSON.stringify(wideEnvelopeSample))
+          .digest("hex"),
+      }),
+    );
+    expect(wideEnvelopeResult.content[0]!.text).toContain('"column_2": 98');
     expect(envelopeResult.content[0]!.text).toContain('"active": true');
   });
 

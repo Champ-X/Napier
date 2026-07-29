@@ -114,8 +114,10 @@ function inspectDelimitedData(
       truncated: false,
     };
   }
-  const headers = uniqueColumnNames(rows[0]!);
   const dataRows = rows.slice(1);
+  const headers = uniqueColumnNames(
+    completeColumnValues(rows[0]!, maxColumnWidth(rows[0]!.length, dataRows)),
+  );
   const columns = headers.slice(0, MAX_STRUCTURED_DATA_COLUMNS);
   const sampleRows = dataRows
     .slice(0, maxRows)
@@ -143,7 +145,12 @@ function inspectMarkdownTableData(
   if (!table) {
     throw new Error(`${errorPrefix} Markdown table not found`);
   }
-  const headers = uniqueColumnNames(table.headers);
+  const headers = uniqueColumnNames(
+    completeColumnValues(
+      table.headers,
+      maxColumnWidth(table.headers.length, table.rows),
+    ),
+  );
   const columns = headers.slice(0, MAX_STRUCTURED_DATA_COLUMNS);
   const sampleRows = table.rows
     .slice(0, maxRows)
@@ -234,6 +241,14 @@ function uniqueColumnNames(values: unknown[]): string[] {
     used.add(candidate);
     return candidate;
   });
+}
+
+function completeColumnValues(values: unknown[], width: number): unknown[] {
+  return Array.from({ length: width }, (_, index) => values[index]);
+}
+
+function maxColumnWidth(headerWidth: number, rows: unknown[][]): number {
+  return rows.reduce((width, row) => Math.max(width, row.length), headerWidth);
 }
 
 function parseDelimitedRows(
@@ -381,8 +396,12 @@ function jsonTableEnvelopeRows(value: unknown): unknown[] | undefined {
       ? value["data"]
       : undefined;
   if (!Array.isArray(columnsValue) || !rowsValue) return undefined;
-  const columns = uniqueColumnNames(columnsValue);
-  const sourceColumns = sourceColumnNames(columnsValue);
+  const completeColumnsValue = completeColumnValues(
+    columnsValue,
+    maxColumnWidth(columnsValue.length, rowsValue.filter(Array.isArray)),
+  );
+  const columns = uniqueColumnNames(completeColumnsValue);
+  const sourceColumns = sourceColumnNames(completeColumnsValue);
   if (columns.length === 0) return undefined;
   return rowsValue.map((row) => {
     if (Array.isArray(row)) {

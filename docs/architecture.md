@@ -1584,6 +1584,8 @@ inspect_data
   -> normalize duplicate or blank tabular headers into unique names such as
      name_2 or column_3 before projecting sample rows, preventing object-key
      overwrites in Agent and Workbench previews
+  -> complete rows wider than their declared header with column_N names before
+     hashing the column set and bounded sample
   -> hash the workspace-relative path, complete file, column set, and sample
      rows so Trace can show format, row/column counts, truncation, and hashes
      without rendering column names or sample values

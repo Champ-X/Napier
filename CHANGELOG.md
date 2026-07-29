@@ -291,6 +291,9 @@ All notable changes to Napier are recorded here.
 - `inspect_data` and Plan artifact data profiles now normalize duplicate or
   blank tabular headers into unique names such as `name_2` or `column_3`, so
   bounded samples do not silently overwrite earlier columns.
+- `inspect_data` and Plan artifact data profiles now preserve rows wider than
+  their declared header by completing the projected column set with `column_N`
+  names before hashing sample evidence.
 - Added a read-only `inspect_code` workspace tool for TypeScript, JavaScript,
   Python, and Go files. It returns bounded symbol outlines to the Agent while
   Trace renders only language, symbol/line/byte counts, truncation state, and

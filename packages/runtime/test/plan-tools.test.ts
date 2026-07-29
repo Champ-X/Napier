@@ -655,6 +655,34 @@ describe("plan tools", () => {
       }),
     );
 
+    const wideMarkdownContents = ["| name |", "| --- |", "| alpha | 1 |"].join(
+      "\n",
+    );
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "wide.md"),
+      wideMarkdownContents,
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceDataArtifactProfile(workspaceRoot, {
+        ...artifact,
+        id: "wide-md",
+        path: "artifacts/wide.md",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        format: "markdown_table",
+        sha256: createHash("sha256").update(wideMarkdownContents).digest("hex"),
+        sizeBytes: Buffer.byteLength(wideMarkdownContents),
+        rowCount: 1,
+        columnCount: 2,
+        columns: ["name", "column_2"],
+        sampleRows: [{ name: "alpha", column_2: "1" }],
+        columnSetSha256: sha256(canonicalJson(["name", "column_2"])),
+        sampleSha256: sha256(canonicalJson([{ name: "alpha", column_2: "1" }])),
+      }),
+    );
+
     const duplicateMarkdownContents = [
       "| name | name | |",
       "| --- | --- | --- |",
