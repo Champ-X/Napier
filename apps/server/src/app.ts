@@ -333,6 +333,7 @@ import {
   AutomationService,
   ChannelService,
   changedAgentFields,
+  canonicalJson,
   compareRuns,
   CredentialReferenceStore,
   EvaluationCasebookQualificationService,
@@ -18168,10 +18169,10 @@ function verifyPlanArtifactDataProfileProjection(
 ) {
   const pathSha256 = sha256Text(artifact.path);
   const recomputedDeclaredColumnSetSha256 = sha256Text(
-    JSON.stringify(declared.columns),
+    canonicalJson(declared.columns),
   );
   const recomputedDeclaredSampleSha256 = sha256Text(
-    JSON.stringify(declared.sampleRows),
+    canonicalJson(declared.sampleRows),
   );
   const diagnostics = [
     ...(declared.planId === plan.id ? [] : ["plan_id_mismatch"]),

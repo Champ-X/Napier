@@ -4984,6 +4984,29 @@ describe("Napier HTTP goal flow", () => {
         observedSampleSha256: dataProfileBody.sampleSha256,
       }),
     );
+    const reorderedProfileResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores/data/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          profile: {
+            ...dataProfileBody,
+            sampleRows: [
+              { score: "1", name: "alpha" },
+              { score: "2", name: "beta" },
+            ],
+          },
+        }),
+      },
+    );
+    expect(reorderedProfileResponse.status).toBe(200);
+    await expect(reorderedProfileResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        verificationStatus: "valid",
+        diagnostics: [],
+        recomputedDeclaredSampleSha256: dataProfileBody.sampleSha256,
+      }),
+    );
     const tamperedProfileResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores/data/verify`,
       {
