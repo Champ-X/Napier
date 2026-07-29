@@ -38,6 +38,41 @@ describe("artifact event trace view", () => {
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects previewed artifact text evidence without text contents", () => {
+    const event = artifactEvent("artifact.previewed", {
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 5,
+      status: "verified",
+      kind: "file",
+      path: "TOP_SECRET_PATH",
+      text: "TOP_SECRET_TEXT",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      textSha256: "c".repeat(64),
+      sizeBytes: 128,
+      lineCount: 4,
+    });
+
+    expect(artifactEventTraceView(event)).toEqual({
+      action: "previewed",
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 5,
+      status: "verified",
+      kind: "file",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      textSha256: "c".repeat(64),
+      sizeBytes: 128,
+      lineCount: 4,
+    });
+    expect(artifactEventTraceSummary(event)).toBe(
+      `artifact / previewed / plan 1234567890 / artifact 0987654321 / plan-r5 / status verified / kind file / size-bytes 128 / lines 4 / path ${"a".repeat(12)} / artifact ${"b".repeat(12)} / text ${"c".repeat(12)}`,
+    );
+    expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("falls back for malformed artifact receipts", () => {
     expect(artifactEventTraceSummary(artifactEvent("artifact.future", {}))).toBe(
       "artifact",

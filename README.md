@@ -1055,7 +1055,10 @@ artifacts through runtime-computed digests, and avoid claiming plan completion
 until required steps and artifacts are settled. Produced or verified file
 artifacts can be downloaded from the Plan Workbench through a no-store,
 workspace-confined endpoint that rehashes bytes, rejects verified digest drift,
-and appends a hash-only `artifact.exported` Ledger event.
+and appends a hash-only `artifact.exported` Ledger event. Small UTF-8 file
+artifacts can also be previewed in place; the server enforces the same
+workspace and digest checks plus a 64 KiB preview limit, returns text only in
+the no-store response, and records a hash-only `artifact.previewed` event.
 
 `read_file` reports the SHA-256 and byte size of the complete UTF-8 file even
 when only a line range is returned. A write-capable Agent must pass that digest

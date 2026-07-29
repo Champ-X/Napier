@@ -58,9 +58,14 @@ import {
   verifyExecutionPlanBlueprintRecordReplayOutcomes,
   verifyExecutionPlanBlueprintRecordReplays,
 } from "./api";
-import { downloadPlanArtifactFile } from "./artifact-file-api";
+import {
+  downloadPlanArtifactFile,
+  previewPlanArtifactText,
+  type PlanArtifactTextPreview,
+} from "./artifact-file-api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import {
+  formatArtifactSizeBytes,
   projectArtifactManifestActions,
   projectArtifactManifestEvidence,
 } from "./artifact-manifest-view-model";
@@ -268,6 +273,8 @@ export default function PlanPanel({
   const [draftReviewError, setDraftReviewError] = useState<string>();
   const [artifactBusyId, setArtifactBusyId] = useState<string>();
   const [artifactError, setArtifactError] = useState<string>();
+  const [artifactPreview, setArtifactPreview] =
+    useState<PlanArtifactTextPreview>();
   const [archiveBusyAction, setArchiveBusyAction] = useState<
     "export" | "verify" | undefined
   >();
@@ -303,6 +310,7 @@ export default function PlanPanel({
     setDraftReviewError(undefined);
     setArtifactBusyId(undefined);
     setArtifactError(undefined);
+    setArtifactPreview(undefined);
     setArchiveReceipt(undefined);
     setArchiveError(undefined);
     setBlueprintReceipt(undefined);
@@ -431,6 +439,28 @@ export default function PlanPanel({
         artifact.id,
       );
       downloadBlob(download.blob, download.filename);
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(formatApiErrorMessage(error));
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
+  const previewArtifact = async (
+    artifact: ArtifactManifestEntry,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:preview`);
+    setArtifactError(undefined);
+    setArtifactPreview(undefined);
+    try {
+      const preview = await previewPlanArtifactText(
+        threadId,
+        plan.id,
+        artifact.id,
+      );
+      setArtifactPreview(preview);
       await onDraftApplied();
     } catch (error) {
       setArtifactError(formatApiErrorMessage(error));
@@ -1745,6 +1775,18 @@ export default function PlanPanel({
                               : planCopy.artifactActions.produce}
                           </button>
                         ) : null}
+                        {actions.canPreview ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.preview}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() => void previewArtifact(artifact)}
+                          >
+                            {artifactBusyId === `${artifact.id}:preview`
+                              ? planCopy.artifactActions.previewing
+                              : planCopy.artifactActions.preview}
+                          </button>
+                        ) : null}
                         {actions.canDownload ? (
                           <button
                             type="button"
@@ -1785,6 +1827,38 @@ export default function PlanPanel({
                               : missingLabel}
                           </button>
                         ) : null}
+                      </div>
+                    ) : null}
+                    {artifactPreview?.artifactId === artifact.id ? (
+                      <div
+                        className="artifact-preview"
+                        role="region"
+                        aria-label={planCopy.artifactActions.previewTitle}
+                      >
+                        <header>
+                          <strong>
+                            {planCopy.artifactActions.previewTitle}
+                          </strong>
+                          <button
+                            type="button"
+                            aria-label={planCopy.artifactActions.closePreview}
+                            onClick={() => setArtifactPreview(undefined)}
+                          >
+                            {planCopy.artifactActions.closePreview}
+                          </button>
+                        </header>
+                        <small>
+                          {planCopy.digest}:{" "}
+                          <code title={artifactPreview.textSha256}>
+                            {artifactPreview.textSha256.slice(0, 16)}
+                          </code>
+                          {" / "}
+                          {planCopy.size}:{" "}
+                          {formatArtifactSizeBytes(artifactPreview.sizeBytes)}
+                          {" / "}
+                          {planCopy.lineCount}: {artifactPreview.lineCount}
+                        </small>
+                        <pre>{artifactPreview.text}</pre>
                       </div>
                     ) : null}
                   </article>

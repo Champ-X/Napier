@@ -9,6 +9,7 @@ import { canonicalJson, sha256 } from "../src/ed25519.js";
 import {
   createPlanTools,
   exportWorkspaceFileArtifact,
+  previewWorkspaceTextArtifact,
 } from "../src/plan-tools.js";
 import { LocalStore } from "../src/store.js";
 
@@ -420,6 +421,91 @@ describe("plan tools", () => {
         path: "artifacts/report.txt",
         kind: "file",
         description: "Verified report file.",
+        status: "verified",
+        evidence: "The file was verified.",
+        sha256: createHash("sha256").update(contents).digest("hex"),
+        sizeBytes: Buffer.byteLength(contents),
+        createdAt: "2026-07-27T00:00:00.000Z",
+        updatedAt: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toThrow("Verified artifact digest drifted");
+  });
+
+  it("previews only small valid UTF-8 workspace file artifacts", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-plan-tools-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "artifacts"), { recursive: true });
+    const contents = "line one\nline two\n";
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "preview.txt"),
+      contents,
+      "utf8",
+    );
+    const preview = await previewWorkspaceTextArtifact(workspaceRoot, {
+      id: "preview",
+      path: "artifacts/preview.txt",
+      kind: "file",
+      description: "Preview file.",
+      status: "produced",
+      evidence: "The file was produced.",
+      createdAt: "2026-07-27T00:00:00.000Z",
+      updatedAt: "2026-07-27T00:00:00.000Z",
+    });
+    expect(preview).toEqual({
+      text: contents,
+      sha256: createHash("sha256").update(contents).digest("hex"),
+      sizeBytes: Buffer.byteLength(contents),
+      lineCount: 3,
+    });
+
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "binary.bin"),
+      Buffer.from([0xff, 0xfe, 0xfd]),
+    );
+    await expect(
+      previewWorkspaceTextArtifact(workspaceRoot, {
+        id: "binary",
+        path: "artifacts/binary.bin",
+        kind: "file",
+        description: "Binary file.",
+        status: "produced",
+        evidence: "The binary file was produced.",
+        createdAt: "2026-07-27T00:00:00.000Z",
+        updatedAt: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toThrow("valid UTF-8 text");
+
+    const largeContents = "x".repeat(64 * 1024 + 1);
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "large.txt"),
+      largeContents,
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceTextArtifact(workspaceRoot, {
+        id: "large",
+        path: "artifacts/large.txt",
+        kind: "file",
+        description: "Large file.",
+        status: "produced",
+        evidence: "The large file was produced.",
+        createdAt: "2026-07-27T00:00:00.000Z",
+        updatedAt: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toThrow("Artifact preview exceeds");
+
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "preview.txt"),
+      "drifted\n",
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceTextArtifact(workspaceRoot, {
+        id: "preview",
+        path: "artifacts/preview.txt",
+        kind: "file",
+        description: "Verified preview file.",
         status: "verified",
         evidence: "The file was verified.",
         sha256: createHash("sha256").update(contents).digest("hex"),

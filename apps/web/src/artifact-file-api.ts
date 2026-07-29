@@ -1,10 +1,27 @@
 import { throwNapierApiError } from "./api-error";
+import { requestJson } from "./api-client";
 
 export interface PlanArtifactFileDownload {
   blob: Blob;
   filename: string;
   sha256: string;
   sizeBytes: number;
+}
+
+export interface PlanArtifactTextPreview {
+  kind: "napier.plan-artifact-text-preview";
+  schemaVersion: 1;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  pathSha256: string;
+  sha256: string;
+  sizeBytes: number;
+  lineCount: number;
+  textSha256: string;
+  text: string;
 }
 
 export async function downloadPlanArtifactFile(
@@ -41,6 +58,16 @@ export async function downloadPlanArtifactFile(
     sha256: expectedSha256,
     sizeBytes,
   };
+}
+
+export function previewPlanArtifactText(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+): Promise<PlanArtifactTextPreview> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
+  );
 }
 
 async function sha256ArrayBuffer(value: ArrayBuffer): Promise<string> {

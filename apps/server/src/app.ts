@@ -349,6 +349,7 @@ import {
   createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
   exportWorkspaceFileArtifact,
+  previewWorkspaceTextArtifact,
   createInboundDeadLetterRetryHistory,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
@@ -7237,6 +7238,66 @@ export function createApp(services: NapierServices): Hono {
           exported.contents.byteOffset + exported.contents.byteLength,
         ) as ArrayBuffer;
         return context.body(body);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.get(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/preview",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const planId = context.req.param("planId");
+      assertPlanThread(services, planId, threadId);
+      const plan = services.store.getPlan(planId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(context, "Plan artifact preview is invalid", 404);
+      }
+      try {
+        const preview = await previewWorkspaceTextArtifact(
+          services.store.workspaceRoot,
+          artifact,
+        );
+        const payload = {
+          kind: "napier.plan-artifact-text-preview" as const,
+          schemaVersion: 1 as const,
+          planId: plan.id,
+          artifactId: artifact.id,
+          planRevision: plan.revision,
+          status: artifact.status,
+          artifactKind: artifact.kind,
+          pathSha256: sha256Text(artifact.path),
+          sha256: preview.sha256,
+          sizeBytes: preview.sizeBytes,
+          lineCount: preview.lineCount,
+          textSha256: sha256Text(preview.text),
+          text: preview.text,
+        };
+        await services.store.appendEvent({
+          threadId,
+          runId: createId("runctl"),
+          type: "artifact.previewed",
+          category: "artifact",
+          visibility: "user",
+          payload: {
+            planId: plan.id,
+            artifactId: artifact.id,
+            planRevision: plan.revision,
+            status: artifact.status,
+            kind: artifact.kind,
+            pathSha256: payload.pathSha256,
+            sha256: preview.sha256,
+            sizeBytes: preview.sizeBytes,
+            lineCount: preview.lineCount,
+            textSha256: payload.textSha256,
+          },
+        });
+        setPlanArtifactTextPreviewHeaders(context, plan, artifact, payload);
+        return context.json(payload);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -17668,6 +17729,40 @@ function setPlanArtifactFileExportHeaders(
     "X-Napier-Plan-Artifact-Size-Bytes",
     String(exported.sizeBytes),
   );
+}
+
+function setPlanArtifactTextPreviewHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: ExecutionPlan["artifacts"][number],
+  preview: {
+    sha256: string;
+    sizeBytes: number;
+    lineCount: number;
+    textSha256: string;
+  },
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, preview);
+  context.header("X-Napier-Thread-Id", plan.threadId);
+  context.header("X-Napier-Plan-Id", plan.id);
+  context.header("X-Napier-Plan-Revision", String(plan.revision));
+  context.header("X-Napier-Plan-Artifact-Id", artifact.id);
+  context.header("X-Napier-Plan-Artifact-Status", artifact.status);
+  context.header(
+    "X-Napier-Plan-Artifact-Path-SHA256",
+    sha256Text(artifact.path),
+  );
+  context.header("X-Napier-Plan-Artifact-SHA256", preview.sha256);
+  context.header(
+    "X-Napier-Plan-Artifact-Size-Bytes",
+    String(preview.sizeBytes),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Line-Count",
+    String(preview.lineCount),
+  );
+  context.header("X-Napier-Plan-Artifact-Text-SHA256", preview.textSha256);
 }
 
 function planArtifactDownloadFilename(

@@ -4766,11 +4766,87 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     ]);
+    const previewArtifactResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/preview`,
+    );
+    const previewedPlan = services.store.getPlan(plan.id);
+    expect(previewArtifactResponse.status).toBe(200);
+    expect(previewArtifactResponse.headers.get("Cache-Control")).toBe(
+      "no-store",
+    );
+    expect(previewArtifactResponse.headers.get("X-Napier-Plan-Revision")).toBe(
+      String(previewedPlan.revision),
+    );
+    expect(
+      previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Status"),
+    ).toBe("verified");
+    expect(
+      previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256"),
+    ).toBe(createHash("sha256").update("report.md").digest("hex"));
+    expect(
+      previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-SHA256"),
+    ).toBe(expectedReportSha256);
+    expect(
+      previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Size-Bytes"),
+    ).toBe(String(Buffer.byteLength(reportContents)));
+    expect(
+      previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Line-Count"),
+    ).toBe(String(reportContents.split(/\r\n|\r|\n/u).length));
+    const previewText = await previewArtifactResponse.text();
+    const previewBody = JSON.parse(previewText) as {
+      text: string;
+      textSha256: string;
+      sha256: string;
+      sizeBytes: number;
+      lineCount: number;
+    };
+    expect(previewArtifactResponse.headers.get("X-Napier-Content-SHA256")).toBe(
+      createHash("sha256").update(previewText).digest("hex"),
+    );
+    expect(
+      previewArtifactResponse.headers.get(
+        "X-Napier-Plan-Artifact-Text-SHA256",
+      ),
+    ).toBe(createHash("sha256").update(reportContents).digest("hex"));
+    expect(previewBody).toEqual(
+      expect.objectContaining({
+        text: reportContents,
+        textSha256: createHash("sha256").update(reportContents).digest("hex"),
+        sha256: expectedReportSha256,
+        sizeBytes: Buffer.byteLength(reportContents),
+        lineCount: reportContents.split(/\r\n|\r|\n/u).length,
+      }),
+    );
+    const previewEvents = (await services.store.listEvents(created.thread.id))
+      .filter(
+        (event) =>
+          event.type === "artifact.previewed" &&
+          event.payload["artifactId"] === "report",
+      );
+    expect(previewEvents).toEqual([
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          textSha256: createHash("sha256").update(reportContents).digest("hex"),
+          sha256: expectedReportSha256,
+          sizeBytes: Buffer.byteLength(reportContents),
+          lineCount: reportContents.split(/\r\n|\r|\n/u).length,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(previewEvents)).not.toContain(reportContents);
     await writeFile(
       path.join(services.store.workspaceRoot, "report.md"),
       "# Drifted report\n\nThis no longer matches the verified digest.\n",
       "utf8",
     );
+    const driftedPreviewResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/preview`,
+    );
+    expect(driftedPreviewResponse.status).toBe(400);
+    await expect(driftedPreviewResponse.json()).resolves.toEqual({
+      error: "Verified artifact digest drifted; replan before replacing it",
+    });
     const driftedDownloadResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file`,
     );

@@ -86,7 +86,10 @@ import {
   verifyRunReplaySnapshot,
   verifyThreadReplayBundle,
 } from "../src/api";
-import { downloadPlanArtifactFile } from "../src/artifact-file-api";
+import {
+  downloadPlanArtifactFile,
+  previewPlanArtifactText,
+} from "../src/artifact-file-api";
 
 describe("Web JSON API wrappers", () => {
   afterEach(() => {
@@ -578,6 +581,44 @@ describe("Web JSON API wrappers", () => {
         sizeBytes: bytes.byteLength,
       }),
     );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("previews plan text artifacts through response hash verification", async () => {
+    const preview = {
+      kind: "napier.plan-artifact-text-preview",
+      schemaVersion: 1,
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "file",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      sizeBytes: 21,
+      lineCount: 2,
+      textSha256: "c".repeat(64),
+      text: "previewed artifact\n",
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/preview",
+      );
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      const text = JSON.stringify(preview);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      previewPlanArtifactText("thread_1", "plan_1", "artifact_1"),
+    ).resolves.toEqual(preview);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

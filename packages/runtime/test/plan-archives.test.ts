@@ -216,6 +216,101 @@ describe("execution plan archives", () => {
     );
   });
 
+  it("keeps artifact preview receipts hash-only in plan archives", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Artifact preview archive",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    let plan = await store.createPlan(thread.id, {
+      objective: "Preview a workflow artifact.",
+      steps: [
+        {
+          id: "write",
+          title: "Write artifact",
+          description: "Write the artifact.",
+          verification: "The artifact is marked produced.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: "report.md",
+          description: "The report artifact.",
+        },
+      ],
+    });
+    plan = await store.updatePlanArtifact(plan.id, "report", {
+      status: "produced",
+      sourceRunId: run.id,
+      evidence: "The report was produced.",
+    });
+    const reportContents = "# Report\n\nReady for preview.\n";
+    const reportSha256 = createHash("sha256")
+      .update(reportContents)
+      .digest("hex");
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.previewed",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "report",
+        planRevision: plan.revision,
+        status: "produced",
+        kind: "file",
+        pathSha256: createHash("sha256").update("report.md").digest("hex"),
+        sha256: reportSha256,
+        sizeBytes: Buffer.byteLength(reportContents),
+        lineCount: reportContents.split(/\r\n|\r|\n/u).length,
+        textSha256: reportSha256,
+      },
+    });
+
+    const archive = await createExecutionPlanArchive(store, thread.id, plan.id);
+    expect(archive.events.map((event) => event.type)).toEqual([
+      "artifact.previewed",
+    ]);
+    expect(JSON.stringify(archive.events)).not.toContain(reportContents);
+    expect(verifyExecutionPlanArchive(archive).status).toBe("valid");
+
+    const tampered = structuredClone(archive);
+    const previewEvent = tampered.events[0];
+    if (
+      !previewEvent?.payload ||
+      Array.isArray(previewEvent.payload) ||
+      typeof previewEvent.payload !== "object"
+    ) {
+      throw new Error("Artifact preview event fixture is missing");
+    }
+    previewEvent.payload["text"] = reportContents;
+    tampered.eventStreamSha256 = createHash("sha256")
+      .update(tampered.events.map((event) => JSON.stringify(event)).join("\n"))
+      .digest("hex");
+    tampered.contentSha256 = hashExecutionPlanArchiveContent({
+      kind: tampered.kind,
+      schemaVersion: tampered.schemaVersion,
+      apiVersion: tampered.apiVersion,
+      threadId: tampered.threadId,
+      plan: tampered.plan,
+      events: tampered.events,
+      eventStreamSha256: tampered.eventStreamSha256,
+    });
+    expect(verifyExecutionPlanArchive(tampered)).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["invalid_shape"],
+      }),
+    );
+  });
+
   it("distills a reusable workflow blueprint from a plan archive", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;

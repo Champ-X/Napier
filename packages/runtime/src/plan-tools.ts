@@ -21,12 +21,20 @@ import { createReplanPolicyTemplate } from "./replan-policies.js";
 import type { LocalStore } from "./store.js";
 
 const MAX_ARTIFACT_HASH_BYTES = 32 * 1024 * 1024;
+const MAX_ARTIFACT_PREVIEW_BYTES = 64 * 1024;
 const DIRECTORY_DIGEST_KIND = "napier.plan-directory-digest";
 
 export interface WorkspaceFileArtifactExport {
   contents: Buffer;
   sha256: string;
   sizeBytes: number;
+}
+
+export interface WorkspaceTextArtifactPreview {
+  text: string;
+  sha256: string;
+  sizeBytes: number;
+  lineCount: number;
 }
 
 const planStepInputSchema = Type.Object({
@@ -553,6 +561,45 @@ export async function exportWorkspaceFileArtifact(
     contents,
     sha256: observedSha256,
     sizeBytes: info.size,
+  };
+}
+
+export async function previewWorkspaceTextArtifact(
+  workspaceRoot: string,
+  artifact: ExecutionPlan["artifacts"][number],
+): Promise<WorkspaceTextArtifactPreview> {
+  if (artifact.kind !== "file") {
+    throw new Error("Only file artifacts can be previewed");
+  }
+  if (artifact.status !== "produced" && artifact.status !== "verified") {
+    throw new Error("Only produced or verified artifacts can be previewed");
+  }
+  if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
+    throw new Error("Artifact path escapes the configured workspace");
+  }
+  const { target, info } = await inspectWorkspaceArtifactTarget(
+    workspaceRoot,
+    artifact,
+  );
+  if (info.size > MAX_ARTIFACT_PREVIEW_BYTES) {
+    throw new Error(
+      `Artifact preview exceeds the ${MAX_ARTIFACT_PREVIEW_BYTES / 1024} KiB limit`,
+    );
+  }
+  const contents = await readFile(target);
+  const observedSha256 = sha256(contents);
+  assertVerifiedArtifactDigestMatches(artifact, observedSha256);
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(contents);
+  } catch {
+    throw new Error("Artifact preview requires valid UTF-8 text");
+  }
+  return {
+    text,
+    sha256: observedSha256,
+    sizeBytes: info.size,
+    lineCount: text.length === 0 ? 0 : text.split(/\r\n|\r|\n/u).length,
   };
 }
 

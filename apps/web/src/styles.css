@@ -6287,6 +6287,71 @@ button:disabled {
   opacity: 0.58;
 }
 
+.artifact-preview {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  margin-top: 9px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.artifact-preview header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.artifact-preview strong {
+  font-family: var(--serif);
+  font-size: 10px;
+  color: var(--ink);
+}
+
+.artifact-preview button {
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.artifact-preview button:hover,
+.artifact-preview button:focus-visible {
+  color: var(--ledger);
+  outline: none;
+}
+
+.artifact-preview small {
+  display: block;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifact-preview pre {
+  max-height: 240px;
+  padding: 9px;
+  margin: 0;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
 .artifact-error {
   margin: 8px 0 0;
   font-size: 10px;

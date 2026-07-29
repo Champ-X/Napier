@@ -9,10 +9,12 @@ export interface ArtifactEventTraceView {
   kind?: string;
   pathSha256?: string;
   sha256?: string;
+  textSha256?: string;
   sizeBytes?: number;
+  lineCount?: number;
 }
 
-const ARTIFACT_EVENT = /^artifact\.(exported)$/u;
+const ARTIFACT_EVENT = /^artifact\.(exported|previewed)$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ARTIFACT_RECEIPT_SUMMARY = "artifact receipt";
@@ -37,7 +39,9 @@ export function artifactEventTraceView(
     ...safeTokenField(event.payload, "kind"),
     ...shaField(event.payload, "pathSha256"),
     ...shaField(event.payload, "sha256"),
+    ...shaField(event.payload, "textSha256"),
     ...integerField(event.payload, "sizeBytes"),
+    ...integerField(event.payload, "lineCount"),
   };
 }
 
@@ -56,8 +60,10 @@ export function artifactEventTraceSummary(
     ...(view.status ? [`status ${view.status}`] : []),
     ...(view.kind ? [`kind ${view.kind}`] : []),
     ...(view.sizeBytes !== undefined ? [`size-bytes ${view.sizeBytes}`] : []),
+    ...(view.lineCount !== undefined ? [`lines ${view.lineCount}`] : []),
     ...hashSummary("path", view.pathSha256),
     ...hashSummary("artifact", view.sha256),
+    ...hashSummary("text", view.textSha256),
   ].join(" / ");
 }
 

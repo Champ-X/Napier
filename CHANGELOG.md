@@ -352,6 +352,10 @@ All notable changes to Napier are recorded here.
   workspace-confined no-store endpoint. The server rehashes bytes, rejects
   verified digest drift, records a hash-only `artifact.exported` Ledger event,
   and renders that event through a bounded Trace summary.
+- Plan Workbench now previews small UTF-8 produced or verified file artifacts
+  through the same workspace and digest boundary. Preview responses are
+  no-store and hash-bound, while `artifact.previewed` Ledger events and Plan
+  archives persist only content/text hashes, byte count, and line count.
 - Thread replay bundle validation now recomputes Independent Advisor
   `evidenceSummary` from predecessor Run events, so a forged current/stale
   summary fails even if review and bundle hashes are recalculated.
