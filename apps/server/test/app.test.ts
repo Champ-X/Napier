@@ -4758,13 +4758,31 @@ describe("Napier HTTP goal flow", () => {
         "utf8",
       ),
     ).toBe(reportContents);
-    expect(
-      (await services.store.listEvents(created.thread.id)).filter(
-        (event) =>
-          event.type === "artifact.exported" &&
-          event.payload["artifactId"] === "report",
-      ),
-    ).toEqual([
+    const exportedEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.exported" &&
+        event.payload["artifactId"] === "report",
+    );
+    expectLedgerEventReceiptProjection(
+      downloadArtifactResponse,
+      {
+        ledgerEventId:
+          downloadArtifactResponse.headers.get("X-Napier-Ledger-Event-Id") ??
+          "",
+        ledgerEventSeq: Number(
+          downloadArtifactResponse.headers.get("X-Napier-Ledger-Event-Seq") ??
+            Number.NaN,
+        ),
+        ledgerEventSha256:
+          downloadArtifactResponse.headers.get(
+            "X-Napier-Ledger-Event-SHA256",
+          ) ?? "",
+      },
+      exportedEvents[0],
+    );
+    expect(exportedEvents).toEqual([
       expect.objectContaining({
         category: "artifact",
         payload: expect.objectContaining({

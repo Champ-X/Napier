@@ -7283,7 +7283,7 @@ export function createApp(services: NapierServices): Hono {
           services.store.workspaceRoot,
           artifact,
         );
-        await services.store.appendEvent({
+        const ledgerEvent = await services.store.appendEvent({
           threadId,
           runId: createId("runctl"),
           type: "artifact.exported",
@@ -7300,7 +7300,10 @@ export function createApp(services: NapierServices): Hono {
             sizeBytes: exported.sizeBytes,
           },
         });
-        setPlanArtifactFileExportHeaders(context, plan, artifact, exported);
+        setPlanArtifactFileExportHeaders(context, plan, artifact, {
+          ...exported,
+          ...createLedgerEventReceiptProjection(ledgerEvent),
+        });
         context.header("Content-Type", "application/octet-stream");
         const body = exported.contents.buffer.slice(
           exported.contents.byteOffset,
@@ -18103,7 +18106,10 @@ function setPlanArtifactFileExportHeaders(
   context: Context,
   plan: ExecutionPlan,
   artifact: ExecutionPlan["artifacts"][number],
-  exported: { sha256: string; sizeBytes: number },
+  exported: {
+    sha256: string;
+    sizeBytes: number;
+  } & Partial<LedgerEventReceiptProjection>,
 ): void {
   context.header("Cache-Control", "no-store");
   context.header(
@@ -18125,6 +18131,7 @@ function setPlanArtifactFileExportHeaders(
     "X-Napier-Plan-Artifact-Size-Bytes",
     String(exported.sizeBytes),
   );
+  setLedgerEventReceiptHeaders(context, exported);
 }
 
 function setPlanArtifactTextPreviewHeaders(

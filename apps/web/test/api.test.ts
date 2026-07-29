@@ -574,6 +574,9 @@ describe("Web JSON API wrappers", () => {
             'attachment; filename="napier-artifact-artifact_1-report.txt"',
           "X-Napier-Content-SHA256": sha256,
           "X-Napier-Plan-Artifact-Size-Bytes": String(bytes.byteLength),
+          "X-Napier-Ledger-Event-Id": "event_download1234567890",
+          "X-Napier-Ledger-Event-Seq": "6",
+          "X-Napier-Ledger-Event-SHA256": "d".repeat(64),
         },
       });
     });
@@ -590,7 +593,32 @@ describe("Web JSON API wrappers", () => {
         filename: "napier-artifact-artifact_1-report.txt",
         sha256,
         sizeBytes: bytes.byteLength,
+        ledgerEventId: "event_download1234567890",
+        ledgerEventSeq: 6,
+        ledgerEventSha256: "d".repeat(64),
       }),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects plan artifact downloads without ledger receipt headers", async () => {
+    const bytes = new TextEncoder().encode("downloadable artifact\n");
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const fetchMock = vi.fn(async () => {
+      return new Response(bytes, {
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "X-Napier-Content-SHA256": sha256,
+          "X-Napier-Plan-Artifact-Size-Bytes": String(bytes.byteLength),
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      downloadPlanArtifactFile("thread_1", "plan_1", "artifact_1"),
+    ).rejects.toThrow(
+      "Response ledger receipt invalid for /api/threads/thread_1/plans/plan_1/artifacts/artifact_1/file",
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
@@ -607,6 +635,9 @@ describe("Web JSON API wrappers", () => {
           "Content-Type": "application/octet-stream",
           "X-Napier-Content-SHA256": sha256,
           "X-Napier-Plan-Artifact-Size-Bytes": String(bytes.byteLength),
+          "X-Napier-Ledger-Event-Id": "event_download1234567890",
+          "X-Napier-Ledger-Event-Seq": "6",
+          "X-Napier-Ledger-Event-SHA256": "d".repeat(64),
         },
       });
     });
@@ -619,6 +650,9 @@ describe("Web JSON API wrappers", () => {
         filename: `napier-artifact-artifact_bad_path-${sha256.slice(0, 12)}.artifact`,
         sha256,
         sizeBytes: bytes.byteLength,
+        ledgerEventId: "event_download1234567890",
+        ledgerEventSeq: 6,
+        ledgerEventSha256: "d".repeat(64),
       }),
     );
     expect(fetchMock).toHaveBeenCalledTimes(1);

@@ -1,17 +1,17 @@
 import { throwNapierApiError } from "./api-error";
 import { requestJson } from "./api-client";
 
-export interface PlanArtifactFileDownload {
-  blob: Blob;
-  filename: string;
-  sha256: string;
-  sizeBytes: number;
-}
-
 export interface PlanArtifactLedgerEventReceipt {
   ledgerEventId: string;
   ledgerEventSeq: number;
   ledgerEventSha256: string;
+}
+
+export interface PlanArtifactFileDownload extends PlanArtifactLedgerEventReceipt {
+  blob: Blob;
+  filename: string;
+  sha256: string;
+  sizeBytes: number;
 }
 
 export interface PlanArtifactTextPreview {
@@ -191,6 +191,7 @@ export async function downloadPlanArtifactFile(
   if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
     throw new Error(`Response artifact size invalid for ${path}`);
   }
+  const receipt = ledgerEventReceiptFromHeaders(response, path);
   return {
     blob: new Blob([bytes], {
       type: response.headers.get("Content-Type") ?? "application/octet-stream",
@@ -200,6 +201,7 @@ export async function downloadPlanArtifactFile(
       planArtifactFileFallbackFilename(artifactId, expectedSha256),
     sha256: expectedSha256,
     sizeBytes,
+    ...receipt,
   };
 }
 
@@ -287,6 +289,30 @@ function contentDispositionFilename(response: Response): string | undefined {
   if (!match) return undefined;
   const filename = safeFilenameSegment(match[1] ?? "", "");
   return filename.length > 0 ? filename : undefined;
+}
+
+function ledgerEventReceiptFromHeaders(
+  response: Response,
+  path: string,
+): PlanArtifactLedgerEventReceipt {
+  const ledgerEventId = response.headers.get("X-Napier-Ledger-Event-Id");
+  const ledgerEventSeq = Number(
+    response.headers.get("X-Napier-Ledger-Event-Seq") ?? Number.NaN,
+  );
+  const ledgerEventSha256 = response.headers.get(
+    "X-Napier-Ledger-Event-SHA256",
+  );
+  if (
+    !ledgerEventId ||
+    !/^event_[a-z0-9]+$/u.test(ledgerEventId) ||
+    !Number.isSafeInteger(ledgerEventSeq) ||
+    ledgerEventSeq <= 0 ||
+    !ledgerEventSha256 ||
+    !/^[a-f0-9]{64}$/u.test(ledgerEventSha256)
+  ) {
+    throw new Error(`Response ledger receipt invalid for ${path}`);
+  }
+  return { ledgerEventId, ledgerEventSeq, ledgerEventSha256 };
 }
 
 function planArtifactFileFallbackFilename(

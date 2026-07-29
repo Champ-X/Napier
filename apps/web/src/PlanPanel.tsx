@@ -330,6 +330,15 @@ export default function PlanPanel({
   const [draftReviewError, setDraftReviewError] = useState<string>();
   const [artifactBusyId, setArtifactBusyId] = useState<string>();
   const [artifactError, setArtifactError] = useState<string>();
+  const [artifactFileDownloadReceipt, setArtifactFileDownloadReceipt] =
+    useState<
+      PlanArtifactLedgerEventReceipt & {
+        artifactId: string;
+        filename: string;
+        sha256: string;
+        sizeBytes: number;
+      }
+    >();
   const [artifactPreview, setArtifactPreview] =
     useState<PlanArtifactTextPreviewReceipt>();
   const [artifactDataProfile, setArtifactDataProfile] =
@@ -489,6 +498,7 @@ export default function PlanPanel({
     setArtifactDirectoryManifest(undefined);
     setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
+    setArtifactFileDownloadReceipt(undefined);
     try {
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
         status: action,
@@ -512,6 +522,7 @@ export default function PlanPanel({
     if (!threadId || !plan || artifactBusyId) return;
     setArtifactBusyId(`${artifact.id}:download`);
     setArtifactError(undefined);
+    setArtifactFileDownloadReceipt(undefined);
     try {
       const download = await downloadPlanArtifactFile(
         threadId,
@@ -519,6 +530,15 @@ export default function PlanPanel({
         artifact.id,
       );
       downloadBlob(download.blob, download.filename);
+      setArtifactFileDownloadReceipt({
+        artifactId: artifact.id,
+        filename: download.filename,
+        sha256: download.sha256,
+        sizeBytes: download.sizeBytes,
+        ledgerEventId: download.ledgerEventId,
+        ledgerEventSeq: download.ledgerEventSeq,
+        ledgerEventSha256: download.ledgerEventSha256,
+      });
       await onDraftApplied();
     } catch (error) {
       setArtifactError(formatApiErrorMessage(error));
@@ -2394,6 +2414,30 @@ export default function PlanPanel({
                               : missingLabel}
                           </button>
                         ) : null}
+                      </div>
+                    ) : null}
+                    {artifactFileDownloadReceipt?.artifactId === artifact.id ? (
+                      <div
+                        className="artifact-data-profile-verification status-valid"
+                        role="status"
+                      >
+                        <strong>{planCopy.artifactActions.download}</strong>
+                        <small>
+                          {planCopy.digest}:{" "}
+                          <code title={artifactFileDownloadReceipt.sha256}>
+                            {artifactFileDownloadReceipt.sha256.slice(0, 16)}
+                          </code>
+                          {" / "}
+                          {planCopy.size}:{" "}
+                          {formatArtifactSizeBytes(
+                            artifactFileDownloadReceipt.sizeBytes,
+                          )}
+                          {" / "}
+                          {artifactFileDownloadReceipt.filename}
+                        </small>
+                        <PlanArtifactLedgerReceiptLine
+                          receipt={artifactFileDownloadReceipt}
+                        />
                       </div>
                     ) : null}
                     {artifactPreview?.artifactId === artifact.id ? (
