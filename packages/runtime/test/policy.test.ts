@@ -184,6 +184,36 @@ describe("workspace policy", () => {
     expect(
       assessToolCall(
         "observe",
+        "lsp_diagnostics",
+        { path: "src/index.ts" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "lsp_diagnostics",
+        { path: "src/index.ts" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "read-only sandboxed language-server diagnostics",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
+        "lsp_diagnostics",
+        { path: "../outside.ts" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "observe",
         "run_command",
         { runtime: "node", args: ["--version"] },
         "/workspace",

@@ -44,6 +44,7 @@ import type {
   ToolPolicyMode,
   UsagePriceTableCatalog,
 } from "@napier/contracts";
+import { AGENT_TOOL_NAMES } from "@napier/contracts";
 
 import {
   applySkillContent,
@@ -1114,19 +1115,7 @@ export default function ContextPanel({
   const canSignPromptPackage =
     promptPublisher.trim().length > 0 && promptTrustAnchorId.length > 0;
   const subagentOptions: SubagentRole[] = ["researcher", "reviewer", "general"];
-  const toolOptions = [
-    "list_files",
-    "read_file",
-    "search_files",
-    "list_symbols",
-    "inspect_data",
-    "inspect_code",
-    "read_symbol",
-    "apply_patch",
-    "run_command",
-    "workspace_process",
-    "verify_workspace",
-  ] as const;
+  const toolOptions = AGENT_TOOL_NAMES;
 
   return (
     <section

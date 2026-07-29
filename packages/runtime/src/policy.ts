@@ -25,6 +25,7 @@ const WRITE_TOOLS = new Set(["apply_patch"]);
 const WORKSPACE_FILE_PREVIEW_TOOLS = new Set(["workspace_file_preview"]);
 const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
+const LSP_TOOLS = new Set(["lsp_diagnostics"]);
 const PROCESS_TOOLS = new Set(["run_command", "workspace_process"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
@@ -193,6 +194,33 @@ export function assessToolCall(
       allowed: true,
       risk: "medium",
       reason: "read-only sandboxed verification",
+    };
+  }
+
+  if (LSP_TOOLS.has(toolName)) {
+    const candidate = getStringField(input, "path");
+    if (
+      !candidate ||
+      path.isAbsolute(candidate) ||
+      !isPathInsideWorkspace(candidate, workspaceRoot)
+    ) {
+      return {
+        allowed: false,
+        risk: "high",
+        reason: "LSP diagnostics must target a path inside the workspace",
+      };
+    }
+    if (mode === "observe") {
+      return {
+        allowed: false,
+        risk: "medium",
+        reason: "the active agent policy does not allow process execution",
+      };
+    }
+    return {
+      allowed: true,
+      risk: "medium",
+      reason: "read-only sandboxed language-server diagnostics",
     };
   }
 

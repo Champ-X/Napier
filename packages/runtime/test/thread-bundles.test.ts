@@ -96,6 +96,24 @@ function evaluationCompletedPayload(
 }
 
 describe("thread replay bundles", () => {
+  it("round-trips Agent profiles that enable LSP diagnostics", async () => {
+    const { store } = await createStore();
+    const current = store.listAgents()[0]!;
+    const agent = await store.updateAgent(current.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_diagnostics"],
+    });
+    const thread = await store.createThread({
+      title: "Portable LSP profile",
+      agentId: agent.id,
+    });
+    const bundle = createThreadReplayBundle(await store.getDetail(thread.id));
+
+    expect(bundle.agent.enabledTools).toEqual(["lsp_diagnostics"]);
+    expect(validateThreadReplayBundle(bundle)).toEqual(bundle);
+    expect(verifyThreadReplayBundle(bundle).status).toBe("valid");
+  });
+
   it("binds deterministic content and event hashes while excluding generation time", async () => {
     const { store } = await createStore();
     const thread = store.listThreads()[0]!;

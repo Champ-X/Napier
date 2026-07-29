@@ -68,6 +68,23 @@ export interface ToolEventTraceView extends CommandToolEventTraceView {
   symbolSourceSignatureSha256?: string;
   symbolSourceRangeSha256?: string;
   symbolSourceLineAnchorSetSha256?: string;
+  lspStatus?: "clean" | "diagnostics";
+  lspLanguage?:
+    | "typescript"
+    | "typescriptreact"
+    | "javascript"
+    | "javascriptreact";
+  lspDiagnosticCount?: number;
+  lspErrorCount?: number;
+  lspWarningCount?: number;
+  lspTruncated?: boolean;
+  lspDurationMs?: number;
+  lspProtocolBytes?: number;
+  lspPathSha256?: string;
+  lspFileSha256?: string;
+  lspDiagnosticSetSha256?: string;
+  lspCodeSetSha256?: string;
+  lspResultSha256?: string;
   verificationKind?: "typecheck" | "test" | "format";
   verificationStatus?: "passed" | "failed" | "timed_out" | "output_capped";
   verificationExitCode?: number;
@@ -170,6 +187,10 @@ export function toolEventTraceView(
     toolName === "read_symbol"
       ? readSymbolEvidence(event.payload["details"])
       : undefined;
+  const lspEvidence =
+    toolName === "lsp_diagnostics"
+      ? lspDiagnosticsEvidence(event.payload["details"])
+      : undefined;
   const verificationEvidence =
     toolName === "verify_workspace"
       ? verificationEvidenceView(event.payload["details"])
@@ -205,6 +226,7 @@ export function toolEventTraceView(
     ...(dataEvidence ? dataEvidence : {}),
     ...(codeEvidence ? codeEvidence : {}),
     ...(symbolSourceEvidence ? symbolSourceEvidence : {}),
+    ...(lspEvidence ? lspEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
@@ -337,6 +359,39 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.symbolSourceLineAnchorSetSha256
       ? [`symbol-anchors ${view.symbolSourceLineAnchorSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.lspStatus ? [`lsp ${view.lspStatus}`] : []),
+    ...(view.lspLanguage ? [`language ${view.lspLanguage}`] : []),
+    ...(view.lspDiagnosticCount !== undefined
+      ? [`diagnostics ${view.lspDiagnosticCount}`]
+      : []),
+    ...(view.lspErrorCount !== undefined
+      ? [`errors ${view.lspErrorCount}`]
+      : []),
+    ...(view.lspWarningCount !== undefined
+      ? [`warnings ${view.lspWarningCount}`]
+      : []),
+    ...(view.lspDurationMs !== undefined
+      ? [`duration-ms ${view.lspDurationMs}`]
+      : []),
+    ...(view.lspProtocolBytes !== undefined
+      ? [`protocol-bytes ${view.lspProtocolBytes}`]
+      : []),
+    ...(view.lspTruncated ? ["lsp-truncated"] : []),
+    ...(view.lspPathSha256
+      ? [`lsp-path ${view.lspPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.lspFileSha256
+      ? [`lsp-file ${view.lspFileSha256.slice(0, 12)}`]
+      : []),
+    ...(view.lspDiagnosticSetSha256
+      ? [`diagnostic-set ${view.lspDiagnosticSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.lspCodeSetSha256
+      ? [`code-set ${view.lspCodeSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.lspResultSha256
+      ? [`lsp-result ${view.lspResultSha256.slice(0, 12)}`]
       : []),
     ...(view.verificationKind && view.verificationStatus
       ? [`verification ${view.verificationKind} ${view.verificationStatus}`]
@@ -772,6 +827,83 @@ function codeLanguage(
     value === "unknown"
     ? value
     : undefined;
+}
+
+function lspDiagnosticsEvidence(value: unknown):
+  | {
+      lspStatus: "clean" | "diagnostics";
+      lspLanguage:
+        | "typescript"
+        | "typescriptreact"
+        | "javascript"
+        | "javascriptreact";
+      lspDiagnosticCount: number;
+      lspErrorCount: number;
+      lspWarningCount: number;
+      lspTruncated?: boolean;
+      lspDurationMs?: number;
+      lspProtocolBytes?: number;
+      lspPathSha256?: string;
+      lspFileSha256?: string;
+      lspDiagnosticSetSha256?: string;
+      lspCodeSetSha256?: string;
+      lspResultSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  if (
+    record["kind"] !== "napier.lsp-diagnostics" ||
+    record["schemaVersion"] !== 1 ||
+    (record["status"] !== "clean" && record["status"] !== "diagnostics") ||
+    (record["language"] !== "typescript" &&
+      record["language"] !== "typescriptreact" &&
+      record["language"] !== "javascript" &&
+      record["language"] !== "javascriptreact")
+  ) {
+    return undefined;
+  }
+  const diagnosticCount = integerInRange(record["diagnosticCount"], 0, 64);
+  const errorCount = integerInRange(record["errorCount"], 0, 64);
+  const warningCount = integerInRange(record["warningCount"], 0, 64);
+  if (
+    diagnosticCount === undefined ||
+    errorCount === undefined ||
+    warningCount === undefined ||
+    errorCount + warningCount > diagnosticCount
+  ) {
+    return undefined;
+  }
+  const durationMs = integerInRange(record["durationMs"], 0, 30_000);
+  const protocolBytes = integerInRange(
+    record["protocolBytes"],
+    0,
+    2 * 1024 * 1024,
+  );
+  const pathSha256 = sha256(record["pathSha256"]);
+  const fileSha256 = sha256(record["fileSha256"]);
+  const diagnosticSetSha256 = sha256(record["diagnosticSetSha256"]);
+  const codeSetSha256 = sha256(record["codeSetSha256"]);
+  const resultSha256 = sha256(record["resultSha256"]);
+  return {
+    lspStatus: record["status"],
+    lspLanguage: record["language"],
+    lspDiagnosticCount: diagnosticCount,
+    lspErrorCount: errorCount,
+    lspWarningCount: warningCount,
+    ...(record["truncated"] === true ? { lspTruncated: true } : {}),
+    ...(durationMs !== undefined ? { lspDurationMs: durationMs } : {}),
+    ...(protocolBytes !== undefined ? { lspProtocolBytes: protocolBytes } : {}),
+    ...(pathSha256 ? { lspPathSha256: pathSha256 } : {}),
+    ...(fileSha256 ? { lspFileSha256: fileSha256 } : {}),
+    ...(diagnosticSetSha256
+      ? { lspDiagnosticSetSha256: diagnosticSetSha256 }
+      : {}),
+    ...(codeSetSha256 ? { lspCodeSetSha256: codeSetSha256 } : {}),
+    ...(resultSha256 ? { lspResultSha256: resultSha256 } : {}),
+  };
 }
 
 function verificationEvidenceView(value: unknown):

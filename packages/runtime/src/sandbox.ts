@@ -11,6 +11,7 @@ const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
 const CONTAINER_EXEC = "/usr/bin/docker";
 const CONTAINER_IMAGE_ENV = "NAPIER_CONTAINER_SANDBOX_IMAGE";
 const PROCESS_STOP_GRACE_MS = 2_000;
+const MAX_RUNTIME_READ_PATHS = 8;
 const LINUX_RUNTIME_READ_PATHS = [
   "/lib",
   "/lib64",
@@ -29,6 +30,7 @@ export interface SandboxLaunchRequest {
   env: Record<string, string>;
   workspaceRoot: string;
   approvedCapabilities: ExtensionCapability[];
+  runtimeReadPaths?: string[];
 }
 
 export interface SandboxedProcess {
@@ -323,6 +325,7 @@ export function buildMacOsSandboxProfile(
     request.workspaceRoot,
     request.cwd,
     sandboxHome,
+    ...(request.runtimeReadPaths ?? []),
   ]);
   const rules = [
     "(version 1)",
@@ -354,6 +357,9 @@ export function buildMacOsSandboxProfile(
       `(allow file-read* (subpath ${sandboxLiteral(request.workspaceRoot)}))`,
     );
   }
+  for (const runtimePath of request.runtimeReadPaths ?? []) {
+    rules.push(`(allow file-read* (subpath ${sandboxLiteral(runtimePath)}))`);
+  }
   if (capabilities.has("workspace.write")) {
     rules.push(
       `(allow file-write* (subpath ${sandboxLiteral(request.workspaceRoot)}))`,
@@ -379,6 +385,7 @@ export function buildLinuxBubblewrapArgs(
   const directories = destinationDirectories([
     path.dirname(request.command),
     ...(workspaceMounted ? [request.workspaceRoot] : []),
+    ...(request.runtimeReadPaths ?? []),
     ...LINUX_RUNTIME_READ_PATHS,
   ]);
   const args = [
@@ -404,6 +411,9 @@ export function buildLinuxBubblewrapArgs(
       request.workspaceRoot,
       request.workspaceRoot,
     );
+  }
+  for (const runtimePath of request.runtimeReadPaths ?? []) {
+    args.push("--ro-bind", runtimePath, runtimePath);
   }
   args.push(
     "--ro-bind",
@@ -473,6 +483,9 @@ export function buildOciContainerArgs(
       ),
     );
   }
+  for (const runtimePath of request.runtimeReadPaths ?? []) {
+    args.push("--mount", bindMount(runtimePath, runtimePath, true));
+  }
   args.push(image, request.command, ...request.args);
   return args;
 }
@@ -498,6 +511,20 @@ function validateLaunchRequest(request: SandboxLaunchRequest): void {
     !request.approvedCapabilities.includes("workspace.read")
   ) {
     throw new Error("workspace.write requires workspace.read");
+  }
+  if (
+    request.runtimeReadPaths !== undefined &&
+    (request.runtimeReadPaths.length > MAX_RUNTIME_READ_PATHS ||
+      request.runtimeReadPaths.some(
+        (runtimePath) =>
+          !path.isAbsolute(runtimePath) ||
+          path.resolve(runtimePath) === path.parse(runtimePath).root ||
+          /[\u0000-\u001f\u007f]/u.test(runtimePath),
+      ))
+  ) {
+    throw new Error(
+      `Sandbox runtime read paths must contain at most ${MAX_RUNTIME_READ_PATHS} absolute non-root paths`,
+    );
   }
 }
 

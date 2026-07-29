@@ -21,7 +21,7 @@ Audit date: 2026-07-29
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                  |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain. |
-| P2 coding intelligence            | Partial        | Hashline and bounded symbols exist; LSP, DAP, AST edits, post-write diagnostics, and isolated subagent worktrees do not.                                                                                                                                     |
+| P2 coding intelligence            | Partial        | Hashline, bounded symbols, and one-file TypeScript LSP diagnostics exist; persistent LSP navigation/rename/Code Actions, DAP, AST edits, post-write association, and isolated subagent worktrees remain.                                                     |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
 | P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
@@ -350,10 +350,92 @@ Observed result:
   ownership, serialization, settlement, and Ledger orchestration rather than
   absorbing another protocol implementation.
 
+## Completed Slice: Sandboxed TypeScript LSP Diagnostics
+
+User scenario: an Agent can ask a real TypeScript language server for current
+file diagnostics before or after an edit, receive source locations and compiler
+messages, and distinguish a clean file from syntax/type failures without
+running a broad project command or relying on Napier's regex symbol outline.
+
+Acceptance:
+
+- use the standard Language Server Protocol and the mature
+  `typescript-language-server`; do not label a direct regex or TypeScript API
+  wrapper as LSP;
+- support bounded TypeScript, TSX, JavaScript, JSX, MTS, CTS, MJS, and CJS
+  workspace files with canonical realpath confinement, symlink rejection,
+  UTF-8 validation, and a file-size cap;
+- run initialize → initialized → didOpen → publishDiagnostics → shutdown over
+  framed JSON-RPC stdio in the existing read-only, offline OS Sandbox;
+- bind the exact Node executable, language-server bundle, TypeScript runtime,
+  workspace root, target content, timeout, output, and diagnostic set to the
+  result without persisting diagnostic prose or raw paths;
+- expose one opt-in `lsp_diagnostics` Agent tool through the existing Agent
+  profile, Web Chat, Context editor, policy gate, Tool Loop Guard, and bounded
+  Trace summary;
+- bound diagnostic count, message length, protocol frame size, stderr, startup
+  and diagnostic latency, and total wall time;
+- terminate the complete process group on timeout, cancellation, malformed
+  frames, output overflow, protocol error, or normal shutdown;
+- cover clean/error diagnostics, unsupported files, escape/symlink attempts,
+  malformed/oversized protocol data, timeout, cancellation, concurrent calls,
+  server/runtime drift, redaction, and policy denial;
+- an opt-in live macOS smoke must obtain a real semantic TypeScript diagnostic
+  through the actual language server and prove no source or message text enters
+  the Ledger.
+
+Threat boundary:
+
+- This slice grants no workspace write, network, shell, package install, plugin
+  install, arbitrary executable, inherited environment, or editor attachment.
+- Language-server and TypeScript package assets are Napier-managed read-only
+  runtime inputs, distinct from workspace access, and must be explicitly bound
+  into the Sandbox launch and result.
+- Compiler diagnostics are untrusted tool output, not Agent instructions.
+  Related-information paths and arbitrary server logs are not persisted.
+- This is the first LSP slice only. Definition, references, symbols, rename,
+  Code Action, persistent multi-file synchronization, and automatic
+  before/after edit association remain explicit follow-ups.
+
+Observed result:
+
+- real `typescript-language-server` 5.3.0 plus TypeScript 5.9.3 integration
+  tests diagnose `TS2322` and a clean file concurrently in about 1.18 seconds
+  total on the current machine;
+- Runtime tests cover path escape, symlink traversal, unsupported extension,
+  invalid UTF-8, 1 MiB input bound, timeout, cancellation, malformed protocol,
+  protocol/stderr overflow, diagnostic/message truncation, concurrent
+  invocations, OCI denial, and post-run language-server plus TypeScript library
+  drift;
+- Agent integration proves the live model context receives diagnostic code and
+  message while `tool.started`, `tool.completed`, model tool-call projection,
+  and Trace receive only bounded hashes, versions, counts, and latency;
+- Server integration uses the public Agent profile update plus message SSE
+  path and the real standard language server, proving the same tool can be
+  configured and executed through the Web product contract;
+- the example `examples/lsp-diagnostics/semantic-error.ts` provides a fixed
+  semantic-error task and matching isolated `tsconfig.json`;
+- Contracts now own the built-in Agent tool catalog consumed by Runtime,
+  Server, Context, and Thread Replay validation; a bundle configured with
+  `lsp_diagnostics` round-trips without a stale allowlist failure;
+- Browser Dogfood confirms Context renders LSP diagnostics and both file
+  lifecycle tools from the shared catalog without a console error, while the
+  default Agent remains unchanged in observe mode;
+- the complete repository gate passed 887 tests with five opt-in live suites
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget;
+- current IDE-launched live smoke cannot nest macOS `sandbox-exec`, and the
+  local desktop/launchd bridges available to this session did not start an
+  independent process. The live suite therefore remains opt-in and is not
+  claimed as passed in this environment; the Sandbox fails closed without a
+  host-execution fallback.
+
 ## Next Candidate
 
-Re-audit P1 and P2 from the new HEAD. A general PTY or write-capable Process
-Session still depends on a managed guardian/resource boundary and explicit
-recovery scope. A narrow LSP diagnostic slice may now produce more coding
-outcome value than another local process primitive, but the choice must follow
-the next repository and benchmark audit.
+Re-audit P2 from the new HEAD before selecting the next slice. The highest
+coding-outcome candidate is write-linked diagnostics: capture bounded
+before/after LSP results around an Agent edit, show a diagnostic delta, and
+associate the evidence with the changed symbols and verification result without
+making the generic patch protocol TypeScript-specific. Persistent definition,
+reference, rename, and Code Action sessions remain a separate candidate and
+must justify their lifecycle and workspace-synchronization cost first.

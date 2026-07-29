@@ -1,0 +1,119 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import {
+  fauxAssistantMessage,
+  fauxProvider,
+  fauxToolCall,
+} from "@earendil-works/pi-ai";
+import { afterEach, describe, expect, it } from "vitest";
+
+import {
+  AgentRuntime,
+  createPlatformSandboxAdapter,
+  LocalStore,
+  ModelRegistry,
+} from "../src/index.js";
+
+const describeLive =
+  process.env["NAPIER_LIVE_LSP_SMOKE"] === "1" ? describe : describe.skip;
+const temporaryRoots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    temporaryRoots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true })),
+  );
+});
+
+describeLive("live LSP diagnostics smoke", () => {
+  it("diagnoses a real TypeScript error through the Agent sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-workspace-"),
+    );
+    temporaryRoots.push(workspaceRoot);
+    const targetPath = "semantic-error.ts";
+    const source = "const LIVE_PRIVATE_VALUE: string = 42;\n";
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { strict: true, noEmit: true } }),
+      ),
+      writeFile(path.join(workspaceRoot, targetPath), source),
+    ]);
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(workspaceRoot, ".napier"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_diagnostics"],
+    });
+    const thread = await store.createThread({
+      title: "Live LSP smoke",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "live-lsp-smoke" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_diagnostics", { path: targetPath }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("TS2322");
+        expect(messages).toContain(
+          "Type 'number' is not assignable to type 'string'.",
+        );
+        return fauxAssistantMessage(
+          "The real language server reported TS2322.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Diagnose the TypeScript file through LSP.",
+      model: { provider: "live-lsp-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const toolEvents = (await store.listEvents(thread.id)).filter(
+      (event) =>
+        event.type.startsWith("tool.") &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_diagnostics",
+    );
+    expect(toolEvents).toHaveLength(2);
+    expect(toolEvents[1]?.payload["details"]).toEqual(
+      expect.objectContaining({
+        status: "diagnostics",
+        diagnosticCount: 1,
+        errorCount: 1,
+        sandbox: "macos-sandbox-exec",
+        languageServerVersion: "5.3.0",
+        typescriptVersion: "5.9.3",
+      }),
+    );
+    expect(JSON.stringify(toolEvents)).not.toContain(targetPath);
+    expect(JSON.stringify(toolEvents)).not.toContain(source.trim());
+    expect(JSON.stringify(toolEvents)).not.toContain(
+      "Type 'number' is not assignable to type 'string'.",
+    );
+    store.close();
+  }, 30_000);
+});

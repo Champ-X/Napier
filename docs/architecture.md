@@ -1609,6 +1609,17 @@ read_symbol
      range, and line-anchor set so Trace can show kind, range, counts,
      truncation, and hashes without rendering source, paths, names, or
      signatures
+lsp_diagnostics
+  -> canonicalize one TypeScript or JavaScript file inside the workspace
+  -> reject symlinks, protected roots, invalid UTF-8, and files over 1 MiB
+  -> bind Node, typescript-language-server, TypeScript, environment, and limits
+  -> launch the language server read-only and offline through the OS Sandbox
+  -> drive initialize / initialized / didOpen / publishDiagnostics /
+     shutdown / exit over standard framed JSON-RPC
+  -> cap diagnostics, messages, protocol bytes, stderr, and total wall time
+  -> return source locations, codes, and messages only to the live Agent
+  -> persist only language/version/count/latency plus runtime, file,
+     diagnostic-set, code-set, stderr, limit, and result hashes
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require a missing target
@@ -1651,6 +1662,48 @@ creation is limited to `create` with an explicit opt-in and uses the same
 workspace, protected-segment, and symlink checks; file deletion, arbitrary
 directory operations, and permission changes remain outside this tool.
 Subagents call the read-only tool factory and never receive `apply_patch`.
+
+## TypeScript LSP Diagnostics Flow
+
+`lsp_diagnostics` is implemented outside the oversized workspace-tool module.
+`lsp-diagnostics.ts` owns target/runtime preparation and result projection,
+`lsp-protocol-session.ts` owns the bounded JSON-RPC lifecycle, and
+`lsp-diagnostics-tool.ts` owns the Agent schema plus Ledger redaction:
+
+```text
+Agent selects lsp_diagnostics + workspace-relative source path
+  -> require workspace/unrestricted policy and enabled tool
+  -> canonicalize the workspace and target; reject escape, symlink,
+     protected roots, unsupported extension, invalid UTF-8, or >1 MiB
+  -> resolve and hash the current Node executable
+  -> resolve versioned typescript-language-server and TypeScript assets
+  -> bind those assets as Napier-managed read-only Sandbox runtime paths
+  -> launch Node with the bundled language-server entrypoint and fixed env
+  -> initialize LSP with explicit tsserver path and automatic typing disabled
+  -> didOpen exactly the preflighted source bytes
+  -> accept only diagnostics for the target URI
+  -> cap 64 diagnostics, 1,000 chars/message, 2 MiB protocol, 16,000 stderr
+     chars, and 1-30 seconds total wall time
+  -> reject workspace edits and terminate on timeout, cancellation, malformed
+     protocol, output overflow, early exit, or failed shutdown
+  -> rehash runtime assets after settlement
+  -> return diagnostic locations/codes/messages to the current Agent only
+  -> retain counts, versions, latency, and hashes in tool.completed and Trace
+```
+
+The Sandbox launch contract supports at most eight explicit absolute
+non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
+adds read-only binds, and OCI adds read-only mounts. Existing command and
+Process Session launches omit this field, so their capability surface is
+unchanged. OCI LSP remains fail-closed until host/image runtime asset identity
+is defined.
+
+The language server runs as untrusted code output inside the Capability Plane:
+diagnostic prose is not treated as instructions, related-information paths are
+discarded, workspace edits are rejected, and no package/plugin installation or
+network access is available. This first slice does not keep a persistent LSP
+session and does not expose definitions, references, symbols, rename, Code
+Actions, or write-linked before/after diagnostics.
 
 ## Workspace File Lifecycle Flow
 
@@ -3875,7 +3928,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has twenty-nine parts:
+The current boundary has thirty-one parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -3983,11 +4036,15 @@ The current boundary has twenty-nine parts:
     message/session/action limits, hash-only input receipts, Workbench
     controls, schema v1/v2 compatibility, and a real stateful
     Agent-to-Sandbox smoke.
+31. standard TypeScript LSP diagnostics with one-file canonical confinement,
+    separately bound read-only Runtime assets, framed JSON-RPC lifecycle,
+    bounded diagnostics/protocol/latency, Agent/Server/Context/Trace
+    integration, and message/path-redacted durable evidence.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
-verification, read-only/offline explicit-argv command execution, and bounded
-background Process Session lifecycle control.
+verification, read-only/offline TypeScript LSP diagnostics, explicit-argv
+command execution, and bounded background Process Session lifecycle control.
 `unrestricted` is reserved for future sandboxed shell execution, but known
 destructive command patterns are still denied.
 
@@ -4014,7 +4071,8 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- LSP, DAP, AST edits, write-linked diagnostics/tests, and isolated subagent
+- persistent LSP sessions with definitions/references/rename/Code Actions,
+  DAP, AST edits, write-linked diagnostics/tests, and isolated subagent
   worktrees;
 - typed executable Workflow nodes, checkpoint recovery, single-node tests,
   JSONL events, and a TypeScript SDK;

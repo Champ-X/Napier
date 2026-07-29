@@ -17,6 +17,7 @@
     "test": "vitest run --maxWorkers=4 --testTimeout=30000",
     "test:live-command": "NAPIER_LIVE_COMMAND_SMOKE=1 vitest run test/live-command-smoke.test.ts --testTimeout=30000",
     "test:live-files": "NAPIER_LIVE_WORKSPACE_FILE_SMOKE=1 vitest run test/live-workspace-file-smoke.test.ts --testTimeout=30000",
+    "test:live-lsp": "NAPIER_LIVE_LSP_SMOKE=1 vitest run test/live-lsp-diagnostics-smoke.test.ts --testTimeout=30000",
     "test:live-process": "NAPIER_LIVE_WORKSPACE_PROCESS_SMOKE=1 vitest run test/live-workspace-process-smoke.test.ts --testTimeout=30000",
     "test:live-deepseek": "NAPIER_LIVE_DEEPSEEK_SMOKE=1 vitest run test/live-deepseek-smoke.test.ts --testTimeout=60000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -25,7 +26,10 @@
     "@earendil-works/pi-agent-core": "0.82.0",
     "@earendil-works/pi-ai": "0.82.0",
     "@napier/contracts": "*",
-    "typebox": "1.1.38"
+    "typebox": "1.1.38",
+    "typescript": "5.9.3",
+    "typescript-language-server": "5.3.0",
+    "vscode-jsonrpc": "8.2.1"
   },
   "devDependencies": {
     "@types/node": "24.12.4",

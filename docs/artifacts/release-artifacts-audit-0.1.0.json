@@ -6,42 +6,42 @@
     "name": "napier",
     "version": "0.1.0"
   },
-  "artifactSetSha256": "8a23163f6e81e851302e9aabe9f3d419fd5a96a5ebae22e4fe17a3ee1e0f8236",
+  "artifactSetSha256": "f1fbf6384095ed6c7184ddb067164089567d4780af4999ddd1da1f94a9e5a322",
   "artifacts": [
     {
       "kind": "package-lock-audit",
       "path": "docs/artifacts/package-lock-audit-0.1.0.json",
-      "sha256": "9ef146b31a6c4a20ee0d6afc477b158f816b2ada9737f422c362314a5123a55d",
+      "sha256": "0cc51ee34ed725782c916de09cba557c0900a7af8ad14eac5b655b35a737ab5e",
       "valid": true
     },
     {
       "kind": "runtime-environment-audit",
       "path": "docs/artifacts/runtime-environment-audit-0.1.0.json",
-      "sha256": "dbdf30e29448b26d9635098c3a5b4a036891580192ff5f831c352452342779c3",
+      "sha256": "7ff455e1aea0bf34103fb99670b3e5c95d7a38d7d9f71a9256ad331b73d356ad",
       "valid": true
     },
     {
       "kind": "web-dist-audit",
       "path": "docs/artifacts/web-dist-audit-0.1.0.json",
-      "sha256": "cd835a594bec12745b282046721d464faec33bb6a7e0db809855079b6195516b",
+      "sha256": "c008b278db889be1cd5a1d40ea918ff6aeee1904ae0a2099171f445e13078eee",
       "valid": true
     },
     {
       "kind": "web-dist-manifest",
       "path": "docs/artifacts/web-dist-0.1.0.sha256",
-      "sha256": "ea953f3af46e689b7b672eaea644be9cf823759198d93944e033bcaaa7d1cf26",
+      "sha256": "c5be93e8c40b903afa6f4329131b475cc64614e7ccc50c211c9d4e7b73cf759e",
       "valid": true
     },
     {
       "kind": "management-openapi",
       "path": "docs/artifacts/management-openapi-0.1.0.json",
-      "sha256": "52bcdfd65907fad8e9182ff4d4ec9526f6b181cfe6c4130e9510fd6474553b65",
+      "sha256": "37ef2c73ad85f9029d8f384d8b8f4aab0c3f07db52837d22def91557cab42d14",
       "valid": true
     },
     {
       "kind": "management-openapi-compatibility",
       "path": "docs/artifacts/management-openapi-compatibility-0.1.0.json",
-      "sha256": "647b05644b5f4c8c02349ced4de7526a1e8f9956b63c39252d953ed010b9bb28",
+      "sha256": "b46201fef25835a122dd0aae07d8b64ffdc5bb1564f465526e9dfedccc580bf1",
       "valid": true
     }
   ],

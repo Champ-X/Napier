@@ -474,7 +474,7 @@ async function resolveExecutable(
   return resolved;
 }
 
-async function sha256File(file: string): Promise<string> {
+export async function sha256File(file: string): Promise<string> {
   const hash = createHash("sha256");
   await new Promise<void>((resolve, reject) => {
     const stream = createReadStream(file);

@@ -64,6 +64,20 @@ describe("OS sandbox adapters", () => {
     expect(workspaceNetwork).toContain(
       '(allow file-write* (subpath "/workspace"))',
     );
+    const runtimeAssets = buildMacOsSandboxProfile(
+      {
+        ...BASE_REQUEST,
+        runtimeReadPaths: ["/opt/napier/lsp", "/opt/napier/typescript"],
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+      },
+      "/tmp/napier-sandbox",
+    );
+    expect(runtimeAssets).toContain(
+      '(allow file-read* (subpath "/opt/napier/lsp"))',
+    );
+    expect(runtimeAssets).toContain(
+      '(allow file-read* (subpath "/opt/napier/typescript"))',
+    );
   });
 
   it("fails closed on platforms without an implemented adapter", async () => {
@@ -186,6 +200,20 @@ describe("OS sandbox adapters", () => {
     expect(readOnly).toContain("--ro-bind\0/workspace\0/workspace");
     expect(readOnly).not.toContain("--bind\0/workspace\0/workspace");
     expect(readOnly).toContain("--chdir\0/workspace");
+    const runtimeAssets = buildLinuxBubblewrapArgs(
+      {
+        ...BASE_REQUEST,
+        runtimeReadPaths: ["/opt/napier/lsp", "/opt/napier/typescript"],
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+      },
+      "/tmp/napier-sandbox",
+    ).join("\0");
+    expect(runtimeAssets).toContain(
+      "--ro-bind\0/opt/napier/lsp\0/opt/napier/lsp",
+    );
+    expect(runtimeAssets).toContain(
+      "--ro-bind\0/opt/napier/typescript\0/opt/napier/typescript",
+    );
 
     const writableNetwork = buildLinuxBubblewrapArgs(
       {
@@ -255,6 +283,18 @@ describe("OS sandbox adapters", () => {
     expect(writableNetwork).not.toContain(
       "--mount\0type=bind,source=/workspace,target=/workspace,readonly",
     );
+    const runtimeAssets = buildOciContainerArgs(
+      {
+        ...BASE_REQUEST,
+        runtimeReadPaths: ["/opt/napier/lsp"],
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+      },
+      "/tmp/napier-sandbox",
+      "ghcr.io/example/napier-sandbox:node22",
+    ).join("\0");
+    expect(runtimeAssets).toContain(
+      "--mount\0type=bind,source=/opt/napier/lsp,target=/opt/napier/lsp,readonly",
+    );
   });
 
   it("rejects relative executables and write-only workspace access", () => {
@@ -277,6 +317,24 @@ describe("OS sandbox adapters", () => {
         "/tmp/napier-sandbox",
       ),
     ).toThrow("workspace.write requires workspace.read");
+    expect(() =>
+      buildMacOsSandboxProfile(
+        {
+          ...BASE_REQUEST,
+          runtimeReadPaths: ["/"],
+        },
+        "/tmp/napier-sandbox",
+      ),
+    ).toThrow("absolute non-root paths");
+    expect(() =>
+      buildLinuxBubblewrapArgs(
+        {
+          ...BASE_REQUEST,
+          runtimeReadPaths: ["relative/runtime"],
+        },
+        "/tmp/napier-sandbox",
+      ),
+    ).toThrow("absolute non-root paths");
     expect(() =>
       buildLinuxBubblewrapArgs(
         {

@@ -1,6 +1,11 @@
 import type { JsonValue } from "@napier/contracts";
 
 import {
+  lspDiagnosticsToolCallArgumentsLedgerProjection,
+  lspDiagnosticsToolInputLedgerProjection,
+  lspDiagnosticsToolOutputLedgerProjection,
+} from "./lsp-diagnostics-tool.js";
+import {
   commandToolCallArgumentsLedgerProjection,
   commandToolInputLedgerProjection,
   commandToolOutputLedgerProjection,
@@ -23,6 +28,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "run_command") {
     return commandToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "lsp_diagnostics") {
+    return lspDiagnosticsToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "workspace_process") {
     return workspaceProcessToolCallArgumentsLedgerProjection(args);
   }
@@ -41,6 +49,9 @@ export function agentToolInputLedgerProjection(
 ): Record<string, JsonValue> {
   if (toolName === "run_command") {
     return commandToolInputLedgerProjection(args);
+  }
+  if (toolName === "lsp_diagnostics") {
+    return lspDiagnosticsToolInputLedgerProjection(args);
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolInputLedgerProjection(args);
@@ -61,6 +72,9 @@ export function agentToolOutputLedgerProjection(
 ): Record<string, JsonValue> {
   if (toolName === "run_command") {
     return commandToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "lsp_diagnostics") {
+    return lspDiagnosticsToolOutputLedgerProjection(output, result);
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolOutputLedgerProjection(output, result);

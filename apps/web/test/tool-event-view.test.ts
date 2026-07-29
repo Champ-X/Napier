@@ -173,6 +173,58 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes LSP diagnostic evidence without paths or messages", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_diagnostics",
+      status: "completed",
+      effect: "read",
+      output: "TOP_SECRET_DIAGNOSTIC_MESSAGE",
+      details: {
+        kind: "napier.lsp-diagnostics",
+        schemaVersion: 1,
+        status: "diagnostics",
+        language: "typescript",
+        diagnosticCount: 2,
+        errorCount: 1,
+        warningCount: 1,
+        informationCount: 0,
+        hintCount: 0,
+        truncated: true,
+        durationMs: 612,
+        protocolBytes: 2400,
+        path: "TOP_SECRET_PATH",
+        pathSha256: "a".repeat(64),
+        fileSha256: "b".repeat(64),
+        diagnosticSetSha256: "c".repeat(64),
+        codeSetSha256: "d".repeat(64),
+        resultSha256: "e".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "lsp_diagnostics",
+      status: "completed",
+      effect: "read",
+      lspStatus: "diagnostics",
+      lspLanguage: "typescript",
+      lspDiagnosticCount: 2,
+      lspErrorCount: 1,
+      lspWarningCount: 1,
+      lspTruncated: true,
+      lspDurationMs: 612,
+      lspProtocolBytes: 2400,
+      lspPathSha256: "a".repeat(64),
+      lspFileSha256: "b".repeat(64),
+      lspDiagnosticSetSha256: "c".repeat(64),
+      lspCodeSetSha256: "d".repeat(64),
+      lspResultSha256: "e".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / lsp_diagnostics / completed / effect read / lsp diagnostics / language typescript / diagnostics 2 / errors 1 / warnings 1 / duration-ms 612 / protocol-bytes 2400 / lsp-truncated / lsp-path ${"a".repeat(12)} / lsp-file ${"b".repeat(12)} / diagnostic-set ${"c".repeat(12)} / code-set ${"d".repeat(12)} / lsp-result ${"e".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes search_files hash evidence without match text", () => {
     const event = toolEvent("tool.completed", {
       toolName: "search_files",

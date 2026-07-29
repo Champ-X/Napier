@@ -78,6 +78,10 @@ Version `0.1.0` includes:
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
+- an `lsp_diagnostics` tool that drives the standard TypeScript language
+  server against one TypeScript or JavaScript workspace file through the same
+  read-only, offline OS sandbox, with bounded diagnostics and hash-only durable
+  evidence;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -1280,6 +1284,36 @@ optional context, emits line anchors for follow-up Hashline edits, and records
 file/range/signature/name hashes. Trace summaries show only kind, range,
 counts, truncation state, and hashes, never source text, paths, symbol names, or
 signatures.
+
+`lsp_diagnostics` is the first semantic IDE capability. It launches
+`typescript-language-server` 5.3.0 with TypeScript 5.9.3 over standard framed
+JSON-RPC, opens one current TypeScript, TSX, JavaScript, JSX, MTS, CTS, MJS, or
+CJS file, waits for bounded published diagnostics, and shuts the server down.
+The selected file is canonicalized inside the workspace, symlinks and
+protected roots are rejected, UTF-8 and 1 MiB limits are enforced, and the
+process runs read-only and offline with a fixed secret-free environment. The
+server and TypeScript assets are separately read-only-bound into the Sandbox
+and checked for digest drift after execution.
+
+Compiler source locations, codes, and messages are returned only to the live
+Agent. Durable tool evidence retains path/file hashes, language, package
+versions, severity counts, diagnostic/code-set hashes, protocol bytes, latency,
+stderr hash, resource limits, and result hash. Trace renders that bounded view
+without path or message text. This is intentionally not a persistent editor
+session and does not yet claim definitions, references, symbols, rename, Code
+Actions, or automatic before/after edit association.
+
+Run the real local-Sandbox smoke from a non-sandboxed Terminal:
+
+```bash
+npm run test:live-lsp
+```
+
+The repository also includes
+`examples/lsp-diagnostics/semantic-error.ts` as a fixed `TS2322` example.
+macOS rejects nested `sandbox-exec`, so launching the live smoke from an IDE
+process that is itself sandboxed fails closed rather than falling back to an
+unsandboxed language server.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
@@ -2638,6 +2672,8 @@ anchors, **Sandbox verify** is read-only, offline, and command-closed, and
 **Sandbox command** is an explicit-argv, read-only/offline Node runner with no
 shell or inherited environment. **Background process** adds bounded
 start/input/poll/cancel lifecycle control over the same sandbox boundary.
+**LSP diagnostics** adds one-file TypeScript/JavaScript semantic diagnostics
+over standard LSP without granting workspace writes or network access.
 Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.

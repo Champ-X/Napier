@@ -328,6 +328,7 @@ import type {
   VerifySignedExtensionPackageRequest,
   VerifyTrustedReceiptRequest,
 } from "@napier/contracts";
+import { AGENT_TOOL_NAMES } from "@napier/contracts";
 import {
   AgentRuntime,
   AutomationService,
@@ -11586,19 +11587,7 @@ function parseToolPolicy(
 }
 
 function parseEnabledTools(input: unknown): string[] | undefined {
-  const allowed = new Set([
-    "list_files",
-    "read_file",
-    "search_files",
-    "list_symbols",
-    "inspect_data",
-    "inspect_code",
-    "read_symbol",
-    "apply_patch",
-    "run_command",
-    "workspace_process",
-    "verify_workspace",
-  ]);
+  const allowed: ReadonlySet<string> = new Set(AGENT_TOOL_NAMES);
   if (
     !Array.isArray(input) ||
     input.length > allowed.size ||

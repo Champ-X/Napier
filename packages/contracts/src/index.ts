@@ -2614,6 +2614,25 @@ export interface PromptVariableSnapshot {
   contentSha256: string;
 }
 
+export const AGENT_TOOL_NAMES = [
+  "list_files",
+  "read_file",
+  "search_files",
+  "list_symbols",
+  "inspect_data",
+  "inspect_code",
+  "read_symbol",
+  "lsp_diagnostics",
+  "apply_patch",
+  "workspace_file_preview",
+  "workspace_file_apply",
+  "run_command",
+  "workspace_process",
+  "verify_workspace",
+] as const;
+
+export type AgentToolName = (typeof AGENT_TOOL_NAMES)[number];
+
 export interface AgentProfile {
   id: string;
   name: string;
@@ -2961,6 +2980,48 @@ export interface RunControlMessage {
   cancellationEventSeq?: number;
   cancellationReason?: RunControlMessageCancellationReason;
   contentSha256: string;
+}
+
+export type LspDiagnosticLanguage =
+  | "typescript"
+  | "typescriptreact"
+  | "javascript"
+  | "javascriptreact";
+
+export interface LspDiagnosticsDetails {
+  kind: "napier.lsp-diagnostics";
+  schemaVersion: 1;
+  status: "clean" | "diagnostics";
+  language: LspDiagnosticLanguage;
+  sandbox: string;
+  workspaceAccess: "read_only";
+  networkAccess: "denied";
+  workspaceRootSha256: string;
+  pathSha256: string;
+  fileSha256: string;
+  fileBytes: number;
+  diagnosticCount: number;
+  errorCount: number;
+  warningCount: number;
+  informationCount: number;
+  hintCount: number;
+  truncated: boolean;
+  diagnosticSetSha256: string;
+  codeSetSha256: string;
+  nodeExecutableSha256: string;
+  languageServerVersion: string;
+  languageServerSha256: string;
+  typescriptVersion: string;
+  typescriptServerSha256: string;
+  environmentSha256: string;
+  resourceLimitsSha256: string;
+  timeoutMs: number;
+  durationMs: number;
+  protocolBytes: number;
+  stderrChars: number;
+  stderrSha256: string;
+  stderrTruncated: boolean;
+  resultSha256: string;
 }
 
 export type WorkspaceProcessStatus =

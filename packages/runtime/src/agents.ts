@@ -1,40 +1,28 @@
 import { createHash } from "node:crypto";
 
-import type {
-  AgentProfile,
-  AgentProfileField,
-  AgentProfileRevision,
-  AgentProfileRevisionSource,
-  AutomaticRecoveryPolicy,
-  ModelAdvisorPolicy,
-  ModelAdvisorRuleId,
-  ModelRef,
-  ResolvedModelAdvisorPolicy,
-  RunLimits,
-  SubagentLimits,
-  ToolLoopGuardPolicy,
-  UpdateAgentProfileRequest,
+import {
+  AGENT_TOOL_NAMES,
+  type AgentToolName,
+  type AgentProfile,
+  type AgentProfileField,
+  type AgentProfileRevision,
+  type AgentProfileRevisionSource,
+  type AutomaticRecoveryPolicy,
+  type ModelAdvisorPolicy,
+  type ModelAdvisorRuleId,
+  type ModelRef,
+  type ResolvedModelAdvisorPolicy,
+  type RunLimits,
+  type SubagentLimits,
+  type ToolLoopGuardPolicy,
+  type UpdateAgentProfileRequest,
 } from "@napier/contracts";
 
 import { nowIso } from "./ids.js";
 import { normalizePromptVariableDefinitions } from "./prompt-variables.js";
 import { normalizeToolLoopGuardPolicy } from "./tool-loop-guard.js";
 
-const ALLOWED_TOOLS = new Set([
-  "list_files",
-  "read_file",
-  "search_files",
-  "list_symbols",
-  "inspect_data",
-  "inspect_code",
-  "read_symbol",
-  "apply_patch",
-  "workspace_file_preview",
-  "workspace_file_apply",
-  "run_command",
-  "workspace_process",
-  "verify_workspace",
-]);
+const ALLOWED_TOOLS: ReadonlySet<string> = new Set(AGENT_TOOL_NAMES);
 const THINKING_LEVELS = new Set<AgentProfile["thinkingLevel"]>([
   "off",
   "minimal",
@@ -522,11 +510,19 @@ function validateToolPolicy(
   return value;
 }
 
-function normalizeTools(values: string[]): string[] {
-  const normalized = [...new Set(values)];
-  const unsupported = normalized.find((tool) => !ALLOWED_TOOLS.has(tool));
-  if (unsupported) throw new Error(`Unsupported Agent tool: ${unsupported}`);
+function normalizeTools(values: string[]): AgentToolName[] {
+  const normalized: AgentToolName[] = [];
+  for (const tool of new Set(values)) {
+    if (!isAgentToolName(tool)) {
+      throw new Error(`Unsupported Agent tool: ${tool}`);
+    }
+    normalized.push(tool);
+  }
   return normalized.sort();
+}
+
+function isAgentToolName(value: string): value is AgentToolName {
+  return ALLOWED_TOOLS.has(value);
 }
 
 export function effectiveModelAdvisorPolicy(

@@ -6,6 +6,19 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added the first real LSP coding-intelligence slice. The opt-in
+  `lsp_diagnostics` Agent tool drives `typescript-language-server` 5.3.0 and
+  TypeScript 5.9.3 over standard framed JSON-RPC, with initialize, didOpen,
+  diagnostics, shutdown, and exit lifecycles. Each invocation is confined to
+  one workspace TypeScript or JavaScript file and launches through the existing
+  read-only, offline OS Sandbox with separately bound language-server and
+  TypeScript runtime assets. Source, paths, diagnostic messages, and server
+  logs remain live-only; Ledger and Trace retain language, version, count,
+  severity, latency, bounded protocol, runtime, file, diagnostic-set, and
+  result hashes. Agent profiles, Context configuration, policy, Server SSE,
+  Tool Loop Guard, and the Web Trace projection consume the same tool. This
+  slice does not claim definitions, references, rename, Code Actions, or a
+  persistent editor session.
 - Added bounded input streams for explicitly interactive Workspace Process
   Sessions. Agent and operator paths can send serialized UTF-8 messages, append
   a newline, and close stdin while preserving the existing explicit-argv,

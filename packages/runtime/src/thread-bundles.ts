@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import {
+  AGENT_TOOL_NAMES,
   NAPIER_API_VERSION,
   type AgentProfile,
   type AgentProfileRevision,
@@ -163,21 +164,7 @@ const SUBAGENT_STATUSES = new Set([
   "timed_out",
 ]);
 const SUBAGENT_ROLES = new Set(["researcher", "reviewer", "general"]);
-const AGENT_TOOLS = new Set([
-  "list_files",
-  "read_file",
-  "search_files",
-  "list_symbols",
-  "inspect_data",
-  "inspect_code",
-  "read_symbol",
-  "apply_patch",
-  "workspace_file_preview",
-  "workspace_file_apply",
-  "run_command",
-  "workspace_process",
-  "verify_workspace",
-]);
+const AGENT_TOOLS: ReadonlySet<string> = new Set(AGENT_TOOL_NAMES);
 const SUBAGENT_STOP_REASONS = new Set([
   "completed",
   "turn_capped",

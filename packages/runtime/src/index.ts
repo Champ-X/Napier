@@ -25,6 +25,8 @@ export * from "./ids.js";
 export * from "./inbound-dead-letters.js";
 export * from "./independent-model-advisor.js";
 export * from "./inspector-packages.js";
+export * from "./lsp-diagnostics.js";
+export * from "./lsp-diagnostics-tool.js";
 export * from "./memory.js";
 export * from "./model-advisor.js";
 export * from "./model-context-envelope.js";

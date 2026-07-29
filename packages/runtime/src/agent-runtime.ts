@@ -89,6 +89,7 @@ import {
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
 } from "./memory.js";
+import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import {
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
@@ -1172,6 +1173,19 @@ export class AgentRuntime {
     ) {
       tools.push(
         createVerificationTool({
+          workspaceRoot: this.store.workspaceRoot,
+          sandbox: this.verificationSandbox,
+        }),
+      );
+    }
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("lsp_diagnostics")
+    ) {
+      tools.push(
+        createLspDiagnosticsTool({
           workspaceRoot: this.store.workspaceRoot,
           sandbox: this.verificationSandbox,
         }),
@@ -3313,6 +3327,7 @@ function builtInToolEffect(
     toolName === "inspect_data" ||
     toolName === "inspect_code" ||
     toolName === "read_symbol" ||
+    toolName === "lsp_diagnostics" ||
     toolName === "workspace_file_preview" ||
     toolName === "run_command" ||
     toolName === "verify_workspace" ||
