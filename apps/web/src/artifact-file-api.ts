@@ -45,6 +45,38 @@ export interface PlanArtifactDataProfile {
   sampleRows: Array<Record<string, string | number | boolean | null>>;
 }
 
+export interface PlanArtifactDataProfileVerification {
+  kind: "napier.plan-artifact-data-profile-verification";
+  schemaVersion: 1;
+  threadId: string;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  verificationStatus: "valid" | "drifted";
+  diagnostics: string[];
+  pathSha256: string;
+  declaredSha256: string;
+  observedSha256: string;
+  declaredSizeBytes: number;
+  observedSizeBytes: number;
+  declaredFormat: string;
+  observedFormat: string;
+  declaredRowCount: number;
+  observedRowCount: number;
+  declaredColumnCount: number;
+  observedColumnCount: number;
+  declaredTruncated: boolean;
+  observedTruncated: boolean;
+  declaredColumnSetSha256: string;
+  recomputedDeclaredColumnSetSha256: string;
+  observedColumnSetSha256: string;
+  declaredSampleSha256: string;
+  recomputedDeclaredSampleSha256: string;
+  observedSampleSha256: string;
+}
+
 export interface PlanArtifactDriftCheck {
   kind: "napier.plan-artifact-drift-check";
   schemaVersion: 1;
@@ -137,6 +169,21 @@ export function previewPlanArtifactDataProfile(
 ): Promise<PlanArtifactDataProfile> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/data`,
+  );
+}
+
+export function verifyPlanArtifactDataProfile(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+  profile: PlanArtifactDataProfile,
+): Promise<PlanArtifactDataProfileVerification> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/data/verify`,
+    {
+      method: "POST",
+      body: JSON.stringify({ profile }),
+    },
   );
 }
 

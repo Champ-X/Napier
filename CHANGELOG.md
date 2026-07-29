@@ -288,6 +288,9 @@ All notable changes to Napier are recorded here.
   hash-only Ledger receipt boundary.
 - Plan artifact data profiles can now be downloaded from Workbench as
   path-free JSON using artifact and sample SHA-256 evidence in the filename.
+- Downloaded Plan artifact data profile JSON can now be uploaded back through
+  Workbench for no-store verification against freshly recomputed workspace
+  bytes and self-declared column/sample hashes.
 - `inspect_data` and Plan artifact data profiles now normalize duplicate or
   blank tabular headers into unique names such as `name_2` or `column_3`, so
   bounded samples do not silently overwrite earlier columns.

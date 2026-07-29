@@ -64,10 +64,12 @@ import {
   previewPlanArtifactDataProfile,
   previewPlanArtifactText,
   type PlanArtifactDataProfile,
+  type PlanArtifactDataProfileVerification,
   type PlanArtifactDriftCheck,
   type PlanArtifactDirectoryManifest,
   type PlanArtifactTextPreview,
   previewPlanArtifactDirectoryManifest,
+  verifyPlanArtifactDataProfile,
 } from "./artifact-file-api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import {
@@ -327,6 +329,8 @@ export default function PlanPanel({
     useState<PlanArtifactTextPreview>();
   const [artifactDataProfile, setArtifactDataProfile] =
     useState<PlanArtifactDataProfile>();
+  const [artifactDataProfileVerification, setArtifactDataProfileVerification] =
+    useState<PlanArtifactDataProfileVerification>();
   const [artifactDirectoryManifest, setArtifactDirectoryManifest] =
     useState<PlanArtifactDirectoryManifest>();
   const [artifactDriftCheck, setArtifactDriftCheck] =
@@ -368,6 +372,7 @@ export default function PlanPanel({
     setArtifactError(undefined);
     setArtifactPreview(undefined);
     setArtifactDataProfile(undefined);
+    setArtifactDataProfileVerification(undefined);
     setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     setArchiveReceipt(undefined);
@@ -470,6 +475,7 @@ export default function PlanPanel({
     setArtifactError(undefined);
     setArtifactPreview(undefined);
     setArtifactDataProfile(undefined);
+    setArtifactDataProfileVerification(undefined);
     setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     try {
@@ -560,6 +566,34 @@ export default function PlanPanel({
     }
   };
 
+  const verifyDataProfileFile = async (
+    artifact: ArtifactManifestEntry,
+    file: File,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:data-verify`);
+    setArtifactError(undefined);
+    setArtifactDataProfileVerification(undefined);
+    try {
+      const profile = JSON.parse(await file.text()) as PlanArtifactDataProfile;
+      const verification = await verifyPlanArtifactDataProfile(
+        threadId,
+        plan.id,
+        artifact.id,
+        profile,
+      );
+      setArtifactDataProfileVerification(verification);
+    } catch (error) {
+      setArtifactError(
+        error instanceof SyntaxError
+          ? planCopy.artifactActions.dataProfileVerifyInvalidJson
+          : formatApiErrorMessage(error),
+      );
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
   const previewDirectoryManifest = async (
     artifact: ArtifactManifestEntry,
   ): Promise<void> => {
@@ -568,6 +602,7 @@ export default function PlanPanel({
     setArtifactError(undefined);
     setArtifactPreview(undefined);
     setArtifactDataProfile(undefined);
+    setArtifactDataProfileVerification(undefined);
     setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     try {
@@ -2140,6 +2175,10 @@ export default function PlanPanel({
                   artifactDataProfile?.artifactId === artifact.id
                     ? projectArtifactDataProfileView(artifactDataProfile)
                     : undefined;
+                const dataProfileVerification =
+                  artifactDataProfileVerification?.artifactId === artifact.id
+                    ? artifactDataProfileVerification
+                    : undefined;
                 const missingLabel =
                   actions.missingMode === "drifted"
                     ? planCopy.artifactActions.markDrifted
@@ -2369,10 +2408,37 @@ export default function PlanPanel({
                           >
                             {planCopy.artifactActions.downloadDataProfile}
                           </button>
+                          <label
+                            className="artifact-profile-file-action"
+                            aria-disabled={Boolean(artifactBusyId)}
+                          >
+                            {artifactBusyId === `${artifact.id}:data-verify`
+                              ? planCopy.artifactActions.verifyingDataProfile
+                              : planCopy.artifactActions.verifyDataProfile}
+                            <input
+                              className="fixture-file-input"
+                              type="file"
+                              accept="application/json,.json"
+                              disabled={Boolean(artifactBusyId)}
+                              aria-label={
+                                planCopy.artifactActions.verifyDataProfile
+                              }
+                              onChange={(event) => {
+                                const file = event.currentTarget.files?.[0];
+                                event.currentTarget.value = "";
+                                if (file) {
+                                  void verifyDataProfileFile(artifact, file);
+                                }
+                              }}
+                            />
+                          </label>
                           <button
                             type="button"
                             aria-label={planCopy.artifactActions.closePreview}
-                            onClick={() => setArtifactDataProfile(undefined)}
+                            onClick={() => {
+                              setArtifactDataProfile(undefined);
+                              setArtifactDataProfileVerification(undefined);
+                            }}
                           >
                             {planCopy.artifactActions.closePreview}
                           </button>
@@ -2401,6 +2467,48 @@ export default function PlanPanel({
                             {dataProfileView.sampleShortSha256}
                           </code>
                         </small>
+                        {dataProfileVerification ? (
+                          <div
+                            className={`artifact-data-profile-verification status-${dataProfileVerification.verificationStatus}`}
+                          >
+                            <strong>
+                              {
+                                planCopy.artifactActions
+                                  .dataProfileVerificationStatuses[
+                                  dataProfileVerification.verificationStatus
+                                ]
+                              }
+                            </strong>
+                            <small>
+                              {planCopy.artifactActions.observed}:{" "}
+                              <code
+                                title={dataProfileVerification.observedSha256}
+                              >
+                                {dataProfileVerification.observedSha256.slice(
+                                  0,
+                                  16,
+                                )}
+                              </code>
+                              {" / "}
+                              {planCopy.artifactActions.sample}:{" "}
+                              <code
+                                title={
+                                  dataProfileVerification.observedSampleSha256
+                                }
+                              >
+                                {dataProfileVerification.observedSampleSha256.slice(
+                                  0,
+                                  16,
+                                )}
+                              </code>
+                            </small>
+                            {dataProfileVerification.diagnostics.length > 0 ? (
+                              <small>
+                                {dataProfileVerification.diagnostics.join(", ")}
+                              </small>
+                            ) : null}
+                          </div>
+                        ) : null}
                         {dataProfileView.hasColumns ? (
                           <div className="artifact-data-table">
                             <table>

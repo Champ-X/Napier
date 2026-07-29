@@ -4750,9 +4750,7 @@ describe("Napier HTTP goal flow", () => {
     expect(
       downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Size-Bytes"),
     ).toBe(String(Buffer.byteLength(reportContents)));
-    expect(
-      downloadArtifactResponse.headers.get("Content-Disposition"),
-    ).toBe(
+    expect(downloadArtifactResponse.headers.get("Content-Disposition")).toBe(
       `attachment; filename="napier-artifact-report-${expectedReportSha256.slice(0, 12)}-report.md"`,
     );
     expect(
@@ -4958,6 +4956,61 @@ describe("Napier HTTP goal flow", () => {
     ]);
     expect(JSON.stringify(dataProfileEvents)).not.toContain("alpha");
     expect(JSON.stringify(dataProfileEvents)).not.toContain("beta");
+    const dataProfileVerifyResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores/data/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({ profile: dataProfileBody }),
+      },
+    );
+    expect(dataProfileVerifyResponse.status).toBe(200);
+    expect(dataProfileVerifyResponse.headers.get("Cache-Control")).toBe(
+      "no-store",
+    );
+    expect(
+      dataProfileVerifyResponse.headers.get("X-Napier-Verification-Status"),
+    ).toBe("valid");
+    await expect(dataProfileVerifyResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        kind: "napier.plan-artifact-data-profile-verification",
+        schemaVersion: 1,
+        verificationStatus: "valid",
+        diagnostics: [],
+        declaredSha256: expectedScoresSha256,
+        observedSha256: expectedScoresSha256,
+        declaredColumnSetSha256: dataProfileBody.columnSetSha256,
+        observedColumnSetSha256: dataProfileBody.columnSetSha256,
+        declaredSampleSha256: dataProfileBody.sampleSha256,
+        observedSampleSha256: dataProfileBody.sampleSha256,
+      }),
+    );
+    const tamperedProfileResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores/data/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          profile: {
+            ...dataProfileBody,
+            sampleRows: [{ name: "tampered", score: "9" }],
+          },
+        }),
+      },
+    );
+    expect(tamperedProfileResponse.status).toBe(200);
+    expect(
+      tamperedProfileResponse.headers.get("X-Napier-Verification-Status"),
+    ).toBe("drifted");
+    expect(
+      tamperedProfileResponse.headers.get("X-Napier-Diagnostic-Count"),
+    ).toBe("1");
+    await expect(tamperedProfileResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        verificationStatus: "drifted",
+        diagnostics: ["declared_sample_hash_mismatch"],
+        declaredSampleSha256: dataProfileBody.sampleSha256,
+        observedSampleSha256: dataProfileBody.sampleSha256,
+      }),
+    );
     const currentDriftCheckResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/drift-check`,
       { method: "POST" },

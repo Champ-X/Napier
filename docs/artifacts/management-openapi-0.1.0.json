@@ -9085,6 +9085,72 @@
         "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/data"
       }
     },
+    "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/data/verify": {
+      "post": {
+        "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-data-verify",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/data/verify",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/plans/:planId/artifacts/:artifactId/data/verify"
+      }
+    },
     "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/drift-check": {
       "post": {
         "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-drift-check",
@@ -13398,7 +13464,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "bc7a4cdb88929011d949ea4ab3f241abdc3078e06a0c5f54148532b6702471bf",
-  "x-napier-route-count": 234,
-  "x-napier-route-set-sha256": "6a1b84dccc01f26be061985ae5fa85465b508268f6bf1285672fca52593adcbb"
+  "x-napier-source-sha256": "1e20da9955c93cfe7257d855759a90e9f5465de5595d028cf0873bfd85942c8f",
+  "x-napier-route-count": 235,
+  "x-napier-route-set-sha256": "de2f6dec15dee5fa1aa7bdc8996731138f86451af2a139a4507df1736a643ce4"
 }

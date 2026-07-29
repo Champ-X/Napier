@@ -89,9 +89,11 @@ import {
 import {
   checkPlanArtifactDrift,
   downloadPlanArtifactFile,
+  type PlanArtifactDataProfile,
   previewPlanArtifactDataProfile,
   previewPlanArtifactDirectoryManifest,
   previewPlanArtifactText,
+  verifyPlanArtifactDataProfile,
 } from "../src/artifact-file-api";
 
 describe("Web JSON API wrappers", () => {
@@ -655,7 +657,7 @@ describe("Web JSON API wrappers", () => {
   });
 
   it("profiles plan data artifacts through response hash verification", async () => {
-    const profile = {
+    const profile: PlanArtifactDataProfile = {
       kind: "napier.plan-artifact-data-profile",
       schemaVersion: 1,
       planId: "plan_1",
@@ -697,6 +699,87 @@ describe("Web JSON API wrappers", () => {
     await expect(
       previewPlanArtifactDataProfile("thread_1", "plan_1", "artifact_1"),
     ).resolves.toEqual(profile);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies plan data profiles through response hash verification", async () => {
+    const profile: PlanArtifactDataProfile = {
+      kind: "napier.plan-artifact-data-profile",
+      schemaVersion: 1,
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "file",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      sizeBytes: 21,
+      format: "csv",
+      rowCount: 2,
+      columnCount: 2,
+      truncated: false,
+      columnSetSha256: "c".repeat(64),
+      sampleSha256: "d".repeat(64),
+      columns: ["name", "score"],
+      sampleRows: [{ name: "alpha", score: "1" }],
+    };
+    const verification = {
+      kind: "napier.plan-artifact-data-profile-verification",
+      schemaVersion: 1,
+      threadId: "thread_1",
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "file",
+      verificationStatus: "valid",
+      diagnostics: [],
+      pathSha256: "a".repeat(64),
+      declaredSha256: "b".repeat(64),
+      observedSha256: "b".repeat(64),
+      declaredSizeBytes: 21,
+      observedSizeBytes: 21,
+      declaredFormat: "csv",
+      observedFormat: "csv",
+      declaredRowCount: 2,
+      observedRowCount: 2,
+      declaredColumnCount: 2,
+      observedColumnCount: 2,
+      declaredTruncated: false,
+      observedTruncated: false,
+      declaredColumnSetSha256: "c".repeat(64),
+      recomputedDeclaredColumnSetSha256: "c".repeat(64),
+      observedColumnSetSha256: "c".repeat(64),
+      declaredSampleSha256: "d".repeat(64),
+      recomputedDeclaredSampleSha256: "d".repeat(64),
+      observedSampleSha256: "d".repeat(64),
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/data/verify",
+      );
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ profile }));
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyPlanArtifactDataProfile(
+        "thread_1",
+        "plan_1",
+        "artifact_1",
+        profile,
+      ),
+    ).resolves.toEqual(verification);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

@@ -634,6 +634,7 @@ const MAX_TRACE_EXPORT_REQUEST_BYTES = 8 * 1024;
 const MAX_BRANCH_REQUEST_BYTES = 8 * 1024;
 const MAX_TRUST_ADMIN_REQUEST_BYTES = 8 * 1024;
 const MAX_PACKAGE_GOVERNANCE_REQUEST_BYTES = 64 * 1024;
+const MAX_PLAN_ARTIFACT_DATA_PROFILE_VERIFY_REQUEST_BYTES = 4 * 1024 * 1024;
 
 export async function createServices(options?: {
   dataRoot?: string;
@@ -7495,6 +7496,66 @@ export function createApp(services: NapierServices): Hono {
         });
         setPlanArtifactDataProfileHeaders(context, plan, artifact, payload);
         return context.json(payload);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/data/verify",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const planId = context.req.param("planId");
+      assertPlanThread(services, planId, threadId);
+      const plan = services.store.getPlan(planId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(
+          context,
+          "Plan artifact data profile verification request is invalid",
+          404,
+        );
+      }
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_PLAN_ARTIFACT_DATA_PROFILE_VERIFY_REQUEST_BYTES,
+          "Plan artifact data profile verification request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          error instanceof RequestBodyTooLargeError
+            ? error.message
+            : "Plan artifact data profile verification request is invalid",
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const profile = planArtifactDataProfileVerificationRequest(input);
+      if (!profile) {
+        return jsonError(
+          context,
+          "Plan artifact data profile verification request is invalid",
+          400,
+        );
+      }
+      try {
+        const observed = await previewWorkspaceDataArtifactProfile(
+          services.store.workspaceRoot,
+          artifact,
+        );
+        const verification = verifyPlanArtifactDataProfileProjection(
+          plan,
+          artifact,
+          profile,
+          observed,
+        );
+        setPlanArtifactDataProfileVerificationHeaders(context, verification);
+        return context.json(verification);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -17994,10 +18055,7 @@ function setPlanArtifactDataProfileHeaders(
     String(profile.sizeBytes),
   );
   context.header("X-Napier-Plan-Artifact-Data-Format", profile.format);
-  context.header(
-    "X-Napier-Plan-Artifact-Row-Count",
-    String(profile.rowCount),
-  );
+  context.header("X-Napier-Plan-Artifact-Row-Count", String(profile.rowCount));
   context.header(
     "X-Napier-Plan-Artifact-Column-Count",
     String(profile.columnCount),
@@ -18010,9 +18068,264 @@ function setPlanArtifactDataProfileHeaders(
     "X-Napier-Plan-Artifact-Column-Set-SHA256",
     profile.columnSetSha256,
   );
+  context.header("X-Napier-Plan-Artifact-Sample-SHA256", profile.sampleSha256);
+}
+
+type PlanArtifactDataProfilePayload = {
+  kind: "napier.plan-artifact-data-profile";
+  schemaVersion: 1;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  pathSha256: string;
+  sha256: string;
+  sizeBytes: number;
+  format: string;
+  rowCount: number;
+  columnCount: number;
+  truncated: boolean;
+  columnSetSha256: string;
+  sampleSha256: string;
+  columns: string[];
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+};
+
+function setPlanArtifactDataProfileVerificationHeaders(
+  context: Context,
+  verification: {
+    verificationStatus: "valid" | "drifted";
+    diagnostics: string[];
+    threadId: string;
+    planId: string;
+    artifactId: string;
+    observedSha256: string;
+    declaredSha256: string;
+    observedColumnSetSha256: string;
+    declaredColumnSetSha256: string;
+    observedSampleSha256: string;
+    declaredSampleSha256: string;
+  },
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, verification);
   context.header(
-    "X-Napier-Plan-Artifact-Sample-SHA256",
-    profile.sampleSha256,
+    "X-Napier-Verification-Status",
+    verification.verificationStatus,
+  );
+  context.header("X-Napier-Thread-Id", verification.threadId);
+  context.header("X-Napier-Plan-Id", verification.planId);
+  context.header("X-Napier-Plan-Artifact-Id", verification.artifactId);
+  context.header(
+    "X-Napier-Diagnostic-Count",
+    String(verification.diagnostics.length),
+  );
+  context.header(
+    "X-Napier-Diagnostics-SHA256",
+    sha256Json(verification.diagnostics),
+  );
+  context.header(
+    "X-Napier-Declared-Artifact-SHA256",
+    verification.declaredSha256,
+  );
+  context.header(
+    "X-Napier-Observed-Artifact-SHA256",
+    verification.observedSha256,
+  );
+  context.header(
+    "X-Napier-Declared-Column-Set-SHA256",
+    verification.declaredColumnSetSha256,
+  );
+  context.header(
+    "X-Napier-Observed-Column-Set-SHA256",
+    verification.observedColumnSetSha256,
+  );
+  context.header(
+    "X-Napier-Declared-Sample-SHA256",
+    verification.declaredSampleSha256,
+  );
+  context.header(
+    "X-Napier-Observed-Sample-SHA256",
+    verification.observedSampleSha256,
+  );
+}
+
+function verifyPlanArtifactDataProfileProjection(
+  plan: ExecutionPlan,
+  artifact: ExecutionPlan["artifacts"][number],
+  declared: PlanArtifactDataProfilePayload,
+  observed: {
+    sha256: string;
+    sizeBytes: number;
+    format: string;
+    rowCount: number;
+    columnCount: number;
+    truncated: boolean;
+    columnSetSha256: string;
+    sampleSha256: string;
+  },
+) {
+  const pathSha256 = sha256Text(artifact.path);
+  const recomputedDeclaredColumnSetSha256 = sha256Text(
+    JSON.stringify(declared.columns),
+  );
+  const recomputedDeclaredSampleSha256 = sha256Text(
+    JSON.stringify(declared.sampleRows),
+  );
+  const diagnostics = [
+    ...(declared.planId === plan.id ? [] : ["plan_id_mismatch"]),
+    ...(declared.artifactId === artifact.id ? [] : ["artifact_id_mismatch"]),
+    ...(declared.planRevision === plan.revision
+      ? []
+      : ["plan_revision_mismatch"]),
+    ...(declared.status === artifact.status ? [] : ["status_mismatch"]),
+    ...(declared.artifactKind === artifact.kind ? [] : ["kind_mismatch"]),
+    ...(declared.pathSha256 === pathSha256 ? [] : ["path_hash_mismatch"]),
+    ...(declared.sha256 === observed.sha256 ? [] : ["artifact_hash_mismatch"]),
+    ...(declared.sizeBytes === observed.sizeBytes ? [] : ["size_mismatch"]),
+    ...(declared.format === observed.format ? [] : ["format_mismatch"]),
+    ...(declared.rowCount === observed.rowCount ? [] : ["row_count_mismatch"]),
+    ...(declared.columnCount === observed.columnCount
+      ? []
+      : ["column_count_mismatch"]),
+    ...(declared.truncated === observed.truncated
+      ? []
+      : ["truncated_mismatch"]),
+    ...(declared.columnSetSha256 === observed.columnSetSha256
+      ? []
+      : ["column_set_mismatch"]),
+    ...(declared.sampleSha256 === observed.sampleSha256
+      ? []
+      : ["sample_mismatch"]),
+    ...(declared.columnSetSha256 === recomputedDeclaredColumnSetSha256
+      ? []
+      : ["declared_column_set_hash_mismatch"]),
+    ...(declared.sampleSha256 === recomputedDeclaredSampleSha256
+      ? []
+      : ["declared_sample_hash_mismatch"]),
+  ];
+  return {
+    kind: "napier.plan-artifact-data-profile-verification" as const,
+    schemaVersion: 1 as const,
+    threadId: plan.threadId,
+    planId: plan.id,
+    artifactId: artifact.id,
+    planRevision: plan.revision,
+    status: artifact.status,
+    artifactKind: artifact.kind,
+    verificationStatus:
+      diagnostics.length === 0 ? ("valid" as const) : ("drifted" as const),
+    diagnostics,
+    pathSha256,
+    declaredSha256: declared.sha256,
+    observedSha256: observed.sha256,
+    declaredSizeBytes: declared.sizeBytes,
+    observedSizeBytes: observed.sizeBytes,
+    declaredFormat: declared.format,
+    observedFormat: observed.format,
+    declaredRowCount: declared.rowCount,
+    observedRowCount: observed.rowCount,
+    declaredColumnCount: declared.columnCount,
+    observedColumnCount: observed.columnCount,
+    declaredTruncated: declared.truncated,
+    observedTruncated: observed.truncated,
+    declaredColumnSetSha256: declared.columnSetSha256,
+    recomputedDeclaredColumnSetSha256,
+    observedColumnSetSha256: observed.columnSetSha256,
+    declaredSampleSha256: declared.sampleSha256,
+    recomputedDeclaredSampleSha256,
+    observedSampleSha256: observed.sampleSha256,
+  };
+}
+
+function planArtifactDataProfileVerificationRequest(
+  input: unknown,
+): PlanArtifactDataProfilePayload | undefined {
+  const record = requestRecord(input, ["profile"]);
+  if (!record) return undefined;
+  return planArtifactDataProfilePayload(record["profile"]);
+}
+
+function planArtifactDataProfilePayload(
+  input: unknown,
+): PlanArtifactDataProfilePayload | undefined {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return undefined;
+  }
+  const record = input as Record<string, unknown>;
+  if (
+    record["kind"] !== "napier.plan-artifact-data-profile" ||
+    record["schemaVersion"] !== 1 ||
+    typeof record["planId"] !== "string" ||
+    typeof record["artifactId"] !== "string" ||
+    !nonNegativeSafeInteger(record["planRevision"]) ||
+    typeof record["status"] !== "string" ||
+    typeof record["artifactKind"] !== "string" ||
+    !isSha256String(record["pathSha256"]) ||
+    !isSha256String(record["sha256"]) ||
+    !nonNegativeSafeInteger(record["sizeBytes"]) ||
+    !validPlanArtifactDataFormat(record["format"]) ||
+    !nonNegativeSafeInteger(record["rowCount"]) ||
+    !nonNegativeSafeInteger(record["columnCount"]) ||
+    typeof record["truncated"] !== "boolean" ||
+    !isSha256String(record["columnSetSha256"]) ||
+    !isSha256String(record["sampleSha256"]) ||
+    !isStringArray(record["columns"]) ||
+    !isDataProfileSampleRows(record["sampleRows"])
+  ) {
+    return undefined;
+  }
+  return {
+    kind: record["kind"],
+    schemaVersion: 1,
+    planId: record["planId"],
+    artifactId: record["artifactId"],
+    planRevision: record["planRevision"],
+    status: record["status"],
+    artifactKind: record["artifactKind"],
+    pathSha256: record["pathSha256"],
+    sha256: record["sha256"],
+    sizeBytes: record["sizeBytes"],
+    format: record["format"],
+    rowCount: record["rowCount"],
+    columnCount: record["columnCount"],
+    truncated: record["truncated"],
+    columnSetSha256: record["columnSetSha256"],
+    sampleSha256: record["sampleSha256"],
+    columns: record["columns"],
+    sampleRows: record["sampleRows"],
+  };
+}
+
+function validPlanArtifactDataFormat(value: unknown): value is string {
+  return (
+    value === "json" ||
+    value === "jsonl" ||
+    value === "csv" ||
+    value === "tsv" ||
+    value === "markdown_table"
+  );
+}
+
+function isDataProfileSampleRows(
+  value: unknown,
+): value is Array<Record<string, string | number | boolean | null>> {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (row) =>
+        row &&
+        typeof row === "object" &&
+        !Array.isArray(row) &&
+        Object.values(row).every(
+          (cell) =>
+            cell === null ||
+            typeof cell === "string" ||
+            (typeof cell === "number" && Number.isFinite(cell)) ||
+            typeof cell === "boolean",
+        ),
+    )
   );
 }
 
@@ -25089,6 +25402,20 @@ function requestRecord(
   return Object.keys(record).every((key) => supportedKeys.includes(key))
     ? record
     : undefined;
+}
+
+function nonNegativeSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isSha256String(value: unknown): value is string {
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
 }
 
 function validCasebookName(value: unknown): value is string {

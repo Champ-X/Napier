@@ -3602,7 +3602,11 @@ event stores only Plan/artifact IDs, Plan revision, status/kind, `pathSha256`,
 artifact SHA-256, byte count, format, row/column counts, truncation state,
 `columnSetSha256`, and `sampleSha256`; raw columns, sample rows, artifact
 paths, and file contents fail closed at append, restore, replay, and archive
-verification boundaries.
+verification boundaries. Workbench can download the no-store data profile JSON
+and upload it back to a sibling verifier; the verifier recomputes the current
+profile, checks the uploaded columns/sample against their declared hashes, and
+returns only valid/drifted status, diagnostics, counts, and declared/observed
+hashes.
 Produced or verified directory artifacts expose a sibling manifest preview.
 The response is no-store and may include artifact-relative entry paths, file
 hashes, byte counts, and aggregate directory digest for operator inspection;
