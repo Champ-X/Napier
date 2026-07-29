@@ -23,6 +23,12 @@ import type { LocalStore } from "./store.js";
 const MAX_ARTIFACT_HASH_BYTES = 32 * 1024 * 1024;
 const DIRECTORY_DIGEST_KIND = "napier.plan-directory-digest";
 
+export interface WorkspaceFileArtifactExport {
+  contents: Buffer;
+  sha256: string;
+  sizeBytes: number;
+}
+
 const planStepInputSchema = Type.Object({
   id: Type.String({ minLength: 1, maxLength: 64 }),
   title: Type.String({ minLength: 1, maxLength: 120 }),
@@ -515,6 +521,38 @@ export async function createWorkspaceArtifactDriftRequest(
     confirmedDrift: true,
     ...(input.sourceRunId ? { sourceRunId: input.sourceRunId } : {}),
     ...(input.evidence ? { evidence: input.evidence } : {}),
+  };
+}
+
+export async function exportWorkspaceFileArtifact(
+  workspaceRoot: string,
+  artifact: ExecutionPlan["artifacts"][number],
+): Promise<WorkspaceFileArtifactExport> {
+  if (artifact.kind !== "file") {
+    throw new Error("Only file artifacts can be exported");
+  }
+  if (artifact.status !== "produced" && artifact.status !== "verified") {
+    throw new Error("Only produced or verified artifacts can be exported");
+  }
+  if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
+    throw new Error("Artifact path escapes the configured workspace");
+  }
+  const { target, info } = await inspectWorkspaceArtifactTarget(
+    workspaceRoot,
+    artifact,
+  );
+  if (info.size > MAX_ARTIFACT_HASH_BYTES) {
+    throw new Error(
+      `Artifact exceeds the ${MAX_ARTIFACT_HASH_BYTES / 1024 / 1024} MB verification limit`,
+    );
+  }
+  const contents = await readFile(target);
+  const observedSha256 = sha256(contents);
+  assertVerifiedArtifactDigestMatches(artifact, observedSha256);
+  return {
+    contents,
+    sha256: observedSha256,
+    sizeBytes: info.size,
   };
 }
 

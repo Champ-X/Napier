@@ -86,6 +86,7 @@ import {
   verifyRunReplaySnapshot,
   verifyThreadReplayBundle,
 } from "../src/api";
+import { downloadPlanArtifactFile } from "../src/artifact-file-api";
 
 describe("Web JSON API wrappers", () => {
   afterEach(() => {
@@ -541,6 +542,42 @@ describe("Web JSON API wrappers", () => {
     await expect(
       getExecutionPlanArchive("thread_1", "plan_1"),
     ).resolves.toEqual(archive);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("downloads plan artifact files with response hash verification", async () => {
+    const bytes = new TextEncoder().encode("downloadable artifact\n");
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/file",
+      );
+      expect(init).toBeUndefined();
+      return new Response(bytes, {
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Disposition":
+            'attachment; filename="napier-artifact-artifact_1-report.txt"',
+          "X-Napier-Content-SHA256": sha256,
+          "X-Napier-Plan-Artifact-Size-Bytes": String(bytes.byteLength),
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const download = await downloadPlanArtifactFile(
+      "thread_1",
+      "plan_1",
+      "artifact_1",
+    );
+    await expect(download.blob.text()).resolves.toBe("downloadable artifact\n");
+    expect(download).toEqual(
+      expect.objectContaining({
+        filename: "napier-artifact-artifact_1-report.txt",
+        sha256,
+        sizeBytes: bytes.byteLength,
+      }),
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

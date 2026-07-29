@@ -60,6 +60,8 @@ export const planCopy = {
     producing: "Marking...",
     verify: "Verify bytes",
     verifying: "Verifying...",
+    download: "Download file",
+    downloading: "Downloading...",
     recheck: "Recheck bytes",
     rechecking: "Rechecking...",
     markMissing: "Mark missing",

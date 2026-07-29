@@ -2677,6 +2677,11 @@ not render evaluator reasons, evidence text, rubric names, criterion score
 reasons, reviewer names or notes, casebook names/descriptions, suite names, or
 arbitrary future evaluation payload prose. Unknown `evaluation.*` events fail
 closed to their category instead of using the generic text fallback.
+Artifact export events use a dedicated bounded summary. `artifact.exported`
+summaries may show safe Plan/artifact IDs, Plan revision, status/kind, byte
+count, `pathSha256`, and artifact SHA-256. They do not render artifact paths,
+file contents, evidence prose, or arbitrary future artifact payload text.
+Unknown `artifact.*` events fail closed to their category.
 Plan governance events are also bounded in the event list. `plan.*` summaries
 may show safe plan/step/artifact/replan IDs, statuses, strategy enums, phase
 and ready/blocked counts, revision counters, artifact byte counts, blueprint
@@ -3505,6 +3510,15 @@ only a confirmed missing file or digest mismatch can append `plan.artifact.missi
 evidence, mark the Plan blocked, and surface the existing `artifact_drift`
 replan recommendation. Verified artifact cards render the server-computed byte
 count beside a short digest while retaining the full SHA-256 as audit context.
+Produced or verified file artifacts can also be downloaded from the Workbench
+through a no-store, workspace-confined file endpoint. The server rejects
+non-file artifacts, unproduced artifacts, symbolic links, files above the
+artifact hash limit, and verified digest drift before returning bytes. A
+successful download appends an `artifact.exported` Ledger event containing only
+the Plan/artifact IDs, Plan revision, status/kind, `pathSha256`, content
+SHA-256, and byte count. The event is included in Plan archives as scoped
+artifact evidence and has a bounded Trace summary that never renders the path
+or file contents.
 Every accepted state change is appended to the Thread ledger. The HTTP API and
 internal Agent tool share the same `plan.artifact.*` payload builder, which
 also emits `pathSha256` and `evidenceSha256` companions for hash-only Trace

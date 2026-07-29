@@ -4,6 +4,7 @@ import {
 } from "@napier/contracts";
 
 import { agentEventTraceSummary } from "./agent-event-view";
+import { artifactEventTraceSummary } from "./artifact-event-view";
 import { branchEventTraceSummary } from "./branch-event-view";
 import { channelEventTraceSummary } from "./channel-event-view";
 import {
@@ -161,6 +162,9 @@ export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
   }
   if (event.type.startsWith("plan.")) {
     return classifiedSummary(event, planEventTraceSummary(event), "fixed");
+  }
+  if (event.type.startsWith("artifact.")) {
+    return classifiedSummary(event, artifactEventTraceSummary(event), "fixed");
   }
   if (event.type === "model.response") {
     return classifiedSummary(event, modelResponseTraceSummary(event), "fixed");

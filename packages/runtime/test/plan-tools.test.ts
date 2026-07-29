@@ -6,7 +6,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
-import { createPlanTools } from "../src/plan-tools.js";
+import {
+  createPlanTools,
+  exportWorkspaceFileArtifact,
+} from "../src/plan-tools.js";
 import { LocalStore } from "../src/store.js";
 
 const temporaryRoots: string[] = [];
@@ -351,6 +354,80 @@ describe("plan tools", () => {
         phaseProjectionSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
+  });
+
+  it("exports only bounded workspace file artifacts", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-plan-tools-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "artifacts"), { recursive: true });
+    const contents = "downloadable artifact\n";
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "report.txt"),
+      contents,
+      "utf8",
+    );
+    const produced = await exportWorkspaceFileArtifact(workspaceRoot, {
+      id: "report",
+      path: "artifacts/report.txt",
+      kind: "file",
+      description: "Report file.",
+      status: "produced",
+      evidence: "The file was produced.",
+      createdAt: "2026-07-27T00:00:00.000Z",
+      updatedAt: "2026-07-27T00:00:00.000Z",
+    });
+    expect(produced).toEqual({
+      contents: Buffer.from(contents),
+      sha256: createHash("sha256").update(contents).digest("hex"),
+      sizeBytes: Buffer.byteLength(contents),
+    });
+
+    await expect(
+      exportWorkspaceFileArtifact(workspaceRoot, {
+        id: "bundle",
+        path: "artifacts",
+        kind: "directory",
+        description: "Directory bundle.",
+        status: "produced",
+        evidence: "The directory was produced.",
+        createdAt: "2026-07-27T00:00:00.000Z",
+        updatedAt: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toThrow("Only file artifacts can be exported");
+
+    await expect(
+      exportWorkspaceFileArtifact(workspaceRoot, {
+        id: "draft",
+        path: "artifacts/report.txt",
+        kind: "file",
+        description: "Draft file.",
+        status: "expected",
+        evidence: "",
+        createdAt: "2026-07-27T00:00:00.000Z",
+        updatedAt: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toThrow("Only produced or verified artifacts can be exported");
+
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "report.txt"),
+      "drifted artifact\n",
+      "utf8",
+    );
+    await expect(
+      exportWorkspaceFileArtifact(workspaceRoot, {
+        id: "report",
+        path: "artifacts/report.txt",
+        kind: "file",
+        description: "Verified report file.",
+        status: "verified",
+        evidence: "The file was verified.",
+        sha256: createHash("sha256").update(contents).digest("hex"),
+        sizeBytes: Buffer.byteLength(contents),
+        createdAt: "2026-07-27T00:00:00.000Z",
+        updatedAt: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toThrow("Verified artifact digest drifted");
   });
 
   it("verifies directory artifacts with a stable manifest digest", async () => {

@@ -58,6 +58,7 @@ import {
   verifyExecutionPlanBlueprintRecordReplayOutcomes,
   verifyExecutionPlanBlueprintRecordReplays,
 } from "./api";
+import { downloadPlanArtifactFile } from "./artifact-file-api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import {
   projectArtifactManifestActions,
@@ -409,6 +410,27 @@ export default function PlanPanel({
           ? { observeWorkspace: true }
           : {}),
       });
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(formatApiErrorMessage(error));
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
+  const downloadArtifact = async (
+    artifact: ArtifactManifestEntry,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:download`);
+    setArtifactError(undefined);
+    try {
+      const download = await downloadPlanArtifactFile(
+        threadId,
+        plan.id,
+        artifact.id,
+      );
+      downloadBlob(download.blob, download.filename);
       await onDraftApplied();
     } catch (error) {
       setArtifactError(formatApiErrorMessage(error));
@@ -1721,6 +1743,18 @@ export default function PlanPanel({
                             {artifactBusyId === `${artifact.id}:produced`
                               ? planCopy.artifactActions.producing
                               : planCopy.artifactActions.produce}
+                          </button>
+                        ) : null}
+                        {actions.canDownload ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.download}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() => void downloadArtifact(artifact)}
+                          >
+                            {artifactBusyId === `${artifact.id}:download`
+                              ? planCopy.artifactActions.downloading
+                              : planCopy.artifactActions.download}
                           </button>
                         ) : null}
                         {actions.canVerify ? (
@@ -3651,6 +3685,15 @@ function downloadJson(value: unknown, filename: string): void {
       type: "application/json",
     }),
   );
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;

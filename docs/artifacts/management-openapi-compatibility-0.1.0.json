@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "168c4dbfc1e0a9f85a2f41ebf1de06f693b52c924477a07303f002e91c29e710",
-    "routeCount": 229,
-    "routeSetSha256": "b43d3ecd8d0eafaba14e4e04ef1c5fd0a9c07b1356049f31e257149601e42096"
+    "sha256": "19d321b3ae188f910a8bc74016073bb1745b5c5ab05a8d6ff5ec4de8de7fe5c2",
+    "routeCount": 230,
+    "routeSetSha256": "9927538969c00632160feb6eb600e91c2233b1631536a24b001b14cca5c3214d"
   },
-  "operationCount": 229,
-  "operationSetSha256": "8b85a58c15d90fcfa1d0adc7bba930444b8b8e6080b44ca19e7e48936e05075f",
+  "operationCount": 230,
+  "operationSetSha256": "a2698e8a9181f2a70ab232307ce54aa89932c15e57307d05bd8b6483f3aec050",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -1339,6 +1339,30 @@
         "threads"
       ],
       "pathParameters": [
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file",
+      "method": "get",
+      "path": "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file",
+      "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-file",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "artifactId",
         "planId",
         "threadId"
       ],

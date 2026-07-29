@@ -348,6 +348,7 @@ import {
   createRunReplaySnapshot,
   createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
+  exportWorkspaceFileArtifact,
   createInboundDeadLetterRetryHistory,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
   createReceiptTrustAnchorDirectoryQuorumActivationDecisionReceipt,
@@ -7191,6 +7192,54 @@ export function createApp(services: NapierServices): Hono {
       }
       setExecutionPlanHeaders(context, plan);
       return context.json(plan);
+    },
+  );
+
+  app.get(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/file",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const planId = context.req.param("planId");
+      assertPlanThread(services, planId, threadId);
+      const plan = services.store.getPlan(planId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(context, "Plan artifact file is invalid", 404);
+      }
+      try {
+        const exported = await exportWorkspaceFileArtifact(
+          services.store.workspaceRoot,
+          artifact,
+        );
+        await services.store.appendEvent({
+          threadId,
+          runId: createId("runctl"),
+          type: "artifact.exported",
+          category: "artifact",
+          visibility: "user",
+          payload: {
+            planId: plan.id,
+            artifactId: artifact.id,
+            planRevision: plan.revision,
+            status: artifact.status,
+            kind: artifact.kind,
+            pathSha256: sha256Text(artifact.path),
+            sha256: exported.sha256,
+            sizeBytes: exported.sizeBytes,
+          },
+        });
+        setPlanArtifactFileExportHeaders(context, plan, artifact, exported);
+        context.header("Content-Type", "application/octet-stream");
+        const body = exported.contents.buffer.slice(
+          exported.contents.byteOffset,
+          exported.contents.byteOffset + exported.contents.byteLength,
+        ) as ArrayBuffer;
+        return context.body(body);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
     },
   );
 
@@ -17591,6 +17640,44 @@ function setExecutionPlanHeaders(context: Context, plan: ExecutionPlan): void {
   } else {
     context.header("X-Napier-Replan-Recommendation", "false");
   }
+}
+
+function setPlanArtifactFileExportHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: ExecutionPlan["artifacts"][number],
+  exported: { sha256: string; sizeBytes: number },
+): void {
+  context.header("Cache-Control", "no-store");
+  context.header(
+    "Content-Disposition",
+    `attachment; filename="${planArtifactDownloadFilename(artifact, exported.sha256)}"`,
+  );
+  setStableContentSha256Header(context, exported.sha256);
+  context.header("X-Napier-Thread-Id", plan.threadId);
+  context.header("X-Napier-Plan-Id", plan.id);
+  context.header("X-Napier-Plan-Revision", String(plan.revision));
+  context.header("X-Napier-Plan-Artifact-Id", artifact.id);
+  context.header("X-Napier-Plan-Artifact-Status", artifact.status);
+  context.header(
+    "X-Napier-Plan-Artifact-Path-SHA256",
+    sha256Text(artifact.path),
+  );
+  context.header("X-Napier-Plan-Artifact-SHA256", exported.sha256);
+  context.header(
+    "X-Napier-Plan-Artifact-Size-Bytes",
+    String(exported.sizeBytes),
+  );
+}
+
+function planArtifactDownloadFilename(
+  artifact: ExecutionPlan["artifacts"][number],
+  sha256: string,
+): string {
+  const baseName = path.basename(artifact.path).replace(/[^A-Za-z0-9._-]/g, "_");
+  const safeName =
+    baseName.length > 0 && baseName !== "." ? baseName : artifact.id;
+  return `napier-artifact-${artifact.id}-${sha256.slice(0, 12)}-${safeName}`;
 }
 
 function setExecutionPlanReplanDraftReviewHeaders(

@@ -348,6 +348,10 @@ All notable changes to Napier are recorded here.
 - OTLP export now projects Advisor checks and completion freshness summaries as
   metadata-only event attributes, preserving candidate text, prompts, guidance,
   and diagnostic prose redaction.
+- Plan Workbench now downloads produced or verified file artifacts through a
+  workspace-confined no-store endpoint. The server rehashes bytes, rejects
+  verified digest drift, records a hash-only `artifact.exported` Ledger event,
+  and renders that event through a bounded Trace summary.
 - Thread replay bundle validation now recomputes Independent Advisor
   `evidenceSummary` from predecessor Run events, so a forged current/stale
   summary fails even if review and bundle hashes are recalculated.

@@ -450,13 +450,41 @@ function assertArchivePlanEvent(
     !Number.isSafeInteger(record["seq"]) ||
     record["seq"] <= previousSeq ||
     typeof record["type"] !== "string" ||
-    record["category"] !== "plan" ||
+    (record["category"] !== "plan" && !isArchiveArtifactExportEvent(record)) ||
     typeof record["visibility"] !== "string" ||
     typeof record["createdAt"] !== "string" ||
     Number.isNaN(Date.parse(record["createdAt"])) ||
     payload["planId"] !== planId
   ) {
     throw new Error("Execution plan archive event is invalid");
+  }
+}
+
+function isArchiveArtifactExportEvent(
+  event: Record<string, unknown>,
+): boolean {
+  if (event["type"] !== "artifact.exported" || event["category"] !== "artifact") {
+    return false;
+  }
+  const payload = recordField(event, "payload");
+  try {
+    stringField(payload, "artifactId");
+    assertSha256(stringField(payload, "pathSha256"), "pathSha256");
+    assertSha256(stringField(payload, "sha256"), "sha256");
+    const sizeBytes = payload["sizeBytes"];
+    const planRevision = payload["planRevision"];
+    return (
+      typeof sizeBytes === "number" &&
+      Number.isSafeInteger(sizeBytes) &&
+      sizeBytes >= 0 &&
+      typeof planRevision === "number" &&
+      Number.isSafeInteger(planRevision) &&
+      planRevision >= 1 &&
+      payload["kind"] === "file" &&
+      (payload["status"] === "produced" || payload["status"] === "verified")
+    );
+  } catch {
+    return false;
   }
 }
 

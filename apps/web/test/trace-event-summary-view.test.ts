@@ -23,6 +23,17 @@ describe("Trace event summary view", () => {
     const fixed = traceEventSummaryView(
       traceEvent("message.user", "message", ["TOP_SECRET_USER_TEXT"]),
     );
+    const artifact = traceEventSummaryView(
+      traceEvent("artifact.exported", "artifact", {
+        planId: "plan_1234567890",
+        artifactId: "artifact_1234567890",
+        status: "verified",
+        kind: "file",
+        pathSha256: "a".repeat(64),
+        sha256: "b".repeat(64),
+        sizeBytes: 10,
+      }),
+    );
     const category = traceEventSummaryView(
       traceEvent("message.future", "message", {
         text: "TOP_SECRET_FUTURE_MESSAGE",
@@ -39,6 +50,10 @@ describe("Trace event summary view", () => {
       source: "bounded",
     });
     expect(fixed).toEqual({ text: "message receipt", source: "fixed" });
+    expect(artifact).toEqual({
+      text: `artifact / exported / plan 1234567890 / artifact 1234567890 / status verified / kind file / size-bytes 10 / path ${"a".repeat(12)} / artifact ${"b".repeat(12)}`,
+      source: "bounded",
+    });
     expect(category).toEqual({ text: "message", source: "category" });
     expect(generic).toEqual({
       text: "TOP_SECRET_GENERIC_SUMMARY",

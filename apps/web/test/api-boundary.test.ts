@@ -9,7 +9,11 @@ const webRoot = path.resolve(
   "..",
 );
 const sourceRoot = path.join(webRoot, "src");
-const allowedFetchCallers = new Set(["src/api-client.ts", "src/api.ts"]);
+const allowedFetchCallers = new Set([
+  "src/api-client.ts",
+  "src/api.ts",
+  "src/artifact-file-api.ts",
+]);
 
 describe("Web API boundary", () => {
   it("keeps direct fetch calls behind hash-verified JSON and SSE clients", async () => {

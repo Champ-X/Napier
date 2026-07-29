@@ -1052,7 +1052,10 @@ When Plan tools are available, the Runtime also injects a concise
 multi-step or artifact delivery work, start and settle steps with evidence,
 record planned artifacts after workspace bytes exist, verify file and directory
 artifacts through runtime-computed digests, and avoid claiming plan completion
-until required steps and artifacts are settled.
+until required steps and artifacts are settled. Produced or verified file
+artifacts can be downloaded from the Plan Workbench through a no-store,
+workspace-confined endpoint that rehashes bytes, rejects verified digest drift,
+and appends a hash-only `artifact.exported` Ledger event.
 
 `read_file` reports the SHA-256 and byte size of the complete UTF-8 file even
 when only a line range is returned. A write-capable Agent must pass that digest

@@ -4717,11 +4717,67 @@ describe("Napier HTTP goal flow", () => {
         ]),
       }),
     );
+    const downloadArtifactResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file`,
+    );
+    expect(downloadArtifactResponse.status).toBe(200);
+    expect(downloadArtifactResponse.headers.get("Cache-Control")).toBe(
+      "no-store",
+    );
+    expect(
+      downloadArtifactResponse.headers.get("X-Napier-Content-SHA256"),
+    ).toBe(expectedReportSha256);
+    expect(
+      downloadArtifactResponse.headers.get(
+        "X-Napier-Content-SHA256-Mode",
+      ),
+    ).toBe("stable");
+    expect(
+      downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256"),
+    ).toBe(createHash("sha256").update("report.md").digest("hex"));
+    expect(
+      downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Size-Bytes"),
+    ).toBe(String(Buffer.byteLength(reportContents)));
+    expect(
+      downloadArtifactResponse.headers.get("Content-Disposition"),
+    ).toContain(`napier-artifact-report-${expectedReportSha256.slice(0, 12)}`);
+    expect(
+      Buffer.from(await downloadArtifactResponse.arrayBuffer()).toString(
+        "utf8",
+      ),
+    ).toBe(reportContents);
+    expect(
+      (await services.store.listEvents(created.thread.id)).filter(
+        (event) =>
+          event.type === "artifact.exported" &&
+          event.payload["artifactId"] === "report",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          planId: plan.id,
+          artifactId: "report",
+          status: "verified",
+          kind: "file",
+          pathSha256: createHash("sha256").update("report.md").digest("hex"),
+          sha256: expectedReportSha256,
+          sizeBytes: Buffer.byteLength(reportContents),
+        }),
+      }),
+    ]);
     await writeFile(
       path.join(services.store.workspaceRoot, "report.md"),
       "# Drifted report\n\nThis no longer matches the verified digest.\n",
       "utf8",
     );
+    const driftedDownloadResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file`,
+    );
+    expect(driftedDownloadResponse.status).toBe(400);
+    await expect(driftedDownloadResponse.json()).resolves.toEqual({
+      error: "Verified artifact digest drifted; replan before replacing it",
+    });
     const driftedArtifactResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report`,
       {

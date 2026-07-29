@@ -11,6 +11,7 @@ export interface ArtifactManifestActionsProjection {
   canProduce: boolean;
   canVerify: boolean;
   canMarkMissing: boolean;
+  canDownload: boolean;
   verifyMode: "verify" | "recheck";
   missingMode: "missing" | "drifted";
   hasActions: boolean;
@@ -48,15 +49,19 @@ export function projectArtifactManifestActions(
     artifact.status === "produced" ||
     (artifact.status === "verified" &&
       (artifact.kind === "file" || artifact.kind === "directory"));
+  const canDownload =
+    artifact.kind === "file" &&
+    (artifact.status === "produced" || artifact.status === "verified");
   return {
     canProduce,
     canVerify,
     canMarkMissing,
+    canDownload,
     verifyMode: artifact.status === "verified" ? "recheck" : "verify",
     missingMode: artifact.status === "verified" ? "drifted" : "missing",
     hasActions:
       artifact.status !== "superseded" &&
-      (canProduce || canVerify || canMarkMissing),
+      (canProduce || canVerify || canMarkMissing || canDownload),
   };
 }
 

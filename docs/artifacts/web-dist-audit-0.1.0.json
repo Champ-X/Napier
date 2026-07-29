@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-D_43JBx9.js",
-    "sizeBytes": 150025,
+    "path": "apps/web/dist/assets/index-Zra571Z_.js",
+    "sizeBytes": 150040,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "bb183016f8537accff43cd88c295948c4096ec21fda61c0da4690a459ac4cb87"
+    "sha256": "4a8c9647adf32ce23f0edb14defc3a478e2a93a2a50463a7d6dae7c46b351682"
   },
-  "distContentSha256": "bb183016f8537accff43cd88c295948c4096ec21fda61c0da4690a459ac4cb87",
+  "distContentSha256": "4a8c9647adf32ce23f0edb14defc3a478e2a93a2a50463a7d6dae7c46b351682",
   "errors": []
 }
