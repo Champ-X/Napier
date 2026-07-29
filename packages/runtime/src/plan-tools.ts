@@ -19,10 +19,17 @@ import { createPlanArtifactEventPayload } from "./plans.js";
 import { isPathInsideWorkspace } from "./policy.js";
 import { createReplanPolicyTemplate } from "./replan-policies.js";
 import type { LocalStore } from "./store.js";
+import {
+  inspectStructuredData,
+  type WorkspaceDataCell,
+  type WorkspaceDataFormat,
+} from "./structured-data.js";
 
 const MAX_ARTIFACT_HASH_BYTES = 32 * 1024 * 1024;
 const MAX_ARTIFACT_PREVIEW_BYTES = 64 * 1024;
+const MAX_ARTIFACT_DATA_PROFILE_BYTES = 2 * 1024 * 1024;
 const MAX_ARTIFACT_DIRECTORY_MANIFEST_ENTRIES = 5_000;
+const MAX_ARTIFACT_DATA_PROFILE_ROWS = 10;
 const DIRECTORY_DIGEST_KIND = "napier.plan-directory-digest";
 
 export interface WorkspaceFileArtifactExport {
@@ -36,6 +43,19 @@ export interface WorkspaceTextArtifactPreview {
   sha256: string;
   sizeBytes: number;
   lineCount: number;
+}
+
+export interface WorkspaceDataArtifactProfile {
+  format: WorkspaceDataFormat;
+  sha256: string;
+  sizeBytes: number;
+  rowCount: number;
+  columnCount: number;
+  columns: string[];
+  sampleRows: Array<Record<string, WorkspaceDataCell>>;
+  truncated: boolean;
+  columnSetSha256: string;
+  sampleSha256: string;
 }
 
 export interface WorkspaceDirectoryArtifactManifestEntry {
@@ -680,6 +700,55 @@ export async function previewWorkspaceTextArtifact(
     sha256: observedSha256,
     sizeBytes: info.size,
     lineCount: text.length === 0 ? 0 : text.split(/\r\n|\r|\n/u).length,
+  };
+}
+
+export async function previewWorkspaceDataArtifactProfile(
+  workspaceRoot: string,
+  artifact: ExecutionPlan["artifacts"][number],
+): Promise<WorkspaceDataArtifactProfile> {
+  if (artifact.kind !== "file") {
+    throw new Error("Only file artifacts can expose a data profile");
+  }
+  if (artifact.status !== "produced" && artifact.status !== "verified") {
+    throw new Error(
+      "Only produced or verified artifacts can expose a data profile",
+    );
+  }
+  if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
+    throw new Error("Artifact path escapes the configured workspace");
+  }
+  const { target, info } = await inspectWorkspaceArtifactTarget(
+    workspaceRoot,
+    artifact,
+  );
+  if (info.size > MAX_ARTIFACT_DATA_PROFILE_BYTES) {
+    throw new Error(
+      `Artifact data profile exceeds the ${MAX_ARTIFACT_DATA_PROFILE_BYTES / 1024 / 1024} MB limit`,
+    );
+  }
+  const contents = await readFile(target);
+  const observedSha256 = sha256(contents);
+  assertVerifiedArtifactDigestMatches(artifact, observedSha256);
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(contents);
+  } catch {
+    throw new Error("Artifact data profile requires valid UTF-8 text");
+  }
+  const profile = inspectStructuredData(
+    text,
+    artifact.path,
+    "auto",
+    MAX_ARTIFACT_DATA_PROFILE_ROWS,
+    "Artifact data profile",
+  );
+  return {
+    ...profile,
+    sha256: observedSha256,
+    sizeBytes: info.size,
+    columnSetSha256: sha256(canonicalJson(profile.columns)),
+    sampleSha256: sha256(canonicalJson(profile.sampleRows)),
   };
 }
 

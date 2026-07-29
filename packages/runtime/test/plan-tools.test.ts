@@ -10,6 +10,7 @@ import {
   createPlanTools,
   exportWorkspaceFileArtifact,
   inspectWorkspaceArtifactDrift,
+  previewWorkspaceDataArtifactProfile,
   previewWorkspaceDirectoryArtifactManifest,
   previewWorkspaceTextArtifact,
 } from "../src/plan-tools.js";
@@ -514,6 +515,66 @@ describe("plan tools", () => {
         sizeBytes: Buffer.byteLength(contents),
         createdAt: "2026-07-27T00:00:00.000Z",
         updatedAt: "2026-07-27T00:00:00.000Z",
+      }),
+    ).rejects.toThrow("Verified artifact digest drifted");
+  });
+
+  it("profiles structured workspace file artifacts without trusting drifted bytes", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-plan-tools-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "artifacts"), { recursive: true });
+    const contents = "name,score\nalpha,1\nbeta,2\n";
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "scores.csv"),
+      contents,
+      "utf8",
+    );
+    const artifact = {
+      id: "scores",
+      path: "artifacts/scores.csv",
+      kind: "file" as const,
+      description: "Score data.",
+      status: "produced" as const,
+      evidence: "The score data was produced.",
+      createdAt: "2026-07-27T00:00:00.000Z",
+      updatedAt: "2026-07-27T00:00:00.000Z",
+    };
+
+    await expect(
+      previewWorkspaceDataArtifactProfile(workspaceRoot, artifact),
+    ).resolves.toEqual({
+      format: "csv",
+      sha256: createHash("sha256").update(contents).digest("hex"),
+      sizeBytes: Buffer.byteLength(contents),
+      rowCount: 2,
+      columnCount: 2,
+      columns: ["name", "score"],
+      sampleRows: [
+        { name: "alpha", score: "1" },
+        { name: "beta", score: "2" },
+      ],
+      truncated: false,
+      columnSetSha256: sha256(canonicalJson(["name", "score"])),
+      sampleSha256: sha256(
+        canonicalJson([
+          { name: "alpha", score: "1" },
+          { name: "beta", score: "2" },
+        ]),
+      ),
+    });
+
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "scores.csv"),
+      "name,score\ndrifted,9\n",
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceDataArtifactProfile(workspaceRoot, {
+        ...artifact,
+        status: "verified" as const,
+        sha256: createHash("sha256").update(contents).digest("hex"),
+        sizeBytes: Buffer.byteLength(contents),
       }),
     ).rejects.toThrow("Verified artifact digest drifted");
   });

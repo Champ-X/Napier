@@ -350,6 +350,7 @@ import {
   createWorkspaceArtifactVerificationRequest,
   exportWorkspaceFileArtifact,
   inspectWorkspaceArtifactDrift,
+  previewWorkspaceDataArtifactProfile,
   previewWorkspaceDirectoryArtifactManifest,
   previewWorkspaceTextArtifact,
   createInboundDeadLetterRetryHistory,
@@ -7424,6 +7425,75 @@ export function createApp(services: NapierServices): Hono {
           },
         });
         setPlanArtifactTextPreviewHeaders(context, plan, artifact, payload);
+        return context.json(payload);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.get(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/data",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const planId = context.req.param("planId");
+      assertPlanThread(services, planId, threadId);
+      const plan = services.store.getPlan(planId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(context, "Plan artifact data profile is invalid", 404);
+      }
+      try {
+        const profile = await previewWorkspaceDataArtifactProfile(
+          services.store.workspaceRoot,
+          artifact,
+        );
+        const payload = {
+          kind: "napier.plan-artifact-data-profile" as const,
+          schemaVersion: 1 as const,
+          planId: plan.id,
+          artifactId: artifact.id,
+          planRevision: plan.revision,
+          status: artifact.status,
+          artifactKind: artifact.kind,
+          pathSha256: sha256Text(artifact.path),
+          sha256: profile.sha256,
+          sizeBytes: profile.sizeBytes,
+          format: profile.format,
+          rowCount: profile.rowCount,
+          columnCount: profile.columnCount,
+          truncated: profile.truncated,
+          columnSetSha256: profile.columnSetSha256,
+          sampleSha256: profile.sampleSha256,
+          columns: profile.columns,
+          sampleRows: profile.sampleRows,
+        };
+        await services.store.appendEvent({
+          threadId,
+          runId: createId("runctl"),
+          type: "artifact.data_profiled",
+          category: "artifact",
+          visibility: "user",
+          payload: {
+            planId: plan.id,
+            artifactId: artifact.id,
+            planRevision: plan.revision,
+            status: artifact.status,
+            kind: artifact.kind,
+            pathSha256: payload.pathSha256,
+            sha256: profile.sha256,
+            sizeBytes: profile.sizeBytes,
+            format: profile.format,
+            rowCount: profile.rowCount,
+            columnCount: profile.columnCount,
+            truncated: profile.truncated,
+            columnSetSha256: profile.columnSetSha256,
+            sampleSha256: profile.sampleSha256,
+          },
+        });
+        setPlanArtifactDataProfileHeaders(context, plan, artifact, payload);
         return context.json(payload);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
@@ -17890,6 +17960,60 @@ function setPlanArtifactTextPreviewHeaders(
     String(preview.lineCount),
   );
   context.header("X-Napier-Plan-Artifact-Text-SHA256", preview.textSha256);
+}
+
+function setPlanArtifactDataProfileHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: ExecutionPlan["artifacts"][number],
+  profile: {
+    sha256: string;
+    sizeBytes: number;
+    format: string;
+    rowCount: number;
+    columnCount: number;
+    truncated: boolean;
+    columnSetSha256: string;
+    sampleSha256: string;
+  },
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, profile);
+  context.header("X-Napier-Thread-Id", plan.threadId);
+  context.header("X-Napier-Plan-Id", plan.id);
+  context.header("X-Napier-Plan-Revision", String(plan.revision));
+  context.header("X-Napier-Plan-Artifact-Id", artifact.id);
+  context.header("X-Napier-Plan-Artifact-Status", artifact.status);
+  context.header(
+    "X-Napier-Plan-Artifact-Path-SHA256",
+    sha256Text(artifact.path),
+  );
+  context.header("X-Napier-Plan-Artifact-SHA256", profile.sha256);
+  context.header(
+    "X-Napier-Plan-Artifact-Size-Bytes",
+    String(profile.sizeBytes),
+  );
+  context.header("X-Napier-Plan-Artifact-Data-Format", profile.format);
+  context.header(
+    "X-Napier-Plan-Artifact-Row-Count",
+    String(profile.rowCount),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Column-Count",
+    String(profile.columnCount),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Data-Truncated",
+    String(profile.truncated),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Column-Set-SHA256",
+    profile.columnSetSha256,
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Sample-SHA256",
+    profile.sampleSha256,
+  );
 }
 
 function setPlanArtifactDirectoryManifestHeaders(

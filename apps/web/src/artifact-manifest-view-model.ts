@@ -13,6 +13,7 @@ export interface ArtifactManifestActionsProjection {
   canMarkMissing: boolean;
   canDownload: boolean;
   canPreview: boolean;
+  canProfileData: boolean;
   canInspectManifest: boolean;
   canCheckDrift: boolean;
   verifyMode: "verify" | "recheck";
@@ -69,6 +70,8 @@ export function projectArtifactManifestActions(
     artifact.kind === "file" &&
     (artifact.status === "produced" || artifact.status === "verified");
   const canPreview = canDownload;
+  const canProfileData =
+    canDownload && /\.(?:csv|json|jsonl|ndjson)$/iu.test(artifact.path);
   const canInspectManifest =
     artifact.kind === "directory" &&
     (artifact.status === "produced" || artifact.status === "verified");
@@ -81,6 +84,7 @@ export function projectArtifactManifestActions(
     canMarkMissing,
     canDownload,
     canPreview,
+    canProfileData,
     canInspectManifest,
     canCheckDrift,
     verifyMode: artifact.status === "verified" ? "recheck" : "verify",
@@ -92,6 +96,7 @@ export function projectArtifactManifestActions(
         canMarkMissing ||
         canDownload ||
         canPreview ||
+        canProfileData ||
         canInspectManifest ||
         canCheckDrift),
   };

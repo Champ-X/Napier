@@ -47,6 +47,7 @@ describe("artifact manifest view model", () => {
       canMarkMissing: true,
       canDownload: false,
       canPreview: false,
+      canProfileData: false,
       canInspectManifest: false,
       canCheckDrift: false,
       verifyMode: "verify",
@@ -63,6 +64,7 @@ describe("artifact manifest view model", () => {
       canMarkMissing: true,
       canDownload: false,
       canPreview: false,
+      canProfileData: false,
       canInspectManifest: true,
       canCheckDrift: false,
       verifyMode: "verify",
@@ -79,6 +81,7 @@ describe("artifact manifest view model", () => {
       canMarkMissing: true,
       canDownload: true,
       canPreview: true,
+      canProfileData: false,
       canInspectManifest: false,
       canCheckDrift: true,
       verifyMode: "recheck",
@@ -93,6 +96,7 @@ describe("artifact manifest view model", () => {
       expect.objectContaining({
         canDownload: false,
         canPreview: false,
+        canProfileData: false,
         canInspectManifest: true,
         canCheckDrift: true,
       }),
@@ -107,12 +111,26 @@ describe("artifact manifest view model", () => {
       canMarkMissing: false,
       canDownload: false,
       canPreview: false,
+      canProfileData: false,
       canInspectManifest: false,
       canCheckDrift: false,
       verifyMode: "verify",
       missingMode: "missing",
       hasActions: false,
     });
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({
+          status: "verified",
+          kind: "file",
+          path: "artifacts/scores.csv",
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        canProfileData: true,
+      }),
+    );
   });
 
   it("formats exact byte counts", () => {

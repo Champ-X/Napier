@@ -4430,9 +4430,15 @@ describe("Napier HTTP goal flow", () => {
     });
     await mkdir(services.store.workspaceRoot, { recursive: true });
     const reportContents = "# Verified report\n\nRuntime-observed evidence.\n";
+    const scoresContents = "name,score\nalpha,1\nbeta,2\n";
     await writeFile(
       path.join(services.store.workspaceRoot, "report.md"),
       reportContents,
+      "utf8",
+    );
+    await writeFile(
+      path.join(services.store.workspaceRoot, "scores.csv"),
+      scoresContents,
       "utf8",
     );
     const app = createApp(services);
@@ -4485,6 +4491,11 @@ describe("Napier HTTP goal flow", () => {
               id: "report",
               path: "report.md",
               description: "The verified report.",
+            },
+            {
+              id: "scores",
+              path: "scores.csv",
+              description: "The structured score data.",
             },
           ],
         }),
@@ -4837,6 +4848,116 @@ describe("Napier HTTP goal flow", () => {
       }),
     ]);
     expect(JSON.stringify(previewEvents)).not.toContain(reportContents);
+    const scoresProducedResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "produced",
+          sourceRunId: run.id,
+          evidence: "The score data file was produced.",
+        }),
+      },
+    );
+    expect(scoresProducedResponse.status).toBe(200);
+    const scoresVerifiedResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "verified",
+          observeWorkspace: true,
+          sourceRunId: run.id,
+          evidence: "The server verified the score data bytes.",
+        }),
+      },
+    );
+    expect(scoresVerifiedResponse.status).toBe(200);
+    const expectedScoresSha256 = createHash("sha256")
+      .update(scoresContents)
+      .digest("hex");
+    const dataProfileResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores/data`,
+    );
+    expect(
+      dataProfileResponse.status,
+      await dataProfileResponse.clone().text(),
+    ).toBe(200);
+    expect(dataProfileResponse.headers.get("Cache-Control")).toBe("no-store");
+    expect(
+      dataProfileResponse.headers.get("X-Napier-Plan-Artifact-Data-Format"),
+    ).toBe("csv");
+    expect(
+      dataProfileResponse.headers.get("X-Napier-Plan-Artifact-Row-Count"),
+    ).toBe("2");
+    expect(
+      dataProfileResponse.headers.get("X-Napier-Plan-Artifact-Column-Count"),
+    ).toBe("2");
+    expect(
+      dataProfileResponse.headers.get("X-Napier-Plan-Artifact-Data-Truncated"),
+    ).toBe("false");
+    expect(
+      dataProfileResponse.headers.get("X-Napier-Plan-Artifact-SHA256"),
+    ).toBe(expectedScoresSha256);
+    const dataProfileText = await dataProfileResponse.text();
+    const dataProfileBody = JSON.parse(dataProfileText) as {
+      format: string;
+      rowCount: number;
+      columnCount: number;
+      columns: string[];
+      sampleRows: Array<Record<string, string>>;
+      columnSetSha256: string;
+      sampleSha256: string;
+    };
+    expect(dataProfileResponse.headers.get("X-Napier-Content-SHA256")).toBe(
+      createHash("sha256").update(dataProfileText).digest("hex"),
+    );
+    expect(
+      dataProfileResponse.headers.get(
+        "X-Napier-Plan-Artifact-Column-Set-SHA256",
+      ),
+    ).toBe(dataProfileBody.columnSetSha256);
+    expect(
+      dataProfileResponse.headers.get("X-Napier-Plan-Artifact-Sample-SHA256"),
+    ).toBe(dataProfileBody.sampleSha256);
+    expect(dataProfileBody).toEqual(
+      expect.objectContaining({
+        format: "csv",
+        rowCount: 2,
+        columnCount: 2,
+        columns: ["name", "score"],
+        sampleRows: [
+          { name: "alpha", score: "1" },
+          { name: "beta", score: "2" },
+        ],
+      }),
+    );
+    const dataProfileEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.data_profiled" &&
+        event.payload["artifactId"] === "scores",
+    );
+    expect(dataProfileEvents).toEqual([
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          format: "csv",
+          rowCount: 2,
+          columnCount: 2,
+          truncated: false,
+          columnSetSha256: dataProfileBody.columnSetSha256,
+          sampleSha256: dataProfileBody.sampleSha256,
+          sha256: expectedScoresSha256,
+          sizeBytes: Buffer.byteLength(scoresContents),
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(dataProfileEvents)).not.toContain("alpha");
+    expect(JSON.stringify(dataProfileEvents)).not.toContain("beta");
     const currentDriftCheckResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/drift-check`,
       { method: "POST" },

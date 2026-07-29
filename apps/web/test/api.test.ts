@@ -89,6 +89,7 @@ import {
 import {
   checkPlanArtifactDrift,
   downloadPlanArtifactFile,
+  previewPlanArtifactDataProfile,
   previewPlanArtifactDirectoryManifest,
   previewPlanArtifactText,
 } from "../src/artifact-file-api";
@@ -650,6 +651,52 @@ describe("Web JSON API wrappers", () => {
     await expect(
       previewPlanArtifactText("thread_1", "plan_1", "artifact_1"),
     ).resolves.toEqual(preview);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("profiles plan data artifacts through response hash verification", async () => {
+    const profile = {
+      kind: "napier.plan-artifact-data-profile",
+      schemaVersion: 1,
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "file",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      sizeBytes: 21,
+      format: "csv",
+      rowCount: 2,
+      columnCount: 2,
+      truncated: false,
+      columnSetSha256: "c".repeat(64),
+      sampleSha256: "d".repeat(64),
+      columns: ["name", "score"],
+      sampleRows: [
+        { name: "alpha", score: "1" },
+        { name: "beta", score: "2" },
+      ],
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/data",
+      );
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      const text = JSON.stringify(profile);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      previewPlanArtifactDataProfile("thread_1", "plan_1", "artifact_1"),
+    ).resolves.toEqual(profile);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

@@ -3585,6 +3585,16 @@ checks, returns text only in the no-store response, and appends an
 status/kind, `pathSha256`, artifact SHA-256, byte count, line count, and
 `textSha256`. Plan archive verification accepts only that hash-only preview
 receipt shape, so raw preview text or paths in the event payload fail closed.
+CSV, JSON, JSONL, and NDJSON file artifacts can also be profiled through the
+same produced/verified file boundary. The runtime reuses the Agent
+`inspect_data` parser, limits the source to 2 MiB, returns at most 10 sample
+rows in the no-store response, and computes column-set and sample SHA-256
+receipts from the projected profile. The persisted `artifact.data_profiled`
+event stores only Plan/artifact IDs, Plan revision, status/kind, `pathSha256`,
+artifact SHA-256, byte count, format, row/column counts, truncation state,
+`columnSetSha256`, and `sampleSha256`; raw columns, sample rows, artifact
+paths, and file contents fail closed at append, restore, replay, and archive
+verification boundaries.
 Produced or verified directory artifacts expose a sibling manifest preview.
 The response is no-store and may include artifact-relative entry paths, file
 hashes, byte counts, and aggregate directory digest for operator inspection;

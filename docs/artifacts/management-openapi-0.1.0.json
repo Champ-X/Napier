@@ -9027,6 +9027,64 @@
         "x-napier-source-route": "POST /api/threads/:threadId/plans/:planId/artifacts/:artifactId"
       }
     },
+    "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/data": {
+      "get": {
+        "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-data",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/data",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/data"
+      }
+    },
     "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/drift-check": {
       "post": {
         "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-drift-check",
@@ -13340,7 +13398,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "c19173e1b88ce360b8fd1ea7fcdd432cf2008602739c806ec188aa37c26d9303",
-  "x-napier-route-count": 233,
-  "x-napier-route-set-sha256": "3ab96fb83f7ed78bc34eb8f256c2f21b5df4cb6346edd41b202dca5d998699f3"
+  "x-napier-source-sha256": "bc7a4cdb88929011d949ea4ab3f241abdc3078e06a0c5f54148532b6702471bf",
+  "x-napier-route-count": 234,
+  "x-napier-route-set-sha256": "6a1b84dccc01f26be061985ae5fa85465b508268f6bf1285672fca52593adcbb"
 }

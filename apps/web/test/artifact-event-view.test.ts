@@ -73,6 +73,50 @@ describe("artifact event trace view", () => {
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects data profiles without columns or sample rows", () => {
+    const event = artifactEvent("artifact.data_profiled", {
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 5,
+      status: "verified",
+      kind: "file",
+      format: "csv",
+      path: "TOP_SECRET_PATH",
+      columns: ["TOP_SECRET_COLUMN"],
+      sampleRows: [{ TOP_SECRET_COLUMN: "TOP_SECRET_VALUE" }],
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      columnSetSha256: "c".repeat(64),
+      sampleSha256: "d".repeat(64),
+      sizeBytes: 128,
+      rowCount: 3,
+      columnCount: 2,
+      truncated: false,
+    });
+
+    expect(artifactEventTraceView(event)).toEqual({
+      action: "data_profiled",
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 5,
+      status: "verified",
+      kind: "file",
+      format: "csv",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      columnSetSha256: "c".repeat(64),
+      sampleSha256: "d".repeat(64),
+      sizeBytes: 128,
+      rowCount: 3,
+      columnCount: 2,
+      truncated: false,
+    });
+    expect(artifactEventTraceSummary(event)).toBe(
+      `artifact / data_profiled / plan 1234567890 / artifact 0987654321 / plan-r5 / status verified / kind file / format csv / truncated false / size-bytes 128 / rows 3 / columns 2 / path ${"a".repeat(12)} / artifact ${"b".repeat(12)} / columns ${"c".repeat(12)} / sample ${"d".repeat(12)}`,
+    );
+    expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("projects artifact drift checks without paths or file contents", () => {
     const event = artifactEvent("artifact.drift_checked", {
       planId: "plan_1234567890",

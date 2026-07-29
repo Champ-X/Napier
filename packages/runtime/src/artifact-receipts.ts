@@ -2,6 +2,7 @@ import type { RunEvent } from "@napier/contracts";
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const ARTIFACT_RECEIPT_EVENTS = new Set([
+  "artifact.data_profiled",
   "artifact.directory_manifested",
   "artifact.drift_checked",
   "artifact.exported",
@@ -23,6 +24,16 @@ const ARTIFACT_PREVIEWED_KEYS = [
   ...ARTIFACT_EXPORTED_KEYS,
   "lineCount",
   "textSha256",
+];
+
+const ARTIFACT_DATA_PROFILED_KEYS = [
+  ...ARTIFACT_EXPORTED_KEYS,
+  "format",
+  "rowCount",
+  "columnCount",
+  "truncated",
+  "columnSetSha256",
+  "sampleSha256",
 ];
 
 const ARTIFACT_DRIFT_CHECKED_BASE_KEYS = [
@@ -74,6 +85,10 @@ export function assertArtifactReceiptEventBoundary(
 ): void {
   if (!isArtifactReceiptEvent(event)) return;
   const payload = recordField(event["payload"], label);
+  if (event["type"] === "artifact.data_profiled") {
+    assertArtifactDataProfiledPayload(payload, label);
+    return;
+  }
   if (event["type"] === "artifact.directory_manifested") {
     assertArtifactDirectoryManifestedPayload(payload, label);
     return;
@@ -103,6 +118,36 @@ export function assertArtifactReceiptEventBoundary(
     assertNonNegativeInteger(payload["lineCount"], label);
     assertSha256(payload["textSha256"], label);
   }
+}
+
+function assertArtifactDataProfiledPayload(
+  payload: Record<string, unknown>,
+  label: string,
+): void {
+  assertExactKeys(payload, ARTIFACT_DATA_PROFILED_KEYS, label);
+  assertNonEmptyString(payload["planId"], label);
+  assertNonEmptyString(payload["artifactId"], label);
+  assertPositiveInteger(payload["planRevision"], label);
+  if (payload["status"] !== "produced" && payload["status"] !== "verified") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (payload["kind"] !== "file") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  const format = payload["format"];
+  if (format !== "json" && format !== "jsonl" && format !== "csv") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (typeof payload["truncated"] !== "boolean") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  assertSha256(payload["pathSha256"], label);
+  assertSha256(payload["sha256"], label);
+  assertSha256(payload["columnSetSha256"], label);
+  assertSha256(payload["sampleSha256"], label);
+  assertNonNegativeInteger(payload["sizeBytes"], label);
+  assertNonNegativeInteger(payload["rowCount"], label);
+  assertNonNegativeInteger(payload["columnCount"], label);
 }
 
 function assertArtifactDirectoryManifestedPayload(

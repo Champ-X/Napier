@@ -363,6 +363,11 @@ All notable changes to Napier are recorded here.
   through the same workspace and digest boundary. Preview responses are
   no-store and hash-bound, while `artifact.previewed` Ledger events and Plan
   archives persist only content/text hashes, byte count, and line count.
+- Plan Workbench now profiles produced or verified CSV, JSON, JSONL, and
+  NDJSON file artifacts using the shared `inspect_data` parser. The no-store
+  response shows columns and capped sample rows, while
+  `artifact.data_profiled` Ledger receipts persist only format, counts,
+  truncation state, content hash, column-set hash, and sample hash.
 - Plan Workbench now previews produced or verified directory artifact manifests
   with artifact-relative entries and file hashes in the no-store response while
   recording only digest, byte, entry, file, and directory counts in
@@ -396,9 +401,10 @@ All notable changes to Napier are recorded here.
   states without creating another recovery status source.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`,
-  `artifact.directory_manifested`, and `artifact.drift_checked` receipts remain
-  hash-only, so recomputed portable replay hashes cannot hide raw artifact
-  paths, directory entries, or preview text in exported evidence.
+  `artifact.data_profiled`, `artifact.directory_manifested`, and
+  `artifact.drift_checked` receipts remain hash-only, so recomputed portable
+  replay hashes cannot hide raw artifact paths, directory entries, preview
+  text, columns, or sample rows in exported evidence.
 - SQLite restore now applies the same hash-only artifact receipt boundary to
   persisted Thread events, rejecting locally modified ledger rows that smuggle
   raw preview text back into startup state.

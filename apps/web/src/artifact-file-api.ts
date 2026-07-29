@@ -24,6 +24,27 @@ export interface PlanArtifactTextPreview {
   text: string;
 }
 
+export interface PlanArtifactDataProfile {
+  kind: "napier.plan-artifact-data-profile";
+  schemaVersion: 1;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  pathSha256: string;
+  sha256: string;
+  sizeBytes: number;
+  format: "json" | "jsonl" | "csv";
+  rowCount: number;
+  columnCount: number;
+  truncated: boolean;
+  columnSetSha256: string;
+  sampleSha256: string;
+  columns: string[];
+  sampleRows: Array<Record<string, string | number | boolean | null>>;
+}
+
 export interface PlanArtifactDriftCheck {
   kind: "napier.plan-artifact-drift-check";
   schemaVersion: 1;
@@ -106,6 +127,16 @@ export function previewPlanArtifactText(
 ): Promise<PlanArtifactTextPreview> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
+  );
+}
+
+export function previewPlanArtifactDataProfile(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+): Promise<PlanArtifactDataProfile> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/data`,
   );
 }
 

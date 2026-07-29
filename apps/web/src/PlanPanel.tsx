@@ -61,7 +61,9 @@ import {
 import {
   checkPlanArtifactDrift,
   downloadPlanArtifactFile,
+  previewPlanArtifactDataProfile,
   previewPlanArtifactText,
+  type PlanArtifactDataProfile,
   type PlanArtifactDriftCheck,
   type PlanArtifactDirectoryManifest,
   type PlanArtifactTextPreview,
@@ -319,6 +321,8 @@ export default function PlanPanel({
   const [artifactError, setArtifactError] = useState<string>();
   const [artifactPreview, setArtifactPreview] =
     useState<PlanArtifactTextPreview>();
+  const [artifactDataProfile, setArtifactDataProfile] =
+    useState<PlanArtifactDataProfile>();
   const [artifactDirectoryManifest, setArtifactDirectoryManifest] =
     useState<PlanArtifactDirectoryManifest>();
   const [artifactDriftCheck, setArtifactDriftCheck] =
@@ -359,6 +363,7 @@ export default function PlanPanel({
     setArtifactBusyId(undefined);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     setArchiveReceipt(undefined);
@@ -460,7 +465,9 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:${action}`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
+    setArtifactDriftCheck(undefined);
     try {
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
         status: action,
@@ -471,7 +478,6 @@ export default function PlanPanel({
           : {}),
       });
       await onDraftApplied();
-      setArtifactDriftCheck(undefined);
     } catch (error) {
       setArtifactError(formatApiErrorMessage(error));
     } finally {
@@ -507,6 +513,7 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:preview`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     try {
@@ -524,6 +531,31 @@ export default function PlanPanel({
     }
   };
 
+  const previewDataProfile = async (
+    artifact: ArtifactManifestEntry,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:data`);
+    setArtifactError(undefined);
+    setArtifactPreview(undefined);
+    setArtifactDataProfile(undefined);
+    setArtifactDirectoryManifest(undefined);
+    setArtifactDriftCheck(undefined);
+    try {
+      const profile = await previewPlanArtifactDataProfile(
+        threadId,
+        plan.id,
+        artifact.id,
+      );
+      setArtifactDataProfile(profile);
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(formatApiErrorMessage(error));
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
   const previewDirectoryManifest = async (
     artifact: ArtifactManifestEntry,
   ): Promise<void> => {
@@ -531,6 +563,7 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:manifest`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     try {
@@ -555,6 +588,7 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:drift-check`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     try {
@@ -2188,6 +2222,18 @@ export default function PlanPanel({
                               : planCopy.artifactActions.preview}
                           </button>
                         ) : null}
+                        {actions.canProfileData ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.dataProfile}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() => void previewDataProfile(artifact)}
+                          >
+                            {artifactBusyId === `${artifact.id}:data`
+                              ? planCopy.artifactActions.dataProfiling
+                              : planCopy.artifactActions.dataProfile}
+                          </button>
+                        ) : null}
                         {actions.canInspectManifest ? (
                           <button
                             type="button"
@@ -2286,6 +2332,82 @@ export default function PlanPanel({
                           {planCopy.lineCount}: {artifactPreview.lineCount}
                         </small>
                         <pre>{artifactPreview.text}</pre>
+                      </div>
+                    ) : null}
+                    {artifactDataProfile?.artifactId === artifact.id ? (
+                      <div
+                        className="artifact-preview artifact-data-profile"
+                        role="region"
+                        aria-label={planCopy.artifactActions.dataProfileTitle}
+                      >
+                        <header>
+                          <strong>
+                            {planCopy.artifactActions.dataProfileTitle}
+                          </strong>
+                          <button
+                            type="button"
+                            aria-label={planCopy.artifactActions.closePreview}
+                            onClick={() => setArtifactDataProfile(undefined)}
+                          >
+                            {planCopy.artifactActions.closePreview}
+                          </button>
+                        </header>
+                        <small>
+                          {planCopy.artifactActions.dataFormat}:{" "}
+                          {artifactDataProfile.format}
+                          {" / "}
+                          {planCopy.artifactActions.rows}:{" "}
+                          {artifactDataProfile.rowCount}
+                          {" / "}
+                          {planCopy.artifactActions.columns}:{" "}
+                          {artifactDataProfile.columnCount}
+                          {" / "}
+                          {planCopy.artifactActions.truncated}:{" "}
+                          {String(artifactDataProfile.truncated)}
+                        </small>
+                        <small>
+                          {planCopy.artifactActions.columnSet}:{" "}
+                          <code title={artifactDataProfile.columnSetSha256}>
+                            {artifactDataProfile.columnSetSha256.slice(0, 16)}
+                          </code>
+                          {" / "}
+                          {planCopy.artifactActions.sample}:{" "}
+                          <code title={artifactDataProfile.sampleSha256}>
+                            {artifactDataProfile.sampleSha256.slice(0, 16)}
+                          </code>
+                        </small>
+                        {artifactDataProfile.columns.length > 0 ? (
+                          <div className="artifact-data-table">
+                            <table>
+                              <thead>
+                                <tr>
+                                  {artifactDataProfile.columns.map((column) => (
+                                    <th key={column}>{column}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {artifactDataProfile.sampleRows.map(
+                                  (row, rowIndex) => (
+                                    <tr
+                                      key={`${artifactDataProfile.artifactId}:${rowIndex}`}
+                                    >
+                                      {artifactDataProfile.columns.map(
+                                        (column) => (
+                                          <td key={column}>
+                                            {formatDataCell(row[column])}
+                                          </td>
+                                        ),
+                                      )}
+                                    </tr>
+                                  ),
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <small>{planCopy.artifactActions.noRows}</small>
+                        )}
                       </div>
                     ) : null}
                     {artifactDirectoryManifest?.artifactId === artifact.id ? (
@@ -4321,6 +4443,13 @@ function compareBlueprintRecords(
 
 function BookGlyph() {
   return <Download size={14} aria-hidden="true" />;
+}
+
+function formatDataCell(
+  value: string | number | boolean | null | undefined,
+): string {
+  if (value === undefined || value === null) return "";
+  return String(value);
 }
 
 function downloadJson(value: unknown, filename: string): void {
