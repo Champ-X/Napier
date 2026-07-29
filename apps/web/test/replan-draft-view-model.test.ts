@@ -5,9 +5,11 @@ import type {
 import { describe, expect, it } from "vitest";
 
 import {
+  projectReplanArtifactRoles,
   projectReplanDraftSummary,
   projectReplanHistorySummary,
   projectReplanRecordSummary,
+  projectReplanStepRoles,
 } from "../src/replan-draft-view-model";
 
 type ReplanDraftFixtureOverride = Partial<
@@ -218,6 +220,34 @@ describe("replan draft view model", () => {
     });
     expect(JSON.stringify(history)).not.toContain("Raw reason");
     expect(JSON.stringify(history)).not.toContain("Raw evidence");
+  });
+
+  it("projects latest replan entity roles for step and artifact cards", () => {
+    const record = replanRecordFixture({
+      addedStepIds: ["restore_step"],
+      supersededStepIds: ["blocked_step"],
+      dependencyUpdatedStepIds: ["downstream_step"],
+      addedArtifactIds: ["replacement_report"],
+      supersededArtifactIds: ["old_report"],
+    });
+
+    expect(projectReplanStepRoles("restore_step", record)).toEqual(["added"]);
+    expect(projectReplanStepRoles("downstream_step", record)).toEqual([
+      "dependency_updated",
+    ]);
+    expect(projectReplanStepRoles("blocked_step", record)).toEqual([
+      "superseded",
+    ]);
+    expect(projectReplanStepRoles("unrelated_step", record)).toEqual([]);
+    expect(projectReplanStepRoles("restore_step", undefined)).toEqual([]);
+    expect(projectReplanArtifactRoles("replacement_report", record)).toEqual([
+      "added",
+    ]);
+    expect(projectReplanArtifactRoles("old_report", record)).toEqual([
+      "superseded",
+    ]);
+    expect(projectReplanArtifactRoles("unrelated_report", record)).toEqual([]);
+    expect(projectReplanArtifactRoles("old_report", undefined)).toEqual([]);
   });
 });
 

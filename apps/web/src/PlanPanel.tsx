@@ -117,9 +117,11 @@ import {
 } from "./plan-blueprint-library-view-model";
 import { listReceiptTrustAnchors } from "./receipt-trust-api";
 import {
+  projectReplanArtifactRoles,
   projectReplanDraftSummary,
   projectReplanHistorySummary,
   projectReplanRecordSummary,
+  projectReplanStepRoles,
 } from "./replan-draft-view-model";
 
 const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
@@ -1799,52 +1801,74 @@ export default function PlanPanel({
               </div>
             ) : null}
             <ol className="plan-steps">
-              {plan.steps.map((step, index) => (
-                <li
-                  className={`plan-step step-${step.status}${
-                    criticalPathSet.has(step.id) ? " on-critical-path" : ""
-                  }`}
-                  key={step.id}
-                >
-                  <div className="step-index">
-                    {String(index + 1).padStart(2, "0")}
-                  </div>
-                  <div className="step-body">
-                    <header>
-                      <h4>{step.title}</h4>
-                      <span>{planCopy.statuses[step.status]}</span>
-                    </header>
-                    <p>{step.description}</p>
-                    <dl>
-                      <div>
-                        <dt>{planCopy.dependsOn}</dt>
-                        <dd>
-                          {step.dependsOn.length > 0
-                            ? step.dependsOn.join(", ")
-                            : planCopy.none}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>{planCopy.verification}</dt>
-                        <dd>{step.verification}</dd>
-                      </div>
-                      {step.evidence ? (
-                        <div>
-                          <dt>{planCopy.evidence}</dt>
-                          <dd>{step.evidence}</dd>
+              {plan.steps.map((step, index) => {
+                const replanRoles = projectReplanStepRoles(
+                  step.id,
+                  latestReplan,
+                );
+                return (
+                  <li
+                    className={`plan-step step-${step.status}${
+                      criticalPathSet.has(step.id) ? " on-critical-path" : ""
+                    }`}
+                    key={step.id}
+                  >
+                    <div className="step-index">
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+                    <div className="step-body">
+                      <header>
+                        <h4>{step.title}</h4>
+                        <div className="plan-entity-status">
+                          <span className="plan-status-badge">
+                            {planCopy.statuses[step.status]}
+                          </span>
+                          {replanRoles.length > 0 ? (
+                            <div
+                              className="plan-replan-entity-badges"
+                              aria-label={planCopy.latestReplanImpact}
+                            >
+                              {replanRoles.map((role) => (
+                                <span key={role}>
+                                  {planCopy.replanEntityRoles[role]}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                      {step.blocker ? (
+                      </header>
+                      <p>{step.description}</p>
+                      <dl>
                         <div>
-                          <dt>{planCopy.blocker}</dt>
-                          <dd>{step.blocker}</dd>
+                          <dt>{planCopy.dependsOn}</dt>
+                          <dd>
+                            {step.dependsOn.length > 0
+                              ? step.dependsOn.join(", ")
+                              : planCopy.none}
+                          </dd>
                         </div>
-                      ) : null}
-                    </dl>
-                    {step.runId ? <code>{step.runId}</code> : null}
-                  </div>
-                </li>
-              ))}
+                        <div>
+                          <dt>{planCopy.verification}</dt>
+                          <dd>{step.verification}</dd>
+                        </div>
+                        {step.evidence ? (
+                          <div>
+                            <dt>{planCopy.evidence}</dt>
+                            <dd>{step.evidence}</dd>
+                          </div>
+                        ) : null}
+                        {step.blocker ? (
+                          <div>
+                            <dt>{planCopy.blocker}</dt>
+                            <dd>{step.blocker}</dd>
+                          </div>
+                        ) : null}
+                      </dl>
+                      {step.runId ? <code>{step.runId}</code> : null}
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           </article>
 
@@ -1957,6 +1981,10 @@ export default function PlanPanel({
               {plan.artifacts.map((artifact) => {
                 const evidence = projectArtifactManifestEvidence(artifact);
                 const actions = projectArtifactManifestActions(artifact);
+                const replanRoles = projectReplanArtifactRoles(
+                  artifact.id,
+                  latestReplan,
+                );
                 const verifyLabel =
                   actions.verifyMode === "recheck"
                     ? planCopy.artifactActions.recheck
@@ -1981,7 +2009,23 @@ export default function PlanPanel({
                   <article key={artifact.id}>
                     <header>
                       <code>{artifact.path}</code>
-                      <span>{planCopy.statuses[artifact.status]}</span>
+                      <div className="plan-entity-status">
+                        <span className="plan-status-badge">
+                          {planCopy.statuses[artifact.status]}
+                        </span>
+                        {replanRoles.length > 0 ? (
+                          <div
+                            className="plan-replan-entity-badges"
+                            aria-label={planCopy.latestReplanImpact}
+                          >
+                            {replanRoles.map((role) => (
+                              <span key={role}>
+                                {planCopy.replanEntityRoles[role]}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
                     </header>
                     <p>{artifact.description}</p>
                     {artifact.evidence ? (

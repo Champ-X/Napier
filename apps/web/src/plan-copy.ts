@@ -29,6 +29,12 @@ export const planCopy = {
   addedStepsHash: "Added steps hash",
   addedArtifactsHash: "Added artifacts hash",
   dependencyUpdatesHash: "Dependency updates hash",
+  latestReplanImpact: "Latest replan impact",
+  replanEntityRoles: {
+    added: "Added by latest replan",
+    dependency_updated: "Dependency updated",
+    superseded: "Superseded by latest replan",
+  },
   reviewDraft: "Review draft",
   reviewingDraft: "Reviewing",
   modelUnavailableHint:

@@ -6153,7 +6153,16 @@ button:disabled {
   font-size: 11px;
 }
 
-.step-body > header span {
+.plan-entity-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: min-content;
+}
+
+.plan-status-badge {
   padding: 2px 4px;
   font-family: var(--mono);
   font-size: 6px;
@@ -6163,23 +6172,42 @@ button:disabled {
   border: 1px solid var(--rule);
 }
 
-.step-ready .step-body > header span,
-.step-running .step-body > header span {
+.step-ready .plan-status-badge,
+.step-running .plan-status-badge {
   color: #765814;
   background: #f3e8c8;
   border-color: #d8c188;
 }
 
-.step-completed .step-body > header span {
+.step-completed .plan-status-badge {
   color: #285241;
   background: #dfe9e0;
   border-color: #abc3b1;
 }
 
-.step-blocked .step-body > header span {
+.step-blocked .plan-status-badge {
   color: #8b3f2f;
   background: var(--vermilion-soft);
   border-color: #d9a698;
+}
+
+.plan-replan-entity-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: flex-end;
+}
+
+.plan-replan-entity-badges span {
+  padding: 2px 4px;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: #7e5835;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: rgb(126 88 53 / 8%);
+  border: 1px solid rgb(126 88 53 / 18%);
+  border-radius: 999px;
 }
 
 .step-body > p {

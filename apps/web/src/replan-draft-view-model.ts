@@ -62,6 +62,10 @@ export interface ReplanHistorySummaryProjection {
   hasMultipleRecords: boolean;
 }
 
+export type ReplanStepRole = "added" | "dependency_updated" | "superseded";
+
+export type ReplanArtifactRole = "added" | "superseded";
+
 export function projectReplanDraftSummary(
   recommendation: ExecutionPlanReplanRecommendation,
 ): ReplanDraftSummaryProjection {
@@ -153,4 +157,31 @@ export function projectReplanHistorySummary(
     hasHistory: projectedRecords.length > 0,
     hasMultipleRecords: projectedRecords.length > 1,
   };
+}
+
+export function projectReplanStepRoles(
+  stepId: string,
+  record: ExecutionPlanReplanRecord | undefined,
+): ReplanStepRole[] {
+  if (!record) return [];
+  const roles: ReplanStepRole[] = [];
+  if (record.addedStepIds.includes(stepId)) roles.push("added");
+  if (record.dependencyUpdatedStepIds.includes(stepId)) {
+    roles.push("dependency_updated");
+  }
+  if (record.supersededStepIds.includes(stepId)) roles.push("superseded");
+  return roles;
+}
+
+export function projectReplanArtifactRoles(
+  artifactId: string,
+  record: ExecutionPlanReplanRecord | undefined,
+): ReplanArtifactRole[] {
+  if (!record) return [];
+  const roles: ReplanArtifactRole[] = [];
+  if (record.addedArtifactIds.includes(artifactId)) roles.push("added");
+  if (record.supersededArtifactIds.includes(artifactId)) {
+    roles.push("superseded");
+  }
+  return roles;
 }

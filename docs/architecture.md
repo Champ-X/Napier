@@ -3243,8 +3243,11 @@ component hashes after Apply without rendering reason or evidence prose. When a
 Plan has multiple recovery cycles, the same Workbench surface renders a compact
 applied replan history with revision spans, strategy enums, structural-change
 counts, and replan hashes, preserving the Work Ledger trail without reopening
-the archived event stream. A stale expected revision fails as a conflict before
-any plan mutation is committed.
+the archived event stream. Step and artifact cards also project latest-replan
+impact badges for added, superseded, and dependency-updated entities, so the
+operator can find the replacement path directly in the executable Plan surface.
+A stale expected revision fails as a conflict before any plan mutation is
+committed.
 
 Plan REST responses are no-store and response-hash-bound:
 
