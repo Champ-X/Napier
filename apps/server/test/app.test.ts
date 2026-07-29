@@ -371,9 +371,13 @@ describe("Napier HTTP goal flow", () => {
   });
 
   it("keeps Run SSE done frames behind the terminal status guard", async () => {
-    const source = await readFile(new URL("../src/app.ts", import.meta.url), {
-      encoding: "utf8",
-    });
+    const [source, streamSource] = await Promise.all([
+      readFile(new URL("../src/app.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL("../../../packages/runtime/src/run-stream.ts", import.meta.url),
+        "utf8",
+      ),
+    ]);
     const directDoneRunStatusWrites = [
       ...source.matchAll(/type:\s*"done"[\s\S]{0,120}status:\s*run\.status/g),
     ];
@@ -385,24 +389,28 @@ describe("Napier HTTP goal flow", () => {
 
     expect(directDoneRunStatusWrites).toHaveLength(0);
     expect(guardedDoneFrameWrites).toHaveLength(3);
-    expect(source).toContain("threadId,");
-    expect(source).toContain("snapshotSha256,");
-    expect(source).toContain("snapshotBytes,");
-    expect(source).toContain("eventCount,");
-    expect(source).toContain("eventBytes,");
-    expect(source).toContain("eventStreamSha256,");
-    expect(source).toMatch(
+    expect(streamSource).toContain("threadId,");
+    expect(streamSource).toContain("snapshotSha256,");
+    expect(streamSource).toContain("snapshotBytes,");
+    expect(streamSource).toContain("eventCount,");
+    expect(streamSource).toContain("eventBytes,");
+    expect(streamSource).toContain("eventStreamSha256,");
+    expect(streamSource).toMatch(
       /case "queued":[\s\S]*case "running":[\s\S]*throw new Error/,
     );
-    expect(source).toContain(
+    expect(streamSource).toContain(
       "Run stream cannot finish with non-terminal status",
     );
   });
 
   it("keeps Run SSE snapshot frames behind the detail hash guard", async () => {
-    const source = await readFile(new URL("../src/app.ts", import.meta.url), {
-      encoding: "utf8",
-    });
+    const [source, streamSource] = await Promise.all([
+      readFile(new URL("../src/app.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL("../../../packages/runtime/src/run-stream.ts", import.meta.url),
+        "utf8",
+      ),
+    ]);
     const directSnapshotWrites = [
       ...source.matchAll(/type:\s*"snapshot"[\s\S]{0,120}detail:/g),
     ];
@@ -414,12 +422,14 @@ describe("Napier HTTP goal flow", () => {
 
     expect(directSnapshotWrites).toHaveLength(0);
     expect(guardedSnapshotWrites).toHaveLength(3);
-    expect(source).toContain("const serializedDetail = JSON.stringify(detail)");
-    expect(source).toContain("detailSha256: sha256Text(serializedDetail)");
-    expect(source).toContain(
+    expect(streamSource).toContain(
+      "const serializedDetail = JSON.stringify(detail)",
+    );
+    expect(streamSource).toContain("detailSha256: sha256(serializedDetail)");
+    expect(streamSource).toContain(
       'detailBytes: Buffer.byteLength(serializedDetail, "utf8")',
     );
-    expect(source).toContain("eventBytes: jsonByteLength(detail.events)");
+    expect(streamSource).toContain("eventBytes: jsonByteLength(detail.events)");
   });
 
   it("keeps successful Run SSE streams snapshot-before-done", async () => {
@@ -436,9 +446,13 @@ describe("Napier HTTP goal flow", () => {
   });
 
   it("keeps Run SSE event frames behind the event hash guard", async () => {
-    const source = await readFile(new URL("../src/app.ts", import.meta.url), {
-      encoding: "utf8",
-    });
+    const [source, streamSource] = await Promise.all([
+      readFile(new URL("../src/app.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL("../../../packages/runtime/src/run-stream.ts", import.meta.url),
+        "utf8",
+      ),
+    ]);
     const directEventWrites = [
       ...source.matchAll(
         /writeFrame\(\s*\{\s*type:\s*"event"[\s\S]{0,120}event/g,
@@ -452,13 +466,19 @@ describe("Napier HTTP goal flow", () => {
 
     expect(directEventWrites).toHaveLength(0);
     expect(guardedEventWrites).toHaveLength(3);
-    expect(source).toContain("eventSha256: sha256Text(JSON.stringify(event))");
+    expect(streamSource).toContain(
+      "eventSha256: sha256(JSON.stringify(event))",
+    );
   });
 
   it("keeps Run SSE error frames behind the thread diagnostic guard", async () => {
-    const source = await readFile(new URL("../src/app.ts", import.meta.url), {
-      encoding: "utf8",
-    });
+    const [source, streamSource] = await Promise.all([
+      readFile(new URL("../src/app.ts", import.meta.url), "utf8"),
+      readFile(
+        new URL("../../../packages/runtime/src/run-stream.ts", import.meta.url),
+        "utf8",
+      ),
+    ]);
     const directErrorWrites = [
       ...source.matchAll(/writeFrame\(\s*\{\s*type:\s*"error"/g),
     ];
@@ -470,9 +490,9 @@ describe("Napier HTTP goal flow", () => {
 
     expect(directErrorWrites).toHaveLength(0);
     expect(guardedErrorWrites).toHaveLength(3);
-    expect(source).toContain("threadId,");
-    expect(source).toContain(
-      "diagnosticSha256: sha256Text(errorMessage(error))",
+    expect(streamSource).toContain("threadId,");
+    expect(streamSource).toContain(
+      "diagnosticSha256: sha256(errorMessage(error))",
     );
   });
 

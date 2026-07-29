@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a one-shot `napier run` CLI with human output and line-delimited
+  `StreamFrame` JSONL. It creates a Thread or verifies an explicit existing
+  Thread, then delegates execution to the same `AgentRuntime`, model registry,
+  policy, Sandbox, SQLite Ledger, and Run lease as Web/HTTP. Event frames are
+  followed by a hash-bound final snapshot and terminal done frame; stdout
+  backpressure, timeout, pre-aborted signals, SIGINT/SIGTERM, concurrent Run
+  rejection, cleanup, and stable redacted error frames are covered. Server and
+  CLI now share `createLocalAgentRuntime()` service initialization and Run
+  stream frame construction, removing duplicated bootstrap and SSE hashing
+  logic from the oversized Server module. A built subprocess smoke and an
+  opt-in real DeepSeek JSONL smoke exercise the product entry point. Ambient
+  provider keys remain unusable without an active credential reference in the
+  selected data root. This slice does not claim an interactive TUI,
+  resume/branch commands, RPC, ACP, or Desktop packaging.
 - Added workspace-confined TypeScript/JavaScript reference discovery. The
   opt-in `lsp_references` Agent tool sends standard
   `textDocument/references` requests with explicit declaration inclusion

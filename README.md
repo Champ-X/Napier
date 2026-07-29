@@ -29,6 +29,9 @@ Version `0.1.0` includes:
 - a Pi-powered multi-provider runtime for OpenAI, Anthropic, Google, and
   OpenRouter;
 - a deterministic zero-key demo model for onboarding and CI;
+- a one-shot `napier run` CLI with human output or hash-bound `StreamFrame`
+  JSONL, backed by the same Agent Runtime, model registry, policy, Sandbox,
+  SQLite Ledger, and Thread Run lease as the HTTP/Web path;
 - an authoritative SQLite WAL that commits workspace projections and ordered
   events atomically, uses revision CAS for concurrent local writers, and
   migrates legacy `workspace.json`/JSONL state without evidence loss;
@@ -299,6 +302,45 @@ npm start -w @napier/server
 
 Open `http://127.0.0.1:8787`.
 
+For a zero-key one-shot terminal Run with the demo model:
+
+```bash
+npm run napier -- run \
+  --workspace . \
+  --prompt "Summarize this workspace."
+```
+
+Human mode writes only the final assistant result to stdout and a concise Run
+status to stderr. Use the same Runtime as a line-delimited automation stream:
+
+```bash
+npm run --silent napier -- run \
+  --workspace . \
+  --prompt "Inspect this workspace and report the highest-risk gap." \
+  --jsonl
+```
+
+JSONL mode writes hash-bound event frames followed by one final snapshot and
+one terminal done frame. It emits no banner or other non-JSON stdout. The
+`--silent` npm flag suppresses wrapper/build logs; an installed `napier` binary
+does not need it. Continue an existing Thread by passing its explicit ID and
+the same state directory:
+
+```bash
+npm run --silent napier -- run \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --prompt "Continue from the prior evidence." \
+  --jsonl
+```
+
+Live models use `--model provider/model-id` and the same credential-reference
+store as Web. An ambient API key alone is insufficient: register its
+environment-variable name through **Context -> Provider credentials** in the
+selected data root first. This CLI slice is one-shot; it does not claim an
+interactive TUI, resume/branch commands, RPC, ACP, or Desktop packaging.
+
 ## Store Scale Baseline
 
 Run the opt-in store benchmark after changes to persistence or Thread
@@ -378,14 +420,16 @@ explicit opt-in test:
 export DEEPSEEK_API_KEY="..."
 export DEEPSEEK_MODEL="deepseek-v4-flash"
 npm run test:live-deepseek
+npm run test:live-cli
 ```
 
-The smoke uses a temporary local store and workspace, stores only the
-`DEEPSEEK_API_KEY` environment-variable locator as a credential reference,
+Both smokes use a temporary local store and workspace, store only the
+`DEEPSEEK_API_KEY` environment-variable locator as a credential reference, and
+check that the raw key never appears in recorded output. The Runtime smoke
 asserts `model.response`, `context.model_envelope`, assistant message, and
-`run.completed` Ledger evidence, and checks that the raw key never appears in
-the recorded events. It is skipped by default and is not part of
-`npm run check`.
+`run.completed` Ledger evidence. The CLI smoke drives the JSONL entry point and
+verifies a terminal completed frame. They are skipped by default and are not
+part of `npm run check`.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source

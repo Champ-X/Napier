@@ -303,6 +303,7 @@ export class AgentRuntime {
     );
     const forwardAbort = (): void => abortController.abort();
     options.signal?.addEventListener("abort", forwardAbort, { once: true });
+    if (options.signal?.aborted) abortController.abort();
     this.activeRuns.set(thread.id, { runId: run.id, abort: forwardAbort });
     const budgetTimeout = setTimeout(
       () => {

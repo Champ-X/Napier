@@ -96,6 +96,9 @@ removal is a versioned contract change.
   terminating Pi tool integration, and linked child-Run continuation;
 - predecessor-linked Agent Milestone projection with automatic same-Run Ledger
   evidence ranges and bounded next-turn context reinjection;
+- a shared local bootstrap for Store, credential references, model registry,
+  Extensions, Sandbox, Workspace Processes, file mutations, and Agent Runtime,
+  plus shared hash-bound Run stream frame construction;
 - transactional SQLite thread, run, and event persistence with legacy
   JSON/JSONL migration.
 
@@ -152,6 +155,40 @@ The runtime has no HTTP or React dependency.
 
 Disconnecting an SSE client does not cancel a run. Runs are durable operations;
 explicit cancellation uses the stop endpoint.
+
+### CLI
+
+`@napier/cli` is a one-shot Experience Plane adapter over the same local
+Runtime and Ledger as the Server. `napier run` canonicalizes an explicit
+workspace, opens an explicit or workspace-default data root, creates a Thread
+or verifies a selected existing Thread, and calls only
+`AgentRuntime.runPrompt()`. It does not implement a second model/tool loop or
+talk directly to Store for Run execution.
+
+The Server and CLI both construct local services through
+`createLocalAgentRuntime()`. That bootstrap owns initialization and idempotent
+shutdown ordering for SQLite, MCP transports, Process Sessions, file mutation
+state, Sandbox, credentials, models, and the Agent Runtime. Server-only
+evaluation, automation, channel, and recovery services remain layered above
+it.
+
+Human mode writes the final assistant message to stdout and a bounded status
+line to stderr. `--jsonl` writes the shared `StreamFrame` contract as one JSON
+object per line: zero or more event frames, then a final snapshot and terminal
+done frame. HTTP SSE and CLI JSONL use the same event, snapshot, done, and
+error constructors, including event/snapshot/event-stream hashes and the
+terminal-status guard. JSONL writes await stdout backpressure. Invalid
+preflight input and bootstrap failures produce only the stable public error
+frame and a diagnostic hash; raw provider, credential, Sandbox, and tool
+errors are not written.
+
+Timeout, SIGINT, and SIGTERM flow into the active Runtime AbortSignal. Shutdown
+settles Napier-owned Process Sessions and MCP transports before closing
+SQLite; it does not kill unrelated workspace processes or delete state.
+Environment credentials remain unavailable unless the selected data root
+already contains an active credential reference. This adapter is intentionally
+one-shot and does not yet provide an interactive TUI, resume/branch commands,
+RPC, ACP, or Desktop packaging.
 
 ### Workbench
 
@@ -4180,8 +4217,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- CLI/TUI, SDK/RPC, ACP, Desktop, persistent browser, and data/research
-  capability slices over the same Runtime and Ledger;
+- interactive TUI, resume/branch CLI commands, SDK/RPC, ACP, Desktop,
+  persistent browser, and data/research capability slices over the same
+  Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;
 - fixed Capability & Outcome benchmarks centered on task success, recovery,

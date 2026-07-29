@@ -248,7 +248,6 @@ import type {
   RunMetrics,
   RunReplaySnapshot,
   RunReplaySnapshotVerification,
-  RunStatus,
   SubagentOutcomeEvidenceVerification,
   SubagentOutcomeReview,
   EvaluationReviewerBallot,
@@ -285,7 +284,6 @@ import type {
   SignExtensionPackageChannelIndexRequest,
   SignInspectorPackageRequest,
   StreamFrame,
-  TerminalRunStatus,
   SubmitEvaluationReviewerBallotRequest,
   TrustedReceiptEnvelope,
   TrustedReceiptVerification,
@@ -330,13 +328,14 @@ import type {
 } from "@napier/contracts";
 import { AGENT_TOOL_NAMES } from "@napier/contracts";
 import {
-  AgentRuntime,
+  type AgentRuntime,
   AutomationService,
   ChannelService,
   changedAgentFields,
   canonicalJson,
   compareRuns,
-  CredentialReferenceStore,
+  type CredentialReferenceStore,
+  createLocalAgentRuntime,
   EvaluationCasebookQualificationService,
   EvaluationSuiteService,
   type KeychainSecretStore,
@@ -345,7 +344,6 @@ import {
   createEvaluationSuiteGateReceipt,
   createGoal,
   createId,
-  createPlatformSandboxAdapter,
   createExecutionPlanArchive,
   createExecutionPlanBlueprint,
   createPlanArtifactEventPayload,
@@ -366,7 +364,7 @@ import {
   builtinUsagePriceTableCatalog,
   exportThreadReplayBundle,
   hashEventStream,
-  LocalStore,
+  type LocalStore,
   MAX_RECEIPT_TRUST_ANCHORS,
   MAX_RECEIPT_TRUST_DIRECTORY_SUBSCRIPTIONS,
   MAX_RECEIPT_TRUST_DIRECTORY_SOURCE_WEIGHT,
@@ -387,8 +385,8 @@ import {
   MAX_EXECUTION_PLAN_BLUEPRINT_BYTES,
   MAX_RUN_CONTROL_MESSAGE_BYTES,
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
-  McpExtensionManager,
-  ModelRegistry,
+  type McpExtensionManager,
+  type ModelRegistry,
   normalizePromptVariableDefinitions,
   normalizeToolLoopGuardPolicy,
   openTelemetryTraceArtifactEventAnchorSetSha256,
@@ -398,8 +396,14 @@ import {
   reviewExecutionPlanBlueprintRecordOutcomes,
   reviewExecutionPlanReplanDraft,
   reviewSubagentOutcome,
+  RUN_STREAM_ERROR_CODE,
+  RUN_STREAM_ERROR_MESSAGE,
   RunEvaluationService,
   signTrustedReceipt,
+  streamEventFrame,
+  streamRunDoneFrame,
+  streamRunErrorFrame,
+  streamSnapshotFrame,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
@@ -417,8 +421,8 @@ import {
   verifyInboundDeadLetterExportArtifact,
   verifyInboundDeadLetterRetryHistory,
   verifyUsagePriceTableCatalog,
-  WorkspaceFileMutationManager,
-  WorkspaceProcessManager,
+  type WorkspaceFileMutationManager,
+  type WorkspaceProcessManager,
   executionPlanRequestFromBlueprint,
 } from "@napier/runtime";
 import { Hono, type Context } from "hono";
@@ -466,6 +470,7 @@ export interface NapierServices {
   workspaceProcesses: WorkspaceProcessManager;
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
+  shutdownLocalRuntime(): Promise<void>;
 }
 
 const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
@@ -495,8 +500,6 @@ const BUNDLED_SKILLS: SkillSummary[] = [
 ];
 
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
-const RUN_STREAM_ERROR_MESSAGE = "Run failed while streaming.";
-const RUN_STREAM_ERROR_CODE = "run_failed";
 
 const INBOUND_CHANNEL_ADAPTERS: readonly InboundChannelAdapterDescriptor[] = [
   {
@@ -667,39 +670,25 @@ export async function createServices(options?: {
       process.env["NAPIER_HOME"] ??
       path.join(workspaceRoot, ".napier"),
   );
-  const store = new LocalStore({ dataRoot, workspaceRoot });
-  await store.initialize();
-  const credentials = new CredentialReferenceStore({
-    store,
-    ...(options?.keychain ? { keychain: options.keychain } : {}),
-  });
-  const models = new ModelRegistry(credentials);
-  const extensions = new McpExtensionManager({ store });
-  const sandbox = options?.sandbox ?? createPlatformSandboxAdapter();
-  const workspaceProcesses = new WorkspaceProcessManager({
-    store,
-    workspaceRoot,
-    sandbox,
-  });
-  await workspaceProcesses.initialize();
-  const workspaceFileMutations = new WorkspaceFileMutationManager({
-    store,
+  const local = await createLocalAgentRuntime({
     workspaceRoot,
     dataRoot,
+    ...(options?.keychain ? { keychain: options.keychain } : {}),
+    ...(options?.sandbox ? { sandbox: options.sandbox } : {}),
   });
-  await workspaceFileMutations.initialize();
+  const {
+    store,
+    credentials,
+    models,
+    extensions,
+    workspaceProcesses,
+    workspaceFileMutations,
+    runtime,
+  } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
     new EvaluationCasebookQualificationService(store, models);
   const evaluationSuites = new EvaluationSuiteService(store, models);
-  const runtime = new AgentRuntime(
-    store,
-    models,
-    extensions,
-    sandbox,
-    workspaceProcesses,
-    workspaceFileMutations,
-  );
   const automation = new AutomationService(store, runtime);
   const channels = new ChannelService(store, runtime);
   const recovery = new RecoveryService(store, runtime);
@@ -735,6 +724,7 @@ export async function createServices(options?: {
     workspaceProcesses,
     receiptTrustDirectories,
     receiptTrustDirectorySubscriptions,
+    shutdownLocalRuntime: local.shutdown,
   };
 }
 
@@ -18216,80 +18206,6 @@ function jsonError(
   const body = { error: message };
   setJsonErrorProjectionHeaders(context, body, status);
   return context.json(body, status);
-}
-
-function streamRunErrorFrame(
-  threadId: string,
-  error: unknown,
-): Extract<StreamFrame, { type: "error" }> {
-  return {
-    type: "error",
-    threadId,
-    message: RUN_STREAM_ERROR_MESSAGE,
-    code: RUN_STREAM_ERROR_CODE,
-    diagnosticSha256: sha256Text(errorMessage(error)),
-  };
-}
-
-function streamEventFrame(
-  event: RunEvent,
-): Extract<StreamFrame, { type: "event" }> {
-  return {
-    type: "event",
-    event,
-    eventSha256: sha256Text(JSON.stringify(event)),
-  };
-}
-
-function streamSnapshotFrame(
-  detail: ThreadDetail,
-): Extract<StreamFrame, { type: "snapshot" }> {
-  const serializedDetail = JSON.stringify(detail);
-  return {
-    type: "snapshot",
-    detail,
-    detailSha256: sha256Text(serializedDetail),
-    detailBytes: Buffer.byteLength(serializedDetail, "utf8"),
-    eventBytes: jsonByteLength(detail.events),
-  };
-}
-
-function streamRunDoneFrame(
-  threadId: string,
-  runId: string,
-  status: RunStatus,
-  snapshotSha256: string,
-  snapshotBytes: number,
-  eventCount: number,
-  eventBytes: number,
-  eventStreamSha256: string,
-): Extract<StreamFrame, { type: "done" }> {
-  return {
-    type: "done",
-    threadId,
-    runId,
-    status: terminalRunStatus(status),
-    snapshotSha256,
-    snapshotBytes,
-    eventCount,
-    eventBytes,
-    eventStreamSha256,
-  };
-}
-
-function terminalRunStatus(status: RunStatus): TerminalRunStatus {
-  switch (status) {
-    case "completed":
-    case "failed":
-    case "cancelled":
-    case "interrupted":
-      return status;
-    case "queued":
-    case "running":
-      throw new Error(
-        `Run stream cannot finish with non-terminal status: ${status}`,
-      );
-  }
 }
 
 function errorMessage(error: unknown): string {

@@ -6,7 +6,7 @@ benchmarks.
 
 ## Baseline
 
-Audit date: 2026-07-29
+Audit date: 2026-07-30
 
 - The Work Ledger, replay artifacts, Plans, evaluation, recovery, and
   extension governance are substantially ahead of the execution surface.
@@ -21,11 +21,11 @@ Audit date: 2026-07-29
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                  |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain. |
-| P2 coding intelligence            | Partial        | Hashline, bounded symbols, TypeScript LSP diagnostics/definitions, and automatic write-linked diagnostic deltas exist; references, persistent LSP/rename/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain.      |
+| P2 coding intelligence            | Partial        | Hashline, bounded symbols, TypeScript LSP diagnostics/definitions/references, and write-linked diagnostic deltas exist; persistent LSP/rename/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain.                 |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
 | P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
-| P6 product entry points           | Early          | Web Workbench and HTTP/SSE exist; CLI/TUI, one-shot JSONL, SDK/RPC, ACP, and Desktop are not product-complete.                                                                                                                                               |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and one-shot human/JSONL CLI exist; interactive TUI, resume/branch CLI commands, SDK/RPC, ACP, and Desktop remain.                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
 | P9 outcome benchmark              | Not started    | Build fixed Coding, Research, Workflow, Long-horizon, Tooling, Security, and UX tasks with environment and Ledger evidence.                                                                                                                                  |
@@ -689,3 +689,98 @@ Observed result:
   completed tool event and write-linked diagnostics preserved the original
   file, so the boundary failed closed and is not claimed as a passed live
   smoke in this environment.
+
+## Completed Slice: One-shot JSONL CLI
+
+User scenario: a developer or CI job can run one real Napier task from a
+terminal, receive the same hash-bound event stream as the Web/HTTP path, and
+reuse the same workspace, Agent revision, model credentials, Sandbox, tools,
+and Ledger without starting the Web Server or implementing another Agent Loop.
+
+Acceptance:
+
+- add an installable `napier run` command with explicit workspace, prompt,
+  model, Agent, existing Thread, data-root, title, timeout, and `--jsonl`
+  options; provide deterministic help/version and reject unknown, duplicate,
+  conflicting, oversized, or malformed input before creating a Thread;
+- extract a small `createLocalAgentRuntime` bootstrap into `@napier/runtime`
+  for Store, credential references, model registry, extensions, Sandbox,
+  Workspace Process manager, file mutation manager, and Agent Runtime; migrate
+  Server startup to this adapter so CLI and Web do not drift;
+- create a Thread when none is supplied, or append to an explicitly selected
+  existing Thread after verifying Agent ownership; never silently select a
+  different Agent or mutate profile configuration;
+- drive only `AgentRuntime.runPrompt`, including cancellation and an external
+  wall-time AbortSignal; do not duplicate model, tool, policy, recovery, or
+  Ledger logic in the CLI;
+- stream the existing `StreamFrame` contract as one JSON object per stdout
+  line: hash-bound event frames followed by a final snapshot and done frame;
+  pre-Run failures use a bounded error frame and nonzero exit status;
+- human mode prints only the final assistant result plus a concise Run status
+  to stderr; machine mode emits no banners or non-JSON stdout;
+- preserve credential fail-closed behavior: an environment variable is usable
+  only when the selected data root already contains an active credential
+  reference; CLI arguments and errors must never print secret values;
+- cleanly stop active Process Sessions and MCP transports on success, failure,
+  timeout, cancellation, SIGINT, and bootstrap failure, then close SQLite;
+- cover new/existing Thread, demo/live-provider availability, normal/failure/
+  timeout/cancellation, JSONL ordering/hashes/backpressure, invalid arguments,
+  concurrent active-Run rejection, cleanup, and secret redaction;
+- run a real built CLI subprocess against a temporary workspace and provide an
+  opt-in low-cost DeepSeek CLI smoke. Do not claim TUI, interactive chat,
+  resume, branch, RPC, ACP, or Desktop in this slice.
+
+Performance and complexity budget:
+
+- demo one-shot startup should emit its first Run event within 1 second and
+  settle within 2 seconds on the current machine; JSONL writing must honor
+  stdout backpressure;
+- no Agent Loop code enters `apps/cli`; Server `app.ts` should shrink or remain
+  flat after adopting shared bootstrap, and no new code enters `store.ts`;
+- Web main entry remains below 150 KiB and the existing HTTP/SSE contract stays
+  compatible.
+
+Threat boundary:
+
+- Workspace and data-root selection are explicit local operator inputs. The
+  CLI canonicalizes both but does not grant tools broader policy or filesystem
+  capability than the selected Agent revision.
+- JSONL is a live local execution stream and may contain user/assistant text,
+  matching HTTP SSE behavior. Durable Ledger, Replay, Trace, and tool
+  redaction boundaries remain unchanged.
+- Machine-mode errors expose a stable public message plus diagnostic hash, not
+  raw provider, credential, Sandbox, or tool error text.
+- SIGINT/timeout requests cancellation through the active Runtime; the CLI
+  never kills unrelated workspace processes or deletes state to recover.
+
+Observed result:
+
+- `napier run` executes a new or explicit existing Thread in human or JSONL
+  mode through `AgentRuntime.runPrompt()`. Machine output contains only event
+  frames, one final snapshot, and one terminal done frame; preflight/bootstrap
+  failures use the shared stable error frame;
+- `createLocalAgentRuntime()` now owns the Store, credential, model,
+  Extension, Sandbox, Process Session, file mutation, and Agent Runtime
+  lifecycle for both Server and CLI. Shared Run stream constructors also
+  replace the Server-local event/snapshot/done/error implementations;
+- the CLI suite covers parsing, new and existing Threads, hash/order
+  verification, stdout backpressure, preflight rejection, missing credential
+  references, timeout, pre-aborted cancellation, independent-runtime Run lease
+  contention, a built subprocess, and deterministic help. The second
+  concurrent Runtime does not call its model;
+- the built zero-key CLI subprocess completed in about 0.85 seconds on the
+  current machine. The first JSONL Run event remained under the 1-second
+  budget;
+- the opt-in DeepSeek JSONL smoke completed the fixed
+  `NAPIER_CLI_LIVE_OK` task against the real provider in about 2.02 seconds,
+  emitted terminal completed evidence, and did not expose the API key;
+- pre-aborted CLI testing found and fixed an Agent Runtime cancellation race:
+  an already-aborted parent signal is now forwarded before model execution;
+- shared shutdown attempts Process Session, MCP, and SQLite cleanup even if an
+  earlier step fails, and the Server production entry uses that same shutdown
+  path;
+- `apps/server/src/app.ts` fell by 84 lines to 27,540 lines, no code entered
+  `store.ts`, and `apps/cli` contains no model or tool loop;
+- the complete repository gate passed 930 tests with nine opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.

@@ -51,10 +51,8 @@ const shutdown = async (): Promise<void> => {
   await services.recovery.stop();
   await services.automation.stop();
   await services.channels.stop();
-  await services.workspaceProcesses.shutdown();
-  await services.extensions.shutdown();
+  await services.shutdownLocalRuntime();
   await new Promise<void>((resolve) => server.close(() => resolve()));
-  services.store.close();
 };
 
 process.once("SIGINT", () => void shutdown());
