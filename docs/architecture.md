@@ -3246,8 +3246,10 @@ counts, and replan hashes, preserving the Work Ledger trail without reopening
 the archived event stream. Step and artifact cards also project latest-replan
 impact badges for added, superseded, and dependency-updated entities, so the
 operator can find the replacement path directly in the executable Plan surface.
-A stale expected revision fails as a conflict before any plan mutation is
-committed.
+The same latest-replan card derives recovery progress from current Plan state,
+counting settled added steps and verified added artifacts without introducing a
+second recovery status source. A stale expected revision fails as a conflict
+before any plan mutation is committed.
 
 Plan REST responses are no-store and response-hash-bound:
 

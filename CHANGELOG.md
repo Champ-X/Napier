@@ -375,6 +375,9 @@ All notable changes to Napier are recorded here.
 - Step and artifact cards now show latest-replan impact badges for added,
   superseded, and dependency-updated entities so operators can continue after
   recovery without manually matching IDs from the replan summary.
+- Latest replan cards now include recovery progress for replacement work,
+  counting settled added steps and verified added artifacts from current Plan
+  state without introducing a second recovery status source.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`, and `artifact.drift_checked`
   receipts remain hash-only, so recomputed portable replay hashes cannot hide

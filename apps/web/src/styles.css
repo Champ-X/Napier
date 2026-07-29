@@ -6003,7 +6003,8 @@ button:disabled {
 }
 
 .plan-replan-draft-summary,
-.plan-replan-record-summary {
+.plan-replan-record-summary,
+.plan-replan-recovery-progress {
   display: grid;
   gap: 5px;
   padding: 8px;
@@ -6015,6 +6016,10 @@ button:disabled {
 
 .plan-replan-record-summary {
   border-color: rgb(126 88 53 / 14%);
+}
+
+.plan-replan-recovery-progress {
+  border-color: rgb(45 85 71 / 16%);
 }
 
 .plan-replan-draft-summary dl,

@@ -121,6 +121,7 @@ import {
   projectReplanDraftSummary,
   projectReplanHistorySummary,
   projectReplanRecordSummary,
+  projectReplanRecoveryProgress,
   projectReplanStepRoles,
 } from "./replan-draft-view-model";
 
@@ -273,6 +274,10 @@ export default function PlanPanel({
   const latestReplanSummary = latestReplan
     ? projectReplanRecordSummary(latestReplan)
     : undefined;
+  const latestReplanRecoveryProgress =
+    plan && latestReplan
+      ? projectReplanRecoveryProgress(plan, latestReplan)
+      : undefined;
   const replanHistorySummary =
     plan && plan.replans.length > 0
       ? projectReplanHistorySummary(plan.replans)
@@ -1564,6 +1569,46 @@ export default function PlanPanel({
                         </dd>
                       </div>
                     </dl>
+                  </div>
+                ) : null}
+                {latestReplanRecoveryProgress?.hasRecoveryWork ? (
+                  <div className="plan-replan-recovery-progress">
+                    <span>{planCopy.recoveryProgress}</span>
+                    <strong>
+                      {latestReplanRecoveryProgress.isComplete
+                        ? planCopy.recoveryComplete
+                        : planCopy.recoveryInProgress}
+                    </strong>
+                    <small>
+                      {latestReplanRecoveryProgress.settledStepCount.toLocaleString()}{" "}
+                      /{" "}
+                      {latestReplanRecoveryProgress.addedStepCount.toLocaleString()}{" "}
+                      {planCopy.recoveryStepsSettled}
+                      {" / "}
+                      {latestReplanRecoveryProgress.verifiedArtifactCount.toLocaleString()}{" "}
+                      /{" "}
+                      {latestReplanRecoveryProgress.addedArtifactCount.toLocaleString()}{" "}
+                      {planCopy.recoveryArtifactsVerified}
+                    </small>
+                    <small>
+                      {planCopy.statuses.ready}:{" "}
+                      {latestReplanRecoveryProgress.readyStepCount.toLocaleString()}
+                      {" / "}
+                      {planCopy.statuses.running}:{" "}
+                      {latestReplanRecoveryProgress.runningStepCount.toLocaleString()}
+                      {" / "}
+                      {planCopy.statuses.blocked}:{" "}
+                      {latestReplanRecoveryProgress.blockedStepCount.toLocaleString()}
+                      {" / "}
+                      {planCopy.statuses.produced}:{" "}
+                      {latestReplanRecoveryProgress.producedArtifactCount.toLocaleString()}
+                      {" / "}
+                      {planCopy.statuses.expected}:{" "}
+                      {latestReplanRecoveryProgress.pendingArtifactCount.toLocaleString()}
+                      {" / "}
+                      {planCopy.statuses.missing}:{" "}
+                      {latestReplanRecoveryProgress.missingArtifactCount.toLocaleString()}
+                    </small>
                   </div>
                 ) : null}
               </div>

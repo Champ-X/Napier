@@ -1,4 +1,5 @@
 import type {
+  ExecutionPlan,
   ExecutionPlanReplanRecommendation,
   ExecutionPlanReplanRecord,
 } from "@napier/contracts";
@@ -65,6 +66,21 @@ export interface ReplanHistorySummaryProjection {
 export type ReplanStepRole = "added" | "dependency_updated" | "superseded";
 
 export type ReplanArtifactRole = "added" | "superseded";
+
+export interface ReplanRecoveryProgressProjection {
+  addedStepCount: number;
+  settledStepCount: number;
+  readyStepCount: number;
+  runningStepCount: number;
+  blockedStepCount: number;
+  addedArtifactCount: number;
+  verifiedArtifactCount: number;
+  producedArtifactCount: number;
+  missingArtifactCount: number;
+  pendingArtifactCount: number;
+  hasRecoveryWork: boolean;
+  isComplete: boolean;
+}
 
 export function projectReplanDraftSummary(
   recommendation: ExecutionPlanReplanRecommendation,
@@ -184,4 +200,56 @@ export function projectReplanArtifactRoles(
     roles.push("superseded");
   }
   return roles;
+}
+
+export function projectReplanRecoveryProgress(
+  plan: Pick<ExecutionPlan, "steps" | "artifacts">,
+  record: ExecutionPlanReplanRecord | undefined,
+): ReplanRecoveryProgressProjection | undefined {
+  if (!record) return undefined;
+  const addedStepIds = new Set(record.addedStepIds);
+  const addedArtifactIds = new Set(record.addedArtifactIds);
+  const steps = plan.steps.filter((step) => addedStepIds.has(step.id));
+  const artifacts = plan.artifacts.filter((artifact) =>
+    addedArtifactIds.has(artifact.id),
+  );
+  const settledStepCount = steps.filter(
+    (step) => step.status === "completed" || step.status === "skipped",
+  ).length;
+  const readyStepCount = steps.filter((step) => step.status === "ready").length;
+  const runningStepCount = steps.filter(
+    (step) => step.status === "running",
+  ).length;
+  const blockedStepCount = steps.filter(
+    (step) => step.status === "blocked",
+  ).length;
+  const verifiedArtifactCount = artifacts.filter(
+    (artifact) => artifact.status === "verified",
+  ).length;
+  const producedArtifactCount = artifacts.filter(
+    (artifact) => artifact.status === "produced",
+  ).length;
+  const missingArtifactCount = artifacts.filter(
+    (artifact) => artifact.status === "missing",
+  ).length;
+  const pendingArtifactCount = artifacts.filter(
+    (artifact) => artifact.status === "expected",
+  ).length;
+  return {
+    addedStepCount: record.addedStepIds.length,
+    settledStepCount,
+    readyStepCount,
+    runningStepCount,
+    blockedStepCount,
+    addedArtifactCount: record.addedArtifactIds.length,
+    verifiedArtifactCount,
+    producedArtifactCount,
+    missingArtifactCount,
+    pendingArtifactCount,
+    hasRecoveryWork:
+      record.addedStepIds.length > 0 || record.addedArtifactIds.length > 0,
+    isComplete:
+      record.addedStepIds.length === settledStepCount &&
+      record.addedArtifactIds.length === verifiedArtifactCount,
+  };
 }

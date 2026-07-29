@@ -1,4 +1,5 @@
 import type {
+  ExecutionPlan,
   ExecutionPlanReplanRecommendation,
   ExecutionPlanReplanRecord,
 } from "@napier/contracts";
@@ -9,6 +10,7 @@ import {
   projectReplanDraftSummary,
   projectReplanHistorySummary,
   projectReplanRecordSummary,
+  projectReplanRecoveryProgress,
   projectReplanStepRoles,
 } from "../src/replan-draft-view-model";
 
@@ -249,6 +251,47 @@ describe("replan draft view model", () => {
     expect(projectReplanArtifactRoles("unrelated_report", record)).toEqual([]);
     expect(projectReplanArtifactRoles("old_report", undefined)).toEqual([]);
   });
+
+  it("projects latest replan recovery progress from current plan state", () => {
+    const record = replanRecordFixture({
+      addedStepIds: ["restore_step", "verify_step", "blocked_step"],
+      addedArtifactIds: [
+        "replacement_report",
+        "replacement_data",
+        "missing_data",
+      ],
+    });
+    const plan = {
+      steps: [
+        stepFixture({ id: "restore_step", status: "completed" }),
+        stepFixture({ id: "verify_step", status: "ready" }),
+        stepFixture({ id: "blocked_step", status: "blocked" }),
+        stepFixture({ id: "source_step", status: "completed" }),
+      ],
+      artifacts: [
+        artifactFixture({ id: "replacement_report", status: "verified" }),
+        artifactFixture({ id: "replacement_data", status: "produced" }),
+        artifactFixture({ id: "missing_data", status: "missing" }),
+        artifactFixture({ id: "source_report", status: "verified" }),
+      ],
+    } satisfies Pick<ExecutionPlan, "steps" | "artifacts">;
+
+    expect(projectReplanRecoveryProgress(plan, record)).toEqual({
+      addedStepCount: 3,
+      settledStepCount: 1,
+      readyStepCount: 1,
+      runningStepCount: 0,
+      blockedStepCount: 1,
+      addedArtifactCount: 3,
+      verifiedArtifactCount: 1,
+      producedArtifactCount: 1,
+      missingArtifactCount: 1,
+      pendingArtifactCount: 0,
+      hasRecoveryWork: true,
+      isComplete: false,
+    });
+    expect(projectReplanRecoveryProgress(plan, undefined)).toBeUndefined();
+  });
 });
 
 function recommendationFixture(
@@ -319,6 +362,39 @@ function replanRecordFixture(
     toRevision: 2,
     replanSha256: "d".repeat(64),
     createdAt: "2026-07-29T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function stepFixture(
+  overrides: Partial<ExecutionPlan["steps"][number]> = {},
+): ExecutionPlan["steps"][number] {
+  return {
+    id: "step_fixture",
+    title: "Step fixture",
+    description: "A fixture step.",
+    verification: "Evidence exists.",
+    dependsOn: [],
+    status: "ready",
+    evidence: "",
+    createdAt: "2026-07-29T00:00:00.000Z",
+    updatedAt: "2026-07-29T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function artifactFixture(
+  overrides: Partial<ExecutionPlan["artifacts"][number]> = {},
+): ExecutionPlan["artifacts"][number] {
+  return {
+    id: "artifact_fixture",
+    path: "artifacts/fixture.md",
+    kind: "file",
+    description: "Artifact fixture.",
+    status: "expected",
+    evidence: "",
+    createdAt: "2026-07-29T00:00:00.000Z",
+    updatedAt: "2026-07-29T00:00:00.000Z",
     ...overrides,
   };
 }
