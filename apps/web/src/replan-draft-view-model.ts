@@ -45,6 +45,23 @@ export interface ReplanRecordSummaryProjection {
   replanSha256: string;
 }
 
+export interface ReplanHistoryRecordProjection {
+  id: string;
+  strategy: ExecutionPlanReplanRecord["strategy"];
+  fromRevision: number;
+  toRevision: number;
+  structuralChangeCount: number;
+  replanSha256: string;
+}
+
+export interface ReplanHistorySummaryProjection {
+  recordCount: number;
+  totalStructuralChangeCount: number;
+  records: ReplanHistoryRecordProjection[];
+  hasHistory: boolean;
+  hasMultipleRecords: boolean;
+}
+
 export function projectReplanDraftSummary(
   recommendation: ExecutionPlanReplanRecommendation,
 ): ReplanDraftSummaryProjection {
@@ -109,5 +126,31 @@ export function projectReplanRecordSummary(
     addedArtifactsSha256: record.addedArtifactsSha256,
     dependencyUpdatesSha256: record.dependencyUpdatesSha256,
     replanSha256: record.replanSha256,
+  };
+}
+
+export function projectReplanHistorySummary(
+  records: readonly ExecutionPlanReplanRecord[],
+): ReplanHistorySummaryProjection {
+  const projectedRecords = records.map((record) => {
+    const summary = projectReplanRecordSummary(record);
+    return {
+      id: record.id,
+      strategy: record.strategy,
+      fromRevision: record.fromRevision,
+      toRevision: record.toRevision,
+      structuralChangeCount: summary.structuralChangeCount,
+      replanSha256: summary.replanSha256,
+    };
+  });
+  return {
+    recordCount: projectedRecords.length,
+    totalStructuralChangeCount: projectedRecords.reduce(
+      (total, record) => total + record.structuralChangeCount,
+      0,
+    ),
+    records: projectedRecords,
+    hasHistory: projectedRecords.length > 0,
+    hasMultipleRecords: projectedRecords.length > 1,
   };
 }

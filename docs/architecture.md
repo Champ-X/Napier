@@ -3239,8 +3239,12 @@ range, affected IDs, and SHA-256 digests for added steps, added artifacts,
 dependency updates, and the complete replan record. The Workbench projects the
 latest applied replan into an ID/hash summary beside the draft signal, allowing
 operators to inspect superseded entities, new work, dependency rewrites, and
-component hashes after Apply without rendering reason or evidence prose. A stale
-expected revision fails as a conflict before any plan mutation is committed.
+component hashes after Apply without rendering reason or evidence prose. When a
+Plan has multiple recovery cycles, the same Workbench surface renders a compact
+applied replan history with revision spans, strategy enums, structural-change
+counts, and replan hashes, preserving the Work Ledger trail without reopening
+the archived event stream. A stale expected revision fails as a conflict before
+any plan mutation is committed.
 
 Plan REST responses are no-store and response-hash-bound:
 

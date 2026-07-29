@@ -118,6 +118,7 @@ import {
 import { listReceiptTrustAnchors } from "./receipt-trust-api";
 import {
   projectReplanDraftSummary,
+  projectReplanHistorySummary,
   projectReplanRecordSummary,
 } from "./replan-draft-view-model";
 
@@ -270,6 +271,10 @@ export default function PlanPanel({
   const latestReplanSummary = latestReplan
     ? projectReplanRecordSummary(latestReplan)
     : undefined;
+  const replanHistorySummary =
+    plan && plan.replans.length > 0
+      ? projectReplanHistorySummary(plan.replans)
+      : undefined;
   const replanRecommendation = plan?.replanRecommendation;
   const replanDraftSummary = replanRecommendation
     ? projectReplanDraftSummary(replanRecommendation)
@@ -1559,6 +1564,42 @@ export default function PlanPanel({
                     </dl>
                   </div>
                 ) : null}
+              </div>
+            ) : null}
+            {replanHistorySummary?.hasMultipleRecords ? (
+              <div
+                className="plan-replan-ledger plan-replan-history"
+                aria-label={planCopy.replanHistory}
+              >
+                <span>{planCopy.replanHistory}</span>
+                <strong>
+                  {replanHistorySummary.recordCount.toLocaleString()}{" "}
+                  {planCopy.records}
+                  {" / "}
+                  {replanHistorySummary.totalStructuralChangeCount.toLocaleString()}{" "}
+                  {planCopy.changes}
+                </strong>
+                <ol>
+                  {replanHistorySummary.records.map((record, index) => (
+                    <li key={record.id}>
+                      <span>
+                        #{String(index + 1).padStart(2, "0")}{" "}
+                        {planCopy.replanStrategies[record.strategy]}
+                      </span>
+                      <small>
+                        r{record.fromRevision} {"->"} r{record.toRevision}
+                        {" / "}
+                        {record.structuralChangeCount.toLocaleString()}{" "}
+                        {planCopy.changes}
+                        {" / "}
+                        {planCopy.hash}:{" "}
+                        <code title={record.replanSha256}>
+                          {record.replanSha256.slice(0, 12)}
+                        </code>
+                      </small>
+                    </li>
+                  ))}
+                </ol>
               </div>
             ) : null}
             {replanRecommendation ? (

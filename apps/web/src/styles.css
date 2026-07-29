@@ -5951,6 +5951,28 @@ button:disabled {
   color: #80362f;
 }
 
+.plan-replan-history ol {
+  display: grid;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.plan-replan-history li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 7px;
+  background: rgb(255 255 255 / 42%);
+  border: 1px solid rgb(126 88 53 / 14%);
+  border-radius: 8px;
+}
+
+.plan-replan-history li span,
+.plan-replan-history li small {
+  overflow-wrap: anywhere;
+}
+
 .plan-review-action {
   justify-self: start;
   display: inline-flex;

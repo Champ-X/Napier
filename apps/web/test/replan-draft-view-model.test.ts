@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   projectReplanDraftSummary,
+  projectReplanHistorySummary,
   projectReplanRecordSummary,
 } from "../src/replan-draft-view-model";
 
@@ -170,6 +171,54 @@ describe("replan draft view model", () => {
       replanSha256: "d".repeat(64),
     });
   });
+
+  it("projects multi-replan history without prose fields", () => {
+    const history = projectReplanHistorySummary([
+      replanRecordFixture({
+        id: "replan_first",
+        fromRevision: 1,
+        toRevision: 2,
+        addedStepIds: ["recover_first"],
+        replanSha256: "1".repeat(64),
+      }),
+      replanRecordFixture({
+        id: "replan_second",
+        strategy: "recover_blocked",
+        fromRevision: 2,
+        toRevision: 3,
+        supersededStepIds: ["blocked_step"],
+        dependencyUpdatedStepIds: ["downstream_step"],
+        replanSha256: "2".repeat(64),
+      }),
+    ]);
+
+    expect(history).toEqual({
+      recordCount: 2,
+      totalStructuralChangeCount: 3,
+      records: [
+        {
+          id: "replan_first",
+          strategy: "artifact_drift",
+          fromRevision: 1,
+          toRevision: 2,
+          structuralChangeCount: 1,
+          replanSha256: "1".repeat(64),
+        },
+        {
+          id: "replan_second",
+          strategy: "recover_blocked",
+          fromRevision: 2,
+          toRevision: 3,
+          structuralChangeCount: 2,
+          replanSha256: "2".repeat(64),
+        },
+      ],
+      hasHistory: true,
+      hasMultipleRecords: true,
+    });
+    expect(JSON.stringify(history)).not.toContain("Raw reason");
+    expect(JSON.stringify(history)).not.toContain("Raw evidence");
+  });
 });
 
 function recommendationFixture(
@@ -217,5 +266,29 @@ function recommendationFixture(
     recommendationSha256: "f".repeat(64),
     ...recommendationOverrides,
     draft,
+  };
+}
+
+function replanRecordFixture(
+  overrides: Partial<ExecutionPlanReplanRecord> = {},
+): ExecutionPlanReplanRecord {
+  return {
+    id: "replan_fixture",
+    strategy: "artifact_drift",
+    reason: "Raw reason should not enter the history projection.",
+    evidence: "Raw evidence should not enter the history projection.",
+    supersededStepIds: [],
+    supersededArtifactIds: [],
+    dependencyUpdatedStepIds: [],
+    addedStepIds: [],
+    addedArtifactIds: [],
+    addedStepsSha256: "a".repeat(64),
+    addedArtifactsSha256: "b".repeat(64),
+    dependencyUpdatesSha256: "c".repeat(64),
+    fromRevision: 1,
+    toRevision: 2,
+    replanSha256: "d".repeat(64),
+    createdAt: "2026-07-29T00:00:00.000Z",
+    ...overrides,
   };
 }

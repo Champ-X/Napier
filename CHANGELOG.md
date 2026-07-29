@@ -369,6 +369,9 @@ All notable changes to Napier are recorded here.
 - Latest replan ledger cards now show the applied structural changes and
   replan component hashes, so operators can inspect what changed after Apply
   without reopening the archived Plan event.
+- Plan Workbench now renders a compact applied replan history when a Plan has
+  multiple recovery cycles, showing each revision span, strategy, structural
+  change count, and replan hash without reason or evidence prose.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`, and `artifact.drift_checked`
   receipts remain hash-only, so recomputed portable replay hashes cannot hide
