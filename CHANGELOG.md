@@ -1208,6 +1208,9 @@ write:management-openapi-compatibility` now emits
 - Direct Run replay API attachment headers now use the same
   `napier-<runId>-replay-<content-hash>.json` filename shape as Run Lab, so
   browser saves and scripted captures preserve the replay content receipt.
+- Portable Thread fixture downloads now share a tested
+  `napier-thread-<safe-thread-id>-<content-hash>.json` filename projection
+  across Run Lab and direct API attachment headers.
 - No-store `POST /api/threads/import/verify` preflight for portable Thread
   replay bundles. The endpoint reuses the same fail-closed bundle validator as
   import, returns `valid` / `invalid` plus low-cardinality diagnostics without

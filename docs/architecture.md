@@ -2436,6 +2436,8 @@ export Thread
   -> hash the ordered event stream
   -> hash canonical bundle content independently of generatedAt
   -> return napier.thread-replay schema version 1
+  -> save direct API attachments and Run Lab downloads as
+     napier-thread-<safe-thread-id>-<content-hash>.json
   -> mirror no-store bundle content hash, event-stream hash, thread ID,
      verification status, run/event/plan/evaluation counts,
      ledger-backed/embedded Model Context Envelope counts, and first/last

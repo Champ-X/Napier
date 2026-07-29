@@ -1486,6 +1486,9 @@ assessments and attempts, subagent tasks and typed outcome receipts, and every
 ordered event.
 `generatedAt` is excluded from the canonical content digest, so repeated
 exports of unchanged evidence produce the same content SHA-256.
+Fixture downloads use
+`napier-thread-<thread-id>-<content-hash>.json` filenames with filesystem-safe
+Thread ID segments.
 The fixture response is no-store and mirrors the bundle content SHA-256,
 event-stream SHA-256, thread ID, verification status, run/event/plan/evaluation
 counts, ledger-backed and embedded Model Context Envelope counts, and
@@ -1510,8 +1513,6 @@ hash, and right-minus-left metric deltas in headers for budget and quality
 regression checks. Comparison headers also include event-type delta hashes,
 added/removed tool-set hashes, and configuration changed-field/capability set
 hashes so CI can detect behavioral drift without parsing full replay bodies.
-Direct `GET /api/threads/:threadId/runs/:runId/replay` attachments and Run Lab
-downloads both use `napier-<runId>-replay-<content-hash>.json` filenames.
 The import endpoint first strictly parses the wrapper object, accepting only a
 `bundle` and an optional normalized non-empty title, before the runtime validates
 the full fixture schema and hashes.

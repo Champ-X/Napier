@@ -9889,9 +9889,6 @@ describe("Napier HTTP goal flow", () => {
     );
     expect(fixtureResponse.status).toBe(200);
     expect(fixtureResponse.headers.get("cache-control")).toBe("no-store");
-    expect(fixtureResponse.headers.get("content-disposition")).toMatch(
-      /^attachment; filename="napier-thread-/,
-    );
     const fixture = (await fixtureResponse.json()) as ThreadReplayBundle;
     expectThreadReplayBundleHeaders(fixtureResponse, fixture);
     expect(fixture).toEqual(
@@ -12691,6 +12688,11 @@ function expectThreadReplayBundleHeaders(
   const verification = verifyThreadReplayBundle(bundle);
   expect(verification.status).toBe("valid");
   expect(response.headers.get("cache-control")).toBe("no-store");
+  const safeThreadId =
+    bundle.thread.id.replace(/[^A-Za-z0-9._-]/g, "_") || "thread";
+  expect(response.headers.get("content-disposition")).toBe(
+    `attachment; filename="napier-thread-${safeThreadId}-${bundle.contentSha256.slice(0, 12)}.json"`,
+  );
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     bundle.contentSha256,
   );

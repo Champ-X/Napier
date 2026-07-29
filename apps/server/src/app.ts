@@ -5329,12 +5329,7 @@ export function createApp(services: NapierServices): Hono {
         `Exported thread replay bundle verification failed: ${verification.diagnostics.join(", ")}`,
       );
     }
-    setThreadReplayBundleHeaders(
-      context,
-      bundle,
-      verification,
-      `napier-thread-${bundle.thread.id}-${bundle.contentSha256.slice(0, 12)}.json`,
-    );
+    setThreadReplayBundleHeaders(context, bundle, verification);
     return context.json(bundle);
   });
 
@@ -20302,10 +20297,12 @@ function setThreadReplayBundleHeaders(
   context: Context,
   bundle: ThreadReplayBundle,
   verification: ThreadReplayBundleVerification,
-  filename: string,
 ): void {
   context.header("Cache-Control", "no-store");
-  context.header("Content-Disposition", `attachment; filename="${filename}"`);
+  context.header(
+    "Content-Disposition",
+    `attachment; filename="${threadReplayBundleFilename(bundle)}"`,
+  );
   setStableContentSha256Header(context, bundle.contentSha256);
   context.header("X-Napier-Thread-Id", bundle.thread.id);
   context.header("X-Napier-Event-Stream-SHA256", bundle.eventStreamSha256);
@@ -20326,6 +20323,11 @@ function setThreadReplayBundleHeaders(
     String(verification.embeddedModelContextEnvelopeCount),
   );
   setEventBoundaryHeaders(context, bundle.events);
+}
+
+function threadReplayBundleFilename(bundle: ThreadReplayBundle): string {
+  const safeThreadId = safeFilenameSegment(bundle.thread.id, "thread");
+  return `napier-thread-${safeThreadId}-${bundle.contentSha256.slice(0, 12)}.json`;
 }
 
 function setThreadReplayBundleVerificationHeaders(

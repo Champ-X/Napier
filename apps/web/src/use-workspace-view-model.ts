@@ -94,7 +94,10 @@ import type {
 } from "./extension-package-types";
 import { formatApiErrorMessage } from "./api-error";
 import { selectedModelAvailability } from "./model-selection-view-model";
-import { runReplaySnapshotFilename } from "./run-replay-view-model";
+import {
+  runReplaySnapshotFilename,
+  threadReplayBundleFilename,
+} from "./run-replay-view-model";
 
 export type InspectorTab =
   | "trace"
@@ -1954,10 +1957,7 @@ export function useWorkspaceViewModel() {
     try {
       const bundle = await getThreadReplayBundle(detail.thread.id);
       const coverage = summarizeThreadReplayBundleCoverage(bundle);
-      downloadJson(
-        bundle,
-        `napier-thread-${bundle.thread.id}-${bundle.contentSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(bundle, threadReplayBundleFilename(bundle));
       setLabFixtureReceipt({
         action: "exported",
         contentSha256: bundle.contentSha256,
