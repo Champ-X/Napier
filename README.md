@@ -1075,6 +1075,10 @@ and appends a hash-only `artifact.exported` Ledger event. Small UTF-8 file
 artifacts can also be previewed in place; the server enforces the same
 workspace and digest checks plus a 64 KiB preview limit, returns text only in
 the no-store response, and records a hash-only `artifact.previewed` event. The
+same manifest path lets produced or verified directory artifacts show their
+bounded directory entries, file hashes, byte counts, and aggregate digest in
+Workbench while recording only counts and hashes in
+`artifact.directory_manifested`. The
 Workbench can also run a non-mutating drift check for verified file and
 directory artifacts; it records `artifact.drift_checked` with only
 expected/observed hashes, byte count, and the `current`/`drifted`/`missing`

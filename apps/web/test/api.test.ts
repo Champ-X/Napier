@@ -89,6 +89,7 @@ import {
 import {
   checkPlanArtifactDrift,
   downloadPlanArtifactFile,
+  previewPlanArtifactDirectoryManifest,
   previewPlanArtifactText,
 } from "../src/artifact-file-api";
 
@@ -658,6 +659,53 @@ describe("Web JSON API wrappers", () => {
     await expect(
       checkPlanArtifactDrift("thread_1", "plan_1", "artifact_1"),
     ).resolves.toEqual(check);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("previews plan directory artifact manifests through response hash verification", async () => {
+    const manifest = {
+      kind: "napier.plan-artifact-directory-manifest",
+      schemaVersion: 1,
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "directory",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      sizeBytes: 42,
+      entryCount: 2,
+      fileCount: 1,
+      directoryCount: 1,
+      entries: [
+        { kind: "directory", path: "." },
+        {
+          kind: "file",
+          path: "report.md",
+          sha256: "c".repeat(64),
+          sizeBytes: 42,
+        },
+      ],
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/manifest",
+      );
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      const text = JSON.stringify(manifest);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      previewPlanArtifactDirectoryManifest("thread_1", "plan_1", "artifact_1"),
+    ).resolves.toEqual(manifest);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

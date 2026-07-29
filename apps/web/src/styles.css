@@ -6472,6 +6472,38 @@ button:disabled {
   border-radius: 2px;
 }
 
+.artifact-directory-manifest ol {
+  display: grid;
+  gap: 4px;
+  max-height: 240px;
+  padding: 8px;
+  margin: 0;
+  overflow: auto;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-soft);
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.artifact-directory-manifest li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.artifact-directory-manifest li code:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artifact-directory-manifest li span {
+  color: var(--ink-faint);
+}
+
 .artifact-drift-check {
   display: grid;
   gap: 5px;

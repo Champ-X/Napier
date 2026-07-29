@@ -3560,6 +3560,13 @@ checks, returns text only in the no-store response, and appends an
 status/kind, `pathSha256`, artifact SHA-256, byte count, line count, and
 `textSha256`. Plan archive verification accepts only that hash-only preview
 receipt shape, so raw preview text or paths in the event payload fail closed.
+Produced or verified directory artifacts expose a sibling manifest preview.
+The response is no-store and may include artifact-relative entry paths, file
+hashes, byte counts, and aggregate directory digest for operator inspection;
+the corresponding `artifact.directory_manifested` Ledger event stores only
+Plan/artifact IDs, Plan revision, status/kind, `pathSha256`, directory digest,
+byte count, and entry/file/directory counts. Raw directory entries in that
+receipt fail closed before persistence, replay export, or archive verification.
 Verified file and directory artifacts also expose a non-mutating drift check
 from the Workbench. The server observes the current workspace bytes, returns
 `current`, `drifted`, or `missing`, and appends `artifact.drift_checked` with

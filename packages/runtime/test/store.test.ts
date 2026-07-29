@@ -1016,6 +1016,31 @@ describe("LocalStore", () => {
       }),
     ).rejects.toThrow("hash-only artifact receipt is invalid");
     expect(store.getThread(thread.id).eventCount).toBe(0);
+
+    await expect(
+      store.appendEvent({
+        threadId: thread.id,
+        runId: run.id,
+        type: "artifact.directory_manifested",
+        category: "artifact",
+        visibility: "user",
+        payload: {
+          planId: "plan_append_preview",
+          artifactId: "artifact_append_bundle",
+          planRevision: 1,
+          status: "verified",
+          kind: "directory",
+          pathSha256: "a".repeat(64),
+          sha256: "b".repeat(64),
+          sizeBytes: 32,
+          entryCount: 2,
+          fileCount: 1,
+          directoryCount: 1,
+          entries: [{ path: "Raw directory entry must not enter the Ledger." }],
+        },
+      }),
+    ).rejects.toThrow("hash-only artifact receipt is invalid");
+    expect(store.getThread(thread.id).eventCount).toBe(0);
   });
 
   it("pauses on, answers, and continues a durable operator decision", async () => {

@@ -4712,7 +4712,8 @@ describe("Napier HTTP goal flow", () => {
             status: "verified",
             sha256: expectedReportSha256,
             sizeBytes: Buffer.byteLength(reportContents),
-            evidence: "Workbench rechecked the report bytes from the workspace.",
+            evidence:
+              "Workbench rechecked the report bytes from the workspace.",
           }),
         ]),
       }),
@@ -4728,12 +4729,12 @@ describe("Napier HTTP goal flow", () => {
       downloadArtifactResponse.headers.get("X-Napier-Content-SHA256"),
     ).toBe(expectedReportSha256);
     expect(
-      downloadArtifactResponse.headers.get(
-        "X-Napier-Content-SHA256-Mode",
-      ),
+      downloadArtifactResponse.headers.get("X-Napier-Content-SHA256-Mode"),
     ).toBe("stable");
     expect(
-      downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256"),
+      downloadArtifactResponse.headers.get(
+        "X-Napier-Plan-Artifact-Path-SHA256",
+      ),
     ).toBe(createHash("sha256").update("report.md").digest("hex"));
     expect(
       downloadArtifactResponse.headers.get("X-Napier-Plan-Artifact-Size-Bytes"),
@@ -4804,9 +4805,7 @@ describe("Napier HTTP goal flow", () => {
       createHash("sha256").update(previewText).digest("hex"),
     );
     expect(
-      previewArtifactResponse.headers.get(
-        "X-Napier-Plan-Artifact-Text-SHA256",
-      ),
+      previewArtifactResponse.headers.get("X-Napier-Plan-Artifact-Text-SHA256"),
     ).toBe(createHash("sha256").update(reportContents).digest("hex"));
     expect(previewBody).toEqual(
       expect.objectContaining({
@@ -4817,12 +4816,13 @@ describe("Napier HTTP goal flow", () => {
         lineCount: reportContents.split(/\r\n|\r|\n/u).length,
       }),
     );
-    const previewEvents = (await services.store.listEvents(created.thread.id))
-      .filter(
-        (event) =>
-          event.type === "artifact.previewed" &&
-          event.payload["artifactId"] === "report",
-      );
+    const previewEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.previewed" &&
+        event.payload["artifactId"] === "report",
+    );
     expect(previewEvents).toEqual([
       expect.objectContaining({
         category: "artifact",
@@ -4903,12 +4903,13 @@ describe("Napier HTTP goal flow", () => {
         sizeBytes: Buffer.byteLength(driftedReportContents),
       }),
     );
-    const driftCheckEvents = (await services.store.listEvents(created.thread.id))
-      .filter(
-        (event) =>
-          event.type === "artifact.drift_checked" &&
-          event.payload["artifactId"] === "report",
-      );
+    const driftCheckEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.drift_checked" &&
+        event.payload["artifactId"] === "report",
+    );
     expect(driftCheckEvents).toEqual([
       expect.objectContaining({
         category: "artifact",
@@ -7146,6 +7147,198 @@ describe("Napier HTTP goal flow", () => {
         "plan.artifact.verified",
       ]),
     );
+  });
+
+  it("previews directory artifact manifests through public APIs", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-server-"));
+    temporaryRoots.push(root);
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    const bundleRoot = path.join(services.store.workspaceRoot, "bundle");
+    await mkdir(path.join(bundleRoot, "nested"), { recursive: true });
+    const alpha = "alpha evidence\n";
+    const beta = "nested beta evidence\n";
+    await writeFile(path.join(bundleRoot, "alpha.txt"), alpha);
+    await writeFile(path.join(bundleRoot, "nested", "beta.txt"), beta);
+    const app = createApp(services);
+    const created = (await (
+      await app.request("/api/threads", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Directory artifact API test" }),
+      })
+    ).json()) as ThreadDetail;
+    const run = await services.store.createRun({
+      threadId: created.thread.id,
+      agentId: created.agent.id,
+    });
+    const createResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          objective: "Verify a bundle directory.",
+          steps: [
+            {
+              id: "bundle",
+              title: "Bundle",
+              description: "Produce the bundle directory.",
+              verification: "The directory manifest digest is recorded.",
+            },
+          ],
+          artifacts: [
+            {
+              id: "bundle-dir",
+              path: "bundle",
+              kind: "directory",
+              description: "The generated bundle directory.",
+            },
+          ],
+        }),
+      },
+    );
+    expect(createResponse.status).toBe(201);
+    let plan = (await createResponse.json()) as ExecutionPlan;
+    await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "produced",
+          sourceRunId: run.id,
+          evidence: "The bundle directory was produced.",
+        }),
+      },
+    );
+    const verifiedResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          status: "verified",
+          observeWorkspace: true,
+          sourceRunId: run.id,
+          evidence: "The server verified the directory manifest.",
+        }),
+      },
+    );
+    expect(verifiedResponse.status).toBe(200);
+    plan = (await verifiedResponse.json()) as ExecutionPlan;
+    const artifact = plan.artifacts.find(
+      (candidate) => candidate.id === "bundle-dir",
+    )!;
+    expect(artifact).toEqual(
+      expect.objectContaining({
+        kind: "directory",
+        status: "verified",
+        sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        sizeBytes: Buffer.byteLength(alpha) + Buffer.byteLength(beta),
+      }),
+    );
+
+    const manifestResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest`,
+    );
+    expect(manifestResponse.status).toBe(200);
+    expect(manifestResponse.headers.get("Cache-Control")).toBe("no-store");
+    expect(manifestResponse.headers.get("X-Napier-Plan-Revision")).toBe(
+      String(plan.revision),
+    );
+    expect(
+      manifestResponse.headers.get("X-Napier-Plan-Artifact-Path-SHA256"),
+    ).toBe(createHash("sha256").update("bundle").digest("hex"));
+    expect(manifestResponse.headers.get("X-Napier-Plan-Artifact-SHA256")).toBe(
+      artifact.sha256,
+    );
+    expect(
+      manifestResponse.headers.get("X-Napier-Plan-Artifact-Entry-Count"),
+    ).toBe("4");
+    expect(
+      manifestResponse.headers.get("X-Napier-Plan-Artifact-File-Count"),
+    ).toBe("2");
+    expect(
+      manifestResponse.headers.get("X-Napier-Plan-Artifact-Directory-Count"),
+    ).toBe("2");
+    const manifestText = await manifestResponse.text();
+    expect(manifestResponse.headers.get("X-Napier-Content-SHA256")).toBe(
+      responseSha256(JSON.parse(manifestText)),
+    );
+    const manifest = JSON.parse(manifestText) as {
+      kind: string;
+      artifactId: string;
+      artifactKind: string;
+      sha256: string;
+      sizeBytes: number;
+      entryCount: number;
+      fileCount: number;
+      directoryCount: number;
+      entries: Array<{
+        kind: "directory" | "file";
+        path: string;
+        sha256?: string;
+        sizeBytes?: number;
+      }>;
+    };
+    expect(manifest).toEqual(
+      expect.objectContaining({
+        kind: "napier.plan-artifact-directory-manifest",
+        artifactId: "bundle-dir",
+        artifactKind: "directory",
+        sha256: artifact.sha256,
+        sizeBytes: Buffer.byteLength(alpha) + Buffer.byteLength(beta),
+        entryCount: 4,
+        fileCount: 2,
+        directoryCount: 2,
+        entries: [
+          { kind: "directory", path: "." },
+          {
+            kind: "file",
+            path: "alpha.txt",
+            sha256: createHash("sha256").update(alpha).digest("hex"),
+            sizeBytes: Buffer.byteLength(alpha),
+          },
+          { kind: "directory", path: "nested" },
+          {
+            kind: "file",
+            path: "nested/beta.txt",
+            sha256: createHash("sha256").update(beta).digest("hex"),
+            sizeBytes: Buffer.byteLength(beta),
+          },
+        ],
+      }),
+    );
+    const manifestEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.directory_manifested" &&
+        event.payload["artifactId"] === "bundle-dir",
+    );
+    expect(manifestEvents).toEqual([
+      expect.objectContaining({
+        category: "artifact",
+        payload: {
+          planId: plan.id,
+          artifactId: "bundle-dir",
+          planRevision: plan.revision,
+          status: "verified",
+          kind: "directory",
+          pathSha256: createHash("sha256").update("bundle").digest("hex"),
+          sha256: artifact.sha256,
+          sizeBytes: Buffer.byteLength(alpha) + Buffer.byteLength(beta),
+          entryCount: 4,
+          fileCount: 2,
+          directoryCount: 2,
+        },
+      }),
+    ]);
+    expect(JSON.stringify(manifestEvents)).not.toContain("alpha.txt");
+    expect(JSON.stringify(manifestEvents)).not.toContain("nested/beta.txt");
   });
 
   it("confirms verified artifact drift into recoverable plan evidence", async () => {

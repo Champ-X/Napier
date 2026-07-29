@@ -108,13 +108,50 @@ describe("artifact event trace view", () => {
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects directory manifests without entry paths", () => {
+    const event = artifactEvent("artifact.directory_manifested", {
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 7,
+      status: "verified",
+      kind: "directory",
+      path: "TOP_SECRET_PATH",
+      entries: [{ path: "TOP_SECRET_ENTRY.md" }],
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      sizeBytes: 512,
+      entryCount: 3,
+      fileCount: 2,
+      directoryCount: 1,
+    });
+
+    expect(artifactEventTraceView(event)).toEqual({
+      action: "directory_manifested",
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 7,
+      status: "verified",
+      kind: "directory",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      sizeBytes: 512,
+      entryCount: 3,
+      fileCount: 2,
+      directoryCount: 1,
+    });
+    expect(artifactEventTraceSummary(event)).toBe(
+      `artifact / directory_manifested / plan 1234567890 / artifact 0987654321 / plan-r7 / status verified / kind directory / size-bytes 512 / entries 3 / files 2 / directories 1 / path ${"a".repeat(12)} / artifact ${"b".repeat(12)}`,
+    );
+    expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("falls back for malformed artifact receipts", () => {
-    expect(artifactEventTraceSummary(artifactEvent("artifact.future", {}))).toBe(
-      "artifact",
-    );
-    expect(artifactEventTraceSummary(artifactEvent("artifact.exported", []))).toBe(
-      "artifact receipt",
-    );
+    expect(
+      artifactEventTraceSummary(artifactEvent("artifact.future", {})),
+    ).toBe("artifact");
+    expect(
+      artifactEventTraceSummary(artifactEvent("artifact.exported", [])),
+    ).toBe("artifact receipt");
   });
 });
 

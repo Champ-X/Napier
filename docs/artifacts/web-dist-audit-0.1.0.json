@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DTq--Leq.js",
+    "path": "apps/web/dist/assets/index-CyJ6uSba.js",
     "sizeBytes": 150040,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "291374fa7751c813f1414996b4c23e06fc5b5379e9084c5cb8b5bf09c5761075"
+    "sha256": "61166ab351583e7771a6c5dd231f5bf484c3d0e777d994b774471c9e0f73e301"
   },
-  "distContentSha256": "291374fa7751c813f1414996b4c23e06fc5b5379e9084c5cb8b5bf09c5761075",
+  "distContentSha256": "61166ab351583e7771a6c5dd231f5bf484c3d0e777d994b774471c9e0f73e301",
   "errors": []
 }

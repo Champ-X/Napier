@@ -350,6 +350,7 @@ import {
   createWorkspaceArtifactVerificationRequest,
   exportWorkspaceFileArtifact,
   inspectWorkspaceArtifactDrift,
+  previewWorkspaceDirectoryArtifactManifest,
   previewWorkspaceTextArtifact,
   createInboundDeadLetterRetryHistory,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
@@ -7306,6 +7307,73 @@ export function createApp(services: NapierServices): Hono {
           exported.contents.byteOffset + exported.contents.byteLength,
         ) as ArrayBuffer;
         return context.body(body);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
+    },
+  );
+
+  app.get(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/manifest",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const planId = context.req.param("planId");
+      assertPlanThread(services, planId, threadId);
+      const plan = services.store.getPlan(planId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(context, "Plan artifact manifest is invalid", 404);
+      }
+      try {
+        const manifest = await previewWorkspaceDirectoryArtifactManifest(
+          services.store.workspaceRoot,
+          artifact,
+        );
+        const payload = {
+          kind: "napier.plan-artifact-directory-manifest" as const,
+          schemaVersion: 1 as const,
+          planId: plan.id,
+          artifactId: artifact.id,
+          planRevision: plan.revision,
+          status: artifact.status,
+          artifactKind: artifact.kind,
+          pathSha256: sha256Text(artifact.path),
+          sha256: manifest.sha256,
+          sizeBytes: manifest.sizeBytes,
+          entryCount: manifest.entryCount,
+          fileCount: manifest.fileCount,
+          directoryCount: manifest.directoryCount,
+          entries: manifest.entries,
+        };
+        await services.store.appendEvent({
+          threadId,
+          runId: createId("runctl"),
+          type: "artifact.directory_manifested",
+          category: "artifact",
+          visibility: "user",
+          payload: {
+            planId: plan.id,
+            artifactId: artifact.id,
+            planRevision: plan.revision,
+            status: artifact.status,
+            kind: artifact.kind,
+            pathSha256: payload.pathSha256,
+            sha256: manifest.sha256,
+            sizeBytes: manifest.sizeBytes,
+            entryCount: manifest.entryCount,
+            fileCount: manifest.fileCount,
+            directoryCount: manifest.directoryCount,
+          },
+        });
+        setPlanArtifactDirectoryManifestHeaders(
+          context,
+          plan,
+          artifact,
+          payload,
+        );
+        return context.json(payload);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -17833,6 +17901,48 @@ function setPlanArtifactTextPreviewHeaders(
   context.header("X-Napier-Plan-Artifact-Text-SHA256", preview.textSha256);
 }
 
+function setPlanArtifactDirectoryManifestHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: ExecutionPlan["artifacts"][number],
+  manifest: {
+    sha256: string;
+    sizeBytes: number;
+    entryCount: number;
+    fileCount: number;
+    directoryCount: number;
+  },
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, manifest);
+  context.header("X-Napier-Thread-Id", plan.threadId);
+  context.header("X-Napier-Plan-Id", plan.id);
+  context.header("X-Napier-Plan-Revision", String(plan.revision));
+  context.header("X-Napier-Plan-Artifact-Id", artifact.id);
+  context.header("X-Napier-Plan-Artifact-Status", artifact.status);
+  context.header(
+    "X-Napier-Plan-Artifact-Path-SHA256",
+    sha256Text(artifact.path),
+  );
+  context.header("X-Napier-Plan-Artifact-SHA256", manifest.sha256);
+  context.header(
+    "X-Napier-Plan-Artifact-Size-Bytes",
+    String(manifest.sizeBytes),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Entry-Count",
+    String(manifest.entryCount),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-File-Count",
+    String(manifest.fileCount),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Directory-Count",
+    String(manifest.directoryCount),
+  );
+}
+
 function setPlanArtifactDriftCheckHeaders(
   context: Context,
   plan: ExecutionPlan,
@@ -17877,7 +17987,9 @@ function planArtifactDownloadFilename(
   artifact: ExecutionPlan["artifacts"][number],
   sha256: string,
 ): string {
-  const baseName = path.basename(artifact.path).replace(/[^A-Za-z0-9._-]/g, "_");
+  const baseName = path
+    .basename(artifact.path)
+    .replace(/[^A-Za-z0-9._-]/g, "_");
   const safeName =
     baseName.length > 0 && baseName !== "." ? baseName : artifact.id;
   return `napier-artifact-${artifact.id}-${sha256.slice(0, 12)}-${safeName}`;

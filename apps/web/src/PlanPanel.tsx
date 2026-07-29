@@ -63,7 +63,9 @@ import {
   downloadPlanArtifactFile,
   previewPlanArtifactText,
   type PlanArtifactDriftCheck,
+  type PlanArtifactDirectoryManifest,
   type PlanArtifactTextPreview,
+  previewPlanArtifactDirectoryManifest,
 } from "./artifact-file-api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import {
@@ -310,6 +312,8 @@ export default function PlanPanel({
   const [artifactError, setArtifactError] = useState<string>();
   const [artifactPreview, setArtifactPreview] =
     useState<PlanArtifactTextPreview>();
+  const [artifactDirectoryManifest, setArtifactDirectoryManifest] =
+    useState<PlanArtifactDirectoryManifest>();
   const [artifactDriftCheck, setArtifactDriftCheck] =
     useState<PlanArtifactDriftCheck>();
   const [archiveBusyAction, setArchiveBusyAction] = useState<
@@ -348,6 +352,7 @@ export default function PlanPanel({
     setArtifactBusyId(undefined);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     setArchiveReceipt(undefined);
     setArchiveError(undefined);
@@ -448,6 +453,7 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:${action}`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDirectoryManifest(undefined);
     try {
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
         status: action,
@@ -494,6 +500,7 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:preview`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     try {
       const preview = await previewPlanArtifactText(
@@ -510,6 +517,30 @@ export default function PlanPanel({
     }
   };
 
+  const previewDirectoryManifest = async (
+    artifact: ArtifactManifestEntry,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:manifest`);
+    setArtifactError(undefined);
+    setArtifactPreview(undefined);
+    setArtifactDirectoryManifest(undefined);
+    setArtifactDriftCheck(undefined);
+    try {
+      const manifest = await previewPlanArtifactDirectoryManifest(
+        threadId,
+        plan.id,
+        artifact.id,
+      );
+      setArtifactDirectoryManifest(manifest);
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(formatApiErrorMessage(error));
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
   const checkArtifactDrift = async (
     artifact: ArtifactManifestEntry,
   ): Promise<void> => {
@@ -517,6 +548,7 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:drift-check`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDirectoryManifest(undefined);
     setArtifactDriftCheck(undefined);
     try {
       const check = await checkPlanArtifactDrift(
@@ -2161,6 +2193,20 @@ export default function PlanPanel({
                               : planCopy.artifactActions.preview}
                           </button>
                         ) : null}
+                        {actions.canInspectManifest ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.manifest}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() =>
+                              void previewDirectoryManifest(artifact)
+                            }
+                          >
+                            {artifactBusyId === `${artifact.id}:manifest`
+                              ? planCopy.artifactActions.manifesting
+                              : planCopy.artifactActions.manifest}
+                          </button>
+                        ) : null}
                         {actions.canDownload ? (
                           <button
                             type="button"
@@ -2245,6 +2291,66 @@ export default function PlanPanel({
                           {planCopy.lineCount}: {artifactPreview.lineCount}
                         </small>
                         <pre>{artifactPreview.text}</pre>
+                      </div>
+                    ) : null}
+                    {artifactDirectoryManifest?.artifactId === artifact.id ? (
+                      <div
+                        className="artifact-preview artifact-directory-manifest"
+                        role="region"
+                        aria-label={planCopy.artifactActions.manifestTitle}
+                      >
+                        <header>
+                          <strong>
+                            {planCopy.artifactActions.manifestTitle}
+                          </strong>
+                          <button
+                            type="button"
+                            aria-label={planCopy.artifactActions.closePreview}
+                            onClick={() =>
+                              setArtifactDirectoryManifest(undefined)
+                            }
+                          >
+                            {planCopy.artifactActions.closePreview}
+                          </button>
+                        </header>
+                        <small>
+                          {planCopy.digest}:{" "}
+                          <code title={artifactDirectoryManifest.sha256}>
+                            {artifactDirectoryManifest.sha256.slice(0, 16)}
+                          </code>
+                          {" / "}
+                          {planCopy.size}:{" "}
+                          {formatArtifactSizeBytes(
+                            artifactDirectoryManifest.sizeBytes,
+                          )}
+                          {" / "}
+                          {planCopy.artifactActions.entries}:{" "}
+                          {artifactDirectoryManifest.entryCount.toLocaleString()}
+                          {" / "}
+                          {planCopy.artifactActions.files}:{" "}
+                          {artifactDirectoryManifest.fileCount.toLocaleString()}
+                          {" / "}
+                          {planCopy.artifactActions.directories}:{" "}
+                          {artifactDirectoryManifest.directoryCount.toLocaleString()}
+                        </small>
+                        <ol>
+                          {artifactDirectoryManifest.entries.map((entry) => (
+                            <li key={`${entry.kind}:${entry.path}`}>
+                              <code>{entry.path}</code>
+                              <span>{entry.kind}</span>
+                              {entry.sha256 ? (
+                                <code title={entry.sha256}>
+                                  {entry.sha256.slice(0, 16)}
+                                </code>
+                              ) : null}
+                              {entry.sizeBytes !== undefined ? (
+                                <span>
+                                  {formatArtifactSizeBytes(entry.sizeBytes)}
+                                </span>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ol>
                       </div>
                     ) : null}
                     {artifactDriftCheck?.artifactId === artifact.id ? (

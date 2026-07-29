@@ -15,9 +15,13 @@ export interface ArtifactEventTraceView {
   textSha256?: string;
   sizeBytes?: number;
   lineCount?: number;
+  entryCount?: number;
+  fileCount?: number;
+  directoryCount?: number;
 }
 
-const ARTIFACT_EVENT = /^artifact\.(drift_checked|exported|previewed)$/u;
+const ARTIFACT_EVENT =
+  /^artifact\.(directory_manifested|drift_checked|exported|previewed)$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ARTIFACT_RECEIPT_SUMMARY = "artifact receipt";
@@ -48,12 +52,13 @@ export function artifactEventTraceView(
     ...shaField(event.payload, "textSha256"),
     ...integerField(event.payload, "sizeBytes"),
     ...integerField(event.payload, "lineCount"),
+    ...integerField(event.payload, "entryCount"),
+    ...integerField(event.payload, "fileCount"),
+    ...integerField(event.payload, "directoryCount"),
   };
 }
 
-export function artifactEventTraceSummary(
-  event: RunEvent,
-): string | undefined {
+export function artifactEventTraceSummary(event: RunEvent): string | undefined {
   if (!event.type.startsWith("artifact.")) return undefined;
   if (!ARTIFACT_EVENT.test(event.type)) return event.category;
   const view = artifactEventTraceView(event);
@@ -68,6 +73,11 @@ export function artifactEventTraceSummary(
     ...(view.result ? [`result ${view.result}`] : []),
     ...(view.sizeBytes !== undefined ? [`size-bytes ${view.sizeBytes}`] : []),
     ...(view.lineCount !== undefined ? [`lines ${view.lineCount}`] : []),
+    ...(view.entryCount !== undefined ? [`entries ${view.entryCount}`] : []),
+    ...(view.fileCount !== undefined ? [`files ${view.fileCount}`] : []),
+    ...(view.directoryCount !== undefined
+      ? [`directories ${view.directoryCount}`]
+      : []),
     ...hashSummary("path", view.pathSha256),
     ...hashSummary("artifact", view.sha256),
     ...hashSummary("expected", view.expectedSha256),
@@ -101,7 +111,9 @@ function shaField(
   key: keyof ArtifactEventTraceView,
 ): Partial<ArtifactEventTraceView> {
   const value = payload[key];
-  return typeof value === "string" && SHA256.test(value) ? { [key]: value } : {};
+  return typeof value === "string" && SHA256.test(value)
+    ? { [key]: value }
+    : {};
 }
 
 function integerField(

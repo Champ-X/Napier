@@ -10,6 +10,7 @@ import {
   createPlanTools,
   exportWorkspaceFileArtifact,
   inspectWorkspaceArtifactDrift,
+  previewWorkspaceDirectoryArtifactManifest,
   previewWorkspaceTextArtifact,
 } from "../src/plan-tools.js";
 import { LocalStore } from "../src/store.js";
@@ -555,7 +556,9 @@ describe("plan tools", () => {
     ).resolves.toEqual({
       result: "drifted",
       expectedSha256: sha256,
-      observedSha256: createHash("sha256").update(driftedContents).digest("hex"),
+      observedSha256: createHash("sha256")
+        .update(driftedContents)
+        .digest("hex"),
       sizeBytes: Buffer.byteLength(driftedContents),
     });
 
@@ -669,6 +672,34 @@ describe("plan tools", () => {
         sourceRunId: run.id,
       }),
     );
+    await expect(
+      previewWorkspaceDirectoryArtifactManifest(
+        workspaceRoot,
+        plan.artifacts[0]!,
+      ),
+    ).resolves.toEqual({
+      entries: [
+        { kind: "directory", path: "." },
+        {
+          kind: "file",
+          path: "alpha.txt",
+          sha256: sha256(Buffer.from(alpha)),
+          sizeBytes: Buffer.byteLength(alpha),
+        },
+        { kind: "directory", path: "nested" },
+        {
+          kind: "file",
+          path: "nested/beta.txt",
+          sha256: sha256(Buffer.from(beta)),
+          sizeBytes: Buffer.byteLength(beta),
+        },
+      ],
+      sha256: expectedDigest,
+      sizeBytes: Buffer.byteLength(alpha) + Buffer.byteLength(beta),
+      entryCount: 4,
+      fileCount: 2,
+      directoryCount: 2,
+    });
     expect((await store.listEvents(thread.id)).at(-1)?.payload).toEqual(
       expect.objectContaining({
         artifactId: "bundle-dir",

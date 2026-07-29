@@ -22,6 +22,7 @@ import type { LocalStore } from "./store.js";
 
 const MAX_ARTIFACT_HASH_BYTES = 32 * 1024 * 1024;
 const MAX_ARTIFACT_PREVIEW_BYTES = 64 * 1024;
+const MAX_ARTIFACT_DIRECTORY_MANIFEST_ENTRIES = 5_000;
 const DIRECTORY_DIGEST_KIND = "napier.plan-directory-digest";
 
 export interface WorkspaceFileArtifactExport {
@@ -35,6 +36,22 @@ export interface WorkspaceTextArtifactPreview {
   sha256: string;
   sizeBytes: number;
   lineCount: number;
+}
+
+export interface WorkspaceDirectoryArtifactManifestEntry {
+  kind: "directory" | "file";
+  path: string;
+  sha256?: string;
+  sizeBytes?: number;
+}
+
+export interface WorkspaceDirectoryArtifactManifest {
+  entries: WorkspaceDirectoryArtifactManifestEntry[];
+  sha256: string;
+  sizeBytes: number;
+  entryCount: number;
+  fileCount: number;
+  directoryCount: number;
 }
 
 export interface WorkspaceArtifactDriftInspection {
@@ -495,7 +512,9 @@ export async function createWorkspaceArtifactDriftRequest(
     throw new Error("Only verified artifacts can be drift-checked");
   }
   if (artifact.kind !== "file" && artifact.kind !== "directory") {
-    throw new Error("Only workspace files and directories can be drift-checked");
+    throw new Error(
+      "Only workspace files and directories can be drift-checked",
+    );
   }
   if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
     throw new Error("Artifact path escapes the configured workspace");
@@ -550,7 +569,9 @@ export async function inspectWorkspaceArtifactDrift(
     throw new Error("Verified artifact is missing its stored digest");
   }
   if (artifact.kind !== "file" && artifact.kind !== "directory") {
-    throw new Error("Only workspace files and directories can be drift-checked");
+    throw new Error(
+      "Only workspace files and directories can be drift-checked",
+    );
   }
   if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
     throw new Error("Artifact path escapes the configured workspace");
@@ -662,6 +683,35 @@ export async function previewWorkspaceTextArtifact(
   };
 }
 
+export async function previewWorkspaceDirectoryArtifactManifest(
+  workspaceRoot: string,
+  artifact: ExecutionPlan["artifacts"][number],
+): Promise<WorkspaceDirectoryArtifactManifest> {
+  if (artifact.kind !== "directory") {
+    throw new Error("Only directory artifacts can expose a manifest");
+  }
+  if (artifact.status !== "produced" && artifact.status !== "verified") {
+    throw new Error(
+      "Only produced or verified artifacts can expose a manifest",
+    );
+  }
+  if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
+    throw new Error("Artifact path escapes the configured workspace");
+  }
+  const { target } = await inspectWorkspaceArtifactTarget(
+    workspaceRoot,
+    artifact,
+  );
+  const manifest = await createWorkspaceDirectoryManifest(target);
+  if (manifest.entryCount > MAX_ARTIFACT_DIRECTORY_MANIFEST_ENTRIES) {
+    throw new Error(
+      `Artifact directory manifest exceeds the ${MAX_ARTIFACT_DIRECTORY_MANIFEST_ENTRIES} entry preview limit`,
+    );
+  }
+  assertVerifiedArtifactDigestMatches(artifact, manifest.sha256);
+  return manifest;
+}
+
 function assertVerifiedArtifactDigestMatches(
   artifact: ExecutionPlan["artifacts"][number],
   observedSha256: string,
@@ -715,17 +765,20 @@ async function inspectWorkspaceArtifactTarget(
   return { target: realTarget, info };
 }
 
-interface DirectoryDigestEntry {
-  kind: "directory" | "file";
-  path: string;
-  sha256?: string;
-  sizeBytes?: number;
-}
-
 async function hashWorkspaceDirectory(
   target: string,
 ): Promise<{ sha256: string; sizeBytes: number }> {
-  const entries: DirectoryDigestEntry[] = [];
+  const manifest = await createWorkspaceDirectoryManifest(target);
+  return {
+    sha256: manifest.sha256,
+    sizeBytes: manifest.sizeBytes,
+  };
+}
+
+async function createWorkspaceDirectoryManifest(
+  target: string,
+): Promise<WorkspaceDirectoryArtifactManifest> {
+  const entries: WorkspaceDirectoryArtifactManifestEntry[] = [];
   let totalBytes = 0;
   await walkDirectory(target, ".", entries, (byteLength) => {
     totalBytes += byteLength;
@@ -735,22 +788,29 @@ async function hashWorkspaceDirectory(
       );
     }
   });
+  const digestContent = {
+    kind: DIRECTORY_DIGEST_KIND,
+    schemaVersion: 1,
+    entries,
+  };
+  const fileCount = entries.filter((entry) => entry.kind === "file").length;
+  const directoryCount = entries.filter(
+    (entry) => entry.kind === "directory",
+  ).length;
   return {
-    sha256: sha256(
-      canonicalJson({
-        kind: DIRECTORY_DIGEST_KIND,
-        schemaVersion: 1,
-        entries,
-      }),
-    ),
+    entries,
+    sha256: sha256(canonicalJson(digestContent)),
     sizeBytes: totalBytes,
+    entryCount: entries.length,
+    fileCount,
+    directoryCount,
   };
 }
 
 async function walkDirectory(
   directory: string,
   relativePath: string,
-  entries: DirectoryDigestEntry[],
+  entries: WorkspaceDirectoryArtifactManifestEntry[],
   recordBytes: (byteLength: number) => void,
 ): Promise<void> {
   const info = await lstat(directory);

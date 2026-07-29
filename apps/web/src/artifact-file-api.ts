@@ -39,6 +39,30 @@ export interface PlanArtifactDriftCheck {
   sizeBytes?: number;
 }
 
+export interface PlanArtifactDirectoryManifestEntry {
+  kind: "directory" | "file";
+  path: string;
+  sha256?: string;
+  sizeBytes?: number;
+}
+
+export interface PlanArtifactDirectoryManifest {
+  kind: "napier.plan-artifact-directory-manifest";
+  schemaVersion: 1;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  pathSha256: string;
+  sha256: string;
+  sizeBytes: number;
+  entryCount: number;
+  fileCount: number;
+  directoryCount: number;
+  entries: PlanArtifactDirectoryManifestEntry[];
+}
+
 export async function downloadPlanArtifactFile(
   threadId: string,
   planId: string,
@@ -58,9 +82,7 @@ export async function downloadPlanArtifactFile(
   if (observedSha256 !== expectedSha256) {
     throw new Error(`Response hash mismatch for ${path}`);
   }
-  const headerSize = response.headers.get(
-    "X-Napier-Plan-Artifact-Size-Bytes",
-  );
+  const headerSize = response.headers.get("X-Napier-Plan-Artifact-Size-Bytes");
   const sizeBytes = Number(headerSize ?? Number.NaN);
   if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
     throw new Error(`Response artifact size invalid for ${path}`);
@@ -93,6 +115,16 @@ export function checkPlanArtifactDrift(
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/drift-check`,
     { method: "POST" },
+  );
+}
+
+export function previewPlanArtifactDirectoryManifest(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+): Promise<PlanArtifactDirectoryManifest> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/manifest`,
   );
 }
 
