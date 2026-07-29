@@ -86,6 +86,9 @@ Version `0.1.0` includes:
   background Node sessions with cursor-based stdout/stderr observation,
   cancellation, lifecycle settlement, graceful shutdown, and fail-closed
   restart reconciliation;
+- preview-bound `workspace_file_preview` / `workspace_file_apply` tools plus a
+  lazy Files recovery panel for directory creation, no-overwrite-intent moves,
+  reversible trash, and explicit restore without shell access;
 - a fail-closed tool policy that blocks host escape and destructive commands;
 - Agent Skills discovery through standard `SKILL.md` packages;
 - frozen Agent Prompt Variables with strict `literal`, `current_date`, and
@@ -1286,6 +1289,54 @@ atomic link or rename. Trace records the operation, path, byte counts,
 before/after hashes, and a path SHA-256 receipt;
 Workbench summaries show only the operation, byte/edit counts, path hash, and
 content hashes. Researcher, reviewer, and general subagents remain read-only.
+
+## Reversible Workspace File Lifecycle
+
+`apply_patch` remains the content-editing primitive. Directory creation,
+move/rename, and reversible removal use a separate two-tool protocol:
+
+```text
+workspace_file_preview
+  -> normalize every workspace-relative path
+  -> reject protected segments including case aliases, symlinks, unsupported
+     entry types, workspace escape, occupied destinations, and scopes over
+     2,000 entries or 32 MiB
+  -> bind the source tree, destination absence, nearest existing parent
+     identity, Thread, Run, and five-minute expiry into a one-use preview ID
+workspace_file_apply
+  -> accept only that preview ID, never raw paths
+  -> acquire deterministic source/destination locks shared with apply_patch
+  -> rebuild the complete plan immediately before mutation
+  -> create directories or rename on one filesystem without a copy/delete
+     fallback
+  -> move trash payloads under the protected Napier data root with a
+     hash-bound local recovery manifest
+  -> append one hash-only workspace.file.mutated event
+```
+
+Supported operations are `create_directory`, `move`, `trash`, and `restore`.
+Permanent purge, destination overwrite requests, permission changes, root
+moves, symlink lifecycle, and Process Session writes are not exposed. Napier
+rejects a destination observed as occupied during preview or the final
+precondition check. An external process can still race after that check because
+it does not honor Napier's host-local lock; postcondition loss is reported as
+`indeterminate` rather than an invitation to retry blindly.
+
+Trash manifests retain the original relative path only under the protected
+local data root. Agent tool evidence, Trace, Replay, and exports retain path
+hashes, content/tree hashes, counts, byte size, reversibility, and
+postcondition. The lazy Files panel lists only trash items belonging to the
+selected Thread and offers explicit restore to the original path. Restore
+fails closed when that path is occupied or trash bytes drifted; no permanent
+delete action exists in the panel. Thread and request-sequence guards discard
+late list or restore responses after the selected Thread changes.
+
+Run the complete Agent-to-filesystem smoke:
+
+```bash
+npm run test:live-files
+```
+
 New delegations must return a bounded
 JSON outcome containing a summary, typed findings/risks/recommendations,
 workspace-relative line evidence, and explicit unknowns. Napier normalizes that

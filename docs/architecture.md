@@ -1526,7 +1526,7 @@ Agent-authored progress through HTTP.
 ## Workspace Edit Flow
 
 General shell execution and unconstrained file writes are not Agent tools.
-The only built-in write primitive is hash-bound, structured `apply_patch`:
+The built-in content write primitive is hash-bound, structured `apply_patch`:
 when any workspace tools are enabled, `AgentRuntime.runPrompt` also injects a
 concise `workspace_tool_protocol` into the live system prompt. That protocol is
 derived from the actual enabled tools, tells the Agent to treat tool output as
@@ -1651,6 +1651,56 @@ creation is limited to `create` with an explicit opt-in and uses the same
 workspace, protected-segment, and symlink checks; file deletion, arbitrary
 directory operations, and permission changes remain outside this tool.
 Subagents call the read-only tool factory and never receive `apply_patch`.
+
+## Workspace File Lifecycle Flow
+
+File lifecycle operations are a separate Capability Plane module rather than
+new modes inside `apply_patch` or a write-enabled shell:
+
+```text
+workspace_file_preview (read effect)
+  -> normalize source and destination inside the canonical workspace
+  -> reject case aliases of .git / .napier / node_modules, symlinks,
+     unsupported entry types, occupied destinations, and scope over
+     2,000 entries or 32 MiB
+  -> hash the complete bounded source tree, including empty directories
+  -> bind operation + path hashes + source snapshot + destination absence +
+     nearest existing parent device/inode identity + Thread + Run +
+     five-minute expiry
+  -> retain one one-use preview only in the current Runtime
+workspace_file_apply (write effect)
+  -> accept only previewId
+  -> recompute the plan before and after deterministic multi-path lock
+     acquisition
+  -> consume the preview and perform create_directory, move, trash, or restore
+  -> require one-filesystem rename; EXDEV fails without recursive copy/delete
+  -> inspect the postcondition, reporting verified, drifted, or indeterminate
+  -> append workspace.file.mutated with hashes and counts only
+```
+
+`WorkspaceFileMutationManager` owns preview lifetime and commit orchestration.
+`workspace-file-scope.ts` owns bounded path/tree inspection and local trash
+manifest validation. `workspace-write-lock.ts` is shared with `apply_patch`, so
+content edits and lifecycle moves cannot concurrently mutate the same
+Napier-addressed path on one host.
+
+Trash is an intentionally reversible local artifact under
+`<dataRoot>/workspace-trash/<trashId>`. Its protected manifest contains the
+original relative path, source snapshot, counts, bytes, owning Thread/Run, and
+content hash. Public Ledger/Trace/Replay projections contain only path hashes,
+tree hashes, counts, reversibility, trash ID, and postcondition. The Files
+Workbench reads local manifests through a Thread-scoped no-store API and
+offers only explicit restore; no purge or arbitrary path input exists. Its
+Thread and request-sequence guards abort or discard late list/restore responses
+before they can update a newly selected Thread.
+
+Napier checks destination absence during preview, immediately before rename,
+and after lock acquisition. Standard Node rename cannot provide portable
+`RENAME_NOREPLACE` for directories, so a hostile external writer can still
+race after the final check. The postcondition reports uncertainty instead of
+claiming distributed isolation. Permanent deletion, overwrite requests,
+permission changes, root moves, symlink lifecycle, and Process Session writes
+remain outside this capability.
 
 ## Sandboxed Command Flow
 

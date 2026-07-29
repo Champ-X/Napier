@@ -172,6 +172,8 @@ const AGENT_TOOLS = new Set([
   "inspect_code",
   "read_symbol",
   "apply_patch",
+  "workspace_file_preview",
+  "workspace_file_apply",
   "run_command",
   "workspace_process",
   "verify_workspace",

@@ -3058,6 +3058,70 @@ export interface WorkspaceProcessDelta {
   entries: WorkspaceProcessDeltaEntry[];
 }
 
+export type WorkspaceFileMutationOperation =
+  | "create_directory"
+  | "move"
+  | "trash"
+  | "restore";
+
+export type WorkspaceFileEntryKind = "file" | "directory";
+
+export interface WorkspaceFileMutationEvidence {
+  kind: "napier.workspace-file-mutation";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  operation: WorkspaceFileMutationOperation;
+  initiatedBy: "agent" | "operator";
+  entryKind?: WorkspaceFileEntryKind;
+  sourcePathSha256?: string;
+  destinationPathSha256?: string;
+  beforeSha256?: string;
+  afterSha256?: string;
+  fileCount: number;
+  directoryCount: number;
+  bytes: number;
+  createdDirectoryCount?: number;
+  trashId?: string;
+  reversible: boolean;
+  postcondition: "verified" | "drifted" | "indeterminate";
+  appliedAt: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceTrashItem {
+  kind: "napier.workspace-trash-item";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  originalPath: string;
+  originalPathSha256: string;
+  entryKind: WorkspaceFileEntryKind;
+  snapshotSha256: string;
+  fileCount: number;
+  directoryCount: number;
+  bytes: number;
+  trashedAt: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceTrashList {
+  kind: "napier.workspace-trash-list";
+  schemaVersion: 1;
+  threadId: string;
+  items: WorkspaceTrashItem[];
+}
+
+export interface WorkspaceTrashRestoreResult {
+  kind: "napier.workspace-trash-restore";
+  schemaVersion: 1;
+  trashId: string;
+  restoredPath: string;
+  evidence: WorkspaceFileMutationEvidence;
+}
+
 export type OperatorDecisionStatus =
   | "pending"
   | "answered"
@@ -3973,6 +4037,8 @@ const TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES = [
   "operator.decision.",
   "run.control.",
   "run.",
+  "workspace.process.",
+  "workspace.file.",
   "subagent.",
   "model.advisor.",
   "model.",
@@ -6542,6 +6608,7 @@ export interface QualifyPromptPackageRequest {
 export type InspectorPanelId =
   | "trace"
   | "processes"
+  | "files"
   | "lab"
   | "plan"
   | "goal"
@@ -6572,6 +6639,16 @@ export const NAPIER_INSPECTOR_PANELS: readonly InspectorPackageManifestPanel[] =
       label: "Processes",
       surface: "lazy",
       capabilities: ["session-status", "output-cursor", "cancellation"],
+    },
+    {
+      id: "files",
+      label: "Files",
+      surface: "lazy",
+      capabilities: [
+        "workspace-mutation-preview",
+        "reversible-trash",
+        "operator-restore",
+      ],
     },
     {
       id: "lab",

@@ -57,6 +57,11 @@ import {
   agentToolInputLedgerProjection as toolInputLedgerProjection,
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
+import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
+import {
+  createWorkspaceFileApplyTool,
+  createWorkspaceFilePreviewTool,
+} from "./workspace-file-tools.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
@@ -219,6 +224,7 @@ export class AgentRuntime {
     readonly extensionManager?: McpExtensionManager,
     readonly verificationSandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
     readonly workspaceProcesses?: WorkspaceProcessManager,
+    readonly workspaceFileMutations?: WorkspaceFileMutationManager,
   ) {}
 
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
@@ -1132,6 +1138,32 @@ export class AgentRuntime {
           includeWriteTools: profile.toolPolicy !== "observe",
           dataRoot: this.store.dataRoot,
         }).filter((tool) => profile.enabledTools.includes(tool.name));
+    if (
+      !advisorCorrection &&
+      profile.enabledTools.includes("workspace_file_preview") &&
+      this.workspaceFileMutations
+    ) {
+      tools.push(
+        createWorkspaceFilePreviewTool(this.workspaceFileMutations, {
+          threadId: run.threadId,
+          runId: run.id,
+        }),
+      );
+    }
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("workspace_file_apply") &&
+      this.workspaceFileMutations
+    ) {
+      tools.push(
+        createWorkspaceFileApplyTool(this.workspaceFileMutations, {
+          threadId: run.threadId,
+          runId: run.id,
+        }),
+      );
+    }
     let pendingOperatorDecisionId: string | undefined;
     if (
       !advisorCorrection &&
@@ -3275,6 +3307,7 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     toolName === "inspect_data" ||
     toolName === "inspect_code" ||
     toolName === "read_symbol" ||
+    toolName === "workspace_file_preview" ||
     toolName === "run_command" ||
     toolName === "workspace_process" ||
     toolName === "verify_workspace" ||
@@ -3285,6 +3318,7 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
   }
   if (
     toolName === "apply_patch" ||
+    toolName === "workspace_file_apply" ||
     toolName === "bash" ||
     toolName === "create_plan" ||
     toolName === "update_plan_step" ||

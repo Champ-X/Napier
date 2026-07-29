@@ -42,6 +42,60 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "workspace_file_preview",
+        {
+          action: "preview",
+          operation: "move",
+          sourcePath: "src/a.ts",
+          destinationPath: "src/b.ts",
+        },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+        reason: "read-only workspace file mutation preview",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "workspace_file_apply",
+        { previewId: "filepreview_12345678" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "workspace_file_apply",
+        { previewId: "filepreview_12345678" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "fresh preview-bound workspace file mutation",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
+        "workspace_file_preview",
+        {
+          action: "preview",
+          operation: "move",
+          sourcePath: ".GIT/config",
+          destinationPath: "config",
+        },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
         "workspace",
         "apply_patch",
         { path: "../README.md" },
@@ -79,7 +133,7 @@ describe("workspace policy", () => {
       assessToolCall(
         "workspace",
         "apply_patch",
-        { path: ".git/config" },
+        { path: ".GIT/config" },
         "/workspace",
       ),
     ).toEqual(

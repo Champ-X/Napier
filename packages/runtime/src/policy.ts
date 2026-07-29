@@ -2,6 +2,8 @@ import path from "node:path";
 
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
 
+import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
+
 export interface PolicyDecision {
   allowed: boolean;
   risk: "low" | "medium" | "high" | "critical";
@@ -20,9 +22,10 @@ const READ_ONLY_TOOLS = new Set([
   "web_search",
 ]);
 const WRITE_TOOLS = new Set(["apply_patch"]);
+const WORKSPACE_FILE_PREVIEW_TOOLS = new Set(["workspace_file_preview"]);
+const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
 const PROCESS_TOOLS = new Set(["run_command", "workspace_process"]);
-const PROTECTED_WRITE_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
   "update_plan_step",
@@ -109,29 +112,46 @@ export function assessToolCall(
     };
   }
 
+  if (WORKSPACE_FILE_PREVIEW_TOOLS.has(toolName)) {
+    for (const key of ["path", "sourcePath", "destinationPath"]) {
+      const candidate = getStringField(input, key);
+      if (!candidate) continue;
+      const denial = workspaceWritePathDenial(candidate, workspaceRoot);
+      if (denial) return denial;
+    }
+    return {
+      allowed: true,
+      risk: "low",
+      reason: "read-only workspace file mutation preview",
+    };
+  }
+
+  if (WORKSPACE_FILE_APPLY_TOOLS.has(toolName)) {
+    if (mode === "observe") {
+      return {
+        allowed: false,
+        risk: "medium",
+        reason: "the active agent policy is read-only",
+      };
+    }
+    return {
+      allowed: true,
+      risk: "medium",
+      reason: "fresh preview-bound workspace file mutation",
+    };
+  }
+
   if (WRITE_TOOLS.has(toolName)) {
     const candidate = getStringField(input, "path");
-    if (!candidate || !isPathInsideWorkspace(candidate, workspaceRoot)) {
+    if (!candidate) {
       return {
         allowed: false,
         risk: "high",
         reason: "writes must target a path inside the workspace",
       };
     }
-    const relative = path.relative(
-      path.resolve(workspaceRoot),
-      path.resolve(workspaceRoot, candidate),
-    );
-    const protectedSegment = relative
-      .split(path.sep)
-      .find((segment) => PROTECTED_WRITE_SEGMENTS.has(segment));
-    if (protectedSegment) {
-      return {
-        allowed: false,
-        risk: "high",
-        reason: `writes cannot modify protected path segment: ${protectedSegment}`,
-      };
-    }
+    const denial = workspaceWritePathDenial(candidate, workspaceRoot);
+    if (denial) return denial;
     if (mode === "observe") {
       return {
         allowed: false,
@@ -228,4 +248,31 @@ export function assessToolCall(
     risk: "high",
     reason: `tool "${toolName}" is not registered in the policy`,
   };
+}
+
+function workspaceWritePathDenial(
+  candidate: string,
+  workspaceRoot: string,
+): PolicyDecision | undefined {
+  if (!isPathInsideWorkspace(candidate, workspaceRoot)) {
+    return {
+      allowed: false,
+      risk: "high",
+      reason: "writes must target a path inside the workspace",
+    };
+  }
+  const relative = path.relative(
+    path.resolve(workspaceRoot),
+    path.resolve(workspaceRoot, candidate),
+  );
+  const protectedSegment = relative
+    .split(path.sep)
+    .find(isProtectedWorkspacePathSegment);
+  return protectedSegment
+    ? {
+        allowed: false,
+        risk: "high",
+        reason: `writes cannot modify protected path segment: ${protectedSegment}`,
+      }
+    : undefined;
 }

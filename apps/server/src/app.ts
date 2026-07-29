@@ -416,6 +416,7 @@ import {
   verifyInboundDeadLetterExportArtifact,
   verifyInboundDeadLetterRetryHistory,
   verifyUsagePriceTableCatalog,
+  WorkspaceFileMutationManager,
   WorkspaceProcessManager,
   executionPlanRequestFromBlueprint,
 } from "@napier/runtime";
@@ -460,6 +461,7 @@ export interface NapierServices {
   automation: AutomationService;
   channels: ChannelService;
   recovery: RecoveryService;
+  workspaceFileMutations: WorkspaceFileMutationManager;
   workspaceProcesses: WorkspaceProcessManager;
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
@@ -678,6 +680,12 @@ export async function createServices(options?: {
     sandbox,
   });
   await workspaceProcesses.initialize();
+  const workspaceFileMutations = new WorkspaceFileMutationManager({
+    store,
+    workspaceRoot,
+    dataRoot,
+  });
+  await workspaceFileMutations.initialize();
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
     new EvaluationCasebookQualificationService(store, models);
@@ -688,6 +696,7 @@ export async function createServices(options?: {
     extensions,
     sandbox,
     workspaceProcesses,
+    workspaceFileMutations,
   );
   const automation = new AutomationService(store, runtime);
   const channels = new ChannelService(store, runtime);
@@ -720,6 +729,7 @@ export async function createServices(options?: {
     automation,
     channels,
     recovery,
+    workspaceFileMutations,
     workspaceProcesses,
     receiptTrustDirectories,
     receiptTrustDirectorySubscriptions,
@@ -4452,6 +4462,48 @@ export function createApp(services: NapierServices): Hono {
       return jsonError(context, errorMessage(error), 404);
     }
   });
+
+  app.get("/api/threads/:threadId/workspace-trash", async (context) => {
+    const threadId = context.req.param("threadId");
+    try {
+      const list = await services.workspaceFileMutations.listTrash(threadId);
+      setWorkspaceFileProjectionHeaders(context, list);
+      return context.json(list);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 404);
+    }
+  });
+
+  app.post(
+    "/api/threads/:threadId/workspace-trash/:trashId/restore",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const trashId = context.req.param("trashId");
+      if (!validWorkspaceTrashId(trashId)) {
+        return jsonError(context, "Workspace trash ID is invalid", 400);
+      }
+      try {
+        const result = await services.workspaceFileMutations.restoreTrash(
+          threadId,
+          trashId,
+          context.req.raw.signal,
+        );
+        setWorkspaceFileProjectionHeaders(context, result);
+        return context.json(result);
+      } catch (error) {
+        const message = errorMessage(error);
+        return jsonError(
+          context,
+          message,
+          message.includes("already exists") ||
+            message.includes("drifted") ||
+            message.includes("stale")
+            ? 409
+            : 404,
+        );
+      }
+    },
+  );
 
   app.get(
     "/api/threads/:threadId/processes/:processId/output",
@@ -17889,6 +17941,10 @@ function validWorkspaceProcessId(value: unknown): value is string {
   return typeof value === "string" && /^process_[a-z0-9]{8,80}$/.test(value);
 }
 
+function validWorkspaceTrashId(value: unknown): value is string {
+  return typeof value === "string" && /^trash_[a-z0-9]{8,80}$/.test(value);
+}
+
 function validMemoryId(value: unknown): value is string {
   return typeof value === "string" && /^memory_[a-z0-9]{8,80}$/.test(value);
 }
@@ -21279,6 +21335,14 @@ function setThreadDetailProjectionHeaders(
 }
 
 function setWorkspaceProcessProjectionHeaders(
+  context: Context,
+  projection: unknown,
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, projection);
+}
+
+function setWorkspaceFileProjectionHeaders(
   context: Context,
   projection: unknown,
 ): void {

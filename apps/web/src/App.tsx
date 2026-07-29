@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Command,
   Database,
+  FolderArchive,
   GitBranch,
   Layers,
   Plus,
@@ -35,6 +36,7 @@ import {
 const LazyContextPanel = lazy(() => import("./ContextPanel"));
 const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
+const LazyFilesPanel = lazy(() => import("./FilesPanel"));
 const LazyMemoryPanel = lazy(() => import("./MemoryPanel"));
 const LazyOperatorDecisionPanel = lazy(() => import("./OperatorDecisionPanel"));
 const LazyProcessPanel = lazy(() => import("./ProcessPanel"));
@@ -368,6 +370,14 @@ export function App() {
             {copy.tabs.processes}
           </InspectorTabButton>
           <InspectorTabButton
+            id="files"
+            active={vm.inspectorTab === "files"}
+            icon={<FolderArchive size={14} />}
+            onClick={vm.setInspectorTab}
+          >
+            {copy.tabs.files}
+          </InspectorTabButton>
+          <InspectorTabButton
             id="lab"
             active={vm.inspectorTab === "lab"}
             icon={<Scale size={14} />}
@@ -464,6 +474,17 @@ export function App() {
               }
             >
               <LazyProcessPanel threadId={vm.detail.thread.id} />
+            </Suspense>
+          ) : null}
+          {vm.inspectorTab === "files" && vm.detail ? (
+            <Suspense
+              fallback={
+                <div className="context-loading" role="status">
+                  {copy.filesLoading}
+                </div>
+              }
+            >
+              <LazyFilesPanel threadId={vm.detail.thread.id} />
             </Suspense>
           ) : null}
           {vm.inspectorTab === "lab" ? (

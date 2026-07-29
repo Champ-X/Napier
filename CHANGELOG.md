@@ -6,6 +6,17 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added preview-bound, reversible Workspace file lifecycle operations.
+  `workspace_file_preview` and `workspace_file_apply` support bounded directory
+  creation, move/rename, reversible trash, and restore without shell access,
+  permanent deletion, destination overwrite requests, or cross-device copy
+  fallback. Plans are one-use, expiring, Thread/Run-bound, revalidated under
+  locks shared with `apply_patch`, and produce hash-only Ledger evidence. A
+  lazy Files Workbench lists Thread-scoped local trash and offers explicit
+  fail-closed restore. Protected path aliases, destination parent replacement,
+  and late cross-Thread Workbench responses fail closed. `npm run
+  test:live-files` drives the complete Agent lifecycle against real temporary
+  workspace bytes.
 - Added bounded Workspace Process Sessions as an opt-in Agent capability.
   `workspace_process` starts, cursor-polls, and cancels background Node work
   through the same explicit-argv, read-only, offline OS Sandbox used by

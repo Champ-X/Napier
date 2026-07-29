@@ -204,8 +204,83 @@ Observed result:
   semantics while adding canonical confinement, symlink race defense, bounded
   local details, and fail-closed truncation.
 
+## Completed Slice: Reversible Workspace File Lifecycle
+
+User scenario: an Agent can reorganize a workspace without shell access by
+previewing and then creating directories, moving files or directories, moving
+an entry into Napier-managed reversible trash, and restoring it. An operator
+can inspect and restore trash from Workbench after the originating Run ends.
+
+Acceptance:
+
+- add separate read-only preview/list and write-only apply Agent tools so
+  policy, Advisor freshness, and automatic recovery classify effects
+  accurately;
+- preview plans are short-lived, one-use, and bound to the owning Thread, Run,
+  requested operation, normalized paths, source snapshot, destination
+  non-existence, and nearest existing parent device/inode identity;
+- apply accepts only a preview ID, rechecks the complete plan immediately
+  before mutation, rejects stale plans, and refuses a destination observed as
+  occupied at the final check;
+- support `create_directory`, `move`, `trash`, and `restore`; moving to trash
+  remains reversible and permanent purge is not exposed;
+- file and directory scope inspection is bounded and rejects protected
+  segments including case aliases, symlink targets or descendants, workspace
+  escape, unsupported entry types, and incomplete snapshots;
+- operations share the existing per-target host lock with `apply_patch`,
+  acquire multi-path locks in deterministic order, use atomic rename where
+  possible, and fail closed on cross-device movement;
+- local trash manifests preserve the original relative path and recovery
+  metadata under the protected data root; Ledger, Trace, Replay, and exports
+  receive path hashes and bounded metadata only;
+- a lazy Files Workbench panel lists reversible items for the selected Thread
+  and restores only after an explicit operator action and a fresh destination
+  check; Thread/request-sequence guards discard late responses after selection
+  changes;
+- normal, stale, concurrent, cancellation-before-apply, symlink, protected
+  path, ownership, destination collision, restart, cross-device failure, and
+  restore tests cover Runtime, Agent tool, Server API, and Workbench views;
+- real Agent Dogfood performs preview → move → preview → trash → restore on
+  actual workspace bytes without using a shell.
+
+Threat boundary:
+
+- This slice does not grant Process Sessions workspace write access and does
+  not introduce arbitrary shell commands.
+- Trash is recovery storage, not a security boundary. A local user with direct
+  filesystem access can still alter Workspace or trash bytes; freshness and
+  postcondition checks report drift rather than claiming attribution.
+- Preview cannot make filesystem mutation transactional with external
+  processes. Napier locks coordinate Napier writers on one host and narrows the
+  final race with an immediate recheck, but external writers do not honor it.
+- Rename is required to remain on one filesystem. `EXDEV` fails without a
+  copy/delete fallback so a failed move cannot become a partial recursive copy.
+- Permanent deletion, overwrite, root moves, permission changes, symlink
+  lifecycle, `.git`, `.napier`, `node_modules`, and unbounded trees remain out
+  of scope.
+
+Observed result:
+
+- the opt-in Agent smoke completed preview → move → preview → trash → list →
+  preview restore → apply against real temporary workspace bytes in 229 ms;
+- Runtime tests prove one-use/expiry/ownership, stale source, occupied
+  destination, replaced-parent identity drift, cancellation before apply,
+  concurrent apply, shared `apply_patch` locking, symlink/case-alias protected
+  scope rejection, EXDEV rollback, trash drift rejection, restart recovery,
+  and indeterminate postcondition;
+- Server integration proves Thread-scoped list/restore, collision response,
+  immediate Ledger projection, path redaction, and actual byte restoration;
+- Browser Dogfood rendered the lazy Files panel, original relative path,
+  bounded scope and snapshot, then restored `deliverables/report.txt`, removed
+  the recovery card, displayed the evidence hash, emitted POST 200, exposed no
+  temporary absolute path, and produced no console error;
+- the main implementation is split into mutation orchestration, bounded scope,
+  Agent tool, and shared lock modules; `tools.ts` loses its private lock
+  implementation and does not grow.
+
 ## Next Candidate
 
-After this slice, decide between an explicit write-session preflight/diff
-workflow and a managed guardian/OCI backend. PTY and managed Python should wait
-for a backend that can prove hard limits and restart ownership.
+Re-audit P1 after this slice. A write-capable Process Session still requires a
+preflight scope, explicit capability grant, and recovery contract; a managed
+guardian/OCI backend remains the likely prerequisite for PTY, persistent
+Python/JavaScript, hard resource limits, and proved orphan cleanup.

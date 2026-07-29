@@ -30,6 +30,7 @@ export const copy = {
   tabs: {
     trace: "Trace",
     processes: "Processes",
+    files: "Files",
     lab: "Lab",
     plan: "Plan",
     goal: "Goal",
@@ -40,6 +41,7 @@ export const copy = {
   },
   automationLoading: "Opening automation register...",
   processLoading: "Opening sandbox process register...",
+  filesLoading: "Opening reversible workspace recovery...",
   extensionLoading: "Opening capability registry...",
   planLoading: "Durable plan",
   planNextPrompt:

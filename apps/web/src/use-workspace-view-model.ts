@@ -104,6 +104,7 @@ import {
 export type InspectorTab =
   | "trace"
   | "processes"
+  | "files"
   | "lab"
   | "plan"
   | "goal"

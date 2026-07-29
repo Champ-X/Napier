@@ -29,12 +29,14 @@ const SAFE_READ_ONLY_TOOLS = new Set([
   "inspect_code",
   "read_symbol",
   "run_command",
+  "workspace_file_preview",
   "verify_workspace",
   "web_fetch",
   "web_search",
 ]);
 const UNSAFE_TOOLS = new Set([
   "apply_patch",
+  "workspace_file_apply",
   "bash",
   "workspace_process",
   "create_plan",

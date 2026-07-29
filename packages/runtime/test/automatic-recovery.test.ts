@@ -151,6 +151,42 @@ describe("safe automatic recovery", () => {
     });
     expect(process.blockReasons).toContain("unsafe_tool_effect");
 
+    const filePreview = assessAutomaticRecovery({
+      run,
+      events: [
+        event(1, "tool.started", {
+          callId: "file-preview-1",
+          toolName: "workspace_file_preview",
+          status: "started",
+        }),
+        event(2, "tool.completed", {
+          callId: "file-preview-1",
+          toolName: "workspace_file_preview",
+          status: "completed",
+        }),
+      ],
+    });
+    expect(filePreview.eligible).toBe(true);
+
+    const fileApply = assessAutomaticRecovery({
+      run,
+      events: [
+        event(1, "tool.started", {
+          callId: "file-apply-1",
+          toolName: "workspace_file_apply",
+          status: "started",
+          effect: "read",
+        }),
+        event(2, "tool.completed", {
+          callId: "file-apply-1",
+          toolName: "workspace_file_apply",
+          status: "completed",
+          effect: "read",
+        }),
+      ],
+    });
+    expect(fileApply.blockReasons).toContain("unsafe_tool_effect");
+
     const unknown = assessAutomaticRecovery({
       run,
       events: [

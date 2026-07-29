@@ -16,6 +16,7 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --maxWorkers=4 --testTimeout=30000",
     "test:live-command": "NAPIER_LIVE_COMMAND_SMOKE=1 vitest run test/live-command-smoke.test.ts --testTimeout=30000",
+    "test:live-files": "NAPIER_LIVE_WORKSPACE_FILE_SMOKE=1 vitest run test/live-workspace-file-smoke.test.ts --testTimeout=30000",
     "test:live-process": "NAPIER_LIVE_WORKSPACE_PROCESS_SMOKE=1 vitest run test/live-workspace-process-smoke.test.ts --testTimeout=30000",
     "test:live-deepseek": "NAPIER_LIVE_DEEPSEEK_SMOKE=1 vitest run test/live-deepseek-smoke.test.ts --testTimeout=60000",
     "typecheck": "tsc -p tsconfig.json --noEmit"

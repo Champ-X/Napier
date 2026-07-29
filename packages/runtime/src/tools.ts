@@ -24,6 +24,8 @@ import {
   MAX_STRUCTURED_DATA_SAMPLE_ROWS,
   type WorkspaceDataFormat,
 } from "./structured-data.js";
+import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
+import { withWorkspacePathLock } from "./workspace-write-lock.js";
 export type { WorkspaceDataFormat } from "./structured-data.js";
 
 const MAX_LIST_ENTRIES = 300;
@@ -41,7 +43,6 @@ const MAX_PATCH_BYTES = 256 * 1024;
 const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
 const SHA256_PATTERN_RE = /^[a-f0-9]{64}$/;
-const PROTECTED_PATH_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 
 const listFilesSchema = Type.Object({
   path: Type.Optional(
@@ -504,7 +505,7 @@ function normalizeWritablePath(candidate: string): string {
   }
   const protectedSegment = normalized
     .split(path.sep)
-    .find((segment) => PROTECTED_PATH_SEGMENTS.has(segment));
+    .find(isProtectedWorkspacePathSegment);
   if (protectedSegment) {
     throw new Error(
       `apply_patch cannot modify protected path segment: ${protectedSegment}`,
@@ -1170,88 +1171,6 @@ function applyHashRangeEdits(
   return lines.join("\n");
 }
 
-async function withEditLock<T>(
-  dataRoot: string,
-  target: string,
-  operation: () => Promise<T>,
-): Promise<T> {
-  const locksRoot = path.join(path.resolve(dataRoot), "file-edit-locks");
-  await mkdir(locksRoot, { recursive: true });
-  const lockIdentity =
-    process.platform === "darwin" || process.platform === "win32"
-      ? target.toLowerCase()
-      : target;
-  const lockPath = path.join(locksRoot, `${sha256(lockIdentity)}.lock`);
-  let lock;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      lock = await open(lockPath, "wx", 0o600);
-      break;
-    } catch (error) {
-      if (
-        errorCode(error) === "EEXIST" &&
-        attempt === 0 &&
-        (await removeAbandonedEditLock(lockPath))
-      ) {
-        continue;
-      }
-      if (errorCode(error) === "EEXIST") {
-        throw new Error("apply_patch target is already being edited");
-      }
-      throw error;
-    }
-  }
-  if (!lock) throw new Error("apply_patch could not acquire its edit lock");
-  try {
-    await lock.writeFile(
-      `${JSON.stringify({
-        pid: process.pid,
-        acquiredAt: new Date().toISOString(),
-      })}\n`,
-      "utf8",
-    );
-    await lock.sync();
-    return await operation();
-  } finally {
-    await lock.close().catch(() => undefined);
-    await unlink(lockPath).catch(() => undefined);
-  }
-}
-
-async function removeAbandonedEditLock(lockPath: string): Promise<boolean> {
-  let record: { pid?: unknown };
-  try {
-    record = JSON.parse(await readFile(lockPath, "utf8")) as {
-      pid?: unknown;
-    };
-  } catch (error) {
-    return isMissingFileError(error);
-  }
-  if (
-    typeof record.pid !== "number" ||
-    !Number.isSafeInteger(record.pid) ||
-    record.pid < 1 ||
-    isProcessAlive(record.pid)
-  ) {
-    return false;
-  }
-  try {
-    await unlink(lockPath);
-    return true;
-  } catch (error) {
-    return isMissingFileError(error);
-  }
-}
-
-function isProcessAlive(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return errorCode(error) !== "ESRCH";
-  }
-}
-
 async function syncDirectory(directory: string): Promise<void> {
   const handle = await open(directory, "r");
   try {
@@ -1271,7 +1190,7 @@ export async function applyWorkspacePatch(
     await realpath(path.resolve(workspaceRoot)),
     relativePath,
   );
-  return withEditLock(dataRoot, canonicalTarget, async () => {
+  return withWorkspacePathLock(dataRoot, canonicalTarget, async () => {
     let createdParentDirectories: string[] = [];
     let committed = false;
     let source = "";
@@ -1441,12 +1360,7 @@ async function walkFiles(root: string, depth: number): Promise<string[]> {
     const entries = await readdir(directory, { withFileTypes: true });
     entries.sort((left, right) => left.name.localeCompare(right.name));
     for (const entry of entries) {
-      if (
-        entry.isSymbolicLink() ||
-        entry.name === ".git" ||
-        entry.name === "node_modules" ||
-        entry.name === ".napier"
-      )
+      if (entry.isSymbolicLink() || isProtectedWorkspacePathSegment(entry.name))
         continue;
       const absolute = path.join(directory, entry.name);
       output.push(absolute);

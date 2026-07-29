@@ -98,6 +98,18 @@ export interface ToolEventTraceView extends CommandToolEventTraceView {
   patchEditCount?: number;
   patchCreatedParentDirectoryCount?: number;
   patchCreatedParentDirectorySetSha256?: string;
+  fileMutationAction?: "list_trash" | "preview" | "apply";
+  fileMutationOperation?: "create_directory" | "move" | "trash" | "restore";
+  fileMutationItemCount?: number;
+  fileMutationSourcePathSha256?: string;
+  fileMutationDestinationPathSha256?: string;
+  fileMutationBeforeSha256?: string;
+  fileMutationAfterSha256?: string;
+  fileMutationFileCount?: number;
+  fileMutationDirectoryCount?: number;
+  fileMutationBytes?: number;
+  fileMutationReversible?: boolean;
+  fileMutationPostcondition?: "verified" | "drifted" | "indeterminate";
   listCount?: number;
   listTruncated?: boolean;
   listPathSha256?: string;
@@ -170,6 +182,10 @@ export function toolEventTraceView(
     toolName === "apply_patch"
       ? applyPatchEvidence(event.payload["details"])
       : undefined;
+  const fileMutationEvidence =
+    toolName === "workspace_file_preview" || toolName === "workspace_file_apply"
+      ? workspaceFileMutationEvidence(event.payload["details"])
+      : undefined;
   const listEvidence =
     toolName === "list_files"
       ? listFilesEvidence(event.payload["details"])
@@ -192,6 +208,7 @@ export function toolEventTraceView(
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
+    ...(fileMutationEvidence ? fileMutationEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
     ...(readEvidence ? readEvidence : {}),
   };
@@ -397,6 +414,40 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
           `created-dir-set ${view.patchCreatedParentDirectorySetSha256.slice(0, 12)}`,
         ]
       : []),
+    ...(view.fileMutationAction
+      ? [`file-action ${view.fileMutationAction}`]
+      : []),
+    ...(view.fileMutationOperation
+      ? [`file-operation ${view.fileMutationOperation}`]
+      : []),
+    ...(view.fileMutationItemCount !== undefined
+      ? [`trash-items ${view.fileMutationItemCount}`]
+      : []),
+    ...(view.fileMutationFileCount !== undefined
+      ? [`files ${view.fileMutationFileCount}`]
+      : []),
+    ...(view.fileMutationDirectoryCount !== undefined
+      ? [`directories ${view.fileMutationDirectoryCount}`]
+      : []),
+    ...(view.fileMutationBytes !== undefined
+      ? [`bytes ${view.fileMutationBytes}`]
+      : []),
+    ...(view.fileMutationSourcePathSha256
+      ? [`source ${view.fileMutationSourcePathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.fileMutationDestinationPathSha256
+      ? [`destination ${view.fileMutationDestinationPathSha256.slice(0, 12)}`]
+      : []),
+    ...(view.fileMutationBeforeSha256
+      ? [`before ${view.fileMutationBeforeSha256.slice(0, 12)}`]
+      : []),
+    ...(view.fileMutationAfterSha256
+      ? [`after ${view.fileMutationAfterSha256.slice(0, 12)}`]
+      : []),
+    ...(view.fileMutationPostcondition
+      ? [`postcondition ${view.fileMutationPostcondition}`]
+      : []),
+    ...(view.fileMutationReversible ? ["reversible"] : []),
     ...(view.listCount !== undefined ? [`entries ${view.listCount}`] : []),
     ...(view.listTruncated ? ["entries-truncated"] : []),
     ...(view.listPathSha256
@@ -906,6 +957,76 @@ function patchOperation(
     value === "hashrange_replace"
     ? value
     : undefined;
+}
+
+function workspaceFileMutationEvidence(value: unknown):
+  | {
+      fileMutationAction: "list_trash" | "preview" | "apply";
+      fileMutationOperation?: "create_directory" | "move" | "trash" | "restore";
+      fileMutationItemCount?: number;
+      fileMutationSourcePathSha256?: string;
+      fileMutationDestinationPathSha256?: string;
+      fileMutationBeforeSha256?: string;
+      fileMutationAfterSha256?: string;
+      fileMutationFileCount?: number;
+      fileMutationDirectoryCount?: number;
+      fileMutationBytes?: number;
+      fileMutationReversible?: boolean;
+      fileMutationPostcondition?: "verified" | "drifted" | "indeterminate";
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const action =
+    record["action"] === "list_trash" ||
+    record["action"] === "preview" ||
+    record["action"] === "apply"
+      ? record["action"]
+      : undefined;
+  if (!action) return undefined;
+  const operation =
+    record["operation"] === "create_directory" ||
+    record["operation"] === "move" ||
+    record["operation"] === "trash" ||
+    record["operation"] === "restore"
+      ? record["operation"]
+      : undefined;
+  const itemCount = integerInRange(record["itemCount"], 0, 10_000);
+  const fileCount = integerInRange(record["fileCount"], 0, 2_000);
+  const directoryCount = integerInRange(record["directoryCount"], 0, 2_000);
+  const bytes = integerInRange(record["bytes"], 0, 32 * 1024 * 1024);
+  const sourcePathSha256 = sha256(record["sourcePathSha256"]);
+  const destinationPathSha256 = sha256(record["destinationPathSha256"]);
+  const beforeSha256 = sha256(record["beforeSha256"]);
+  const afterSha256 = sha256(record["afterSha256"]);
+  const postcondition =
+    record["postcondition"] === "verified" ||
+    record["postcondition"] === "drifted" ||
+    record["postcondition"] === "indeterminate"
+      ? record["postcondition"]
+      : undefined;
+  return {
+    fileMutationAction: action,
+    ...(operation ? { fileMutationOperation: operation } : {}),
+    ...(itemCount !== undefined ? { fileMutationItemCount: itemCount } : {}),
+    ...(sourcePathSha256
+      ? { fileMutationSourcePathSha256: sourcePathSha256 }
+      : {}),
+    ...(destinationPathSha256
+      ? { fileMutationDestinationPathSha256: destinationPathSha256 }
+      : {}),
+    ...(beforeSha256 ? { fileMutationBeforeSha256: beforeSha256 } : {}),
+    ...(afterSha256 ? { fileMutationAfterSha256: afterSha256 } : {}),
+    ...(fileCount !== undefined ? { fileMutationFileCount: fileCount } : {}),
+    ...(directoryCount !== undefined
+      ? { fileMutationDirectoryCount: directoryCount }
+      : {}),
+    ...(bytes !== undefined ? { fileMutationBytes: bytes } : {}),
+    ...(record["reversible"] === true ? { fileMutationReversible: true } : {}),
+    ...(postcondition ? { fileMutationPostcondition: postcondition } : {}),
+  };
 }
 
 function listFilesEvidence(value: unknown):

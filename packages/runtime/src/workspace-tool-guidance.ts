@@ -17,12 +17,16 @@ export function formatWorkspaceToolGuidance(
     toolNames.has("list_symbols") ||
     toolNames.has("read_symbol");
   const hasPatch = toolNames.has("apply_patch");
+  const hasFilePreview = toolNames.has("workspace_file_preview");
+  const hasFileApply = toolNames.has("workspace_file_apply");
   const hasCommand = toolNames.has("run_command");
   const hasProcess = toolNames.has("workspace_process");
   const hasVerification = toolNames.has("verify_workspace");
   if (
     !hasWorkspaceRead &&
     !hasPatch &&
+    !hasFilePreview &&
+    !hasFileApply &&
     !hasCommand &&
     !hasProcess &&
     !hasVerification
@@ -48,6 +52,16 @@ export function formatWorkspaceToolGuidance(
     lines.push(
       "Before apply_patch, obtain the current complete SHA-256 from read_file or read_symbol, then use exact, hashline, or hashrange preconditions; do not guess stale hashes.",
       "For new artifact files in missing directories, set createParentDirectories only when the requested output path intentionally needs those parents.",
+    );
+  }
+  if (hasFilePreview) {
+    lines.push(
+      "Use workspace_file_preview before creating directories, moving or renaming entries, moving an entry to reversible trash, or restoring trash. Inspect the exact source, destination, bounded scope, and reversibility in the expiring preview.",
+    );
+  }
+  if (hasFileApply) {
+    lines.push(
+      "workspace_file_apply accepts only a fresh preview ID. Never retry an apply after an unknown outcome; inspect the workspace or reversible trash and preview again.",
     );
   }
   if (hasPatch && hasVerification) {

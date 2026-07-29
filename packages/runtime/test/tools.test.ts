@@ -1293,7 +1293,7 @@ describe("workspace tools", () => {
     await expect(
       applyWorkspacePatch(workspaceRoot, dataRoot, {
         operation: "create",
-        path: ".git/config",
+        path: ".GIT/config",
         expectedSha256: null,
         content: "blocked\n",
       }),

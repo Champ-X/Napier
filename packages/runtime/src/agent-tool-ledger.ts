@@ -6,6 +6,11 @@ import {
   commandToolOutputLedgerProjection,
 } from "./command-execution.js";
 import {
+  workspaceFileToolCallArgumentsLedgerProjection,
+  workspaceFileToolInputLedgerProjection,
+  workspaceFileToolOutputLedgerProjection,
+} from "./workspace-file-tools.js";
+import {
   workspaceProcessToolCallArgumentsLedgerProjection,
   workspaceProcessToolInputLedgerProjection,
   workspaceProcessToolOutputLedgerProjection,
@@ -21,6 +26,12 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "workspace_process") {
     return workspaceProcessToolCallArgumentsLedgerProjection(args);
   }
+  if (
+    toolName === "workspace_file_preview" ||
+    toolName === "workspace_file_apply"
+  ) {
+    return workspaceFileToolCallArgumentsLedgerProjection(toolName, args);
+  }
   return toJsonValue(args);
 }
 
@@ -33,6 +44,12 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolInputLedgerProjection(args);
+  }
+  if (
+    toolName === "workspace_file_preview" ||
+    toolName === "workspace_file_apply"
+  ) {
+    return workspaceFileToolInputLedgerProjection(toolName, args);
   }
   return { input: toJsonValue(args) };
 }
@@ -47,6 +64,12 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolOutputLedgerProjection(output, result);
+  }
+  if (
+    toolName === "workspace_file_preview" ||
+    toolName === "workspace_file_apply"
+  ) {
+    return workspaceFileToolOutputLedgerProjection(output, result);
   }
   return { output };
 }

@@ -1669,6 +1669,164 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.files-panel .panel-heading {
+  margin-bottom: 10px;
+}
+
+.files-panel .panel-heading h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.files-safety {
+  padding: 8px 9px;
+  margin: 10px 0 0;
+  font-size: 7px;
+  line-height: 1.5;
+  color: #315b48;
+  background: rgb(69 107 91 / 7%);
+  border-left: 2px solid #456b5b;
+}
+
+.files-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.files-card {
+  position: relative;
+  padding: 13px;
+  background:
+    linear-gradient(rgb(249 246 238 / 94%), rgb(249 246 238 / 94%)),
+    repeating-linear-gradient(0deg, transparent 0 23px, rgb(71 88 78 / 7%) 24px);
+  border: 1px solid var(--rule-strong);
+  border-top: 3px double #7e8b82;
+  box-shadow: 3px 4px 0 rgb(80 71 55 / 6%);
+}
+
+.files-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: #9a5a3f;
+}
+
+.files-card > header {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.files-card > header > svg {
+  margin-top: 2px;
+  color: var(--vermilion);
+}
+
+.files-card > header > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.files-card > header strong,
+.files-card > header span,
+.files-card dt,
+.files-card dd,
+.files-card code,
+.files-restored {
+  font-family: var(--mono);
+}
+
+.files-card > header strong {
+  font-size: 8px;
+}
+
+.files-card > header span {
+  overflow: hidden;
+  font-size: 6px;
+  color: var(--ink-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.files-card dl {
+  display: grid;
+  margin: 10px 0;
+  border-top: 1px solid rgb(126 113 87 / 13%);
+  border-left: 1px solid rgb(126 113 87 / 13%);
+}
+
+.files-card dl > div {
+  min-width: 0;
+  padding: 7px;
+  border-right: 1px solid rgb(126 113 87 / 13%);
+  border-bottom: 1px solid rgb(126 113 87 / 13%);
+}
+
+.files-card dt {
+  margin-bottom: 3px;
+  font-size: 5px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.files-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 6px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.files-card code {
+  color: var(--ink);
+}
+
+.files-restore-button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 6px;
+}
+
+.files-restored {
+  display: flex;
+  gap: 8px;
+  padding: 9px;
+  margin-top: 12px;
+  color: #315b48;
+  background: rgb(69 107 91 / 8%);
+  border: 1px solid #afc7b6;
+}
+
+.files-restored > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.files-restored strong {
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.files-restored code,
+.files-restored span {
+  overflow: hidden;
+  font-size: 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .process-delta {
   padding: 9px;
   margin-top: 10px;
