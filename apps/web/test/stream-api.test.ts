@@ -15,6 +15,7 @@ import {
   NapierContentHashMissingError,
   NapierStreamDoneEventCountError,
   NapierStreamDoneEventStreamHashError,
+  NapierStreamDoneSizeError,
   NapierStreamDoneSnapshotHashError,
   NapierStreamEventHashError,
   NapierStreamEventSequenceError,
@@ -830,6 +831,28 @@ describe("streaming Run API client", () => {
     }
   });
 
+  it("rejects snapshot frames whose byte receipt drifts before dispatch", async () => {
+    const snapshotFrame = {
+      ...streamSnapshotFrame("thread_1"),
+      detailBytes: streamSnapshotFrame("thread_1").detailBytes + 1,
+    };
+    const data = JSON.stringify(snapshotFrame);
+    const onFrame = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => sseResponse(`event: snapshot\ndata: ${data}`)),
+    );
+
+    await expect(
+      streamPrompt("thread_1", { text: "finish" }, onFrame),
+    ).rejects.toMatchObject({
+      name: "NapierStreamFrameContractError",
+      reason: "invalid_snapshot",
+      frameSha256: sha256Text(data),
+    });
+    expect(onFrame).not.toHaveBeenCalled();
+  });
+
   it("rejects snapshot frames with invalid event records before dispatch", async () => {
     const invalidEvent = {
       ...streamEventFrame(20).event,
@@ -1578,6 +1601,53 @@ describe("streaming Run API client", () => {
     }
   });
 
+  it("rejects completed streams whose done size receipt drifts", async () => {
+    const snapshot = streamSnapshotFrame(
+      "thread_1",
+      [streamEventFrame(1).event],
+      [streamRunRecord("thread_1", "run_1")],
+    );
+    const doneFrame = {
+      ...streamDoneFrame("run_1", "completed", snapshot),
+      snapshotBytes: snapshot.detailBytes + 1,
+    };
+    const data = JSON.stringify(doneFrame);
+    const frames: StreamFrame[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        sseResponse(
+          [
+            `event: snapshot\ndata: ${JSON.stringify(snapshot)}`,
+            "",
+            `event: done\ndata: ${data}`,
+          ].join("\n"),
+        ),
+      ),
+    );
+
+    try {
+      await streamPrompt("thread_1", { text: "finish" }, (frame) => {
+        frames.push(frame);
+      });
+      throw new Error("Expected streamPrompt to reject");
+    } catch (error) {
+      expect(frames).toEqual([snapshot]);
+      expect(error).toBeInstanceOf(NapierStreamDoneSizeError);
+      expect(error).toMatchObject({
+        name: "NapierStreamDoneSizeError",
+        projection: "snapshot",
+        expectedBytes: snapshot.detailBytes,
+        actualBytes: snapshot.detailBytes + 1,
+        snapshotSha256: snapshot.detailSha256,
+        frameSha256: sha256Text(data),
+      });
+      expect(formatApiErrorMessage(error)).toBe(
+        `Stream done snapshot size mismatch for /api/threads/thread_1/messages (expected ${snapshot.detailBytes} bytes · actual ${snapshot.detailBytes + 1} bytes · snapshot ${snapshot.detailSha256.slice(0, 12)} · body ${sha256Text(data).slice(0, 12)})`,
+      );
+    }
+  });
+
   it("rejects completed streams whose done event-stream hash drifts", async () => {
     const snapshot = streamSnapshotFrame(
       "thread_1",
@@ -2187,6 +2257,8 @@ function streamSnapshotFrame(
     type: "snapshot",
     detail,
     detailSha256: sha256Text(JSON.stringify(detail)),
+    detailBytes: Buffer.byteLength(JSON.stringify(detail), "utf8"),
+    eventBytes: Buffer.byteLength(JSON.stringify(detail.events), "utf8"),
   };
 }
 
@@ -2282,8 +2354,13 @@ function streamDoneFrame(
     status,
     snapshotSha256:
       typeof snapshot === "string" ? snapshot : snapshot.detailSha256,
+    snapshotBytes:
+      typeof snapshot === "string"
+        ? 0
+        : Buffer.byteLength(JSON.stringify(snapshot.detail), "utf8"),
     eventCount:
       typeof snapshot === "string" ? 0 : snapshot.detail.thread.eventCount,
+    eventBytes: Buffer.byteLength(JSON.stringify(events), "utf8"),
     eventStreamSha256:
       overrides.eventStreamSha256 ??
       sha256Text(events.map((event) => JSON.stringify(event)).join("\n")),

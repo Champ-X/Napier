@@ -282,6 +282,33 @@ export class NapierStreamDoneEventCountError extends Error {
   }
 }
 
+export class NapierStreamDoneSizeError extends Error {
+  readonly projection: "snapshot" | "events";
+  readonly expectedBytes: number;
+  readonly actualBytes: number;
+  readonly snapshotSha256: string;
+  readonly frameSha256: string;
+
+  constructor(
+    path: string,
+    options: {
+      projection: "snapshot" | "events";
+      expectedBytes: number;
+      actualBytes: number;
+      snapshotSha256: string;
+      frameSha256: string;
+    },
+  ) {
+    super(`Stream done ${options.projection} size mismatch for ${path}`);
+    this.name = "NapierStreamDoneSizeError";
+    this.projection = options.projection;
+    this.expectedBytes = options.expectedBytes;
+    this.actualBytes = options.actualBytes;
+    this.snapshotSha256 = options.snapshotSha256;
+    this.frameSha256 = options.frameSha256;
+  }
+}
+
 export class NapierStreamDoneEventStreamHashError extends Error {
   readonly expectedSha256: string;
   readonly actualSha256: string;
@@ -665,6 +692,9 @@ export function formatApiErrorMessage(error: unknown): string {
   }
   if (error instanceof NapierStreamDoneEventCountError) {
     return `${error.message} (expected ${error.expectedEventCount} · actual ${error.actualEventCount} · snapshot ${error.snapshotSha256.slice(0, 12)} · body ${error.frameSha256.slice(0, 12)})`;
+  }
+  if (error instanceof NapierStreamDoneSizeError) {
+    return `${error.message} (expected ${error.expectedBytes} bytes · actual ${error.actualBytes} bytes · snapshot ${error.snapshotSha256.slice(0, 12)} · body ${error.frameSha256.slice(0, 12)})`;
   }
   if (error instanceof NapierStreamDoneEventStreamHashError) {
     return `${error.message} (expected ${error.expectedSha256.slice(0, 12)} · actual ${error.actualSha256.slice(0, 12)} · body ${error.frameSha256.slice(0, 12)})`;

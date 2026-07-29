@@ -53,6 +53,88 @@ describe("LocalStore", () => {
     );
   });
 
+  it("reports bounded persistence timing and byte metrics without event content", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Persistence observability",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const before = store.getPersistenceMetrics();
+
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "benchmark.observed",
+      category: "lifecycle",
+      visibility: "debug",
+      payload: { marker: "must-not-appear-in-persistence-metrics" },
+    });
+
+    const after = store.getPersistenceMetrics();
+    expect(after).toEqual(
+      expect.objectContaining({
+        schemaVersion: 1,
+        commitCount: before.commitCount + 1,
+        failedCommitCount: 0,
+        projectionFailureCount: 0,
+        stateBytesWritten: expect.any(Number),
+        eventBytesWritten: expect.any(Number),
+        projectionBytesWritten: expect.any(Number),
+        maxCommitDurationMs: expect.any(Number),
+        last: expect.objectContaining({
+          status: "committed",
+          revision: expect.any(Number),
+          stateBytes: expect.any(Number),
+          eventCount: 1,
+          eventBytes: expect.any(Number),
+          touchedThreadCount: 1,
+          stateProjectionBytes: expect.any(Number),
+          eventProjectionBytes: expect.any(Number),
+          serializationDurationMs: expect.any(Number),
+          ledgerCommitDurationMs: expect.any(Number),
+          projectionDurationMs: expect.any(Number),
+          totalDurationMs: expect.any(Number),
+          projectionFailureCount: 0,
+        }),
+      }),
+    );
+    expect(after.stateBytesWritten).toBeGreaterThan(before.stateBytesWritten);
+    expect(after.eventBytesWritten).toBeGreaterThan(before.eventBytesWritten);
+    expect(after.projectionBytesWritten).toBeGreaterThan(
+      before.projectionBytesWritten,
+    );
+    expect(after.last!.stateBytes).toBeGreaterThan(0);
+    expect(after.last!.eventBytes).toBeGreaterThan(0);
+    expect(after.last!.stateProjectionBytes).toBeGreaterThan(
+      after.last!.stateBytes,
+    );
+    expect(after.last!.eventProjectionBytes).toBeGreaterThan(0);
+    expect(after.maxCommitDurationMs).toBeGreaterThanOrEqual(
+      after.last!.ledgerCommitDurationMs,
+    );
+    expect(after.last!.totalDurationMs).toBeGreaterThanOrEqual(
+      after.last!.ledgerCommitDurationMs,
+    );
+    for (const duration of [
+      after.last!.serializationDurationMs,
+      after.last!.ledgerCommitDurationMs,
+      after.last!.projectionDurationMs,
+      after.last!.totalDurationMs,
+      after.maxCommitDurationMs,
+    ]) {
+      expect(Number.isFinite(duration)).toBe(true);
+      expect(duration).toBeGreaterThanOrEqual(0);
+    }
+    expect(JSON.stringify(after)).not.toContain(
+      "must-not-appear-in-persistence-metrics",
+    );
+  });
+
   it("persists Agent revision history and rolls back through a new revision", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-store-"));
     temporaryRoots.push(root);

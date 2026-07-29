@@ -6638,6 +6638,36 @@ export interface WorkspaceSummary {
 
 export type HealthStatus = "ok" | "degraded" | "failed";
 
+export interface StorePersistenceSample {
+  status: "committed" | "failed";
+  recordedAt: string;
+  revision: number;
+  stateBytes: number;
+  eventCount: number;
+  eventBytes: number;
+  touchedThreadCount: number;
+  stateProjectionBytes: number;
+  eventProjectionBytes: number;
+  serializationDurationMs: number;
+  ledgerCommitDurationMs: number;
+  projectionDurationMs: number;
+  totalDurationMs: number;
+  projectionFailureCount: number;
+}
+
+export interface StorePersistenceMetrics {
+  schemaVersion: 1;
+  startedAt: string;
+  commitCount: number;
+  failedCommitCount: number;
+  projectionFailureCount: number;
+  stateBytesWritten: number;
+  eventBytesWritten: number;
+  projectionBytesWritten: number;
+  maxCommitDurationMs: number;
+  last?: StorePersistenceSample;
+}
+
 export interface HealthResponse {
   status: HealthStatus;
   service: "napier";
@@ -6663,6 +6693,9 @@ export interface HealthResponse {
       name: string;
       appliedAt: string;
     }[];
+  };
+  store: {
+    persistence: StorePersistenceMetrics;
   };
 }
 
@@ -6734,7 +6767,13 @@ export interface CreateBranchRequest {
 
 export type StreamFrame =
   | { type: "event"; event: RunEvent; eventSha256: string }
-  | { type: "snapshot"; detail: ThreadDetail; detailSha256: string }
+  | {
+      type: "snapshot";
+      detail: ThreadDetail;
+      detailSha256: string;
+      detailBytes: number;
+      eventBytes: number;
+    }
   | {
       type: "error";
       threadId: string;
@@ -6748,7 +6787,9 @@ export type StreamFrame =
       runId: string;
       status: TerminalRunStatus;
       snapshotSha256: string;
+      snapshotBytes: number;
       eventCount: number;
+      eventBytes: number;
       eventStreamSha256: string;
     };
 

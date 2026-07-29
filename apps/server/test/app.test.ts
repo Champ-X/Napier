@@ -204,6 +204,38 @@ describe("Napier HTTP goal flow", () => {
     expect(response.headers.get("x-napier-ledger-migrations-sha256")).toBe(
       responseSha256(health.ledger.migrations),
     );
+    expect(response.headers.get("x-napier-store-persistence-sha256")).toBe(
+      responseSha256(health.store.persistence),
+    );
+    expect(response.headers.get("x-napier-store-commit-count")).toBe(
+      String(health.store.persistence.commitCount),
+    );
+    expect(response.headers.get("x-napier-store-failed-commit-count")).toBe(
+      String(health.store.persistence.failedCommitCount),
+    );
+    expect(
+      response.headers.get("x-napier-store-projection-failure-count"),
+    ).toBe(String(health.store.persistence.projectionFailureCount));
+    expect(response.headers.get("x-napier-store-state-bytes-written")).toBe(
+      String(health.store.persistence.stateBytesWritten),
+    );
+    expect(response.headers.get("x-napier-store-event-bytes-written")).toBe(
+      String(health.store.persistence.eventBytesWritten),
+    );
+    expect(
+      response.headers.get("x-napier-store-projection-bytes-written"),
+    ).toBe(String(health.store.persistence.projectionBytesWritten));
+    expect(
+      response.headers.get("x-napier-store-last-commit-duration-ms"),
+    ).toBeNull();
+    expect(
+      response.headers.get("x-napier-store-last-persist-duration-ms"),
+    ).toBeNull();
+    expect(response.headers.get("x-napier-store-last-state-bytes")).toBeNull();
+    expect(response.headers.get("x-napier-store-last-event-bytes")).toBeNull();
+    expect(
+      response.headers.get("x-napier-store-last-projection-bytes"),
+    ).toBeNull();
     expect(
       response.headers.get("x-napier-ledger-latest-migration-version"),
     ).toBe(String(LEDGER_SCHEMA_VERSION));
@@ -237,6 +269,14 @@ describe("Napier HTTP goal flow", () => {
             }),
           ]),
         }),
+        store: {
+          persistence: expect.objectContaining({
+            schemaVersion: 1,
+            commitCount: expect.any(Number),
+            failedCommitCount: 0,
+            projectionFailureCount: 0,
+          }),
+        },
       }),
     );
   });
@@ -338,7 +378,7 @@ describe("Napier HTTP goal flow", () => {
     ];
     const guardedDoneFrameWrites = [
       ...source.matchAll(
-        /streamRunDoneFrame\(\s*threadId,\s*run\.id,\s*run\.status,\s*snapshotFrame\.detailSha256,\s*snapshotFrame\.detail\.thread\.eventCount,\s*hashEventStream\(snapshotFrame\.detail\.events\),?\s*\)/g,
+        /streamRunDoneFrame\(\s*threadId,\s*run\.id,\s*run\.status,\s*snapshotFrame\.detailSha256,\s*snapshotFrame\.detailBytes,\s*snapshotFrame\.detail\.thread\.eventCount,\s*snapshotFrame\.eventBytes,\s*hashEventStream\(snapshotFrame\.detail\.events\),?\s*\)/g,
       ),
     ];
 
@@ -346,7 +386,9 @@ describe("Napier HTTP goal flow", () => {
     expect(guardedDoneFrameWrites).toHaveLength(3);
     expect(source).toContain("threadId,");
     expect(source).toContain("snapshotSha256,");
+    expect(source).toContain("snapshotBytes,");
     expect(source).toContain("eventCount,");
+    expect(source).toContain("eventBytes,");
     expect(source).toContain("eventStreamSha256,");
     expect(source).toMatch(
       /case "queued":[\s\S]*case "running":[\s\S]*throw new Error/,
@@ -371,9 +413,12 @@ describe("Napier HTTP goal flow", () => {
 
     expect(directSnapshotWrites).toHaveLength(0);
     expect(guardedSnapshotWrites).toHaveLength(3);
+    expect(source).toContain("const serializedDetail = JSON.stringify(detail)");
+    expect(source).toContain("detailSha256: sha256Text(serializedDetail)");
     expect(source).toContain(
-      "detailSha256: sha256Text(JSON.stringify(detail))",
+      'detailBytes: Buffer.byteLength(serializedDetail, "utf8")',
     );
+    expect(source).toContain("eventBytes: jsonByteLength(detail.events)");
   });
 
   it("keeps successful Run SSE streams snapshot-before-done", async () => {
@@ -382,7 +427,7 @@ describe("Napier HTTP goal flow", () => {
     });
     const snapshotBeforeDoneWrites = [
       ...source.matchAll(
-        /const snapshotFrame = streamSnapshotFrame\([\s\S]{0,160}const doneFrame = streamRunDoneFrame\(\s*threadId,\s*run\.id,\s*run\.status,\s*snapshotFrame\.detailSha256,\s*snapshotFrame\.detail\.thread\.eventCount,\s*hashEventStream\(snapshotFrame\.detail\.events\),?\s*\);[\s\S]{0,80}await writeFrame\(snapshotFrame\);[\s\S]{0,80}await writeFrame\(doneFrame\);/g,
+        /const snapshotFrame = streamSnapshotFrame\([\s\S]{0,160}const doneFrame = streamRunDoneFrame\(\s*threadId,\s*run\.id,\s*run\.status,\s*snapshotFrame\.detailSha256,\s*snapshotFrame\.detailBytes,\s*snapshotFrame\.detail\.thread\.eventCount,\s*snapshotFrame\.eventBytes,\s*hashEventStream\(snapshotFrame\.detail\.events\),?\s*\);[\s\S]{0,80}await writeFrame\(snapshotFrame\);[\s\S]{0,80}await writeFrame\(doneFrame\);/g,
       ),
     ];
 
@@ -2497,6 +2542,30 @@ describe("Napier HTTP goal flow", () => {
     expect(bootstrapResponse.headers.get("cache-control")).toBe("no-store");
     expect(bootstrapResponse.headers.get("x-napier-content-sha256")).toBe(
       responseSha256(bootstrap),
+    );
+    expect(bootstrapResponse.headers.get("x-napier-bootstrap-bytes")).toBe(
+      String(Buffer.byteLength(JSON.stringify(bootstrap), "utf8")),
+    );
+    expect(
+      bootstrapResponse.headers.get(
+        "x-napier-bootstrap-active-thread-bytes",
+      ),
+    ).toBe(
+      String(
+        Buffer.byteLength(JSON.stringify(bootstrap.activeThread!), "utf8"),
+      ),
+    );
+    expect(
+      bootstrapResponse.headers.get(
+        "x-napier-bootstrap-active-thread-event-bytes",
+      ),
+    ).toBe(
+      String(
+        Buffer.byteLength(
+          JSON.stringify(bootstrap.activeThread!.events),
+          "utf8",
+        ),
+      ),
     );
     expect(bootstrapResponse.headers.get("x-napier-schedule-list-sha256")).toBe(
       createHash("sha256")
@@ -11372,6 +11441,12 @@ function expectThreadDetailProjectionHeaders(
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
   expect(response.headers.get("x-napier-thread-id")).toBe(detail.thread.id);
+  expect(response.headers.get("x-napier-thread-detail-bytes")).toBe(
+    String(Buffer.byteLength(JSON.stringify(detail), "utf8")),
+  );
+  expect(response.headers.get("x-napier-thread-event-bytes")).toBe(
+    String(Buffer.byteLength(JSON.stringify(detail.events), "utf8")),
+  );
   expect(response.headers.get("x-napier-run-count")).toBe(
     String(detail.runs.length),
   );
@@ -11475,6 +11550,9 @@ function expectThreadEventsProjectionHeaders(
   expect(response.headers.get("x-napier-after-seq")).toBe(String(afterSeq));
   expect(response.headers.get("x-napier-event-count")).toBe(
     String(events.length),
+  );
+  expect(response.headers.get("x-napier-event-bytes")).toBe(
+    String(Buffer.byteLength(JSON.stringify(events), "utf8")),
   );
   expectEventBoundaryHeaders(response, events);
 }
@@ -15104,7 +15182,15 @@ function expectFinalDoneMatchesSnapshot(
   );
   expect(done.threadId).toBe(snapshot.detail.thread.id);
   expect(done.snapshotSha256).toBe(snapshot.detailSha256);
+  expect(snapshot.detailBytes).toBe(
+    Buffer.byteLength(JSON.stringify(snapshot.detail), "utf8"),
+  );
+  expect(snapshot.eventBytes).toBe(
+    Buffer.byteLength(JSON.stringify(snapshot.detail.events), "utf8"),
+  );
+  expect(done.snapshotBytes).toBe(snapshot.detailBytes);
   expect(done.eventCount).toBe(snapshot.detail.thread.eventCount);
+  expect(done.eventBytes).toBe(snapshot.eventBytes);
   expect(done.eventStreamSha256).toBe(
     textSha256(
       snapshot.detail.events.map((event) => JSON.stringify(event)).join("\n"),

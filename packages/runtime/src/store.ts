@@ -209,6 +209,7 @@ import {
   type SubagentStopReason,
   type SubagentTask,
   type SubagentTaskStatus,
+  type StorePersistenceMetrics,
   type ThreadDetail,
   type ThreadImportProvenance,
   type ThreadReplayBundle,
@@ -489,6 +490,10 @@ import {
   type LedgerSchemaReport,
   SqliteLedger,
 } from "./sqlite-ledger.js";
+import {
+  monotonicNow,
+  StorePersistenceMonitor,
+} from "./store-observability.js";
 import {
   createRunConfigurationFingerprint,
   type PromptVariableFingerprintInput,
@@ -942,6 +947,7 @@ export class LocalStore {
   private readonly databasePath: string;
   private readonly stateQueue: SerialQueue;
   private readonly threadQueues = new Map<string, SerialQueue>();
+  private readonly persistenceMonitor = new StorePersistenceMonitor();
   private ledger: SqliteLedger | undefined;
   private state: PersistedState = structuredClone(EMPTY_STATE);
   private stateRevision = 0;
@@ -1019,6 +1025,11 @@ export class LocalStore {
   getLedgerSchemaReport(): LedgerSchemaReport {
     this.assertInitialized();
     return this.requireLedger().schemaReport();
+  }
+
+  getPersistenceMetrics(): StorePersistenceMetrics {
+    this.assertInitialized();
+    return this.persistenceMonitor.snapshot();
   }
 
   listAgents(): AgentProfile[] {
@@ -11249,29 +11260,89 @@ export class LocalStore {
   private async persistState(
     eventOrEvents?: RunEvent | RunEvent[],
   ): Promise<void> {
+    const startedAt = monotonicNow();
+    const serializationStartedAt = monotonicNow();
     const compactState = JSON.stringify(this.state);
-    try {
-      this.stateRevision = this.requireLedger().commit(
-        this.stateRevision,
-        compactState,
-        eventOrEvents,
-      );
-    } catch (error) {
-      this.refreshStateFromLedger(true);
-      throw error;
-    }
-    const projections: Array<Promise<void>> = [
-      this.writeStateProjection(JSON.stringify(this.state, null, 2)),
-    ];
+    const serializationDurationMs = monotonicNow() - serializationStartedAt;
+    const stateBytes = Buffer.byteLength(compactState, "utf8");
     const events = Array.isArray(eventOrEvents)
       ? eventOrEvents
       : eventOrEvents
         ? [eventOrEvents]
         : [];
-    for (const threadId of new Set(events.map((event) => event.threadId))) {
+    const eventBytes = events.reduce(
+      (total, event) =>
+        total + Buffer.byteLength(JSON.stringify(event), "utf8"),
+      0,
+    );
+    const touchedThreadIds = [
+      ...new Set(events.map((event) => event.threadId)),
+    ];
+    const ledgerCommitStartedAt = monotonicNow();
+    try {
+      this.stateRevision = this.requireLedger().commit(
+        this.stateRevision,
+        compactState,
+        events,
+      );
+    } catch (error) {
+      this.persistenceMonitor.record({
+        status: "failed",
+        revision: this.stateRevision,
+        stateBytes,
+        eventCount: events.length,
+        eventBytes,
+        touchedThreadCount: touchedThreadIds.length,
+        stateProjectionBytes: 0,
+        eventProjectionBytes: 0,
+        serializationDurationMs,
+        ledgerCommitDurationMs: monotonicNow() - ledgerCommitStartedAt,
+        projectionDurationMs: 0,
+        totalDurationMs: monotonicNow() - startedAt,
+        projectionFailureCount: 0,
+      });
+      this.refreshStateFromLedger(true);
+      throw error;
+    }
+    const ledgerCommitDurationMs = monotonicNow() - ledgerCommitStartedAt;
+    const projectionStartedAt = monotonicNow();
+    const projections: Array<Promise<number>> = [
+      this.writeStateProjection(JSON.stringify(this.state, null, 2)),
+    ];
+    for (const threadId of touchedThreadIds) {
       projections.push(this.writeEventProjection(threadId));
     }
-    await Promise.allSettled(projections);
+    const projectionResults = await Promise.allSettled(projections);
+    const projectionDurationMs = monotonicNow() - projectionStartedAt;
+    const projectionFailureCount = projectionResults.filter(
+      (result) => result.status === "rejected",
+    ).length;
+    const stateProjectionBytes =
+      projectionResults[0]?.status === "fulfilled"
+        ? projectionResults[0].value
+        : 0;
+    const eventProjectionBytes = projectionResults
+      .slice(1)
+      .reduce(
+        (total, result) =>
+          total + (result.status === "fulfilled" ? result.value : 0),
+        0,
+      );
+    this.persistenceMonitor.record({
+      status: "committed",
+      revision: this.stateRevision,
+      stateBytes,
+      eventCount: events.length,
+      eventBytes,
+      touchedThreadCount: touchedThreadIds.length,
+      stateProjectionBytes,
+      eventProjectionBytes,
+      serializationDurationMs,
+      ledgerCommitDurationMs,
+      projectionDurationMs,
+      totalDurationMs: monotonicNow() - startedAt,
+      projectionFailureCount,
+    });
   }
 
   private assertInitialized(): void {
@@ -11472,19 +11543,23 @@ export class LocalStore {
     }
   }
 
-  private async writeStateProjection(stateJson: string): Promise<void> {
+  private async writeStateProjection(stateJson: string): Promise<number> {
     const temporaryPath = this.projectionTemporaryPath(this.statePath);
-    await writeFile(temporaryPath, `${stateJson}\n`, "utf8");
+    const contents = `${stateJson}\n`;
+    await writeFile(temporaryPath, contents, "utf8");
     await rename(temporaryPath, this.statePath);
+    return Buffer.byteLength(contents, "utf8");
   }
 
-  private async writeEventProjection(threadId: string): Promise<void> {
+  private async writeEventProjection(threadId: string): Promise<number> {
     const eventPath = this.eventPath(threadId);
     const temporaryPath = this.projectionTemporaryPath(eventPath);
     const events = this.requireLedger().listEvents(threadId);
     const contents = events.map((event) => JSON.stringify(event)).join("\n");
-    await writeFile(temporaryPath, contents ? `${contents}\n` : "", "utf8");
+    const projection = contents ? `${contents}\n` : "";
+    await writeFile(temporaryPath, projection, "utf8");
     await rename(temporaryPath, eventPath);
+    return Buffer.byteLength(projection, "utf8");
   }
 
   private projectionTemporaryPath(targetPath: string): string {

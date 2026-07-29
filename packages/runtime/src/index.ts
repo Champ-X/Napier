@@ -54,6 +54,7 @@ export * from "./skill-packages.js";
 export * from "./skills.js";
 export * from "./sqlite-ledger.js";
 export * from "./store.js";
+export * from "./store-observability.js";
 export * from "./subagents.js";
 export * from "./subagent-outcome-review.js";
 export * from "./subagent-outcome-repair.js";

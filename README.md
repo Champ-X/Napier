@@ -280,6 +280,28 @@ npm start -w @napier/server
 
 Open `http://127.0.0.1:8787`.
 
+## Store Scale Baseline
+
+Run the opt-in store benchmark after changes to persistence or Thread
+projection code:
+
+```bash
+npm run bench:store-scale
+npm run bench:store-scale -- --output /tmp/napier-store-scale.json
+```
+
+The default report measures cumulative 100- and 1,000-event checkpoints and
+prints JSON with append latency, `getDetail()` latency, Thread/event payload
+bytes, growth ratios, and the latest Store persistence sample. Pass `--output`
+for a machine-readable report unaffected by npm build logs. Use
+`NAPIER_BENCH_EVENT_COUNTS=100,1000,10000` for the extended 10k profile. The
+benchmark uses a temporary workspace and deletes it on exit.
+
+`/api/health` exposes process-lifetime Store commit, failure, timing, and byte
+metrics without event content. Thread Detail, incremental event, Bootstrap,
+and terminal SSE projections also expose exact UTF-8 byte counts so payload
+growth can be audited independently of wall-clock noise.
+
 ## Live Models
 
 Napier resolves credentials on the server. Keys are never persisted in Napier

@@ -137,6 +137,7 @@ import { requestJson, requestJsonWithResponse } from "./api-client";
 import {
   NapierStreamDoneEventCountError,
   NapierStreamDoneEventStreamHashError,
+  NapierStreamDoneSizeError,
   NapierStreamDoneSnapshotHashError,
   NapierStreamEventHashError,
   NapierStreamFrameContractError,
@@ -1369,7 +1370,9 @@ async function streamRunFrames(
   let hasSnapshotFrame = false;
   let snapshotRunStatuses = new Map<string, string>();
   let snapshotSha256: string | undefined;
+  let snapshotBytes: number | undefined;
   let snapshotEventCount: number | undefined;
+  let snapshotEventBytes: number | undefined;
   let snapshotEventStreamSha256: string | undefined;
   let streamRunId =
     expectation.kind === "resume" ? expectation.runId : undefined;
@@ -1414,7 +1417,9 @@ async function streamRunFrames(
       hasSnapshotFrame = true;
       snapshotRunStatuses = streamSnapshotRunStatuses(frame);
       snapshotSha256 = frame.detailSha256;
+      snapshotBytes = frame.detailBytes;
       snapshotEventCount = frame.detail.thread.eventCount;
+      snapshotEventBytes = frame.eventBytes;
       snapshotEventStreamSha256 = await streamSnapshotEventStreamSha256(frame);
     }
     if (frame.type === "done" && !hasSnapshotFrame) {
@@ -1440,6 +1445,30 @@ async function streamRunFrames(
         throw new NapierStreamDoneEventCountError(path, {
           expectedEventCount: snapshotEventCount,
           actualEventCount: frame.eventCount,
+          snapshotSha256,
+          frameSha256,
+        });
+      }
+      if (
+        snapshotBytes !== undefined &&
+        frame.snapshotBytes !== snapshotBytes
+      ) {
+        throw new NapierStreamDoneSizeError(path, {
+          projection: "snapshot",
+          expectedBytes: snapshotBytes,
+          actualBytes: frame.snapshotBytes,
+          snapshotSha256,
+          frameSha256,
+        });
+      }
+      if (
+        snapshotEventBytes !== undefined &&
+        frame.eventBytes !== snapshotEventBytes
+      ) {
+        throw new NapierStreamDoneSizeError(path, {
+          projection: "events",
+          expectedBytes: snapshotEventBytes,
+          actualBytes: frame.eventBytes,
           snapshotSha256,
           frameSha256,
         });
@@ -1866,9 +1895,11 @@ function streamFrameContractReason(
         TERMINAL_RUN_STATUSES.has(frame["status"]) &&
         typeof frame["snapshotSha256"] === "string" &&
         SHA256.test(frame["snapshotSha256"]) &&
+        isNonNegativeSafeInteger(frame["snapshotBytes"]) &&
         typeof frame["eventCount"] === "number" &&
         Number.isSafeInteger(frame["eventCount"]) &&
         frame["eventCount"] >= 0 &&
+        isNonNegativeSafeInteger(frame["eventBytes"]) &&
         typeof frame["eventStreamSha256"] === "string" &&
         SHA256.test(frame["eventStreamSha256"])
         ? undefined
@@ -1908,7 +1939,9 @@ function isRunEventRecord(event: unknown): boolean {
 function isSnapshotFrame(frame: Record<string, unknown>): boolean {
   if (
     typeof frame["detailSha256"] !== "string" ||
-    !SHA256.test(frame["detailSha256"])
+    !SHA256.test(frame["detailSha256"]) ||
+    !isNonNegativeSafeInteger(frame["detailBytes"]) ||
+    !isNonNegativeSafeInteger(frame["eventBytes"])
   ) {
     return false;
   }
@@ -1946,6 +1979,12 @@ function isSnapshotFrame(frame: Record<string, unknown>): boolean {
   const events = detail["events"];
   if (!Array.isArray(events)) return false;
   if (events.length !== eventCount) return false;
+  if (
+    frame["detailBytes"] !== jsonByteLength(detail) ||
+    frame["eventBytes"] !== jsonByteLength(events)
+  ) {
+    return false;
+  }
   if (!isRecord(detail["agent"]) || typeof detail["agent"]["id"] !== "string") {
     return false;
   }
@@ -1988,6 +2027,14 @@ function isSnapshotFrame(frame: Record<string, unknown>): boolean {
     lastSeq = seq;
   }
   return true;
+}
+
+function isNonNegativeSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+function jsonByteLength(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).byteLength;
 }
 
 function isRunRecordForThread(

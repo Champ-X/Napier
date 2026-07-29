@@ -138,6 +138,19 @@ describe("Web JSON API wrappers", () => {
           },
         ],
       },
+      store: {
+        persistence: {
+          schemaVersion: 1,
+          startedAt: "2026-07-26T00:00:00.000Z",
+          commitCount: 0,
+          failedCommitCount: 0,
+          projectionFailureCount: 0,
+          stateBytesWritten: 0,
+          eventBytesWritten: 0,
+          projectionBytesWritten: 0,
+          maxCommitDurationMs: 0,
+        },
+      },
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe("/api/health");

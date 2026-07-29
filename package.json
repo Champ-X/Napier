@@ -11,6 +11,7 @@
     "node": ">=22.19.0"
   },
   "scripts": {
+    "bench:store-scale": "npm run build:core && node scripts/benchmark-store-scale.mjs",
     "build": "npm run build:core && npm run build -w @napier/server && npm run build -w @napier/web",
     "build:core": "npm run build -w @napier/contracts && npm run build -w @napier/runtime",
     "check": "npm run check:runtime-environment && npm run check:runtime-environment-receipt && npm run check:package-lock && npm run check:package-lock-receipt && npm run check:management-openapi && npm run check:management-openapi-compatibility && npm run build && npm run check:web-dist-manifest && npm run check:web-dist && npm run check:web-dist-receipt && npm run check:release-artifacts && npm test",

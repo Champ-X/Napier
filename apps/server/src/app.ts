@@ -728,12 +728,18 @@ export function createApp(services: NapierServices): Hono {
   );
 
   app.get("/api/health", (context) => {
+    const persistence = services.store.getPersistenceMetrics();
     const response: HealthResponse = {
-      status: "ok",
+      status:
+        persistence.last?.status === "failed" ||
+        (persistence.last?.projectionFailureCount ?? 0) > 0
+          ? "degraded"
+          : "ok",
       service: "napier",
       time: new Date().toISOString(),
       runtime: createHealthRuntimeProjection(),
       ledger: services.store.getLedgerSchemaReport(),
+      store: { persistence },
     };
     setHealthProjectionHeaders(context, response);
     return context.json(response);
@@ -10632,7 +10638,9 @@ export function createApp(services: NapierServices): Hono {
             run.id,
             run.status,
             snapshotFrame.detailSha256,
+            snapshotFrame.detailBytes,
             snapshotFrame.detail.thread.eventCount,
+            snapshotFrame.eventBytes,
             hashEventStream(snapshotFrame.detail.events),
           );
           await writeFrame(snapshotFrame);
@@ -10707,7 +10715,9 @@ export function createApp(services: NapierServices): Hono {
           run.id,
           run.status,
           snapshotFrame.detailSha256,
+          snapshotFrame.detailBytes,
           snapshotFrame.detail.thread.eventCount,
+          snapshotFrame.eventBytes,
           hashEventStream(snapshotFrame.detail.events),
         );
         await writeFrame(snapshotFrame);
@@ -10775,7 +10785,9 @@ export function createApp(services: NapierServices): Hono {
           run.id,
           run.status,
           snapshotFrame.detailSha256,
+          snapshotFrame.detailBytes,
           snapshotFrame.detail.thread.eventCount,
+          snapshotFrame.eventBytes,
           hashEventStream(snapshotFrame.detail.events),
         );
         await writeFrame(snapshotFrame);
@@ -17839,6 +17851,60 @@ function setHealthProjectionHeaders(
       })),
     ),
   );
+  context.header(
+    "X-Napier-Store-Persistence-SHA256",
+    sha256Text(JSON.stringify(response.store.persistence)),
+  );
+  context.header(
+    "X-Napier-Store-Commit-Count",
+    String(response.store.persistence.commitCount),
+  );
+  context.header(
+    "X-Napier-Store-Failed-Commit-Count",
+    String(response.store.persistence.failedCommitCount),
+  );
+  context.header(
+    "X-Napier-Store-Projection-Failure-Count",
+    String(response.store.persistence.projectionFailureCount),
+  );
+  context.header(
+    "X-Napier-Store-State-Bytes-Written",
+    String(response.store.persistence.stateBytesWritten),
+  );
+  context.header(
+    "X-Napier-Store-Event-Bytes-Written",
+    String(response.store.persistence.eventBytesWritten),
+  );
+  context.header(
+    "X-Napier-Store-Projection-Bytes-Written",
+    String(response.store.persistence.projectionBytesWritten),
+  );
+  const lastPersistence = response.store.persistence.last;
+  if (lastPersistence) {
+    context.header(
+      "X-Napier-Store-Last-Commit-Duration-Ms",
+      String(lastPersistence.ledgerCommitDurationMs),
+    );
+    context.header(
+      "X-Napier-Store-Last-Persist-Duration-Ms",
+      String(lastPersistence.totalDurationMs),
+    );
+    context.header(
+      "X-Napier-Store-Last-State-Bytes",
+      String(lastPersistence.stateBytes),
+    );
+    context.header(
+      "X-Napier-Store-Last-Event-Bytes",
+      String(lastPersistence.eventBytes),
+    );
+    context.header(
+      "X-Napier-Store-Last-Projection-Bytes",
+      String(
+        lastPersistence.stateProjectionBytes +
+          lastPersistence.eventProjectionBytes,
+      ),
+    );
+  }
   const latestMigration = response.ledger.migrations.at(-1);
   if (latestMigration) {
     context.header(
@@ -17916,10 +17982,13 @@ function streamEventFrame(
 function streamSnapshotFrame(
   detail: ThreadDetail,
 ): Extract<StreamFrame, { type: "snapshot" }> {
+  const serializedDetail = JSON.stringify(detail);
   return {
     type: "snapshot",
     detail,
-    detailSha256: sha256Text(JSON.stringify(detail)),
+    detailSha256: sha256Text(serializedDetail),
+    detailBytes: Buffer.byteLength(serializedDetail, "utf8"),
+    eventBytes: jsonByteLength(detail.events),
   };
 }
 
@@ -17928,7 +17997,9 @@ function streamRunDoneFrame(
   runId: string,
   status: RunStatus,
   snapshotSha256: string,
+  snapshotBytes: number,
   eventCount: number,
+  eventBytes: number,
   eventStreamSha256: string,
 ): Extract<StreamFrame, { type: "done" }> {
   return {
@@ -17937,7 +18008,9 @@ function streamRunDoneFrame(
     runId,
     status: terminalRunStatus(status),
     snapshotSha256,
+    snapshotBytes,
     eventCount,
+    eventBytes,
     eventStreamSha256,
   };
 }
@@ -21003,6 +21076,14 @@ function setThreadDetailProjectionHeaders(
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, detail);
   context.header("X-Napier-Thread-Id", detail.thread.id);
+  context.header(
+    "X-Napier-Thread-Detail-Bytes",
+    String(jsonByteLength(detail)),
+  );
+  context.header(
+    "X-Napier-Thread-Event-Bytes",
+    String(jsonByteLength(detail.events)),
+  );
   context.header("X-Napier-Run-Count", String(detail.runs.length));
   context.header("X-Napier-Event-Count", String(detail.events.length));
   context.header("X-Napier-Plan-Count", String(detail.plans.length));
@@ -21398,6 +21479,7 @@ function setThreadEventsProjectionHeaders(
   context.header("X-Napier-Thread-Id", threadId);
   context.header("X-Napier-After-Seq", String(afterSeq));
   context.header("X-Napier-Event-Count", String(events.length));
+  context.header("X-Napier-Event-Bytes", String(jsonByteLength(events)));
   const firstSeq = events[0]?.seq;
   const lastSeq = events.at(-1)?.seq;
   if (firstSeq !== undefined) {
@@ -26073,6 +26155,20 @@ function setBootstrapProjectionHeaders(
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, response);
   context.header(
+    "X-Napier-Bootstrap-Bytes",
+    String(jsonByteLength(response)),
+  );
+  if (response.activeThread) {
+    context.header(
+      "X-Napier-Bootstrap-Active-Thread-Bytes",
+      String(jsonByteLength(response.activeThread)),
+    );
+    context.header(
+      "X-Napier-Bootstrap-Active-Thread-Event-Bytes",
+      String(jsonByteLength(response.activeThread.events)),
+    );
+  }
+  context.header(
     "X-Napier-Schedule-List-SHA256",
     automationScheduleListSha256(response.schedules),
   );
@@ -26098,6 +26194,10 @@ function setBootstrapProjectionHeaders(
 
 function sha256Json(value: JsonValue): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+function jsonByteLength(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value), "utf8");
 }
 
 function sha256Text(value: string): string {
