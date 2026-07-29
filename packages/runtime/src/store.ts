@@ -10964,6 +10964,10 @@ export class LocalStore {
         createdAt: nowIso(),
         payload: input.payload,
       };
+      assertArtifactReceiptEventBoundary(
+        event,
+        `Ledger event ${input.type}`,
+      );
       thread.eventCount = event.seq;
       thread.updatedAt = event.createdAt;
       const message = extractMessagePreview(event);

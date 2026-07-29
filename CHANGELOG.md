@@ -363,6 +363,9 @@ All notable changes to Napier are recorded here.
 - SQLite restore now applies the same hash-only artifact receipt boundary to
   persisted Thread events, rejecting locally modified ledger rows that smuggle
   raw preview text back into startup state.
+- LocalStore append now applies that artifact receipt boundary before mutating
+  Thread projections or committing events, preventing malformed preview/export
+  receipts from entering the Work Ledger in the first place.
 - Thread replay bundle validation now recomputes Independent Advisor
   `evidenceSummary` from predecessor Run events, so a forged current/stale
   summary fails even if review and bundle hashes are recalculated.

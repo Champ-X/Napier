@@ -3533,7 +3533,9 @@ hash-only artifact receipt boundary, preventing recomputed portable replay
 hashes from smuggling preview text or raw artifact paths into exported evidence.
 SQLite restore also checks the same boundary for every persisted Thread event,
 so a locally modified ledger row cannot reintroduce raw preview content on
-startup.
+startup. The LocalStore append path applies the boundary before mutating the
+Thread projection or committing to SQLite, so malformed artifact receipts fail
+before they can enter the Work Ledger.
 Every accepted state change is appended to the Thread ledger. The HTTP API and
 internal Agent tool share the same `plan.artifact.*` payload builder, which
 also emits `pathSha256` and `evidenceSha256` companions for hash-only Trace
