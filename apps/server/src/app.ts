@@ -11359,6 +11359,7 @@ function parseEnabledTools(input: unknown): string[] | undefined {
     "inspect_code",
     "read_symbol",
     "apply_patch",
+    "run_command",
     "verify_workspace",
   ]);
   if (

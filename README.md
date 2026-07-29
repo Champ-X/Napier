@@ -78,6 +78,10 @@ Version `0.1.0` includes:
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
+- a `run_command` tool for foreground Node diagnostics with
+  explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
+  capabilities, a fixed secret-free environment, bounded output and wall time,
+  parent-Run cancellation, and argument/output-redacted Ledger evidence;
 - a fail-closed tool policy that blocks host escape and destructive commands;
 - Agent Skills discovery through standard `SKILL.md` packages;
 - frozen Agent Prompt Variables with strict `literal`, `current_date`, and
@@ -259,6 +263,10 @@ boundary, while its store safely serializes multiple local runtime instances.
 General shell execution, automatic managed package upgrades, additional SaaS
 inbound adapters beyond GitHub/Slack/Linear, and distributed multi-host workers
 are next-layer capabilities, not simulated features.
+
+The re-audited [next-stage gap matrix](docs/next-stage-gap-matrix.md) tracks
+which local execution and product slices are complete, partial, or intentionally
+deferred.
 
 ## Quick Start
 
@@ -1074,6 +1082,44 @@ malformed, duplicate, or repeated targets fail the extraction before proposals
 are written. A target with a pending replacement is omitted. Valid detections
 inherit source scope and Agent but remain ordinary proposals requiring human
 approval.
+
+## Sandboxed Command Execution
+
+An Agent with `workspace` or `unrestricted` policy can opt into
+`run_command`. It passes 0–64 literal argv items directly to Napier's fixed
+Node executable. Napier does not evaluate a command string, invoke a shell,
+inherit the server environment, or resolve a user-controlled executable.
+
+The command cwd is canonicalized inside the workspace. The OS sandbox receives
+only `process.spawn` and `workspace.read`; workspace writes and networking stay
+denied. The child receives a fixed CI-oriented environment without provider
+credentials. Each foreground invocation has a 1–120 second wall-time limit,
+32,000-character caps for stdout and stderr, process-group cancellation, and
+distinct `succeeded`, `failed`, `timed_out`, and `output_capped` outcomes.
+Non-zero exits are structured results rather than hidden transport failures.
+
+The live model receives bounded stdout/stderr so it can use the result. The
+Ledger does not retain argv or output text: `model.response`, `tool.started`,
+and `tool.completed` keep only runtime/count metadata, input/output hashes,
+stable result evidence, exit state, limits, and sandbox capability state.
+Trace renders the same bounded view. The Tool Loop Guard consumes the redacted
+call and stable result hashes, so privacy does not disable repetition
+detection. Unknown interrupted outcomes remain subject to normal recovery
+checks and are never silently repeated.
+
+Run the real local-backend smoke outside an already sandboxed parent process:
+
+```bash
+npm run test:live-command
+```
+
+macOS rejects nested `sandbox-exec`, so the smoke fails closed when launched
+from an IDE process that is itself sandboxed. OCI command execution is also
+fail-closed until runtime executable identity can be bound across the host and
+image. Hard per-command CPU/memory quotas, PTY, background processes, and
+write-capable sessions remain explicit next-stage work. Python and Git are not
+advertised by this slice because their macOS Developer Tools shims require a
+broader managed Runtime boundary than the Node smoke.
 
 ## Controlled Workspace Editing
 
@@ -2456,7 +2502,7 @@ channels should accept only intended operational data.
 The default Agent policy is `observe`:
 
 - read/list/search inside the workspace are allowed;
-- `apply_patch` and `verify_workspace` are not exposed;
+- `apply_patch`, `verify_workspace`, and `run_command` are not exposed;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
@@ -2464,12 +2510,15 @@ The default Agent policy is `observe`:
 
 Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line
-anchors, while **Sandbox verify** is read-only, offline, and command-closed.
+anchors, **Sandbox verify** is read-only, offline, and command-closed, and
+**Sandbox command** is an explicit-argv, read-only/offline Node runner with no
+shell or inherited environment.
 Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.
-General shell execution remains disabled. Stdio MCP and structured workspace
-verification are the narrow process exceptions: macOS uses
+General shell execution remains disabled. Stdio MCP, structured workspace
+verification, and the allowlisted command runner are the narrow process
+exceptions: macOS uses
 `/usr/bin/sandbox-exec`; Linux requires `/usr/bin/bwrap` and usable kernel or
 setuid namespace support. Windows or explicitly containerized deployments can
 opt into an OCI adapter by configuring `NAPIER_CONTAINER_SANDBOX_IMAGE`; it

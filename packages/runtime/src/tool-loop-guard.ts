@@ -303,7 +303,8 @@ function projectToolLoopTurns(
     ) {
       return [{ responseSeq: event.seq }];
     }
-    const callSha256 = createToolCallSha256(toolName, call["arguments"]);
+    const callSha256 = toolCallSha256FromLedger(toolName, call["arguments"]);
+    if (!callSha256) return [{ responseSeq: event.seq }];
     let turnEnd = index + 1;
     while (
       turnEnd < ordered.length &&
@@ -332,11 +333,12 @@ function projectToolLoopTurns(
     const terminal = terminals[0]!;
     if (
       !record(terminal.payload) ||
-      terminal.payload["toolName"] !== toolName ||
-      typeof terminal.payload["output"] !== "string"
+      terminal.payload["toolName"] !== toolName
     ) {
       return [{ responseSeq: event.seq, callSha256 }];
     }
+    const resultSha256 = toolResultSha256FromLedger(terminal.payload);
+    if (!resultSha256) return [{ responseSeq: event.seq, callSha256 }];
     return [
       {
         responseSeq: event.seq,
@@ -346,12 +348,47 @@ function projectToolLoopTurns(
           terminalSeq: terminal.seq,
           toolName,
           callSha256,
-          resultSha256: sha256(terminal.payload["output"]),
+          resultSha256,
           status: terminal.type === "tool.completed" ? "completed" : "failed",
         },
       },
     ];
   });
+}
+
+function toolCallSha256FromLedger(
+  toolName: string,
+  args: unknown,
+): string | undefined {
+  if (
+    record(args) &&
+    args["kind"] === "napier.redacted-tool-arguments" &&
+    args["schemaVersion"] === 1 &&
+    args["redacted"] === true &&
+    typeof args["inputSha256"] === "string" &&
+    SHA256.test(args["inputSha256"])
+  ) {
+    return args["inputSha256"];
+  }
+  return createToolCallSha256(toolName, args);
+}
+
+function toolResultSha256FromLedger(
+  payload: Record<string, unknown>,
+): string | undefined {
+  if (
+    typeof payload["resultSha256"] === "string" &&
+    SHA256.test(payload["resultSha256"])
+  ) {
+    return payload["resultSha256"];
+  }
+  if (typeof payload["output"] === "string") {
+    return sha256(payload["output"]);
+  }
+  return typeof payload["outputSha256"] === "string" &&
+    SHA256.test(payload["outputSha256"])
+    ? payload["outputSha256"]
+    : undefined;
 }
 
 function parseToolLoopGuardContextReceipt(

@@ -4070,6 +4070,154 @@ describe("AgentRuntime demo path", () => {
     );
   });
 
+  it("runs a bounded command without persisting argv or output text", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["run_command"],
+    });
+    const thread = await store.createThread({
+      title: "Bounded command",
+      agentId: agent.id,
+    });
+    let launchRequest: SandboxLaunchRequest | undefined;
+    const sandbox: OsSandboxAdapter = {
+      id: "fake-agent-command",
+      async launch(request) {
+        launchRequest = structuredClone(request);
+        const stdin = new PassThrough();
+        const stdout = new PassThrough();
+        const stderr = new PassThrough();
+        let resolveExit:
+          | ((value: {
+              code: number | null;
+              signal: NodeJS.Signals | null;
+            }) => void)
+          | undefined;
+        const exit = new Promise<{
+          code: number | null;
+          signal: NodeJS.Signals | null;
+        }>((resolve) => {
+          resolveExit = resolve;
+        });
+        setTimeout(() => {
+          stdout.end("SAFE_COMMAND_OUTPUT\n");
+          stderr.end();
+          resolveExit?.({ code: 0, signal: null });
+        }, 0);
+        return {
+          stdin,
+          stdout,
+          stderr,
+          exit,
+          terminate: async () => {
+            stdout.end();
+            stderr.end();
+            resolveExit?.({ code: null, signal: "SIGTERM" });
+          },
+        };
+      },
+    };
+    const faux = fauxProvider({ provider: "faux-command" });
+    faux.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("run_command", {
+          runtime: "node",
+          args: [
+            "-e",
+            "console.log('TOP_SECRET_COMMAND_ARGUMENT')",
+            "; touch MUST_NOT_RUN",
+          ],
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          "SAFE_COMMAND_OUTPUT",
+        );
+        return fauxAssistantMessage("The bounded Node command completed.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(faux.provider);
+    const runtime = new AgentRuntime(store, registry, undefined, sandbox);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Run the requested read-only Node calculation.",
+      model: { provider: "faux-command", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(launchRequest).toEqual(
+      expect.objectContaining({
+        command: process.execPath,
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+      }),
+    );
+    expect(JSON.stringify(launchRequest)).not.toContain("network.connect");
+    expect(JSON.stringify(launchRequest)).not.toContain("workspace.write");
+    const events = await store.listEvents(thread.id);
+    const commandEvents = events.filter(
+      (event) =>
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "run_command",
+    );
+    expect(commandEvents.map((event) => event.type)).toEqual([
+      "tool.started",
+      "tool.completed",
+    ]);
+    expect(commandEvents[0]?.payload).toEqual(
+      expect.objectContaining({
+        effect: "read",
+        inputRedacted: true,
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+      }),
+    );
+    expect(commandEvents[1]?.payload).toEqual(
+      expect.objectContaining({
+        outputRedacted: true,
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        details: expect.objectContaining({
+          runtime: "node",
+          status: "succeeded",
+          workspaceAccess: "read_only",
+          networkAccess: "denied",
+          resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          stdoutSha256: createHash("sha256")
+            .update("SAFE_COMMAND_OUTPUT\n")
+            .digest("hex"),
+        }),
+      }),
+    );
+    const ledgerJson = JSON.stringify(events);
+    expect(ledgerJson).not.toContain("TOP_SECRET_COMMAND_ARGUMENT");
+    expect(ledgerJson).not.toContain("MUST_NOT_RUN");
+    expect(ledgerJson).not.toContain("SAFE_COMMAND_OUTPUT");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, thread.id),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "valid",
+        eventCount: expect.any(Number),
+      }),
+    );
+  });
+
   it("stops at the snapshotted parent turn budget before executing a tool", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

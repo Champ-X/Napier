@@ -51,6 +51,12 @@ import {
   createDelegationLedgerProjection,
   formatDelegationLedgerProjection,
 } from "./delegation-ledger.js";
+import {
+  commandToolCallArgumentsLedgerProjection,
+  commandToolInputLedgerProjection,
+  commandToolOutputLedgerProjection,
+  createCommandTool,
+} from "./command-execution.js";
 import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
 import {
   createAgentMilestoneContextProjection,
@@ -1135,6 +1141,19 @@ export class AgentRuntime {
         }),
       );
     }
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("run_command")
+    ) {
+      tools.push(
+        createCommandTool({
+          workspaceRoot: this.store.workspaceRoot,
+          sandbox: this.verificationSandbox,
+        }),
+      );
+    }
     if (!safeReadOnlyRecovery && !advisorCorrection) {
       tools.push(...createPlanTools(this.store, run));
       tools.push(
@@ -1303,7 +1322,9 @@ export class AgentRuntime {
               callId: toolCall.id,
               toolName: toolCall.name,
               status: "blocked",
-              input: toJsonValue(args),
+              ...(toolCall.name === "run_command"
+                ? commandToolInputLedgerProjection(args)
+                : { input: toJsonValue(args) }),
               policyReason: budgetExhaustion.message,
             },
           },
@@ -1375,7 +1396,9 @@ export class AgentRuntime {
               callId: toolCall.id,
               toolName: toolCall.name,
               status: "blocked",
-              input: toJsonValue(args),
+              ...(toolCall.name === "run_command"
+                ? commandToolInputLedgerProjection(args)
+                : { input: toJsonValue(args) }),
               policyReason: decision.reason,
             },
           },
@@ -1825,7 +1848,10 @@ export class AgentRuntime {
           .map((block) => ({
             id: block.id,
             name: block.name,
-            arguments: block.arguments,
+            arguments:
+              block.name === "run_command"
+                ? commandToolCallArgumentsLedgerProjection(block.arguments)
+                : block.arguments,
           }));
         const hasToolCalls = toolCalls.length > 0;
         const redactCandidate =
@@ -1918,7 +1944,9 @@ export class AgentRuntime {
             ...(builtInToolEffect(event.toolName)
               ? { effect: builtInToolEffect(event.toolName)! }
               : {}),
-            input: toJsonValue(event.args),
+            ...(event.toolName === "run_command"
+              ? commandToolInputLedgerProjection(event.args)
+              : { input: toJsonValue(event.args) }),
           },
         },
         onEvent,
@@ -1926,6 +1954,7 @@ export class AgentRuntime {
       return undefined;
     }
     if (event.type === "tool_execution_end") {
+      const output = resultText(event.result);
       await this.record(
         {
           threadId: run.threadId,
@@ -1937,7 +1966,9 @@ export class AgentRuntime {
             callId: event.toolCallId,
             toolName: event.toolName,
             status: event.isError ? "failed" : "completed",
-            output: resultText(event.result),
+            ...(event.toolName === "run_command"
+              ? commandToolOutputLedgerProjection(output, event.result)
+              : { output }),
             ...(event.result.details !== undefined
               ? { details: toJsonValue(event.result.details) }
               : {}),
@@ -3234,6 +3265,7 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     toolName === "inspect_data" ||
     toolName === "inspect_code" ||
     toolName === "read_symbol" ||
+    toolName === "run_command" ||
     toolName === "verify_workspace" ||
     toolName === "web_fetch" ||
     toolName === "web_search"
@@ -3268,8 +3300,11 @@ function formatWorkspaceToolGuidance(tools: readonly AgentTool[]): string {
     toolNames.has("list_symbols") ||
     toolNames.has("read_symbol");
   const hasPatch = toolNames.has("apply_patch");
+  const hasCommand = toolNames.has("run_command");
   const hasVerification = toolNames.has("verify_workspace");
-  if (!hasWorkspaceRead && !hasPatch && !hasVerification) return "";
+  if (!hasWorkspaceRead && !hasPatch && !hasCommand && !hasVerification) {
+    return "";
+  }
 
   const lines = [
     "<workspace_tool_protocol>",
@@ -3300,6 +3335,12 @@ function formatWorkspaceToolGuidance(tools: readonly AgentTool[]): string {
   } else if (hasVerification) {
     lines.push(
       "Use verify_workspace for bounded typecheck, test, or format evidence; report failed, timed-out, or capped checks explicitly.",
+    );
+  }
+  if (hasCommand) {
+    lines.push(
+      "Use run_command only for bounded read-only Node work that the structured workspace tools and verify_workspace cannot express; pass literal argv items, never secrets or shell syntax.",
+      "Treat failed, timed-out, and output-capped command results as incomplete evidence. run_command cannot modify the workspace or access the network.",
     );
   }
   lines.push("</workspace_tool_protocol>");

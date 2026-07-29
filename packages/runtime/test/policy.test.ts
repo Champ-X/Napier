@@ -102,6 +102,36 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "run_command",
+        { runtime: "node", args: ["--version"] },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "run_command",
+        { runtime: "node", args: ["--version"], cwd: "packages/runtime" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "read-only sandboxed command execution",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
+        "run_command",
+        { runtime: "node", args: ["--version"], cwd: "../outside" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
         "workspace",
         "verify_workspace",
         { kind: "test", cwd: "../outside" },

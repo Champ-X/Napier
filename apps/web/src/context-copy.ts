@@ -122,6 +122,7 @@ export const contextCopy = {
     inspect_code: "Inspect code",
     read_symbol: "Read symbol",
     apply_patch: "Atomic patch",
+    run_command: "Sandbox command",
     verify_workspace: "Sandbox verify",
   },
   skills: "Available skills",

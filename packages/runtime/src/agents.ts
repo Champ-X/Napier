@@ -29,6 +29,7 @@ const ALLOWED_TOOLS = new Set([
   "inspect_code",
   "read_symbol",
   "apply_patch",
+  "run_command",
   "verify_workspace",
 ]);
 const THINKING_LEVELS = new Set<AgentProfile["thinkingLevel"]>([

@@ -2024,6 +2024,7 @@ describe("Napier HTTP goal flow", () => {
           "inspect_code",
           "read_symbol",
           "apply_patch",
+          "run_command",
           "verify_workspace",
         ],
         enabledSkills: ["software-delivery", "artifact-studio"],
@@ -2080,6 +2081,7 @@ describe("Napier HTTP goal flow", () => {
           "list_symbols",
           "read_file",
           "read_symbol",
+          "run_command",
           "search_files",
           "verify_workspace",
         ],
@@ -2547,9 +2549,7 @@ describe("Napier HTTP goal flow", () => {
       String(Buffer.byteLength(JSON.stringify(bootstrap), "utf8")),
     );
     expect(
-      bootstrapResponse.headers.get(
-        "x-napier-bootstrap-active-thread-bytes",
-      ),
+      bootstrapResponse.headers.get("x-napier-bootstrap-active-thread-bytes"),
     ).toBe(
       String(
         Buffer.byteLength(JSON.stringify(bootstrap.activeThread!), "utf8"),

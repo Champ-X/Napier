@@ -1,12 +1,12 @@
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
-import type { Readable } from "node:stream";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
+import { runSandboxedProcess } from "./sandboxed-process.js";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MIN_TIMEOUT_MS = 1_000;
@@ -113,12 +113,6 @@ export interface VerificationRunnerOptions {
   nodeExecutable?: string;
 }
 
-interface OutputCollector {
-  readonly completion: Promise<void>;
-  readonly text: string;
-  readonly truncated: boolean;
-}
-
 interface PathSnapshotReceipt {
   kind: "file" | "directory";
   sha256: string;
@@ -139,7 +133,6 @@ export class VerificationRunner {
     signal?: AbortSignal,
   ): Promise<VerificationResult> {
     validateVerificationRequest(input);
-    const startedAt = Date.now();
     const workspaceRoot = await realpath(this.workspaceRoot);
     const cwd = await resolveExistingPath(
       workspaceRoot,
@@ -191,103 +184,71 @@ export class VerificationRunner {
       workspaceSnapshotBytes: workspaceSnapshot.bytes,
       workspaceSnapshotTruncated: workspaceSnapshot.truncated,
     };
-    const child = await this.options.sandbox.launch({
-      command: nodeExecutable,
-      args: verificationArgs(input.kind, cli, target),
-      cwd,
-      env: {
-        CI: "1",
-        FORCE_COLOR: "0",
-        NO_COLOR: "1",
-      },
-      workspaceRoot,
-      approvedCapabilities: ["process.spawn", "workspace.read"],
-    });
-    child.stdin.end();
-
-    let forcedStatus:
-      | Exclude<VerificationStatus, "passed" | "failed">
-      | undefined;
-    let termination: Promise<void> | undefined;
-    const forceStop = (
-      status: Exclude<VerificationStatus, "passed" | "failed">,
-    ): void => {
-      if (forcedStatus) return;
-      forcedStatus = status;
-      termination = child.terminate();
-    };
-    const stdout = collectOutput(child.stdout, () =>
-      forceStop("output_capped"),
-    );
-    const stderr = collectOutput(child.stderr, () =>
-      forceStop("output_capped"),
-    );
-    const timeout = setTimeout(
-      () => forceStop("timed_out"),
-      input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-    );
-    const abort = (): void => {
-      if (!termination) termination = child.terminate();
-    };
-    signal?.addEventListener("abort", abort, { once: true });
-    if (signal?.aborted) abort();
-
-    try {
-      const exit = await child.exit;
-      await termination;
-      await Promise.all([stdout.completion, stderr.completion]);
-      if (signal?.aborted) throw new Error("verification was aborted");
-      const status: VerificationStatus =
-        forcedStatus ?? (exit.code === 0 ? "passed" : "failed");
-      const stdoutText = stdout.text;
-      const stderrText = stderr.text;
-      return {
-        details: {
-          kind: input.kind,
-          status,
-          sandbox: this.options.sandbox.id,
-          cwd: cwdPath,
-          ...(targetPath ? { target: targetPath } : {}),
-          scopeSha256: sha256(canonicalJson(scopeReceipt)),
-          cwdPathSha256: scopeReceipt.cwdPathSha256,
-          ...(scopeReceipt.targetPathSha256
-            ? { targetPathSha256: scopeReceipt.targetPathSha256 }
-            : {}),
-          ...(targetSnapshot
-            ? {
-                targetKind: targetSnapshot.kind,
-                targetSnapshotSha256: targetSnapshot.sha256,
-                targetSnapshotFileCount: targetSnapshot.fileCount,
-                targetSnapshotBytes: targetSnapshot.bytes,
-                targetSnapshotTruncated: targetSnapshot.truncated,
-              }
-            : {}),
-          verifierPathSha256: scopeReceipt.verifierPathSha256,
-          verifierSha256,
-          workspaceSnapshotSha256: workspaceSnapshot.sha256,
-          workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
-          workspaceSnapshotBytes: workspaceSnapshot.bytes,
-          workspaceSnapshotTruncated: workspaceSnapshot.truncated,
-          durationMs: Math.max(0, Date.now() - startedAt),
-          exitCode: exit.code,
-          signal: exit.signal,
-          stdoutChars: stdoutText.length,
-          stderrChars: stderrText.length,
-          stdoutSha256: sha256(stdoutText),
-          stderrSha256: sha256(stderrText),
-          stdoutTruncated: stdout.truncated,
-          stderrTruncated: stderr.truncated,
+    const execution = await runSandboxedProcess({
+      sandbox: this.options.sandbox,
+      launch: {
+        command: nodeExecutable,
+        args: verificationArgs(input.kind, cli, target),
+        cwd,
+        env: {
+          CI: "1",
+          FORCE_COLOR: "0",
+          NO_COLOR: "1",
         },
-        stdout: stdoutText,
-        stderr: stderrText,
-      };
-    } finally {
-      clearTimeout(timeout);
-      signal?.removeEventListener("abort", abort);
-      if (signal?.aborted && !termination) {
-        await child.terminate();
-      }
-    }
+        workspaceRoot,
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+      },
+      timeoutMs: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      maxOutputChars: MAX_OUTPUT_CHARS,
+      ...(signal ? { signal } : {}),
+      abortedMessage: "verification was aborted",
+    });
+    const status: VerificationStatus =
+      execution.status === "exited"
+        ? execution.exitCode === 0
+          ? "passed"
+          : "failed"
+        : execution.status;
+    return {
+      details: {
+        kind: input.kind,
+        status,
+        sandbox: this.options.sandbox.id,
+        cwd: cwdPath,
+        ...(targetPath ? { target: targetPath } : {}),
+        scopeSha256: sha256(canonicalJson(scopeReceipt)),
+        cwdPathSha256: scopeReceipt.cwdPathSha256,
+        ...(scopeReceipt.targetPathSha256
+          ? { targetPathSha256: scopeReceipt.targetPathSha256 }
+          : {}),
+        ...(targetSnapshot
+          ? {
+              targetKind: targetSnapshot.kind,
+              targetSnapshotSha256: targetSnapshot.sha256,
+              targetSnapshotFileCount: targetSnapshot.fileCount,
+              targetSnapshotBytes: targetSnapshot.bytes,
+              targetSnapshotTruncated: targetSnapshot.truncated,
+            }
+          : {}),
+        verifierPathSha256: scopeReceipt.verifierPathSha256,
+        verifierSha256,
+        workspaceSnapshotSha256: workspaceSnapshot.sha256,
+        workspaceSnapshotFileCount: workspaceSnapshot.fileCount,
+        workspaceSnapshotBytes: workspaceSnapshot.bytes,
+        workspaceSnapshotTruncated: workspaceSnapshot.truncated,
+        durationMs: execution.durationMs,
+        exitCode: execution.exitCode,
+        signal: execution.signal,
+        stdoutChars: execution.stdout.length,
+        stderrChars: execution.stderr.length,
+        stdoutSha256: sha256(execution.stdout),
+        stderrSha256: sha256(execution.stderr),
+        stdoutTruncated: execution.stdoutTruncated,
+        stderrTruncated: execution.stderrTruncated,
+      },
+      stdout: execution.stdout,
+      stderr: execution.stderr,
+    };
   }
 }
 
@@ -515,38 +476,6 @@ async function createDirectorySnapshot(
     fileCount: files.length,
     bytes,
     truncated,
-  };
-}
-
-function collectOutput(stream: Readable, onLimit: () => void): OutputCollector {
-  let text = "";
-  let truncated = false;
-  const completion = new Promise<void>((resolve) => {
-    const finish = (): void => resolve();
-    stream.once("end", finish);
-    stream.once("close", finish);
-    stream.once("error", finish);
-    stream.on("data", (chunk: Buffer | string) => {
-      if (truncated) return;
-      const value = chunk.toString();
-      const remaining = MAX_OUTPUT_CHARS - text.length;
-      if (value.length <= remaining) {
-        text += value;
-        return;
-      }
-      text += value.slice(0, Math.max(0, remaining));
-      truncated = true;
-      onLimit();
-    });
-  });
-  return {
-    completion,
-    get text() {
-      return text;
-    },
-    get truncated() {
-      return truncated;
-    },
   };
 }
 

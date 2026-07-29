@@ -155,6 +155,38 @@ describe("Tool loop guard", () => {
     expect(
       detectToolCallLoop(events, RUN_ID, { ...POLICY, enabled: false }),
     ).toBeUndefined();
+
+    const redactedCallSha256 = createToolCallSha256("run_command", {
+      runtime: "node",
+      args: ["--version"],
+    });
+    const redactedResultSha256 = "a".repeat(64);
+    const redactedEvents = Array.from({ length: 3 }, (_, index) => [
+      modelResponseEvent(index * 2 + 1, `command_${index}`, "run_command", {
+        kind: "napier.redacted-tool-arguments",
+        schemaVersion: 1,
+        redacted: true,
+        runtime: "node",
+        argumentCount: 1,
+        cwdPathSha256: "b".repeat(64),
+        inputSha256: redactedCallSha256,
+      }),
+      event(index * 2 + 2, "tool.completed", {
+        callId: `command_${index}`,
+        toolName: "run_command",
+        status: "completed",
+        outputRedacted: true,
+        outputSha256: "c".repeat(64),
+        resultSha256: redactedResultSha256,
+      }),
+    ]).flat();
+    expect(detectToolCallLoop(redactedEvents, RUN_ID, POLICY)).toEqual(
+      expect.objectContaining({
+        toolName: "run_command",
+        callSha256: redactedCallSha256,
+        resultSha256: redactedResultSha256,
+      }),
+    );
   });
 
   it("projects, grounds, activates, and retires trigger receipts", () => {

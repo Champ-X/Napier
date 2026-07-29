@@ -28,6 +28,7 @@
     "dev": "npm run build:core && concurrently -n server,web -c yellow,cyan \"npm run dev -w @napier/server\" \"npm run dev -w @napier/web\"",
     "format": "prettier --write .",
     "test": "npm run test:root && npm run test --workspaces --if-present",
+    "test:live-command": "npm run test:live-command -w @napier/runtime",
     "test:live-deepseek": "npm run test:live-deepseek -w @napier/runtime",
     "test:root": "vitest run scripts/*.test.mjs --testTimeout=30000",
     "typecheck": "npm run build:core && npm run typecheck -w @napier/server && npm run typecheck -w @napier/web",

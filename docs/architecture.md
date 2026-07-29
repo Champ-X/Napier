@@ -47,7 +47,8 @@ removal is a versioned contract change.
 - conversion from Pi events to Napier events;
 - tool assembly, canonical workspace-path checks, hash-aware literal search,
   hash-bound atomic editing with Hashline-style line anchors, sandboxed
-  structured verification, and
+  structured verification, explicit-argv read-only Node command
+  execution, and
   last-moment policy checks;
 - configurable Model Advisor gates that combine deterministic output checks
   with an optional distinct zero-tool review model before the user-visible
@@ -1650,6 +1651,51 @@ creation is limited to `create` with an explicit opt-in and uses the same
 workspace, protected-segment, and symlink checks; file deletion, arbitrary
 directory operations, and permission changes remain outside this tool.
 Subagents call the read-only tool factory and never receive `apply_patch`.
+
+## Sandboxed Command Flow
+
+`run_command` is the first general-purpose execution slice, but it is not a
+general shell:
+
+```text
+model selects node + literal argv
+  -> require non-observe policy + enabled run_command tool
+  -> validate 0-64 bounded arguments, cwd, and 1-120 second wall budget
+  -> canonicalize cwd inside the workspace
+  -> resolve one Napier-owned absolute executable and hash its current bytes
+  -> launch that executable directly, without a shell
+  -> pass a fixed secret-free environment
+  -> grant process.spawn + workspace.read only
+  -> deny workspace writes and networking in the OS sandbox
+  -> cap stdout/stderr independently and terminate the process group on
+     timeout, output cap, or parent-Run cancellation
+  -> return bounded output to the live model
+  -> redact argv/output text from model.response and tool Ledger events
+  -> retain call/result, executable, environment, cwd, limits, and output hashes
+```
+
+The runtime implementation is isolated in `command-execution.ts`; shared
+process lifetime and output collection live in `sandboxed-process.ts` and are
+also used by `verify_workspace`. This avoids adding process lifecycle logic to
+the Store or Server modules.
+
+The Ledger projection deliberately differs from ordinary tools. The live Pi
+tool result includes bounded stdout/stderr, but the persisted model response
+replaces arguments with runtime/count metadata and an input SHA-256.
+`tool.started` and `tool.completed` retain redaction flags, byte counts,
+stable call/result hashes, and structured command details. The Tool Loop Guard
+understands these redacted projections, so repeated commands remain detectable
+without persisting command or output text.
+
+Local command execution currently supports macOS sandbox-exec and Linux
+Bubblewrap. It fails closed on unsupported adapters and OCI until host/image
+runtime identity binding exists. Wall time, output, and process-group
+termination are enforced; hard per-command CPU/memory quotas require an OCI or
+managed session backend and remain an explicit gap. PTY, background jobs,
+process inventory, writes, package installation, and inherited environment
+variables are not part of this slice. Python and Git remain outside the public
+runtime enum until a managed backend can bind their transitive runtime
+dependencies without broadening the local macOS profile.
 
 ## Workspace Verification Flow
 
@@ -3704,7 +3750,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has twenty-five parts:
+The current boundary has twenty-eight parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -3798,32 +3844,56 @@ The current boundary has twenty-five parts:
     argument/result repetition evidence, compaction-immune next-turn redirects,
     pre-side-effect blocking, schema-8 fingerprints, metadata-only OTLP, lazy
     Context/Trace inspection, and portable trigger revalidation.
+28. explicit-argv Node command execution with direct absolute
+    executable launch, canonical cwd, fixed environment, read-only/offline
+    capabilities, bounded wall/output lifetime, parent cancellation,
+    argument/output-redacted Ledger evidence, stable loop-detection hashes, and
+    a real local-sandbox smoke.
 
 `observe` permits only in-process read operations. `workspace` additionally
-permits enabled hash-bound edits and read-only structured verification.
+permits individually enabled hash-bound edits, read-only structured
+verification, and read-only/offline explicit-argv command execution.
 `unrestricted` is reserved for future sandboxed shell execution, but known
 destructive command patterns are still denied.
 
 An in-process policy is not a sandbox. General shell and package installation
-remain disabled. Stdio MCP and workspace verification use narrow macOS
-sandbox-exec or Linux Bubblewrap adapters; a container or VM remains the
-recommended outer boundary for production third-party code.
+remain disabled. Stdio MCP, workspace verification, and the command runner use
+narrow macOS sandbox-exec or Linux Bubblewrap adapters; a container or VM
+remains the recommended outer boundary for production third-party code.
 
 ## Capability Roadmap
 
-### Layer 1: Reliable local runtime
+The current priority and acceptance state is maintained in
+[`next-stage-gap-matrix.md`](next-stage-gap-matrix.md). Distributed work stays
+deferred until the local P0-P9 product loop is stable.
 
-- a Postgres backend for distributed workers;
-- continued endpoint-level JSON Schema promotion across remaining
-  management-plane workflows.
+### Layer 1: Local execution and architecture
 
-### Layer 2: Extension fabric
+- durable Workspace Process Sessions with PTY, foreground/background jobs,
+  output cursors, cancellation, restart reconciliation, and pre/post diffs;
+- hard CPU/memory/process quotas through managed OCI or equivalent isolation;
+- domain extraction from the oversized Server and Store modules;
+- startup, first-token, tool-latency, long-thread, memory, Web bundle, and
+  database-growth budgets.
 
-- a Windows sandbox adapter with Job Object/AppContainer enforcement;
-- Linux Secret Service and Windows Credential Manager write adapters.
+### Layer 2: Coding and workflow
 
-### Layer 3: Operations and evaluation
+- LSP, DAP, AST edits, write-linked diagnostics/tests, and isolated subagent
+  worktrees;
+- typed executable Workflow nodes, checkpoint recovery, single-node tests,
+  JSONL events, and a TypeScript SDK;
+- controlled re-execution from model, tool, and Workflow checkpoints.
 
-- resumable distributed run workers and cross-host delivery claims;
-- additional authenticated SaaS channel adapters beyond GitHub/Slack/Linear and
-  policy templates.
+### Layer 3: Product and outcome proof
+
+- CLI/TUI, SDK/RPC, ACP, Desktop, persistent browser, and data/research
+  capability slices over the same Runtime and Ledger;
+- stable Extension developer APIs, ecosystem discovery, and compatibility
+  tests;
+- fixed Capability & Outcome benchmarks centered on task success, recovery,
+  cost, latency, security, and first-task UX.
+
+### Deferred: team and distributed
+
+- Postgres, distributed workers, cross-host leases, multi-user RBAC, and
+  collaboration begin only after the local acceptance gates hold.

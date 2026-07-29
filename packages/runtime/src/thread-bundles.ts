@@ -172,6 +172,7 @@ const AGENT_TOOLS = new Set([
   "inspect_code",
   "read_symbol",
   "apply_patch",
+  "run_command",
   "verify_workspace",
 ]);
 const SUBAGENT_STOP_REASONS = new Set([

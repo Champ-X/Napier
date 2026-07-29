@@ -21,6 +21,7 @@ const READ_ONLY_TOOLS = new Set([
 ]);
 const WRITE_TOOLS = new Set(["apply_patch"]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
+const PROCESS_TOOLS = new Set(["run_command"]);
 const PROTECTED_WRITE_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
@@ -172,6 +173,29 @@ export function assessToolCall(
       allowed: true,
       risk: "medium",
       reason: "read-only sandboxed verification",
+    };
+  }
+
+  if (PROCESS_TOOLS.has(toolName)) {
+    const cwd = getStringField(input, "cwd");
+    if (cwd && !isPathInsideWorkspace(cwd, workspaceRoot)) {
+      return {
+        allowed: false,
+        risk: "high",
+        reason: "command cwd escapes the configured workspace",
+      };
+    }
+    if (mode === "observe") {
+      return {
+        allowed: false,
+        risk: "medium",
+        reason: "the active agent policy does not allow process execution",
+      };
+    }
+    return {
+      allowed: true,
+      risk: "medium",
+      reason: "read-only sandboxed command execution",
     };
   }
 

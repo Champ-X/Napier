@@ -6,6 +6,21 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added `run_command`, a foreground explicit-argv Node Agent tool
+  that launches one absolute runtime directly through the existing macOS or
+  Linux OS sandbox with read-only workspace and denied network capabilities.
+  It uses a fixed secret-free environment, canonical workspace cwd, bounded
+  wall time and stdout/stderr, process-group cancellation, and structured
+  success/failure/timeout/output-cap outcomes. Model tool results retain bounded
+  output, while Ledger and Trace redact argv and output text into call/result,
+  executable, environment, cwd, limit, and stream hashes. Tool Loop Guard
+  repetition detection remains stable over the redacted projection. Context
+  exposes the capability as an opt-in Agent tool, a real macOS sandbox smoke is
+  available through `npm run test:live-command`, and shared sandbox process
+  lifetime handling now serves both command execution and
+  `verify_workspace`. Python and Git remain outside the public runtime enum
+  after live macOS testing showed their Developer Tools shims need a broader
+  managed Runtime boundary.
 - Hash-only Model Context Envelopes. Every Pi provider request now records a
   debug-only `context.model_envelope` receipt at the actual stream boundary,
   after message conversion and before the model call. The receipt binds System

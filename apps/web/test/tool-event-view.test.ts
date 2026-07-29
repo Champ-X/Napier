@@ -115,6 +115,64 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes sandbox command evidence without argv or output", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "run_command",
+      status: "completed",
+      effect: "read",
+      output: "TOP_SECRET_COMMAND_OUTPUT",
+      details: {
+        runtime: "node",
+        status: "succeeded",
+        workspaceAccess: "read_only",
+        networkAccess: "denied",
+        argumentCount: 2,
+        exitCode: 0,
+        timeoutMs: 30_000,
+        outputLimitChars: 32_000,
+        commandSha256: "a".repeat(64),
+        resultSha256: "0".repeat(64),
+        executableSha256: "b".repeat(64),
+        argumentSetSha256: "c".repeat(64),
+        environmentSha256: "d".repeat(64),
+        resourceLimitsSha256: "e".repeat(64),
+        cwdPathSha256: "f".repeat(64),
+        stdoutSha256: "1".repeat(64),
+        stderrSha256: "2".repeat(64),
+        stdoutTruncated: true,
+        rawArgs: ["TOP_SECRET_COMMAND_ARGUMENT"],
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "run_command",
+      status: "completed",
+      effect: "read",
+      commandRuntime: "node",
+      commandStatus: "succeeded",
+      commandArgumentCount: 2,
+      commandExitCode: 0,
+      commandTimeoutMs: 30_000,
+      commandOutputLimitChars: 32_000,
+      commandWorkspaceAccess: "read_only",
+      commandNetworkAccess: "denied",
+      commandSha256: "a".repeat(64),
+      commandResultSha256: "0".repeat(64),
+      commandExecutableSha256: "b".repeat(64),
+      commandArgumentSetSha256: "c".repeat(64),
+      commandEnvironmentSha256: "d".repeat(64),
+      commandResourceLimitsSha256: "e".repeat(64),
+      commandCwdPathSha256: "f".repeat(64),
+      commandStdoutSha256: "1".repeat(64),
+      commandStderrSha256: "2".repeat(64),
+      commandStdoutTruncated: true,
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / run_command / completed / effect read / command node succeeded / args 2 / exit 0 / timeout 30000ms / output-limit 32000 / workspace read_only / network denied / command ${"a".repeat(12)} / result ${"0".repeat(12)} / executable ${"b".repeat(12)} / argv ${"c".repeat(12)} / environment ${"d".repeat(12)} / limits ${"e".repeat(12)} / cwd ${"f".repeat(12)} / stdout ${"1".repeat(12)} / stderr ${"2".repeat(12)} / stdout-truncated`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes search_files hash evidence without match text", () => {
     const event = toolEvent("tool.completed", {
       toolName: "search_files",

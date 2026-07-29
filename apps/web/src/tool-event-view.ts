@@ -1,11 +1,16 @@
 import type { RunEvent } from "@napier/contracts";
 import {
+  commandToolEventEvidence,
+  commandToolEventSummaryParts,
+  type CommandToolEventTraceView,
+} from "./command-tool-event-view";
+import {
   isStructuredDataFormat,
   structuredDataFormatLabel,
   type StructuredDataFormat,
 } from "./structured-data-format-view";
 
-export interface ToolEventTraceView {
+export interface ToolEventTraceView extends CommandToolEventTraceView {
   toolName: string;
   status: string;
   effect?: "read" | "write";
@@ -157,6 +162,10 @@ export function toolEventTraceView(
     toolName === "verify_workspace"
       ? verificationEvidenceView(event.payload["details"])
       : undefined;
+  const commandEvidence =
+    toolName === "run_command"
+      ? commandToolEventEvidence(event.payload["details"])
+      : undefined;
   const patchEvidence =
     toolName === "apply_patch"
       ? applyPatchEvidence(event.payload["details"])
@@ -181,6 +190,7 @@ export function toolEventTraceView(
     ...(codeEvidence ? codeEvidence : {}),
     ...(symbolSourceEvidence ? symbolSourceEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
+    ...(commandEvidence ? commandEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
     ...(readEvidence ? readEvidence : {}),
@@ -359,6 +369,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.verificationStdoutTruncated ? ["stdout-truncated"] : []),
     ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
+    ...commandToolEventSummaryParts(view),
     ...(view.patchOperation ? [`patch ${view.patchOperation}`] : []),
     ...(view.patchEditCount !== undefined
       ? [`edits ${view.patchEditCount}`]

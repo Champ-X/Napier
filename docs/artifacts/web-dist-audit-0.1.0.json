@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 56,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BP9FsUM2.js",
+    "path": "apps/web/dist/assets/index-BrazEZfj.js",
     "sizeBytes": 130947,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "4e5cb47079760b00f2cbc05cefb02eadcd58c7bd7b25b5e552dfb8fd8fdfe48f"
+    "sha256": "0db8d206764300a5cc83f25417dc9519ff103645ae6451d2061b36d3596cd8fe"
   },
-  "distContentSha256": "4e5cb47079760b00f2cbc05cefb02eadcd58c7bd7b25b5e552dfb8fd8fdfe48f",
+  "distContentSha256": "0db8d206764300a5cc83f25417dc9519ff103645ae6451d2061b36d3596cd8fe",
   "errors": []
 }

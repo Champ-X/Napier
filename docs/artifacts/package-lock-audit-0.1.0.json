@@ -6,7 +6,7 @@
   "rootPackage": {
     "name": "napier",
     "version": "0.1.0",
-    "packageJsonSha256": "cfdcc24d08e50961d10c2d35a3a43c9d67432e5bc24668a4fd84a248b6b2438c",
+    "packageJsonSha256": "0c54ad16c17a1796ca1cf138a9cfd7c6806e90177ecc1fdf32cfd2283bc68ee7",
     "packageLockSha256": "a71c58cfc753cd56b683ef7f641bcec4e2bc68b13ce46ee3b08c7f3e41ed86c0"
   },
   "counts": {
