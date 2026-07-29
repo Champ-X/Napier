@@ -1,7 +1,13 @@
-import type { ExecutionPlanReplanRecommendation } from "@napier/contracts";
+import type {
+  ExecutionPlanReplanRecommendation,
+  ExecutionPlanReplanRecord,
+} from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
-import { projectReplanDraftSummary } from "../src/replan-draft-view-model";
+import {
+  projectReplanDraftSummary,
+  projectReplanRecordSummary,
+} from "../src/replan-draft-view-model";
 
 type ReplanDraftFixtureOverride = Partial<
   Omit<ExecutionPlanReplanRecommendation["draft"], "request" | "evaluation">
@@ -128,6 +134,41 @@ describe("replan draft view model", () => {
         hasStructuralChanges: true,
       }),
     );
+  });
+
+  it("projects applied replan records as inspectable ledger structure", () => {
+    const record = {
+      id: "replan_123",
+      strategy: "artifact_drift",
+      reason: "Raw reason should not be needed by the projection.",
+      evidence: "Raw evidence should not be needed by the projection.",
+      supersededStepIds: ["step_old"],
+      supersededArtifactIds: ["artifact_old"],
+      dependencyUpdatedStepIds: ["step_downstream"],
+      addedStepIds: ["restore-artifact_old"],
+      addedArtifactIds: ["replacement-artifact_old"],
+      addedStepsSha256: "a".repeat(64),
+      addedArtifactsSha256: "b".repeat(64),
+      dependencyUpdatesSha256: "c".repeat(64),
+      fromRevision: 4,
+      toRevision: 5,
+      replanSha256: "d".repeat(64),
+      createdAt: "2026-07-29T00:00:00.000Z",
+    } satisfies ExecutionPlanReplanRecord;
+
+    expect(projectReplanRecordSummary(record)).toEqual({
+      supersededStepIds: ["step_old"],
+      supersededArtifactIds: ["artifact_old"],
+      addedStepIds: ["restore-artifact_old"],
+      addedArtifactIds: ["replacement-artifact_old"],
+      dependencyUpdatedStepIds: ["step_downstream"],
+      structuralChangeCount: 5,
+      hasStructuralChanges: true,
+      addedStepsSha256: "a".repeat(64),
+      addedArtifactsSha256: "b".repeat(64),
+      dependencyUpdatesSha256: "c".repeat(64),
+      replanSha256: "d".repeat(64),
+    });
   });
 });
 

@@ -15,6 +15,7 @@ export const planCopy = {
   replan: "Latest replan",
   replanSignal: "Replan signal",
   draft: "Draft",
+  appliedChanges: "Applied changes",
   draftChanges: "Draft changes",
   changes: "changes",
   expectedRevision: "Expected revision",
@@ -23,6 +24,9 @@ export const planCopy = {
   addedSteps: "Added steps",
   addedArtifacts: "Added artifacts",
   dependencyUpdates: "Dependency updates",
+  addedStepsHash: "Added steps hash",
+  addedArtifactsHash: "Added artifacts hash",
+  dependencyUpdatesHash: "Dependency updates hash",
   reviewDraft: "Review draft",
   reviewingDraft: "Reviewing",
   modelUnavailableHint:

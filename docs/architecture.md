@@ -3236,8 +3236,11 @@ revision-CAS replan flow before state changes; the Plan Workbench exposes that
 application as an explicit action beside model review. Replans are bounded
 history entries on the same ExecutionPlan: they record the strategy, revision
 range, affected IDs, and SHA-256 digests for added steps, added artifacts,
-dependency updates, and the complete replan record. A stale expected revision
-fails as a conflict before any plan mutation is committed.
+dependency updates, and the complete replan record. The Workbench projects the
+latest applied replan into an ID/hash summary beside the draft signal, allowing
+operators to inspect superseded entities, new work, dependency rewrites, and
+component hashes after Apply without rendering reason or evidence prose. A stale
+expected revision fails as a conflict before any plan mutation is committed.
 
 Plan REST responses are no-store and response-hash-bound:
 

@@ -116,7 +116,10 @@ import {
   type PlanBlueprintLibrarySelectionReceipt,
 } from "./plan-blueprint-library-view-model";
 import { listReceiptTrustAnchors } from "./receipt-trust-api";
-import { projectReplanDraftSummary } from "./replan-draft-view-model";
+import {
+  projectReplanDraftSummary,
+  projectReplanRecordSummary,
+} from "./replan-draft-view-model";
 
 const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_FILE_BYTES = 2 * 1024 * 1024;
@@ -264,6 +267,9 @@ export default function PlanPanel({
   );
   const criticalPathSet = new Set(criticalPath);
   const latestReplan = plan?.replans.at(-1);
+  const latestReplanSummary = latestReplan
+    ? projectReplanRecordSummary(latestReplan)
+    : undefined;
   const replanRecommendation = plan?.replanRecommendation;
   const replanDraftSummary = replanRecommendation
     ? projectReplanDraftSummary(replanRecommendation)
@@ -1460,6 +1466,99 @@ export default function PlanPanel({
                   {" / "}
                   {planCopy.hash}: {latestReplan.replanSha256.slice(0, 12)}
                 </small>
+                {latestReplanSummary ? (
+                  <div className="plan-replan-record-summary">
+                    <span>{planCopy.appliedChanges}</span>
+                    <strong>
+                      {latestReplanSummary.structuralChangeCount.toLocaleString()}{" "}
+                      {planCopy.changes}
+                      {" / "}
+                      {planCopy.hash}:{" "}
+                      <code title={latestReplanSummary.replanSha256}>
+                        {latestReplanSummary.replanSha256.slice(0, 12)}
+                      </code>
+                    </strong>
+                    <dl>
+                      {latestReplanSummary.supersededStepIds.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.supersededSteps}</dt>
+                          <dd>
+                            {latestReplanSummary.supersededStepIds.join(", ")}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {latestReplanSummary.supersededArtifactIds.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.supersededArtifacts}</dt>
+                          <dd>
+                            {latestReplanSummary.supersededArtifactIds.join(
+                              ", ",
+                            )}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {latestReplanSummary.addedStepIds.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.addedSteps}</dt>
+                          <dd>{latestReplanSummary.addedStepIds.join(", ")}</dd>
+                        </div>
+                      ) : null}
+                      {latestReplanSummary.addedArtifactIds.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.addedArtifacts}</dt>
+                          <dd>
+                            {latestReplanSummary.addedArtifactIds.join(", ")}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {latestReplanSummary.dependencyUpdatedStepIds.length >
+                      0 ? (
+                        <div>
+                          <dt>{planCopy.dependencyUpdates}</dt>
+                          <dd>
+                            {latestReplanSummary.dependencyUpdatedStepIds.join(
+                              ", ",
+                            )}
+                          </dd>
+                        </div>
+                      ) : null}
+                      <div>
+                        <dt>{planCopy.addedStepsHash}</dt>
+                        <dd>
+                          <code title={latestReplanSummary.addedStepsSha256}>
+                            {latestReplanSummary.addedStepsSha256.slice(0, 12)}
+                          </code>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{planCopy.addedArtifactsHash}</dt>
+                        <dd>
+                          <code
+                            title={latestReplanSummary.addedArtifactsSha256}
+                          >
+                            {latestReplanSummary.addedArtifactsSha256.slice(
+                              0,
+                              12,
+                            )}
+                          </code>
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{planCopy.dependencyUpdatesHash}</dt>
+                        <dd>
+                          <code
+                            title={latestReplanSummary.dependencyUpdatesSha256}
+                          >
+                            {latestReplanSummary.dependencyUpdatesSha256.slice(
+                              0,
+                              12,
+                            )}
+                          </code>
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                ) : null}
               </div>
             ) : null}
             {replanRecommendation ? (

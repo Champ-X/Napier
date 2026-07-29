@@ -366,6 +366,9 @@ All notable changes to Napier are recorded here.
 - Replan signals now show an inline draft-change summary before Apply:
   superseded steps/artifacts, added steps/artifacts, dependency rewrites, and
   the expected Plan revision are visible without opening model review.
+- Latest replan ledger cards now show the applied structural changes and
+  replan component hashes, so operators can inspect what changed after Apply
+  without reopening the archived Plan event.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`, and `artifact.drift_checked`
   receipts remain hash-only, so recomputed portable replay hashes cannot hide
