@@ -24,6 +24,7 @@ import {
   normalizeAutomaticRecoveryPolicy,
   validateAgentProfileRevision,
 } from "./agents.js";
+import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import {
   hashAutomaticRecoveryEventStream,
   validateAutomaticRecoveryAssessment,
@@ -708,6 +709,10 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     );
     assertIsoDate(event["createdAt"], `events[${index}].createdAt`);
     assertJsonValue(event["payload"], `events[${index}].payload`);
+    assertArtifactReceiptEventBoundary(
+      event,
+      `Thread replay bundle events[${index}]`,
+    );
     typedEvents.push(value as RunEvent);
   }
   assertThreadImportProvenanceReceipt(threadImportProvenance, typedEvents);

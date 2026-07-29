@@ -325,6 +325,72 @@ describe("run replay", () => {
     });
   });
 
+  it("rejects raw artifact preview text when snapshot hashes are recomputed", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Artifact preview snapshot",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const previewText = "# Report\n\nSnapshot exports must stay hash-only.\n";
+    const previewSha256 = sha256(previewText);
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.previewed",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: "plan_preview",
+        artifactId: "artifact_report",
+        planRevision: 1,
+        status: "verified",
+        kind: "file",
+        pathSha256: sha256("report.md"),
+        sha256: previewSha256,
+        sizeBytes: Buffer.byteLength(previewText),
+        lineCount: previewText.split(/\r\n|\r|\n/u).length,
+        textSha256: previewSha256,
+      },
+    });
+
+    const snapshot = await createRunReplaySnapshot(store, thread.id, run.id);
+    expect(verifyRunReplaySnapshot(snapshot).status).toBe("valid");
+    expect(JSON.stringify(snapshot.events)).not.toContain(previewText);
+
+    const tampered = structuredClone(snapshot);
+    const event = tampered.events.find(
+      (candidate) => candidate.type === "artifact.previewed",
+    );
+    if (
+      !event?.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object"
+    ) {
+      throw new Error("Artifact preview snapshot fixture is missing");
+    }
+    event.payload["text"] = previewText;
+    tampered.eventStreamSha256 = hashEventStream(tampered.events);
+    const {
+      generatedAt: _generatedAt,
+      contentSha256: _contentSha256,
+      ...snapshotContent
+    } = tampered;
+    tampered.contentSha256 = sha256(canonicalJson(snapshotContent));
+    expect(verifyRunReplaySnapshot(tampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["invalid_shape"],
+      eventCount: 0,
+      subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
+    });
+  });
+
   it("tracks embedded reviewer envelopes without changing candidate response coverage", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;

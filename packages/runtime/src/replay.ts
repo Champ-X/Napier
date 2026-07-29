@@ -18,6 +18,7 @@ import {
 } from "@napier/contracts";
 
 import type { LocalStore } from "./store.js";
+import { assertArtifactReceiptEventBoundary } from "./artifact-receipts.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { compareRunConfigurations } from "./run-config.js";
 import {
@@ -453,6 +454,7 @@ function assertReplayEvent(
   ) {
     throw new Error("Run replay snapshot event is invalid");
   }
+  assertArtifactReceiptEventBoundary(record, "Run replay snapshot event");
 }
 
 function assertReplaySubagent(

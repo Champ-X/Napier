@@ -12,6 +12,10 @@ import {
   assertPlanArtifactEventBindings,
   refreshPlanProjection,
 } from "./plans.js";
+import {
+  assertArtifactReceiptEventBoundary,
+  isArtifactReceiptEvent,
+} from "./artifact-receipts.js";
 import { hashEventStream } from "./replay.js";
 import type { LocalStore } from "./store.js";
 
@@ -463,80 +467,17 @@ function assertArchivePlanEvent(
 function isArchiveArtifactEvidenceEvent(
   event: Record<string, unknown>,
 ): boolean {
-  if (event["category"] !== "artifact") {
+  if (!isArtifactReceiptEvent(event)) {
     return false;
   }
-  const payload = recordField(event, "payload");
   try {
-    if (event["type"] === "artifact.exported") {
-      assertArchiveArtifactReceiptPayload(payload, [
-        "planId",
-        "artifactId",
-        "planRevision",
-        "status",
-        "kind",
-        "pathSha256",
-        "sha256",
-        "sizeBytes",
-      ]);
-      return true;
-    }
-    if (event["type"] === "artifact.previewed") {
-      assertArchiveArtifactReceiptPayload(payload, [
-        "planId",
-        "artifactId",
-        "planRevision",
-        "status",
-        "kind",
-        "pathSha256",
-        "sha256",
-        "sizeBytes",
-        "lineCount",
-        "textSha256",
-      ]);
-      const lineCount = payload["lineCount"];
-      return (
-        typeof lineCount === "number" &&
-        Number.isSafeInteger(lineCount) &&
-        lineCount >= 0
-      );
-    }
-    return false;
+    assertArtifactReceiptEventBoundary(
+      event,
+      "Execution plan archive artifact receipt",
+    );
+    return true;
   } catch {
     return false;
-  }
-}
-
-function assertArchiveArtifactReceiptPayload(
-  payload: Record<string, unknown>,
-  allowedKeys: string[],
-): void {
-  if (
-    Object.keys(payload).some((key) => !allowedKeys.includes(key)) ||
-    allowedKeys.some((key) => !(key in payload))
-  ) {
-    throw new Error("Execution plan archive artifact receipt is invalid");
-  }
-  stringField(payload, "planId");
-  stringField(payload, "artifactId");
-  assertSha256(stringField(payload, "pathSha256"), "pathSha256");
-  assertSha256(stringField(payload, "sha256"), "sha256");
-  if ("textSha256" in payload) {
-    assertSha256(stringField(payload, "textSha256"), "textSha256");
-  }
-  const sizeBytes = payload["sizeBytes"];
-  const planRevision = payload["planRevision"];
-  if (
-    typeof sizeBytes !== "number" ||
-    !Number.isSafeInteger(sizeBytes) ||
-    sizeBytes < 0 ||
-    typeof planRevision !== "number" ||
-    !Number.isSafeInteger(planRevision) ||
-    planRevision < 1 ||
-    payload["kind"] !== "file" ||
-    (payload["status"] !== "produced" && payload["status"] !== "verified")
-  ) {
-    throw new Error("Execution plan archive artifact receipt is invalid");
   }
 }
 

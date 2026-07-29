@@ -356,6 +356,10 @@ All notable changes to Napier are recorded here.
   through the same workspace and digest boundary. Preview responses are
   no-store and hash-bound, while `artifact.previewed` Ledger events and Plan
   archives persist only content/text hashes, byte count, and line count.
+- Thread replay bundles and Run replay snapshots now enforce that
+  `artifact.exported` and `artifact.previewed` receipts remain hash-only, so
+  recomputed portable replay hashes cannot hide raw artifact paths or preview
+  text in exported evidence.
 - Thread replay bundle validation now recomputes Independent Advisor
   `evidenceSummary` from predecessor Run events, so a forged current/stale
   summary fails even if review and bundle hashes are recalculated.

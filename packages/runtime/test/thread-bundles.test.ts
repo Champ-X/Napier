@@ -341,6 +341,85 @@ describe("thread replay bundles", () => {
     );
   });
 
+  it("rejects raw artifact preview text when bundle hashes are recomputed", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Artifact preview bundle",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const plan = await store.createPlan(thread.id, {
+      objective: "Preview artifact evidence.",
+      steps: [
+        {
+          id: "preview",
+          title: "Preview artifact",
+          description: "Preview the artifact.",
+          verification: "The preview receipt stays hash-only.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: "report.md",
+          description: "The report artifact.",
+        },
+      ],
+    });
+    const previewText = "# Report\n\nDo not persist this text.\n";
+    const previewSha256 = sha256(previewText);
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.previewed",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "report",
+        planRevision: plan.revision,
+        status: "produced",
+        kind: "file",
+        pathSha256: sha256("report.md"),
+        sha256: previewSha256,
+        sizeBytes: Buffer.byteLength(previewText),
+        lineCount: previewText.split(/\r\n|\r|\n/u).length,
+        textSha256: previewSha256,
+      },
+    });
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    expect(validateThreadReplayBundle(bundle).events).toEqual(bundle.events);
+    expect(JSON.stringify(bundle.events)).not.toContain(previewText);
+
+    const tampered = structuredClone(bundle);
+    const event = tampered.events.find(
+      (candidate) => candidate.type === "artifact.previewed",
+    );
+    if (
+      !event?.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object"
+    ) {
+      throw new Error("Artifact preview event fixture is missing");
+    }
+    event.payload["text"] = previewText;
+    tampered.eventStreamSha256 = hashThreadEventStream(tampered.events);
+    const {
+      generatedAt: _generatedAt,
+      contentSha256: _contentSha256,
+      ...content
+    } = tampered;
+    tampered.contentSha256 = sha256(canonicalJson(content));
+    expect(() => validateThreadReplayBundle(tampered)).toThrow(
+      "hash-only artifact receipt is invalid",
+    );
+  });
+
   it("rebinds Agent milestone evidence after portable event remapping", async () => {
     const { store } = await createStore();
     const agent = store.listAgents()[0]!;
