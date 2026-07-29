@@ -295,6 +295,9 @@ All notable changes to Napier are recorded here.
   `artifact.data_profile_verified` Ledger receipt with status, diagnostic
   count/hash, declared/recomputed/observed profile hashes, and no raw columns,
   samples, or diagnostics.
+- The data profile verifier response now mirrors the appended Ledger event
+  ID/sequence/hash, and Workbench refreshes the active Thread after upload
+  verification so the Trace immediately exposes the replayable receipt.
 - `inspect_data` and Plan artifact data profiles now normalize duplicate or
   blank tabular headers into unique names such as `name_2` or `column_3`, so
   bounded samples do not silently overwrite earlier columns.

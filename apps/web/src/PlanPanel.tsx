@@ -583,6 +583,7 @@ export default function PlanPanel({
         profile,
       );
       setArtifactDataProfileVerification(verification);
+      await onDraftApplied();
     } catch (error) {
       setArtifactError(
         error instanceof SyntaxError
@@ -2497,6 +2498,28 @@ export default function PlanPanel({
                                 }
                               >
                                 {dataProfileVerification.observedSampleSha256.slice(
+                                  0,
+                                  16,
+                                )}
+                              </code>
+                            </small>
+                            <small>
+                              {planCopy.receipt}:{" "}
+                              <code
+                                title={dataProfileVerification.ledgerEventId}
+                              >
+                                #
+                                {String(
+                                  dataProfileVerification.ledgerEventSeq,
+                                ).padStart(3, "0")}
+                              </code>
+                              {" / "}
+                              <code
+                                title={
+                                  dataProfileVerification.ledgerEventSha256
+                                }
+                              >
+                                {dataProfileVerification.ledgerEventSha256.slice(
                                   0,
                                   16,
                                 )}

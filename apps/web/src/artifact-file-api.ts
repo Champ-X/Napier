@@ -75,6 +75,9 @@ export interface PlanArtifactDataProfileVerification {
   declaredSampleSha256: string;
   recomputedDeclaredSampleSha256: string;
   observedSampleSha256: string;
+  ledgerEventId: string;
+  ledgerEventSeq: number;
+  ledgerEventSha256: string;
 }
 
 export interface PlanArtifactDriftCheck {

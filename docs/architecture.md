@@ -3612,7 +3612,10 @@ IDs, Plan revision, status/kind, `pathSha256`, verification status, diagnostic
 count/hash, declared/recomputed/observed artifact, column-set, sample, count,
 format, truncation, and byte-size evidence. Uploaded columns, sample rows, and
 diagnostic strings remain no-store and fail closed if they appear in persisted
-artifact receipts.
+artifact receipts. The no-store verifier response mirrors the appended Ledger
+event ID, sequence, and event SHA-256, and the Workbench refreshes the active
+Thread after upload verification so Trace immediately shows the replayable
+receipt.
 Produced or verified directory artifacts expose a sibling manifest preview.
 The response is no-store and may include artifact-relative entry paths, file
 hashes, byte counts, and aggregate directory digest for operator inspection;

@@ -4970,7 +4970,12 @@ describe("Napier HTTP goal flow", () => {
     expect(
       dataProfileVerifyResponse.headers.get("X-Napier-Verification-Status"),
     ).toBe("valid");
-    await expect(dataProfileVerifyResponse.json()).resolves.toEqual(
+    const dataProfileVerifyBody = (await dataProfileVerifyResponse.json()) as {
+      ledgerEventId: string;
+      ledgerEventSeq: number;
+      ledgerEventSha256: string;
+    };
+    expect(dataProfileVerifyBody).toEqual(
       expect.objectContaining({
         kind: "napier.plan-artifact-data-profile-verification",
         schemaVersion: 1,
@@ -4984,6 +4989,18 @@ describe("Napier HTTP goal flow", () => {
         observedSampleSha256: dataProfileBody.sampleSha256,
       }),
     );
+    expect(
+      dataProfileVerifyResponse.headers.get("X-Napier-Ledger-Event-Id"),
+    ).toBe(dataProfileVerifyBody.ledgerEventId);
+    expect(
+      dataProfileVerifyResponse.headers.get("X-Napier-Ledger-Event-Seq"),
+    ).toBe(String(dataProfileVerifyBody.ledgerEventSeq));
+    expect(
+      dataProfileVerifyResponse.headers.get("X-Napier-Ledger-Event-SHA256"),
+    ).toBe(dataProfileVerifyBody.ledgerEventSha256);
+    expect(dataProfileVerifyBody.ledgerEventId).toMatch(/^event_[a-z0-9]+$/);
+    expect(dataProfileVerifyBody.ledgerEventSeq).toBeGreaterThan(0);
+    expect(dataProfileVerifyBody.ledgerEventSha256).toMatch(/^[a-f0-9]{64}$/);
     const reorderedProfileResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/scores/data/verify`,
       {
@@ -5049,6 +5066,8 @@ describe("Napier HTTP goal flow", () => {
     );
     expect(dataProfileVerificationEvents).toEqual([
       expect.objectContaining({
+        id: dataProfileVerifyBody.ledgerEventId,
+        seq: dataProfileVerifyBody.ledgerEventSeq,
         category: "artifact",
         payload: expect.objectContaining({
           planId: plan.id,
@@ -5102,6 +5121,11 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     ]);
+    expect(
+      createHash("sha256")
+        .update(JSON.stringify(dataProfileVerificationEvents[0]))
+        .digest("hex"),
+    ).toBe(dataProfileVerifyBody.ledgerEventSha256);
     expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain(
       "alpha",
     );

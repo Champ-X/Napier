@@ -753,6 +753,9 @@ describe("Web JSON API wrappers", () => {
       declaredSampleSha256: "d".repeat(64),
       recomputedDeclaredSampleSha256: "d".repeat(64),
       observedSampleSha256: "d".repeat(64),
+      ledgerEventId: "event_1234567890",
+      ledgerEventSeq: 12,
+      ledgerEventSha256: "e".repeat(64),
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe(

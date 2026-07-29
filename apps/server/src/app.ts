@@ -7555,7 +7555,7 @@ export function createApp(services: NapierServices): Hono {
           profile,
           observed,
         );
-        await services.store.appendEvent({
+        const ledgerEvent = await services.store.appendEvent({
           threadId,
           runId: createId("runctl"),
           type: "artifact.data_profile_verified",
@@ -7564,8 +7564,14 @@ export function createApp(services: NapierServices): Hono {
           payload:
             createPlanArtifactDataProfileVerificationEventPayload(verification),
         });
-        setPlanArtifactDataProfileVerificationHeaders(context, verification);
-        return context.json(verification);
+        const response = {
+          ...verification,
+          ledgerEventId: ledgerEvent.id,
+          ledgerEventSeq: ledgerEvent.seq,
+          ledgerEventSha256: sha256Json(ledgerEvent as unknown as JsonValue),
+        };
+        setPlanArtifactDataProfileVerificationHeaders(context, response);
+        return context.json(response);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -18116,6 +18122,9 @@ function setPlanArtifactDataProfileVerificationHeaders(
     declaredColumnSetSha256: string;
     observedSampleSha256: string;
     declaredSampleSha256: string;
+    ledgerEventId?: string;
+    ledgerEventSeq?: number;
+    ledgerEventSha256?: string;
   },
 ): void {
   context.header("Cache-Control", "no-store");
@@ -18159,6 +18168,21 @@ function setPlanArtifactDataProfileVerificationHeaders(
     "X-Napier-Observed-Sample-SHA256",
     verification.observedSampleSha256,
   );
+  if (verification.ledgerEventId) {
+    context.header("X-Napier-Ledger-Event-Id", verification.ledgerEventId);
+  }
+  if (verification.ledgerEventSeq !== undefined) {
+    context.header(
+      "X-Napier-Ledger-Event-Seq",
+      String(verification.ledgerEventSeq),
+    );
+  }
+  if (verification.ledgerEventSha256) {
+    context.header(
+      "X-Napier-Ledger-Event-SHA256",
+      verification.ledgerEventSha256,
+    );
+  }
 }
 
 function verifyPlanArtifactDataProfileProjection(

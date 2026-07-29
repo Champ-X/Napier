@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 56,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DVXrXPeX.js",
+    "path": "apps/web/dist/assets/index-BYDhnNEQ.js",
     "sizeBytes": 129794,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "69dda25abdf5773003452705960a723c74a231d36a380b16e08ac90fd31c7e5e"
+    "sha256": "146c368a6c43570895544267d5c2fea9df7877f8fc1443d5b682027e40b68214"
   },
-  "distContentSha256": "69dda25abdf5773003452705960a723c74a231d36a380b16e08ac90fd31c7e5e",
+  "distContentSha256": "146c368a6c43570895544267d5c2fea9df7877f8fc1443d5b682027e40b68214",
   "errors": []
 }
