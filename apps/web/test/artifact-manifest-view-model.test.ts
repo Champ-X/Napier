@@ -73,7 +73,11 @@ describe("artifact manifest view model", () => {
     });
     expect(
       projectArtifactManifestActions(
-        artifactFixture({ status: "verified", kind: "file" }),
+        artifactFixture({
+          status: "verified",
+          kind: "file",
+          path: "artifacts/report.txt",
+        }),
       ),
     ).toEqual({
       canProduce: false,
@@ -137,6 +141,19 @@ describe("artifact manifest view model", () => {
           status: "produced",
           kind: "file",
           path: "artifacts/scores.tsv",
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        canProfileData: true,
+      }),
+    );
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({
+          status: "verified",
+          kind: "file",
+          path: "artifacts/report.md",
         }),
       ),
     ).toEqual(

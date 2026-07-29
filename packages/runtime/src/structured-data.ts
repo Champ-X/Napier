@@ -2,7 +2,12 @@ export const MAX_STRUCTURED_DATA_SAMPLE_ROWS = 25;
 export const MAX_STRUCTURED_DATA_COLUMNS = 80;
 const MAX_STRUCTURED_DATA_CELL_BYTES = 4_096;
 
-export type WorkspaceDataFormat = "json" | "jsonl" | "csv" | "tsv";
+export type WorkspaceDataFormat =
+  | "json"
+  | "jsonl"
+  | "csv"
+  | "tsv"
+  | "markdown_table";
 export type WorkspaceDataCell = string | number | boolean | null;
 
 export interface WorkspaceStructuredDataInspection {
@@ -27,9 +32,11 @@ export function inspectStructuredData(
       ? inspectDelimitedData(source, maxRows, errorPrefix, ",", "CSV")
       : format === "tsv"
         ? inspectDelimitedData(source, maxRows, errorPrefix, "\t", "TSV")
-      : format === "jsonl"
-        ? inspectJsonLinesData(source, maxRows, errorPrefix)
-        : inspectJsonData(source, maxRows, errorPrefix);
+        : format === "markdown_table"
+          ? inspectMarkdownTableData(source, maxRows, errorPrefix)
+          : format === "jsonl"
+            ? inspectJsonLinesData(source, maxRows, errorPrefix)
+            : inspectJsonData(source, maxRows, errorPrefix);
   return { format, ...inspected };
 }
 
@@ -42,10 +49,14 @@ function detectDataFormat(
   const lower = relativePath.toLowerCase();
   if (lower.endsWith(".jsonl") || lower.endsWith(".ndjson")) return "jsonl";
   if (lower.endsWith(".json")) return "json";
+  if (lower.endsWith(".md") || lower.endsWith(".markdown")) {
+    return "markdown_table";
+  }
   if (lower.endsWith(".tsv") || lower.endsWith(".tab")) return "tsv";
   if (lower.endsWith(".csv")) return "csv";
   const trimmed = source.trimStart();
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) return "json";
+  if (findMarkdownTable(source)) return "markdown_table";
   const firstLine = trimmed.split(/\r?\n/u, 1)[0] ?? "";
   if (firstLine.includes("\t") && !firstLine.includes(",")) return "tsv";
   return "csv";
@@ -122,6 +133,94 @@ function inspectDelimitedData(
     truncated:
       dataRows.length > sampleRows.length || headers.length > columns.length,
   };
+}
+
+function inspectMarkdownTableData(
+  source: string,
+  maxRows: number,
+  errorPrefix: string,
+): Omit<WorkspaceStructuredDataInspection, "format"> {
+  const table = findMarkdownTable(source);
+  if (!table) {
+    throw new Error(`${errorPrefix} Markdown table not found`);
+  }
+  const headers = table.headers.map((value, index) =>
+    value.trim().length > 0 ? value.trim() : `column_${index + 1}`,
+  );
+  const columns = headers.slice(0, MAX_STRUCTURED_DATA_COLUMNS);
+  const sampleRows = table.rows
+    .slice(0, maxRows)
+    .map((row) =>
+      Object.fromEntries(
+        columns.map((column, index) => [column, previewCell(row[index] ?? "")]),
+      ),
+    );
+  return {
+    rowCount: table.rows.length,
+    columnCount: headers.length,
+    columns,
+    sampleRows,
+    truncated:
+      table.rows.length > sampleRows.length ||
+      headers.length > columns.length,
+  };
+}
+
+function findMarkdownTable(
+  source: string,
+): { headers: string[]; rows: string[][] } | undefined {
+  const lines = source.split(/\r?\n/u);
+  for (let index = 0; index < lines.length - 1; index += 1) {
+    const header = splitMarkdownTableRow(lines[index]!);
+    if (header.length === 0) continue;
+    const separator = splitMarkdownTableRow(lines[index + 1]!);
+    if (!isMarkdownSeparatorRow(separator)) continue;
+    const rows: string[][] = [];
+    for (const line of lines.slice(index + 2)) {
+      if (line.trim().length === 0) break;
+      const row = splitMarkdownTableRow(line);
+      if (row.length === 0) break;
+      rows.push(row);
+    }
+    return { headers: header, rows };
+  }
+  return undefined;
+}
+
+function splitMarkdownTableRow(line: string): string[] {
+  const trimmed = line.trim();
+  if (!trimmed.includes("|")) return [];
+  const cells: string[] = [];
+  let cell = "";
+  let escaped = false;
+  for (const char of trimmed) {
+    if (escaped) {
+      cell += char;
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === "|") {
+      cells.push(cell.trim());
+      cell = "";
+      continue;
+    }
+    cell += char;
+  }
+  cells.push(cell.trim());
+  if (trimmed.startsWith("|")) cells.shift();
+  if (trimmed.endsWith("|")) cells.pop();
+  return cells;
+}
+
+function isMarkdownSeparatorRow(cells: string[]): boolean {
+  return (
+    cells.length > 0 &&
+    cells.every((cell) => /^:?-{3,}:?$/u.test(cell.trim()))
+  );
 }
 
 function parseDelimitedRows(

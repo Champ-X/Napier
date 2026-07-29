@@ -139,7 +139,8 @@ function assertArtifactDataProfiledPayload(
     format !== "json" &&
     format !== "jsonl" &&
     format !== "csv" &&
-    format !== "tsv"
+    format !== "tsv" &&
+    format !== "markdown_table"
   ) {
     throw new Error(`${label} hash-only artifact receipt is invalid`);
   }

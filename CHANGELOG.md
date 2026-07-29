@@ -273,13 +273,16 @@ All notable changes to Napier are recorded here.
   TypeScript, JavaScript, Python, and Go symbol maps. It returns symbols to the
   Agent while Trace renders only file/symbol/skipped counts, line/byte counts,
   truncation state, and root/language/file-set/symbol-set hashes.
-- Added a read-only `inspect_data` workspace tool for JSON, JSONL, CSV, and TSV
-  files. It returns bounded schema/sample evidence to the Agent while Trace
-  renders only format, row/column counts, truncation state, and path/file/
-  column-set/sample hashes.
+- Added a read-only `inspect_data` workspace tool for JSON, JSONL, CSV, TSV,
+  and Markdown table files. It returns bounded schema/sample evidence to the
+  Agent while Trace renders only format, row/column counts, truncation state,
+  and path/file/column-set/sample hashes.
 - `inspect_data` and Plan artifact data profiles now project JSON array rows as
   `column_1..N`, so matrix-style JSON outputs remain inspectable without
   storing raw columns or sample rows in Ledger receipts.
+- `inspect_data` and Plan artifact data profiles now parse the first Markdown
+  table in `.md` / `.markdown` artifacts through the same no-store sample and
+  hash-only Ledger receipt boundary.
 - Added a read-only `inspect_code` workspace tool for TypeScript, JavaScript,
   Python, and Go files. It returns bounded symbol outlines to the Agent while
   Trace renders only language, symbol/line/byte counts, truncation state, and

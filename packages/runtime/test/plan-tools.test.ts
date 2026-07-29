@@ -621,6 +621,40 @@ describe("plan tools", () => {
       }),
     );
 
+    const markdownContents = [
+      "# Scores",
+      "",
+      "| name | score |",
+      "| --- | ---: |",
+      "| alpha | 1 |",
+      "| beta | 2 |",
+    ].join("\n");
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "scores.md"),
+      markdownContents,
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceDataArtifactProfile(workspaceRoot, {
+        ...artifact,
+        id: "scores-md",
+        path: "artifacts/scores.md",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        format: "markdown_table",
+        sha256: createHash("sha256").update(markdownContents).digest("hex"),
+        sizeBytes: Buffer.byteLength(markdownContents),
+        rowCount: 2,
+        columnCount: 2,
+        columns: ["name", "score"],
+        sampleRows: [
+          { name: "alpha", score: "1" },
+          { name: "beta", score: "2" },
+        ],
+      }),
+    );
+
     await writeFile(
       path.join(workspaceRoot, "artifacts", "scores.csv"),
       "name,score\ndrifted,9\n",

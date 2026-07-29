@@ -212,10 +212,19 @@ describe("workspace tools", () => {
       ["Ada", 98],
       ["Linus", 87, true],
     ]);
+    const markdownTable = [
+      "# Scores",
+      "",
+      "| name | score |",
+      "| --- | ---: |",
+      "| Ada | 98 |",
+      "| Linus | 87 |",
+    ].join("\n");
     await writeFile(path.join(workspaceRoot, "scores.csv"), csv);
     await writeFile(path.join(workspaceRoot, "scores.tsv"), tsv);
     await writeFile(path.join(workspaceRoot, "items.jsonl"), jsonl);
     await writeFile(path.join(workspaceRoot, "matrix.json"), matrixJson);
+    await writeFile(path.join(workspaceRoot, "scores.md"), markdownTable);
     const inspect = createWorkspaceTools(workspaceRoot).find(
       (tool) => tool.name === "inspect_data",
     )!;
@@ -318,6 +327,34 @@ describe("workspace tools", () => {
         .digest("hex"),
     });
     expect(matrixResult.content[0]!.text).toContain('"column_3": true');
+
+    const markdownResult = await inspect.execute("inspect-markdown-table", {
+      path: "scores.md",
+      maxRows: 2,
+    });
+    const markdownSample = [
+      { name: "Ada", score: "98" },
+      { name: "Linus", score: "87" },
+    ];
+    expect(markdownResult.details).toEqual({
+      path: "scores.md",
+      pathSha256: createHash("sha256").update("scores.md").digest("hex"),
+      format: "markdown_table",
+      sha256: createHash("sha256").update(markdownTable).digest("hex"),
+      sizeBytes: Buffer.byteLength(markdownTable),
+      rowCount: 2,
+      columnCount: 2,
+      truncated: false,
+      columnSetSha256: createHash("sha256")
+        .update(JSON.stringify(csvColumns))
+        .digest("hex"),
+      sampleSha256: createHash("sha256")
+        .update(JSON.stringify(markdownSample))
+        .digest("hex"),
+    });
+    expect(markdownResult.content[0]!.text).toContain(
+      '"format":"markdown_table"',
+    );
   });
 
   it("lists code symbols across a bounded workspace directory", async () => {
