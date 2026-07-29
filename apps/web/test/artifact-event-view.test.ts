@@ -80,7 +80,7 @@ describe("artifact event trace view", () => {
       planRevision: 5,
       status: "verified",
       kind: "file",
-      format: "csv",
+      format: "markdown_table",
       path: "TOP_SECRET_PATH",
       columns: ["TOP_SECRET_COLUMN"],
       sampleRows: [{ TOP_SECRET_COLUMN: "TOP_SECRET_VALUE" }],
@@ -101,7 +101,7 @@ describe("artifact event trace view", () => {
       planRevision: 5,
       status: "verified",
       kind: "file",
-      format: "csv",
+      format: "markdown_table",
       pathSha256: "a".repeat(64),
       sha256: "b".repeat(64),
       columnSetSha256: "c".repeat(64),
@@ -112,7 +112,7 @@ describe("artifact event trace view", () => {
       truncated: false,
     });
     expect(artifactEventTraceSummary(event)).toBe(
-      `artifact / data_profiled / plan 1234567890 / artifact 0987654321 / plan-r5 / status verified / kind file / format csv / truncated false / size-bytes 128 / rows 3 / columns 2 / path ${"a".repeat(12)} / artifact ${"b".repeat(12)} / columns ${"c".repeat(12)} / sample ${"d".repeat(12)}`,
+      `artifact / data_profiled / plan 1234567890 / artifact 0987654321 / plan-r5 / status verified / kind file / format Markdown table / truncated false / size-bytes 128 / rows 3 / columns 2 / path ${"a".repeat(12)} / artifact ${"b".repeat(12)} / columns ${"c".repeat(12)} / sample ${"d".repeat(12)}`,
     );
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

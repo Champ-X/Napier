@@ -1,4 +1,9 @@
 import type { RunEvent } from "@napier/contracts";
+import {
+  isStructuredDataFormat,
+  structuredDataFormatLabel,
+  type StructuredDataFormat,
+} from "./structured-data-format-view";
 
 export interface ToolEventTraceView {
   toolName: string;
@@ -19,7 +24,7 @@ export interface ToolEventTraceView {
   symbolIndexLanguageCountsSha256?: string;
   symbolIndexFileSetSha256?: string;
   symbolIndexSymbolSetSha256?: string;
-  dataFormat?: "json" | "jsonl" | "csv" | "tsv" | "markdown_table";
+  dataFormat?: StructuredDataFormat;
   dataRowCount?: number;
   dataColumnCount?: number;
   dataSizeBytes?: number;
@@ -229,7 +234,9 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.symbolIndexSymbolSetSha256
       ? [`symbol-set ${view.symbolIndexSymbolSetSha256.slice(0, 12)}`]
       : []),
-    ...(view.dataFormat ? [`data ${view.dataFormat}`] : []),
+    ...(view.dataFormat
+      ? [`data ${structuredDataFormatLabel(view.dataFormat)}`]
+      : []),
     ...(view.dataRowCount !== undefined ? [`rows ${view.dataRowCount}`] : []),
     ...(view.dataColumnCount !== undefined
       ? [`columns ${view.dataColumnCount}`]
@@ -463,7 +470,7 @@ function searchFilesEvidence(value: unknown):
 
 function inspectDataEvidence(value: unknown):
   | {
-      dataFormat: "json" | "jsonl" | "csv" | "tsv" | "markdown_table";
+      dataFormat: StructuredDataFormat;
       dataRowCount: number;
       dataColumnCount: number;
       dataSizeBytes?: number;
@@ -552,16 +559,8 @@ function listSymbolsEvidence(value: unknown):
   };
 }
 
-function dataFormat(
-  value: unknown,
-): "json" | "jsonl" | "csv" | "tsv" | "markdown_table" | undefined {
-  return value === "json" ||
-    value === "jsonl" ||
-    value === "csv" ||
-    value === "tsv" ||
-    value === "markdown_table"
-    ? value
-    : undefined;
+function dataFormat(value: unknown): StructuredDataFormat | undefined {
+  return isStructuredDataFormat(value) ? value : undefined;
 }
 
 function inspectCodeEvidence(value: unknown):

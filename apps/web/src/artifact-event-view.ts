@@ -1,4 +1,5 @@
 import type { RunEvent } from "@napier/contracts";
+import { structuredDataFormatLabel } from "./structured-data-format-view";
 
 export interface ArtifactEventTraceView {
   action: string;
@@ -83,7 +84,9 @@ export function artifactEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.status ? [`status ${view.status}`] : []),
     ...(view.kind ? [`kind ${view.kind}`] : []),
     ...(view.result ? [`result ${view.result}`] : []),
-    ...(view.format ? [`format ${view.format}`] : []),
+    ...(view.format
+      ? [`format ${structuredDataFormatLabel(view.format)}`]
+      : []),
     ...(view.truncated !== undefined ? [`truncated ${view.truncated}`] : []),
     ...(view.sizeBytes !== undefined ? [`size-bytes ${view.sizeBytes}`] : []),
     ...(view.lineCount !== undefined ? [`lines ${view.lineCount}`] : []),

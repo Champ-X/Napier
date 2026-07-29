@@ -136,6 +136,7 @@ import {
   projectReplanRecoveryProgress,
   projectReplanStepRoles,
 } from "./replan-draft-view-model";
+import { structuredDataFormatLabel } from "./structured-data-format-view";
 
 const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_FILE_BYTES = 2 * 1024 * 1024;
@@ -2354,7 +2355,9 @@ export default function PlanPanel({
                         </header>
                         <small>
                           {planCopy.artifactActions.dataFormat}:{" "}
-                          {artifactDataProfile.format}
+                          {structuredDataFormatLabel(
+                            artifactDataProfile.format,
+                          )}
                           {" / "}
                           {planCopy.artifactActions.rows}:{" "}
                           {artifactDataProfile.rowCount}
