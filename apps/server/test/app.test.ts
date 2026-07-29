@@ -13380,8 +13380,10 @@ function expectEvaluationCasebookArtifactHeaders(
   artifact: EvaluationCasebookArtifact,
 ): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
+  const safeCasebookId =
+    artifact.casebook.id.replace(/[^A-Za-z0-9._-]/g, "_") || "casebook";
   expect(response.headers.get("content-disposition")).toBe(
-    `attachment; filename="napier-casebook-${artifact.casebook.id}-r${artifact.casebook.currentRevision}-${artifact.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="napier-casebook-${safeCasebookId}-r${artifact.casebook.currentRevision}-${artifact.contentSha256.slice(0, 12)}.json"`,
   );
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     artifact.contentSha256,
@@ -13501,8 +13503,10 @@ function expectEvaluationCasebookQualificationReceiptHeaders(
   receipt: EvaluationCasebookQualificationReceipt,
 ): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
+  const safeCasebookId =
+    receipt.casebook.id.replace(/[^A-Za-z0-9._-]/g, "_") || "casebook";
   expect(response.headers.get("content-disposition")).toBe(
-    `attachment; filename="napier-casebook-qualification-${receipt.casebook.id}-r${receipt.casebook.currentRevision}-${receipt.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="napier-casebook-qualification-${safeCasebookId}-r${receipt.casebook.currentRevision}-${receipt.contentSha256.slice(0, 12)}.json"`,
   );
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     receipt.contentSha256,
@@ -13711,8 +13715,10 @@ function expectEvaluationSuiteGateReceiptHeaders(
   receipt: EvaluationSuiteGateReceipt,
 ): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
+  const safeSuiteId =
+    receipt.suite.id.replace(/[^A-Za-z0-9._-]/g, "_") || "suite";
   expect(response.headers.get("content-disposition")).toBe(
-    `attachment; filename="napier-gate-${receipt.suite.id}-r${receipt.suite.revision}-${receipt.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="napier-gate-${safeSuiteId}-r${receipt.suite.revision}-${receipt.contentSha256.slice(0, 12)}.json"`,
   );
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     receipt.contentSha256,

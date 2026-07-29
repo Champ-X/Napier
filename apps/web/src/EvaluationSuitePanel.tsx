@@ -42,6 +42,7 @@ import {
 } from "./api";
 import { copy } from "./copy";
 import EvaluationCasebookPanel from "./EvaluationCasebookPanel";
+import { evaluationSuiteGateReceiptFilename } from "./evaluation-artifact-view-model";
 import ReceiptTrustPanel from "./ReceiptTrustPanel";
 import {
   getSignedEvaluationSuiteReceipt,
@@ -1590,7 +1591,7 @@ function downloadGateReceipt(receipt: EvaluationSuiteGateReceipt): void {
   );
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `napier-gate-${receipt.suite.id}-r${receipt.suite.revision}-${receipt.contentSha256.slice(0, 12)}.json`;
+  anchor.download = evaluationSuiteGateReceiptFilename(receipt);
   document.body.append(anchor);
   anchor.click();
   anchor.remove();

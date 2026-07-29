@@ -2008,7 +2008,9 @@ write:management-openapi-compatibility` now emits
   `X-Napier-Content-SHA256` for CI correlation.
 - Evaluation Suite list, execution list, and gate receipt responses now expose
   no-store response hashes plus suite, execution, case, revision, candidate, and
-  gate-state headers for machine polling.
+  gate-state headers for machine polling. Gate receipt downloads now use
+  `napier-gate-<safe-suite-id>-r<revision>-<content-hash>.json` filenames
+  across direct API attachments and Workbench exports.
 - Run Lab case evidence with verdicts, baseline/candidate means, pair hashes,
   five-entry execution history, and receipt download without moving those
   controls into the main browser chunk.
@@ -2136,6 +2138,10 @@ write:management-openapi-compatibility` now emits
   bounded verification uploads, semantic conflict status codes, and
   privacy-safe Ledger events that omit key locators, public-key bytes, private
   keys, signatures, and receipt bodies.
+- Evaluation Casebook artifact and qualification receipt downloads now use
+  `napier-casebook-<safe-casebook-id>-r<revision>-<content-hash>.json` and
+  `napier-casebook-qualification-<safe-casebook-id>-r<revision>-<content-hash>.json`
+  filenames across direct API attachments and Workbench exports.
 - Receipt Trust anchor list/create/revoke and verifier responses now expose
   no-store hashes, anchor state/count headers, key IDs, verification status,
   signature validity, and integrity validity for machine audit.

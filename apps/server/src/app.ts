@@ -21177,7 +21177,7 @@ function setEvaluationSuiteGateReceiptHeaders(
   context.header("Cache-Control", "no-store");
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-gate-${receipt.suite.id}-r${receipt.suite.revision}-${receipt.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="${evaluationSuiteGateReceiptFilename(receipt)}"`,
   );
   setStableContentSha256Header(context, receipt.contentSha256);
   context.header("X-Napier-Thread-Id", receipt.suite.threadId);
@@ -21205,6 +21205,13 @@ function setEvaluationSuiteGateReceiptHeaders(
       receipt.execution.contentSha256,
     );
   }
+}
+
+function evaluationSuiteGateReceiptFilename(
+  receipt: EvaluationSuiteGateReceipt,
+): string {
+  const safeSuiteId = safeFilenameSegment(receipt.suite.id, "suite");
+  return `napier-gate-${safeSuiteId}-r${receipt.suite.revision}-${receipt.contentSha256.slice(0, 12)}.json`;
 }
 
 function setEvaluationCalibrationHeaders(
@@ -21360,7 +21367,7 @@ function setEvaluationCasebookArtifactHeaders(
   context.header("Cache-Control", "no-store");
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-casebook-${artifact.casebook.id}-r${artifact.casebook.currentRevision}-${artifact.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="${evaluationCasebookArtifactFilename(artifact)}"`,
   );
   setStableContentSha256Header(context, artifact.contentSha256);
   context.header("X-Napier-Casebook-Id", artifact.casebook.id);
@@ -21381,6 +21388,13 @@ function setEvaluationCasebookArtifactHeaders(
     "X-Napier-Calibration-Agreement-Rate",
     String(artifact.calibration.agreementRate),
   );
+}
+
+function evaluationCasebookArtifactFilename(
+  artifact: EvaluationCasebookArtifact,
+): string {
+  const safeCasebookId = safeFilenameSegment(artifact.casebook.id, "casebook");
+  return `napier-casebook-${safeCasebookId}-r${artifact.casebook.currentRevision}-${artifact.contentSha256.slice(0, 12)}.json`;
 }
 
 function setEvaluationCasebookQualificationListHeaders(
@@ -21476,7 +21490,7 @@ function setEvaluationCasebookQualificationReceiptHeaders(
   context.header("Cache-Control", "no-store");
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-casebook-qualification-${receipt.casebook.id}-r${receipt.casebook.currentRevision}-${receipt.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="${evaluationCasebookQualificationReceiptFilename(receipt)}"`,
   );
   setStableContentSha256Header(context, receipt.contentSha256);
   context.header("X-Napier-Casebook-Id", receipt.casebook.id);
@@ -21518,6 +21532,13 @@ function setEvaluationCasebookQualificationReceiptHeaders(
       String(receipt.execution.unverifiedCount),
     );
   }
+}
+
+function evaluationCasebookQualificationReceiptFilename(
+  receipt: EvaluationCasebookQualificationReceipt,
+): string {
+  const safeCasebookId = safeFilenameSegment(receipt.casebook.id, "casebook");
+  return `napier-casebook-qualification-${safeCasebookId}-r${receipt.casebook.currentRevision}-${receipt.contentSha256.slice(0, 12)}.json`;
 }
 
 function setEvaluationQualificationBaselineListHeaders(

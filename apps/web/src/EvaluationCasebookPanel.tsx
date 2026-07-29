@@ -47,6 +47,10 @@ import {
   listEvaluationQualificationBaselines,
   promoteEvaluationQualificationBaseline,
 } from "./receipt-trust-api";
+import {
+  evaluationCasebookArtifactFilename,
+  evaluationCasebookQualificationReceiptFilename,
+} from "./evaluation-artifact-view-model";
 import { formatApiErrorMessage } from "./api-error";
 import { configuredModelProviderGroups } from "./model-selection-view-model";
 
@@ -1177,7 +1181,7 @@ function downloadArtifact(artifact: EvaluationCasebookArtifact): void {
   );
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `napier-casebook-${artifact.casebook.id}-r${artifact.casebook.currentRevision}-${artifact.contentSha256.slice(0, 12)}.json`;
+  anchor.download = evaluationCasebookArtifactFilename(artifact);
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
@@ -1194,7 +1198,7 @@ function downloadQualificationReceipt(
   );
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `napier-casebook-qualification-${receipt.casebook.id}-r${receipt.casebook.currentRevision}-${receipt.contentSha256.slice(0, 12)}.json`;
+  anchor.download = evaluationCasebookQualificationReceiptFilename(receipt);
   document.body.append(anchor);
   anchor.click();
   anchor.remove();

@@ -110,11 +110,12 @@ The runtime has no HTTP or React dependency.
 - bounded, strictly parsed Plan creation, step transition, and artifact
   settlement requests;
 - bounded full-thread fixture import and attachment export;
-- no-store, hash-addressed evaluation gate receipt export for CI;
+- no-store, hash-addressed evaluation gate receipt export for CI with safe
+  Suite ID download filenames;
 - no-store evaluator calibration reports with stable content hash headers;
 - no-store reviewer consensus previews plus explicit atomic resolution;
 - bounded, no-store Evaluation Casebook calibration, artifact, and
-  qualification-receipt export;
+  qualification-receipt export with safe Casebook ID download filenames;
 - bounded, strictly parsed Run Evaluation, adjudication, reviewer ballot,
   consensus, and Evaluation Suite administration APIs;
 - bounded, strictly parsed Evaluation Casebook create/update, curation,
