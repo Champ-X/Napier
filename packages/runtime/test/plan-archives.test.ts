@@ -311,6 +311,144 @@ describe("execution plan archives", () => {
     );
   });
 
+  it("keeps artifact drift check receipts hash-only in plan archives", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Artifact drift check archive",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    let plan = await store.createPlan(thread.id, {
+      objective: "Inspect artifact drift without mutating the plan.",
+      steps: [
+        {
+          id: "inspect",
+          title: "Inspect artifact drift",
+          description: "Observe whether the artifact drifted.",
+          verification: "The drift check receipt stays hash-only.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "report",
+          path: "report.md",
+          description: "The report artifact.",
+        },
+      ],
+    });
+    plan = await store.updatePlanArtifact(plan.id, "report", {
+      status: "produced",
+      sourceRunId: run.id,
+      evidence: "The report was produced.",
+    });
+    plan = await store.updatePlanArtifact(plan.id, "report", {
+      status: "verified",
+      sourceRunId: run.id,
+      sha256: "b".repeat(64),
+      sizeBytes: 128,
+      evidence: "The report was verified.",
+    });
+    const pathSha256 = createHash("sha256").update("report.md").digest("hex");
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.drift_checked",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "report",
+        planRevision: plan.revision,
+        status: "verified",
+        kind: "file",
+        pathSha256,
+        expectedSha256: "b".repeat(64),
+        observedSha256: "b".repeat(64),
+        result: "current",
+        sizeBytes: 128,
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.drift_checked",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "report",
+        planRevision: plan.revision,
+        status: "verified",
+        kind: "file",
+        pathSha256,
+        expectedSha256: "b".repeat(64),
+        observedSha256: "c".repeat(64),
+        result: "drifted",
+        sizeBytes: 192,
+      },
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.drift_checked",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "report",
+        planRevision: plan.revision,
+        status: "verified",
+        kind: "file",
+        pathSha256,
+        expectedSha256: "b".repeat(64),
+        result: "missing",
+      },
+    });
+
+    const archive = await createExecutionPlanArchive(store, thread.id, plan.id);
+    expect(archive.events.map((event) => event.type)).toEqual([
+      "artifact.drift_checked",
+      "artifact.drift_checked",
+      "artifact.drift_checked",
+    ]);
+    expect(JSON.stringify(archive.events)).not.toContain("report.md");
+    expect(verifyExecutionPlanArchive(archive).status).toBe("valid");
+
+    const tampered = structuredClone(archive);
+    const driftEvent = tampered.events[1];
+    if (
+      !driftEvent?.payload ||
+      Array.isArray(driftEvent.payload) ||
+      typeof driftEvent.payload !== "object"
+    ) {
+      throw new Error("Artifact drift check event fixture is missing");
+    }
+    driftEvent.payload["path"] = "report.md";
+    driftEvent.payload["text"] = "Raw artifact text.";
+    tampered.eventStreamSha256 = createHash("sha256")
+      .update(tampered.events.map((event) => JSON.stringify(event)).join("\n"))
+      .digest("hex");
+    tampered.contentSha256 = hashExecutionPlanArchiveContent({
+      kind: tampered.kind,
+      schemaVersion: tampered.schemaVersion,
+      apiVersion: tampered.apiVersion,
+      threadId: tampered.threadId,
+      plan: tampered.plan,
+      events: tampered.events,
+      eventStreamSha256: tampered.eventStreamSha256,
+    });
+    expect(verifyExecutionPlanArchive(tampered)).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["invalid_shape"],
+      }),
+    );
+  });
+
   it("distills a reusable workflow blueprint from a plan archive", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;
