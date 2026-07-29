@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --maxWorkers=4 --testTimeout=30000",
+    "test:live-deepseek": "NAPIER_LIVE_DEEPSEEK_SMOKE=1 vitest run test/live-deepseek-smoke.test.ts --testTimeout=60000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

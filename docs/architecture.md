@@ -1240,6 +1240,16 @@ a sanitized error. Environment-variable names and Keychain locators are
 metadata; submitted or resolved values exist only in memory for the vault
 operation or provider call.
 
+Live-provider smoke coverage is opt-in. `npm run test:live-deepseek` sets a
+test-only `NAPIER_LIVE_DEEPSEEK_SMOKE=1` flag and runs a single low-cost
+temporary-store DeepSeek prompt using the `DEEPSEEK_API_KEY` environment
+variable locator. The test persists only that locator, invokes the normal
+`AgentRuntime.runPrompt()` path, and requires `context.model_envelope`,
+`model.response`, assistant-message, and `run.completed` Ledger evidence while
+asserting that the raw key is absent from the stored event stream. Default
+`npm run check` keeps this file skipped, so routine verification remains
+offline and zero-cost.
+
 Credential management responses are no-store and response-hash-bound:
 
 ```text

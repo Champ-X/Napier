@@ -330,6 +330,22 @@ Direct `AgentRuntime.runPrompt()` callers keep the Work Ledger failure contract:
 an unconfigured live provider becomes a stable `run.failed` diagnostic before
 the provider is called, so active goals block with replayable evidence.
 
+For a low-cost live DeepSeek smoke test, export the key and model, then run the
+explicit opt-in test:
+
+```bash
+export DEEPSEEK_API_KEY="..."
+export DEEPSEEK_MODEL="deepseek-v4-flash"
+npm run test:live-deepseek
+```
+
+The smoke uses a temporary local store and workspace, stores only the
+`DEEPSEEK_API_KEY` environment-variable locator as a credential reference,
+asserts `model.response`, `context.model_envelope`, assistant message, and
+`run.completed` Ledger evidence, and checks that the raw key never appears in
+the recorded events. It is skipped by default and is not part of
+`npm run check`.
+
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source
 type, status, availability, revision, last-check time, and aggregate counts;

@@ -261,6 +261,10 @@ All notable changes to Napier are recorded here.
   with stable `run.failed` evidence before invoking the provider stream.
 - Runtime, schedule, inbound delivery, and server model checks now share the
   same `ModelRegistry.resolveConfigured()` executable-model contract.
+- Added an opt-in `npm run test:live-deepseek` smoke that creates a temporary
+  credential locator and Run, calls DeepSeek only when explicitly enabled, and
+  asserts model envelope, response, assistant-message, and completion Ledger
+  evidence without persisting the raw key.
 - `search_files` now returns complete-file and matched-line SHA-256 evidence so
   literal search results can feed `read_file` and Hashline edits directly.
 - Trace tool summaries now surface `search_files` match counts and match-set
