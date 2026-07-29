@@ -525,6 +525,71 @@ describe("run replay", () => {
     });
   });
 
+  it("rejects raw directory manifest entries when snapshot hashes are recomputed", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Directory manifest snapshot",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.directory_manifested",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: "plan_manifest",
+        artifactId: "artifact_bundle",
+        planRevision: 1,
+        status: "verified",
+        kind: "directory",
+        pathSha256: sha256("artifacts/bundle"),
+        sha256: "b".repeat(64),
+        sizeBytes: 256,
+        entryCount: 3,
+        fileCount: 2,
+        directoryCount: 1,
+      },
+    });
+
+    const snapshot = await createRunReplaySnapshot(store, thread.id, run.id);
+    expect(verifyRunReplaySnapshot(snapshot).status).toBe("valid");
+    expect(JSON.stringify(snapshot.events)).not.toContain("artifacts/bundle");
+
+    const tampered = structuredClone(snapshot);
+    const event = tampered.events.find(
+      (candidate) => candidate.type === "artifact.directory_manifested",
+    );
+    if (
+      !event?.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object"
+    ) {
+      throw new Error("Directory manifest snapshot fixture is missing");
+    }
+    event.payload["entries"] = [{ path: "artifacts/bundle/report.md" }];
+    tampered.eventStreamSha256 = hashEventStream(tampered.events);
+    const {
+      generatedAt: _generatedAt,
+      contentSha256: _contentSha256,
+      ...snapshotContent
+    } = tampered;
+    tampered.contentSha256 = sha256(canonicalJson(snapshotContent));
+    expect(verifyRunReplaySnapshot(tampered)).toEqual({
+      status: "invalid",
+      diagnostics: ["invalid_shape"],
+      eventCount: 0,
+      subagentCount: 0,
+      modelContextEnvelopeCount: 0,
+      embeddedModelContextEnvelopeCount: 0,
+    });
+  });
+
   it("rejects forged independent advisor evidence summaries in run snapshots", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;
