@@ -591,6 +591,36 @@ describe("plan tools", () => {
       }),
     );
 
+    const matrixContents = JSON.stringify([
+      ["alpha", 1],
+      ["beta", 2, false],
+    ]);
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "matrix.json"),
+      matrixContents,
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceDataArtifactProfile(workspaceRoot, {
+        ...artifact,
+        id: "matrix",
+        path: "artifacts/matrix.json",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        format: "json",
+        sha256: createHash("sha256").update(matrixContents).digest("hex"),
+        sizeBytes: Buffer.byteLength(matrixContents),
+        rowCount: 2,
+        columnCount: 3,
+        columns: ["column_1", "column_2", "column_3"],
+        sampleRows: [
+          { column_1: "alpha", column_2: 1, column_3: "" },
+          { column_1: "beta", column_2: 2, column_3: false },
+        ],
+      }),
+    );
+
     await writeFile(
       path.join(workspaceRoot, "artifacts", "scores.csv"),
       "name,score\ndrifted,9\n",

@@ -209,6 +209,9 @@ function inspectStructuredRows(
 }
 
 function rowColumns(row: unknown): string[] {
+  if (Array.isArray(row)) {
+    return row.map((_, index) => arrayColumnName(index));
+  }
   if (isPlainRecord(row)) return Object.keys(row);
   return ["value"];
 }
@@ -217,6 +220,17 @@ function projectStructuredRow(
   row: unknown,
   columns: string[],
 ): Record<string, WorkspaceDataCell> {
+  if (Array.isArray(row)) {
+    return Object.fromEntries(
+      columns.map((column) => {
+        const index = arrayColumnIndex(column);
+        return [
+          column,
+          index === undefined ? "" : previewCell(row[index]),
+        ];
+      }),
+    );
+  }
   if (!isPlainRecord(row)) {
     return { value: previewCell(row) };
   }
@@ -247,4 +261,14 @@ function truncatePreview(value: string | undefined): string {
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function arrayColumnName(index: number): string {
+  return `column_${index + 1}`;
+}
+
+function arrayColumnIndex(column: string): number | undefined {
+  const match = /^column_([1-9][0-9]*)$/u.exec(column);
+  if (!match) return undefined;
+  return Number(match[1]) - 1;
 }

@@ -208,9 +208,14 @@ describe("workspace tools", () => {
       JSON.stringify({ id: 1, status: "open", hidden: "alpha" }),
       JSON.stringify({ id: 2, status: "closed", hidden: "beta" }),
     ].join("\n");
+    const matrixJson = JSON.stringify([
+      ["Ada", 98],
+      ["Linus", 87, true],
+    ]);
     await writeFile(path.join(workspaceRoot, "scores.csv"), csv);
     await writeFile(path.join(workspaceRoot, "scores.tsv"), tsv);
     await writeFile(path.join(workspaceRoot, "items.jsonl"), jsonl);
+    await writeFile(path.join(workspaceRoot, "matrix.json"), matrixJson);
     const inspect = createWorkspaceTools(workspaceRoot).find(
       (tool) => tool.name === "inspect_data",
     )!;
@@ -286,6 +291,33 @@ describe("workspace tools", () => {
         .digest("hex"),
     });
     expect(tsvResult.content[0]!.text).toContain('"format":"tsv"');
+
+    const matrixResult = await inspect.execute("inspect-json-matrix", {
+      path: "matrix.json",
+      maxRows: 2,
+    });
+    const matrixColumns = ["column_1", "column_2", "column_3"];
+    const matrixSample = [
+      { column_1: "Ada", column_2: 98, column_3: "" },
+      { column_1: "Linus", column_2: 87, column_3: true },
+    ];
+    expect(matrixResult.details).toEqual({
+      path: "matrix.json",
+      pathSha256: createHash("sha256").update("matrix.json").digest("hex"),
+      format: "json",
+      sha256: createHash("sha256").update(matrixJson).digest("hex"),
+      sizeBytes: Buffer.byteLength(matrixJson),
+      rowCount: 2,
+      columnCount: 3,
+      truncated: false,
+      columnSetSha256: createHash("sha256")
+        .update(JSON.stringify(matrixColumns))
+        .digest("hex"),
+      sampleSha256: createHash("sha256")
+        .update(JSON.stringify(matrixSample))
+        .digest("hex"),
+    });
+    expect(matrixResult.content[0]!.text).toContain('"column_3": true');
   });
 
   it("lists code symbols across a bounded workspace directory", async () => {

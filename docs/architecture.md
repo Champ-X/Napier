@@ -1578,6 +1578,8 @@ inspect_data
      UTF-8 boundary as read_file
   -> reject oversized or malformed input and return at most 25 structured
      sample rows to the Agent
+  -> project JSON array rows as column_1..N so matrix-style JSON is inspectable
+     without requiring a separate parser or schema hint
   -> hash the workspace-relative path, complete file, column set, and sample
      rows so Trace can show format, row/column counts, truncation, and hashes
      without rendering column names or sample values
