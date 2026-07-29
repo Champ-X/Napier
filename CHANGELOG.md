@@ -280,6 +280,9 @@ All notable changes to Napier are recorded here.
 - `inspect_data` and Plan artifact data profiles now project JSON array rows as
   `column_1..N`, so matrix-style JSON outputs remain inspectable without
   storing raw columns or sample rows in Ledger receipts.
+- `inspect_data` and Plan artifact data profiles now recognize JSON table
+  envelopes with `columns` plus `rows` or `data`, projecting them as named
+  columns while preserving hash-only receipt storage.
 - `inspect_data` and Plan artifact data profiles now parse the first Markdown
   table in `.md` / `.markdown` artifacts through the same no-store sample and
   hash-only Ledger receipt boundary.

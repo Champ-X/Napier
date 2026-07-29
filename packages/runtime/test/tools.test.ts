@@ -220,11 +220,19 @@ describe("workspace tools", () => {
       "| Ada | 98 |",
       "| Linus | 87 |",
     ].join("\n");
+    const envelopeJson = JSON.stringify({
+      columns: ["name", "score", "active"],
+      rows: [
+        ["Ada", 98, true],
+        ["Linus", 87],
+      ],
+    });
     await writeFile(path.join(workspaceRoot, "scores.csv"), csv);
     await writeFile(path.join(workspaceRoot, "scores.tsv"), tsv);
     await writeFile(path.join(workspaceRoot, "items.jsonl"), jsonl);
     await writeFile(path.join(workspaceRoot, "matrix.json"), matrixJson);
     await writeFile(path.join(workspaceRoot, "scores.md"), markdownTable);
+    await writeFile(path.join(workspaceRoot, "envelope.json"), envelopeJson);
     const inspect = createWorkspaceTools(workspaceRoot).find(
       (tool) => tool.name === "inspect_data",
     )!;
@@ -355,6 +363,33 @@ describe("workspace tools", () => {
     expect(markdownResult.content[0]!.text).toContain(
       '"format":"markdown_table"',
     );
+
+    const envelopeResult = await inspect.execute("inspect-json-envelope", {
+      path: "envelope.json",
+      maxRows: 2,
+    });
+    const envelopeColumns = ["name", "score", "active"];
+    const envelopeSample = [
+      { name: "Ada", score: 98, active: true },
+      { name: "Linus", score: 87, active: "" },
+    ];
+    expect(envelopeResult.details).toEqual({
+      path: "envelope.json",
+      pathSha256: createHash("sha256").update("envelope.json").digest("hex"),
+      format: "json",
+      sha256: createHash("sha256").update(envelopeJson).digest("hex"),
+      sizeBytes: Buffer.byteLength(envelopeJson),
+      rowCount: 2,
+      columnCount: 3,
+      truncated: false,
+      columnSetSha256: createHash("sha256")
+        .update(JSON.stringify(envelopeColumns))
+        .digest("hex"),
+      sampleSha256: createHash("sha256")
+        .update(JSON.stringify(envelopeSample))
+        .digest("hex"),
+    });
+    expect(envelopeResult.content[0]!.text).toContain('"active": true');
   });
 
   it("lists code symbols across a bounded workspace directory", async () => {

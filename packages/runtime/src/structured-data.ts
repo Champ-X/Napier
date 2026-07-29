@@ -73,7 +73,8 @@ function inspectJsonData(
   } catch {
     throw new Error(`${errorPrefix} JSON parse failed`);
   }
-  const rows = Array.isArray(parsed) ? parsed : [parsed];
+  const envelopeRows = jsonTableEnvelopeRows(parsed);
+  const rows = envelopeRows ?? (Array.isArray(parsed) ? parsed : [parsed]);
   return inspectStructuredRows(rows, maxRows);
 }
 
@@ -360,6 +361,36 @@ function truncatePreview(value: string | undefined): string {
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function jsonTableEnvelopeRows(value: unknown): unknown[] | undefined {
+  if (!isPlainRecord(value)) return undefined;
+  const columnsValue = value["columns"];
+  const rowsValue = Array.isArray(value["rows"])
+    ? value["rows"]
+    : Array.isArray(value["data"])
+      ? value["data"]
+      : undefined;
+  if (!Array.isArray(columnsValue) || !rowsValue) return undefined;
+  const columns = columnsValue.map((column, index) =>
+    typeof column === "string" && column.trim().length > 0
+      ? column.trim()
+      : arrayColumnName(index),
+  );
+  if (columns.length === 0) return undefined;
+  return rowsValue.map((row) => {
+    if (Array.isArray(row)) {
+      return Object.fromEntries(
+        columns.map((column, index) => [column, row[index]]),
+      );
+    }
+    if (isPlainRecord(row)) {
+      return Object.fromEntries(
+        columns.map((column) => [column, row[column]]),
+      );
+    }
+    return row;
+  });
 }
 
 function arrayColumnName(index: number): string {

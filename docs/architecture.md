@@ -1578,6 +1578,7 @@ inspect_data
      read-only realpath and UTF-8 boundary as read_file
   -> reject oversized or malformed input and return at most 25 structured
      sample rows to the Agent
+  -> project JSON table envelopes with columns + rows/data into named columns
   -> project JSON array rows as column_1..N so matrix-style JSON is inspectable
      without requiring a separate parser or schema hint
   -> hash the workspace-relative path, complete file, column set, and sample
