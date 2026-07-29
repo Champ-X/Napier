@@ -1581,6 +1581,9 @@ inspect_data
   -> project JSON table envelopes with columns + rows/data into named columns
   -> project JSON array rows as column_1..N so matrix-style JSON is inspectable
      without requiring a separate parser or schema hint
+  -> normalize duplicate or blank tabular headers into unique names such as
+     name_2 or column_3 before projecting sample rows, preventing object-key
+     overwrites in Agent and Workbench previews
   -> hash the workspace-relative path, complete file, column set, and sample
      rows so Trace can show format, row/column counts, truncation, and hashes
      without rendering column names or sample values

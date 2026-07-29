@@ -655,6 +655,40 @@ describe("plan tools", () => {
       }),
     );
 
+    const duplicateMarkdownContents = [
+      "| name | name | |",
+      "| --- | --- | --- |",
+      "| alpha | beta | 3 |",
+    ].join("\n");
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "duplicate.md"),
+      duplicateMarkdownContents,
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceDataArtifactProfile(workspaceRoot, {
+        ...artifact,
+        id: "duplicate-md",
+        path: "artifacts/duplicate.md",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        format: "markdown_table",
+        sha256: createHash("sha256")
+          .update(duplicateMarkdownContents)
+          .digest("hex"),
+        sizeBytes: Buffer.byteLength(duplicateMarkdownContents),
+        rowCount: 1,
+        columnCount: 3,
+        columns: ["name", "name_2", "column_3"],
+        sampleRows: [{ name: "alpha", name_2: "beta", column_3: "3" }],
+        columnSetSha256: sha256(canonicalJson(["name", "name_2", "column_3"])),
+        sampleSha256: sha256(
+          canonicalJson([{ name: "alpha", name_2: "beta", column_3: "3" }]),
+        ),
+      }),
+    );
+
     const envelopeContents = JSON.stringify({
       columns: ["name", "score", "active"],
       data: [

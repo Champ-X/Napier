@@ -203,6 +203,7 @@ describe("workspace tools", () => {
   it("inspects structured data files with bounded sample receipts", async () => {
     const { workspaceRoot } = await createFixture();
     const csv = "name,score\nAda,98\nLinus,87\n";
+    const duplicateCsv = "name,name,\nAda,Lovelace,98\n";
     const tsv = "name\tscore\nAda\t98\nLinus\t87\n";
     const jsonl = [
       JSON.stringify({ id: 1, status: "open", hidden: "alpha" }),
@@ -227,12 +228,21 @@ describe("workspace tools", () => {
         ["Linus", 87],
       ],
     });
+    const duplicateEnvelopeJson = JSON.stringify({
+      columns: ["name", "name", ""],
+      rows: [["Ada", "Lovelace", 98]],
+    });
     await writeFile(path.join(workspaceRoot, "scores.csv"), csv);
+    await writeFile(path.join(workspaceRoot, "duplicate.csv"), duplicateCsv);
     await writeFile(path.join(workspaceRoot, "scores.tsv"), tsv);
     await writeFile(path.join(workspaceRoot, "items.jsonl"), jsonl);
     await writeFile(path.join(workspaceRoot, "matrix.json"), matrixJson);
     await writeFile(path.join(workspaceRoot, "scores.md"), markdownTable);
     await writeFile(path.join(workspaceRoot, "envelope.json"), envelopeJson);
+    await writeFile(
+      path.join(workspaceRoot, "duplicate-envelope.json"),
+      duplicateEnvelopeJson,
+    );
     const inspect = createWorkspaceTools(workspaceRoot).find(
       (tool) => tool.name === "inspect_data",
     )!;
@@ -267,6 +277,32 @@ describe("workspace tools", () => {
         .update(JSON.stringify(csvSample))
         .digest("hex"),
     });
+
+    const duplicateCsvResult = await inspect.execute("inspect-duplicate-csv", {
+      path: "duplicate.csv",
+      maxRows: 1,
+    });
+    const duplicateColumns = ["name", "name_2", "column_3"];
+    const duplicateSample = [
+      { name: "Ada", name_2: "Lovelace", column_3: "98" },
+    ];
+    expect(duplicateCsvResult.details).toEqual({
+      path: "duplicate.csv",
+      pathSha256: createHash("sha256").update("duplicate.csv").digest("hex"),
+      format: "csv",
+      sha256: createHash("sha256").update(duplicateCsv).digest("hex"),
+      sizeBytes: Buffer.byteLength(duplicateCsv),
+      rowCount: 1,
+      columnCount: 3,
+      truncated: false,
+      columnSetSha256: createHash("sha256")
+        .update(JSON.stringify(duplicateColumns))
+        .digest("hex"),
+      sampleSha256: createHash("sha256")
+        .update(JSON.stringify(duplicateSample))
+        .digest("hex"),
+    });
+    expect(duplicateCsvResult.content[0]!.text).toContain('"name_2"');
 
     const jsonlResult = await inspect.execute("inspect-jsonl", {
       path: "items.jsonl",
@@ -389,6 +425,31 @@ describe("workspace tools", () => {
         .update(JSON.stringify(envelopeSample))
         .digest("hex"),
     });
+
+    const duplicateEnvelopeResult = await inspect.execute(
+      "inspect-duplicate-envelope",
+      {
+        path: "duplicate-envelope.json",
+        maxRows: 1,
+      },
+    );
+    const duplicateEnvelopeSample = [
+      { name: "Ada", name_2: "Lovelace", column_3: 98 },
+    ];
+    expect(duplicateEnvelopeResult.details).toEqual(
+      expect.objectContaining({
+        format: "json",
+        rowCount: 1,
+        columnCount: 3,
+        columnSetSha256: createHash("sha256")
+          .update(JSON.stringify(duplicateColumns))
+          .digest("hex"),
+        sampleSha256: createHash("sha256")
+          .update(JSON.stringify(duplicateEnvelopeSample))
+          .digest("hex"),
+      }),
+    );
+    expect(duplicateEnvelopeResult.content[0]!.text).toContain('"name_2"');
     expect(envelopeResult.content[0]!.text).toContain('"active": true');
   });
 

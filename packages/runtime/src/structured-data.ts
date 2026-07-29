@@ -114,9 +114,7 @@ function inspectDelimitedData(
       truncated: false,
     };
   }
-  const headers = rows[0]!.map((value, index) =>
-    value.trim().length > 0 ? value.trim() : `column_${index + 1}`,
-  );
+  const headers = uniqueColumnNames(rows[0]!);
   const dataRows = rows.slice(1);
   const columns = headers.slice(0, MAX_STRUCTURED_DATA_COLUMNS);
   const sampleRows = dataRows
@@ -145,9 +143,7 @@ function inspectMarkdownTableData(
   if (!table) {
     throw new Error(`${errorPrefix} Markdown table not found`);
   }
-  const headers = table.headers.map((value, index) =>
-    value.trim().length > 0 ? value.trim() : `column_${index + 1}`,
-  );
+  const headers = uniqueColumnNames(table.headers);
   const columns = headers.slice(0, MAX_STRUCTURED_DATA_COLUMNS);
   const sampleRows = table.rows
     .slice(0, maxRows)
@@ -162,8 +158,7 @@ function inspectMarkdownTableData(
     columns,
     sampleRows,
     truncated:
-      table.rows.length > sampleRows.length ||
-      headers.length > columns.length,
+      table.rows.length > sampleRows.length || headers.length > columns.length,
   };
 }
 
@@ -219,9 +214,26 @@ function splitMarkdownTableRow(line: string): string[] {
 
 function isMarkdownSeparatorRow(cells: string[]): boolean {
   return (
-    cells.length > 0 &&
-    cells.every((cell) => /^:?-{3,}:?$/u.test(cell.trim()))
+    cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/u.test(cell.trim()))
   );
+}
+
+function uniqueColumnNames(values: unknown[]): string[] {
+  const used = new Set<string>();
+  return values.map((value, index) => {
+    const base =
+      typeof value === "string" && value.trim().length > 0
+        ? value.trim()
+        : arrayColumnName(index);
+    let candidate = base;
+    let suffix = 2;
+    while (used.has(candidate)) {
+      candidate = `${base}_${suffix}`;
+      suffix += 1;
+    }
+    used.add(candidate);
+    return candidate;
+  });
 }
 
 function parseDelimitedRows(
@@ -324,10 +336,7 @@ function projectStructuredRow(
     return Object.fromEntries(
       columns.map((column) => {
         const index = arrayColumnIndex(column);
-        return [
-          column,
-          index === undefined ? "" : previewCell(row[index]),
-        ];
+        return [column, index === undefined ? "" : previewCell(row[index])];
       }),
     );
   }
@@ -372,11 +381,8 @@ function jsonTableEnvelopeRows(value: unknown): unknown[] | undefined {
       ? value["data"]
       : undefined;
   if (!Array.isArray(columnsValue) || !rowsValue) return undefined;
-  const columns = columnsValue.map((column, index) =>
-    typeof column === "string" && column.trim().length > 0
-      ? column.trim()
-      : arrayColumnName(index),
-  );
+  const columns = uniqueColumnNames(columnsValue);
+  const sourceColumns = sourceColumnNames(columnsValue);
   if (columns.length === 0) return undefined;
   return rowsValue.map((row) => {
     if (Array.isArray(row)) {
@@ -386,11 +392,19 @@ function jsonTableEnvelopeRows(value: unknown): unknown[] | undefined {
     }
     if (isPlainRecord(row)) {
       return Object.fromEntries(
-        columns.map((column) => [column, row[column]]),
+        columns.map((column, index) => [column, row[sourceColumns[index]!]]),
       );
     }
     return row;
   });
+}
+
+function sourceColumnNames(values: unknown[]): string[] {
+  return values.map((value, index) =>
+    typeof value === "string" && value.trim().length > 0
+      ? value.trim()
+      : arrayColumnName(index),
+  );
 }
 
 function arrayColumnName(index: number): string {
