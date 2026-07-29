@@ -3374,6 +3374,8 @@ list blueprint record replays
      preview SHA-256, event-set SHA-256, and stable content SHA-256 only
   -> omit objective prose, raw event payloads, and mutable Plan projections;
      Workbench exports this JSON on demand from the Template shelf
+  -> Workbench downloads use
+     napier-blueprint-replay-history-<safe-record-id>-<content-hash>.json
 verify blueprint record replay history
   -> accept an uploaded replay-history receipt through a bounded no-store API
   -> recompute stable receipt hash without generatedAt/contentSha256, compare
@@ -3391,6 +3393,8 @@ project blueprint record replay outcomes
   -> aggregate active/completed/blocked/cancelled/invalid counts, completion
      basis points, replay-history SHA-256, outcome-set SHA-256, and stable
      content SHA-256 in napier.execution-plan-blueprint-replay-outcomes
+  -> Workbench downloads use
+     napier-blueprint-replay-outcomes-<safe-record-id>-<content-hash>.json
 verify blueprint record replay outcomes
   -> accept an uploaded outcomes receipt through a bounded strict no-store API
   -> recompute the artifact hash and compare record, replay-history,

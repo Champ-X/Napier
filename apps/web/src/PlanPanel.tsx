@@ -95,6 +95,7 @@ import {
   type PlanBlueprintLibraryPreviewReceipt,
   planBlueprintQualificationReceipt,
   type PlanBlueprintLibraryQualificationReceipt,
+  planBlueprintReplayHistoryFilename,
   planBlueprintRecommendationPolicyBacktestReceipt,
   type PlanBlueprintLibraryRecommendationPolicyBacktestReceipt,
   planBlueprintRecommendationPolicyOverrideReceipt,
@@ -110,6 +111,7 @@ import {
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementProofBundleSignedReceipt,
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementReceipt,
+  planBlueprintReplayOutcomesFilename,
   type PlanBlueprintLibraryRecommendationPolicyOverrideRetirementReceipt,
   planBlueprintReplayHistoryReceipt,
   type PlanBlueprintLibraryReplayHistoryReceipt,
@@ -853,10 +855,7 @@ export default function PlanPanel({
     setBlueprintLibraryError(undefined);
     try {
       const history = await getExecutionPlanBlueprintRecordReplays(record.id);
-      downloadJson(
-        history,
-        `napier-blueprint-replay-history-${history.recordId}-${history.contentSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(history, planBlueprintReplayHistoryFilename(history));
       setBlueprintLibraryReceipt(planBlueprintReplayHistoryReceipt(history));
     } catch (error) {
       setBlueprintLibraryError(formatApiErrorMessage(error));
@@ -912,10 +911,7 @@ export default function PlanPanel({
       const outcomes = await getExecutionPlanBlueprintRecordReplayOutcomes(
         record.id,
       );
-      downloadJson(
-        outcomes,
-        `napier-blueprint-replay-outcomes-${outcomes.recordId}-${outcomes.contentSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(outcomes, planBlueprintReplayOutcomesFilename(outcomes));
       setBlueprintLibraryReceipt(planBlueprintReplayOutcomesReceipt(outcomes));
     } catch (error) {
       setBlueprintLibraryError(formatApiErrorMessage(error));

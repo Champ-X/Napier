@@ -100,6 +100,26 @@ export interface PlanBlueprintLibraryReplayOutcomesVerificationReceipt {
   invalidCount: number;
 }
 
+export function planBlueprintReplayHistoryFilename(
+  history: Pick<
+    ExecutionPlanBlueprintRecordReplayHistory,
+    "contentSha256" | "recordId"
+  >,
+): string {
+  const safeRecordId = safeFilenameSegment(history.recordId, "blueprint");
+  return `napier-blueprint-replay-history-${safeRecordId}-${history.contentSha256.slice(0, 12)}.json`;
+}
+
+export function planBlueprintReplayOutcomesFilename(
+  outcomes: Pick<
+    ExecutionPlanBlueprintRecordReplayOutcomes,
+    "contentSha256" | "recordId"
+  >,
+): string {
+  const safeRecordId = safeFilenameSegment(outcomes.recordId, "blueprint");
+  return `napier-blueprint-replay-outcomes-${safeRecordId}-${outcomes.contentSha256.slice(0, 12)}.json`;
+}
+
 export interface PlanBlueprintLibraryOutcomeBaselineReceipt {
   action: "outcomeBaseline";
   recordId: string;
@@ -414,6 +434,13 @@ export function planBlueprintCreatedReceipt(input: {
       : {}),
     replayEventDiagnostics,
   };
+}
+
+function safeFilenameSegment(value: string, fallback: string): string {
+  const normalized = value.replace(/[^A-Za-z0-9._-]/g, "_");
+  return normalized.length > 0 && normalized !== "." && normalized !== ".."
+    ? normalized
+    : fallback;
 }
 
 export function planBlueprintReplayHistoryReceipt(

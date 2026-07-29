@@ -40,8 +40,10 @@ import {
   planBlueprintRecommendationPolicyOverrideRetirementProofBundleSignedReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementHistoryVerificationReceipt,
   planBlueprintRecommendationPolicyOverrideRetirementReceipt,
+  planBlueprintReplayHistoryFilename,
   planBlueprintReplayHistoryReceipt,
   planBlueprintReplayHistoryVerificationReceipt,
+  planBlueprintReplayOutcomesFilename,
   planBlueprintReplayOutcomesReceipt,
   planBlueprintReplayOutcomesVerificationReceipt,
   planBlueprintSelectionReceipt,
@@ -66,6 +68,26 @@ const replayEvent: VerifyExecutionPlanBlueprintRecordReplayEventRequest = {
 };
 
 describe("Plan blueprint library view model", () => {
+  it("builds safe replay artifact filenames", () => {
+    expect(
+      planBlueprintReplayHistoryFilename({
+        recordId: "blueprint:bad/path",
+        contentSha256: "abcdef1234567890".padEnd(64, "0"),
+      }),
+    ).toBe(
+      "napier-blueprint-replay-history-blueprint_bad_path-abcdef123456.json",
+    );
+
+    expect(
+      planBlueprintReplayOutcomesFilename({
+        recordId: "blueprint:bad/path",
+        contentSha256: "123456abcdef7890".padEnd(64, "0"),
+      }),
+    ).toBe(
+      "napier-blueprint-replay-outcomes-blueprint_bad_path-123456abcdef.json",
+    );
+  });
+
   it("projects a valid create-from-template replay event verification", () => {
     const verification: ExecutionPlanBlueprintRecordReplayEventVerification = {
       schemaVersion: 1,

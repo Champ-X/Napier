@@ -599,7 +599,9 @@ All notable changes to Napier are recorded here.
   verifies uploaded replay-history receipts against the current Ledger-derived
   projection with declared/recomputed/observed hashes and low-cardinality
   diagnostics. The Template shelf now downloads replay-history JSON artifacts
-  and can upload them back for no-store verification.
+  as
+  `napier-blueprint-replay-history-<safe-record-id>-<content-hash>.json` and
+  can upload them back for no-store verification.
 - Blueprint replay outcome artifacts. `GET
 /api/plan-blueprints/:recordId/replays/outcomes` now joins immutable
   `plan.created` replay anchors to current durable Plan projections and emits a
@@ -611,9 +613,10 @@ All notable changes to Napier are recorded here.
 /api/plan-blueprints/:recordId/replays/outcomes/verify` performs bounded
   strict no-store verification against the current Ledger and Plan state, so
   stale delivery receipts fail closed after an outcome changes. The Template
-  shelf now exports and uploads outcome JSON separately from replay history,
-  with pure ViewModel receipts and contract tests for latest-outcome and
-  observed-count behavior.
+  shelf now exports outcome JSON separately from replay history as
+  `napier-blueprint-replay-outcomes-<safe-record-id>-<content-hash>.json`, then
+  uploads it back with pure ViewModel receipts and contract tests for
+  latest-outcome and observed-count behavior.
 - Blueprint outcome baselines. `POST
 /api/plan-blueprints/:recordId/replays/outcomes/baselines` now promotes the
   current verified outcomes receipt into an append-only hash-only baseline with

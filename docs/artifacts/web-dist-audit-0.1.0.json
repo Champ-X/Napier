@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 54,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-B17eltEq.js",
+    "path": "apps/web/dist/assets/index-CZEPmScf.js",
     "sizeBytes": 129736,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "aab8c2f49c87f4b210235201d1465f6ccb4050908c78809c56f0cb172ff85077"
+    "sha256": "2e09a97c3726b8b1ee24a701581abec89ee2d43f212a860e354d553f4a8cd0aa"
   },
-  "distContentSha256": "aab8c2f49c87f4b210235201d1465f6ccb4050908c78809c56f0cb172ff85077",
+  "distContentSha256": "2e09a97c3726b8b1ee24a701581abec89ee2d43f212a860e354d553f4a8cd0aa",
   "errors": []
 }
