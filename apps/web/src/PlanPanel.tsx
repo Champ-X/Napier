@@ -75,6 +75,10 @@ import {
   projectArtifactManifestActions,
   projectArtifactManifestEvidence,
 } from "./artifact-manifest-view-model";
+import {
+  executionPlanArchiveFilename,
+  executionPlanBlueprintFilename,
+} from "./plan-archive-artifact-view-model";
 import { planCopy } from "./plan-copy";
 import {
   planBlueprintCreatedReceipt,
@@ -573,10 +577,7 @@ export default function PlanPanel({
     setArchiveError(undefined);
     try {
       const archive = await getExecutionPlanArchive(plan.threadId, plan.id);
-      downloadJson(
-        archive,
-        `napier-plan-${archive.plan.id}-r${archive.plan.revision}-${archive.contentSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(archive, executionPlanArchiveFilename(archive));
       setArchiveReceipt({
         action: "exported",
         contentSha256: archive.contentSha256,
@@ -647,10 +648,7 @@ export default function PlanPanel({
     setVerifiedBlueprint(undefined);
     try {
       const blueprint = await getExecutionPlanBlueprint(plan.threadId, plan.id);
-      downloadJson(
-        blueprint,
-        `napier-plan-blueprint-${blueprint.source.planId}-r${blueprint.source.planRevision}-${blueprint.contentSha256.slice(0, 12)}.json`,
-      );
+      downloadJson(blueprint, executionPlanBlueprintFilename(blueprint));
       setBlueprintReceipt({
         action: "exported",
         contentSha256: blueprint.contentSha256,

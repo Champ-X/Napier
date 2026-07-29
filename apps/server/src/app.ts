@@ -18038,7 +18038,7 @@ function setExecutionPlanArchiveHeaders(
   context.header("Cache-Control", "no-store");
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-plan-${archive.plan.id}-r${archive.plan.revision}-${archive.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="${executionPlanArchiveFilename(archive)}"`,
   );
   setStableContentSha256Header(context, archive.contentSha256);
   context.header("X-Napier-Thread-Id", archive.threadId);
@@ -18067,7 +18067,7 @@ function setExecutionPlanBlueprintHeaders(
   context.header("Cache-Control", "no-store");
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-plan-blueprint-${blueprint.source.planId}-r${blueprint.source.planRevision}-${blueprint.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="${executionPlanBlueprintFilename(blueprint)}"`,
   );
   setStableContentSha256Header(context, blueprint.contentSha256);
   setExecutionPlanBlueprintSourceHeaders(context, blueprint);
@@ -18076,6 +18076,18 @@ function setExecutionPlanBlueprintHeaders(
     "X-Napier-Plan-Artifact-Count",
     String(blueprint.artifactCount),
   );
+}
+
+function executionPlanArchiveFilename(archive: ExecutionPlanArchive): string {
+  const safePlanId = safeFilenameSegment(archive.plan.id, "plan");
+  return `napier-plan-${safePlanId}-r${archive.plan.revision}-${archive.contentSha256.slice(0, 12)}.json`;
+}
+
+function executionPlanBlueprintFilename(
+  blueprint: ExecutionPlanBlueprint,
+): string {
+  const safePlanId = safeFilenameSegment(blueprint.source.planId, "plan");
+  return `napier-plan-blueprint-${safePlanId}-r${blueprint.source.planRevision}-${blueprint.contentSha256.slice(0, 12)}.json`;
 }
 
 function bindExecutionPlanArchiveVerification(

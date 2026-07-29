@@ -3301,6 +3301,8 @@ export plan archive
      ordered plan-scoped Ledger events
   -> expose stable content hash, event-stream hash, plan revision/status,
      resource counts, and event-boundary headers without mutating state
+  -> save direct API attachments and Plan Workbench downloads as
+     napier-plan-<safe-plan-id>-r<revision>-<content-hash>.json
 verify plan archive
   -> strictly parse a single archive, recompute stable content and event-stream
      hashes, validate plan/event ownership, recompute phase projection when
@@ -3311,6 +3313,8 @@ export plan blueprint
      objective, step DAG, artifact declarations, source plan revision, archive
      hash, and event-stream hash
   -> exclude runtime statuses, evidence prose, blockers, and file digests
+  -> save direct API attachments and Plan Workbench downloads as
+     napier-plan-blueprint-<safe-plan-id>-r<revision>-<content-hash>.json
 verify plan blueprint
   -> recompute the stable blueprint hash, validate DAG and source hashes, and
      return no-store valid/invalid diagnostics

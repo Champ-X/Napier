@@ -11137,8 +11137,9 @@ function expectExecutionPlanArchiveHeaders(
   expect(response.headers.get("x-napier-plan-replan-count")).toBe(
     String(archive.plan.replans.length),
   );
+  const safePlanId = archive.plan.id.replace(/[^A-Za-z0-9._-]/g, "_") || "plan";
   expect(response.headers.get("content-disposition")).toBe(
-    `attachment; filename="napier-plan-${archive.plan.id}-r${archive.plan.revision}-${archive.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="napier-plan-${safePlanId}-r${archive.plan.revision}-${archive.contentSha256.slice(0, 12)}.json"`,
   );
   expectEventBoundaryHeaders(response, archive.events);
 }
@@ -11207,8 +11208,10 @@ function expectExecutionPlanBlueprintHeaders(
   expect(response.headers.get("x-napier-plan-artifact-count")).toBe(
     String(blueprint.artifactCount),
   );
+  const safePlanId =
+    blueprint.source.planId.replace(/[^A-Za-z0-9._-]/g, "_") || "plan";
   expect(response.headers.get("content-disposition")).toBe(
-    `attachment; filename="napier-plan-blueprint-${blueprint.source.planId}-r${blueprint.source.planRevision}-${blueprint.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="napier-plan-blueprint-${safePlanId}-r${blueprint.source.planRevision}-${blueprint.contentSha256.slice(0, 12)}.json"`,
   );
   expectExecutionPlanBlueprintSourceHeaders(response, blueprint);
 }

@@ -1155,6 +1155,9 @@ write:management-openapi-compatibility` now emits
   new Plan through the normal creation gate while recording only
   blueprint/source hashes. The Plan Workbench now exposes export, upload
   verification, and create-from-verified-blueprint actions in its lazy chunk.
+  Blueprint downloads now use
+  `napier-plan-blueprint-<safe-plan-id>-r<revision>-<content-hash>.json`
+  filenames across direct API attachments and Workbench exports.
 - Durable Plan archive export and no-store verification. `GET
 /api/threads/:threadId/plans/:planId/archive` now emits a
   `napier.execution-plan-archive` artifact containing the current
@@ -1165,7 +1168,10 @@ write:management-openapi-compatibility` now emits
   and returns low-cardinality diagnostics without mutating state. The Plan
   Workbench exposes export and upload verification actions inside its lazy
   chunk, with runtime/server/Web tests and no-store headers covering archive
-  hash, event count, step/artifact/replan counts, and path mismatch.
+  hash, event count, step/artifact/replan counts, and path mismatch. Archive
+  downloads now use
+  `napier-plan-<safe-plan-id>-r<revision>-<content-hash>.json` filenames across
+  direct API attachments and Workbench exports.
 - Trace Workbench is now a lazy chunk. Event rendering, delegation cards,
   OpenTelemetry export, and archived trace verification load only when the
   Trace tab is opened, keeping OTLP archive tooling outside the main Workbench
