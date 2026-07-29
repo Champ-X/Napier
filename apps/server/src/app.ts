@@ -24632,8 +24632,15 @@ function setInboundDeadLetterExportHeaders(
   }
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-dead-letters-${artifact.channel.id}-${artifact.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="${inboundDeadLetterExportFilename(artifact)}"`,
   );
+}
+
+function inboundDeadLetterExportFilename(
+  artifact: InboundDeadLetterExport,
+): string {
+  const safeChannelId = safeFilenameSegment(artifact.channel.id, "channel");
+  return `napier-dead-letters-${safeChannelId}-${artifact.contentSha256.slice(0, 12)}.json`;
 }
 
 function setInboundDeadLetterExportVerificationHeaders(
@@ -24781,8 +24788,15 @@ function setInboundDeadLetterRetryHistoryHeaders(
   }
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-dead-letter-retry-history-${history.channelId}-${history.contentSha256.slice(0, 12)}.json"`,
+    `attachment; filename="${inboundDeadLetterRetryHistoryFilename(history)}"`,
   );
+}
+
+function inboundDeadLetterRetryHistoryFilename(
+  history: InboundDeadLetterRetryHistory,
+): string {
+  const safeChannelId = safeFilenameSegment(history.channelId, "channel");
+  return `napier-dead-letter-retry-history-${safeChannelId}-${history.contentSha256.slice(0, 12)}.json`;
 }
 
 function setInboundDeadLetterRetryHistoryVerificationHeaders(

@@ -1804,6 +1804,8 @@ export dead letters
   -> return the artifact with Cache-Control: no-store and
      channel/thread identity, content, delivery-count, delivery-id set,
      retry-disposition, current-catalog, and qualification summary headers
+  -> save direct API attachments and Automations downloads as
+     napier-dead-letters-<safe-channel-id>-<content-hash>.json
   -> append channel.dead_letters.exported with count, hash, and
      qualified/missing/drift summary counts
 verify dead-letter export
@@ -1835,6 +1837,8 @@ retry dead letters from artifact
   -> return content-disposition plus channel/thread identity, content/event-set
      hash, event-count, and first/last seq headers for direct retry-history
      artifact capture
+  -> save direct API attachments and Automations downloads as
+     napier-dead-letter-retry-history-<safe-channel-id>-<content-hash>.json
   -> verify uploaded retry history receipts against the current Ledger
      projection without storing the receipt
   -> return verifier status plus observed content/event-set/count/seq headers

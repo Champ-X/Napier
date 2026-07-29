@@ -39,6 +39,10 @@ import type {
 } from "@napier/contracts";
 
 import {
+  deadLetterExportFilename,
+  deadLetterRetryHistoryFilename,
+} from "./automation-artifact-view-model";
+import {
   applyInboundDeadLetterRetry,
   createInboundChannel,
   createSchedule,
@@ -2247,7 +2251,7 @@ function downloadDeadLetterArtifact(artifact: InboundDeadLetterExport): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `napier-dead-letters-${artifact.channel.id}-${artifact.contentSha256.slice(0, 12)}.json`;
+  anchor.download = deadLetterExportFilename(artifact);
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
@@ -2263,7 +2267,7 @@ function downloadDeadLetterRetryHistoryArtifact(
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `napier-dead-letter-retry-history-${history.channelId}-${history.contentSha256.slice(0, 12)}.json`;
+  anchor.download = deadLetterRetryHistoryFilename(history);
   document.body.append(anchor);
   anchor.click();
   anchor.remove();

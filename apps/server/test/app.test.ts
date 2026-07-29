@@ -14094,8 +14094,10 @@ function expectInboundDeadLetterExportHeaders(
   artifact: InboundDeadLetterExport,
 ): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
-  expect(response.headers.get("content-disposition")).toMatch(
-    /^attachment; filename="napier-dead-letters-/,
+  const safeChannelId =
+    artifact.channel.id.replace(/[^A-Za-z0-9._-]/g, "_") || "channel";
+  expect(response.headers.get("content-disposition")).toBe(
+    `attachment; filename="napier-dead-letters-${safeChannelId}-${artifact.contentSha256.slice(0, 12)}.json"`,
   );
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     artifact.contentSha256,
@@ -14287,8 +14289,10 @@ function expectInboundDeadLetterRetryHistoryHeaders(
   threadId: string,
 ): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
-  expect(response.headers.get("content-disposition")).toMatch(
-    /^attachment; filename="napier-dead-letter-retry-history-/,
+  const safeChannelId =
+    history.channelId.replace(/[^A-Za-z0-9._-]/g, "_") || "channel";
+  expect(response.headers.get("content-disposition")).toBe(
+    `attachment; filename="napier-dead-letter-retry-history-${safeChannelId}-${history.contentSha256.slice(0, 12)}.json"`,
   );
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     history.contentSha256,

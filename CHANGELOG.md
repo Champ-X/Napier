@@ -1794,7 +1794,9 @@ write:management-openapi-compatibility` now emits
   top-level qualified/missing/drift summary counts, canonical content SHA-256,
   no queued message/authentication material, matching response hash/count
   headers, channel/thread identity, delivery-ID set hashes, retry-disposition
-  counts, and Ledger audit events with the same counts. Operators can upload the
+  counts, and Ledger audit events with the same counts. Dead-letter exports now
+  use `napier-dead-letters-<safe-channel-id>-<content-hash>.json` filenames
+  across Automations and direct API attachment headers. Operators can upload the
   artifact to a no-store verifier that recomputes the canonical hash and checks
   delivery and qualification summaries while mirroring declared/recomputed
   hashes and observed counts. A two-phase retry preview/apply flow binds
@@ -1806,7 +1808,9 @@ write:management-openapi-compatibility` now emits
   boundaries, event-set hashes, apply result hashes, counts, and public hash
   summaries for operator audit. Retry-history downloads expose direct-download
   content-disposition plus channel/thread identity, content/event-set hash,
-  event-count, and first/last seq headers. The projection can be posted back to
+  event-count, first/last seq headers, and
+  `napier-dead-letter-retry-history-<safe-channel-id>-<content-hash>.json`
+  filenames across Automations and direct API attachment headers. The projection can be posted back to
   a no-store verifier that recomputes the current Ledger-derived hashes and
   reports drift while exposing status and observed content/event-set/count/seq
   headers for machine checks.
