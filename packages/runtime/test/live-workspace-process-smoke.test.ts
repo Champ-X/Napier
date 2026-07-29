@@ -31,7 +31,7 @@ afterEach(async () => {
 });
 
 describeLive("live Workspace Process smoke", () => {
-  it("starts and polls a background Node session through the real Agent sandbox", async () => {
+  it("keeps state across bounded input writes in the real Agent sandbox", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-process-workspace-"),
     );
@@ -60,11 +60,23 @@ describeLive("live Workspace Process smoke", () => {
       agentId: agent.id,
     });
     const commandSource = [
-      "const fs = require('node:fs');",
-      "setTimeout(() => {",
-      "  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));",
-      "  process.stdout.write(`${pkg.name}@${pkg.version}\\n`);",
-      "}, 25);",
+      "process.stdin.setEncoding('utf8');",
+      "let buffer = '';",
+      "let count = 0;",
+      "process.stdin.on('data', (chunk) => {",
+      "  buffer += chunk;",
+      "  for (;;) {",
+      "    const newline = buffer.indexOf('\\n');",
+      "    if (newline < 0) break;",
+      "    const value = buffer.slice(0, newline);",
+      "    buffer = buffer.slice(newline + 1);",
+      "    count += 1;",
+      "    process.stdout.write(`ack:${count}:${value}\\n`);",
+      "  }",
+      "});",
+      "process.stdin.on('end', () => {",
+      "  process.stdout.write(`done:${count}\\n`);",
+      "});",
     ].join(" ");
     const provider = fauxProvider({ provider: "live-process-smoke" });
     provider.setResponses([
@@ -74,9 +86,41 @@ describeLive("live Workspace Process smoke", () => {
           runtime: "node",
           args: ["-e", commandSource],
           timeoutMs: 10_000,
+          interactive: true,
         }),
         { stopReason: "toolUse" },
       ),
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "input",
+            processId,
+            text: "alpha",
+            appendNewline: true,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "input",
+            processId,
+            text: "beta",
+            appendNewline: true,
+            close: true,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
       (context) => {
         const processId = JSON.stringify(context.messages).match(
           /process_[a-z0-9]{20}/u,
@@ -93,11 +137,12 @@ describeLive("live Workspace Process smoke", () => {
         );
       },
       (context) => {
-        expect(JSON.stringify(context.messages)).toContain(
-          "napier-live-workspace@1.0.0",
-        );
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("ack:1:alpha");
+        expect(messages).toContain("ack:2:beta");
+        expect(messages).toContain("done:2");
         return fauxAssistantMessage(
-          "The background package check completed in the sandbox.",
+          "The stateful input worker completed in the sandbox.",
         );
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -114,7 +159,7 @@ describeLive("live Workspace Process smoke", () => {
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
-      text: "Read the package identity in a background Process Session.",
+      text: "Run a stateful background worker across two input messages.",
       model: { provider: "live-process-smoke", id: "faux-1" },
     });
 
@@ -122,14 +167,21 @@ describeLive("live Workspace Process smoke", () => {
     const [session] = await processes.list(thread.id);
     expect(session).toBeDefined();
     const settled = await processes.waitForSettlement(thread.id, session!.id);
-    expect(settled.status).toBe("succeeded");
+    const output = await processes.output(thread.id, session!.id);
+    expect(
+      settled.status,
+      JSON.stringify({ settled, chunks: output.chunks }),
+    ).toBe("succeeded");
     expect(settled.workspaceDeltaStatus).toBe("unchanged");
     expect(settled.workspaceBeforeTruncated).toBe(false);
     expect(settled.workspaceAfterTruncated).toBe(false);
     expect(settled.workspaceDeltaAvailable).toBe(true);
+    expect(settled.stdinWriteCount).toBe(2);
+    expect(settled.stdinOpen).toBe(false);
     const events = await store.listEvents(thread.id);
     expect(JSON.stringify(events)).not.toContain(commandSource);
-    expect(JSON.stringify(events)).not.toContain("napier@0.1.0");
+    expect(JSON.stringify(events)).not.toContain("alpha");
+    expect(JSON.stringify(events)).not.toContain("beta");
     await processes.shutdown();
     store.close();
   }, 30_000);

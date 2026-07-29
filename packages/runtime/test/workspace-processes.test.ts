@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   mkdir,
   mkdtemp,
@@ -19,11 +20,15 @@ import {
   MAX_WORKSPACE_SNAPSHOT_BYTES,
   UnsupportedSandboxAdapter,
   WorkspaceProcessManager,
+  createWorkspaceProcessInputReceipt,
   createWorkspaceProcessSession,
   createWorkspaceProcessTool,
+  parseWorkspaceProcessInputReceipt,
+  projectWorkspaceProcessSessions,
   type OsSandboxAdapter,
   type SandboxedProcess,
   type SandboxLaunchRequest,
+  workspaceProcessToolCallArgumentsLedgerProjection,
   workspaceProcessSessionPayload,
 } from "../src/index.js";
 
@@ -135,6 +140,7 @@ async function startProcess(
   harness: Awaited<ReturnType<typeof createHarness>>,
   command = "setInterval(() => {}, 1000)",
   timeoutMs = 30_000,
+  interactive = false,
 ) {
   return harness.manager.start({
     threadId: harness.thread.id,
@@ -144,6 +150,7 @@ async function startProcess(
       args: ["-e", command],
       timeoutMs,
     },
+    ...(interactive ? { interactive: true } : {}),
   });
 }
 
@@ -159,8 +166,13 @@ describe("Workspace Process Manager", () => {
         nextCursor: 0,
         workspaceAccess: "read_only",
         networkAccess: "denied",
+        stdinMode: "closed",
+        stdinOpen: false,
+        stdinWriteCount: 0,
+        stdinBytes: 0,
       }),
     );
+    expect(harness.controlled.processes[0]?.stdin.writableEnded).toBe(true);
     expect(harness.controlled.processes[0]?.request).toEqual(
       expect.objectContaining({
         command: process.execPath,
@@ -239,6 +251,232 @@ describe("Workspace Process Manager", () => {
     harness.store.close();
   });
 
+  it("serializes bounded interactive input and persists only hash receipts", async () => {
+    const harness = await createHarness();
+    const session = await startProcess(
+      harness,
+      "process.stdin.resume()",
+      30_000,
+      true,
+    );
+    expect(session).toEqual(
+      expect.objectContaining({
+        schemaVersion: 3,
+        stdinMode: "interactive",
+        stdinOpen: true,
+        stdinWriteCount: 0,
+        stdinBytes: 0,
+        stdinSha256: createHash("sha256").update("").digest("hex"),
+      }),
+    );
+    const received: string[] = [];
+    harness.controlled.processes[0]!.stdin.setEncoding("utf8");
+    harness.controlled.processes[0]!.stdin.on("data", (chunk: string) => {
+      received.push(chunk);
+    });
+    const first = harness.manager.writeInput({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      processId: session.id,
+      text: "FIRST_SECRET_INPUT",
+      appendNewline: true,
+      initiatedBy: "agent",
+    });
+    const second = harness.manager.writeInput({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      processId: session.id,
+      text: "SECOND_SECRET_INPUT",
+      close: true,
+      initiatedBy: "agent",
+    });
+    const receipts = await Promise.all([first, second]);
+    expect(received.join("")).toBe("FIRST_SECRET_INPUT\nSECOND_SECRET_INPUT");
+    expect(receipts).toEqual([
+      expect.objectContaining({
+        sequence: 1,
+        initiatedBy: "agent",
+        stdinClosed: false,
+      }),
+      expect.objectContaining({
+        sequence: 2,
+        initiatedBy: "agent",
+        stdinClosed: true,
+      }),
+    ]);
+    const [current] = await harness.manager.list(harness.thread.id);
+    expect(current).toEqual(
+      expect.objectContaining({
+        id: session.id,
+        stdinOpen: false,
+        stdinWriteCount: 2,
+        stdinBytes: Buffer.byteLength(
+          "FIRST_SECRET_INPUT\nSECOND_SECRET_INPUT",
+        ),
+        stdinSha256: createHash("sha256")
+          .update("FIRST_SECRET_INPUT\nSECOND_SECRET_INPUT")
+          .digest("hex"),
+      }),
+    );
+    await expect(
+      harness.manager.writeInput({
+        threadId: harness.thread.id,
+        processId: session.id,
+        text: "late",
+        initiatedBy: "operator",
+      }),
+    ).rejects.toThrow("not open");
+    const events = await harness.store.listEvents(harness.thread.id);
+    expect(
+      events
+        .filter((event) => event.type === "workspace.process.input")
+        .map((event) => event.payload["sequence"]),
+    ).toEqual([1, 2]);
+    expect(JSON.stringify(events)).not.toContain("FIRST_SECRET_INPUT");
+    expect(JSON.stringify(events)).not.toContain("SECOND_SECRET_INPUT");
+    harness.controlled.processes[0]!.settle(0);
+    expect(
+      (await harness.manager.waitForSettlement(harness.thread.id, session.id))
+        .stdinOpen,
+    ).toBe(false);
+    harness.store.close();
+  });
+
+  it("binds close-only input to the empty digest and rejects impossible input evidence", async () => {
+    const harness = await createHarness();
+    const session = await startProcess(
+      harness,
+      "process.stdin.resume()",
+      30_000,
+      true,
+    );
+    const emptySha256 = createHash("sha256").update("").digest("hex");
+    const receipt = await harness.manager.writeInput({
+      threadId: harness.thread.id,
+      processId: session.id,
+      text: "",
+      close: true,
+      initiatedBy: "operator",
+    });
+    expect(receipt).toEqual(
+      expect.objectContaining({
+        sequence: 1,
+        inputBytes: 0,
+        inputSha256: emptySha256,
+        totalInputBytes: 0,
+        cumulativeInputSha256: emptySha256,
+        stdinClosed: true,
+      }),
+    );
+    const {
+      kind: _receiptKind,
+      schemaVersion: _receiptSchemaVersion,
+      contentSha256: _receiptContentSha256,
+      ...receiptInput
+    } = receipt;
+    const inconsistentReceipt = createWorkspaceProcessInputReceipt({
+      ...receiptInput,
+      inputSha256: "a".repeat(64),
+    });
+    expect(
+      parseWorkspaceProcessInputReceipt(inconsistentReceipt),
+    ).toBeUndefined();
+
+    const {
+      kind: _kind,
+      schemaVersion: _schemaVersion,
+      outputAvailable: _outputAvailable,
+      workspaceDeltaAvailable: _workspaceDeltaAvailable,
+      contentSha256: _contentSha256,
+      ...sessionInput
+    } = session;
+    const impossibleSession = createWorkspaceProcessSession({
+      ...sessionInput,
+      schemaVersion: 3,
+      stdinWriteCount: 0,
+      stdinBytes: 1,
+      stdinSha256: "b".repeat(64),
+    });
+    const [startedEvent] = (
+      await harness.store.listEvents(harness.thread.id)
+    ).filter((event) => event.type === "workspace.process.started");
+    expect(
+      projectWorkspaceProcessSessions([
+        {
+          ...startedEvent!,
+          payload: workspaceProcessSessionPayload(impossibleSession),
+        },
+      ]),
+    ).toEqual([]);
+    const prematurelyClosedSession = createWorkspaceProcessSession({
+      ...sessionInput,
+      schemaVersion: 3,
+      stdinOpen: false,
+    });
+    expect(
+      projectWorkspaceProcessSessions([
+        {
+          ...startedEvent!,
+          payload: workspaceProcessSessionPayload(prematurelyClosedSession),
+        },
+      ]),
+    ).toEqual([]);
+    harness.controlled.processes[0]!.settle(0);
+    await harness.manager.waitForSettlement(harness.thread.id, session.id);
+    harness.store.close();
+  });
+
+  it("enforces interactive input Run ownership and total bounds", async () => {
+    const harness = await createHarness();
+    const session = await startProcess(
+      harness,
+      "process.stdin.resume()",
+      30_000,
+      true,
+    );
+    harness.controlled.processes[0]!.stdin.resume();
+    const otherRun = await harness.store.createRun({
+      threadId: harness.thread.id,
+      agentId: harness.store.listAgents()[0]!.id,
+    });
+    await expect(
+      harness.manager.writeInput({
+        threadId: harness.thread.id,
+        runId: otherRun.id,
+        processId: session.id,
+        text: "foreign",
+        initiatedBy: "agent",
+      }),
+    ).rejects.toThrow("does not belong");
+    await expect(
+      harness.manager.writeInput({
+        threadId: harness.thread.id,
+        processId: session.id,
+        text: "x".repeat(32 * 1024 + 1),
+        initiatedBy: "operator",
+      }),
+    ).rejects.toThrow("message limit");
+    const chunk = "x".repeat(32 * 1024);
+    for (let index = 0; index < 8; index += 1) {
+      await harness.manager.writeInput({
+        threadId: harness.thread.id,
+        processId: session.id,
+        text: chunk,
+        initiatedBy: "operator",
+      });
+    }
+    await expect(
+      harness.manager.writeInput({
+        threadId: harness.thread.id,
+        processId: session.id,
+        text: "overflow",
+        initiatedBy: "operator",
+      }),
+    ).rejects.toThrow("total-byte limit");
+    await harness.manager.cancel(harness.thread.id, session.id);
+    harness.store.close();
+  });
+
   it("continues projecting durable schema v1 sessions after upgrade", async () => {
     const harness = await createHarness();
     const session = await startProcess(harness);
@@ -253,6 +491,11 @@ describe("Workspace Process Manager", () => {
       workspaceDeltaAvailable: _workspaceDeltaAvailable,
       workspaceBeforeSha256: _workspaceBeforeSha256,
       workspaceBeforeTruncated: _workspaceBeforeTruncated,
+      stdinMode: _stdinMode,
+      stdinOpen: _stdinOpen,
+      stdinWriteCount: _stdinWriteCount,
+      stdinBytes: _stdinBytes,
+      stdinSha256: _stdinSha256,
       contentSha256: _contentSha256,
       ...legacyInput
     } = session;
@@ -292,6 +535,64 @@ describe("Workspace Process Manager", () => {
     expect(
       (await restarted.list(harness.thread.id))[0]?.workspaceBeforeSha256,
     ).toBeUndefined();
+    restartedStore.close();
+    harness.controlled.processes[0]!.settle(null, "SIGKILL");
+  });
+
+  it("continues projecting durable schema v2 sessions after upgrade", async () => {
+    const harness = await createHarness();
+    const session = await startProcess(harness);
+    const [startedEvent] = (
+      await harness.store.listEvents(harness.thread.id)
+    ).filter((event) => event.type === "workspace.process.started");
+    const {
+      kind: _kind,
+      schemaVersion: _schemaVersion,
+      outputAvailable: _outputAvailable,
+      workspaceDeltaAvailable: _workspaceDeltaAvailable,
+      stdinMode: _stdinMode,
+      stdinOpen: _stdinOpen,
+      stdinWriteCount: _stdinWriteCount,
+      stdinBytes: _stdinBytes,
+      stdinSha256: _stdinSha256,
+      contentSha256: _contentSha256,
+      ...legacyInput
+    } = session;
+    const legacy = createWorkspaceProcessSession({
+      ...legacyInput,
+      schemaVersion: 2,
+    });
+    await harness.store.appendEvent({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      type: startedEvent!.type,
+      category: startedEvent!.category,
+      visibility: startedEvent!.visibility,
+      payload: workspaceProcessSessionPayload(legacy),
+    });
+    harness.store.close();
+
+    const restartedStore = new LocalStore({
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+    });
+    await restartedStore.initialize();
+    const restarted = new WorkspaceProcessManager({
+      store: restartedStore,
+      workspaceRoot: harness.workspaceRoot,
+      sandbox: createControlledSandbox().sandbox,
+    });
+    await restarted.initialize();
+    const restored = await restarted.list(harness.thread.id);
+    expect(restored).toEqual([
+      expect.objectContaining({
+        id: session.id,
+        schemaVersion: 2,
+        status: "interrupted",
+        workspaceBeforeSha256: session.workspaceBeforeSha256,
+      }),
+    ]);
+    expect(restored[0]).not.toHaveProperty("stdinMode");
     restartedStore.close();
     harness.controlled.processes[0]!.settle(null, "SIGKILL");
   });
@@ -555,7 +856,19 @@ describe("Workspace Process Manager", () => {
 
   it("interrupts active evidence on restart and exposes no stale output", async () => {
     const harness = await createHarness();
-    const session = await startProcess(harness);
+    const session = await startProcess(
+      harness,
+      "process.stdin.resume()",
+      30_000,
+      true,
+    );
+    harness.controlled.processes[0]!.stdin.resume();
+    await harness.manager.writeInput({
+      threadId: harness.thread.id,
+      processId: session.id,
+      text: "RESTART_SECRET_INPUT",
+      initiatedBy: "operator",
+    });
     harness.controlled.processes[0]!.stdout.write("ephemeral\n");
     await vi.waitFor(async () => {
       expect(
@@ -582,6 +895,9 @@ describe("Workspace Process Manager", () => {
         status: "interrupted",
         outputAvailable: false,
         workspaceDeltaAvailable: false,
+        stdinOpen: false,
+        stdinWriteCount: 1,
+        stdinBytes: Buffer.byteLength("RESTART_SECRET_INPUT"),
         interruptionReason: expect.stringContaining("outcome is unknown"),
       }),
     );
@@ -604,6 +920,9 @@ describe("Workspace Process Manager", () => {
     expect(
       JSON.stringify(await restartedStore.listEvents(harness.thread.id)),
     ).not.toContain("ephemeral");
+    expect(
+      JSON.stringify(await restartedStore.listEvents(harness.thread.id)),
+    ).not.toContain("RESTART_SECRET_INPUT");
     restartedStore.close();
     harness.controlled.processes[0]!.settle(null, "SIGKILL");
   });
@@ -680,6 +999,49 @@ describe("Workspace Process Manager", () => {
     harness.store.close();
   });
 
+  it("terminates after an accepted input cannot be bound to the Ledger", async () => {
+    const harness = await createHarness();
+    const session = await startProcess(
+      harness,
+      "process.stdin.resume()",
+      30_000,
+      true,
+    );
+    harness.controlled.processes[0]!.stdin.resume();
+    const appendEvent = harness.store.appendEvent.bind(harness.store);
+    vi.spyOn(harness.store, "appendEvent").mockImplementation(async (input) => {
+      if (input.type === "workspace.process.input") {
+        throw new Error("TOP_SECRET_INPUT_LEDGER_FAILURE");
+      }
+      return appendEvent(input);
+    });
+    await expect(
+      harness.manager.writeInput({
+        threadId: harness.thread.id,
+        processId: session.id,
+        text: "UNBOUND_SECRET_INPUT",
+        initiatedBy: "operator",
+      }),
+    ).rejects.toThrow("outcome is unknown");
+    const interrupted = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(interrupted).toEqual(
+      expect.objectContaining({
+        status: "interrupted",
+        stdinOpen: false,
+        stdinWriteCount: 1,
+        interruptionReason: expect.stringContaining("outcome is unknown"),
+      }),
+    );
+    expect(JSON.stringify(interrupted)).not.toContain("TOP_SECRET");
+    expect(
+      JSON.stringify(await harness.store.listEvents(harness.thread.id)),
+    ).not.toContain("UNBOUND_SECRET_INPUT");
+    harness.store.close();
+  });
+
   it("fails closed when no supported sandbox backend is available", async () => {
     const harness = await createHarness({
       sandbox: new UnsupportedSandboxAdapter("test-platform"),
@@ -701,8 +1063,37 @@ describe("Workspace Process Manager", () => {
       action: "start",
       runtime: "node",
       args: ["-e", "setInterval(() => {}, 1000)"],
+      interactive: true,
     });
     const processId = started.details.processId;
+    const input = await tool.execute("call-input", {
+      action: "input",
+      processId,
+      text: "AGENT_SECRET_INPUT",
+      appendNewline: true,
+    });
+    expect(input.details).toEqual(
+      expect.objectContaining({
+        action: "input",
+        stdinOpen: true,
+        stdinWriteCount: 1,
+        inputReceiptSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(input.content[0]?.text).not.toContain("AGENT_SECRET_INPUT");
+    expect(
+      workspaceProcessToolCallArgumentsLedgerProjection({
+        action: "input",
+        processId,
+        text: "AGENT_SECRET_INPUT",
+        appendNewline: true,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        inputBytes: Buffer.byteLength("AGENT_SECRET_INPUT\n"),
+        appendNewline: true,
+      }),
+    );
     harness.controlled.processes[0]!.stdout.write("agent-visible\n");
     await vi.waitFor(async () => {
       const polled = await tool.execute("call-poll", {

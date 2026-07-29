@@ -16,6 +16,9 @@ export interface WorkspaceProcessCardView {
   limitLabel: string;
   outputLabel: string;
   outputAvailable: boolean;
+  stdinState: "unavailable" | "closed" | "open";
+  stdinLabel: string;
+  stdinHash?: string;
   workspaceDeltaState:
     | "pending"
     | "unchanged"
@@ -49,6 +52,7 @@ export function workspaceProcessCardView(
     limitLabel: `${Math.round(session.timeoutMs / 1_000)}s · ${session.outputLimitChars.toLocaleString()} chars/stream`,
     outputLabel: `${session.stdoutChars.toLocaleString()} stdout · ${session.stderrChars.toLocaleString()} stderr · cursor ${session.nextCursor}`,
     outputAvailable: session.outputAvailable,
+    ...stdinView(session),
     ...workspaceDeltaView(session),
     commandHash: session.commandSha256.slice(0, 12),
     ...(session.stdoutSha256 && session.stderrSha256
@@ -58,6 +62,47 @@ export function workspaceProcessCardView(
       : {}),
     ...(session.interruptionReason
       ? { interruptionReason: session.interruptionReason }
+      : {}),
+  };
+}
+
+export function workspaceProcessRequestIsCurrent(
+  token: { threadId: string; sequence: number },
+  activeThreadId: string,
+  activeSequence: number,
+): boolean {
+  return token.threadId === activeThreadId && token.sequence === activeSequence;
+}
+
+export function workspaceProcessSelectionRequestIsCurrent(
+  token: { threadId: string; processId: string; sequence: number },
+  activeThreadId: string,
+  activeProcessId: string | undefined,
+  activeSequence: number,
+): boolean {
+  return (
+    workspaceProcessRequestIsCurrent(token, activeThreadId, activeSequence) &&
+    token.processId === activeProcessId
+  );
+}
+
+function stdinView(
+  session: WorkspaceProcessSession,
+): Pick<WorkspaceProcessCardView, "stdinState" | "stdinLabel" | "stdinHash"> {
+  if (session.stdinMode === undefined) {
+    return {
+      stdinState: "unavailable",
+      stdinLabel: "Input metadata unavailable for this session version",
+    };
+  }
+  return {
+    stdinState: session.stdinOpen ? "open" : "closed",
+    stdinLabel:
+      session.stdinMode === "interactive"
+        ? `${session.stdinWriteCount ?? 0} writes · ${(session.stdinBytes ?? 0).toLocaleString()} bytes · ${session.stdinOpen ? "open" : "closed"}`
+        : "Closed at launch",
+    ...(session.stdinSha256
+      ? { stdinHash: session.stdinSha256.slice(0, 12) }
       : {}),
   };
 }

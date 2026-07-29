@@ -2,6 +2,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   JsonValue,
   WorkspaceProcessDeltaStatus,
+  WorkspaceProcessInputReceipt,
   WorkspaceProcessOutputChunk,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
@@ -10,6 +11,7 @@ import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
+  MAX_WORKSPACE_PROCESS_INPUT_BYTES,
   MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
   type WorkspaceProcessManager,
 } from "./workspace-processes.js";
@@ -36,6 +38,21 @@ const workspaceProcessSchema = Type.Union([
       timeoutMs: Type.Optional(
         Type.Integer({ minimum: 1_000, maximum: 120_000 }),
       ),
+      interactive: Type.Optional(Type.Boolean()),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      action: Type.Literal("input"),
+      processId: Type.String({
+        pattern: "^process_[a-z0-9]{8,80}$",
+      }),
+      text: Type.String({
+        maxLength: MAX_WORKSPACE_PROCESS_INPUT_BYTES,
+      }),
+      appendNewline: Type.Optional(Type.Boolean()),
+      close: Type.Optional(Type.Boolean()),
     },
     { additionalProperties: false },
   ),
@@ -67,7 +84,7 @@ const workspaceProcessSchema = Type.Union([
 ]);
 
 export interface WorkspaceProcessToolDetails {
-  action: "start" | "poll" | "cancel";
+  action: "start" | "input" | "poll" | "cancel";
   processId: string;
   status: WorkspaceProcessStatus;
   nextCursor: number;
@@ -75,6 +92,10 @@ export interface WorkspaceProcessToolDetails {
   workspaceDeltaStatus?: WorkspaceProcessDeltaStatus;
   workspaceChangedFileCount?: number;
   chunkCount: number;
+  stdinOpen?: boolean;
+  stdinWriteCount?: number;
+  stdinBytes?: number;
+  inputReceiptSha256?: string;
   resultSha256: string;
 }
 
@@ -86,7 +107,7 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Start, poll, or cancel a bounded background Node Process Session. Starts use explicit argv, a read-only workspace, denied network access, and a fixed environment. Poll output is ephemeral and is redacted from Ledger evidence.",
+      "Start, send bounded input to, poll, or cancel a background Node Process Session. Starts use explicit argv, a read-only workspace, denied network access, and a fixed environment. Input requires explicit interactive mode. Input and output text are ephemeral and redacted from Ledger evidence.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
       if (input.action === "start") {
@@ -98,9 +119,26 @@ export function createWorkspaceProcessTool(
             ...(input.cwd ? { cwd: input.cwd } : {}),
             ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {}),
           },
+          ...(input.interactive === true ? { interactive: true } : {}),
           ...(signal ? { signal } : {}),
         });
         return toolResult("start", session, []);
+      }
+      if (input.action === "input") {
+        const receipt = await manager.writeInput({
+          ...context,
+          processId: input.processId,
+          text: input.text,
+          ...(input.appendNewline === true ? { appendNewline: true } : {}),
+          ...(input.close === true ? { close: true } : {}),
+          initiatedBy: "agent",
+          ...(signal ? { signal } : {}),
+        });
+        const session = (await manager.list(context.threadId)).find(
+          (candidate) => candidate.id === input.processId,
+        );
+        if (!session) throw new Error("Workspace Process Session not found");
+        return toolResult("input", session, [], receipt);
       }
       if (input.action === "poll") {
         const output = await manager.output(context.threadId, input.processId, {
@@ -140,6 +178,17 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
       ? { processId: value["processId"] }
       : {}),
     argumentCount: Array.isArray(value["args"]) ? value["args"].length : 0,
+    ...(typeof value["text"] === "string"
+      ? {
+          inputBytes: Buffer.byteLength(
+            `${value["text"]}${value["appendNewline"] === true ? "\n" : ""}`,
+            "utf8",
+          ),
+        }
+      : {}),
+    ...(value["appendNewline"] === true ? { appendNewline: true } : {}),
+    ...(value["close"] === true ? { close: true } : {}),
+    ...(value["interactive"] === true ? { interactive: true } : {}),
     cwdPathSha256: sha256(cwd),
     inputSha256: workspaceProcessCallSha256(args),
   };
@@ -177,6 +226,7 @@ function toolResult(
   action: WorkspaceProcessToolDetails["action"],
   session: WorkspaceProcessSession,
   chunks: WorkspaceProcessOutputChunk[],
+  inputReceipt?: WorkspaceProcessInputReceipt,
 ) {
   const chunkSetSha256 = sha256(
     canonicalJson(
@@ -200,6 +250,16 @@ function toolResult(
       ? { workspaceChangedFileCount: session.workspaceChangedFileCount }
       : {}),
     chunkCount: chunks.length,
+    ...(session.stdinOpen !== undefined
+      ? { stdinOpen: session.stdinOpen }
+      : {}),
+    ...(session.stdinWriteCount !== undefined
+      ? { stdinWriteCount: session.stdinWriteCount }
+      : {}),
+    ...(session.stdinBytes !== undefined
+      ? { stdinBytes: session.stdinBytes }
+      : {}),
+    ...(inputReceipt ? { inputReceiptSha256: inputReceipt.contentSha256 } : {}),
     resultSha256: sha256(
       canonicalJson({
         action,
@@ -211,6 +271,10 @@ function toolResult(
         sessionSha256: session.contentSha256,
         workspaceDeltaStatus: session.workspaceDeltaStatus ?? null,
         workspaceChangedFileCount: session.workspaceChangedFileCount ?? null,
+        stdinOpen: session.stdinOpen ?? null,
+        stdinWriteCount: session.stdinWriteCount ?? null,
+        stdinBytes: session.stdinBytes ?? null,
+        inputReceiptSha256: inputReceipt?.contentSha256 ?? null,
       }),
     ),
   };
@@ -218,6 +282,12 @@ function toolResult(
     `Process ${session.id}: ${session.status}`,
     `Cursor: ${details.nextCursor}`,
     `Output available: ${String(session.outputAvailable)}`,
+    `Stdin: ${session.stdinMode ?? "closed"} / ${
+      session.stdinOpen ? "open" : "closed"
+    }`,
+    `Input: ${session.stdinWriteCount ?? 0} writes / ${
+      session.stdinBytes ?? 0
+    } bytes`,
     `Workspace delta: ${session.workspaceDeltaStatus ?? "pending"}`,
     `Workspace changed files: ${
       session.workspaceDeltaStatus === "indeterminate"
@@ -225,6 +295,9 @@ function toolResult(
         : (session.workspaceChangedFileCount ?? "unknown")
     }`,
     `Session SHA-256: ${session.contentSha256}`,
+    ...(inputReceipt
+      ? [`Input receipt SHA-256: ${inputReceipt.contentSha256}`]
+      : []),
   ];
   if (chunks.length > 0) {
     lines.push(

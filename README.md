@@ -84,8 +84,8 @@ Version `0.1.0` includes:
   parent-Run cancellation, and argument/output-redacted Ledger evidence;
 - a `workspace_process` tool and lazy Processes Workbench for bounded
   background Node sessions with cursor-based stdout/stderr observation,
-  cancellation, lifecycle settlement, graceful shutdown, and fail-closed
-  restart reconciliation;
+  explicit interactive stdin, cancellation, lifecycle settlement, graceful
+  shutdown, and fail-closed restart reconciliation;
 - preview-bound `workspace_file_preview` / `workspace_file_apply` tools plus a
   lazy Files recovery panel for directory creation, no-overwrite-intent moves,
   reversible trash, and explicit restore without shell access;
@@ -1130,11 +1130,13 @@ Runtime boundary than the Node smoke.
 
 ## Workspace Process Sessions
 
-An Agent can separately opt into `workspace_process` to start, poll, or cancel
-a longer Node diagnostic. Starts reuse the same explicit-argv preparation,
-fixed environment, executable binding, canonical cwd, read-only workspace, and
-denied-network OS Sandbox as `run_command`; there is still no command string,
-shell, inherited provider credential, or user-selected executable.
+An Agent can separately opt into `workspace_process` to start, send input to,
+poll, or cancel a longer Node diagnostic. Starts reuse the same explicit-argv
+preparation, fixed environment, executable binding, canonical cwd, read-only
+workspace, and denied-network OS Sandbox as `run_command`; there is still no
+command string, shell, inherited provider credential, or user-selected
+executable. Stdin closes at launch unless the start explicitly opts into
+interactive mode.
 
 Each Thread may have at most four active sessions and one Runtime at most eight
 in total. A session retains at most 32,000 characters per stream and 256
@@ -1145,6 +1147,17 @@ Processes panel can read that bounded output while the Runtime remains alive.
 Repeated Workbench polling uses an incremental in-memory projection rather than
 scanning the complete Thread.
 
+An interactive session accepts at most 32 KiB per UTF-8 input action, 256 KiB
+in total, and 64 serialized input actions. A write may append one newline and
+may close stdin after the bytes are accepted. Input after close, settlement, a
+different owning Run, or Runtime restart fails closed. The Processes panel
+offers the same Thread-scoped send and close controls, preserves the final
+receipt after close, and discards stale list, output, delta, or input responses
+when the Thread or selected Process changes. Client cancellation before a
+queued write prevents it; once a write starts, a disconnected caller cannot
+prove whether kernel-buffered bytes reached the child and must inspect the
+session and Trace rather than retry blindly.
+
 Each new session also captures a deterministic workspace snapshot before
 launch and another after settlement. Complete snapshots classify the observed
 execution window as `unchanged` or `changed`; a snapshot that exceeds 2,000
@@ -1152,18 +1165,20 @@ files or 16 MiB, or cannot be completed, is `indeterminate`. This comparison
 does not claim the read-only session wrote a changed file: another local
 process may have changed the workspace concurrently.
 
-Output text and argv never enter the Ledger, Trace, Replay, or exported
-fixtures. Durable `workspace.process.started`, `.settled`, and `.interrupted`
-events bind the Napier Process ID, owning Thread and Run, status, executable,
-command/environment/limit hashes, output hashes/counts, cursor, and truncation
-state. They also bind pre/post workspace digests, comparison status,
-changed-file count, and a changed-path-set digest without storing paths.
+Input and output text plus argv never enter the Ledger, Trace, Replay, or
+exported fixtures. Durable `workspace.process.started`, `.input`, `.settled`,
+and `.interrupted` events bind the Napier Process ID, owning Thread and Run,
+status, executable, command/environment/limit hashes, input sequence/counts
+and cumulative digest, output hashes/counts, cursor, and truncation state. They
+also bind pre/post workspace digests, comparison status, changed-file count,
+and a changed-path-set digest without storing paths.
 Relative paths and before/after file metadata are bounded to 256 entries and
 available only from the current local Runtime through the owning Thread's
 Processes panel. After restart, an unclosed session becomes `interrupted` with
 unknown outcome and no output or path details; Napier does not silently rerun
-it or claim the old host process was reattached. Existing schema v1 Process
-receipts remain readable, while new snapshot-aware sessions use schema v2.
+it or claim the old host process was reattached. Existing schema v1 and v2
+Process receipts remain readable, while new input-aware sessions use schema
+v3.
 
 Run the complete Agent-to-Sandbox smoke from a non-sandboxed Terminal:
 
@@ -1177,7 +1192,9 @@ host or Runtime loss can leave a macOS sandbox wrapper outcome unknown because
 also require a stronger guardian boundary for proved cleanup. Proved orphan
 cleanup, cross-restart reattachment, PTY, hard CPU/memory/process quotas, and
 write-capable sessions require a managed guardian or OCI backend and are not
-claimed by this implementation.
+claimed by this implementation. Interactive stdin is a pipe protocol; it does
+not provide terminal resize, foreground process groups, job control, attach
+semantics, or a persistent JavaScript/Python kernel.
 
 ## Controlled Workspace Editing
 
@@ -1316,7 +1333,7 @@ workspace_file_apply
 
 Supported operations are `create_directory`, `move`, `trash`, and `restore`.
 Permanent purge, destination overwrite requests, permission changes, root
-moves, symlink lifecycle, and Process Session writes are not exposed. Napier
+moves, symlink lifecycle, and Process Session workspace writes are not exposed. Napier
 rejects a destination observed as occupied during preview or the final
 precondition check. An external process can still race after that check because
 it does not honor Napier's host-local lock; postcondition loss is reported as
@@ -2620,7 +2637,7 @@ Selecting `workspace` exposes only individually enabled structured tools:
 anchors, **Sandbox verify** is read-only, offline, and command-closed, and
 **Sandbox command** is an explicit-argv, read-only/offline Node runner with no
 shell or inherited environment. **Background process** adds bounded
-start/poll/cancel lifecycle control over the same sandbox boundary.
+start/input/poll/cancel lifecycle control over the same sandbox boundary.
 Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.

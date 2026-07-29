@@ -69,6 +69,7 @@ export * from "./verification.js";
 export * from "./workspace-file-mutations.js";
 export * from "./workspace-file-tools.js";
 export * from "./workspace-process-events.js";
+export * from "./workspace-process-input.js";
 export * from "./workspace-process-tool.js";
 export * from "./workspace-processes.js";
 export * from "./workspace-snapshot.js";

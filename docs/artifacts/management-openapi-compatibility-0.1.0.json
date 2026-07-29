@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "e9fa10c1022c916b3e64851420c5484444a9c4d3776903b703bfc81277fed3f5",
-    "routeCount": 237,
-    "routeSetSha256": "58fc0392f52ca9c89f409fdae046b55be3d902482d8bd2b0a2f8dd55a4c9b719"
+    "sha256": "52bcdfd65907fad8e9182ff4d4ec9526f6b181cfe6c4130e9510fd6474553b65",
+    "routeCount": 244,
+    "routeSetSha256": "edb22718413138107deb0275890962d56d2b1344a58d103f90f6a8aa19273932"
   },
-  "operationCount": 237,
-  "operationSetSha256": "a2acb7636d0b1399cd8350586de28dcb81f96c65962135ba65f70b730d350020",
+  "operationCount": 244,
+  "operationSetSha256": "73f11a625df3f7c9acf649eb84c542696c4c85f4a09ee204000404459c597f61",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -1473,6 +1473,74 @@
       ]
     },
     {
+      "key": "GET /api/threads/{threadId}/processes",
+      "method": "get",
+      "path": "/api/threads/{threadId}/processes",
+      "operationId": "get-threads-by-threadId-processes",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/processes/{processId}/delta",
+      "method": "get",
+      "path": "/api/threads/{threadId}/processes/{processId}/delta",
+      "operationId": "get-threads-by-threadId-processes-by-processId-delta",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "processId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/processes/{processId}/output",
+      "method": "get",
+      "path": "/api/threads/{threadId}/processes/{processId}/output",
+      "operationId": "get-threads-by-threadId-processes-by-processId-output",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "processId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "GET /api/threads/{threadId}/recovery",
       "method": "get",
       "path": "/api/threads/{threadId}/recovery",
@@ -1547,6 +1615,28 @@
       "method": "get",
       "path": "/api/threads/{threadId}/runs/compare",
       "operationId": "get-threads-by-threadId-runs-compare",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": false,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "GET /api/threads/{threadId}/workspace-trash",
+      "method": "get",
+      "path": "/api/threads/{threadId}/workspace-trash",
+      "operationId": "get-threads-by-threadId-workspace-trash",
       "tags": [
         "threads"
       ],
@@ -4704,6 +4794,52 @@
       ]
     },
     {
+      "key": "POST /api/threads/{threadId}/processes/{processId}/cancel",
+      "method": "post",
+      "path": "/api/threads/{threadId}/processes/{processId}/cancel",
+      "operationId": "post-threads-by-threadId-processes-by-processId-cancel",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "processId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/processes/{processId}/input",
+      "method": "post",
+      "path": "/api/threads/{threadId}/processes/{processId}/input",
+      "operationId": "post-threads-by-threadId-processes-by-processId-input",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "processId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
       "key": "POST /api/threads/{threadId}/resume",
       "method": "post",
       "path": "/api/threads/{threadId}/resume",
@@ -4904,6 +5040,29 @@
       ],
       "pathParameters": [
         "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/workspace-trash/{trashId}/restore",
+      "method": "post",
+      "path": "/api/threads/{threadId}/workspace-trash/{trashId}/restore",
+      "operationId": "post-threads-by-threadId-workspace-trash-by-trashId-restore",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "threadId",
+        "trashId"
       ],
       "acceptsJsonRequestBody": true,
       "jsonRequestSchemaRef": null,

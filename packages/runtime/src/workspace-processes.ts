@@ -4,6 +4,7 @@ import { StringDecoder } from "node:string_decoder";
 
 import type {
   WorkspaceProcessDelta,
+  WorkspaceProcessInputReceipt,
   WorkspaceProcessOutput,
   WorkspaceProcessOutputChunk,
   WorkspaceProcessSession,
@@ -25,12 +26,18 @@ import type { LocalStore } from "./store.js";
 import {
   createWorkspaceProcessSession,
   projectWorkspaceProcessSessions,
+  WORKSPACE_PROCESS_INPUT_EVENT,
   WORKSPACE_PROCESS_INTERRUPTED_EVENT,
   WORKSPACE_PROCESS_SETTLED_EVENT,
   WORKSPACE_PROCESS_STARTED_EVENT,
+  workspaceProcessInputReceiptPayload,
   workspaceProcessSessionPayload,
   workspaceProcessSessionWithRuntimeState,
 } from "./workspace-process-events.js";
+import {
+  type WorkspaceProcessInput,
+  writeWorkspaceProcessInput,
+} from "./workspace-process-input.js";
 import {
   createWorkspacePathSnapshot,
   diffWorkspaceSnapshots,
@@ -45,6 +52,11 @@ export const MAX_RETAINED_WORKSPACE_PROCESSES = 64;
 export const MAX_WORKSPACE_PROCESS_OUTPUT_CHUNKS = 256;
 export const MAX_WORKSPACE_PROCESS_POLL_CHUNKS = 64;
 export const MAX_WORKSPACE_PROCESS_POLL_WAIT_MS = 5_000;
+export {
+  MAX_WORKSPACE_PROCESS_INPUT_BYTES,
+  MAX_WORKSPACE_PROCESS_INPUT_WRITES,
+  MAX_WORKSPACE_PROCESS_TOTAL_INPUT_BYTES,
+} from "./workspace-process-input.js";
 
 type ForcedWorkspaceProcessStatus =
   | "timed_out"
@@ -79,6 +91,8 @@ interface ActiveWorkspaceProcess {
   changeWaiters: Set<() => void>;
   parentSignal?: AbortSignal;
   parentAbort?: () => void;
+  stdinHash: Hash;
+  inputTail: Promise<void>;
 }
 
 export interface WorkspaceProcessManagerOptions extends CommandRunnerOptions {
@@ -89,6 +103,14 @@ export interface StartWorkspaceProcessRequest {
   threadId: string;
   runId: string;
   command: CommandExecutionRequest;
+  interactive?: boolean;
+  signal?: AbortSignal;
+}
+
+export interface WriteWorkspaceProcessInputRequest extends WorkspaceProcessInput {
+  threadId: string;
+  processId: string;
+  runId?: string;
   signal?: AbortSignal;
 }
 
@@ -122,6 +144,7 @@ export class WorkspaceProcessManager {
           schemaVersion: session.schemaVersion,
           ...stableSessionInput(session),
           status: "interrupted",
+          ...(session.schemaVersion === 3 ? { stdinOpen: false } : {}),
           settledAt: nowIso(),
           stdoutChars: session.stdoutChars,
           stderrChars: session.stderrChars,
@@ -215,7 +238,7 @@ export class WorkspaceProcessManager {
       await child.terminate().catch(() => undefined);
       throw new Error("Workspace Process Manager is shutting down");
     }
-    child.stdin.end();
+    if (request.interactive !== true) child.stdin.end();
     const processId = createId("process");
     const startedAt = nowIso();
     const session = createWorkspaceProcessSession({
@@ -235,6 +258,11 @@ export class WorkspaceProcessManager {
       cwdPathSha256: prepared.receipt.cwdPathSha256,
       timeoutMs: prepared.timeoutMs,
       outputLimitChars: MAX_COMMAND_OUTPUT_CHARS,
+      stdinMode: request.interactive === true ? "interactive" : "closed",
+      stdinOpen: request.interactive === true,
+      stdinWriteCount: 0,
+      stdinBytes: 0,
+      stdinSha256: sha256(""),
       workspaceBeforeSha256: beforeSnapshot.sha256,
       workspaceBeforeTruncated: beforeSnapshot.truncated,
       startedAt,
@@ -400,6 +428,37 @@ export class WorkspaceProcessManager {
     };
   }
 
+  async writeInput(
+    request: WriteWorkspaceProcessInputRequest,
+  ): Promise<WorkspaceProcessInputReceipt> {
+    this.assertReady();
+    if (request.signal?.aborted) {
+      throw new Error("workspace process input was aborted");
+    }
+    const session = await this.requireSession(
+      request.threadId,
+      request.processId,
+    );
+    if (request.runId && request.runId !== session.runId) {
+      throw new Error("Workspace Process Session does not belong to the Run");
+    }
+    const entry = this.entries.get(request.processId);
+    if (!entry || entry.session.threadId !== request.threadId) {
+      throw new Error("Workspace Process input is unavailable after restart");
+    }
+    const operation = entry.inputTail.then(async () => {
+      if (request.signal?.aborted) {
+        throw new Error("workspace process input was aborted");
+      }
+      return this.writeInputNow(entry, request);
+    });
+    entry.inputTail = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    return operation;
+  }
+
   async cancel(
     threadId: string,
     processId: string,
@@ -470,8 +529,11 @@ export class WorkspaceProcessManager {
       completion: Promise.resolve(),
       changeVersion: 0,
       changeWaiters: new Set<() => void>(),
+      stdinHash: createHash("sha256"),
+      inputTail: Promise.resolve(),
       ...(parentSignal ? { parentSignal } : {}),
     };
+    child.stdin.on("error", () => undefined);
     entry.stdout = this.collect(entry, "stdout", child.stdout);
     entry.stderr = this.collect(entry, "stderr", child.stderr);
     if (parentSignal) {
@@ -567,9 +629,37 @@ export class WorkspaceProcessManager {
     }
   }
 
+  private async writeInputNow(
+    entry: ActiveWorkspaceProcess,
+    request: WriteWorkspaceProcessInputRequest,
+  ): Promise<WorkspaceProcessInputReceipt> {
+    const { session, receipt } = await writeWorkspaceProcessInput(
+      entry.session,
+      entry.child.stdin,
+      entry.stdinHash,
+      request,
+    );
+    entry.session = session;
+    this.notifyChange(entry);
+    try {
+      await this.appendInputReceipt(receipt, session);
+    } catch {
+      this.forceStop(
+        entry,
+        "interrupted",
+        "Process input may have been accepted but its Ledger evidence could not be persisted; the outcome is unknown.",
+      );
+      throw new Error(
+        "Workspace Process input outcome is unknown because Ledger evidence could not be persisted",
+      );
+    }
+    return receipt;
+  }
+
   private async monitor(entry: ActiveWorkspaceProcess): Promise<void> {
     const exit = await entry.child.exit;
     await entry.termination;
+    await entry.inputTail;
     await Promise.all([entry.stdout.completion, entry.stderr.completion]);
     clearTimeout(entry.timeout);
     entry.parentSignal?.removeEventListener("abort", entry.parentAbort!);
@@ -597,6 +687,7 @@ export class WorkspaceProcessManager {
     const session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
       status,
+      ...(entry.session.schemaVersion === 3 ? { stdinOpen: false } : {}),
       settledAt,
       durationMs: Math.max(
         0,
@@ -642,6 +733,13 @@ export class WorkspaceProcessManager {
     }
     entry.forcedStatus = status;
     entry.interruptionReason = reason;
+    if (entry.session.schemaVersion === 3 && entry.session.stdinOpen === true) {
+      entry.session = createWorkspaceProcessSession({
+        ...stableSessionInput(entry.session),
+        status: entry.session.status,
+        stdinOpen: false,
+      });
+    }
     entry.termination = entry.child.terminate();
     this.notifyChange(entry);
   }
@@ -653,6 +751,7 @@ export class WorkspaceProcessManager {
     entry.session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
       status: "interrupted",
+      ...(entry.session.schemaVersion === 3 ? { stdinOpen: false } : {}),
       settledAt: nowIso(),
       stdoutChars: entry.stdout.chars,
       stderrChars: entry.stderr.chars,
@@ -676,6 +775,25 @@ export class WorkspaceProcessManager {
       category: "lifecycle",
       visibility: "user",
       payload: workspaceProcessSessionPayload(session),
+    });
+    const projection =
+      this.projectedSessions.get(session.threadId) ??
+      new Map<string, WorkspaceProcessSession>();
+    projection.set(session.id, session);
+    this.projectedSessions.set(session.threadId, projection);
+  }
+
+  private async appendInputReceipt(
+    receipt: WorkspaceProcessInputReceipt,
+    session: WorkspaceProcessSession,
+  ): Promise<void> {
+    await this.options.store.appendEvent({
+      threadId: receipt.threadId,
+      runId: receipt.runId,
+      type: WORKSPACE_PROCESS_INPUT_EVENT,
+      category: "tool",
+      visibility: "user",
+      payload: workspaceProcessInputReceiptPayload(receipt),
     });
     const projection =
       this.projectedSessions.get(session.threadId) ??

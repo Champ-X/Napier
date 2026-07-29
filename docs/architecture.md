@@ -1699,8 +1699,8 @@ and after lock acquisition. Standard Node rename cannot provide portable
 `RENAME_NOREPLACE` for directories, so a hostile external writer can still
 race after the final check. The postcondition reports uncertainty instead of
 claiming distributed isolation. Permanent deletion, overwrite requests,
-permission changes, root moves, symlink lifecycle, and Process Session writes
-remain outside this capability.
+permission changes, root moves, symlink lifecycle, and Process Session
+workspace writes remain outside this capability.
 
 ## Sandboxed Command Flow
 
@@ -1762,6 +1762,10 @@ Agent selects start + node + literal argv
   -> launch through macOS sandbox-exec or Linux Bubblewrap
   -> append workspace.process.started with metadata and hashes only
   -> return a Napier process ID, never a host PID
+  -> close stdin by default, or retain it only for an explicit interactive start
+  -> serialize at most 64 UTF-8 input actions, 32 KiB each and 256 KiB total
+  -> optionally append a newline and close stdin after a write
+  -> append workspace.process.input with byte counts and hashes, never text
   -> collect at most 32,000 chars per stream and 256 ordered chunks in memory
   -> Agent or Workbench polls chunks after a monotonic cursor
   -> cancel on Agent/operator request, parent abort, timeout, or output cap
@@ -1782,20 +1786,30 @@ logic is shared with workspace verification, excludes `.git`, `.napier`,
 `node_modules`, and symlinks, and fails closed as `indeterminate` when either
 side exceeds 2,000 files or 16 MiB or the post-snapshot is unavailable.
 
-Output text is intentionally ephemeral. The live Agent tool result and
+Input and output text are intentionally ephemeral. The live Agent tool result and
 `GET .../processes/{processId}/output?after=<cursor>` can return bounded chunks,
 but model responses, tool events, Process lifecycle events, Trace summaries,
 Replay, and exports retain only hashes, counts, cursors, status, and limits.
+`POST .../processes/{processId}/input` accepts only owning-Thread UTF-8 text,
+optional newline, and optional close; Agent writes additionally bind to the
+owning Run. Its response is a hash-only input receipt. Writes are serialized
+through one per-session chain and resolve only after the Node Writable
+callback, so backpressure delays the caller instead of dropping data. If
+accepted bytes cannot be bound to the Ledger, Napier terminates the session and
+reports an unknown outcome rather than inviting a blind retry.
 The similarly Thread-scoped `GET .../processes/{processId}/delta` returns at
 most 256 relative-path entries with before/after file metadata from the current
 Runtime. The Ledger retains only pre/post snapshot digests, truncation state,
 comparison status, changed-file count, and a changed-path-set digest. The lazy
 Processes panel exposes output availability, status, limits, settlement
 evidence, cancellation, and workspace-window drift under the owning Thread.
-It explicitly does not attribute concurrent external changes to the read-only
-session. Path details disappear after Runtime restart while the summary
-evidence remains. Schema v1 sessions continue to project as delta-unavailable;
-new sessions use schema v2.
+For running interactive sessions it also exposes bounded input and explicit
+stdin close; request-sequence and Process-selection guards discard stale
+responses. It explicitly does not attribute concurrent external changes to the
+read-only session. Path details disappear after Runtime restart while the
+summary evidence remains. Schema v1 sessions continue to project as
+delta-unavailable, schema v2 sessions retain snapshot evidence without input
+metadata, and new sessions use schema v3.
 
 Graceful Server shutdown stops active process groups before closing the Store.
 An abrupt host or Runtime loss cannot prove that a macOS sandbox wrapper died,
@@ -1804,7 +1818,9 @@ unknown interruption rather than completion or reattachment. A guardian or OCI
 identity is required for proved cleanup of abrupt or deliberately detached
 descendants and cross-restart reattachment. PTY, workspace writes, hard
 CPU/memory/process quotas, Python, and remote sandboxes remain outside this
-slice.
+slice. Interactive stdin is a pipe protocol and does not imply terminal resize,
+job control, foreground process groups, attach semantics, or a persistent
+language kernel.
 
 ## Workspace Verification Flow
 
@@ -3962,6 +3978,11 @@ The current boundary has twenty-nine parts:
     cursor output, cancellation and graceful shutdown, Thread-scoped local
     inspection, hash-only lifecycle settlement, restart interruption
     reconciliation, incremental projection, and a real Agent-to-Sandbox smoke.
+30. bounded Process input streams with closed-by-default stdin, explicit
+    interactive opt-in, serialized UTF-8 writes and close, independent
+    message/session/action limits, hash-only input receipts, Workbench
+    controls, schema v1/v2 compatibility, and a real stateful
+    Agent-to-Sandbox smoke.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
@@ -3985,7 +4006,7 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 1: Local execution and architecture
 
 - extend bounded Workspace Process Sessions with PTY, a managed guardian,
-  proved orphan cleanup, cross-restart reattachment, and pre/post diffs;
+  proved orphan cleanup, and cross-restart reattachment;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;
 - domain extraction from the oversized Server and Store modules;
 - startup, first-token, tool-latency, long-thread, memory, Web bundle, and

@@ -30,7 +30,7 @@ afterEach(async () => {
 });
 
 describe("Agent Workspace Process integration", () => {
-  it("starts, polls, and settles a background process through the Agent loop", async () => {
+  it("starts, writes, polls, and settles an interactive process through the Agent loop", async () => {
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-agent-process-test-"),
     );
@@ -42,7 +42,7 @@ describe("Agent Workspace Process integration", () => {
       dataRoot: path.join(root, "data"),
     });
     await store.initialize();
-    const sandbox = autoSettlingSandbox("BACKGROUND_SECRET_OUTPUT\n");
+    const sandbox = inputSettlingSandbox("BACKGROUND_SECRET_OUTPUT\n");
     const processes = new WorkspaceProcessManager({
       store,
       workspaceRoot,
@@ -66,9 +66,24 @@ describe("Agent Workspace Process integration", () => {
           runtime: "node",
           args: ["-e", source],
           timeoutMs: 10_000,
+          interactive: true,
         }),
         { stopReason: "toolUse" },
       ),
+      (context) => {
+        const text = JSON.stringify(context.messages);
+        const processId = text.match(/process_[a-z0-9]{20}/u)?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "input",
+            processId,
+            text: "BACKGROUND_SECRET_INPUT",
+            close: true,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
       (context) => {
         const text = JSON.stringify(context.messages);
         const processId = text.match(/process_[a-z0-9]{20}/u)?.[0];
@@ -127,22 +142,28 @@ describe("Agent Workspace Process integration", () => {
         )
         .map((event) => event.payload),
     ).toEqual([
-      expect.objectContaining({ effect: "read" }),
+      expect.objectContaining({ effect: "write" }),
+      expect.objectContaining({ effect: "write" }),
       expect.objectContaining({ effect: "read" }),
     ]);
     expect(
       events
         .filter((event) => event.type.startsWith("workspace.process."))
         .map((event) => event.type),
-    ).toEqual(["workspace.process.started", "workspace.process.settled"]);
+    ).toEqual([
+      "workspace.process.started",
+      "workspace.process.input",
+      "workspace.process.settled",
+    ]);
     expect(JSON.stringify(events)).not.toContain(source);
     expect(JSON.stringify(events)).not.toContain("BACKGROUND_SECRET_OUTPUT");
+    expect(JSON.stringify(events)).not.toContain("BACKGROUND_SECRET_INPUT");
     await processes.shutdown();
     store.close();
   });
 });
 
-function autoSettlingSandbox(output: string): OsSandboxAdapter {
+function inputSettlingSandbox(output: string): OsSandboxAdapter {
   return {
     id: "agent-process-sandbox",
     async launch() {
@@ -172,8 +193,11 @@ function autoSettlingSandbox(output: string): OsSandboxAdapter {
         stderr.end();
         resolveExit?.({ code, signal });
       };
-      setTimeout(() => stdout.write(output), 5);
-      setTimeout(() => settle(0, null), 20);
+      stdin.resume();
+      stdin.once("end", () => {
+        stdout.write(output);
+        settle(0, null);
+      });
       return {
         stdin,
         stdout,

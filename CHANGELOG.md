@@ -6,6 +6,17 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added bounded input streams for explicitly interactive Workspace Process
+  Sessions. Agent and operator paths can send serialized UTF-8 messages, append
+  a newline, and close stdin while preserving the existing explicit-argv,
+  read-only, offline Node Sandbox. Closed stdin remains the default. Each
+  message is limited to 32 KiB, each session to 256 KiB and 64 input actions,
+  and raw input remains live-only; the Ledger and Trace retain sequence,
+  byte-count, cumulative digest, close state, and session binding. The
+  Processes Workbench exposes send/close controls with stale-response guards,
+  and the live macOS smoke proves state across two writes before normal
+  settlement. This is a pipe protocol, not a PTY or persistent language
+  kernel.
 - Added preview-bound, reversible Workspace file lifecycle operations.
   `workspace_file_preview` and `workspace_file_apply` support bounded directory
   creation, move/rename, reversible trash, and restore without shell access,
@@ -15,7 +26,7 @@ All notable changes to Napier are recorded here.
   lazy Files Workbench lists Thread-scoped local trash and offers explicit
   fail-closed restore. Protected path aliases, destination parent replacement,
   and late cross-Thread Workbench responses fail closed. `npm run
-  test:live-files` drives the complete Agent lifecycle against real temporary
+test:live-files` drives the complete Agent lifecycle against real temporary
   workspace bytes.
 - Added bounded Workspace Process Sessions as an opt-in Agent capability.
   `workspace_process` starts, cursor-polls, and cancels background Node work

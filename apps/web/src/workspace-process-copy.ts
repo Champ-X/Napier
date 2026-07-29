@@ -6,6 +6,16 @@ export const workspaceProcessCopy = {
   refresh: "Refresh",
   cancel: "Cancel process",
   cancelling: "Cancelling...",
+  sendInput: "Send line",
+  sendingInput: "Sending...",
+  closeInput: "Close stdin",
+  closingInput: "Closing...",
+  inputLabel: "Process input",
+  inputPlaceholder: "UTF-8 input for this sandboxed process",
+  inputSafety:
+    "Input text is sent to the live process and is not stored in the Ledger. Do not send secrets.",
+  inputReceipt: "Input receipt",
+  stdin: "Stdin",
   showOutput: "Show output",
   hideOutput: "Hide output",
   showDelta: "Inspect workspace delta",
@@ -39,4 +49,6 @@ export const workspaceProcessCopy = {
   scope: "Scope",
   output: "Output",
   error: "Process Sessions could not be loaded.",
+  inputError:
+    "Process input was rejected or its outcome is unknown. Refresh the session before retrying.",
 } as const;

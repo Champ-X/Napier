@@ -6,6 +6,7 @@ import { PassThrough } from "node:stream";
 import type {
   ThreadDetail,
   WorkspaceProcessDelta,
+  WorkspaceProcessInputReceipt,
   WorkspaceProcessOutput,
   WorkspaceProcessSession,
 } from "@napier/contracts";
@@ -63,7 +64,11 @@ describe("Workspace Process HTTP API", () => {
         runtime: "node",
         args: ["-e", "process.stdout.write('HTTP_SECRET_OUTPUT')"],
       },
+      interactive: true,
     });
+    const stdin: string[] = [];
+    controlled.stdin.setEncoding("utf8");
+    controlled.stdin.on("data", (chunk: string) => stdin.push(chunk));
     controlled.stdout.write("HTTP_SECRET_OUTPUT");
     await vi.waitFor(async () => {
       const current = await services.workspaceProcesses.output(
@@ -98,6 +103,49 @@ describe("Workspace Process HTTP API", () => {
       },
     ]);
 
+    const inputResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${session.id}/input`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: "HTTP_SECRET_INPUT",
+          appendNewline: true,
+        }),
+      },
+    );
+    expect(inputResponse.status).toBe(200);
+    expect(
+      (await inputResponse.json()) as WorkspaceProcessInputReceipt,
+    ).toEqual(
+      expect.objectContaining({
+        processId: session.id,
+        initiatedBy: "operator",
+        sequence: 1,
+        stdinClosed: false,
+      }),
+    );
+    expect(stdin.join("")).toBe("HTTP_SECRET_INPUT\n");
+    const invalidInputResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${session.id}/input`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "", unknown: true }),
+      },
+    );
+    expect(invalidInputResponse.status).toBe(400);
+    const newlineInputResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${session.id}/input`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "", appendNewline: true }),
+      },
+    );
+    expect(newlineInputResponse.status).toBe(200);
+    expect(stdin.join("")).toBe("HTTP_SECRET_INPUT\n\n");
+
     const invalidResponse = await app.request(
       `/api/threads/${thread.id}/processes/${session.id}/output?after=-1`,
     );
@@ -115,6 +163,15 @@ describe("Workspace Process HTTP API", () => {
       `/api/threads/${otherThread.id}/processes/${session.id}/delta`,
     );
     expect(deniedDeltaResponse.status).toBe(404);
+    const deniedInputResponse = await app.request(
+      `/api/threads/${otherThread.id}/processes/${session.id}/input`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "foreign" }),
+      },
+    );
+    expect(deniedInputResponse.status).toBe(404);
 
     await writeFile(path.join(workspaceRoot, "http-drift.txt"), "drift");
     const cancelResponse = await app.request(
@@ -152,6 +209,7 @@ describe("Workspace Process HTTP API", () => {
     const detailResponse = await app.request(`/api/threads/${thread.id}`);
     const detail = (await detailResponse.json()) as ThreadDetail;
     expect(JSON.stringify(detail.events)).not.toContain("HTTP_SECRET_OUTPUT");
+    expect(JSON.stringify(detail.events)).not.toContain("HTTP_SECRET_INPUT");
     expect(JSON.stringify(detail.events)).not.toContain("http-drift.txt");
   });
 });
@@ -190,5 +248,5 @@ function createControlledSandbox() {
       } satisfies SandboxedProcess;
     },
   };
-  return { sandbox, stdout, terminate };
+  return { sandbox, stdin, stdout, terminate };
 }

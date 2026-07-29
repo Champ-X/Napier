@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import {
   appendWorkspaceProcessOutput,
   workspaceProcessCardView,
+  workspaceProcessRequestIsCurrent,
+  workspaceProcessSelectionRequestIsCurrent,
 } from "../src/workspace-process-view-model";
 
 describe("Workspace Process view model", () => {
@@ -25,6 +27,8 @@ describe("Workspace Process view model", () => {
       limitLabel: "30s · 32,000 chars/stream",
       outputLabel: "12 stdout · 3 stderr · cursor 2",
       outputAvailable: true,
+      stdinState: "unavailable",
+      stdinLabel: "Input metadata unavailable for this session version",
       workspaceDeltaState: "unchanged",
       workspaceDeltaLabel: "No workspace drift observed",
       workspaceDeltaAvailable: true,
@@ -35,6 +39,57 @@ describe("Workspace Process view model", () => {
     expect(JSON.stringify(workspaceProcessCardView(session))).not.toContain(
       "SECRET",
     );
+  });
+
+  it("projects interactive stdin state and rejects stale request tokens", () => {
+    expect(
+      workspaceProcessCardView({
+        ...fixture(),
+        schemaVersion: 3,
+        stdinMode: "interactive",
+        stdinOpen: true,
+        stdinWriteCount: 2,
+        stdinBytes: 128,
+        stdinSha256: "9".repeat(64),
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        stdinState: "open",
+        stdinLabel: "2 writes · 128 bytes · open",
+        stdinHash: "999999999999",
+      }),
+    );
+    const token = { threadId: "thread_alpha", sequence: 2 };
+    expect(workspaceProcessRequestIsCurrent(token, "thread_alpha", 2)).toBe(
+      true,
+    );
+    expect(workspaceProcessRequestIsCurrent(token, "thread_beta", 2)).toBe(
+      false,
+    );
+    expect(workspaceProcessRequestIsCurrent(token, "thread_alpha", 3)).toBe(
+      false,
+    );
+    const selectionToken = {
+      threadId: "thread_alpha",
+      processId: "process_alpha",
+      sequence: 4,
+    };
+    expect(
+      workspaceProcessSelectionRequestIsCurrent(
+        selectionToken,
+        "thread_alpha",
+        "process_alpha",
+        4,
+      ),
+    ).toBe(true);
+    expect(
+      workspaceProcessSelectionRequestIsCurrent(
+        selectionToken,
+        "thread_alpha",
+        "process_beta",
+        4,
+      ),
+    ).toBe(false);
   });
 
   it("distinguishes observed drift, indeterminate comparison, and unavailable legacy evidence", () => {

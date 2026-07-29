@@ -1,6 +1,7 @@
 import type {
   JsonValue,
   RunEvent,
+  WorkspaceProcessInputReceipt,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
 } from "@napier/contracts";
@@ -8,6 +9,7 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 
 export const WORKSPACE_PROCESS_STARTED_EVENT = "workspace.process.started";
+export const WORKSPACE_PROCESS_INPUT_EVENT = "workspace.process.input";
 export const WORKSPACE_PROCESS_SETTLED_EVENT = "workspace.process.settled";
 export const WORKSPACE_PROCESS_INTERRUPTED_EVENT =
   "workspace.process.interrupted";
@@ -15,6 +17,7 @@ export const WORKSPACE_PROCESS_INTERRUPTED_EVENT =
 const PROCESS_ID = /^process_[a-z0-9]{8,80}$/;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
+const EMPTY_SHA256 = sha256("");
 const STATUSES = new Set<WorkspaceProcessStatus>([
   "running",
   "succeeded",
@@ -32,28 +35,22 @@ export type WorkspaceProcessSessionInput = Omit<
   | "outputAvailable"
   | "workspaceDeltaAvailable"
   | "contentSha256"
-> & { schemaVersion?: 1 | 2 };
+> & { schemaVersion?: 1 | 2 | 3 };
 
 export function createWorkspaceProcessSession(
   input: WorkspaceProcessSessionInput,
 ): WorkspaceProcessSession {
-  const { schemaVersion = 2, ...session } = input;
+  const { schemaVersion = 3, ...session } = input;
   const base = {
     kind: "napier.workspace-process-session" as const,
     ...session,
     outputAvailable: false,
   };
-  const content =
-    schemaVersion === 1
-      ? {
-          ...base,
-          schemaVersion,
-        }
-      : {
-          ...base,
-          schemaVersion,
-          workspaceDeltaAvailable: false,
-        };
+  const content = {
+    ...base,
+    schemaVersion,
+    ...(schemaVersion >= 2 ? { workspaceDeltaAvailable: false } : {}),
+  };
   return {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
@@ -66,6 +63,29 @@ export function workspaceProcessSessionPayload(
   return JSON.parse(JSON.stringify(session)) as JsonValue;
 }
 
+export function createWorkspaceProcessInputReceipt(
+  input: Omit<
+    WorkspaceProcessInputReceipt,
+    "kind" | "schemaVersion" | "contentSha256"
+  >,
+): WorkspaceProcessInputReceipt {
+  const content = {
+    kind: "napier.workspace-process-input" as const,
+    schemaVersion: 1 as const,
+    ...input,
+  };
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+export function workspaceProcessInputReceiptPayload(
+  receipt: WorkspaceProcessInputReceipt,
+): JsonValue {
+  return JSON.parse(JSON.stringify(receipt)) as JsonValue;
+}
+
 export function projectWorkspaceProcessSessions(
   events: RunEvent[],
 ): WorkspaceProcessSession[] {
@@ -73,6 +93,23 @@ export function projectWorkspaceProcessSessions(
   for (const event of events
     .slice()
     .sort((left, right) => left.seq - right.seq)) {
+    if (event.type === WORKSPACE_PROCESS_INPUT_EVENT) {
+      const receipt = parseWorkspaceProcessInputReceipt(event.payload);
+      const current = receipt ? sessions.get(receipt.processId) : undefined;
+      const updated =
+        receipt && current
+          ? applyWorkspaceProcessInputReceipt(current, receipt)
+          : undefined;
+      if (
+        updated &&
+        receipt &&
+        receipt.threadId === event.threadId &&
+        receipt.runId === event.runId
+      ) {
+        sessions.set(updated.id, updated);
+      }
+      continue;
+    }
     if (
       event.type !== WORKSPACE_PROCESS_STARTED_EVENT &&
       event.type !== WORKSPACE_PROCESS_SETTLED_EVENT &&
@@ -86,7 +123,13 @@ export function projectWorkspaceProcessSessions(
       session.threadId !== event.threadId ||
       session.runId !== event.runId ||
       (event.type === WORKSPACE_PROCESS_STARTED_EVENT
-        ? session.status !== "running"
+        ? session.status !== "running" ||
+          (session.schemaVersion === 3 &&
+            session.stdinMode === "interactive" &&
+            (session.stdinOpen !== true ||
+              session.stdinWriteCount !== 0 ||
+              session.stdinBytes !== 0 ||
+              session.stdinSha256 !== EMPTY_SHA256))
         : session.status === "running")
     ) {
       continue;
@@ -96,6 +139,44 @@ export function projectWorkspaceProcessSessions(
   return [...sessions.values()].sort((left, right) =>
     right.startedAt.localeCompare(left.startedAt),
   );
+}
+
+export function parseWorkspaceProcessInputReceipt(
+  value: unknown,
+): WorkspaceProcessInputReceipt | undefined {
+  if (!record(value)) return undefined;
+  if (
+    value["kind"] !== "napier.workspace-process-input" ||
+    value["schemaVersion"] !== 1 ||
+    typeof value["id"] !== "string" ||
+    !RESOURCE_ID.test(value["id"]) ||
+    typeof value["threadId"] !== "string" ||
+    !RESOURCE_ID.test(value["threadId"]) ||
+    typeof value["runId"] !== "string" ||
+    !RESOURCE_ID.test(value["runId"]) ||
+    typeof value["processId"] !== "string" ||
+    !PROCESS_ID.test(value["processId"]) ||
+    (value["initiatedBy"] !== "agent" && value["initiatedBy"] !== "operator") ||
+    !boundedInteger(value["sequence"], 1, 64) ||
+    !boundedInteger(value["inputBytes"], 0, 32 * 1024) ||
+    !hash(value["inputSha256"]) ||
+    !boundedInteger(value["totalInputBytes"], 0, 256 * 1024) ||
+    !hash(value["cumulativeInputSha256"]) ||
+    typeof value["stdinClosed"] !== "boolean" ||
+    !isoDate(value["writtenAt"]) ||
+    !hash(value["sessionSha256"]) ||
+    !hash(value["contentSha256"]) ||
+    Number(value["totalInputBytes"]) < Number(value["inputBytes"]) ||
+    (value["inputBytes"] === 0 &&
+      (value["stdinClosed"] !== true || value["inputSha256"] !== EMPTY_SHA256))
+  ) {
+    return undefined;
+  }
+  const { contentSha256, ...content } = value;
+  if (sha256(canonicalJson(content as JsonValue)) !== contentSha256) {
+    return undefined;
+  }
+  return structuredClone(value) as unknown as WorkspaceProcessInputReceipt;
 }
 
 export function workspaceProcessSessionWithRuntimeState(
@@ -125,7 +206,9 @@ function parseWorkspaceProcessSession(
   const status = value["status"];
   if (
     value["kind"] !== "napier.workspace-process-session" ||
-    (value["schemaVersion"] !== 1 && value["schemaVersion"] !== 2) ||
+    (value["schemaVersion"] !== 1 &&
+      value["schemaVersion"] !== 2 &&
+      value["schemaVersion"] !== 3) ||
     typeof status !== "string" ||
     !STATUSES.has(status as WorkspaceProcessStatus) ||
     typeof value["id"] !== "string" ||
@@ -167,14 +250,52 @@ function parseWorkspaceProcessSession(
     "workspaceChangedPathSetSha256",
     "workspaceDeltaAvailable",
   ] as const;
+  const stdinFields = [
+    "stdinMode",
+    "stdinOpen",
+    "stdinWriteCount",
+    "stdinBytes",
+    "stdinSha256",
+  ] as const;
   if (value["schemaVersion"] === 1) {
-    if (workspaceFields.some((field) => value[field] !== undefined)) {
+    if (
+      workspaceFields.some((field) => value[field] !== undefined) ||
+      stdinFields.some((field) => value[field] !== undefined)
+    ) {
       return undefined;
     }
   } else if (
     !hash(value["workspaceBeforeSha256"]) ||
     typeof value["workspaceBeforeTruncated"] !== "boolean" ||
     value["workspaceDeltaAvailable"] !== false
+  ) {
+    return undefined;
+  }
+  if (
+    (value["schemaVersion"] === 2 &&
+      stdinFields.some((field) => value[field] !== undefined)) ||
+    (value["schemaVersion"] === 3 &&
+      ((value["stdinMode"] !== "closed" &&
+        value["stdinMode"] !== "interactive") ||
+        typeof value["stdinOpen"] !== "boolean" ||
+        !boundedInteger(value["stdinWriteCount"], 0, 64) ||
+        !boundedInteger(value["stdinBytes"], 0, 256 * 1024) ||
+        !hash(value["stdinSha256"])))
+  ) {
+    return undefined;
+  }
+  if (
+    value["schemaVersion"] === 3 &&
+    ((value["stdinMode"] === "closed" &&
+      (value["stdinOpen"] !== false ||
+        value["stdinWriteCount"] !== 0 ||
+        value["stdinBytes"] !== 0 ||
+        value["stdinSha256"] !== EMPTY_SHA256)) ||
+      (value["stdinWriteCount"] === 0 &&
+        (value["stdinBytes"] !== 0 || value["stdinSha256"] !== EMPTY_SHA256)) ||
+      (value["stdinBytes"] === 0 && value["stdinSha256"] !== EMPTY_SHA256) ||
+      (value["stdinBytes"] !== 0 && value["stdinSha256"] === EMPTY_SHA256) ||
+      (status !== "running" && value["stdinOpen"] !== false))
   ) {
     return undefined;
   }
@@ -224,7 +345,7 @@ function parseWorkspaceProcessSession(
     return undefined;
   }
   if (
-    value["schemaVersion"] === 2 &&
+    value["schemaVersion"] >= 2 &&
     ((status === "running" && hasWorkspaceDelta) ||
       (status !== "running" && status !== "interrupted" && !hasWorkspaceDelta))
   ) {
@@ -250,6 +371,46 @@ function parseWorkspaceProcessSession(
     return undefined;
   }
   return structuredClone(value) as unknown as WorkspaceProcessSession;
+}
+
+function applyWorkspaceProcessInputReceipt(
+  session: WorkspaceProcessSession,
+  receipt: WorkspaceProcessInputReceipt,
+): WorkspaceProcessSession | undefined {
+  if (
+    session.schemaVersion !== 3 ||
+    session.status !== "running" ||
+    session.stdinMode !== "interactive" ||
+    session.stdinOpen !== true ||
+    receipt.threadId !== session.threadId ||
+    receipt.runId !== session.runId ||
+    receipt.processId !== session.id ||
+    receipt.sequence !== (session.stdinWriteCount ?? 0) + 1 ||
+    receipt.totalInputBytes !==
+      (session.stdinBytes ?? 0) + receipt.inputBytes ||
+    (receipt.inputBytes === 0 &&
+      (receipt.inputSha256 !== EMPTY_SHA256 ||
+        receipt.cumulativeInputSha256 !== session.stdinSha256))
+  ) {
+    return undefined;
+  }
+  const {
+    kind: _kind,
+    schemaVersion: _schemaVersion,
+    outputAvailable: _outputAvailable,
+    workspaceDeltaAvailable: _workspaceDeltaAvailable,
+    contentSha256: _contentSha256,
+    ...input
+  } = session;
+  const updated = createWorkspaceProcessSession({
+    ...input,
+    schemaVersion: 3,
+    stdinOpen: !receipt.stdinClosed,
+    stdinWriteCount: receipt.sequence,
+    stdinBytes: receipt.totalInputBytes,
+    stdinSha256: receipt.cumulativeInputSha256,
+  });
+  return updated.contentSha256 === receipt.sessionSha256 ? updated : undefined;
 }
 
 function record(value: unknown): value is Record<string, unknown> {

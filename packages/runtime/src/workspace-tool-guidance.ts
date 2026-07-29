@@ -81,7 +81,8 @@ export function formatWorkspaceToolGuidance(
   }
   if (hasProcess) {
     lines.push(
-      "Use workspace_process to start, poll, or cancel a bounded background Node session. Poll with the returned cursor and cancel sessions that are no longer needed.",
+      "Use workspace_process to start, poll, send bounded input to, or cancel a background Node session. Retain stdin only with explicit interactive mode, close it when the worker should settle, poll with the returned cursor, and cancel sessions that are no longer needed.",
+      "Process input text is live-only. Never send secrets, and never blindly retry an input action after an unknown outcome; refresh the session and Trace first.",
       "Process Sessions are read-only and offline, but starting or cancelling one is a lifecycle side effect. Never claim completion until polling returns a terminal status.",
       "When a terminal Process Session reports workspace drift or an indeterminate comparison, surface that result without claiming the Process Session caused an external concurrent change.",
     );

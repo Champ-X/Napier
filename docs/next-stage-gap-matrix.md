@@ -17,19 +17,19 @@ Audit date: 2026-07-29
 
 ## Priority Matrix
 
-| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                           |
-| --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                           |
-| P1 managed work environment       | In progress    | `run_command` provides one foreground, read-only, offline Node execution slice. The current slice adds bounded background Process Sessions; Python, PTY, workspace diff, write sessions, hard CPU/memory quotas, containers, remote sandboxes, and cross-restart reattachment remain. |
-| P2 coding intelligence            | Partial        | Hashline and bounded symbols exist; LSP, DAP, AST edits, post-write diagnostics, and isolated subagent worktrees do not.                                                                                                                                                              |
-| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                |
-| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                                    |
-| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                                          |
-| P6 product entry points           | Early          | Web Workbench and HTTP/SSE exist; CLI/TUI, one-shot JSONL, SDK/RPC, ACP, and Desktop are not product-complete.                                                                                                                                                                        |
-| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                       |
-| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                             |
-| P9 outcome benchmark              | Not started    | Build fixed Coding, Research, Workflow, Long-horizon, Tooling, Security, and UX tasks with environment and Ledger evidence.                                                                                                                                                           |
-| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                      |
+| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                  |
+| --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                  |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain. |
+| P2 coding intelligence            | Partial        | Hashline and bounded symbols exist; LSP, DAP, AST edits, post-write diagnostics, and isolated subagent worktrees do not.                                                                                                                                     |
+| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
+| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
+| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
+| P6 product entry points           | Early          | Web Workbench and HTTP/SSE exist; CLI/TUI, one-shot JSONL, SDK/RPC, ACP, and Desktop are not product-complete.                                                                                                                                               |
+| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
+| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
+| P9 outcome benchmark              | Not started    | Build fixed Coding, Research, Workflow, Long-horizon, Tooling, Security, and UX tasks with environment and Ledger evidence.                                                                                                                                  |
+| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                             |
 
 ## Completed Slice: Read-Only Sandboxed Commands
 
@@ -278,9 +278,82 @@ Observed result:
   Agent tool, and shared lock modules; `tools.ts` loses its private lock
   implementation and does not grow.
 
+## Completed Slice: Bounded Process Input Streams
+
+User scenario: an Agent or operator can start an explicitly interactive,
+read-only Node Process Session, send multiple bounded UTF-8 input messages,
+observe cursor output between messages, and close stdin so a protocol worker
+or stateful script can settle without shell access.
+
+Acceptance:
+
+- `workspace_process start` defaults to closed stdin and requires an explicit
+  interactive mode to retain the input stream;
+- Agent and Server input actions accept a Process ID plus bounded text,
+  optional newline, and optional close-after-write, with no command string or
+  Workspace write capability;
+- enforce per-message, total-byte, and write-count limits independently from
+  stdout/stderr limits;
+- serialize writes, reject input after close or settlement, and preserve
+  Thread ownership across Agent, HTTP, and Workbench paths;
+- record only input sequence, size, cumulative size, cumulative hash, and
+  close state in the Work Ledger; raw input remains live-process data;
+- cancellation, timeout, output cap, parent abort, graceful shutdown, and
+  restart interruption close or invalidate stdin before settlement;
+- the Processes Workbench exposes input only for a running interactive
+  session, supports explicit close, and rejects late cross-Thread responses;
+- tests cover normal multi-write state, default EOF compatibility, close,
+  cancellation, timeout, overflow, concurrent writes, ownership, restart, and
+  input redaction;
+- a live macOS sandbox smoke proves state persists across separate writes and
+  settles after stdin closes.
+
+Threat boundary:
+
+- This is a pipe protocol, not a PTY. Terminal control sequences, resize,
+  foreground process groups, job control, and attach semantics remain out of
+  scope.
+- Input is untrusted process data. The existing fixed executable, explicit
+  argv, secret-free environment, read-only Workspace, denied network, wall
+  time, output cap, and process-group termination remain mandatory.
+- Client cancellation cannot prove whether the child consumed the final
+  kernel-buffered bytes. Unknown write outcomes are reported as such and must
+  not be retried blindly.
+- Restarted sessions are marked interrupted; stdin is never reattached from
+  exported or replayed evidence.
+- A write-capable Process Session still requires a preflight scope, explicit
+  capability grant, and recovery contract. This slice does not weaken that
+  blocker or claim to provide a persistent JavaScript/Python kernel.
+
+Observed result:
+
+- Runtime and Agent integration prove default EOF compatibility, serialized
+  multi-write state, close-only input, Run and Thread ownership, independent
+  message/total/action limits, Writable backpressure, settlement races,
+  restart interruption, Ledger failure handling, schema v1/v2 compatibility,
+  action-aware tool effects, and raw input redaction;
+- Server integration drives operator input through the Thread-scoped endpoint,
+  accepts newline-only input, rejects malformed and cross-Thread requests, and
+  confirms input text is absent from Thread events;
+- the independent macOS Terminal smoke completed in 327 ms, preserved worker
+  state across `alpha` and `beta` writes, returned ordered acknowledgements,
+  closed stdin, settled successfully, and reported an unchanged workspace;
+- Browser Dogfood sent `ledger-input-dogfood`, observed
+  `UI_ACK:ledger-input-dogfood` and `UI_DONE`, closed stdin, reached a
+  successful settlement, rendered two hash-only input receipts, and produced
+  no console error;
+- the complete repository gate passed 878 tests with four opt-in live suites
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget;
+- stdin limits, validation, Writable backpressure, and session/receipt
+  transitions live in `workspace-process-input.ts`; the Process Manager retains
+  ownership, serialization, settlement, and Ledger orchestration rather than
+  absorbing another protocol implementation.
+
 ## Next Candidate
 
-Re-audit P1 after this slice. A write-capable Process Session still requires a
-preflight scope, explicit capability grant, and recovery contract; a managed
-guardian/OCI backend remains the likely prerequisite for PTY, persistent
-Python/JavaScript, hard resource limits, and proved orphan cleanup.
+Re-audit P1 and P2 from the new HEAD. A general PTY or write-capable Process
+Session still depends on a managed guardian/resource boundary and explicit
+recovery scope. A narrow LSP diagnostic slice may now produce more coding
+outcome value than another local process primitive, but the choice must follow
+the next repository and benchmark audit.

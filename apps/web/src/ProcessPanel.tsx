@@ -1,8 +1,9 @@
 import { RefreshCw, Square, Terminal } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
   WorkspaceProcessDelta,
+  WorkspaceProcessInputReceipt,
   WorkspaceProcessOutputChunk,
   WorkspaceProcessSession,
 } from "@napier/contracts";
@@ -12,11 +13,14 @@ import {
   getWorkspaceProcessDelta,
   getWorkspaceProcessOutput,
   listWorkspaceProcesses,
+  sendWorkspaceProcessInput,
 } from "./workspace-process-api";
 import { workspaceProcessCopy as copy } from "./workspace-process-copy";
 import {
   appendWorkspaceProcessOutput,
   workspaceProcessCardView,
+  workspaceProcessRequestIsCurrent,
+  workspaceProcessSelectionRequestIsCurrent,
 } from "./workspace-process-view-model";
 
 export default function ProcessPanel({ threadId }: { threadId: string }) {
@@ -29,40 +33,131 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
   const [busyId, setBusyId] = useState<string>();
   const [deltaBusyId, setDeltaBusyId] = useState<string>();
   const [error, setError] = useState<string>();
+  const [inputDrafts, setInputDrafts] = useState<Record<string, string>>({});
+  const [inputBusy, setInputBusy] = useState<{
+    processId: string;
+    action: "send" | "close";
+  }>();
+  const [inputReceipt, setInputReceipt] =
+    useState<WorkspaceProcessInputReceipt>();
+  const activeThreadIdRef = useRef(threadId);
+  const loadSequenceRef = useRef(0);
+  const outputSequenceRef = useRef(0);
+  const selectedIdRef = useRef<string | undefined>(undefined);
+  const deltaSequenceRef = useRef(0);
+  const deltaIdRef = useRef<string | undefined>(undefined);
+  const inputSequenceRef = useRef(0);
+  const controllersRef = useRef(new Set<AbortController>());
+  activeThreadIdRef.current = threadId;
+  selectedIdRef.current = selectedId;
+  deltaIdRef.current = deltaId;
 
   const loadSessions = useCallback(async () => {
+    const token = {
+      threadId,
+      sequence: (loadSequenceRef.current += 1),
+    };
+    const controller = new AbortController();
+    controllersRef.current.add(controller);
     try {
-      setSessions(await listWorkspaceProcesses(threadId));
+      const next = await listWorkspaceProcesses(threadId, controller.signal);
+      if (
+        !workspaceProcessRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          loadSequenceRef.current,
+        )
+      ) {
+        return;
+      }
+      setSessions(next);
       setError(undefined);
     } catch {
-      setError(copy.error);
+      if (
+        !controller.signal.aborted &&
+        workspaceProcessRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          loadSequenceRef.current,
+        )
+      ) {
+        setError(copy.error);
+      }
+    } finally {
+      controllersRef.current.delete(controller);
     }
   }, [threadId]);
 
   const loadOutput = useCallback(async () => {
     if (!selectedId) return;
+    const token = {
+      threadId,
+      processId: selectedId,
+      sequence: (outputSequenceRef.current += 1),
+    };
+    const controller = new AbortController();
+    controllersRef.current.add(controller);
     try {
       const output = await getWorkspaceProcessOutput(
         threadId,
         selectedId,
         cursor,
+        0,
+        controller.signal,
       );
+      if (
+        !workspaceProcessSelectionRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          selectedIdRef.current,
+          outputSequenceRef.current,
+        )
+      ) {
+        return;
+      }
       setChunks((current) => appendWorkspaceProcessOutput(current, output));
       setCursor((current) => Math.max(current, output.nextCursor));
       setError(undefined);
     } catch {
-      setError(copy.error);
+      if (
+        !controller.signal.aborted &&
+        workspaceProcessSelectionRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          selectedIdRef.current,
+          outputSequenceRef.current,
+        )
+      ) {
+        setError(copy.error);
+      }
+    } finally {
+      controllersRef.current.delete(controller);
     }
   }, [cursor, selectedId, threadId]);
 
   useEffect(() => {
     setSessions([]);
     setSelectedId(undefined);
+    selectedIdRef.current = undefined;
     setChunks([]);
     setCursor(0);
     setDelta(undefined);
     setDeltaId(undefined);
+    deltaIdRef.current = undefined;
+    setBusyId(undefined);
+    setDeltaBusyId(undefined);
+    setInputDrafts({});
+    setInputBusy(undefined);
+    setInputReceipt(undefined);
     void loadSessions();
+    return () => {
+      loadSequenceRef.current += 1;
+      outputSequenceRef.current += 1;
+      deltaSequenceRef.current += 1;
+      inputSequenceRef.current += 1;
+      for (const controller of controllersRef.current) controller.abort();
+      controllersRef.current.clear();
+    };
   }, [loadSessions]);
 
   const hasRunning = sessions.some((session) => session.status === "running");
@@ -82,21 +177,59 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
   );
   const toggleOutput = async (session: WorkspaceProcessSession) => {
     if (selectedId === session.id) {
+      outputSequenceRef.current += 1;
+      selectedIdRef.current = undefined;
       setSelectedId(undefined);
       setChunks([]);
       setCursor(0);
       return;
     }
+    const token = {
+      threadId,
+      processId: session.id,
+      sequence: (outputSequenceRef.current += 1),
+    };
+    const controller = new AbortController();
+    controllersRef.current.add(controller);
+    selectedIdRef.current = session.id;
     setSelectedId(session.id);
     setChunks([]);
     setCursor(0);
     try {
-      const output = await getWorkspaceProcessOutput(threadId, session.id, 0);
+      const output = await getWorkspaceProcessOutput(
+        threadId,
+        session.id,
+        0,
+        0,
+        controller.signal,
+      );
+      if (
+        !workspaceProcessSelectionRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          selectedIdRef.current,
+          outputSequenceRef.current,
+        )
+      ) {
+        return;
+      }
       setChunks(output.chunks);
       setCursor(output.nextCursor);
       setError(undefined);
     } catch {
-      setError(copy.error);
+      if (
+        !controller.signal.aborted &&
+        workspaceProcessSelectionRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          selectedIdRef.current,
+          outputSequenceRef.current,
+        )
+      ) {
+        setError(copy.error);
+      }
+    } finally {
+      controllersRef.current.delete(controller);
     }
   };
 
@@ -104,32 +237,140 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
     setBusyId(processId);
     try {
       await cancelWorkspaceProcess(threadId, processId);
+      if (activeThreadIdRef.current !== threadId) return;
       await loadSessions();
     } catch {
-      setError(copy.error);
+      if (activeThreadIdRef.current === threadId) setError(copy.error);
     } finally {
-      setBusyId(undefined);
+      if (activeThreadIdRef.current === threadId) setBusyId(undefined);
+    }
+  };
+
+  const sendInput = async (processId: string, action: "send" | "close") => {
+    const token = {
+      threadId,
+      sequence: (inputSequenceRef.current += 1),
+    };
+    const controller = new AbortController();
+    controllersRef.current.add(controller);
+    setInputBusy({ processId, action });
+    setInputReceipt(undefined);
+    setError(undefined);
+    try {
+      const receipt = await sendWorkspaceProcessInput(
+        threadId,
+        processId,
+        action === "send"
+          ? {
+              text: inputDrafts[processId] ?? "",
+              appendNewline: true,
+            }
+          : { text: "", close: true },
+        controller.signal,
+      );
+      if (
+        !workspaceProcessRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          inputSequenceRef.current,
+        )
+      ) {
+        return;
+      }
+      setInputReceipt(receipt);
+      if (action === "send") {
+        setInputDrafts((current) => ({ ...current, [processId]: "" }));
+      }
+      await loadSessions();
+    } catch {
+      if (
+        !controller.signal.aborted &&
+        workspaceProcessRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          inputSequenceRef.current,
+        )
+      ) {
+        setError(copy.inputError);
+      }
+    } finally {
+      controllersRef.current.delete(controller);
+      if (
+        workspaceProcessRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          inputSequenceRef.current,
+        )
+      ) {
+        setInputBusy(undefined);
+      }
     }
   };
 
   const toggleDelta = async (session: WorkspaceProcessSession) => {
     if (deltaId === session.id) {
+      deltaSequenceRef.current += 1;
+      deltaIdRef.current = undefined;
       setDeltaId(undefined);
       setDelta(undefined);
+      setDeltaBusyId(undefined);
       return;
     }
+    const token = {
+      threadId,
+      processId: session.id,
+      sequence: (deltaSequenceRef.current += 1),
+    };
+    const controller = new AbortController();
+    controllersRef.current.add(controller);
+    deltaIdRef.current = session.id;
     setDeltaId(session.id);
     setDeltaBusyId(session.id);
     try {
-      const next = await getWorkspaceProcessDelta(threadId, session.id);
+      const next = await getWorkspaceProcessDelta(
+        threadId,
+        session.id,
+        controller.signal,
+      );
+      if (
+        !workspaceProcessSelectionRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          deltaIdRef.current,
+          deltaSequenceRef.current,
+        )
+      ) {
+        return;
+      }
       setDelta(next);
       setError(undefined);
     } catch {
+      if (
+        controller.signal.aborted ||
+        !workspaceProcessSelectionRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          deltaIdRef.current,
+          deltaSequenceRef.current,
+        )
+      ) {
+        return;
+      }
+      deltaIdRef.current = undefined;
       setDeltaId(undefined);
       setDelta(undefined);
       setError(copy.error);
     } finally {
-      setDeltaBusyId(undefined);
+      controllersRef.current.delete(controller);
+      if (
+        workspaceProcessRequestIsCurrent(
+          token,
+          activeThreadIdRef.current,
+          deltaSequenceRef.current,
+        )
+      ) {
+        setDeltaBusyId(undefined);
+      }
     }
   };
 
@@ -196,6 +437,13 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                   <div>
                     <dt>{copy.output}</dt>
                     <dd>{card.outputLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>{copy.stdin}</dt>
+                    <dd>
+                      {card.stdinLabel}
+                      {card.stdinHash ? ` · ${card.stdinHash}` : ""}
+                    </dd>
                   </div>
                   <div
                     className={`process-delta-summary is-${card.workspaceDeltaState}`}
@@ -271,6 +519,66 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                     </button>
                   ) : null}
                 </div>
+                {card.running && card.stdinState === "open" ? (
+                  <form
+                    className="process-input"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void sendInput(card.id, "send");
+                    }}
+                  >
+                    <label htmlFor={`process-input-${card.id}`}>
+                      {copy.inputLabel}
+                    </label>
+                    <textarea
+                      id={`process-input-${card.id}`}
+                      value={inputDrafts[card.id] ?? ""}
+                      maxLength={32 * 1024}
+                      rows={3}
+                      disabled={inputBusy?.processId === card.id}
+                      placeholder={copy.inputPlaceholder}
+                      onChange={(event) =>
+                        setInputDrafts((current) => ({
+                          ...current,
+                          [card.id]: event.currentTarget.value,
+                        }))
+                      }
+                    />
+                    <small>{copy.inputSafety}</small>
+                    <div>
+                      <button
+                        type="submit"
+                        className="secondary-button"
+                        disabled={
+                          inputBusy?.processId === card.id ||
+                          (inputDrafts[card.id] ?? "").length === 0
+                        }
+                      >
+                        {inputBusy?.processId === card.id &&
+                        inputBusy.action === "send"
+                          ? copy.sendingInput
+                          : copy.sendInput}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary-button danger"
+                        disabled={inputBusy?.processId === card.id}
+                        onClick={() => void sendInput(card.id, "close")}
+                      >
+                        {inputBusy?.processId === card.id &&
+                        inputBusy.action === "close"
+                          ? copy.closingInput
+                          : copy.closeInput}
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
+                {inputReceipt?.processId === card.id ? (
+                  <span className="process-input-receipt" role="status">
+                    {copy.inputReceipt}{" "}
+                    {inputReceipt.contentSha256.slice(0, 12)}
+                  </span>
+                ) : null}
                 {expanded ? (
                   <div className="process-output">
                     <strong>{copy.liveOutput}</strong>

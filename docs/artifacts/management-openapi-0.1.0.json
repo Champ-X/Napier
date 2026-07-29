@@ -10109,6 +10109,64 @@
         "x-napier-source-route": "GET /api/threads/:threadId/processes/:processId/delta"
       }
     },
+    "/api/threads/{threadId}/processes/{processId}/input": {
+      "post": {
+        "operationId": "post-threads-by-threadId-processes-by-processId-input",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/processes/{processId}/input",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/processes/:processId/input"
+      }
+    },
     "/api/threads/{threadId}/processes/{processId}/output": {
       "get": {
         "operationId": "get-threads-by-threadId-processes-by-processId-output",
@@ -13900,7 +13958,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "77e6c6623ba54781ad6503e2fde756ff9a67516da225fce52c9599d214b37eb1",
-  "x-napier-route-count": 243,
-  "x-napier-route-set-sha256": "9abd3550f2765caca7c41d9481df95a8c51fb27e77a2f8e6a56ed783cf82e175"
+  "x-napier-source-sha256": "54c599a17002b84a41ad5c68a4a5cb4cf20504ffb92a47837666b0f038e7e5f7",
+  "x-napier-route-count": 244,
+  "x-napier-route-set-sha256": "edb22718413138107deb0275890962d56d2b1344a58d103f90f6a8aa19273932"
 }

@@ -4,6 +4,35 @@ import { describe, expect, it } from "vitest";
 import { workspaceProcessEventTraceSummary } from "../src/workspace-process-event-view";
 
 describe("Workspace Process event view", () => {
+  it("summarizes input receipts without accepting input text", () => {
+    const event: RunEvent = {
+      id: "event_1234567890abcdef1234",
+      threadId: "thread_1234567890abcdef1234",
+      runId: "run_1234567890abcdef1234",
+      seq: 3,
+      type: "workspace.process.input",
+      category: "tool",
+      visibility: "user",
+      createdAt: "2026-07-29T00:00:00.000Z",
+      payload: {
+        processId: "process_1234567890abcdef1234",
+        initiatedBy: "operator",
+        sequence: 2,
+        inputBytes: 18,
+        totalInputBytes: 32,
+        inputSha256: "a".repeat(64),
+        cumulativeInputSha256: "b".repeat(64),
+        stdinClosed: true,
+        text: "TOP_SECRET_INPUT",
+      },
+    };
+    const summary = workspaceProcessEventTraceSummary(event);
+    expect(summary).toBe(
+      `process / input / id abcdef1234 / sequence 2 / by operator / bytes 18 / total-bytes 32 / input ${"a".repeat(12)} / cumulative ${"b".repeat(12)} / stdin-closed`,
+    );
+    expect(summary).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes bounded lifecycle evidence without output or arguments", () => {
     const event: RunEvent = {
       id: "event_1234567890abcdef1234",

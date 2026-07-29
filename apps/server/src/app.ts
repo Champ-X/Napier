@@ -645,6 +645,7 @@ const MAX_PLAN_ARTIFACT_FILE_VERIFY_REQUEST_BYTES = 32 * 1024 * 1024;
 const MAX_PLAN_ARTIFACT_DATA_PROFILE_VERIFY_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_PLAN_ARTIFACT_DIRECTORY_MANIFEST_VERIFY_REQUEST_BYTES =
   4 * 1024 * 1024;
+const MAX_WORKSPACE_PROCESS_INPUT_REQUEST_BYTES = 128 * 1024;
 
 export async function createServices(options?: {
   dataRoot?: string;
@@ -4565,6 +4566,70 @@ export function createApp(services: NapierServices): Hono {
         return context.json(delta);
       } catch (error) {
         return jsonError(context, errorMessage(error), 404);
+      }
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/processes/:processId/input",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const processId = context.req.param("processId");
+      if (!validWorkspaceProcessId(processId)) {
+        return jsonError(
+          context,
+          "Workspace Process Session ID is invalid",
+          400,
+        );
+      }
+      let input: unknown;
+      try {
+        input = await readLimitedJson(
+          context.req.raw,
+          MAX_WORKSPACE_PROCESS_INPUT_REQUEST_BYTES,
+          "Workspace Process input request",
+        );
+      } catch (error) {
+        return jsonError(
+          context,
+          errorMessage(error),
+          error instanceof RequestBodyTooLargeError ? 413 : 400,
+        );
+      }
+      const request = parseWorkspaceProcessInputRequest(input);
+      if (!request) {
+        return jsonError(
+          context,
+          "Workspace Process input request is invalid",
+          400,
+        );
+      }
+      try {
+        const receipt = await services.workspaceProcesses.writeInput({
+          threadId,
+          processId,
+          ...request,
+          initiatedBy: "operator",
+          signal: context.req.raw.signal,
+        });
+        setWorkspaceProcessProjectionHeaders(context, receipt);
+        return context.json(receipt);
+      } catch (error) {
+        const message = errorMessage(error);
+        return jsonError(
+          context,
+          message,
+          message.includes("limit")
+            ? 413
+            : message.includes("valid UTF-8") ||
+                message.includes("input is empty")
+              ? 400
+              : message.includes("not open") ||
+                  message.includes("unavailable") ||
+                  message.includes("unknown")
+                ? 409
+                : 404,
+        );
       }
     },
   );
@@ -17941,6 +18006,33 @@ function validWorkspaceProcessId(value: unknown): value is string {
   return typeof value === "string" && /^process_[a-z0-9]{8,80}$/.test(value);
 }
 
+function parseWorkspaceProcessInputRequest(input: unknown):
+  | {
+      text: string;
+      appendNewline?: boolean;
+      close?: boolean;
+    }
+  | undefined {
+  const record = requestRecord(input, ["text", "appendNewline", "close"]);
+  if (
+    !record ||
+    typeof record["text"] !== "string" ||
+    (record["appendNewline"] !== undefined &&
+      typeof record["appendNewline"] !== "boolean") ||
+    (record["close"] !== undefined && typeof record["close"] !== "boolean") ||
+    (record["text"].length === 0 &&
+      record["appendNewline"] !== true &&
+      record["close"] !== true)
+  ) {
+    return undefined;
+  }
+  return {
+    text: record["text"],
+    ...(record["appendNewline"] === true ? { appendNewline: true } : {}),
+    ...(record["close"] === true ? { close: true } : {}),
+  };
+}
+
 function validWorkspaceTrashId(value: unknown): value is string {
   return typeof value === "string" && /^trash_[a-z0-9]{8,80}$/.test(value);
 }
@@ -26351,10 +26443,7 @@ function setBootstrapProjectionHeaders(
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, response);
-  context.header(
-    "X-Napier-Bootstrap-Bytes",
-    String(jsonByteLength(response)),
-  );
+  context.header("X-Napier-Bootstrap-Bytes", String(jsonByteLength(response)));
   if (response.activeThread) {
     context.header(
       "X-Napier-Bootstrap-Active-Thread-Bytes",

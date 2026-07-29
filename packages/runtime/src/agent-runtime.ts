@@ -1987,8 +1987,8 @@ export class AgentRuntime {
             callId: event.toolCallId,
             toolName: event.toolName,
             status: "started",
-            ...(builtInToolEffect(event.toolName)
-              ? { effect: builtInToolEffect(event.toolName)! }
+            ...(builtInToolEffect(event.toolName, event.args)
+              ? { effect: builtInToolEffect(event.toolName, event.args)! }
               : {}),
             ...toolInputLedgerProjection(event.toolName, event.args),
           },
@@ -3298,7 +3298,13 @@ function modelRefFromModel(model: Model<Api>): ModelRef {
   };
 }
 
-function builtInToolEffect(toolName: string): "read" | "write" | undefined {
+function builtInToolEffect(
+  toolName: string,
+  args?: unknown,
+): "read" | "write" | undefined {
+  if (toolName === "workspace_process") {
+    return recordValue(args) && args["action"] === "poll" ? "read" : "write";
+  }
   if (
     toolName === "list_files" ||
     toolName === "read_file" ||
@@ -3309,7 +3315,6 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     toolName === "read_symbol" ||
     toolName === "workspace_file_preview" ||
     toolName === "run_command" ||
-    toolName === "workspace_process" ||
     toolName === "verify_workspace" ||
     toolName === "web_fetch" ||
     toolName === "web_search"
@@ -3328,6 +3333,10 @@ function builtInToolEffect(toolName: string): "read" | "write" | undefined {
     return "write";
   }
   return undefined;
+}
+
+function recordValue(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function formatPlanToolGuidance(tools: readonly AgentTool[]): string {

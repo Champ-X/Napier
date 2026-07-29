@@ -2977,9 +2977,11 @@ export type WorkspaceProcessDeltaStatus =
   | "changed"
   | "indeterminate";
 
+export type WorkspaceProcessStdinMode = "closed" | "interactive";
+
 export interface WorkspaceProcessSession {
   kind: "napier.workspace-process-session";
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   id: string;
   threadId: string;
   runId: string;
@@ -2996,6 +2998,11 @@ export interface WorkspaceProcessSession {
   cwdPathSha256: string;
   timeoutMs: number;
   outputLimitChars: number;
+  stdinMode?: WorkspaceProcessStdinMode;
+  stdinOpen?: boolean;
+  stdinWriteCount?: number;
+  stdinBytes?: number;
+  stdinSha256?: string;
   workspaceBeforeSha256?: string;
   workspaceBeforeTruncated?: boolean;
   workspaceAfterSha256?: string;
@@ -3018,6 +3025,25 @@ export interface WorkspaceProcessSession {
   nextCursor: number;
   outputAvailable: boolean;
   interruptionReason?: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceProcessInputReceipt {
+  kind: "napier.workspace-process-input";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  processId: string;
+  initiatedBy: "agent" | "operator";
+  sequence: number;
+  inputBytes: number;
+  inputSha256: string;
+  totalInputBytes: number;
+  cumulativeInputSha256: string;
+  stdinClosed: boolean;
+  writtenAt: string;
+  sessionSha256: string;
   contentSha256: string;
 }
 

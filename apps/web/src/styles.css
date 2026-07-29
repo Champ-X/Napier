@@ -1630,6 +1630,65 @@ button:disabled {
   color: #813d30;
 }
 
+.process-input {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  margin-top: 10px;
+  background: rgb(69 107 91 / 5%);
+  border: 1px dotted #8ca99a;
+}
+
+.process-input label,
+.process-input small,
+.process-input > span,
+.process-input button,
+.process-input textarea {
+  font-family: var(--mono);
+}
+
+.process-input label {
+  font-size: 6px;
+  font-weight: 600;
+  color: var(--ledger);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.process-input textarea {
+  width: 100%;
+  min-height: 58px;
+  padding: 7px;
+  resize: vertical;
+  font-size: 7px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: rgb(255 255 255 / 62%);
+  border: 1px solid var(--rule-strong);
+}
+
+.process-input small,
+.process-input > span {
+  font-size: 6px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.process-input-receipt {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 6px;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
+
+.process-input > div {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 .process-output {
   padding: 9px;
   margin-top: 10px;
