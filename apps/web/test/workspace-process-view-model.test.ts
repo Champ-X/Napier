@@ -1,0 +1,102 @@
+import type {
+  WorkspaceProcessOutput,
+  WorkspaceProcessSession,
+} from "@napier/contracts";
+import { describe, expect, it } from "vitest";
+
+import {
+  appendWorkspaceProcessOutput,
+  workspaceProcessCardView,
+} from "../src/workspace-process-view-model";
+
+describe("Workspace Process view model", () => {
+  it("projects a bounded process card without command or output text", () => {
+    const session = fixture();
+    expect(workspaceProcessCardView(session)).toEqual({
+      id: session.id,
+      status: "succeeded",
+      statusLabel: "Succeeded",
+      running: false,
+      startedAt: session.startedAt,
+      settledAt: session.settledAt,
+      durationLabel: "1,250 ms",
+      runtimeLabel: "node · macos-sandbox-exec",
+      scopeLabel: "Workspace read-only · Network denied",
+      limitLabel: "30s · 32,000 chars/stream",
+      outputLabel: "12 stdout · 3 stderr · cursor 2",
+      outputAvailable: true,
+      commandHash: "aaaaaaaaaaaa",
+      resultHashes: "bbbbbbbbbbbb / cccccccccccc",
+    });
+    expect(JSON.stringify(workspaceProcessCardView(session))).not.toContain(
+      "SECRET",
+    );
+  });
+
+  it("deduplicates ordered cursor chunks and retains the bounded tail", () => {
+    const incoming: WorkspaceProcessOutput = {
+      kind: "napier.workspace-process-output",
+      schemaVersion: 1,
+      processId: "process_1234567890abcdef1234",
+      status: "running",
+      afterCursor: 1,
+      nextCursor: 3,
+      hasMore: false,
+      outputAvailable: true,
+      chunks: [
+        { cursor: 2, stream: "stderr", text: "two" },
+        { cursor: 3, stream: "stdout", text: "three" },
+      ],
+    };
+    expect(
+      appendWorkspaceProcessOutput(
+        [
+          { cursor: 1, stream: "stdout", text: "one" },
+          { cursor: 2, stream: "stderr", text: "old" },
+        ],
+        incoming,
+      ),
+    ).toEqual([
+      { cursor: 1, stream: "stdout", text: "one" },
+      { cursor: 2, stream: "stderr", text: "two" },
+      { cursor: 3, stream: "stdout", text: "three" },
+    ]);
+  });
+});
+
+function fixture(): WorkspaceProcessSession {
+  return {
+    kind: "napier.workspace-process-session",
+    schemaVersion: 1,
+    id: "process_1234567890abcdef1234",
+    threadId: "thread_1234567890abcdef1234",
+    runId: "run_1234567890abcdef1234",
+    runtime: "node",
+    status: "succeeded",
+    sandbox: "macos-sandbox-exec",
+    workspaceAccess: "read_only",
+    networkAccess: "denied",
+    argumentCount: 2,
+    commandSha256: "a".repeat(64),
+    executableSha256: "d".repeat(64),
+    environmentSha256: "e".repeat(64),
+    resourceLimitsSha256: "f".repeat(64),
+    cwdPathSha256: "0".repeat(64),
+    timeoutMs: 30_000,
+    outputLimitChars: 32_000,
+    startedAt: "2026-07-29T00:00:00.000Z",
+    settledAt: "2026-07-29T00:00:01.250Z",
+    durationMs: 1_250,
+    exitCode: 0,
+    signal: null,
+    stdoutChars: 12,
+    stderrChars: 3,
+    stdoutSha256: "b".repeat(64),
+    stderrSha256: "c".repeat(64),
+    stdoutTruncated: false,
+    stderrTruncated: false,
+    nextCursor: 2,
+    outputAvailable: true,
+    contentSha256: "1".repeat(64),
+  };
+}

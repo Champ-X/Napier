@@ -50,6 +50,33 @@ describe("workspace policy", () => {
     ).toBe(false);
     expect(
       assessToolCall(
+        "observe",
+        "workspace_process",
+        { action: "start", runtime: "node", args: ["--version"] },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "workspace_process",
+        {
+          action: "start",
+          runtime: "node",
+          args: ["--version"],
+          cwd: "packages/runtime",
+        },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "high",
+        reason: "bounded background Process Session lifecycle",
+      }),
+    );
+    expect(
+      assessToolCall(
         "workspace",
         "apply_patch",
         { path: ".git/config" },

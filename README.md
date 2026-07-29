@@ -82,6 +82,10 @@ Version `0.1.0` includes:
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
   parent-Run cancellation, and argument/output-redacted Ledger evidence;
+- a `workspace_process` tool and lazy Processes Workbench for bounded
+  background Node sessions with cursor-based stdout/stderr observation,
+  cancellation, lifecycle settlement, graceful shutdown, and fail-closed
+  restart reconciliation;
 - a fail-closed tool policy that blocks host escape and destructive commands;
 - Agent Skills discovery through standard `SKILL.md` packages;
 - frozen Agent Prompt Variables with strict `literal`, `current_date`, and
@@ -1116,10 +1120,49 @@ npm run test:live-command
 macOS rejects nested `sandbox-exec`, so the smoke fails closed when launched
 from an IDE process that is itself sandboxed. OCI command execution is also
 fail-closed until runtime executable identity can be bound across the host and
-image. Hard per-command CPU/memory quotas, PTY, background processes, and
-write-capable sessions remain explicit next-stage work. Python and Git are not
-advertised by this slice because their macOS Developer Tools shims require a
-broader managed Runtime boundary than the Node smoke.
+image. Hard per-command CPU/memory quotas, PTY, and write-capable sessions
+remain explicit next-stage work. Python and Git are not advertised by this
+slice because their macOS Developer Tools shims require a broader managed
+Runtime boundary than the Node smoke.
+
+## Workspace Process Sessions
+
+An Agent can separately opt into `workspace_process` to start, poll, or cancel
+a longer Node diagnostic. Starts reuse the same explicit-argv preparation,
+fixed environment, executable binding, canonical cwd, read-only workspace, and
+denied-network OS Sandbox as `run_command`; there is still no command string,
+shell, inherited provider credential, or user-selected executable.
+
+Each Thread may have at most four active sessions and one Runtime at most eight
+in total. A session retains at most 32,000 characters per stream and 256
+ordered chunks, settles on exit, non-zero exit, timeout, output cap, parent
+cancellation, operator cancellation, or graceful Runtime shutdown, and exposes
+output through a monotonically increasing cursor. The live Agent and local
+Processes panel can read that bounded output while the Runtime remains alive.
+Repeated Workbench polling uses an incremental in-memory projection rather than
+scanning the complete Thread.
+
+Output text and argv never enter the Ledger, Trace, Replay, or exported
+fixtures. Durable `workspace.process.started`, `.settled`, and `.interrupted`
+events bind the Napier Process ID, owning Thread and Run, status, executable,
+command/environment/limit hashes, output hashes/counts, cursor, and truncation
+state. After restart, an unclosed session becomes `interrupted` with unknown
+outcome and no output text; Napier does not silently rerun it or claim the old
+host process was reattached.
+
+Run the complete Agent-to-Sandbox smoke from a non-sandboxed Terminal:
+
+```bash
+npm run test:live-process
+```
+
+Graceful shutdown terminates active process groups before Store close. Abrupt
+host or Runtime loss can leave a macOS sandbox wrapper outcome unknown because
+`sandbox-exec` has no parent-death guarantee; deliberately detached descendants
+also require a stronger guardian boundary for proved cleanup. Proved orphan
+cleanup, cross-restart reattachment, PTY, hard CPU/memory/process quotas, and
+write-capable sessions require a managed guardian or OCI backend and are not
+claimed by this implementation.
 
 ## Controlled Workspace Editing
 
@@ -2502,7 +2545,8 @@ channels should accept only intended operational data.
 The default Agent policy is `observe`:
 
 - read/list/search inside the workspace are allowed;
-- `apply_patch`, `verify_workspace`, and `run_command` are not exposed;
+- `apply_patch`, `verify_workspace`, `run_command`, and `workspace_process`
+  are not exposed;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
@@ -2512,13 +2556,14 @@ Selecting `workspace` exposes only individually enabled structured tools:
 **Atomic patch** is hash-preconditioned and supports Hashline-style line
 anchors, **Sandbox verify** is read-only, offline, and command-closed, and
 **Sandbox command** is an explicit-argv, read-only/offline Node runner with no
-shell or inherited environment.
+shell or inherited environment. **Background process** adds bounded
+start/poll/cancel lifecycle control over the same sandbox boundary.
 Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.
 General shell execution remains disabled. Stdio MCP, structured workspace
-verification, and the allowlisted command runner are the narrow process
-exceptions: macOS uses
+verification, the foreground command runner, and Workspace Process Sessions
+are the narrow process exceptions: macOS uses
 `/usr/bin/sandbox-exec`; Linux requires `/usr/bin/bwrap` and usable kernel or
 setuid namespace support. Windows or explicitly containerized deployments can
 opt into an OCI adapter by configuring `NAPIER_CONTAINER_SANDBOX_IMAGE`; it

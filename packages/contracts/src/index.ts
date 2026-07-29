@@ -2963,6 +2963,69 @@ export interface RunControlMessage {
   contentSha256: string;
 }
 
+export type WorkspaceProcessStatus =
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "timed_out"
+  | "output_capped"
+  | "cancelled"
+  | "interrupted";
+
+export interface WorkspaceProcessSession {
+  kind: "napier.workspace-process-session";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  runtime: "node";
+  status: WorkspaceProcessStatus;
+  sandbox: string;
+  workspaceAccess: "read_only";
+  networkAccess: "denied";
+  argumentCount: number;
+  commandSha256: string;
+  executableSha256: string;
+  environmentSha256: string;
+  resourceLimitsSha256: string;
+  cwdPathSha256: string;
+  timeoutMs: number;
+  outputLimitChars: number;
+  startedAt: string;
+  settledAt?: string;
+  durationMs?: number;
+  exitCode?: number | null;
+  signal?: string | null;
+  stdoutChars: number;
+  stderrChars: number;
+  stdoutSha256?: string;
+  stderrSha256?: string;
+  stdoutTruncated: boolean;
+  stderrTruncated: boolean;
+  nextCursor: number;
+  outputAvailable: boolean;
+  interruptionReason?: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceProcessOutputChunk {
+  cursor: number;
+  stream: "stdout" | "stderr";
+  text: string;
+}
+
+export interface WorkspaceProcessOutput {
+  kind: "napier.workspace-process-output";
+  schemaVersion: 1;
+  processId: string;
+  status: WorkspaceProcessStatus;
+  afterCursor: number;
+  nextCursor: number;
+  hasMore: boolean;
+  outputAvailable: boolean;
+  chunks: WorkspaceProcessOutputChunk[];
+}
+
 export type OperatorDecisionStatus =
   | "pending"
   | "answered"
@@ -6446,6 +6509,7 @@ export interface QualifyPromptPackageRequest {
 
 export type InspectorPanelId =
   | "trace"
+  | "processes"
   | "lab"
   | "plan"
   | "goal"
@@ -6470,6 +6534,12 @@ export const NAPIER_INSPECTOR_PANELS: readonly InspectorPackageManifestPanel[] =
       label: "Trace",
       surface: "core",
       capabilities: ["event-ledger", "otlp-export", "run-filter"],
+    },
+    {
+      id: "processes",
+      label: "Processes",
+      surface: "lazy",
+      capabilities: ["session-status", "output-cursor", "cancellation"],
     },
     {
       id: "lab",

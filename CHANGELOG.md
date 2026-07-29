@@ -6,6 +6,15 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added bounded Workspace Process Sessions as an opt-in Agent capability.
+  `workspace_process` starts, cursor-polls, and cancels background Node work
+  through the same explicit-argv, read-only, offline OS Sandbox used by
+  `run_command`. The manager enforces per-Thread admission, wall/output/chunk
+  bounds, parent and operator cancellation, executable drift checks, graceful
+  shutdown, and fail-closed restart reconciliation. Output remains ephemeral
+  and available to the live Agent and a new lazy Processes Workbench; Ledger,
+  Trace, Replay, and exports retain metadata and hashes only. A real macOS
+  Agent-to-Sandbox smoke is available through `npm run test:live-process`.
 - Added `run_command`, a foreground explicit-argv Node Agent tool
   that launches one absolute runtime directly through the existing macOS or
   Linux OS sandbox with read-only workspace and denied network capabilities.

@@ -29,6 +29,7 @@
     "format": "prettier --write .",
     "test": "npm run test:root && npm run test --workspaces --if-present",
     "test:live-command": "npm run test:live-command -w @napier/runtime",
+    "test:live-process": "npm run test:live-process -w @napier/runtime",
     "test:live-deepseek": "npm run test:live-deepseek -w @napier/runtime",
     "test:root": "vitest run scripts/*.test.mjs --testTimeout=30000",
     "typecheck": "npm run build:core && npm run typecheck -w @napier/server && npm run typecheck -w @napier/web",

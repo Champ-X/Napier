@@ -33,6 +33,7 @@ import { sha256Canonical } from "./stable-digest";
 import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import { toolEventTraceSummary } from "./tool-event-view";
+import { workspaceProcessEventTraceSummary } from "./workspace-process-event-view";
 
 export type TraceEventSummarySource =
   | "bounded"
@@ -190,6 +191,13 @@ export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
   }
   if (event.type.startsWith("run.")) {
     return classifiedSummary(event, runEventTraceSummary(event), "fixed");
+  }
+  if (event.type.startsWith("workspace.process.")) {
+    return classifiedSummary(
+      event,
+      workspaceProcessEventTraceSummary(event),
+      "fixed",
+    );
   }
   if (event.type.startsWith("subagent.")) {
     return classifiedSummary(event, subagentEventTraceSummary(event), "fixed");

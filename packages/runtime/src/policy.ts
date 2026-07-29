@@ -21,7 +21,7 @@ const READ_ONLY_TOOLS = new Set([
 ]);
 const WRITE_TOOLS = new Set(["apply_patch"]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
-const PROCESS_TOOLS = new Set(["run_command"]);
+const PROCESS_TOOLS = new Set(["run_command", "workspace_process"]);
 const PROTECTED_WRITE_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
@@ -194,8 +194,11 @@ export function assessToolCall(
     }
     return {
       allowed: true,
-      risk: "medium",
-      reason: "read-only sandboxed command execution",
+      risk: toolName === "workspace_process" ? "high" : "medium",
+      reason:
+        toolName === "workspace_process"
+          ? "bounded background Process Session lifecycle"
+          : "read-only sandboxed command execution",
     };
   }
 

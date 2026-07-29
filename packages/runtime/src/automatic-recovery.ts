@@ -36,6 +36,7 @@ const SAFE_READ_ONLY_TOOLS = new Set([
 const UNSAFE_TOOLS = new Set([
   "apply_patch",
   "bash",
+  "workspace_process",
   "create_plan",
   "update_plan_step",
   "update_plan_artifact",
@@ -551,14 +552,11 @@ function collectToolObservations(events: RunEvent[]): ToolObservation[] {
         )
       : [];
     const terminal = matches.length === 1 ? matches[0] : undefined;
-    const effect =
-      toolEffect(event.payload) ??
-      (terminal ? toolEffect(terminal.payload) : undefined) ??
-      (SAFE_READ_ONLY_TOOLS.has(toolName)
-        ? "read"
-        : UNSAFE_TOOLS.has(toolName)
-          ? "write"
-          : "unknown");
+    const effect = UNSAFE_TOOLS.has(toolName)
+      ? "write"
+      : (toolEffect(event.payload) ??
+        (terminal ? toolEffect(terminal.payload) : undefined) ??
+        (SAFE_READ_ONLY_TOOLS.has(toolName) ? "read" : "unknown"));
     return [
       {
         toolName: normalizeToolName(toolName),

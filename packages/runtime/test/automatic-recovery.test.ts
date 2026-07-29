@@ -132,6 +132,25 @@ describe("safe automatic recovery", () => {
     });
     expect(write.blockReasons).toContain("unsafe_tool_effect");
 
+    const process = assessAutomaticRecovery({
+      run,
+      events: [
+        event(1, "tool.started", {
+          callId: "process-1",
+          toolName: "workspace_process",
+          status: "started",
+          effect: "read",
+        }),
+        event(2, "tool.completed", {
+          callId: "process-1",
+          toolName: "workspace_process",
+          status: "completed",
+          effect: "read",
+        }),
+      ],
+    });
+    expect(process.blockReasons).toContain("unsafe_tool_effect");
+
     const unknown = assessAutomaticRecovery({
       run,
       events: [

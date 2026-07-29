@@ -29,6 +29,7 @@ export const copy = {
   shortcut: "⌘ ↵",
   tabs: {
     trace: "Trace",
+    processes: "Processes",
     lab: "Lab",
     plan: "Plan",
     goal: "Goal",
@@ -38,6 +39,7 @@ export const copy = {
     context: "Context",
   },
   automationLoading: "Opening automation register...",
+  processLoading: "Opening sandbox process register...",
   extensionLoading: "Opening capability registry...",
   planLoading: "Durable plan",
   planNextPrompt:

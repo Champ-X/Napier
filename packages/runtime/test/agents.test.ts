@@ -243,9 +243,9 @@ describe("Agent profile updates", () => {
     ).toThrow("Unsupported Agent tool");
     expect(
       updateAgentProfile(PROFILE, {
-        enabledTools: ["read_file", "run_command"],
+        enabledTools: ["read_file", "run_command", "workspace_process"],
       }).enabledTools,
-    ).toEqual(["read_file", "run_command"]);
+    ).toEqual(["read_file", "run_command", "workspace_process"]);
     expect(() =>
       updateAgentProfile(PROFILE, {
         model: { provider: "openrouter", id: "bad model" },

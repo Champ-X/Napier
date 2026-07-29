@@ -1124,6 +1124,7 @@ export default function ContextPanel({
     "read_symbol",
     "apply_patch",
     "run_command",
+    "workspace_process",
     "verify_workspace",
   ] as const;
 

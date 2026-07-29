@@ -9,15 +9,18 @@ import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
-import { runSandboxedProcess } from "./sandboxed-process.js";
+import {
+  runSandboxedProcess,
+  type SandboxedProcessResult,
+} from "./sandboxed-process.js";
 
-const DEFAULT_TIMEOUT_MS = 30_000;
+export const DEFAULT_COMMAND_TIMEOUT_MS = 30_000;
 const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 120_000;
 const MAX_ARGUMENTS = 64;
 const MAX_ARGUMENT_CHARS = 2_048;
 const MAX_TOTAL_ARGUMENT_CHARS = 16_384;
-const MAX_OUTPUT_CHARS = 32_000;
+export const MAX_COMMAND_OUTPUT_CHARS = 32_000;
 const ARGUMENT_PATTERN = "^[^\\u0000-\\u001f\\u007f]*$";
 
 const commandSchema = Type.Object(
@@ -111,6 +114,39 @@ export interface CommandRunnerOptions {
   executables?: Partial<Record<CommandRuntime, string>>;
 }
 
+export interface PreparedCommandExecution {
+  runtime: CommandRuntime;
+  sandboxId: string;
+  args: string[];
+  workspaceRoot: string;
+  cwd: string;
+  executable: string;
+  executableSha256: string;
+  timeoutMs: number;
+  launch: {
+    command: string;
+    args: string[];
+    cwd: string;
+    env: Record<string, string>;
+    workspaceRoot: string;
+    approvedCapabilities: ["process.spawn", "workspace.read"];
+  };
+  receipt: {
+    runtime: CommandRuntime;
+    cwdPathSha256: string;
+    executablePathSha256: string;
+    executableSha256: string;
+    argumentCount: number;
+    argumentSetSha256: string;
+    environmentSha256: string;
+    resourceLimitsSha256: string;
+    timeoutMs: number;
+    outputLimitChars: number;
+    workspaceAccess: "read_only";
+    networkAccess: "denied";
+  };
+}
+
 const FIXED_ENVIRONMENT = {
   CI: "1",
   FORCE_COLOR: "0",
@@ -120,128 +156,149 @@ const FIXED_ENVIRONMENT = {
 } as const;
 
 export class CommandRunner {
-  private readonly workspaceRoot: string;
-
-  constructor(private readonly options: CommandRunnerOptions) {
-    this.workspaceRoot = path.resolve(options.workspaceRoot);
-  }
+  constructor(private readonly options: CommandRunnerOptions) {}
 
   async run(
     input: CommandExecutionRequest,
     signal?: AbortSignal,
   ): Promise<CommandExecutionResult> {
-    validateCommandRequest(input);
-    const workspaceRoot = await realpath(this.workspaceRoot);
-    const cwd = await resolveWorkspaceDirectory(
-      workspaceRoot,
-      input.cwd ?? ".",
-    );
-    const cwdPath = path.relative(workspaceRoot, cwd) || ".";
-    const executable = await resolveExecutable(
-      input.runtime,
-      this.options.executables,
-    );
-    const executableSha256 = await sha256File(executable);
-    const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const resourceLimits = {
-      wallTimeMs: timeoutMs,
-      outputCharsPerStream: MAX_OUTPUT_CHARS,
-      processGroupTermination: true,
-      cpuLimit: "sandbox_backend_default",
-      memoryLimit: "sandbox_backend_default",
-    };
-    const environmentSha256 = sha256(canonicalJson(FIXED_ENVIRONMENT));
-    const resourceLimitsSha256 = sha256(canonicalJson(resourceLimits));
-    const argumentSetSha256 = sha256(canonicalJson(input.args));
-    const executablePathSha256 = sha256(executable);
-    const commandReceipt = {
-      runtime: input.runtime,
-      cwdPathSha256: sha256(cwdPath),
-      executablePathSha256,
-      executableSha256,
-      argumentCount: input.args.length,
-      argumentSetSha256,
-      environmentSha256,
-      resourceLimitsSha256,
-      timeoutMs,
-      outputLimitChars: MAX_OUTPUT_CHARS,
-      workspaceAccess: "read_only" as const,
-      networkAccess: "denied" as const,
-    };
-    if (this.options.sandbox.id === "oci-container") {
-      throw new Error(
-        "run_command requires a local OS sandbox until container runtime identity binding is available",
-      );
-    }
+    const prepared = await prepareCommandExecution(this.options, input);
     const execution = await runSandboxedProcess({
       sandbox: this.options.sandbox,
-      launch: {
-        command: executable,
-        args: input.args,
-        cwd,
-        env: { ...FIXED_ENVIRONMENT },
-        workspaceRoot,
-        approvedCapabilities: ["process.spawn", "workspace.read"],
-      },
-      timeoutMs,
-      maxOutputChars: MAX_OUTPUT_CHARS,
+      launch: prepared.launch,
+      timeoutMs: prepared.timeoutMs,
+      maxOutputChars: MAX_COMMAND_OUTPUT_CHARS,
       ...(signal ? { signal } : {}),
       abortedMessage: "command execution was aborted",
     });
-    if ((await sha256File(executable)) !== executableSha256) {
-      throw new Error("command runtime changed during execution");
-    }
-    const status: CommandExecutionStatus =
-      execution.status === "exited"
-        ? execution.exitCode === 0
-          ? "succeeded"
-          : "failed"
-        : execution.status;
-    const stdoutSha256 = sha256(execution.stdout);
-    const stderrSha256 = sha256(execution.stderr);
-    const resultSha256 = sha256(
-      canonicalJson({
-        status,
-        exitCode: execution.exitCode,
-        signal: execution.signal,
-        stdoutSha256,
-        stderrSha256,
-        stdoutTruncated: execution.stdoutTruncated,
-        stderrTruncated: execution.stderrTruncated,
-      }),
-    );
-    return {
-      details: {
-        runtime: input.runtime,
-        status,
-        sandbox: this.options.sandbox.id,
-        workspaceAccess: "read_only",
-        networkAccess: "denied",
-        cwdPathSha256: commandReceipt.cwdPathSha256,
-        executablePathSha256,
-        executableSha256,
-        argumentCount: input.args.length,
-        argumentSetSha256,
-        environmentSha256,
-        resourceLimitsSha256,
-        timeoutMs,
-        outputLimitChars: MAX_OUTPUT_CHARS,
-        commandSha256: sha256(canonicalJson(commandReceipt)),
-        resultSha256,
-        durationMs: execution.durationMs,
-        exitCode: execution.exitCode,
-        signal: execution.signal,
-        stdoutChars: execution.stdout.length,
-        stderrChars: execution.stderr.length,
-        stdoutSha256,
-        stderrSha256,
-        stdoutTruncated: execution.stdoutTruncated,
-        stderrTruncated: execution.stderrTruncated,
-      },
-      stdout: execution.stdout,
-      stderr: execution.stderr,
-    };
+    await assertCommandRuntimeStable(prepared);
+    return finalizeCommandExecution(prepared, execution);
   }
+}
+
+export async function prepareCommandExecution(
+  options: CommandRunnerOptions,
+  input: CommandExecutionRequest,
+): Promise<PreparedCommandExecution> {
+  validateCommandRequest(input);
+  const workspaceRoot = await realpath(path.resolve(options.workspaceRoot));
+  const cwd = await resolveWorkspaceDirectory(workspaceRoot, input.cwd ?? ".");
+  const cwdPath = path.relative(workspaceRoot, cwd) || ".";
+  const executable = await resolveExecutable(
+    input.runtime,
+    options.executables,
+  );
+  const executableSha256 = await sha256File(executable);
+  const timeoutMs = input.timeoutMs ?? DEFAULT_COMMAND_TIMEOUT_MS;
+  const resourceLimits = {
+    wallTimeMs: timeoutMs,
+    outputCharsPerStream: MAX_COMMAND_OUTPUT_CHARS,
+    processGroupTermination: true,
+    cpuLimit: "sandbox_backend_default",
+    memoryLimit: "sandbox_backend_default",
+  };
+  const receipt = {
+    runtime: input.runtime,
+    cwdPathSha256: sha256(cwdPath),
+    executablePathSha256: sha256(executable),
+    executableSha256,
+    argumentCount: input.args.length,
+    argumentSetSha256: sha256(canonicalJson(input.args)),
+    environmentSha256: sha256(canonicalJson(FIXED_ENVIRONMENT)),
+    resourceLimitsSha256: sha256(canonicalJson(resourceLimits)),
+    timeoutMs,
+    outputLimitChars: MAX_COMMAND_OUTPUT_CHARS,
+    workspaceAccess: "read_only" as const,
+    networkAccess: "denied" as const,
+  };
+  if (options.sandbox.id === "oci-container") {
+    throw new Error(
+      "run_command requires a local OS sandbox until container runtime identity binding is available",
+    );
+  }
+  return {
+    runtime: input.runtime,
+    sandboxId: options.sandbox.id,
+    args: [...input.args],
+    workspaceRoot,
+    cwd,
+    executable,
+    executableSha256,
+    timeoutMs,
+    launch: {
+      command: executable,
+      args: [...input.args],
+      cwd,
+      env: { ...FIXED_ENVIRONMENT },
+      workspaceRoot,
+      approvedCapabilities: ["process.spawn", "workspace.read"],
+    },
+    receipt,
+  };
+}
+
+export async function assertCommandRuntimeStable(
+  prepared: PreparedCommandExecution,
+): Promise<void> {
+  if ((await sha256File(prepared.executable)) !== prepared.executableSha256) {
+    throw new Error("command runtime changed during execution");
+  }
+}
+
+export function finalizeCommandExecution(
+  prepared: PreparedCommandExecution,
+  execution: SandboxedProcessResult,
+): CommandExecutionResult {
+  const status: CommandExecutionStatus =
+    execution.status === "exited"
+      ? execution.exitCode === 0
+        ? "succeeded"
+        : "failed"
+      : execution.status;
+  const stdoutSha256 = sha256(execution.stdout);
+  const stderrSha256 = sha256(execution.stderr);
+  const resultSha256 = sha256(
+    canonicalJson({
+      status,
+      exitCode: execution.exitCode,
+      signal: execution.signal,
+      stdoutSha256,
+      stderrSha256,
+      stdoutTruncated: execution.stdoutTruncated,
+      stderrTruncated: execution.stderrTruncated,
+    }),
+  );
+  return {
+    details: {
+      runtime: prepared.runtime,
+      status,
+      sandbox: prepared.sandboxId,
+      workspaceAccess: "read_only",
+      networkAccess: "denied",
+      cwdPathSha256: prepared.receipt.cwdPathSha256,
+      executablePathSha256: prepared.receipt.executablePathSha256,
+      executableSha256: prepared.executableSha256,
+      argumentCount: prepared.receipt.argumentCount,
+      argumentSetSha256: prepared.receipt.argumentSetSha256,
+      environmentSha256: prepared.receipt.environmentSha256,
+      resourceLimitsSha256: prepared.receipt.resourceLimitsSha256,
+      timeoutMs: prepared.timeoutMs,
+      outputLimitChars: MAX_COMMAND_OUTPUT_CHARS,
+      commandSha256: sha256(canonicalJson(prepared.receipt)),
+      resultSha256,
+      durationMs: execution.durationMs,
+      exitCode: execution.exitCode,
+      signal: execution.signal,
+      stdoutChars: execution.stdout.length,
+      stderrChars: execution.stderr.length,
+      stdoutSha256,
+      stderrSha256,
+      stdoutTruncated: execution.stdoutTruncated,
+      stderrTruncated: execution.stderrTruncated,
+    },
+    stdout: execution.stdout,
+    stderr: execution.stderr,
+  };
 }
 
 export function createCommandTool(

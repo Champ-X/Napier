@@ -2,17 +2,17 @@
   "type": "napier.web-dist-audit",
   "schemaVersion": 1,
   "ok": true,
-  "fileCount": 56,
+  "fileCount": 58,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BrazEZfj.js",
-    "sizeBytes": 130947,
+    "path": "apps/web/dist/assets/index-BvVO7KHV.js",
+    "sizeBytes": 131461,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "0db8d206764300a5cc83f25417dc9519ff103645ae6451d2061b36d3596cd8fe"
+    "sha256": "7169b9250f5921693d6be4abe42d88ef977ff074d073b7c6d8e634db8b7e4e06"
   },
-  "distContentSha256": "0db8d206764300a5cc83f25417dc9519ff103645ae6451d2061b36d3596cd8fe",
+  "distContentSha256": "7169b9250f5921693d6be4abe42d88ef977ff074d073b7c6d8e634db8b7e4e06",
   "errors": []
 }

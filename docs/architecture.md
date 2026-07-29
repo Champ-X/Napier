@@ -1691,11 +1691,56 @@ Local command execution currently supports macOS sandbox-exec and Linux
 Bubblewrap. It fails closed on unsupported adapters and OCI until host/image
 runtime identity binding exists. Wall time, output, and process-group
 termination are enforced; hard per-command CPU/memory quotas require an OCI or
-managed session backend and remain an explicit gap. PTY, background jobs,
-process inventory, writes, package installation, and inherited environment
-variables are not part of this slice. Python and Git remain outside the public
-runtime enum until a managed backend can bind their transitive runtime
-dependencies without broadening the local macOS profile.
+managed session backend and remain an explicit gap. PTY, writes, package
+installation, and inherited environment variables are not part of this slice.
+Python and Git remain outside the public runtime enum until a managed backend
+can bind their transitive runtime dependencies without broadening the local
+macOS profile.
+
+## Workspace Process Session Flow
+
+`workspace_process` extends the same Node execution boundary into bounded
+background sessions without turning it into a shell:
+
+```text
+Agent selects start + node + literal argv
+  -> require non-observe policy + enabled workspace_process tool
+  -> reserve one of four per-Thread and eight per-Runtime active slots
+     before async preparation
+  -> reuse command cwd, executable, environment, and capability preparation
+  -> launch through macOS sandbox-exec or Linux Bubblewrap
+  -> append workspace.process.started with metadata and hashes only
+  -> return a Napier process ID, never a host PID
+  -> collect at most 32,000 chars per stream and 256 ordered chunks in memory
+  -> Agent or Workbench polls chunks after a monotonic cursor
+  -> cancel on Agent/operator request, parent abort, timeout, or output cap
+  -> verify the runtime executable remained stable
+  -> append workspace.process.settled with status, counts, and output hashes
+```
+
+`WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
+and the Server router. The Work Ledger remains authoritative across restarts:
+the Manager reconstructs its process projection once during initialization and
+records any unclosed session as `interrupted` with unknown outcome. While the
+Runtime is alive, an incremental in-memory projection serves frequent
+Workbench polling without rescanning a long Thread. It is a cache of Ledger
+state plus active local handles, not a second durable source.
+
+Output text is intentionally ephemeral. The live Agent tool result and
+`GET .../processes/{processId}/output?after=<cursor>` can return bounded chunks,
+but model responses, tool events, Process lifecycle events, Trace summaries,
+Replay, and exports retain only hashes, counts, cursors, status, and limits.
+The lazy Processes panel exposes output availability, status, limits,
+settlement evidence, and cancellation under the owning Thread.
+
+Graceful Server shutdown stops active process groups before closing the Store.
+An abrupt host or Runtime loss cannot prove that a macOS sandbox wrapper died,
+because `sandbox-exec` has no parent-death contract; startup therefore records
+unknown interruption rather than completion or reattachment. A guardian or OCI
+identity is required for proved cleanup of abrupt or deliberately detached
+descendants and cross-restart reattachment. PTY, workspace writes, hard
+CPU/memory/process quotas, Python, and remote sandboxes remain outside this
+slice.
 
 ## Workspace Verification Flow
 
@@ -3750,7 +3795,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has twenty-eight parts:
+The current boundary has twenty-nine parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -3849,17 +3894,23 @@ The current boundary has twenty-eight parts:
     capabilities, bounded wall/output lifetime, parent cancellation,
     argument/output-redacted Ledger evidence, stable loop-detection hashes, and
     a real local-sandbox smoke.
+29. bounded Workspace Process Sessions with per-Thread admission control,
+    cursor output, cancellation and graceful shutdown, Thread-scoped local
+    inspection, hash-only lifecycle settlement, restart interruption
+    reconciliation, incremental projection, and a real Agent-to-Sandbox smoke.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
-verification, and read-only/offline explicit-argv command execution.
+verification, read-only/offline explicit-argv command execution, and bounded
+background Process Session lifecycle control.
 `unrestricted` is reserved for future sandboxed shell execution, but known
 destructive command patterns are still denied.
 
 An in-process policy is not a sandbox. General shell and package installation
-remain disabled. Stdio MCP, workspace verification, and the command runner use
-narrow macOS sandbox-exec or Linux Bubblewrap adapters; a container or VM
-remains the recommended outer boundary for production third-party code.
+remain disabled. Stdio MCP, workspace verification, the command runner, and
+Workspace Process Sessions use narrow macOS sandbox-exec or Linux Bubblewrap
+adapters; a container or VM remains the recommended outer boundary for
+production third-party code.
 
 ## Capability Roadmap
 
@@ -3869,8 +3920,8 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 1: Local execution and architecture
 
-- durable Workspace Process Sessions with PTY, foreground/background jobs,
-  output cursors, cancellation, restart reconciliation, and pre/post diffs;
+- extend bounded Workspace Process Sessions with PTY, a managed guardian,
+  proved orphan cleanup, cross-restart reattachment, and pre/post diffs;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;
 - domain extraction from the oversized Server and Store modules;
 - startup, first-token, tool-latency, long-thread, memory, Web bundle, and

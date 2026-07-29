@@ -66,4 +66,7 @@ export * from "./token-accounting.js";
 export * from "./tool-loop-guard.js";
 export * from "./tools.js";
 export * from "./verification.js";
+export * from "./workspace-process-events.js";
+export * from "./workspace-process-tool.js";
+export * from "./workspace-processes.js";
 export * from "./workflow-blueprints.js";

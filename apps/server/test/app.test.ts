@@ -133,6 +133,7 @@ afterEach(async () => {
     await services.recovery.stop();
     await services.automation.stop();
     await services.channels.stop();
+    await services.workspaceProcesses.shutdown();
     await services.extensions.shutdown();
     services.store.close();
   }
@@ -2025,6 +2026,7 @@ describe("Napier HTTP goal flow", () => {
           "read_symbol",
           "apply_patch",
           "run_command",
+          "workspace_process",
           "verify_workspace",
         ],
         enabledSkills: ["software-delivery", "artifact-studio"],
@@ -2084,6 +2086,7 @@ describe("Napier HTTP goal flow", () => {
           "run_command",
           "search_files",
           "verify_workspace",
+          "workspace_process",
         ],
         runLimits: {
           maxTurns: 36,

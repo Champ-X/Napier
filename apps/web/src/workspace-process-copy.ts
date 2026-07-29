@@ -1,0 +1,25 @@
+export const workspaceProcessCopy = {
+  eyebrow: "SANDBOX SESSIONS",
+  title: "Workspace processes",
+  description:
+    "Observe bounded background Node work without granting shell, network, or workspace write access.",
+  refresh: "Refresh",
+  cancel: "Cancel process",
+  cancelling: "Cancelling...",
+  showOutput: "Show output",
+  hideOutput: "Hide output",
+  noSessions: "No Process Sessions have been started for this Thread.",
+  outputUnavailable:
+    "Output text is unavailable after Runtime restart. Ledger hashes and settlement evidence remain.",
+  noOutput: "No output has been observed at this cursor.",
+  liveOutput: "Live output",
+  commandHash: "Command",
+  outputHashes: "stdout / stderr",
+  started: "Started",
+  settled: "Settled",
+  duration: "Duration",
+  limits: "Limits",
+  scope: "Scope",
+  output: "Output",
+  error: "Process Sessions could not be loaded.",
+} as const;

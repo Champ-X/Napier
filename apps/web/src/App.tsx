@@ -37,6 +37,7 @@ const LazyAutomationPanel = lazy(() => import("./AutomationPanel"));
 const LazyExtensionPanel = lazy(() => import("./ExtensionPanel"));
 const LazyMemoryPanel = lazy(() => import("./MemoryPanel"));
 const LazyOperatorDecisionPanel = lazy(() => import("./OperatorDecisionPanel"));
+const LazyProcessPanel = lazy(() => import("./ProcessPanel"));
 const LazyRunLabPanel = lazy(() => import("./RunLabPanel"));
 const LazyPlanPanel = lazy(() => import("./PlanPanel"));
 const LazyTracePanel = lazy(() => import("./TracePanel"));
@@ -359,6 +360,14 @@ export function App() {
             {copy.tabs.trace}
           </InspectorTabButton>
           <InspectorTabButton
+            id="processes"
+            active={vm.inspectorTab === "processes"}
+            icon={<Command size={14} />}
+            onClick={vm.setInspectorTab}
+          >
+            {copy.tabs.processes}
+          </InspectorTabButton>
+          <InspectorTabButton
             id="lab"
             active={vm.inspectorTab === "lab"}
             icon={<Scale size={14} />}
@@ -444,6 +453,17 @@ export function App() {
                   void vm.verifyOpenTelemetryTraceArtifactFile(file)
                 }
               />
+            </Suspense>
+          ) : null}
+          {vm.inspectorTab === "processes" && vm.detail ? (
+            <Suspense
+              fallback={
+                <div className="context-loading" role="status">
+                  {copy.processLoading}
+                </div>
+              }
+            >
+              <LazyProcessPanel threadId={vm.detail.thread.id} />
             </Suspense>
           ) : null}
           {vm.inspectorTab === "lab" ? (

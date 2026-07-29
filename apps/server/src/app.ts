@@ -339,10 +339,12 @@ import {
   EvaluationCasebookQualificationService,
   EvaluationSuiteService,
   type KeychainSecretStore,
+  type OsSandboxAdapter,
   createEvaluationCasebookQualificationReceipt,
   createEvaluationSuiteGateReceipt,
   createGoal,
   createId,
+  createPlatformSandboxAdapter,
   createExecutionPlanArchive,
   createExecutionPlanBlueprint,
   createPlanArtifactEventPayload,
@@ -414,6 +416,7 @@ import {
   verifyInboundDeadLetterExportArtifact,
   verifyInboundDeadLetterRetryHistory,
   verifyUsagePriceTableCatalog,
+  WorkspaceProcessManager,
   executionPlanRequestFromBlueprint,
 } from "@napier/runtime";
 import { Hono, type Context } from "hono";
@@ -457,6 +460,7 @@ export interface NapierServices {
   automation: AutomationService;
   channels: ChannelService;
   recovery: RecoveryService;
+  workspaceProcesses: WorkspaceProcessManager;
   receiptTrustDirectories: ReceiptTrustAnchorDirectoryDiscoveryService;
   receiptTrustDirectorySubscriptions: ReceiptTrustAnchorDirectorySubscriptionService;
 }
@@ -645,6 +649,7 @@ export async function createServices(options?: {
   workspaceRoot?: string;
   startAutomation?: boolean;
   keychain?: KeychainSecretStore;
+  sandbox?: OsSandboxAdapter;
   receiptTrustDirectoryDiscovery?: ReceiptTrustAnchorDirectoryDiscoveryOptions;
   receiptTrustDirectorySubscriptions?: ReceiptTrustAnchorDirectorySubscriptionServiceOptions;
 }): Promise<NapierServices> {
@@ -666,11 +671,24 @@ export async function createServices(options?: {
   });
   const models = new ModelRegistry(credentials);
   const extensions = new McpExtensionManager({ store });
+  const sandbox = options?.sandbox ?? createPlatformSandboxAdapter();
+  const workspaceProcesses = new WorkspaceProcessManager({
+    store,
+    workspaceRoot,
+    sandbox,
+  });
+  await workspaceProcesses.initialize();
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
     new EvaluationCasebookQualificationService(store, models);
   const evaluationSuites = new EvaluationSuiteService(store, models);
-  const runtime = new AgentRuntime(store, models, extensions);
+  const runtime = new AgentRuntime(
+    store,
+    models,
+    extensions,
+    sandbox,
+    workspaceProcesses,
+  );
   const automation = new AutomationService(store, runtime);
   const channels = new ChannelService(store, runtime);
   const recovery = new RecoveryService(store, runtime);
@@ -702,6 +720,7 @@ export async function createServices(options?: {
     automation,
     channels,
     recovery,
+    workspaceProcesses,
     receiptTrustDirectories,
     receiptTrustDirectorySubscriptions,
   };
@@ -4422,6 +4441,81 @@ export function createApp(services: NapierServices): Hono {
     setAutomaticRecoveryProjectionHeaders(context, recovery);
     return context.json(recovery);
   });
+
+  app.get("/api/threads/:threadId/processes", async (context) => {
+    const threadId = context.req.param("threadId");
+    try {
+      const sessions = await services.workspaceProcesses.list(threadId);
+      setWorkspaceProcessProjectionHeaders(context, sessions);
+      return context.json(sessions);
+    } catch (error) {
+      return jsonError(context, errorMessage(error), 404);
+    }
+  });
+
+  app.get(
+    "/api/threads/:threadId/processes/:processId/output",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const processId = context.req.param("processId");
+      const after = Number.parseInt(context.req.query("after") ?? "0", 10);
+      const wait = Number.parseInt(context.req.query("wait") ?? "0", 10);
+      if (
+        !validWorkspaceProcessId(processId) ||
+        !Number.isSafeInteger(after) ||
+        after < 0 ||
+        !Number.isSafeInteger(wait) ||
+        wait < 0 ||
+        wait > 5_000
+      ) {
+        return jsonError(
+          context,
+          "Workspace Process output request is invalid",
+          400,
+        );
+      }
+      try {
+        const output = await services.workspaceProcesses.output(
+          threadId,
+          processId,
+          {
+            afterCursor: after,
+            waitMs: wait,
+            signal: context.req.raw.signal,
+          },
+        );
+        setWorkspaceProcessProjectionHeaders(context, output);
+        return context.json(output);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 404);
+      }
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/processes/:processId/cancel",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const processId = context.req.param("processId");
+      if (!validWorkspaceProcessId(processId)) {
+        return jsonError(
+          context,
+          "Workspace Process Session ID is invalid",
+          400,
+        );
+      }
+      try {
+        const session = await services.workspaceProcesses.cancel(
+          threadId,
+          processId,
+        );
+        setWorkspaceProcessProjectionHeaders(context, session);
+        return context.json(session);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 404);
+      }
+    },
+  );
 
   app.get("/api/schedules", (context) => {
     const threadId = context.req.query("thread");
@@ -11360,6 +11454,7 @@ function parseEnabledTools(input: unknown): string[] | undefined {
     "read_symbol",
     "apply_patch",
     "run_command",
+    "workspace_process",
     "verify_workspace",
   ]);
   if (
@@ -17765,6 +17860,10 @@ function validRunId(value: unknown): value is string {
   return typeof value === "string" && /^run_[a-z0-9]{8,80}$/.test(value);
 }
 
+function validWorkspaceProcessId(value: unknown): value is string {
+  return typeof value === "string" && /^process_[a-z0-9]{8,80}$/.test(value);
+}
+
 function validMemoryId(value: unknown): value is string {
   return typeof value === "string" && /^memory_[a-z0-9]{8,80}$/.test(value);
 }
@@ -21152,6 +21251,14 @@ function setThreadDetailProjectionHeaders(
     context.header("X-Napier-Import-Receipt-Seq", String(receipt.seq));
     context.header("X-Napier-Import-Receipt-SHA256", receipt.payloadSha256);
   }
+}
+
+function setWorkspaceProcessProjectionHeaders(
+  context: Context,
+  projection: unknown,
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, projection);
 }
 
 function importProvenanceReceipt(

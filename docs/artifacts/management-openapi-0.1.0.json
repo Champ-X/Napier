@@ -9959,6 +9959,156 @@
         "x-napier-source-route": "POST /api/threads/:threadId/plans/from-blueprint-record/preview"
       }
     },
+    "/api/threads/{threadId}/processes": {
+      "get": {
+        "operationId": "get-threads-by-threadId-processes",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/processes",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/processes"
+      }
+    },
+    "/api/threads/{threadId}/processes/{processId}/cancel": {
+      "post": {
+        "operationId": "post-threads-by-threadId-processes-by-processId-cancel",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/processes/{processId}/cancel",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/processes/:processId/cancel"
+      }
+    },
+    "/api/threads/{threadId}/processes/{processId}/output": {
+      "get": {
+        "operationId": "get-threads-by-threadId-processes-by-processId-output",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/processes/{processId}/output",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/processes/:processId/output"
+      }
+    },
     "/api/threads/{threadId}/recovery": {
       "get": {
         "operationId": "get-threads-by-threadId-recovery",
@@ -13600,7 +13750,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "e822a7a141e328f46e3f73011db505e000c881d8f9a38eb83561085866f36688",
-  "x-napier-route-count": 237,
-  "x-napier-route-set-sha256": "58fc0392f52ca9c89f409fdae046b55be3d902482d8bd2b0a2f8dd55a4c9b719"
+  "x-napier-source-sha256": "1d0120bd7cfc8c6bbe8fa7a73305e592f958c2c89aae07d12c76c4232d75b29e",
+  "x-napier-route-count": 240,
+  "x-napier-route-set-sha256": "86826a7aed2211f552cbc2c952ef6e26bead1cc16544ff79741126ceacc0c552"
 }
