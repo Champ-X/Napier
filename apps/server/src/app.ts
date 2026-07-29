@@ -4492,6 +4492,31 @@ export function createApp(services: NapierServices): Hono {
     },
   );
 
+  app.get(
+    "/api/threads/:threadId/processes/:processId/delta",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const processId = context.req.param("processId");
+      if (!validWorkspaceProcessId(processId)) {
+        return jsonError(
+          context,
+          "Workspace Process Session ID is invalid",
+          400,
+        );
+      }
+      try {
+        const delta = await services.workspaceProcesses.delta(
+          threadId,
+          processId,
+        );
+        setWorkspaceProcessProjectionHeaders(context, delta);
+        return context.json(delta);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 404);
+      }
+    },
+  );
+
   app.post(
     "/api/threads/:threadId/processes/:processId/cancel",
     async (context) => {

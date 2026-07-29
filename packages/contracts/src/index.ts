@@ -2972,9 +2972,14 @@ export type WorkspaceProcessStatus =
   | "cancelled"
   | "interrupted";
 
+export type WorkspaceProcessDeltaStatus =
+  | "unchanged"
+  | "changed"
+  | "indeterminate";
+
 export interface WorkspaceProcessSession {
   kind: "napier.workspace-process-session";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   id: string;
   threadId: string;
   runId: string;
@@ -2991,6 +2996,14 @@ export interface WorkspaceProcessSession {
   cwdPathSha256: string;
   timeoutMs: number;
   outputLimitChars: number;
+  workspaceBeforeSha256?: string;
+  workspaceBeforeTruncated?: boolean;
+  workspaceAfterSha256?: string;
+  workspaceAfterTruncated?: boolean;
+  workspaceDeltaStatus?: WorkspaceProcessDeltaStatus;
+  workspaceChangedFileCount?: number;
+  workspaceChangedPathSetSha256?: string;
+  workspaceDeltaAvailable?: boolean;
   startedAt: string;
   settledAt?: string;
   durationMs?: number;
@@ -3024,6 +3037,25 @@ export interface WorkspaceProcessOutput {
   hasMore: boolean;
   outputAvailable: boolean;
   chunks: WorkspaceProcessOutputChunk[];
+}
+
+export interface WorkspaceProcessDeltaEntry {
+  kind: "added" | "modified" | "removed";
+  path: string;
+  beforeSha256?: string;
+  afterSha256?: string;
+  beforeSizeBytes?: number;
+  afterSizeBytes?: number;
+}
+
+export interface WorkspaceProcessDelta {
+  kind: "napier.workspace-process-delta";
+  schemaVersion: 1;
+  processId: string;
+  status?: WorkspaceProcessDeltaStatus;
+  available: boolean;
+  entriesTruncated: boolean;
+  entries: WorkspaceProcessDeltaEntry[];
 }
 
 export type OperatorDecisionStatus =

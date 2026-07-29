@@ -16,6 +16,15 @@ export interface WorkspaceProcessCardView {
   limitLabel: string;
   outputLabel: string;
   outputAvailable: boolean;
+  workspaceDeltaState:
+    | "pending"
+    | "unchanged"
+    | "changed"
+    | "indeterminate"
+    | "unavailable";
+  workspaceDeltaLabel: string;
+  workspaceDeltaAvailable: boolean;
+  workspaceDeltaHashes?: string;
   commandHash: string;
   resultHashes?: string;
   interruptionReason?: string;
@@ -40,6 +49,7 @@ export function workspaceProcessCardView(
     limitLabel: `${Math.round(session.timeoutMs / 1_000)}s · ${session.outputLimitChars.toLocaleString()} chars/stream`,
     outputLabel: `${session.stdoutChars.toLocaleString()} stdout · ${session.stderrChars.toLocaleString()} stderr · cursor ${session.nextCursor}`,
     outputAvailable: session.outputAvailable,
+    ...workspaceDeltaView(session),
     commandHash: session.commandSha256.slice(0, 12),
     ...(session.stdoutSha256 && session.stderrSha256
       ? {
@@ -49,6 +59,66 @@ export function workspaceProcessCardView(
     ...(session.interruptionReason
       ? { interruptionReason: session.interruptionReason }
       : {}),
+  };
+}
+
+function workspaceDeltaView(
+  session: WorkspaceProcessSession,
+): Pick<
+  WorkspaceProcessCardView,
+  | "workspaceDeltaState"
+  | "workspaceDeltaLabel"
+  | "workspaceDeltaAvailable"
+  | "workspaceDeltaHashes"
+> {
+  const workspaceDeltaHashes =
+    session.workspaceBeforeSha256 && session.workspaceAfterSha256
+      ? [
+          session.workspaceBeforeSha256.slice(0, 12),
+          session.workspaceAfterSha256.slice(0, 12),
+          session.workspaceChangedPathSetSha256?.slice(0, 12),
+        ]
+          .filter(Boolean)
+          .join(" / ")
+      : undefined;
+  if (session.status === "running") {
+    return {
+      workspaceDeltaState: "pending",
+      workspaceDeltaLabel: "Comparison pending settlement",
+      workspaceDeltaAvailable: false,
+      ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
+    };
+  }
+  if (session.workspaceDeltaStatus === "unchanged") {
+    return {
+      workspaceDeltaState: "unchanged",
+      workspaceDeltaLabel: "No workspace drift observed",
+      workspaceDeltaAvailable: Boolean(session.workspaceDeltaAvailable),
+      ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
+    };
+  }
+  if (session.workspaceDeltaStatus === "changed") {
+    const count = session.workspaceChangedFileCount ?? 0;
+    return {
+      workspaceDeltaState: "changed",
+      workspaceDeltaLabel: `${count.toLocaleString()} file${count === 1 ? "" : "s"} drifted during window`,
+      workspaceDeltaAvailable: Boolean(session.workspaceDeltaAvailable),
+      ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
+    };
+  }
+  if (session.workspaceDeltaStatus === "indeterminate") {
+    return {
+      workspaceDeltaState: "indeterminate",
+      workspaceDeltaLabel: "Workspace comparison indeterminate",
+      workspaceDeltaAvailable: Boolean(session.workspaceDeltaAvailable),
+      ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
+    };
+  }
+  return {
+    workspaceDeltaState: "unavailable",
+    workspaceDeltaLabel: "Workspace comparison unavailable",
+    workspaceDeltaAvailable: false,
+    ...(workspaceDeltaHashes ? { workspaceDeltaHashes } : {}),
   };
 }
 

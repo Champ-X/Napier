@@ -27,18 +27,33 @@ const STATUSES = new Set<WorkspaceProcessStatus>([
 
 export type WorkspaceProcessSessionInput = Omit<
   WorkspaceProcessSession,
-  "kind" | "schemaVersion" | "outputAvailable" | "contentSha256"
->;
+  | "kind"
+  | "schemaVersion"
+  | "outputAvailable"
+  | "workspaceDeltaAvailable"
+  | "contentSha256"
+> & { schemaVersion?: 1 | 2 };
 
 export function createWorkspaceProcessSession(
   input: WorkspaceProcessSessionInput,
 ): WorkspaceProcessSession {
-  const content = {
+  const { schemaVersion = 2, ...session } = input;
+  const base = {
     kind: "napier.workspace-process-session" as const,
-    schemaVersion: 1 as const,
-    ...input,
+    ...session,
     outputAvailable: false,
   };
+  const content =
+    schemaVersion === 1
+      ? {
+          ...base,
+          schemaVersion,
+        }
+      : {
+          ...base,
+          schemaVersion,
+          workspaceDeltaAvailable: false,
+        };
   return {
     ...content,
     contentSha256: sha256(canonicalJson(content)),
@@ -85,12 +100,17 @@ export function projectWorkspaceProcessSessions(
 
 export function workspaceProcessSessionWithRuntimeState(
   session: WorkspaceProcessSession,
-  runtime: { nextCursor: number; outputAvailable: boolean },
+  runtime: {
+    nextCursor: number;
+    outputAvailable: boolean;
+    workspaceDeltaAvailable: boolean;
+  },
 ): WorkspaceProcessSession {
   const { contentSha256: _contentSha256, ...content } = {
     ...session,
     nextCursor: runtime.nextCursor,
     outputAvailable: runtime.outputAvailable,
+    workspaceDeltaAvailable: runtime.workspaceDeltaAvailable,
   };
   return {
     ...content,
@@ -105,7 +125,7 @@ function parseWorkspaceProcessSession(
   const status = value["status"];
   if (
     value["kind"] !== "napier.workspace-process-session" ||
-    value["schemaVersion"] !== 1 ||
+    (value["schemaVersion"] !== 1 && value["schemaVersion"] !== 2) ||
     typeof status !== "string" ||
     !STATUSES.has(status as WorkspaceProcessStatus) ||
     typeof value["id"] !== "string" ||
@@ -137,6 +157,27 @@ function parseWorkspaceProcessSession(
   ) {
     return undefined;
   }
+  const workspaceFields = [
+    "workspaceBeforeSha256",
+    "workspaceBeforeTruncated",
+    "workspaceAfterSha256",
+    "workspaceAfterTruncated",
+    "workspaceDeltaStatus",
+    "workspaceChangedFileCount",
+    "workspaceChangedPathSetSha256",
+    "workspaceDeltaAvailable",
+  ] as const;
+  if (value["schemaVersion"] === 1) {
+    if (workspaceFields.some((field) => value[field] !== undefined)) {
+      return undefined;
+    }
+  } else if (
+    !hash(value["workspaceBeforeSha256"]) ||
+    typeof value["workspaceBeforeTruncated"] !== "boolean" ||
+    value["workspaceDeltaAvailable"] !== false
+  ) {
+    return undefined;
+  }
   if (
     (value["settledAt"] !== undefined && !isoDate(value["settledAt"])) ||
     (value["durationMs"] !== undefined &&
@@ -149,8 +190,58 @@ function parseWorkspaceProcessSession(
       typeof value["signal"] !== "string") ||
     (value["stdoutSha256"] !== undefined && !hash(value["stdoutSha256"])) ||
     (value["stderrSha256"] !== undefined && !hash(value["stderrSha256"])) ||
+    (value["workspaceAfterSha256"] !== undefined &&
+      !hash(value["workspaceAfterSha256"])) ||
+    (value["workspaceAfterTruncated"] !== undefined &&
+      typeof value["workspaceAfterTruncated"] !== "boolean") ||
+    (value["workspaceDeltaStatus"] !== undefined &&
+      value["workspaceDeltaStatus"] !== "unchanged" &&
+      value["workspaceDeltaStatus"] !== "changed" &&
+      value["workspaceDeltaStatus"] !== "indeterminate") ||
+    (value["workspaceChangedFileCount"] !== undefined &&
+      !nonNegativeInteger(value["workspaceChangedFileCount"])) ||
+    (value["workspaceChangedPathSetSha256"] !== undefined &&
+      !hash(value["workspaceChangedPathSetSha256"])) ||
     (value["interruptionReason"] !== undefined &&
       typeof value["interruptionReason"] !== "string")
+  ) {
+    return undefined;
+  }
+  const hasWorkspaceDelta =
+    value["workspaceAfterSha256"] !== undefined ||
+    value["workspaceAfterTruncated"] !== undefined ||
+    value["workspaceDeltaStatus"] !== undefined ||
+    value["workspaceChangedFileCount"] !== undefined ||
+    value["workspaceChangedPathSetSha256"] !== undefined;
+  if (
+    hasWorkspaceDelta &&
+    (value["workspaceAfterSha256"] === undefined ||
+      value["workspaceAfterTruncated"] === undefined ||
+      value["workspaceDeltaStatus"] === undefined ||
+      value["workspaceChangedFileCount"] === undefined ||
+      value["workspaceChangedPathSetSha256"] === undefined)
+  ) {
+    return undefined;
+  }
+  if (
+    value["schemaVersion"] === 2 &&
+    ((status === "running" && hasWorkspaceDelta) ||
+      (status !== "running" && status !== "interrupted" && !hasWorkspaceDelta))
+  ) {
+    return undefined;
+  }
+  if (
+    hasWorkspaceDelta &&
+    ((value["workspaceDeltaStatus"] === "unchanged" &&
+      value["workspaceChangedFileCount"] !== 0) ||
+      (value["workspaceDeltaStatus"] === "changed" &&
+        value["workspaceChangedFileCount"] === 0) ||
+      (value["workspaceDeltaStatus"] !== "indeterminate" &&
+        (value["workspaceBeforeTruncated"] === true ||
+          value["workspaceAfterTruncated"] === true)) ||
+      (value["workspaceDeltaStatus"] === "indeterminate" &&
+        value["workspaceBeforeTruncated"] !== true &&
+        value["workspaceAfterTruncated"] !== true))
   ) {
     return undefined;
   }

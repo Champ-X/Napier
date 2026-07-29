@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  rm,
+  truncate,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -9,12 +16,15 @@ import {
   LocalStore,
   MAX_ACTIVE_WORKSPACE_PROCESSES,
   MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD,
+  MAX_WORKSPACE_SNAPSHOT_BYTES,
   UnsupportedSandboxAdapter,
   WorkspaceProcessManager,
+  createWorkspaceProcessSession,
   createWorkspaceProcessTool,
   type OsSandboxAdapter,
   type SandboxedProcess,
   type SandboxLaunchRequest,
+  workspaceProcessSessionPayload,
 } from "../src/index.js";
 
 const temporaryRoots: string[] = [];
@@ -203,6 +213,17 @@ describe("Workspace Process Manager", () => {
         stderrChars: 8,
         stdoutSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         stderrSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        workspaceDeltaStatus: "unchanged",
+        workspaceChangedFileCount: 0,
+        workspaceDeltaAvailable: true,
+      }),
+    );
+    expect(await harness.manager.delta(harness.thread.id, session.id)).toEqual(
+      expect.objectContaining({
+        status: "unchanged",
+        available: true,
+        entriesTruncated: false,
+        entries: [],
       }),
     );
     const events = await harness.store.listEvents(harness.thread.id);
@@ -215,6 +236,160 @@ describe("Workspace Process Manager", () => {
     ]);
     expect(JSON.stringify(processEvents)).not.toContain("first");
     expect(JSON.stringify(processEvents)).not.toContain("warning");
+    harness.store.close();
+  });
+
+  it("continues projecting durable schema v1 sessions after upgrade", async () => {
+    const harness = await createHarness();
+    const session = await startProcess(harness);
+    const [startedEvent] = (
+      await harness.store.listEvents(harness.thread.id)
+    ).filter((event) => event.type === "workspace.process.started");
+    expect(startedEvent).toBeDefined();
+    const {
+      kind: _kind,
+      schemaVersion: _schemaVersion,
+      outputAvailable: _outputAvailable,
+      workspaceDeltaAvailable: _workspaceDeltaAvailable,
+      workspaceBeforeSha256: _workspaceBeforeSha256,
+      workspaceBeforeTruncated: _workspaceBeforeTruncated,
+      contentSha256: _contentSha256,
+      ...legacyInput
+    } = session;
+    const legacy = createWorkspaceProcessSession({
+      ...legacyInput,
+      schemaVersion: 1,
+    });
+    await harness.store.appendEvent({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      type: startedEvent!.type,
+      category: startedEvent!.category,
+      visibility: startedEvent!.visibility,
+      payload: workspaceProcessSessionPayload(legacy),
+    });
+    harness.store.close();
+
+    const restartedStore = new LocalStore({
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+    });
+    await restartedStore.initialize();
+    const restarted = new WorkspaceProcessManager({
+      store: restartedStore,
+      workspaceRoot: harness.workspaceRoot,
+      sandbox: createControlledSandbox().sandbox,
+    });
+    await restarted.initialize();
+    expect(await restarted.list(harness.thread.id)).toEqual([
+      expect.objectContaining({
+        id: session.id,
+        schemaVersion: 1,
+        status: "interrupted",
+        outputAvailable: false,
+      }),
+    ]);
+    expect(
+      (await restarted.list(harness.thread.id))[0]?.workspaceBeforeSha256,
+    ).toBeUndefined();
+    restartedStore.close();
+    harness.controlled.processes[0]!.settle(null, "SIGKILL");
+  });
+
+  it("reports external workspace drift locally without persisting paths", async () => {
+    const harness = await createHarness();
+    const modified = path.join(harness.workspaceRoot, "modified.txt");
+    const removed = path.join(harness.workspaceRoot, "removed.txt");
+    const added = path.join(harness.workspaceRoot, "added.txt");
+    await Promise.all([
+      writeFile(modified, "before"),
+      writeFile(removed, "remove"),
+    ]);
+    const session = await startProcess(harness);
+    await Promise.all([
+      writeFile(modified, "after"),
+      writeFile(added, "add"),
+      unlink(removed),
+    ]);
+    harness.controlled.processes[0]!.settle(0);
+    const settled = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 3,
+        workspaceChangedPathSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        workspaceDeltaAvailable: true,
+      }),
+    );
+    const delta = await harness.manager.delta(harness.thread.id, session.id);
+    expect(delta.entriesTruncated).toBe(false);
+    expect(delta.entries.map((entry) => [entry.kind, entry.path])).toEqual([
+      ["added", "added.txt"],
+      ["modified", "modified.txt"],
+      ["removed", "removed.txt"],
+    ]);
+    const events = await harness.store.listEvents(harness.thread.id);
+    expect(JSON.stringify(events)).not.toContain("modified.txt");
+    expect(JSON.stringify(events)).not.toContain("removed.txt");
+    expect(JSON.stringify(events)).not.toContain("added.txt");
+    harness.store.close();
+  });
+
+  it("keeps the process outcome and fails the delta closed when the post-snapshot is unavailable", async () => {
+    const harness = await createHarness();
+    const session = await startProcess(harness);
+    await rm(harness.workspaceRoot, { recursive: true, force: true });
+    harness.controlled.processes[0]!.settle(0);
+
+    const settled = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        status: "succeeded",
+        workspaceAfterTruncated: true,
+        workspaceDeltaStatus: "indeterminate",
+        workspaceChangedFileCount: 0,
+        workspaceDeltaAvailable: true,
+      }),
+    );
+    expect(await harness.manager.delta(harness.thread.id, session.id)).toEqual(
+      expect.objectContaining({
+        status: "indeterminate",
+        available: true,
+        entriesTruncated: false,
+        entries: [],
+      }),
+    );
+    harness.store.close();
+  });
+
+  it("classifies a snapshot-limit overflow as indeterminate", async () => {
+    const harness = await createHarness();
+    const oversized = path.join(harness.workspaceRoot, "oversized.bin");
+    await writeFile(oversized, "");
+    await truncate(oversized, MAX_WORKSPACE_SNAPSHOT_BYTES + 1);
+    const session = await startProcess(harness);
+    expect(session.workspaceBeforeTruncated).toBe(true);
+    harness.controlled.processes[0]!.settle(0);
+
+    const settled = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        status: "succeeded",
+        workspaceBeforeTruncated: true,
+        workspaceAfterTruncated: true,
+        workspaceDeltaStatus: "indeterminate",
+        workspaceChangedFileCount: 0,
+      }),
+    );
     harness.store.close();
   });
 
@@ -406,6 +581,7 @@ describe("Workspace Process Manager", () => {
         id: session.id,
         status: "interrupted",
         outputAvailable: false,
+        workspaceDeltaAvailable: false,
         interruptionReason: expect.stringContaining("outcome is unknown"),
       }),
     );
@@ -417,6 +593,14 @@ describe("Workspace Process Manager", () => {
         chunks: [],
       }),
     );
+    expect(await restarted.delta(harness.thread.id, session.id)).toEqual({
+      kind: "napier.workspace-process-delta",
+      schemaVersion: 1,
+      processId: session.id,
+      available: false,
+      entriesTruncated: false,
+      entries: [],
+    });
     expect(
       JSON.stringify(await restartedStore.listEvents(harness.thread.id)),
     ).not.toContain("ephemeral");
@@ -452,19 +636,24 @@ describe("Workspace Process Manager", () => {
   it("terminates a process whose launch races with Runtime shutdown", async () => {
     const controlled = createControlledSandbox();
     let releaseLaunch: (() => void) | undefined;
+    let markLaunchEntered: (() => void) | undefined;
+    const launchEntered = new Promise<void>((resolve) => {
+      markLaunchEntered = resolve;
+    });
     const launchGate = new Promise<void>((resolve) => {
       releaseLaunch = resolve;
     });
     const delayedSandbox: OsSandboxAdapter = {
       id: "delayed-sandbox",
       async launch(request) {
+        markLaunchEntered!();
         await launchGate;
         return controlled.sandbox.launch(request);
       },
     };
     const harness = await createHarness({ sandbox: delayedSandbox });
     const starting = startProcess(harness);
-    await vi.waitFor(() => expect(releaseLaunch).toBeDefined());
+    await launchEntered;
     await harness.manager.shutdown();
     releaseLaunch!();
     await expect(starting).rejects.toThrow("shutting down");
@@ -486,6 +675,7 @@ describe("Workspace Process Manager", () => {
     );
     expect(interrupted.status).toBe("interrupted");
     expect(interrupted.interruptionReason).toContain("outcome is unknown");
+    expect(interrupted.workspaceDeltaAvailable).toBe(false);
     expect(JSON.stringify(interrupted)).not.toContain("TOP_SECRET");
     harness.store.close();
   });
@@ -527,6 +717,8 @@ describe("Workspace Process Manager", () => {
       processId,
     });
     expect(cancelled.details.status).toBe("cancelled");
+    expect(cancelled.details.workspaceDeltaStatus).toBe("unchanged");
+    expect(cancelled.content[0]?.text).toContain("Workspace delta: unchanged");
     harness.store.close();
   });
 });

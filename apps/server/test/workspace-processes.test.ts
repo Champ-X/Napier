@@ -1,10 +1,11 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 
 import type {
   ThreadDetail,
+  WorkspaceProcessDelta,
   WorkspaceProcessOutput,
   WorkspaceProcessSession,
 } from "@napier/contracts";
@@ -110,7 +111,12 @@ describe("Workspace Process HTTP API", () => {
       `/api/threads/${otherThread.id}/processes/${session.id}/output`,
     );
     expect(deniedResponse.status).toBe(404);
+    const deniedDeltaResponse = await app.request(
+      `/api/threads/${otherThread.id}/processes/${session.id}/delta`,
+    );
+    expect(deniedDeltaResponse.status).toBe(404);
 
+    await writeFile(path.join(workspaceRoot, "http-drift.txt"), "drift");
     const cancelResponse = await app.request(
       `/api/threads/${thread.id}/processes/${session.id}/cancel`,
       { method: "POST" },
@@ -124,9 +130,29 @@ describe("Workspace Process HTTP API", () => {
     );
     expect(controlled.terminate).toHaveBeenCalledOnce();
 
+    const deltaResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${session.id}/delta`,
+    );
+    expect(deltaResponse.status).toBe(200);
+    expect((await deltaResponse.json()) as WorkspaceProcessDelta).toEqual(
+      expect.objectContaining({
+        processId: session.id,
+        status: "changed",
+        available: true,
+        entriesTruncated: false,
+        entries: [
+          expect.objectContaining({
+            kind: "added",
+            path: "http-drift.txt",
+          }),
+        ],
+      }),
+    );
+
     const detailResponse = await app.request(`/api/threads/${thread.id}`);
     const detail = (await detailResponse.json()) as ThreadDetail;
     expect(JSON.stringify(detail.events)).not.toContain("HTTP_SECRET_OUTPUT");
+    expect(JSON.stringify(detail.events)).not.toContain("http-drift.txt");
   });
 });
 

@@ -81,7 +81,7 @@ Observed result:
   macOS rejects nested `sandbox-exec`; this is an environment limitation, not
   a fallback to unsandboxed execution.
 
-## Current Slice: Bounded Workspace Process Sessions
+## Completed Slice: Bounded Workspace Process Sessions
 
 User scenario: an Agent can start a longer Node diagnostic in the background,
 continue reasoning, inspect new output through a cursor, and cancel the process
@@ -146,9 +146,66 @@ Observed result:
   projection, Agent tool projection, and Manager modules. `agent-runtime.ts`
   is smaller than it was before this slice; Store remains unchanged.
 
+## Completed Slice: Process Workspace Delta
+
+User scenario: after a Process Session settles, the operator can tell whether
+the workspace changed during its execution window and inspect a bounded local
+file delta before trusting the result or considering broader write access.
+
+Acceptance:
+
+- verifier and Process Sessions share one deterministic, dependency-free
+  workspace snapshot implementation;
+- a pre-execution snapshot is taken before sandbox launch and a post-execution
+  snapshot after process settlement and runtime identity verification;
+- complete snapshots classify the delta as `unchanged` or `changed`; any
+  truncated side classifies it as `indeterminate` rather than claiming safety;
+- durable session evidence retains only pre/post digests, truncation state,
+  changed-file count, and a changed-path-set digest;
+- bounded relative paths and before/after file metadata remain available only
+  from the current local Runtime through a Thread-scoped API and Workbench
+  view, then become unavailable after restart;
+- external concurrent changes are reported as workspace drift even though the
+  sandbox itself is read-only; Napier does not falsely attribute the writer;
+- failure, timeout, cancellation, output cap, shutdown, restart, concurrent
+  polling, file add/modify/remove, symlink exclusion, snapshot truncation, and
+  sensitive path redaction have automated coverage;
+- the real macOS smoke proves an unchanged read-only session through
+  `AgentRuntime`, and browser Dogfood inspects the rendered delta state.
+
+Threat boundary:
+
+- A pre/post comparison observes an execution window; it cannot prove which
+  process caused a concurrent external change.
+- Snapshot limits remain 2,000 files and 16 MiB. Truncation is fail-closed as
+  `indeterminate`, and unobserved bytes are never represented as unchanged.
+- `.git`, `.napier`, `node_modules`, and symlinks remain excluded. This avoids
+  secret/state ingestion and link traversal, but changes inside those excluded
+  roots are intentionally outside the claim.
+- Relative paths are local ephemeral product data. Ledger, Trace, Replay,
+  exports, and restart projections receive only counts and hashes.
+- This slice does not grant workspace write permission. A later write-capable
+  session still requires an explicit preflight scope and recovery design.
+
+Observed result:
+
+- the opt-in Agent-to-macOS-Sandbox smoke passed from an independent Terminal
+  in 342 ms against a real temporary workspace and proved complete
+  before/after snapshots with an `unchanged` result;
+- an isolated full Server/Runtime/Store/Web dogfood created one concurrent
+  external `drift.txt` write, then the Processes panel rendered
+  `1 file drifted during window`, the relative path, before/after metadata, and
+  the explicit non-attribution warning;
+- the browser page contained no temporary absolute path and produced no console
+  error;
+- schema v1 Process evidence remains recoverable after an actual Store restart;
+  new schema v2 evidence carries the bounded snapshot summary;
+- the shared snapshot implementation retains existing verifier digest
+  semantics while adding canonical confinement, symlink race defense, bounded
+  local details, and fail-closed truncation.
+
 ## Next Candidate
 
-After this slice, add pre/post workspace snapshots and an explicit preview/diff
-contract before considering write-capable Process Sessions. PTY and managed
-Python should wait for a guardian or OCI backend that can prove hard limits and
-restart ownership.
+After this slice, decide between an explicit write-session preflight/diff
+workflow and a managed guardian/OCI backend. PTY and managed Python should wait
+for a backend that can prove hard limits and restart ownership.

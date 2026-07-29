@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -32,7 +32,14 @@ afterEach(async () => {
 
 describeLive("live Workspace Process smoke", () => {
   it("starts and polls a background Node session through the real Agent sandbox", async () => {
-    const workspaceRoot = path.resolve(import.meta.dirname, "../../..");
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-process-workspace-"),
+    );
+    temporaryRoots.push(workspaceRoot);
+    await writeFile(
+      path.join(workspaceRoot, "package.json"),
+      JSON.stringify({ name: "napier-live-workspace", version: "1.0.0" }),
+    );
     const dataRoot = await mkdtemp(path.join(tmpdir(), "napier-live-process-"));
     temporaryRoots.push(dataRoot);
     const store = new LocalStore({ workspaceRoot, dataRoot });
@@ -86,7 +93,9 @@ describeLive("live Workspace Process smoke", () => {
         );
       },
       (context) => {
-        expect(JSON.stringify(context.messages)).toContain("napier@0.1.0");
+        expect(JSON.stringify(context.messages)).toContain(
+          "napier-live-workspace@1.0.0",
+        );
         return fauxAssistantMessage(
           "The background package check completed in the sandbox.",
         );
@@ -114,6 +123,10 @@ describeLive("live Workspace Process smoke", () => {
     expect(session).toBeDefined();
     const settled = await processes.waitForSettlement(thread.id, session!.id);
     expect(settled.status).toBe("succeeded");
+    expect(settled.workspaceDeltaStatus).toBe("unchanged");
+    expect(settled.workspaceBeforeTruncated).toBe(false);
+    expect(settled.workspaceAfterTruncated).toBe(false);
+    expect(settled.workspaceDeltaAvailable).toBe(true);
     const events = await store.listEvents(thread.id);
     expect(JSON.stringify(events)).not.toContain(commandSource);
     expect(JSON.stringify(events)).not.toContain("napier@0.1.0");

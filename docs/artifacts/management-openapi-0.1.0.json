@@ -10059,6 +10059,56 @@
         "x-napier-source-route": "POST /api/threads/:threadId/processes/:processId/cancel"
       }
     },
+    "/api/threads/{threadId}/processes/{processId}/delta": {
+      "get": {
+        "operationId": "get-threads-by-threadId-processes-by-processId-delta",
+        "tags": [
+          "threads"
+        ],
+        "summary": "GET /api/threads/{threadId}/processes/{processId}/delta",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "GET /api/threads/:threadId/processes/:processId/delta"
+      }
+    },
     "/api/threads/{threadId}/processes/{processId}/output": {
       "get": {
         "operationId": "get-threads-by-threadId-processes-by-processId-output",
@@ -13750,7 +13800,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "1d0120bd7cfc8c6bbe8fa7a73305e592f958c2c89aae07d12c76c4232d75b29e",
-  "x-napier-route-count": 240,
-  "x-napier-route-set-sha256": "86826a7aed2211f552cbc2c952ef6e26bead1cc16544ff79741126ceacc0c552"
+  "x-napier-source-sha256": "0e5e7d377871766b70bc80ccab277270adc74985c945ff85d2fcf782356922ab",
+  "x-napier-route-count": 241,
+  "x-napier-route-set-sha256": "47c57159b2c38db074ec3763b42e69d2fc2c4da3b519bc796fd8e39296b3ac33"
 }

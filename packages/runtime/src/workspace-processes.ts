@@ -3,6 +3,7 @@ import type { Readable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 
 import type {
+  WorkspaceProcessDelta,
   WorkspaceProcessOutput,
   WorkspaceProcessOutputChunk,
   WorkspaceProcessSession,
@@ -30,6 +31,13 @@ import {
   workspaceProcessSessionPayload,
   workspaceProcessSessionWithRuntimeState,
 } from "./workspace-process-events.js";
+import {
+  createWorkspacePathSnapshot,
+  diffWorkspaceSnapshots,
+  type WorkspacePathSnapshot,
+  type WorkspaceSnapshotDelta,
+  unavailableWorkspacePathSnapshot,
+} from "./workspace-snapshot.js";
 
 export const MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD = 4;
 export const MAX_ACTIVE_WORKSPACE_PROCESSES = 8;
@@ -56,6 +64,8 @@ interface ActiveWorkspaceProcess {
   session: WorkspaceProcessSession;
   prepared: PreparedCommandExecution;
   child: SandboxedProcess;
+  beforeSnapshot: WorkspacePathSnapshot;
+  workspaceDelta?: WorkspaceSnapshotDelta;
   chunks: WorkspaceProcessOutputChunk[];
   nextCursor: number;
   stdout: StreamCollector;
@@ -109,6 +119,7 @@ export class WorkspaceProcessManager {
         (candidate) => candidate.status === "running",
       )) {
         const interrupted = createWorkspaceProcessSession({
+          schemaVersion: session.schemaVersion,
           ...stableSessionInput(session),
           status: "interrupted",
           settledAt: nowIso(),
@@ -177,9 +188,20 @@ export class WorkspaceProcessManager {
     }
     this.startingByThread.set(request.threadId, startingCount + 1);
     let prepared: PreparedCommandExecution;
+    let beforeSnapshot: WorkspacePathSnapshot;
     let child: SandboxedProcess;
     try {
       prepared = await prepareCommandExecution(this.options, request.command);
+      beforeSnapshot = await createWorkspacePathSnapshot(
+        prepared.workspaceRoot,
+        prepared.workspaceRoot,
+      );
+      if (this.shuttingDown) {
+        throw new Error("Workspace Process Manager is shutting down");
+      }
+      if (request.signal?.aborted) {
+        throw new Error("workspace process start was aborted");
+      }
       child = await this.options.sandbox.launch(prepared.launch);
     } finally {
       const remaining = (this.startingByThread.get(request.threadId) ?? 1) - 1;
@@ -213,6 +235,8 @@ export class WorkspaceProcessManager {
       cwdPathSha256: prepared.receipt.cwdPathSha256,
       timeoutMs: prepared.timeoutMs,
       outputLimitChars: MAX_COMMAND_OUTPUT_CHARS,
+      workspaceBeforeSha256: beforeSnapshot.sha256,
+      workspaceBeforeTruncated: beforeSnapshot.truncated,
       startedAt,
       stdoutChars: 0,
       stderrChars: 0,
@@ -220,7 +244,13 @@ export class WorkspaceProcessManager {
       stderrTruncated: false,
       nextCursor: 0,
     });
-    const entry = this.createEntry(session, prepared, child, request.signal);
+    const entry = this.createEntry(
+      session,
+      prepared,
+      beforeSnapshot,
+      child,
+      request.signal,
+    );
     this.entries.set(processId, entry);
     try {
       await this.appendSession(session, WORKSPACE_PROCESS_STARTED_EVENT);
@@ -335,6 +365,41 @@ export class WorkspaceProcessManager {
     };
   }
 
+  async delta(
+    threadId: string,
+    processId: string,
+  ): Promise<WorkspaceProcessDelta> {
+    this.assertReady();
+    const session = await this.requireSession(threadId, processId);
+    const entry = this.entries.get(processId);
+    if (
+      !entry ||
+      entry.session.threadId !== threadId ||
+      !entry.workspaceDelta
+    ) {
+      return {
+        kind: "napier.workspace-process-delta",
+        schemaVersion: 1,
+        processId,
+        ...(session.workspaceDeltaStatus
+          ? { status: session.workspaceDeltaStatus }
+          : {}),
+        available: false,
+        entriesTruncated: false,
+        entries: [],
+      };
+    }
+    return {
+      kind: "napier.workspace-process-delta",
+      schemaVersion: 1,
+      processId,
+      status: entry.workspaceDelta.status,
+      available: true,
+      entriesTruncated: entry.workspaceDelta.entriesTruncated,
+      entries: structuredClone(entry.workspaceDelta.entries),
+    };
+  }
+
   async cancel(
     threadId: string,
     processId: string,
@@ -388,12 +453,14 @@ export class WorkspaceProcessManager {
   private createEntry(
     session: WorkspaceProcessSession,
     prepared: PreparedCommandExecution,
+    beforeSnapshot: WorkspacePathSnapshot,
     child: SandboxedProcess,
     parentSignal?: AbortSignal,
   ): ActiveWorkspaceProcess {
     const entry: ActiveWorkspaceProcess = {
       session,
       prepared,
+      beforeSnapshot,
       child,
       chunks: [],
       nextCursor: 0,
@@ -515,6 +582,15 @@ export class WorkspaceProcessManager {
       status = "failed";
       interruptionReason = "The bound Node runtime changed during execution.";
     }
+    const afterSnapshot = await createWorkspacePathSnapshot(
+      entry.prepared.workspaceRoot,
+      entry.prepared.workspaceRoot,
+    ).catch(() => unavailableWorkspacePathSnapshot(entry.beforeSnapshot.kind));
+    const workspaceDelta = diffWorkspaceSnapshots(
+      entry.beforeSnapshot,
+      afterSnapshot,
+    );
+    entry.workspaceDelta = workspaceDelta;
     const settledAt = nowIso();
     const stdoutSha256 = entry.stdout.hash.digest("hex");
     const stderrSha256 = entry.stderr.hash.digest("hex");
@@ -535,6 +611,11 @@ export class WorkspaceProcessManager {
       stdoutTruncated: entry.stdout.truncated,
       stderrTruncated: entry.stderr.truncated,
       nextCursor: entry.nextCursor,
+      workspaceAfterSha256: afterSnapshot.sha256,
+      workspaceAfterTruncated: afterSnapshot.truncated,
+      workspaceDeltaStatus: workspaceDelta.status,
+      workspaceChangedFileCount: workspaceDelta.changedFileCount,
+      workspaceChangedPathSetSha256: workspaceDelta.changedPathSetSha256,
       ...(interruptionReason ? { interruptionReason } : {}),
     });
     entry.session = session;
@@ -568,6 +649,7 @@ export class WorkspaceProcessManager {
   private failEntryInMemory(entry: ActiveWorkspaceProcess): void {
     clearTimeout(entry.timeout);
     entry.parentSignal?.removeEventListener("abort", entry.parentAbort!);
+    delete entry.workspaceDelta;
     entry.session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
       status: "interrupted",
@@ -619,6 +701,7 @@ export class WorkspaceProcessManager {
     return workspaceProcessSessionWithRuntimeState(entry.session, {
       nextCursor: entry.nextCursor,
       outputAvailable: true,
+      workspaceDeltaAvailable: Boolean(entry.workspaceDelta),
     });
   }
 
@@ -685,13 +768,19 @@ function stableSessionInput(
   session: WorkspaceProcessSession,
 ): Omit<
   WorkspaceProcessSession,
-  "kind" | "schemaVersion" | "status" | "outputAvailable" | "contentSha256"
+  | "kind"
+  | "schemaVersion"
+  | "status"
+  | "outputAvailable"
+  | "workspaceDeltaAvailable"
+  | "contentSha256"
 > {
   const {
     kind: _kind,
     schemaVersion: _schemaVersion,
     status: _status,
     outputAvailable: _outputAvailable,
+    workspaceDeltaAvailable: _workspaceDeltaAvailable,
     contentSha256: _contentSha256,
     ...input
   } = session;

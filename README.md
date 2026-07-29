@@ -1142,13 +1142,25 @@ Processes panel can read that bounded output while the Runtime remains alive.
 Repeated Workbench polling uses an incremental in-memory projection rather than
 scanning the complete Thread.
 
+Each new session also captures a deterministic workspace snapshot before
+launch and another after settlement. Complete snapshots classify the observed
+execution window as `unchanged` or `changed`; a snapshot that exceeds 2,000
+files or 16 MiB, or cannot be completed, is `indeterminate`. This comparison
+does not claim the read-only session wrote a changed file: another local
+process may have changed the workspace concurrently.
+
 Output text and argv never enter the Ledger, Trace, Replay, or exported
 fixtures. Durable `workspace.process.started`, `.settled`, and `.interrupted`
 events bind the Napier Process ID, owning Thread and Run, status, executable,
 command/environment/limit hashes, output hashes/counts, cursor, and truncation
-state. After restart, an unclosed session becomes `interrupted` with unknown
-outcome and no output text; Napier does not silently rerun it or claim the old
-host process was reattached.
+state. They also bind pre/post workspace digests, comparison status,
+changed-file count, and a changed-path-set digest without storing paths.
+Relative paths and before/after file metadata are bounded to 256 entries and
+available only from the current local Runtime through the owning Thread's
+Processes panel. After restart, an unclosed session becomes `interrupted` with
+unknown outcome and no output or path details; Napier does not silently rerun
+it or claim the old host process was reattached. Existing schema v1 Process
+receipts remain readable, while new snapshot-aware sessions use schema v2.
 
 Run the complete Agent-to-Sandbox smoke from a non-sandboxed Terminal:
 

@@ -25,13 +25,17 @@ describe("Workspace Process event view", () => {
         commandSha256: "a".repeat(64),
         stdoutSha256: "b".repeat(64),
         stderrSha256: "c".repeat(64),
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 2,
+        workspaceChangedPathSetSha256: "d".repeat(64),
         rawOutput: "TOP_SECRET_OUTPUT",
         rawArgs: ["TOP_SECRET_ARGUMENT"],
+        rawPaths: ["TOP_SECRET_PATH"],
       },
     };
     const summary = workspaceProcessEventTraceSummary(event);
     expect(summary).toBe(
-      `process / settled / id abcdef1234 / status succeeded / runtime node / args 2 / stdout-chars 12 / stderr-chars 0 / cursor 1 / command ${"a".repeat(12)} / stdout ${"b".repeat(12)} / stderr ${"c".repeat(12)}`,
+      `process / settled / id abcdef1234 / status succeeded / runtime node / args 2 / stdout-chars 12 / stderr-chars 0 / cursor 1 / command ${"a".repeat(12)} / stdout ${"b".repeat(12)} / stderr ${"c".repeat(12)} / workspace changed / changed-files 2 / changed-paths ${"d".repeat(12)}`,
     );
     expect(summary).not.toContain("TOP_SECRET");
   });

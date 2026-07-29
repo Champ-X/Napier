@@ -1,4 +1,5 @@
 import type {
+  WorkspaceProcessDelta,
   WorkspaceProcessOutput,
   WorkspaceProcessSession,
 } from "@napier/contracts";
@@ -33,5 +34,14 @@ export function cancelWorkspaceProcess(
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/processes/${encodeURIComponent(processId)}/cancel`,
     { method: "POST" },
+  );
+}
+
+export function getWorkspaceProcessDelta(
+  threadId: string,
+  processId: string,
+): Promise<WorkspaceProcessDelta> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/processes/${encodeURIComponent(processId)}/delta`,
   );
 }

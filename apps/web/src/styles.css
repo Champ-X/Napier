@@ -1508,7 +1508,8 @@ button:disabled {
 .process-card dt,
 .process-card dd,
 .process-actions button,
-.process-output {
+.process-output,
+.process-delta {
   font-family: var(--mono);
 }
 
@@ -1581,6 +1582,15 @@ button:disabled {
   color: var(--ink-soft);
 }
 
+.process-delta-summary.is-unchanged dd {
+  color: #315b48;
+}
+
+.process-delta-summary.is-changed dd,
+.process-delta-summary.is-indeterminate dd {
+  color: #813d30;
+}
+
 .process-interruption {
   padding: 7px 8px;
   margin: 9px 0 0;
@@ -1593,6 +1603,7 @@ button:disabled {
 
 .process-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   justify-content: flex-end;
   margin-top: 10px;
@@ -1656,6 +1667,80 @@ button:disabled {
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.process-delta {
+  padding: 9px;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  background: rgb(255 255 255 / 42%);
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid #456b5b;
+}
+
+.process-delta.is-changed,
+.process-delta.is-indeterminate,
+.process-delta.is-unavailable {
+  border-left-color: var(--vermilion);
+}
+
+.process-delta > strong {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 6px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.process-delta p {
+  margin: 0;
+  font-size: 7px;
+  line-height: 1.55;
+}
+
+.process-delta p + ol,
+.process-delta ol + p {
+  margin-top: 8px;
+}
+
+.process-delta ol {
+  display: grid;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.process-delta li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 7px;
+  padding: 6px;
+  background: rgb(238 231 217 / 55%);
+  border: 1px solid rgb(126 113 87 / 18%);
+}
+
+.process-delta li > span {
+  font-size: 6px;
+  color: var(--vermilion);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.process-delta li > code {
+  overflow: hidden;
+  font-size: 7px;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.process-delta li > small {
+  grid-column: 2;
+  font-size: 6px;
+  line-height: 1.45;
+  color: var(--ink-faint);
 }
 
 .live-index,

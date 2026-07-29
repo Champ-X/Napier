@@ -1,4 +1,4 @@
-import { readdir, readFile, realpath, stat } from "node:fs/promises";
+import { readFile, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
 import type { AgentTool } from "@earendil-works/pi-agent-core";
@@ -7,14 +7,12 @@ import { Type } from "typebox";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
 import { runSandboxedProcess } from "./sandboxed-process.js";
+import { createWorkspacePathSnapshot as createPathSnapshot } from "./workspace-snapshot.js";
 
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 120_000;
 const MAX_OUTPUT_CHARS = 32_000;
-const MAX_SCOPE_SNAPSHOT_FILES = 2_000;
-const MAX_SCOPE_SNAPSHOT_BYTES = 16 * 1024 * 1024;
-const SNAPSHOT_EXCLUDED_SEGMENTS = new Set([".git", ".napier", "node_modules"]);
 const VERIFICATION_CLIS = {
   typecheck: "node_modules/typescript/bin/tsc",
   test: "node_modules/vitest/vitest.mjs",
@@ -111,14 +109,6 @@ export interface VerificationRunnerOptions {
   workspaceRoot: string;
   sandbox: OsSandboxAdapter;
   nodeExecutable?: string;
-}
-
-interface PathSnapshotReceipt {
-  kind: "file" | "directory";
-  sha256: string;
-  fileCount: number;
-  bytes: number;
-  truncated: boolean;
 }
 
 export class VerificationRunner {
@@ -369,114 +359,6 @@ function verificationArgs(
     ];
   }
   return [cli, "--check", target ?? "."];
-}
-
-async function createPathSnapshot(
-  workspaceRoot: string,
-  target: string,
-): Promise<PathSnapshotReceipt> {
-  const info = await stat(target);
-  if (info.isFile()) {
-    return createFileSnapshot(workspaceRoot, target, info.size);
-  }
-  if (info.isDirectory()) {
-    return createDirectorySnapshot(workspaceRoot, target);
-  }
-  throw new Error("verification scope must be a file or directory");
-}
-
-async function createFileSnapshot(
-  workspaceRoot: string,
-  target: string,
-  sizeBytes: number,
-): Promise<PathSnapshotReceipt> {
-  const relative = path.relative(workspaceRoot, target) || ".";
-  if (sizeBytes > MAX_SCOPE_SNAPSHOT_BYTES) {
-    return {
-      kind: "file",
-      sha256: sha256(
-        canonicalJson({
-          kind: "file",
-          path: relative,
-          sizeBytes,
-          truncated: true,
-        }),
-      ),
-      fileCount: 1,
-      bytes: 0,
-      truncated: true,
-    };
-  }
-  const buffer = await readFile(target);
-  return {
-    kind: "file",
-    sha256: sha256(buffer),
-    fileCount: 1,
-    bytes: buffer.byteLength,
-    truncated: false,
-  };
-}
-
-async function createDirectorySnapshot(
-  workspaceRoot: string,
-  directory: string,
-): Promise<PathSnapshotReceipt> {
-  const files: Array<{
-    path: string;
-    sha256?: string;
-    sizeBytes: number;
-    truncated?: boolean;
-  }> = [];
-  let bytes = 0;
-  let truncated = false;
-
-  const visit = async (current: string): Promise<void> => {
-    if (truncated) return;
-    const entries = await readdir(current, { withFileTypes: true });
-    entries.sort((left, right) => left.name.localeCompare(right.name));
-    for (const entry of entries) {
-      if (truncated) return;
-      if (
-        entry.isSymbolicLink() ||
-        SNAPSHOT_EXCLUDED_SEGMENTS.has(entry.name)
-      ) {
-        continue;
-      }
-      const absolute = path.join(current, entry.name);
-      if (entry.isDirectory()) {
-        await visit(absolute);
-        continue;
-      }
-      if (!entry.isFile()) continue;
-      const info = await stat(absolute);
-      if (!info.isFile()) continue;
-      const relative = path.relative(workspaceRoot, absolute) || ".";
-      if (
-        files.length >= MAX_SCOPE_SNAPSHOT_FILES ||
-        bytes + info.size > MAX_SCOPE_SNAPSHOT_BYTES
-      ) {
-        truncated = true;
-        files.push({ path: relative, sizeBytes: info.size, truncated: true });
-        return;
-      }
-      const buffer = await readFile(absolute);
-      bytes += buffer.byteLength;
-      files.push({
-        path: relative,
-        sha256: sha256(buffer),
-        sizeBytes: buffer.byteLength,
-      });
-    }
-  };
-
-  await visit(directory);
-  return {
-    kind: "directory",
-    sha256: sha256(canonicalJson(files)),
-    fileCount: files.length,
-    bytes,
-    truncated,
-  };
 }
 
 function formatVerificationResult(result: VerificationResult): string {

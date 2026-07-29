@@ -15,6 +15,13 @@ All notable changes to Napier are recorded here.
   and available to the live Agent and a new lazy Processes Workbench; Ledger,
   Trace, Replay, and exports retain metadata and hashes only. A real macOS
   Agent-to-Sandbox smoke is available through `npm run test:live-process`.
+  Snapshot-aware schema v2 sessions now compare the workspace before launch
+  and after settlement, classify the execution window as unchanged, changed,
+  or indeterminate, and expose at most 256 relative-path entries in the current
+  local Runtime. Durable evidence retains only snapshot and path-set digests
+  plus counts; paths disappear after restart, schema v1 sessions remain
+  readable, and concurrent changes are not attributed to the read-only
+  process.
 - Added `run_command`, a foreground explicit-argv Node Agent tool
   that launches one absolute runtime directly through the existing macOS or
   Linux OS sandbox with read-only workspace and denied network capabilities.

@@ -1,6 +1,7 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   JsonValue,
+  WorkspaceProcessDeltaStatus,
   WorkspaceProcessOutputChunk,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
@@ -71,6 +72,8 @@ export interface WorkspaceProcessToolDetails {
   status: WorkspaceProcessStatus;
   nextCursor: number;
   outputAvailable: boolean;
+  workspaceDeltaStatus?: WorkspaceProcessDeltaStatus;
+  workspaceChangedFileCount?: number;
   chunkCount: number;
   resultSha256: string;
 }
@@ -190,6 +193,12 @@ function toolResult(
     status: session.status,
     nextCursor: chunks.at(-1)?.cursor ?? session.nextCursor,
     outputAvailable: session.outputAvailable,
+    ...(session.workspaceDeltaStatus
+      ? { workspaceDeltaStatus: session.workspaceDeltaStatus }
+      : {}),
+    ...(session.workspaceChangedFileCount !== undefined
+      ? { workspaceChangedFileCount: session.workspaceChangedFileCount }
+      : {}),
     chunkCount: chunks.length,
     resultSha256: sha256(
       canonicalJson({
@@ -200,6 +209,8 @@ function toolResult(
         chunkCount: chunks.length,
         chunkSetSha256,
         sessionSha256: session.contentSha256,
+        workspaceDeltaStatus: session.workspaceDeltaStatus ?? null,
+        workspaceChangedFileCount: session.workspaceChangedFileCount ?? null,
       }),
     ),
   };
@@ -207,6 +218,12 @@ function toolResult(
     `Process ${session.id}: ${session.status}`,
     `Cursor: ${details.nextCursor}`,
     `Output available: ${String(session.outputAvailable)}`,
+    `Workspace delta: ${session.workspaceDeltaStatus ?? "pending"}`,
+    `Workspace changed files: ${
+      session.workspaceDeltaStatus === "indeterminate"
+        ? "unknown"
+        : (session.workspaceChangedFileCount ?? "unknown")
+    }`,
     `Session SHA-256: ${session.contentSha256}`,
   ];
   if (chunks.length > 0) {

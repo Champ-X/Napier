@@ -69,6 +69,7 @@ export function formatWorkspaceToolGuidance(
     lines.push(
       "Use workspace_process to start, poll, or cancel a bounded background Node session. Poll with the returned cursor and cancel sessions that are no longer needed.",
       "Process Sessions are read-only and offline, but starting or cancelling one is a lifecycle side effect. Never claim completion until polling returns a terminal status.",
+      "When a terminal Process Session reports workspace drift or an indeterminate comparison, surface that result without claiming the Process Session caused an external concurrent change.",
     );
   }
   lines.push("</workspace_tool_protocol>");

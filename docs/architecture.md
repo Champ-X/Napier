@@ -1708,6 +1708,7 @@ Agent selects start + node + literal argv
   -> reserve one of four per-Thread and eight per-Runtime active slots
      before async preparation
   -> reuse command cwd, executable, environment, and capability preparation
+  -> capture a bounded deterministic workspace snapshot
   -> launch through macOS sandbox-exec or Linux Bubblewrap
   -> append workspace.process.started with metadata and hashes only
   -> return a Napier process ID, never a host PID
@@ -1715,7 +1716,9 @@ Agent selects start + node + literal argv
   -> Agent or Workbench polls chunks after a monotonic cursor
   -> cancel on Agent/operator request, parent abort, timeout, or output cap
   -> verify the runtime executable remained stable
-  -> append workspace.process.settled with status, counts, and output hashes
+  -> capture the post-settlement workspace snapshot
+  -> classify the window as unchanged, changed, or indeterminate
+  -> append workspace.process.settled with status, counts, and hashes
 ```
 
 `WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
@@ -1724,14 +1727,25 @@ the Manager reconstructs its process projection once during initialization and
 records any unclosed session as `interrupted` with unknown outcome. While the
 Runtime is alive, an incremental in-memory projection serves frequent
 Workbench polling without rescanning a long Thread. It is a cache of Ledger
-state plus active local handles, not a second durable source.
+state plus active local handles, not a second durable source. Snapshot and diff
+logic is shared with workspace verification, excludes `.git`, `.napier`,
+`node_modules`, and symlinks, and fails closed as `indeterminate` when either
+side exceeds 2,000 files or 16 MiB or the post-snapshot is unavailable.
 
 Output text is intentionally ephemeral. The live Agent tool result and
 `GET .../processes/{processId}/output?after=<cursor>` can return bounded chunks,
 but model responses, tool events, Process lifecycle events, Trace summaries,
 Replay, and exports retain only hashes, counts, cursors, status, and limits.
-The lazy Processes panel exposes output availability, status, limits,
-settlement evidence, and cancellation under the owning Thread.
+The similarly Thread-scoped `GET .../processes/{processId}/delta` returns at
+most 256 relative-path entries with before/after file metadata from the current
+Runtime. The Ledger retains only pre/post snapshot digests, truncation state,
+comparison status, changed-file count, and a changed-path-set digest. The lazy
+Processes panel exposes output availability, status, limits, settlement
+evidence, cancellation, and workspace-window drift under the owning Thread.
+It explicitly does not attribute concurrent external changes to the read-only
+session. Path details disappear after Runtime restart while the summary
+evidence remains. Schema v1 sessions continue to project as delta-unavailable;
+new sessions use schema v2.
 
 Graceful Server shutdown stops active process groups before closing the Store.
 An abrupt host or Runtime loss cannot prove that a macOS sandbox wrapper died,

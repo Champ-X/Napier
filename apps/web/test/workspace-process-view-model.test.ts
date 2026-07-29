@@ -25,11 +25,57 @@ describe("Workspace Process view model", () => {
       limitLabel: "30s · 32,000 chars/stream",
       outputLabel: "12 stdout · 3 stderr · cursor 2",
       outputAvailable: true,
+      workspaceDeltaState: "unchanged",
+      workspaceDeltaLabel: "No workspace drift observed",
+      workspaceDeltaAvailable: true,
+      workspaceDeltaHashes: "222222222222 / 333333333333 / 444444444444",
       commandHash: "aaaaaaaaaaaa",
       resultHashes: "bbbbbbbbbbbb / cccccccccccc",
     });
     expect(JSON.stringify(workspaceProcessCardView(session))).not.toContain(
       "SECRET",
+    );
+  });
+
+  it("distinguishes observed drift, indeterminate comparison, and unavailable legacy evidence", () => {
+    expect(
+      workspaceProcessCardView({
+        ...fixture(),
+        workspaceDeltaStatus: "changed",
+        workspaceChangedFileCount: 2,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceDeltaState: "changed",
+        workspaceDeltaLabel: "2 files drifted during window",
+      }),
+    );
+    expect(
+      workspaceProcessCardView({
+        ...fixture(),
+        workspaceDeltaStatus: "indeterminate",
+        workspaceDeltaAvailable: true,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceDeltaState: "indeterminate",
+        workspaceDeltaLabel: "Workspace comparison indeterminate",
+      }),
+    );
+    const {
+      workspaceDeltaStatus: _workspaceDeltaStatus,
+      ...withoutDeltaStatus
+    } = fixture();
+    expect(
+      workspaceProcessCardView({
+        ...withoutDeltaStatus,
+        workspaceDeltaAvailable: false,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceDeltaState: "unavailable",
+        workspaceDeltaLabel: "Workspace comparison unavailable",
+      }),
     );
   });
 
@@ -67,7 +113,7 @@ describe("Workspace Process view model", () => {
 function fixture(): WorkspaceProcessSession {
   return {
     kind: "napier.workspace-process-session",
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: "process_1234567890abcdef1234",
     threadId: "thread_1234567890abcdef1234",
     runId: "run_1234567890abcdef1234",
@@ -84,6 +130,14 @@ function fixture(): WorkspaceProcessSession {
     cwdPathSha256: "0".repeat(64),
     timeoutMs: 30_000,
     outputLimitChars: 32_000,
+    workspaceBeforeSha256: "2".repeat(64),
+    workspaceBeforeTruncated: false,
+    workspaceAfterSha256: "3".repeat(64),
+    workspaceAfterTruncated: false,
+    workspaceDeltaStatus: "unchanged",
+    workspaceChangedFileCount: 0,
+    workspaceChangedPathSetSha256: "4".repeat(64),
+    workspaceDeltaAvailable: true,
     startedAt: "2026-07-29T00:00:00.000Z",
     settledAt: "2026-07-29T00:00:01.250Z",
     durationMs: 1_250,

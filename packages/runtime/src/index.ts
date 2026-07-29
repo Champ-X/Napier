@@ -69,4 +69,5 @@ export * from "./verification.js";
 export * from "./workspace-process-events.js";
 export * from "./workspace-process-tool.js";
 export * from "./workspace-processes.js";
+export * from "./workspace-snapshot.js";
 export * from "./workflow-blueprints.js";

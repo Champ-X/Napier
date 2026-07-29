@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 58,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BvVO7KHV.js",
+    "path": "apps/web/dist/assets/index-CBFDFQgI.js",
     "sizeBytes": 131461,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "7169b9250f5921693d6be4abe42d88ef977ff074d073b7c6d8e634db8b7e4e06"
+    "sha256": "5f08f854362af5ebb76fc6c5ab941cfb94a0334b684938f6b0e177b7e5d6d538"
   },
-  "distContentSha256": "7169b9250f5921693d6be4abe42d88ef977ff074d073b7c6d8e634db8b7e4e06",
+  "distContentSha256": "5f08f854362af5ebb76fc6c5ab941cfb94a0334b684938f6b0e177b7e5d6d538",
   "errors": []
 }

@@ -2,12 +2,14 @@ import { RefreshCw, Square, Terminal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
+  WorkspaceProcessDelta,
   WorkspaceProcessOutputChunk,
   WorkspaceProcessSession,
 } from "@napier/contracts";
 
 import {
   cancelWorkspaceProcess,
+  getWorkspaceProcessDelta,
   getWorkspaceProcessOutput,
   listWorkspaceProcesses,
 } from "./workspace-process-api";
@@ -22,7 +24,10 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
   const [selectedId, setSelectedId] = useState<string>();
   const [chunks, setChunks] = useState<WorkspaceProcessOutputChunk[]>([]);
   const [cursor, setCursor] = useState(0);
+  const [delta, setDelta] = useState<WorkspaceProcessDelta>();
+  const [deltaId, setDeltaId] = useState<string>();
   const [busyId, setBusyId] = useState<string>();
+  const [deltaBusyId, setDeltaBusyId] = useState<string>();
   const [error, setError] = useState<string>();
 
   const loadSessions = useCallback(async () => {
@@ -55,6 +60,8 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
     setSelectedId(undefined);
     setChunks([]);
     setCursor(0);
+    setDelta(undefined);
+    setDeltaId(undefined);
     void loadSessions();
   }, [loadSessions]);
 
@@ -105,6 +112,27 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
     }
   };
 
+  const toggleDelta = async (session: WorkspaceProcessSession) => {
+    if (deltaId === session.id) {
+      setDeltaId(undefined);
+      setDelta(undefined);
+      return;
+    }
+    setDeltaId(session.id);
+    setDeltaBusyId(session.id);
+    try {
+      const next = await getWorkspaceProcessDelta(threadId, session.id);
+      setDelta(next);
+      setError(undefined);
+    } catch {
+      setDeltaId(undefined);
+      setDelta(undefined);
+      setError(copy.error);
+    } finally {
+      setDeltaBusyId(undefined);
+    }
+  };
+
   return (
     <section
       className="panel-section process-panel"
@@ -140,6 +168,7 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
               (candidate) => candidate.id === card.id,
             )!;
             const expanded = selectedId === card.id;
+            const deltaExpanded = deltaId === card.id;
             return (
               <article className="process-card" key={card.id}>
                 <header>
@@ -168,6 +197,12 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                     <dt>{copy.output}</dt>
                     <dd>{card.outputLabel}</dd>
                   </div>
+                  <div
+                    className={`process-delta-summary is-${card.workspaceDeltaState}`}
+                  >
+                    <dt>{copy.workspaceDelta}</dt>
+                    <dd>{card.workspaceDeltaLabel}</dd>
+                  </div>
                   <div>
                     <dt>{copy.commandHash}</dt>
                     <dd>{card.commandHash}</dd>
@@ -192,6 +227,12 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                       <dd>{card.resultHashes}</dd>
                     </div>
                   ) : null}
+                  {card.workspaceDeltaHashes ? (
+                    <div>
+                      <dt>{copy.deltaHashes}</dt>
+                      <dd>{card.workspaceDeltaHashes}</dd>
+                    </div>
+                  ) : null}
                 </dl>
                 {card.interruptionReason ? (
                   <p className="process-interruption">
@@ -207,6 +248,17 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                   >
                     {expanded ? copy.hideOutput : copy.showOutput}
                   </button>
+                  {!card.running ? (
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={deltaBusyId === card.id}
+                      onClick={() => void toggleDelta(session)}
+                      aria-expanded={deltaExpanded}
+                    >
+                      {deltaExpanded ? copy.hideDelta : copy.showDelta}
+                    </button>
+                  ) : null}
                   {card.running ? (
                     <button
                       type="button"
@@ -238,6 +290,36 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                     )}
                   </div>
                 ) : null}
+                {deltaExpanded && delta?.processId === card.id ? (
+                  <div
+                    className={`process-delta is-${delta.status ?? "unavailable"}`}
+                  >
+                    <strong>{copy.workspaceDelta}</strong>
+                    {!delta.available ? (
+                      <p>{copy.deltaUnavailable}</p>
+                    ) : delta.status === "unchanged" ? (
+                      <p>{copy.noDelta}</p>
+                    ) : delta.status === "indeterminate" ? (
+                      <p>{copy.indeterminateDelta}</p>
+                    ) : (
+                      <>
+                        <p>{copy.deltaAttribution}</p>
+                        <ol>
+                          {delta.entries.map((entry) => (
+                            <li key={`${entry.kind}:${entry.path}`}>
+                              <span>{entry.kind}</span>
+                              <code>{entry.path}</code>
+                              <small>{formatDeltaMetadata(entry, copy)}</small>
+                            </li>
+                          ))}
+                        </ol>
+                        {delta.entriesTruncated ? (
+                          <p>{copy.deltaTruncated}</p>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                ) : null}
               </article>
             );
           })}
@@ -245,6 +327,29 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
       )}
     </section>
   );
+}
+
+function formatDeltaMetadata(
+  entry: WorkspaceProcessDelta["entries"][number],
+  labels: Pick<
+    typeof copy,
+    "beforeHash" | "afterHash" | "beforeSize" | "afterSize"
+  >,
+): string {
+  return [
+    ...(entry.beforeSha256
+      ? [`${labels.beforeHash} ${entry.beforeSha256.slice(0, 12)}`]
+      : []),
+    ...(entry.afterSha256
+      ? [`${labels.afterHash} ${entry.afterSha256.slice(0, 12)}`]
+      : []),
+    ...(entry.beforeSizeBytes !== undefined
+      ? [`${labels.beforeSize} ${entry.beforeSizeBytes.toLocaleString()}`]
+      : []),
+    ...(entry.afterSizeBytes !== undefined
+      ? [`${labels.afterSize} ${entry.afterSizeBytes.toLocaleString()}`]
+      : []),
+  ].join(" · ");
 }
 
 function formatDate(value: string): string {
