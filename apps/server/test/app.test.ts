@@ -4835,11 +4835,101 @@ describe("Napier HTTP goal flow", () => {
       }),
     ]);
     expect(JSON.stringify(previewEvents)).not.toContain(reportContents);
+    const currentDriftCheckResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/drift-check`,
+      { method: "POST" },
+    );
+    expect(currentDriftCheckResponse.status).toBe(200);
+    expect(currentDriftCheckResponse.headers.get("Cache-Control")).toBe(
+      "no-store",
+    );
+    expect(
+      currentDriftCheckResponse.headers.get(
+        "X-Napier-Plan-Artifact-Drift-Result",
+      ),
+    ).toBe("current");
+    expect(
+      currentDriftCheckResponse.headers.get(
+        "X-Napier-Plan-Artifact-Expected-SHA256",
+      ),
+    ).toBe(expectedReportSha256);
+    expect(
+      currentDriftCheckResponse.headers.get(
+        "X-Napier-Plan-Artifact-Observed-SHA256",
+      ),
+    ).toBe(expectedReportSha256);
+    const currentDriftText = await currentDriftCheckResponse.text();
+    expect(
+      currentDriftCheckResponse.headers.get("X-Napier-Content-SHA256"),
+    ).toBe(createHash("sha256").update(currentDriftText).digest("hex"));
+    expect(JSON.parse(currentDriftText)).toEqual(
+      expect.objectContaining({
+        kind: "napier.plan-artifact-drift-check",
+        artifactId: "report",
+        result: "current",
+        expectedSha256: expectedReportSha256,
+        observedSha256: expectedReportSha256,
+        sizeBytes: Buffer.byteLength(reportContents),
+      }),
+    );
     await writeFile(
       path.join(services.store.workspaceRoot, "report.md"),
       "# Drifted report\n\nThis no longer matches the verified digest.\n",
       "utf8",
     );
+    const driftedReportContents =
+      "# Drifted report\n\nThis no longer matches the verified digest.\n";
+    const driftedReportSha256 = createHash("sha256")
+      .update(driftedReportContents)
+      .digest("hex");
+    const driftedCheckResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/drift-check`,
+      { method: "POST" },
+    );
+    expect(driftedCheckResponse.status).toBe(200);
+    expect(
+      driftedCheckResponse.headers.get("X-Napier-Plan-Artifact-Drift-Result"),
+    ).toBe("drifted");
+    expect(
+      driftedCheckResponse.headers.get(
+        "X-Napier-Plan-Artifact-Observed-SHA256",
+      ),
+    ).toBe(driftedReportSha256);
+    await expect(driftedCheckResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        result: "drifted",
+        expectedSha256: expectedReportSha256,
+        observedSha256: driftedReportSha256,
+        sizeBytes: Buffer.byteLength(driftedReportContents),
+      }),
+    );
+    const driftCheckEvents = (await services.store.listEvents(created.thread.id))
+      .filter(
+        (event) =>
+          event.type === "artifact.drift_checked" &&
+          event.payload["artifactId"] === "report",
+      );
+    expect(driftCheckEvents).toEqual([
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          result: "current",
+          expectedSha256: expectedReportSha256,
+          observedSha256: expectedReportSha256,
+          sizeBytes: Buffer.byteLength(reportContents),
+        }),
+      }),
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          result: "drifted",
+          expectedSha256: expectedReportSha256,
+          observedSha256: driftedReportSha256,
+          sizeBytes: Buffer.byteLength(driftedReportContents),
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(driftCheckEvents)).not.toContain("Drifted report");
     const driftedPreviewResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/preview`,
     );

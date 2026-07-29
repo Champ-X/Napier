@@ -9,6 +9,7 @@ import { canonicalJson, sha256 } from "../src/ed25519.js";
 import {
   createPlanTools,
   exportWorkspaceFileArtifact,
+  inspectWorkspaceArtifactDrift,
   previewWorkspaceTextArtifact,
 } from "../src/plan-tools.js";
 import { LocalStore } from "../src/store.js";
@@ -514,6 +515,64 @@ describe("plan tools", () => {
         updatedAt: "2026-07-27T00:00:00.000Z",
       }),
     ).rejects.toThrow("Verified artifact digest drifted");
+  });
+
+  it("checks verified workspace artifact drift without mutating state", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-plan-tools-"));
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(path.join(workspaceRoot, "artifacts"), { recursive: true });
+    const contents = "stable artifact\n";
+    const artifactPath = path.join(workspaceRoot, "artifacts", "report.txt");
+    await writeFile(artifactPath, contents, "utf8");
+    const sha256 = createHash("sha256").update(contents).digest("hex");
+    const artifact = {
+      id: "report",
+      path: "artifacts/report.txt",
+      kind: "file" as const,
+      description: "Verified report file.",
+      status: "verified" as const,
+      evidence: "The file was verified.",
+      sha256,
+      sizeBytes: Buffer.byteLength(contents),
+      createdAt: "2026-07-27T00:00:00.000Z",
+      updatedAt: "2026-07-27T00:00:00.000Z",
+    };
+
+    await expect(
+      inspectWorkspaceArtifactDrift(workspaceRoot, artifact),
+    ).resolves.toEqual({
+      result: "current",
+      expectedSha256: sha256,
+      observedSha256: sha256,
+      sizeBytes: Buffer.byteLength(contents),
+    });
+
+    const driftedContents = "drifted artifact\n";
+    await writeFile(artifactPath, driftedContents, "utf8");
+    await expect(
+      inspectWorkspaceArtifactDrift(workspaceRoot, artifact),
+    ).resolves.toEqual({
+      result: "drifted",
+      expectedSha256: sha256,
+      observedSha256: createHash("sha256").update(driftedContents).digest("hex"),
+      sizeBytes: Buffer.byteLength(driftedContents),
+    });
+
+    await rm(artifactPath);
+    await expect(
+      inspectWorkspaceArtifactDrift(workspaceRoot, artifact),
+    ).resolves.toEqual({
+      result: "missing",
+      expectedSha256: sha256,
+    });
+
+    await expect(
+      inspectWorkspaceArtifactDrift(workspaceRoot, {
+        ...artifact,
+        status: "produced",
+      }),
+    ).rejects.toThrow("Only verified artifacts can be drift-checked");
   });
 
   it("verifies directory artifacts with a stable manifest digest", async () => {

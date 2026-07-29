@@ -24,6 +24,21 @@ export interface PlanArtifactTextPreview {
   text: string;
 }
 
+export interface PlanArtifactDriftCheck {
+  kind: "napier.plan-artifact-drift-check";
+  schemaVersion: 1;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  pathSha256: string;
+  expectedSha256: string;
+  result: "current" | "drifted" | "missing";
+  observedSha256?: string;
+  sizeBytes?: number;
+}
+
 export async function downloadPlanArtifactFile(
   threadId: string,
   planId: string,
@@ -67,6 +82,17 @@ export function previewPlanArtifactText(
 ): Promise<PlanArtifactTextPreview> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
+  );
+}
+
+export function checkPlanArtifactDrift(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+): Promise<PlanArtifactDriftCheck> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/drift-check`,
+    { method: "POST" },
   );
 }
 

@@ -45,6 +45,7 @@ describe("artifact manifest view model", () => {
       canMarkMissing: true,
       canDownload: false,
       canPreview: false,
+      canCheckDrift: false,
       verifyMode: "verify",
       missingMode: "missing",
       hasActions: true,
@@ -59,6 +60,7 @@ describe("artifact manifest view model", () => {
       canMarkMissing: true,
       canDownload: false,
       canPreview: false,
+      canCheckDrift: false,
       verifyMode: "verify",
       missingMode: "missing",
       hasActions: true,
@@ -73,10 +75,22 @@ describe("artifact manifest view model", () => {
       canMarkMissing: true,
       canDownload: true,
       canPreview: true,
+      canCheckDrift: true,
       verifyMode: "recheck",
       missingMode: "drifted",
       hasActions: true,
     });
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({ status: "verified", kind: "directory" }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        canDownload: false,
+        canPreview: false,
+        canCheckDrift: true,
+      }),
+    );
     expect(
       projectArtifactManifestActions(
         artifactFixture({ status: "superseded", kind: "file" }),
@@ -87,6 +101,7 @@ describe("artifact manifest view model", () => {
       canMarkMissing: false,
       canDownload: false,
       canPreview: false,
+      canCheckDrift: false,
       verifyMode: "verify",
       missingMode: "missing",
       hasActions: false,

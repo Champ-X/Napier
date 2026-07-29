@@ -37,6 +37,13 @@ export interface WorkspaceTextArtifactPreview {
   lineCount: number;
 }
 
+export interface WorkspaceArtifactDriftInspection {
+  result: "current" | "drifted" | "missing";
+  expectedSha256: string;
+  observedSha256?: string;
+  sizeBytes?: number;
+}
+
 const planStepInputSchema = Type.Object({
   id: Type.String({ minLength: 1, maxLength: 64 }),
   title: Type.String({ minLength: 1, maxLength: 120 }),
@@ -529,6 +536,58 @@ export async function createWorkspaceArtifactDriftRequest(
     confirmedDrift: true,
     ...(input.sourceRunId ? { sourceRunId: input.sourceRunId } : {}),
     ...(input.evidence ? { evidence: input.evidence } : {}),
+  };
+}
+
+export async function inspectWorkspaceArtifactDrift(
+  workspaceRoot: string,
+  artifact: ExecutionPlan["artifacts"][number],
+): Promise<WorkspaceArtifactDriftInspection> {
+  if (artifact.status !== "verified") {
+    throw new Error("Only verified artifacts can be drift-checked");
+  }
+  if (!artifact.sha256) {
+    throw new Error("Verified artifact is missing its stored digest");
+  }
+  if (artifact.kind !== "file" && artifact.kind !== "directory") {
+    throw new Error("Only workspace files and directories can be drift-checked");
+  }
+  if (!isPathInsideWorkspace(artifact.path, workspaceRoot)) {
+    throw new Error("Artifact path escapes the configured workspace");
+  }
+  let observed: { target: string; info: Stats };
+  try {
+    observed = await inspectWorkspaceArtifactTarget(workspaceRoot, artifact);
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return {
+        result: "missing",
+        expectedSha256: artifact.sha256,
+      };
+    }
+    throw error;
+  }
+  if (artifact.kind === "directory") {
+    const digest = await hashWorkspaceDirectory(observed.target);
+    return {
+      result: digest.sha256 === artifact.sha256 ? "current" : "drifted",
+      expectedSha256: artifact.sha256,
+      observedSha256: digest.sha256,
+      sizeBytes: digest.sizeBytes,
+    };
+  }
+  if (observed.info.size > MAX_ARTIFACT_HASH_BYTES) {
+    throw new Error(
+      `Artifact exceeds the ${MAX_ARTIFACT_HASH_BYTES / 1024 / 1024} MB verification limit`,
+    );
+  }
+  const contents = await readFile(observed.target);
+  const observedSha256 = sha256(contents);
+  return {
+    result: observedSha256 === artifact.sha256 ? "current" : "drifted",
+    expectedSha256: artifact.sha256,
+    observedSha256,
+    sizeBytes: observed.info.size,
   };
 }
 

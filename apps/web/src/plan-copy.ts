@@ -56,6 +56,8 @@ export const planCopy = {
   size: "Size",
   lineCount: "Lines",
   source: "Source run",
+  expected: "Expected",
+  observed: "Observed",
   artifactActions: {
     produce: "Mark produced",
     producing: "Marking...",
@@ -69,10 +71,18 @@ export const planCopy = {
     downloading: "Downloading...",
     recheck: "Recheck bytes",
     rechecking: "Rechecking...",
+    checkDrift: "Check drift",
+    checkingDrift: "Checking drift...",
+    driftCheckTitle: "Drift check",
     markMissing: "Mark missing",
     markingMissing: "Marking...",
     markDrifted: "Mark drifted",
     markingDrifted: "Marking drift...",
+    driftResults: {
+      current: "Workspace bytes still match the verified digest.",
+      drifted: "Workspace bytes drifted. Mark drifted to block and replan.",
+      missing: "Workspace artifact is missing. Mark drifted to block and replan.",
+    },
     evidence: {
       produced: "Operator marked the artifact as produced from Workbench.",
       verified: "Workbench verified the artifact bytes from the workspace.",

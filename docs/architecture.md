@@ -3528,6 +3528,12 @@ checks, returns text only in the no-store response, and appends an
 status/kind, `pathSha256`, artifact SHA-256, byte count, line count, and
 `textSha256`. Plan archive verification accepts only that hash-only preview
 receipt shape, so raw preview text or paths in the event payload fail closed.
+Verified file and directory artifacts also expose a non-mutating drift check
+from the Workbench. The server observes the current workspace bytes, returns
+`current`, `drifted`, or `missing`, and appends `artifact.drift_checked` with
+Plan/artifact IDs, Plan revision, status/kind, `pathSha256`, expected SHA-256,
+optional observed SHA-256, optional byte count, and the result. This lets an
+operator inspect drift before choosing the state-changing Mark drifted action.
 Thread replay bundle and Run replay snapshot validation apply the same
 hash-only artifact receipt boundary, preventing recomputed portable replay
 hashes from smuggling preview text or raw artifact paths into exported evidence.

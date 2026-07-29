@@ -59,8 +59,10 @@ import {
   verifyExecutionPlanBlueprintRecordReplays,
 } from "./api";
 import {
+  checkPlanArtifactDrift,
   downloadPlanArtifactFile,
   previewPlanArtifactText,
+  type PlanArtifactDriftCheck,
   type PlanArtifactTextPreview,
 } from "./artifact-file-api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
@@ -275,6 +277,8 @@ export default function PlanPanel({
   const [artifactError, setArtifactError] = useState<string>();
   const [artifactPreview, setArtifactPreview] =
     useState<PlanArtifactTextPreview>();
+  const [artifactDriftCheck, setArtifactDriftCheck] =
+    useState<PlanArtifactDriftCheck>();
   const [archiveBusyAction, setArchiveBusyAction] = useState<
     "export" | "verify" | undefined
   >();
@@ -311,6 +315,7 @@ export default function PlanPanel({
     setArtifactBusyId(undefined);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDriftCheck(undefined);
     setArchiveReceipt(undefined);
     setArchiveError(undefined);
     setBlueprintReceipt(undefined);
@@ -454,6 +459,7 @@ export default function PlanPanel({
     setArtifactBusyId(`${artifact.id}:preview`);
     setArtifactError(undefined);
     setArtifactPreview(undefined);
+    setArtifactDriftCheck(undefined);
     try {
       const preview = await previewPlanArtifactText(
         threadId,
@@ -461,6 +467,29 @@ export default function PlanPanel({
         artifact.id,
       );
       setArtifactPreview(preview);
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(formatApiErrorMessage(error));
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
+  const checkArtifactDrift = async (
+    artifact: ArtifactManifestEntry,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:drift-check`);
+    setArtifactError(undefined);
+    setArtifactPreview(undefined);
+    setArtifactDriftCheck(undefined);
+    try {
+      const check = await checkPlanArtifactDrift(
+        threadId,
+        plan.id,
+        artifact.id,
+      );
+      setArtifactDriftCheck(check);
       await onDraftApplied();
     } catch (error) {
       setArtifactError(formatApiErrorMessage(error));
@@ -1813,6 +1842,18 @@ export default function PlanPanel({
                               : verifyLabel}
                           </button>
                         ) : null}
+                        {actions.canCheckDrift ? (
+                          <button
+                            type="button"
+                            aria-label={`${planCopy.artifactActions.checkDrift}: ${artifact.path}`}
+                            disabled={Boolean(artifactBusyId)}
+                            onClick={() => void checkArtifactDrift(artifact)}
+                          >
+                            {artifactBusyId === `${artifact.id}:drift-check`
+                              ? planCopy.artifactActions.checkingDrift
+                              : planCopy.artifactActions.checkDrift}
+                          </button>
+                        ) : null}
                         {actions.canMarkMissing ? (
                           <button
                             type="button"
@@ -1859,6 +1900,49 @@ export default function PlanPanel({
                           {planCopy.lineCount}: {artifactPreview.lineCount}
                         </small>
                         <pre>{artifactPreview.text}</pre>
+                      </div>
+                    ) : null}
+                    {artifactDriftCheck?.artifactId === artifact.id ? (
+                      <div
+                        className={`artifact-drift-check artifact-drift-check--${artifactDriftCheck.result}`}
+                        role="status"
+                      >
+                        <strong>
+                          {planCopy.artifactActions.driftCheckTitle}
+                        </strong>
+                        <span>
+                          {
+                            planCopy.artifactActions.driftResults[
+                              artifactDriftCheck.result
+                            ]
+                          }
+                        </span>
+                        <small>
+                          {planCopy.expected}:{" "}
+                          <code title={artifactDriftCheck.expectedSha256}>
+                            {artifactDriftCheck.expectedSha256.slice(0, 16)}
+                          </code>
+                          {artifactDriftCheck.observedSha256 ? (
+                            <>
+                              {" / "}
+                              {planCopy.observed}:{" "}
+                              <code
+                                title={artifactDriftCheck.observedSha256}
+                              >
+                                {artifactDriftCheck.observedSha256.slice(0, 16)}
+                              </code>
+                            </>
+                          ) : null}
+                          {artifactDriftCheck.sizeBytes !== undefined ? (
+                            <>
+                              {" / "}
+                              {planCopy.size}:{" "}
+                              {formatArtifactSizeBytes(
+                                artifactDriftCheck.sizeBytes,
+                              )}
+                            </>
+                          ) : null}
+                        </small>
                       </div>
                     ) : null}
                   </article>

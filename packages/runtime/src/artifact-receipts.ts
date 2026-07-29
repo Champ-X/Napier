@@ -2,6 +2,7 @@ import type { RunEvent } from "@napier/contracts";
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const ARTIFACT_RECEIPT_EVENTS = new Set([
+  "artifact.drift_checked",
   "artifact.exported",
   "artifact.previewed",
 ]);
@@ -23,6 +24,23 @@ const ARTIFACT_PREVIEWED_KEYS = [
   "textSha256",
 ];
 
+const ARTIFACT_DRIFT_CHECKED_BASE_KEYS = [
+  "planId",
+  "artifactId",
+  "planRevision",
+  "status",
+  "kind",
+  "pathSha256",
+  "expectedSha256",
+  "result",
+];
+
+const ARTIFACT_DRIFT_CHECKED_OBSERVED_KEYS = [
+  ...ARTIFACT_DRIFT_CHECKED_BASE_KEYS,
+  "observedSha256",
+  "sizeBytes",
+];
+
 export function isArtifactReceiptEvent(
   event: Pick<RunEvent, "type" | "category"> | Record<string, unknown>,
 ): boolean {
@@ -41,6 +59,10 @@ export function assertArtifactReceiptEventBoundary(
 ): void {
   if (!isArtifactReceiptEvent(event)) return;
   const payload = recordField(event["payload"], label);
+  if (event["type"] === "artifact.drift_checked") {
+    assertArtifactDriftCheckedPayload(payload, label);
+    return;
+  }
   const allowedKeys =
     event["type"] === "artifact.previewed"
       ? ARTIFACT_PREVIEWED_KEYS
@@ -61,6 +83,38 @@ export function assertArtifactReceiptEventBoundary(
   if (event["type"] === "artifact.previewed") {
     assertNonNegativeInteger(payload["lineCount"], label);
     assertSha256(payload["textSha256"], label);
+  }
+}
+
+function assertArtifactDriftCheckedPayload(
+  payload: Record<string, unknown>,
+  label: string,
+): void {
+  const result = payload["result"];
+  if (result !== "current" && result !== "drifted" && result !== "missing") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  assertExactKeys(
+    payload,
+    result === "missing"
+      ? ARTIFACT_DRIFT_CHECKED_BASE_KEYS
+      : ARTIFACT_DRIFT_CHECKED_OBSERVED_KEYS,
+    label,
+  );
+  assertNonEmptyString(payload["planId"], label);
+  assertNonEmptyString(payload["artifactId"], label);
+  assertPositiveInteger(payload["planRevision"], label);
+  if (payload["status"] !== "verified") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (payload["kind"] !== "file" && payload["kind"] !== "directory") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  assertSha256(payload["pathSha256"], label);
+  assertSha256(payload["expectedSha256"], label);
+  if (result !== "missing") {
+    assertSha256(payload["observedSha256"], label);
+    assertNonNegativeInteger(payload["sizeBytes"], label);
   }
 }
 

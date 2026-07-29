@@ -958,7 +958,7 @@ describe("LocalStore", () => {
     ).rejects.toThrow("active Thread Run");
   });
 
-  it("rejects raw artifact preview receipts before mutating the Ledger", async () => {
+  it("rejects raw artifact receipts before mutating the Ledger", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;
     const thread = await store.createThread({
@@ -988,6 +988,30 @@ describe("LocalStore", () => {
           lineCount: 2,
           textSha256: "c".repeat(64),
           text: "Raw preview text must not enter the Ledger.",
+        },
+      }),
+    ).rejects.toThrow("hash-only artifact receipt is invalid");
+    expect(store.getThread(thread.id).eventCount).toBe(0);
+
+    await expect(
+      store.appendEvent({
+        threadId: thread.id,
+        runId: run.id,
+        type: "artifact.drift_checked",
+        category: "artifact",
+        visibility: "user",
+        payload: {
+          planId: "plan_append_preview",
+          artifactId: "artifact_append_report",
+          planRevision: 1,
+          status: "verified",
+          kind: "file",
+          pathSha256: "a".repeat(64),
+          expectedSha256: "b".repeat(64),
+          observedSha256: "c".repeat(64),
+          result: "drifted",
+          sizeBytes: 32,
+          path: "Raw artifact path must not enter the Ledger.",
         },
       }),
     ).rejects.toThrow("hash-only artifact receipt is invalid");

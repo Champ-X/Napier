@@ -349,6 +349,7 @@ import {
   createWorkspaceArtifactDriftRequest,
   createWorkspaceArtifactVerificationRequest,
   exportWorkspaceFileArtifact,
+  inspectWorkspaceArtifactDrift,
   previewWorkspaceTextArtifact,
   createInboundDeadLetterRetryHistory,
   createReceiptTrustAnchorDirectoryMetadataReceipt,
@@ -7193,6 +7194,73 @@ export function createApp(services: NapierServices): Hono {
       }
       setExecutionPlanHeaders(context, plan);
       return context.json(plan);
+    },
+  );
+
+  app.post(
+    "/api/threads/:threadId/plans/:planId/artifacts/:artifactId/drift-check",
+    async (context) => {
+      const threadId = context.req.param("threadId");
+      const planId = context.req.param("planId");
+      assertPlanThread(services, planId, threadId);
+      const plan = services.store.getPlan(planId);
+      const artifact = plan.artifacts.find(
+        (candidate) => candidate.id === context.req.param("artifactId"),
+      );
+      if (!artifact) {
+        return jsonError(context, "Plan artifact drift check is invalid", 404);
+      }
+      try {
+        const inspection = await inspectWorkspaceArtifactDrift(
+          services.store.workspaceRoot,
+          artifact,
+        );
+        const payload = {
+          kind: "napier.plan-artifact-drift-check" as const,
+          schemaVersion: 1 as const,
+          planId: plan.id,
+          artifactId: artifact.id,
+          planRevision: plan.revision,
+          status: artifact.status,
+          artifactKind: artifact.kind,
+          pathSha256: sha256Text(artifact.path),
+          expectedSha256: inspection.expectedSha256,
+          result: inspection.result,
+          ...(inspection.observedSha256
+            ? { observedSha256: inspection.observedSha256 }
+            : {}),
+          ...(inspection.sizeBytes !== undefined
+            ? { sizeBytes: inspection.sizeBytes }
+            : {}),
+        };
+        await services.store.appendEvent({
+          threadId,
+          runId: createId("runctl"),
+          type: "artifact.drift_checked",
+          category: "artifact",
+          visibility: "user",
+          payload: {
+            planId: plan.id,
+            artifactId: artifact.id,
+            planRevision: plan.revision,
+            status: artifact.status,
+            kind: artifact.kind,
+            pathSha256: payload.pathSha256,
+            expectedSha256: inspection.expectedSha256,
+            result: inspection.result,
+            ...(inspection.observedSha256
+              ? { observedSha256: inspection.observedSha256 }
+              : {}),
+            ...(inspection.sizeBytes !== undefined
+              ? { sizeBytes: inspection.sizeBytes }
+              : {}),
+          },
+        });
+        setPlanArtifactDriftCheckHeaders(context, plan, artifact, payload);
+        return context.json(payload);
+      } catch (error) {
+        return jsonError(context, errorMessage(error), 400);
+      }
     },
   );
 
@@ -17763,6 +17831,46 @@ function setPlanArtifactTextPreviewHeaders(
     String(preview.lineCount),
   );
   context.header("X-Napier-Plan-Artifact-Text-SHA256", preview.textSha256);
+}
+
+function setPlanArtifactDriftCheckHeaders(
+  context: Context,
+  plan: ExecutionPlan,
+  artifact: ExecutionPlan["artifacts"][number],
+  inspection: {
+    expectedSha256: string;
+    result: string;
+    observedSha256?: string;
+    sizeBytes?: number;
+  },
+): void {
+  context.header("Cache-Control", "no-store");
+  setBodyContentSha256Header(context, inspection);
+  context.header("X-Napier-Thread-Id", plan.threadId);
+  context.header("X-Napier-Plan-Id", plan.id);
+  context.header("X-Napier-Plan-Revision", String(plan.revision));
+  context.header("X-Napier-Plan-Artifact-Id", artifact.id);
+  context.header("X-Napier-Plan-Artifact-Status", artifact.status);
+  context.header(
+    "X-Napier-Plan-Artifact-Path-SHA256",
+    sha256Text(artifact.path),
+  );
+  context.header(
+    "X-Napier-Plan-Artifact-Expected-SHA256",
+    inspection.expectedSha256,
+  );
+  context.header("X-Napier-Plan-Artifact-Drift-Result", inspection.result);
+  setOptionalHeader(
+    context,
+    "X-Napier-Plan-Artifact-Observed-SHA256",
+    inspection.observedSha256,
+  );
+  if (inspection.sizeBytes !== undefined) {
+    context.header(
+      "X-Napier-Plan-Artifact-Size-Bytes",
+      String(inspection.sizeBytes),
+    );
+  }
 }
 
 function planArtifactDownloadFilename(

@@ -6352,6 +6352,44 @@ button:disabled {
   border-radius: 2px;
 }
 
+.artifact-drift-check {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  margin-top: 9px;
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+
+.artifact-drift-check--drifted,
+.artifact-drift-check--missing {
+  background: rgba(128, 54, 47, 0.06);
+  border-color: rgba(128, 54, 47, 0.35);
+}
+
+.artifact-drift-check strong {
+  font-family: var(--serif);
+  font-size: 10px;
+  color: var(--ink);
+}
+
+.artifact-drift-check span {
+  font-size: 9px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.artifact-drift-check small {
+  display: block;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink-faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .artifact-error {
   margin: 8px 0 0;
   font-size: 10px;

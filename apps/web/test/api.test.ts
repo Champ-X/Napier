@@ -87,6 +87,7 @@ import {
   verifyThreadReplayBundle,
 } from "../src/api";
 import {
+  checkPlanArtifactDrift,
   downloadPlanArtifactFile,
   previewPlanArtifactText,
 } from "../src/artifact-file-api";
@@ -619,6 +620,44 @@ describe("Web JSON API wrappers", () => {
     await expect(
       previewPlanArtifactText("thread_1", "plan_1", "artifact_1"),
     ).resolves.toEqual(preview);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("checks plan artifact drift through response hash verification", async () => {
+    const check = {
+      kind: "napier.plan-artifact-drift-check",
+      schemaVersion: 1,
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "file",
+      pathSha256: "a".repeat(64),
+      expectedSha256: "b".repeat(64),
+      result: "drifted",
+      observedSha256: "c".repeat(64),
+      sizeBytes: 42,
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/drift-check",
+      );
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      const text = JSON.stringify(check);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      checkPlanArtifactDrift("thread_1", "plan_1", "artifact_1"),
+    ).resolves.toEqual(check);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

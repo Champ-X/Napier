@@ -73,6 +73,41 @@ describe("artifact event trace view", () => {
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects artifact drift checks without paths or file contents", () => {
+    const event = artifactEvent("artifact.drift_checked", {
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 6,
+      status: "verified",
+      kind: "file",
+      result: "drifted",
+      path: "TOP_SECRET_PATH",
+      text: "TOP_SECRET_TEXT",
+      pathSha256: "a".repeat(64),
+      expectedSha256: "b".repeat(64),
+      observedSha256: "c".repeat(64),
+      sizeBytes: 256,
+    });
+
+    expect(artifactEventTraceView(event)).toEqual({
+      action: "drift_checked",
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 6,
+      status: "verified",
+      kind: "file",
+      result: "drifted",
+      pathSha256: "a".repeat(64),
+      expectedSha256: "b".repeat(64),
+      observedSha256: "c".repeat(64),
+      sizeBytes: 256,
+    });
+    expect(artifactEventTraceSummary(event)).toBe(
+      `artifact / drift_checked / plan 1234567890 / artifact 0987654321 / plan-r6 / status verified / kind file / result drifted / size-bytes 256 / path ${"a".repeat(12)} / expected ${"b".repeat(12)} / observed ${"c".repeat(12)}`,
+    );
+    expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("falls back for malformed artifact receipts", () => {
     expect(artifactEventTraceSummary(artifactEvent("artifact.future", {}))).toBe(
       "artifact",
