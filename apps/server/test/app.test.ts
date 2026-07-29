@@ -9090,7 +9090,7 @@ describe("Napier HTTP goal flow", () => {
     );
     expect(replayResponse.status).toBe(200);
     expect(replayResponse.headers.get("content-disposition")).toContain(
-      `${left!.id}-replay.json`,
+      `${left!.id}-replay-`,
     );
     const replay = (await replayResponse.json()) as RunReplaySnapshot;
     expectRunReplaySnapshotHeaders(replayResponse, replay);
@@ -12605,6 +12605,10 @@ function expectRunReplaySnapshotHeaders(
     .update(JSON.stringify(snapshot))
     .digest("hex");
   expect(response.headers.get("cache-control")).toBe("no-store");
+  const safeRunId = snapshot.run.id.replace(/[^A-Za-z0-9._-]/g, "_") || "run";
+  expect(response.headers.get("content-disposition")).toBe(
+    `attachment; filename="napier-${safeRunId}-replay-${snapshot.contentSha256.slice(0, 12)}.json"`,
+  );
   expect(response.headers.get("x-napier-content-sha256")).toBe(contentSha256);
   expect(response.headers.get("x-napier-thread-id")).toBe(snapshot.threadId);
   expect(response.headers.get("x-napier-run-id")).toBe(snapshot.run.id);

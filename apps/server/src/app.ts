@@ -20454,7 +20454,7 @@ function setRunReplaySnapshotHeaders(
   context.header("Cache-Control", "no-store");
   context.header(
     "Content-Disposition",
-    `attachment; filename="napier-${snapshot.run.id}-replay.json"`,
+    `attachment; filename="${runReplaySnapshotFilename(snapshot)}"`,
   );
   setBodyContentSha256Header(context, snapshot);
   context.header("X-Napier-Thread-Id", snapshot.threadId);
@@ -20471,6 +20471,16 @@ function setRunReplaySnapshotHeaders(
     );
   }
   setEventBoundaryHeaders(context, snapshot.events);
+}
+
+function runReplaySnapshotFilename(snapshot: RunReplaySnapshot): string {
+  const safeRunId = safeFilenameSegment(snapshot.run.id, "run");
+  return `napier-${safeRunId}-replay-${snapshot.contentSha256.slice(0, 12)}.json`;
+}
+
+function safeFilenameSegment(value: string, fallback: string): string {
+  const normalized = value.replace(/[^A-Za-z0-9._-]/g, "_");
+  return normalized.length > 0 ? normalized : fallback;
 }
 
 function setRunReplaySnapshotVerificationHeaders(

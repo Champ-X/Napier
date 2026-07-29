@@ -1205,6 +1205,9 @@ write:management-openapi-compatibility` now emits
 - Run Lab replay downloads now include the stable snapshot content hash prefix
   in the filename, making local replay archives content-addressable before
   upload verification.
+- Direct Run replay API attachment headers now use the same
+  `napier-<runId>-replay-<content-hash>.json` filename shape as Run Lab, so
+  browser saves and scripted captures preserve the replay content receipt.
 - No-store `POST /api/threads/import/verify` preflight for portable Thread
   replay bundles. The endpoint reuses the same fail-closed bundle validator as
   import, returns `valid` / `invalid` plus low-cardinality diagnostics without

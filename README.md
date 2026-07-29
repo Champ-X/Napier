@@ -1503,15 +1503,15 @@ recomputes the snapshot content hash, event-stream hash, metrics, assistant
 output hash, Independent Advisor `evidenceSummary`, and URL thread/run binding
 without mutating state. Run Lab exposes the same verifier as an upload action,
 binding archived replay JSON to the active Thread before an operator trusts it
-for evidence review or CI regression checks. Downloaded replay filenames include
-the stable content hash prefix so local archives remain content-addressable
-outside the browser. Replay and comparison responses
+for evidence review or CI regression checks. Replay and comparison responses
 also mirror duration,
 message/model/tool/subagent counts, token/cache counts, cost USD, output-text
 hash, and right-minus-left metric deltas in headers for budget and quality
 regression checks. Comparison headers also include event-type delta hashes,
 added/removed tool-set hashes, and configuration changed-field/capability set
 hashes so CI can detect behavioral drift without parsing full replay bodies.
+Direct `GET /api/threads/:threadId/runs/:runId/replay` attachments and Run Lab
+downloads both use `napier-<runId>-replay-<content-hash>.json` filenames.
 The import endpoint first strictly parses the wrapper object, accepting only a
 `bundle` and an optional normalized non-empty title, before the runtime validates
 the full fixture schema and hashes.
