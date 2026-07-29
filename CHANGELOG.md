@@ -355,7 +355,10 @@ All notable changes to Napier are recorded here.
 - Plan Workbench now downloads produced or verified file artifacts through a
   workspace-confined no-store endpoint. The server rehashes bytes, rejects
   verified digest drift, records a hash-only `artifact.exported` Ledger event,
-  and renders that event through a bounded Trace summary.
+  renders that event through a bounded Trace summary, and saves attachments
+  with safe artifact IDs plus content-hash prefixes. Workbench fallback
+  filenames now use the same safe hash-addressed form when a browser response
+  lacks a usable attachment name.
 - Plan Workbench now previews small UTF-8 produced or verified file artifacts
   through the same workspace and digest boundary. Preview responses are
   no-store and hash-bound, while `artifact.previewed` Ledger events and Plan

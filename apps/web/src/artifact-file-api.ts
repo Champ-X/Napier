@@ -91,7 +91,9 @@ export async function downloadPlanArtifactFile(
     blob: new Blob([bytes], {
       type: response.headers.get("Content-Type") ?? "application/octet-stream",
     }),
-    filename: contentDispositionFilename(response) ?? `${artifactId}.artifact`,
+    filename:
+      contentDispositionFilename(response) ??
+      planArtifactFileFallbackFilename(artifactId, expectedSha256),
     sha256: expectedSha256,
     sizeBytes,
   };
@@ -138,5 +140,22 @@ async function sha256ArrayBuffer(value: ArrayBuffer): Promise<string> {
 function contentDispositionFilename(response: Response): string | undefined {
   const header = response.headers.get("Content-Disposition");
   const match = header?.match(/\bfilename="([^"]+)"/u);
-  return match?.[1];
+  if (!match) return undefined;
+  const filename = safeFilenameSegment(match[1] ?? "", "");
+  return filename.length > 0 ? filename : undefined;
+}
+
+function planArtifactFileFallbackFilename(
+  artifactId: string,
+  sha256: string,
+): string {
+  const safeArtifactId = safeFilenameSegment(artifactId, "artifact");
+  return `napier-artifact-${safeArtifactId}-${sha256.slice(0, 12)}.artifact`;
+}
+
+function safeFilenameSegment(value: string, fallback: string): string {
+  const normalized = value.replace(/[^A-Za-z0-9._-]/g, "_");
+  return normalized.length > 0 && normalized !== "." && normalized !== ".."
+    ? normalized
+    : fallback;
 }

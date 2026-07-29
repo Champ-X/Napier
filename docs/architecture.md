@@ -3562,10 +3562,14 @@ non-file artifacts, unproduced artifacts, symbolic links, files above the
 artifact hash limit, and verified digest drift before returning bytes. A
 successful download appends an `artifact.exported` Ledger event containing only
 the Plan/artifact IDs, Plan revision, status/kind, `pathSha256`, content
-SHA-256, and byte count. The event is included in Plan archives as scoped
-artifact evidence and has a bounded Trace summary that never renders the path
-or file contents. The same produced/verified file artifacts can be previewed
-in place when their bytes are valid UTF-8 and no larger than 64 KiB. Preview
+SHA-256, and byte count. Direct attachments use
+`napier-artifact-<safe-artifact-id>-<content-hash>-<safe-basename>` filenames,
+and Workbench fallbacks keep the same safe artifact/hash prefix even if a
+browser response lacks a usable attachment header. The event is included in
+Plan archives as scoped artifact evidence and has a bounded Trace summary that
+never renders the path or file contents. The same produced/verified file
+artifacts can be previewed in place when their bytes are valid UTF-8 and no
+larger than 64 KiB. Preview
 uses the same workspace confinement, symbolic-link, and verified-digest drift
 checks, returns text only in the no-store response, and appends an
 `artifact.previewed` Ledger event with Plan/artifact IDs, Plan revision,

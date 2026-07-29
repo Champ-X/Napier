@@ -586,6 +586,35 @@ describe("Web JSON API wrappers", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("uses safe hash-addressed plan artifact fallback filenames", async () => {
+    const bytes = new TextEncoder().encode("downloadable artifact\n");
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const fetchMock = vi.fn(async (path: string) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact%2Fbad%3Apath/file",
+      );
+      return new Response(bytes, {
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "X-Napier-Content-SHA256": sha256,
+          "X-Napier-Plan-Artifact-Size-Bytes": String(bytes.byteLength),
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      downloadPlanArtifactFile("thread_1", "plan_1", "artifact/bad:path"),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        filename: `napier-artifact-artifact_bad_path-${sha256.slice(0, 12)}.artifact`,
+        sha256,
+        sizeBytes: bytes.byteLength,
+      }),
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("previews plan text artifacts through response hash verification", async () => {
     const preview = {
       kind: "napier.plan-artifact-text-preview",

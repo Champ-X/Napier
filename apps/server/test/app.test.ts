@@ -4741,7 +4741,9 @@ describe("Napier HTTP goal flow", () => {
     ).toBe(String(Buffer.byteLength(reportContents)));
     expect(
       downloadArtifactResponse.headers.get("Content-Disposition"),
-    ).toContain(`napier-artifact-report-${expectedReportSha256.slice(0, 12)}`);
+    ).toBe(
+      `attachment; filename="napier-artifact-report-${expectedReportSha256.slice(0, 12)}-report.md"`,
+    );
     expect(
       Buffer.from(await downloadArtifactResponse.arrayBuffer()).toString(
         "utf8",

@@ -17978,12 +17978,25 @@ function planArtifactDownloadFilename(
   artifact: ExecutionPlan["artifacts"][number],
   sha256: string,
 ): string {
-  const baseName = path
-    .basename(artifact.path)
-    .replace(/[^A-Za-z0-9._-]/g, "_");
-  const safeName =
-    baseName.length > 0 && baseName !== "." ? baseName : artifact.id;
-  return `napier-artifact-${artifact.id}-${sha256.slice(0, 12)}-${safeName}`;
+  const safeArtifactId = safePlanArtifactFilenameSegment(
+    artifact.id,
+    "artifact",
+  );
+  const safeName = safePlanArtifactFilenameSegment(
+    path.basename(artifact.path),
+    safeArtifactId,
+  );
+  return `napier-artifact-${safeArtifactId}-${sha256.slice(0, 12)}-${safeName}`;
+}
+
+function safePlanArtifactFilenameSegment(
+  value: string,
+  fallback: string,
+): string {
+  const normalized = value.replace(/[^A-Za-z0-9._-]/g, "_");
+  return normalized.length > 0 && normalized !== "." && normalized !== ".."
+    ? normalized
+    : fallback;
 }
 
 function setExecutionPlanReplanDraftReviewHeaders(
