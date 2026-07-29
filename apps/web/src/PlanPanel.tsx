@@ -69,6 +69,7 @@ import {
 } from "./artifact-file-api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import {
+  artifactDirectoryManifestFilename,
   formatArtifactSizeBytes,
   projectArtifactDriftCheckAction,
   projectArtifactManifestActions,
@@ -2303,6 +2304,22 @@ export default function PlanPanel({
                           <strong>
                             {planCopy.artifactActions.manifestTitle}
                           </strong>
+                          <button
+                            type="button"
+                            aria-label={
+                              planCopy.artifactActions.downloadManifest
+                            }
+                            onClick={() =>
+                              downloadJson(
+                                artifactDirectoryManifest,
+                                artifactDirectoryManifestFilename(
+                                  artifactDirectoryManifest,
+                                ),
+                              )
+                            }
+                          >
+                            {planCopy.artifactActions.downloadManifest}
+                          </button>
                           <button
                             type="button"
                             aria-label={planCopy.artifactActions.closePreview}

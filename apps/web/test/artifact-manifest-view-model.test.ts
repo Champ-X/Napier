@@ -2,6 +2,7 @@ import type { ArtifactManifestEntry } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
+  artifactDirectoryManifestFilename,
   formatArtifactSizeBytes,
   projectArtifactDriftCheckAction,
   projectArtifactManifestActions,
@@ -117,6 +118,15 @@ describe("artifact manifest view model", () => {
   it("formats exact byte counts", () => {
     expect(formatArtifactSizeBytes(1)).toBe("1 byte");
     expect(formatArtifactSizeBytes(1024)).toBe("1,024 bytes");
+  });
+
+  it("builds safe directory manifest download filenames", () => {
+    expect(
+      artifactDirectoryManifestFilename({
+        artifactId: "bundle/report",
+        sha256: "abcdef1234567890".padEnd(64, "0"),
+      }),
+    ).toBe("napier-artifact-manifest-bundle_report-abcdef123456.json");
   });
 
   it("projects drift check follow-up actions only for the matching verified artifact", () => {

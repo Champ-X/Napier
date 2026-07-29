@@ -106,6 +106,7 @@ export const planCopy = {
     manifest: "View manifest",
     manifesting: "Reading manifest...",
     manifestTitle: "Directory manifest",
+    downloadManifest: "Download manifest",
     entries: "Entries",
     files: "Files",
     directories: "Directories",

@@ -32,6 +32,11 @@ export interface ArtifactDriftCheckActionProjection {
   hasAction: boolean;
 }
 
+export interface ArtifactDirectoryManifestDownloadProjectionInput {
+  artifactId: string;
+  sha256: string;
+}
+
 export function projectArtifactManifestEvidence(
   artifact: ArtifactManifestEntry,
 ): ArtifactManifestEvidenceProjection {
@@ -122,6 +127,14 @@ export function projectArtifactDriftCheckAction(
     nextAction: "missing",
     hasAction: true,
   };
+}
+
+export function artifactDirectoryManifestFilename(
+  manifest: ArtifactDirectoryManifestDownloadProjectionInput,
+): string {
+  const safeArtifactId = manifest.artifactId.replace(/[^A-Za-z0-9._-]/g, "_");
+  const safeId = safeArtifactId.length > 0 ? safeArtifactId : "artifact";
+  return `napier-artifact-manifest-${safeId}-${manifest.sha256.slice(0, 12)}.json`;
 }
 
 export function formatArtifactSizeBytes(sizeBytes: number): string {
