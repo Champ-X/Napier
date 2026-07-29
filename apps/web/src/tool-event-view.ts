@@ -19,7 +19,7 @@ export interface ToolEventTraceView {
   symbolIndexLanguageCountsSha256?: string;
   symbolIndexFileSetSha256?: string;
   symbolIndexSymbolSetSha256?: string;
-  dataFormat?: "json" | "jsonl" | "csv";
+  dataFormat?: "json" | "jsonl" | "csv" | "tsv";
   dataRowCount?: number;
   dataColumnCount?: number;
   dataSizeBytes?: number;
@@ -463,7 +463,7 @@ function searchFilesEvidence(value: unknown):
 
 function inspectDataEvidence(value: unknown):
   | {
-      dataFormat: "json" | "jsonl" | "csv";
+      dataFormat: "json" | "jsonl" | "csv" | "tsv";
       dataRowCount: number;
       dataColumnCount: number;
       dataSizeBytes?: number;
@@ -552,8 +552,13 @@ function listSymbolsEvidence(value: unknown):
   };
 }
 
-function dataFormat(value: unknown): "json" | "jsonl" | "csv" | undefined {
-  return value === "json" || value === "jsonl" || value === "csv"
+function dataFormat(
+  value: unknown,
+): "json" | "jsonl" | "csv" | "tsv" | undefined {
+  return value === "json" ||
+    value === "jsonl" ||
+    value === "csv" ||
+    value === "tsv"
     ? value
     : undefined;
 }
