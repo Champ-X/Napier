@@ -45,7 +45,11 @@ function expectOpenTelemetryTraceHeaders(
   artifact: OpenTelemetryTraceArtifact,
 ): void {
   expect(response.headers.get("cache-control")).toBe("no-store");
-  expect(response.headers.get("content-disposition")).toContain("napier-otel-");
+  const sourceId = artifact.runId ?? artifact.threadId;
+  const safeSourceId = sourceId.replace(/[^A-Za-z0-9._-]/g, "_") || "trace";
+  expect(response.headers.get("content-disposition")).toBe(
+    `attachment; filename="napier-otel-${safeSourceId}-${artifact.contentSha256.slice(0, 12)}.json"`,
+  );
   expect(response.headers.get("x-napier-content-sha256")).toBe(
     artifact.contentSha256,
   );

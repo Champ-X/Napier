@@ -1,4 +1,4 @@
-import type { RunEvent } from "@napier/contracts";
+import type { OpenTelemetryTraceArtifact, RunEvent } from "@napier/contracts";
 
 export interface OpenTelemetryTraceExportView {
   scope: OpenTelemetryTraceExportScope;
@@ -10,6 +10,17 @@ export type OpenTelemetryTraceExportScope = "run" | "thread";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const TRACE_EXPORT_RECEIPT_SUMMARY = "trace export receipt";
+
+export function openTelemetryTraceArtifactFilename(
+  artifact: Pick<
+    OpenTelemetryTraceArtifact,
+    "contentSha256" | "runId" | "threadId"
+  >,
+): string {
+  const sourceId = artifact.runId ?? artifact.threadId;
+  const safeSourceId = safeFilenameSegment(sourceId, "trace");
+  return `napier-otel-${safeSourceId}-${artifact.contentSha256.slice(0, 12)}.json`;
+}
 
 export function openTelemetryTraceExportView(
   event: RunEvent,
@@ -57,4 +68,9 @@ function isOpenTelemetryTraceExportScope(
   value: unknown,
 ): value is OpenTelemetryTraceExportScope {
   return value === "run" || value === "thread";
+}
+
+function safeFilenameSegment(value: string, fallback: string): string {
+  const normalized = value.replace(/[^A-Za-z0-9._-]/g, "_");
+  return normalized.length > 0 ? normalized : fallback;
 }

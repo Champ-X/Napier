@@ -1211,6 +1211,9 @@ write:management-openapi-compatibility` now emits
 - Portable Thread fixture downloads now share a tested
   `napier-thread-<safe-thread-id>-<content-hash>.json` filename projection
   across Run Lab and direct API attachment headers.
+- OpenTelemetry trace artifact downloads now share a tested
+  `napier-otel-<safe-scope-id>-<content-hash>.json` filename projection across
+  Trace Workbench and direct API attachment headers.
 - No-store `POST /api/threads/import/verify` preflight for portable Thread
   replay bundles. The endpoint reuses the same fail-closed bundle validator as
   import, returns `valid` / `invalid` plus low-cardinality diagnostics without

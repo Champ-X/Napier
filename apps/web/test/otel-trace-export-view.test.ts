@@ -2,11 +2,22 @@ import type { RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import {
+  openTelemetryTraceArtifactFilename,
   openTelemetryTraceExportSummary,
   openTelemetryTraceExportView,
 } from "../src/otel-trace-export-view";
 
 describe("OpenTelemetry trace export view", () => {
+  it("builds content-addressed trace artifact filenames", () => {
+    expect(
+      openTelemetryTraceArtifactFilename({
+        threadId: "thread:bad/path",
+        runId: "run:bad/path",
+        contentSha256: "abcdef1234567890".padEnd(64, "0"),
+      }),
+    ).toBe("napier-otel-run_bad_path-abcdef123456.json");
+  });
+
   it("projects only hash-only exported trace receipt metadata", () => {
     const event = traceExportEvent({
       scope: "thread",

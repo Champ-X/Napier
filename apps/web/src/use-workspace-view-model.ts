@@ -94,6 +94,7 @@ import type {
 } from "./extension-package-types";
 import { formatApiErrorMessage } from "./api-error";
 import { selectedModelAvailability } from "./model-selection-view-model";
+import { openTelemetryTraceArtifactFilename } from "./otel-trace-export-view";
 import {
   runReplaySnapshotFilename,
   threadReplayBundleFilename,
@@ -1804,10 +1805,7 @@ export function useWorkspaceViewModel() {
           detail.thread.id,
           runId,
         );
-        downloadJson(
-          artifact,
-          `napier-otel-${runId ?? detail.thread.id}-${artifact.contentSha256.slice(0, 12)}.json`,
-        );
+        downloadJson(artifact, openTelemetryTraceArtifactFilename(artifact));
         const eventAnchorSetSha256 = eventAnchorSetSha256FromArtifact(artifact);
         setTraceExportReceipt({
           scope: runId ? "run" : "thread",

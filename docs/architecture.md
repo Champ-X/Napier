@@ -2044,6 +2044,8 @@ select complete Thread or one Run
   -> validate IDs, parent graph, temporal containment, schema, and counts
   -> bind source range/hash + redaction policy + OTLP request to content SHA-256
   -> append trace.otlp.exported with only scope, IDs, counts, and hashes
+  -> save direct API attachments and Trace Workbench downloads as
+     napier-otel-<safe-scope-id>-<content-hash>.json
   -> return no-store artifact headers with trace/thread/run IDs, source seq
      range, event/ span counts, redaction mode/counts, and content hash
 verify exported artifact (maximum 10 MiB, no mutation)

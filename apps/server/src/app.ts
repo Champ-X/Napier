@@ -5413,11 +5413,7 @@ export function createApp(services: NapierServices): Hono {
         contentSha256: artifact.contentSha256,
       },
     });
-    setOpenTelemetryTraceArtifactHeaders(
-      context,
-      artifact,
-      `napier-otel-${body.runId ?? threadId}-${artifact.contentSha256.slice(0, 12)}.json`,
-    );
+    setOpenTelemetryTraceArtifactHeaders(context, artifact);
     return context.json(artifact);
   });
 
@@ -24233,10 +24229,12 @@ function setUsagePriceTableVerificationHeaders(
 function setOpenTelemetryTraceArtifactHeaders(
   context: Context,
   artifact: OpenTelemetryTraceArtifact,
-  filename: string,
 ): void {
   context.header("Cache-Control", "no-store");
-  context.header("Content-Disposition", `attachment; filename="${filename}"`);
+  context.header(
+    "Content-Disposition",
+    `attachment; filename="${openTelemetryTraceArtifactFilename(artifact)}"`,
+  );
   setStableContentSha256Header(context, artifact.contentSha256);
   context.header("X-Napier-Trace-Id", artifact.traceId);
   context.header("X-Napier-Thread-Id", artifact.threadId);
@@ -24274,6 +24272,14 @@ function setOpenTelemetryTraceArtifactHeaders(
     "X-Napier-Trace-Excluded-Payload-Key-Count",
     String(artifact.redaction.excludedPayloadKeys.length),
   );
+}
+
+function openTelemetryTraceArtifactFilename(
+  artifact: OpenTelemetryTraceArtifact,
+): string {
+  const sourceId = artifact.runId ?? artifact.threadId;
+  const safeSourceId = safeFilenameSegment(sourceId, "trace");
+  return `napier-otel-${safeSourceId}-${artifact.contentSha256.slice(0, 12)}.json`;
 }
 
 function setExtensionPublisherTrustAnchorListHeaders(
