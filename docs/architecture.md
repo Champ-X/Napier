@@ -981,7 +981,9 @@ validates anchor uniqueness, envelope/manifest hashes, signature, package-to-
 Extension configuration binding, and key references while allowing revoked or
 expired historical evidence to remain inspectable. Revocation is irreversible
 and atomically clears Agent enablement and connected state for every package
-bound to that key.
+bound to that key. Direct signing responses and Workbench downloads save the
+envelope as `<safe-package-name>-<envelope-hash>.napier-extension.json`, so
+archived package files carry their content receipt in the filename.
 
 Publisher trust read projections are no-store and response-hash-bound:
 

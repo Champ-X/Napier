@@ -9196,7 +9196,7 @@ export function createApp(services: NapierServices): Hono {
     setSignedExtensionPackageHeaders(
       context,
       envelope,
-      `${extension.normalizedName}.napier-extension.json`,
+      extension.normalizedName,
     );
     await appendExtensionEvent(
       services,
@@ -24984,10 +24984,13 @@ function setTrustedReceiptHeaders(
 function setSignedExtensionPackageHeaders(
   context: Context,
   envelope: SignedExtensionPackageEnvelope,
-  filename: string,
+  normalizedName: string,
 ): void {
   context.header("Cache-Control", "no-store");
-  context.header("Content-Disposition", `attachment; filename="${filename}"`);
+  context.header(
+    "Content-Disposition",
+    `attachment; filename="${signedExtensionPackageFilename(normalizedName, envelope)}"`,
+  );
   setStableContentSha256Header(context, envelope.contentSha256);
   context.header("X-Napier-Manifest-SHA256", envelope.manifest.contentSha256);
   context.header(
@@ -24995,6 +24998,14 @@ function setSignedExtensionPackageHeaders(
     envelope.signature.manifestArtifactSha256,
   );
   context.header("X-Napier-Signature-Key-Id", envelope.signature.keyId);
+}
+
+function signedExtensionPackageFilename(
+  normalizedName: string,
+  envelope: SignedExtensionPackageEnvelope,
+): string {
+  const safeName = safeFilenameSegment(normalizedName, "extension");
+  return `${safeName}-${envelope.contentSha256.slice(0, 12)}.napier-extension.json`;
 }
 
 function setSkillPackageHeaders(

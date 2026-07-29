@@ -390,11 +390,11 @@ describe("signed Extension package API", () => {
     );
     expect(signResponse.status).toBe(200);
     expect(signResponse.headers.get("cache-control")).toBe("no-store");
-    expect(signResponse.headers.get("content-disposition")).toContain(
-      "portable_records.napier-extension.json",
-    );
     const envelope =
       (await signResponse.json()) as SignedExtensionPackageEnvelope;
+    expect(signResponse.headers.get("content-disposition")).toBe(
+      `attachment; filename="portable_records-${envelope.contentSha256.slice(0, 12)}.napier-extension.json"`,
+    );
     expect(signResponse.headers.get("x-napier-content-sha256")).toBe(
       envelope.contentSha256,
     );

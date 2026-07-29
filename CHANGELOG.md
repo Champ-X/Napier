@@ -1637,6 +1637,10 @@ write:management-openapi-compatibility` now emits
 - Trusted package import that enforces a 4 MiB JSON boundary, nested strict
   validation, current publisher trust, duplicate package/name rejection, and a
   fresh pending Extension with no inherited capability, tool, or Agent approval.
+- Signed Extension package downloads now use
+  `<safe-package-name>-<envelope-hash>.napier-extension.json` filenames across
+  Workbench and direct API attachment headers, binding local archives to the
+  signed envelope receipt.
 - Reviewed in-place signed package updates with server-recomputed deep
   publisher/version/transport/capability/tool/schema/effect/routing-hint/
   executable diffs, package-binding SHA-256 compare-and-swap, and independent

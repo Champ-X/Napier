@@ -92,6 +92,7 @@ import type {
   ExtensionPackageUpdateConfirmation,
   ExtensionPublisherDraft,
 } from "./extension-package-types";
+import { signedExtensionPackageFilename } from "./extension-package-artifact-view-model";
 import { formatApiErrorMessage } from "./api-error";
 import { selectedModelAvailability } from "./model-selection-view-model";
 import { openTelemetryTraceArtifactFilename } from "./otel-trace-export-view";
@@ -1194,7 +1195,7 @@ export function useWorkspaceViewModel() {
             ?.normalizedName ?? extensionId;
         downloadJson(
           envelope,
-          `${normalizedName}-${envelope.contentSha256.slice(0, 12)}.napier-extension.json`,
+          signedExtensionPackageFilename(normalizedName, envelope),
         );
         setExtensionPackageReceipt({
           action: "signed",
