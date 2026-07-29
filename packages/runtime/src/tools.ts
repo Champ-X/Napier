@@ -25,6 +25,10 @@ import {
   type WorkspaceDataFormat,
 } from "./structured-data.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
+import {
+  createWorkspacePatchTool,
+  type WorkspacePatchObserver,
+} from "./workspace-patch-tool.js";
 import { withWorkspacePathLock } from "./workspace-write-lock.js";
 export type { WorkspaceDataFormat } from "./structured-data.js";
 
@@ -40,7 +44,6 @@ const MAX_CODE_SIGNATURE_BYTES = 512;
 const MAX_SYMBOL_READ_LINES = 220;
 const MAX_SYMBOL_CONTEXT_LINES = 20;
 const MAX_PATCH_BYTES = 256 * 1024;
-const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
 const SHA256_PATTERN_RE = /^[a-f0-9]{64}$/;
 
@@ -160,146 +163,6 @@ const readSymbolSchema = Type.Object({
     }),
   ),
 });
-
-const applyPatchSchema = Type.Union([
-  Type.Object(
-    {
-      operation: Type.Literal("create"),
-      path: Type.String({
-        minLength: 1,
-        description: "Workspace-relative path for a new UTF-8 text file.",
-      }),
-      expectedSha256: Type.Null({
-        description: "Must be null to assert that the file does not exist.",
-      }),
-      content: Type.String({
-        maxLength: MAX_PATCH_BYTES,
-        description: "Complete UTF-8 content for the new file.",
-      }),
-      createParentDirectories: Type.Optional(
-        Type.Boolean({
-          description:
-            "When true, create missing workspace-relative parent directories before creating the file.",
-        }),
-      ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      operation: Type.Literal("replace"),
-      path: Type.String({
-        minLength: 1,
-        description: "Workspace-relative path for an existing UTF-8 file.",
-      }),
-      expectedSha256: Type.String({
-        pattern: SHA256_PATTERN,
-        description:
-          "SHA-256 of the complete current file, obtained from read_file.",
-      }),
-      edits: Type.Array(
-        Type.Object(
-          {
-            oldText: Type.String({
-              minLength: 1,
-              maxLength: MAX_PATCH_BYTES,
-              description:
-                "Exact text that must occur once in the current edit buffer.",
-            }),
-            newText: Type.String({
-              maxLength: MAX_PATCH_BYTES,
-              description: "Replacement text. Empty text removes the match.",
-            }),
-          },
-          { additionalProperties: false },
-        ),
-        { minItems: 1, maxItems: MAX_PATCH_EDITS },
-      ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      operation: Type.Literal("hashline_replace"),
-      path: Type.String({
-        minLength: 1,
-        description: "Workspace-relative path for an existing UTF-8 file.",
-      }),
-      expectedSha256: Type.String({
-        pattern: SHA256_PATTERN,
-        description:
-          "SHA-256 of the complete current file, obtained from read_file.",
-      }),
-      edits: Type.Array(
-        Type.Object(
-          {
-            line: Type.Optional(
-              Type.Integer({
-                minimum: 1,
-                description:
-                  "Optional 1-based line number from read_file. When omitted, the anchor hash must identify exactly one line.",
-              }),
-            ),
-            anchorSha256: Type.String({
-              pattern: SHA256_PATTERN,
-              description:
-                "SHA-256 of the exact line content from read_file lineAnchors.",
-            }),
-            newText: Type.String({
-              maxLength: MAX_PATCH_BYTES,
-              description:
-                "Replacement line content. May include newlines to expand the matched line into a block.",
-            }),
-          },
-          { additionalProperties: false },
-        ),
-        { minItems: 1, maxItems: MAX_PATCH_EDITS },
-      ),
-    },
-    { additionalProperties: false },
-  ),
-  Type.Object(
-    {
-      operation: Type.Literal("hashrange_replace"),
-      path: Type.String({
-        minLength: 1,
-        description: "Workspace-relative path for an existing UTF-8 file.",
-      }),
-      expectedSha256: Type.String({
-        pattern: SHA256_PATTERN,
-        description:
-          "SHA-256 of the complete current file, obtained from read_file or read_symbol.",
-      }),
-      edits: Type.Array(
-        Type.Object(
-          {
-            startLine: Type.Integer({
-              minimum: 1,
-              description: "1-based inclusive start line from read_symbol.",
-            }),
-            endLine: Type.Integer({
-              minimum: 1,
-              description: "1-based inclusive end line from read_symbol.",
-            }),
-            rangeSha256: Type.String({
-              pattern: SHA256_PATTERN,
-              description:
-                "SHA-256 of the exact source range from read_symbol.",
-            }),
-            newText: Type.String({
-              maxLength: MAX_PATCH_BYTES,
-              description:
-                "Replacement range content. Empty text removes the range.",
-            }),
-          },
-          { additionalProperties: false },
-        ),
-        { minItems: 1, maxItems: MAX_PATCH_EDITS },
-      ),
-    },
-    { additionalProperties: false },
-  ),
-]);
 
 export type WorkspacePatchInput =
   | {
@@ -468,6 +331,7 @@ export interface WorkspaceReadDetails {
 export interface CreateWorkspaceToolsOptions {
   includeWriteTools?: boolean;
   dataRoot?: string;
+  patchObserver?: WorkspacePatchObserver;
 }
 
 async function resolveWorkspacePath(
@@ -1961,44 +1825,14 @@ export function createWorkspaceTools(
     if (!options.dataRoot) {
       throw new Error("Write-capable workspace tools require a dataRoot");
     }
-    const applyPatch: AgentTool<typeof applyPatchSchema, WorkspacePatchResult> =
-      {
-        name: "apply_patch",
-        label: "Apply patch",
-        description:
-          "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file or read_symbol, replacements can match exact text, read_file line anchors, or read_symbol range hashes, and create can explicitly create missing parent directories. Deletion is not supported.",
-        parameters: applyPatchSchema,
-        async execute(_toolCallId, input) {
-          const result = await applyWorkspacePatch(
-            workspaceRoot,
-            options.dataRoot!,
-            input as WorkspacePatchInput,
-          );
-          return {
-            content: [
-              {
-                type: "text",
-                text: [
-                  `${result.operation === "create" ? "Created" : "Updated"} ${result.path} atomically.`,
-                  `Before SHA-256: ${result.beforeSha256 ?? "absent"}`,
-                  `After SHA-256: ${result.afterSha256}`,
-                  `Bytes: ${result.beforeBytes} -> ${result.afterBytes}`,
-                  `Edits: ${result.editCount}`,
-                  ...(result.createdParentDirectoryCount !== undefined &&
-                  result.createdParentDirectorySetSha256
-                    ? [
-                        `Created parent directories: ${result.createdParentDirectoryCount}`,
-                        `Created parent directory set SHA-256: ${result.createdParentDirectorySetSha256}`,
-                      ]
-                    : []),
-                ].join("\n"),
-              },
-            ],
-            details: result,
-          };
-        },
-      };
-    tools.push(applyPatch);
+    tools.push(
+      createWorkspacePatchTool({
+        workspaceRoot,
+        dataRoot: options.dataRoot,
+        applyPatch: applyWorkspacePatch,
+        ...(options.patchObserver ? { observer: options.patchObserver } : {}),
+      }),
+    );
   }
   return tools;
 }

@@ -47,7 +47,7 @@ export function createLspDiagnosticsTool(
         ...(signal ? { signal } : {}),
       });
       return {
-        content: [{ type: "text", text: formatLspDiagnostics(result) }],
+        content: [{ type: "text", text: formatLspDiagnosticsForAgent(result) }],
         details: result.details,
       };
     },
@@ -100,7 +100,7 @@ export function lspDiagnosticsToolOutputLedgerProjection(
   };
 }
 
-function formatLspDiagnostics(result: {
+export function formatLspDiagnosticsForAgent(result: {
   details: LspDiagnosticsDetails;
   diagnostics: LspDiagnostic[];
   relativePath: string;

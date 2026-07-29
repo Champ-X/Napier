@@ -510,6 +510,19 @@ describe("Tool event trace view", () => {
         editCount: 1,
         createdParentDirectoryCount: 2,
         createdParentDirectorySetSha256: "4".repeat(64),
+        diagnostics: {
+          kind: "napier.workspace-patch-diagnostics",
+          schemaVersion: 1,
+          status: "improved",
+          beforeDiagnosticCount: 2,
+          afterDiagnosticCount: 1,
+          introducedCount: 0,
+          resolvedCount: 1,
+          durationMs: 850,
+          deltaSetSha256: "5".repeat(64),
+          resultSha256: "6".repeat(64),
+          message: "TOP_SECRET_DIAGNOSTIC",
+        },
       },
     });
 
@@ -525,9 +538,17 @@ describe("Tool event trace view", () => {
       patchEditCount: 1,
       patchCreatedParentDirectoryCount: 2,
       patchCreatedParentDirectorySetSha256: "4".repeat(64),
+      patchDiagnosticsStatus: "improved",
+      patchBeforeDiagnosticCount: 2,
+      patchAfterDiagnosticCount: 1,
+      patchIntroducedDiagnosticCount: 0,
+      patchResolvedDiagnosticCount: 1,
+      patchDiagnosticsDurationMs: 850,
+      patchDiagnosticsDeltaSetSha256: "5".repeat(64),
+      patchDiagnosticsResultSha256: "6".repeat(64),
     });
     expect(toolEventTraceSummary(event)).toBe(
-      `tool / apply_patch / completed / patch hashrange_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)} / created-dirs 2 / created-dir-set ${"4".repeat(12)}`,
+      `tool / apply_patch / completed / patch hashrange_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)} / created-dirs 2 / created-dir-set ${"4".repeat(12)} / diagnostics improved / diagnostic-count 2->1 / introduced 0 / resolved 1 / diagnostic-ms 850 / diagnostic-delta ${"5".repeat(12)} / diagnostic-result ${"6".repeat(12)}`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

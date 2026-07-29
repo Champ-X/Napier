@@ -115,6 +115,22 @@ export interface ToolEventTraceView extends CommandToolEventTraceView {
   patchEditCount?: number;
   patchCreatedParentDirectoryCount?: number;
   patchCreatedParentDirectorySetSha256?: string;
+  patchDiagnosticsStatus?:
+    | "clean"
+    | "introduced"
+    | "improved"
+    | "unchanged"
+    | "regressed"
+    | "truncated"
+    | "unavailable"
+    | "drifted";
+  patchBeforeDiagnosticCount?: number;
+  patchAfterDiagnosticCount?: number;
+  patchIntroducedDiagnosticCount?: number;
+  patchResolvedDiagnosticCount?: number;
+  patchDiagnosticsDurationMs?: number;
+  patchDiagnosticsDeltaSetSha256?: string;
+  patchDiagnosticsResultSha256?: string;
   fileMutationAction?: "list_trash" | "preview" | "apply";
   fileMutationOperation?: "create_directory" | "move" | "trash" | "restore";
   fileMutationItemCount?: number;
@@ -468,6 +484,30 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       ? [
           `created-dir-set ${view.patchCreatedParentDirectorySetSha256.slice(0, 12)}`,
         ]
+      : []),
+    ...(view.patchDiagnosticsStatus
+      ? [`diagnostics ${view.patchDiagnosticsStatus}`]
+      : []),
+    ...(view.patchBeforeDiagnosticCount !== undefined &&
+    view.patchAfterDiagnosticCount !== undefined
+      ? [
+          `diagnostic-count ${view.patchBeforeDiagnosticCount}->${view.patchAfterDiagnosticCount}`,
+        ]
+      : []),
+    ...(view.patchIntroducedDiagnosticCount !== undefined
+      ? [`introduced ${view.patchIntroducedDiagnosticCount}`]
+      : []),
+    ...(view.patchResolvedDiagnosticCount !== undefined
+      ? [`resolved ${view.patchResolvedDiagnosticCount}`]
+      : []),
+    ...(view.patchDiagnosticsDurationMs !== undefined
+      ? [`diagnostic-ms ${view.patchDiagnosticsDurationMs}`]
+      : []),
+    ...(view.patchDiagnosticsDeltaSetSha256
+      ? [`diagnostic-delta ${view.patchDiagnosticsDeltaSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.patchDiagnosticsResultSha256
+      ? [`diagnostic-result ${view.patchDiagnosticsResultSha256.slice(0, 12)}`]
       : []),
     ...(view.fileMutationAction
       ? [`file-action ${view.fileMutationAction}`]
@@ -1039,6 +1079,22 @@ function applyPatchEvidence(value: unknown):
       patchEditCount?: number;
       patchCreatedParentDirectoryCount?: number;
       patchCreatedParentDirectorySetSha256?: string;
+      patchDiagnosticsStatus?:
+        | "clean"
+        | "introduced"
+        | "improved"
+        | "unchanged"
+        | "regressed"
+        | "truncated"
+        | "unavailable"
+        | "drifted";
+      patchBeforeDiagnosticCount?: number;
+      patchAfterDiagnosticCount?: number;
+      patchIntroducedDiagnosticCount?: number;
+      patchResolvedDiagnosticCount?: number;
+      patchDiagnosticsDurationMs?: number;
+      patchDiagnosticsDeltaSetSha256?: string;
+      patchDiagnosticsResultSha256?: string;
     }
   | undefined {
   if (!value || Array.isArray(value) || typeof value !== "object") {
@@ -1061,6 +1117,7 @@ function applyPatchEvidence(value: unknown):
   const createdParentDirectorySetSha256 = sha256(
     record["createdParentDirectorySetSha256"],
   );
+  const diagnostics = patchDiagnosticsEvidence(record["diagnostics"]);
   return {
     patchOperation: operation,
     ...(pathSha256 ? { patchPathSha256: pathSha256 } : {}),
@@ -1077,6 +1134,88 @@ function applyPatchEvidence(value: unknown):
           patchCreatedParentDirectorySetSha256: createdParentDirectorySetSha256,
         }
       : {}),
+    ...(diagnostics ?? {}),
+  };
+}
+
+function patchDiagnosticsEvidence(value: unknown):
+  | {
+      patchDiagnosticsStatus:
+        | "clean"
+        | "introduced"
+        | "improved"
+        | "unchanged"
+        | "regressed"
+        | "truncated"
+        | "unavailable"
+        | "drifted";
+      patchBeforeDiagnosticCount?: number;
+      patchAfterDiagnosticCount?: number;
+      patchIntroducedDiagnosticCount?: number;
+      patchResolvedDiagnosticCount?: number;
+      patchDiagnosticsDurationMs?: number;
+      patchDiagnosticsDeltaSetSha256?: string;
+      patchDiagnosticsResultSha256?: string;
+    }
+  | undefined {
+  if (!value || Array.isArray(value) || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const status =
+    record["status"] === "clean" ||
+    record["status"] === "introduced" ||
+    record["status"] === "improved" ||
+    record["status"] === "unchanged" ||
+    record["status"] === "regressed" ||
+    record["status"] === "truncated" ||
+    record["status"] === "unavailable" ||
+    record["status"] === "drifted"
+      ? record["status"]
+      : undefined;
+  if (
+    record["kind"] !== "napier.workspace-patch-diagnostics" ||
+    record["schemaVersion"] !== 1 ||
+    !status
+  ) {
+    return undefined;
+  }
+  const beforeDiagnosticCount = integerInRange(
+    record["beforeDiagnosticCount"],
+    0,
+    64,
+  );
+  const afterDiagnosticCount = integerInRange(
+    record["afterDiagnosticCount"],
+    0,
+    64,
+  );
+  const introducedCount = integerInRange(record["introducedCount"], 0, 64);
+  const resolvedCount = integerInRange(record["resolvedCount"], 0, 64);
+  const durationMs = integerInRange(record["durationMs"], 0, 60_000);
+  const deltaSetSha256 = sha256(record["deltaSetSha256"]);
+  const resultSha256 = sha256(record["resultSha256"]);
+  return {
+    patchDiagnosticsStatus: status,
+    ...(beforeDiagnosticCount !== undefined
+      ? { patchBeforeDiagnosticCount: beforeDiagnosticCount }
+      : {}),
+    ...(afterDiagnosticCount !== undefined
+      ? { patchAfterDiagnosticCount: afterDiagnosticCount }
+      : {}),
+    ...(introducedCount !== undefined
+      ? { patchIntroducedDiagnosticCount: introducedCount }
+      : {}),
+    ...(resolvedCount !== undefined
+      ? { patchResolvedDiagnosticCount: resolvedCount }
+      : {}),
+    ...(durationMs !== undefined
+      ? { patchDiagnosticsDurationMs: durationMs }
+      : {}),
+    ...(deltaSetSha256
+      ? { patchDiagnosticsDeltaSetSha256: deltaSetSha256 }
+      : {}),
+    ...(resultSha256 ? { patchDiagnosticsResultSha256: resultSha256 } : {}),
   };
 }
 

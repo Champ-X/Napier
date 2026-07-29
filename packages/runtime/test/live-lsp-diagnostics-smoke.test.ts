@@ -1,4 +1,5 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -114,6 +115,99 @@ describeLive("live LSP diagnostics smoke", () => {
     expect(JSON.stringify(toolEvents)).not.toContain(
       "Type 'number' is not assignable to type 'string'.",
     );
+    store.close();
+  }, 30_000);
+
+  it("fixes TS2322 with automatic before and after diagnostics", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-patch-workspace-"),
+    );
+    temporaryRoots.push(workspaceRoot);
+    const targetPath = "semantic-error.ts";
+    const source = "const LIVE_PATCH_PRIVATE_VALUE: string = 42;\n";
+    const updated = "const LIVE_PATCH_PRIVATE_VALUE: string = 'fixed';\n";
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { strict: true, noEmit: true } }),
+      ),
+      writeFile(path.join(workspaceRoot, targetPath), source),
+    ]);
+    const sourceSha256 = createHash("sha256").update(source).digest("hex");
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(workspaceRoot, ".napier"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["apply_patch", "lsp_diagnostics"],
+    });
+    const thread = await store.createThread({
+      title: "Live write-linked LSP smoke",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "live-lsp-patch-smoke" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("apply_patch", {
+          operation: "replace",
+          path: targetPath,
+          expectedSha256: sourceSha256,
+          edits: [{ oldText: "42", newText: "'fixed'" }],
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("Patch diagnostics: improved");
+        expect(messages).toContain("Errors: 1 -> 0");
+        return fauxAssistantMessage(
+          "The real language server verified the fix.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Fix TS2322 and verify the result automatically.",
+      model: { provider: "live-lsp-patch-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(await readFile(path.join(workspaceRoot, targetPath), "utf8")).toBe(
+      updated,
+    );
+    const events = await store.listEvents(thread.id);
+    const patchEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "apply_patch",
+    );
+    expect(patchEvent?.payload["details"]).toEqual(
+      expect.objectContaining({
+        diagnostics: expect.objectContaining({
+          status: "improved",
+          beforeErrorCount: 1,
+          afterErrorCount: 0,
+          resolvedCount: 1,
+        }),
+      }),
+    );
+    expect(JSON.stringify(events)).not.toContain(targetPath);
+    expect(JSON.stringify(events)).not.toContain("LIVE_PATCH_PRIVATE_VALUE");
     store.close();
   }, 30_000);
 });

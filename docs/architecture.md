@@ -1703,7 +1703,44 @@ diagnostic prose is not treated as instructions, related-information paths are
 discarded, workspace edits are rejected, and no package/plugin installation or
 network access is available. This first slice does not keep a persistent LSP
 session and does not expose definitions, references, symbols, rename, Code
-Actions, or write-linked before/after diagnostics.
+Actions, or project-wide synchronization.
+
+## Write-linked Diagnostics Flow
+
+`applyWorkspacePatch` remains the language-neutral atomic/CAS primitive.
+`workspace-patch-tool.ts` owns the Agent schema, optional observation lifecycle,
+and path-free durable projection. `lsp-patch-diagnostics.ts` implements the
+TypeScript observer:
+
+```text
+frozen Agent enables apply_patch + lsp_diagnostics
+  -> create one read-only LSP patch observer for the Run
+  -> supported existing file: diagnose before the write
+  -> require before fileSha256 == patch expectedSha256
+  -> recheck cancellation
+  -> execute the unchanged atomic patch under the workspace path lock
+  -> diagnose the committed bytes
+  -> rehash the target after the LSP protocol settles
+  -> require observed fileSha256 == patch afterSha256
+  -> compare diagnostic multisets without source locations
+  -> return after-write locations/messages to the live Agent
+  -> persist one patch tool.completed event with counts and hashes only
+```
+
+Preflight timeout, cancellation, Sandbox failure, or hash drift prevents the
+write. Once the atomic patch commits, postflight failure cannot convert it into
+a generic failed tool call or roll it back: the result is `unavailable` with an
+error hash. External modification before or during postflight produces
+`drifted` with expected/observed file hashes. Truncated diagnostic sets remain
+`truncated` rather than making a false improvement claim.
+
+Diagnostic identity includes severity, code, source, and message but excludes
+line/character positions, so moving unchanged code does not create a false
+regression. Durable patch details expose before/after severity counts,
+introduced/resolved/unchanged counts, delta/result hashes, and latency. Raw
+paths, patch text, source, compiler messages, and server errors are live-only.
+Unsupported files and Agents without both explicitly enabled tools bypass the
+observer and preserve existing patch latency.
 
 ## Workspace File Lifecycle Flow
 
@@ -3928,7 +3965,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has thirty-one parts:
+The current boundary has thirty-two parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -4040,6 +4077,9 @@ The current boundary has thirty-one parts:
     separately bound read-only Runtime assets, framed JSON-RPC lifecycle,
     bounded diagnostics/protocol/latency, Agent/Server/Context/Trace
     integration, and message/path-redacted durable evidence.
+32. write-linked TypeScript/JavaScript diagnostics with CAS-bound preflight,
+    post-commit delta classification, target-drift detection, path-free patch
+    evidence, public SSE/Trace integration, and explicit unavailable semantics.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
@@ -4072,7 +4112,7 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 2: Coding and workflow
 
 - persistent LSP sessions with definitions/references/rename/Code Actions,
-  DAP, AST edits, write-linked diagnostics/tests, and isolated subagent
+  DAP, AST edits, write-linked test/symbol association, and isolated subagent
   worktrees;
 - typed executable Workflow nodes, checkpoint recovery, single-node tests,
   JSONL events, and a TypeScript SDK;

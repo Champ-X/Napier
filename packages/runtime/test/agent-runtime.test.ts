@@ -2882,7 +2882,8 @@ describe("AgentRuntime demo path", () => {
     expect(patchEvent?.payload).toEqual(
       expect.objectContaining({
         details: expect.objectContaining({
-          path: artifactPath,
+          kind: "napier.workspace-patch",
+          pathSha256: createHash("sha256").update(artifactPath).digest("hex"),
           operation: "create",
           afterSha256: contentSha256,
           createdParentDirectoryCount: 2,
@@ -3002,7 +3003,10 @@ describe("AgentRuntime demo path", () => {
     expect(patchEvent?.payload).toEqual(
       expect.objectContaining({
         details: expect.objectContaining({
-          path: "src/config.txt",
+          kind: "napier.workspace-patch",
+          pathSha256: createHash("sha256")
+            .update("src/config.txt")
+            .digest("hex"),
           operation: "replace",
           beforeSha256: sourceSha256,
           afterSha256: updatedSha256,
@@ -3092,7 +3096,10 @@ describe("AgentRuntime demo path", () => {
     expect(patchEvent?.payload).toEqual(
       expect.objectContaining({
         details: expect.objectContaining({
-          path: "artifacts/reports/summary.md",
+          kind: "napier.workspace-patch",
+          pathSha256: createHash("sha256")
+            .update("artifacts/reports/summary.md")
+            .digest("hex"),
           operation: "create",
           beforeSha256: null,
           afterSha256: contentSha256,
@@ -3244,7 +3251,10 @@ describe("AgentRuntime demo path", () => {
     expect(patchEvent?.payload).toEqual(
       expect.objectContaining({
         details: expect.objectContaining({
-          path: "src/service.ts",
+          kind: "napier.workspace-patch",
+          pathSha256: createHash("sha256")
+            .update("src/service.ts")
+            .digest("hex"),
           operation: "hashrange_replace",
           beforeSha256: sourceSha256,
           afterSha256: updatedSha256,
@@ -3435,7 +3445,10 @@ describe("AgentRuntime demo path", () => {
     expect(patchEvent?.payload).toEqual(
       expect.objectContaining({
         details: expect.objectContaining({
-          path: "src/status.ts",
+          kind: "napier.workspace-patch",
+          pathSha256: createHash("sha256")
+            .update("src/status.ts")
+            .digest("hex"),
           operation: "replace",
           beforeSha256: sourceSha256,
           afterSha256: updatedSha256,

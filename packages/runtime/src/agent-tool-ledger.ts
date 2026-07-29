@@ -20,6 +20,11 @@ import {
   workspaceProcessToolInputLedgerProjection,
   workspaceProcessToolOutputLedgerProjection,
 } from "./workspace-process-tool.js";
+import {
+  workspacePatchToolCallArgumentsLedgerProjection,
+  workspacePatchToolInputLedgerProjection,
+  workspacePatchToolOutputLedgerProjection,
+} from "./workspace-patch-tool.js";
 
 export function agentToolCallArgumentsLedgerProjection(
   toolName: string,
@@ -30,6 +35,9 @@ export function agentToolCallArgumentsLedgerProjection(
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "apply_patch") {
+    return workspacePatchToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolCallArgumentsLedgerProjection(args);
@@ -53,6 +61,9 @@ export function agentToolInputLedgerProjection(
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolInputLedgerProjection(args);
   }
+  if (toolName === "apply_patch") {
+    return workspacePatchToolInputLedgerProjection(args);
+  }
   if (toolName === "workspace_process") {
     return workspaceProcessToolInputLedgerProjection(args);
   }
@@ -75,6 +86,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "apply_patch") {
+    return workspacePatchToolOutputLedgerProjection(output, result);
   }
   if (toolName === "workspace_process") {
     return workspaceProcessToolOutputLedgerProjection(output, result);

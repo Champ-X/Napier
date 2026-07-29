@@ -1301,7 +1301,25 @@ versions, severity counts, diagnostic/code-set hashes, protocol bytes, latency,
 stderr hash, resource limits, and result hash. Trace renders that bounded view
 without path or message text. This is intentionally not a persistent editor
 session and does not yet claim definitions, references, symbols, rename, Code
-Actions, or automatic before/after edit association.
+Actions, project-wide synchronization, or test selection.
+
+When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
+TypeScript and JavaScript writes automatically run LSP diagnostics before and
+after the atomic patch. The preflight result must match the patch
+`expectedSha256`; timeout, cancellation, Sandbox failure, or drift before
+commit leaves the file unchanged. After commit, Napier compares diagnostic
+multisets by severity, code, source, and message while ignoring source
+location, then reports clean, introduced, improved, unchanged, regressed, or
+truncated evidence. A failed or drifted postflight is reported explicitly as a
+committed patch with unavailable or stale diagnostics and is never presented as
+an ordinary failed write.
+
+The live Agent receives actionable after-write locations and compiler messages.
+The Work Ledger and Trace receive only before/after severity counts, diagnostic
+delta counts, file/result hashes, and latency. Patch model-call, started, and
+completed projections also redact raw paths and patch/output text. Non-code
+files and profiles without the explicit LSP tool retain the previous patch
+behavior and launch no hidden process.
 
 Run the real local-Sandbox smoke from a non-sandboxed Terminal:
 
@@ -1311,6 +1329,8 @@ npm run test:live-lsp
 
 The repository also includes
 `examples/lsp-diagnostics/semantic-error.ts` as a fixed `TS2322` example.
+The live suite diagnoses that error and then fixes it through one
+write-linked `apply_patch` call.
 macOS rejects nested `sandbox-exec`, so launching the live smoke from an IDE
 process that is itself sandboxed fails closed rather than falling back to an
 unsandboxed language server.

@@ -1,5 +1,6 @@
+import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -117,6 +118,106 @@ describe("LSP diagnostics HTTP Agent path", () => {
     );
     expect(JSON.stringify(toolEvents)).not.toContain("SERVER_PRIVATE_VALUE");
   });
+
+  it("streams a write-linked diagnostic improvement through one patch call", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-lsp-patch-test-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const targetPath = "src/private-server-patch.ts";
+    const absoluteTarget = path.join(workspaceRoot, targetPath);
+    const source = "export const SERVER_PATCH_PRIVATE: string = 42;\n";
+    const updated = "export const SERVER_PATCH_PRIVATE: string = 'fixed';\n";
+    await mkdir(path.dirname(absoluteTarget), { recursive: true });
+    await writeFile(absoluteTarget, source);
+    const sourceSha256 = createHash("sha256").update(source).digest("hex");
+    const updatedSha256 = createHash("sha256").update(updated).digest("hex");
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: directSandbox(),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agentId = services.store.listAgents()[0]!.id;
+    expect(
+      (
+        await app.request(`/api/agents/${agentId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolPolicy: "workspace",
+            enabledTools: ["apply_patch", "lsp_diagnostics"],
+          }),
+        })
+      ).status,
+    ).toBe(200);
+    const thread = await services.store.createThread({
+      title: "Server write-linked diagnostics",
+      agentId,
+    });
+    const provider = fauxProvider({ provider: "faux-server-lsp-patch" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("apply_patch", {
+          operation: "replace",
+          path: targetPath,
+          expectedSha256: sourceSha256,
+          edits: [{ oldText: "42", newText: "'fixed'" }],
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          "Patch diagnostics: improved",
+        );
+        return fauxAssistantMessage(
+          "The patch resolved the TypeScript diagnostic.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    services.models.registerProvider(provider.provider);
+
+    const response = await app.request(`/api/threads/${thread.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Fix the TypeScript diagnostic.",
+        model: { provider: "faux-server-lsp-patch", id: "faux-1" },
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('"status":"completed"');
+    expect(await readFile(absoluteTarget, "utf8")).toBe(updated);
+    const events = await services.store.listEvents(thread.id);
+    const patchEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "apply_patch",
+    );
+    expect(patchEvent?.payload["details"]).toEqual(
+      expect.objectContaining({
+        afterSha256: updatedSha256,
+        diagnostics: expect.objectContaining({
+          status: "improved",
+          beforeErrorCount: 1,
+          afterErrorCount: 0,
+          resolvedCount: 1,
+        }),
+      }),
+    );
+    expect(JSON.stringify(events)).not.toContain(targetPath);
+    expect(JSON.stringify(events)).not.toContain("SERVER_PATCH_PRIVATE");
+    expect(JSON.stringify(events)).not.toContain(
+      "Type 'number' is not assignable to type 'string'.",
+    );
+  }, 30_000);
 });
 
 function directSandbox(): OsSandboxAdapter {

@@ -54,6 +54,12 @@ const LANGUAGE_BY_EXTENSION = new Map<string, LspDiagnosticLanguage>([
 ]);
 const require = createRequire(import.meta.url);
 
+export function lspDiagnosticLanguageForPath(
+  candidate: string,
+): LspDiagnosticLanguage | undefined {
+  return LANGUAGE_BY_EXTENSION.get(path.extname(candidate).toLowerCase());
+}
+
 export interface LspDiagnosticsRequest {
   path: string;
   timeoutMs?: number;
@@ -72,6 +78,16 @@ export interface LspDiagnosticsRunnerOptions {
   nodeExecutable?: string;
   languageServerPath?: string;
   typescriptServerPath?: string;
+}
+
+export class LspDiagnosticsTargetDriftError extends Error {
+  constructor(
+    readonly expectedFileSha256: string,
+    readonly observedFileSha256?: string,
+  ) {
+    super("LSP diagnostics target changed during execution");
+    this.name = "LspDiagnosticsTargetDriftError";
+  }
 }
 
 interface LspRuntimeAssets {
@@ -143,6 +159,7 @@ export class LspDiagnosticsRunner {
       },
       request.signal,
     );
+    await assertLspTargetStable(prepared.target, prepared.fileSha256);
     await assertLspRuntimeStable(prepared.assets);
     const durationMs = Math.max(0, Date.now() - startedAt);
     const diagnostics = execution.diagnostics;
@@ -260,9 +277,7 @@ async function prepareLspDiagnostics(
       `LSP diagnostics supports files up to ${MAX_LSP_DIAGNOSTIC_FILE_BYTES} bytes`,
     );
   }
-  const language = LANGUAGE_BY_EXTENSION.get(
-    path.extname(relativePath).toLowerCase(),
-  );
+  const language = lspDiagnosticLanguageForPath(relativePath);
   if (!language) {
     throw new Error(
       "LSP diagnostics supports TypeScript and JavaScript source files",
@@ -358,6 +373,24 @@ async function assertLspRuntimeStable(assets: LspRuntimeAssets): Promise<void> {
     current.typescriptServerSha256 !== assets.typescriptServerSha256
   ) {
     throw new Error("LSP diagnostics runtime assets changed during execution");
+  }
+}
+
+async function assertLspTargetStable(
+  target: string,
+  expectedFileSha256: string,
+): Promise<void> {
+  let observedFileSha256: string | undefined;
+  try {
+    observedFileSha256 = await sha256File(target);
+  } catch {
+    throw new LspDiagnosticsTargetDriftError(expectedFileSha256);
+  }
+  if (observedFileSha256 !== expectedFileSha256) {
+    throw new LspDiagnosticsTargetDriftError(
+      expectedFileSha256,
+      observedFileSha256,
+    );
   }
 }
 

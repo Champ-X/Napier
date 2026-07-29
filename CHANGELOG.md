@@ -6,6 +6,18 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added write-linked TypeScript diagnostics for `apply_patch`. When a frozen
+  Agent revision enables both `apply_patch` and `lsp_diagnostics`, supported
+  TypeScript and JavaScript files receive automatic pre-write and post-write
+  language-server checks inside the existing read-only, offline Sandbox. The
+  patch result reports clean, introduced, improved, unchanged, regressed,
+  truncated, unavailable, or drifted compiler evidence with bounded severity
+  and delta counts. Preflight failure or cancellation leaves the workspace
+  unchanged; postflight failure never hides or reclassifies a committed write.
+  Diagnostic identities ignore source movement, while target rehashing detects
+  external edits during the LSP run. Patch model-call, input, output, and
+  durable detail projections now retain hashes and counts without raw paths,
+  patch text, compiler prose, or server errors.
 - Added the first real LSP coding-intelligence slice. The opt-in
   `lsp_diagnostics` Agent tool drives `typescript-language-server` 5.3.0 and
   TypeScript 5.9.3 over standard framed JSON-RPC, with initialize, didOpen,

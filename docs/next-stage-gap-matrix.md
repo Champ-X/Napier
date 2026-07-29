@@ -21,7 +21,7 @@ Audit date: 2026-07-29
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                  |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain. |
-| P2 coding intelligence            | Partial        | Hashline, bounded symbols, and one-file TypeScript LSP diagnostics exist; persistent LSP navigation/rename/Code Actions, DAP, AST edits, post-write association, and isolated subagent worktrees remain.                                                     |
+| P2 coding intelligence            | Partial        | Hashline, bounded symbols, one-file TypeScript LSP diagnostics, and automatic write-linked diagnostic deltas exist; persistent LSP navigation/rename/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain.          |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
 | P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
@@ -430,12 +430,104 @@ Observed result:
   claimed as passed in this environment; the Sandbox fails closed without a
   host-execution fallback.
 
+## Completed Slice: Write-linked TypeScript Diagnostics
+
+User scenario: when an Agent edits a TypeScript or JavaScript file with both
+`apply_patch` and `lsp_diagnostics` enabled, Napier automatically diagnoses the
+CAS-bound source before and after the write, tells the Agent whether compiler
+evidence improved or regressed, and shows the bounded delta on the same patch
+Trace entry. The Agent does not need a second model turn merely to remember to
+call diagnostics.
+
+Acceptance:
+
+- keep `applyWorkspacePatch` language-neutral and preserve its existing
+  atomic/CAS contract; attach code intelligence through an optional observer in
+  the Workspace Tool adapter rather than importing TypeScript into the patch
+  primitive;
+- enable automatic observation only when the frozen Agent revision explicitly
+  enables both `apply_patch` and `lsp_diagnostics` under workspace or
+  unrestricted policy;
+- for existing supported files, run pre-write diagnostics first and require
+  their `fileSha256` to equal the patch `expectedSha256`; any timeout,
+  cancellation, Sandbox failure, or hash mismatch before commit must leave the
+  workspace unchanged;
+- after a successful commit, always attempt post-write diagnostics and bind
+  them to the patch `afterSha256`; a post-write failure or drift must report
+  that the patch committed with unavailable/stale diagnostics, never reclassify
+  the known write as an ordinary failed tool call or silently roll it back;
+- compare bounded diagnostic multisets by severity, code, source, and message
+  rather than source location alone so harmless line movement does not appear
+  as a new compiler failure;
+- classify clean, introduced, improved, unchanged, regressed, truncated,
+  unavailable, and drifted outcomes with before/after severity counts plus
+  introduced/resolved/unchanged counts;
+- return actionable after-write locations, codes, and messages only to the live
+  Agent; patch input, source, paths, diagnostic prose, and server errors must
+  not enter model tool-call Ledger projections, `tool.started`,
+  `tool.completed`, Trace, Replay, or OTLP;
+- unsupported file types and Agents without the explicit LSP tool retain the
+  current patch latency and behavior with no hidden process launch;
+- cover clean/fix/regression/create/truncated outcomes, pre/post timeout,
+  cancellation, post-write drift, concurrent edit races, unsupported files,
+  redaction, Replay validation, Server SSE, and Trace projection;
+- an opt-in live smoke must use the real OS Sandbox and language server to fix a
+  stable `TS2322` example through the Agent tool path.
+
+Threat boundary:
+
+- Compiler diagnostics remain untrusted output. They can guide a later Agent
+  turn but cannot authorize another write or mark a plan/evaluation complete.
+- Pre/post observations add only the existing read-only, offline LSP
+  capability. They do not widen patch scope, permit plugins/network writes, or
+  turn diagnostics into a rollback mechanism.
+- Napier write locks coordinate Napier writers; external editors may ignore
+  them. Therefore association is accepted only when LSP file hashes equal the
+  patch before/after hashes, and drift is a first-class result.
+- This slice links diagnostics to one changed file. Project-wide test
+  selection, changed-symbol association, persistent LSP navigation, and DAP
+  remain follow-ups.
+
+Observed result:
+
+- one `apply_patch` call now fixes the stable `TS2322` example, gives the live
+  Agent `1 error -> 0` plus one resolved diagnostic, and emits one path-free
+  `tool.completed` event rather than a synthetic second tool call;
+- the public Server SSE test runs the actual TypeScript language server before
+  and after the patch and completes the semantic fix in about 1.77 seconds on
+  the current machine;
+- status tests cover clean, introduced, improved, unchanged, regressed,
+  truncated, unavailable, and drifted outcomes, including location-only
+  movement and conservative same-severity diagnostic replacement;
+- preflight failure and cancellation leave bytes unchanged; concurrent
+  preflights still produce exactly one CAS winner; postflight failure retains a
+  successful patch with a failure hash; LSP target rehashing detects edits made
+  while diagnostics are running;
+- unsupported files and profiles without both tools launch no observer, while
+  the generic atomic patch implementation remains unchanged and
+  `tools.ts` shrank from 2,014 to 1,848 lines;
+- model tool-call, `tool.started`, `tool.completed`, Replay, and Trace tests
+  prove patch paths, source, patch text, diagnostic prose, and server errors do
+  not enter durable evidence; the live Agent still receives actionable
+  after-write compiler locations and messages;
+- Trace reuses the patch summary and displays status, before/after counts,
+  introduced/resolved counts, latency, and delta/result hash prefixes without
+  a new panel or state system;
+- the complete repository gate passed 898 tests with six opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget;
+- both real OS-Sandbox live LSP cases remain blocked from this IDE-launched
+  process because macOS rejects nested `sandbox-exec`. The diagnostic case
+  produced no completed details and the write-linked case preserved the
+  original erroneous file, so the boundary failed closed and is not claimed as
+  a passed live smoke in this environment.
+
 ## Next Candidate
 
-Re-audit P2 from the new HEAD before selecting the next slice. The highest
-coding-outcome candidate is write-linked diagnostics: capture bounded
-before/after LSP results around an Agent edit, show a diagnostic delta, and
-associate the evidence with the changed symbols and verification result without
-making the generic patch protocol TypeScript-specific. Persistent definition,
-reference, rename, and Code Action sessions remain a separate candidate and
-must justify their lifecycle and workspace-synchronization cost first.
+Re-audit P2 from the new HEAD. The next highest coding outcome is likely
+symbol/test association for edits: bind the changed symbol set and the most
+relevant bounded verification command to the same patch result, without
+inventing a TypeScript-only write primitive or claiming project-wide test
+selection before a repeatable benchmark exists. Persistent LSP
+definition/reference navigation remains a competing slice if its session
+lifecycle can be introduced without slowing one-shot Agent work.

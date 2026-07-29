@@ -284,6 +284,29 @@ describe("LSP diagnostics runner", () => {
       }).run({ path: "target.ts" }),
     ).rejects.toThrow("runtime assets changed");
   });
+
+  it("fails when the target changes while diagnostics are running", async () => {
+    const root = await createWorkspace();
+    const target = path.join(root, "target.ts");
+    await writeFile(target, "const value = 1;\n");
+    const controlled = controlledSandbox({
+      mode: "diagnostics",
+      beforePublish: async () => {
+        await writeFile(target, "const value = 2;\n");
+      },
+    });
+
+    await expect(
+      new LspDiagnosticsRunner({
+        workspaceRoot: root,
+        sandbox: controlled.sandbox,
+      }).run({ path: "target.ts" }),
+    ).rejects.toMatchObject({
+      name: "LspDiagnosticsTargetDriftError",
+      expectedFileSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      observedFileSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
+  });
 });
 
 async function createWorkspace(): Promise<string> {

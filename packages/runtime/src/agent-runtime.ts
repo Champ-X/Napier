@@ -90,6 +90,7 @@ import {
   parseMemoryProposalResponse,
 } from "./memory.js";
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
+import { LspWorkspacePatchObserver } from "./lsp-patch-diagnostics.js";
 import {
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
@@ -1133,11 +1134,23 @@ export class AgentRuntime {
       },
       onEvent,
     );
+    const patchObserver =
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("apply_patch") &&
+      profile.enabledTools.includes("lsp_diagnostics")
+        ? new LspWorkspacePatchObserver({
+            workspaceRoot: this.store.workspaceRoot,
+            sandbox: this.verificationSandbox,
+          })
+        : undefined;
     const tools = advisorCorrection
       ? []
       : createWorkspaceTools(this.store.workspaceRoot, {
           includeWriteTools: profile.toolPolicy !== "observe",
           dataRoot: this.store.dataRoot,
+          ...(patchObserver ? { patchObserver } : {}),
         }).filter((tool) => profile.enabledTools.includes(tool.name));
     if (
       !advisorCorrection &&

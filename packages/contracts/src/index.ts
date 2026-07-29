@@ -3024,6 +3024,45 @@ export interface LspDiagnosticsDetails {
   resultSha256: string;
 }
 
+export type WorkspacePatchDiagnosticsStatus =
+  | "clean"
+  | "introduced"
+  | "improved"
+  | "unchanged"
+  | "regressed"
+  | "truncated"
+  | "unavailable"
+  | "drifted";
+
+export interface WorkspacePatchDiagnosticsDetails {
+  kind: "napier.workspace-patch-diagnostics";
+  schemaVersion: 1;
+  status: WorkspacePatchDiagnosticsStatus;
+  language?: LspDiagnosticLanguage;
+  beforeDiagnosticCount?: number;
+  afterDiagnosticCount?: number;
+  beforeErrorCount?: number;
+  afterErrorCount?: number;
+  beforeWarningCount?: number;
+  afterWarningCount?: number;
+  beforeInformationCount?: number;
+  afterInformationCount?: number;
+  beforeHintCount?: number;
+  afterHintCount?: number;
+  introducedCount?: number;
+  resolvedCount?: number;
+  unchangedCount?: number;
+  truncated?: boolean;
+  beforeResultSha256?: string;
+  afterResultSha256?: string;
+  deltaSetSha256?: string;
+  expectedFileSha256: string;
+  observedFileSha256?: string;
+  errorSha256?: string;
+  durationMs: number;
+  resultSha256: string;
+}
+
 export type WorkspaceProcessStatus =
   | "running"
   | "succeeded"
