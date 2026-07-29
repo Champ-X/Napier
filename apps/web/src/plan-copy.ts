@@ -22,6 +22,17 @@ export const planCopy = {
   recoveryComplete: "Recovery complete",
   recoveryInProgress: "Recovery in progress",
   runRecoveryStep: "Run recovery step",
+  recoveryNextActions: {
+    complete: "Replacement work is settled.",
+    run_ready_step: "A recovery step is ready on the normal continue path.",
+    running: "Recovery is already running.",
+    blocked: "Recovery is blocked by a blocked step or missing artifact.",
+    verify_artifacts: "Verify produced recovery artifacts before closing.",
+    produce_artifacts:
+      "Produce expected recovery artifacts before verification.",
+    waiting: "Continue earlier ready work before this recovery can run.",
+    unavailable: "No recovery action is currently available.",
+  },
   recoveryStepsSettled: "recovery steps settled",
   recoveryArtifactsVerified: "recovery artifacts verified",
   changes: "changes",

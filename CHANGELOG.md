@@ -380,6 +380,9 @@ All notable changes to Napier are recorded here.
   state without introducing a second recovery status source.
 - When that recovery progress has the active ready step, the card now offers
   `Run recovery step` inline while still using the existing Plan continue path.
+- The same recovery progress card now explains the next bounded action for
+  complete, running, blocked, produced, expected, waiting, and runnable recovery
+  states without creating another recovery status source.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`, and `artifact.drift_checked`
   receipts remain hash-only, so recomputed portable replay hashes cannot hide

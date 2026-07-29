@@ -9,6 +9,7 @@ import {
   projectReplanArtifactRoles,
   projectReplanDraftSummary,
   projectReplanHistorySummary,
+  projectReplanRecoveryNextAction,
   projectReplanRecordSummary,
   projectReplanRecoveryProgress,
   projectReplanStepRoles,
@@ -292,6 +293,95 @@ describe("replan draft view model", () => {
       isComplete: false,
     });
     expect(projectReplanRecoveryProgress(plan, undefined)).toBeUndefined();
+  });
+
+  it("projects latest replan recovery next actions", () => {
+    const base = {
+      addedStepCount: 2,
+      settledStepCount: 1,
+      readyStepIds: ["verify_step"],
+      readyStepCount: 1,
+      runningStepCount: 0,
+      blockedStepCount: 0,
+      addedArtifactCount: 1,
+      verifiedArtifactCount: 0,
+      producedArtifactCount: 0,
+      missingArtifactCount: 0,
+      pendingArtifactCount: 1,
+      hasRecoveryWork: true,
+      isComplete: false,
+    };
+
+    expect(
+      projectReplanRecoveryNextAction(base, {
+        planStatus: "active",
+        readyStepId: "verify_step",
+        running: false,
+      }),
+    ).toEqual({
+      action: "run_ready_step",
+      canRun: true,
+      readyStepId: "verify_step",
+    });
+    expect(
+      projectReplanRecoveryNextAction(base, {
+        planStatus: "active",
+        readyStepId: "verify_step",
+        running: true,
+      }),
+    ).toEqual({ action: "running", canRun: false });
+    expect(
+      projectReplanRecoveryNextAction(
+        { ...base, readyStepIds: [], readyStepCount: 0, blockedStepCount: 1 },
+        { planStatus: "active", readyStepId: undefined, running: false },
+      ),
+    ).toEqual({ action: "blocked", canRun: false });
+    expect(
+      projectReplanRecoveryNextAction(
+        {
+          ...base,
+          readyStepIds: [],
+          readyStepCount: 0,
+          producedArtifactCount: 1,
+          pendingArtifactCount: 0,
+        },
+        { planStatus: "active", readyStepId: undefined, running: false },
+      ),
+    ).toEqual({ action: "verify_artifacts", canRun: false });
+    expect(
+      projectReplanRecoveryNextAction(
+        { ...base, readyStepIds: [], readyStepCount: 0 },
+        { planStatus: "active", readyStepId: undefined, running: false },
+      ),
+    ).toEqual({ action: "produce_artifacts", canRun: false });
+    expect(
+      projectReplanRecoveryNextAction(
+        {
+          ...base,
+          readyStepIds: ["verify_step"],
+          pendingArtifactCount: 0,
+        },
+        { planStatus: "active", readyStepId: "other_step", running: false },
+      ),
+    ).toEqual({ action: "waiting", canRun: false });
+    expect(
+      projectReplanRecoveryNextAction(
+        {
+          ...base,
+          settledStepCount: 2,
+          verifiedArtifactCount: 1,
+          isComplete: true,
+        },
+        { planStatus: "completed", readyStepId: undefined, running: false },
+      ),
+    ).toEqual({ action: "complete", canRun: false });
+    expect(
+      projectReplanRecoveryNextAction(undefined, {
+        planStatus: "active",
+        readyStepId: "verify_step",
+        running: false,
+      }),
+    ).toEqual({ action: "unavailable", canRun: false });
   });
 });
 

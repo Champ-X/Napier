@@ -120,6 +120,7 @@ import {
   projectReplanArtifactRoles,
   projectReplanDraftSummary,
   projectReplanHistorySummary,
+  projectReplanRecoveryNextAction,
   projectReplanRecordSummary,
   projectReplanRecoveryProgress,
   projectReplanStepRoles,
@@ -278,12 +279,15 @@ export default function PlanPanel({
     plan && latestReplan
       ? projectReplanRecoveryProgress(plan, latestReplan)
       : undefined;
-  const canContinueLatestReplanRecovery = Boolean(
-    plan?.status === "active" &&
-    readyStep &&
-    !running &&
-    latestReplanRecoveryProgress?.readyStepIds.includes(readyStep.id),
+  const latestReplanRecoveryNextAction = projectReplanRecoveryNextAction(
+    latestReplanRecoveryProgress,
+    {
+      planStatus: plan?.status,
+      readyStepId: readyStep?.id,
+      running,
+    },
   );
+  const canContinueLatestReplanRecovery = latestReplanRecoveryNextAction.canRun;
   const replanHistorySummary =
     plan && plan.replans.length > 0
       ? projectReplanHistorySummary(plan.replans)
@@ -1614,6 +1618,15 @@ export default function PlanPanel({
                       {" / "}
                       {planCopy.statuses.missing}:{" "}
                       {latestReplanRecoveryProgress.missingArtifactCount.toLocaleString()}
+                    </small>
+                    <small
+                      className={`plan-replan-recovery-next plan-replan-recovery-next--${latestReplanRecoveryNextAction.action}`}
+                    >
+                      {
+                        planCopy.recoveryNextActions[
+                          latestReplanRecoveryNextAction.action
+                        ]
+                      }
                     </small>
                     {canContinueLatestReplanRecovery ? (
                       <button

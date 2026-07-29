@@ -3251,8 +3251,11 @@ counting settled added steps and verified added artifacts without introducing a
 second recovery status source. If the active ready step is one of the latest
 replan's added recovery steps, the card exposes an inline Run recovery step
 action that reuses the normal Plan continue path rather than creating a separate
-execution route. A stale expected revision fails as a conflict before any plan
-mutation is committed.
+execution route. Otherwise the card derives a bounded next-action state from the
+same Plan projection: complete, running, blocked by missing or blocked recovery
+work, produced artifacts waiting for verification, expected artifacts waiting to
+be produced, or earlier ready work that must run before recovery. A stale
+expected revision fails as a conflict before any plan mutation is committed.
 
 Plan REST responses are no-store and response-hash-bound:
 

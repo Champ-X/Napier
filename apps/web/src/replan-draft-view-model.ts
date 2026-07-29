@@ -83,6 +83,22 @@ export interface ReplanRecoveryProgressProjection {
   isComplete: boolean;
 }
 
+export type ReplanRecoveryNextAction =
+  | "complete"
+  | "run_ready_step"
+  | "running"
+  | "blocked"
+  | "verify_artifacts"
+  | "produce_artifacts"
+  | "waiting"
+  | "unavailable";
+
+export interface ReplanRecoveryNextActionProjection {
+  action: ReplanRecoveryNextAction;
+  canRun: boolean;
+  readyStepId?: string;
+}
+
 export function projectReplanDraftSummary(
   recommendation: ExecutionPlanReplanRecommendation,
 ): ReplanDraftSummaryProjection {
@@ -201,6 +217,46 @@ export function projectReplanArtifactRoles(
     roles.push("superseded");
   }
   return roles;
+}
+
+export function projectReplanRecoveryNextAction(
+  progress: ReplanRecoveryProgressProjection | undefined,
+  input: {
+    planStatus: ExecutionPlan["status"] | undefined;
+    readyStepId: string | undefined;
+    running: boolean;
+  },
+): ReplanRecoveryNextActionProjection {
+  if (!progress?.hasRecoveryWork) {
+    return { action: "unavailable", canRun: false };
+  }
+  if (progress.isComplete) {
+    return { action: "complete", canRun: false };
+  }
+  if (input.running || progress.runningStepCount > 0) {
+    return { action: "running", canRun: false };
+  }
+  if (
+    input.planStatus === "active" &&
+    input.readyStepId &&
+    progress.readyStepIds.includes(input.readyStepId)
+  ) {
+    return {
+      action: "run_ready_step",
+      canRun: true,
+      readyStepId: input.readyStepId,
+    };
+  }
+  if (progress.blockedStepCount > 0 || progress.missingArtifactCount > 0) {
+    return { action: "blocked", canRun: false };
+  }
+  if (progress.producedArtifactCount > 0) {
+    return { action: "verify_artifacts", canRun: false };
+  }
+  if (progress.pendingArtifactCount > 0) {
+    return { action: "produce_artifacts", canRun: false };
+  }
+  return { action: "waiting", canRun: false };
 }
 
 export function projectReplanRecoveryProgress(

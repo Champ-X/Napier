@@ -6022,6 +6022,25 @@ button:disabled {
   border-color: rgb(45 85 71 / 16%);
 }
 
+.plan-replan-recovery-next {
+  width: fit-content;
+  padding: 3px 6px;
+  color: var(--ink-soft);
+  background: rgb(255 255 255 / 48%);
+  border: 1px solid rgb(45 85 71 / 13%);
+  border-radius: 999px;
+}
+
+.plan-replan-recovery-next--run_ready_step,
+.plan-replan-recovery-next--complete {
+  color: var(--ledger);
+}
+
+.plan-replan-recovery-next--blocked {
+  color: var(--danger);
+  border-color: rgb(128 54 47 / 16%);
+}
+
 .plan-replan-draft-summary dl,
 .plan-replan-record-summary dl {
   display: grid;
