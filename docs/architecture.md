@@ -190,6 +190,55 @@ already contains an active credential reference. This adapter is intentionally
 one-shot and does not yet provide an interactive TUI, resume/branch commands,
 RPC, ACP, or Desktop packaging.
 
+### Coding Outcome Benchmark
+
+`npm run bench:coding` drives the real one-shot CLI against a versioned case
+manifest and a copied temporary workspace. The runner creates a dedicated
+Agent revision with fixed model, tools, budgets, policy, and low reasoning,
+then consumes the same JSONL `StreamFrame` sequence as external automation.
+The demo model provides a deterministic failed baseline; live providers require
+an explicit environment-variable credential locator.
+
+The initial `coding_shipping_boundary_v1` scorer is host-execution-free. It
+hashes the complete before/after workspace, requires the changed path set to
+equal the case allowlist, and compares a TypeScript-parser AST projection of
+the target with the hidden expected AST. The projection ignores comments,
+whitespace, and numeric separators while preserving every syntax node and
+token kind, so formatting-equivalent output passes without accepting extra
+logic.
+
+After scoring, the runner appends one hash-only `benchmark.evaluated` event to
+the source Run. It emits:
+
+- `napier-benchmark-result-<case>-<hash>.json`, containing model, environment,
+  Run configuration, usage/cost/latency, tool failure/repetition counts, and
+  deterministic outcome;
+- `napier-benchmark-ledger-<case>-<hash>.json`, containing source event-stream
+  and snapshot hashes, event-type counts, Run/evaluation bindings, and chained
+  receipts for non-delta events.
+
+High-volume text/thinking delta receipts are summarized by count and source
+event-stream hash. Prompt, assistant text, reasoning, tool bodies, workspace
+paths, and credentials do not enter benchmark artifacts. Offline verification
+first enforces exact nested schemas, so adding an unknown raw field and
+recomputing every self-describing hash still fails closed. It then recomputes
+result/bundle hashes, receipt chains, event aggregates, Run/tool bindings, and
+the evaluation-event receipt. The command rejects result files above 256 KiB
+and Ledger bundles above 4 MiB before JSON parsing.
+
+The live case also established two Runtime compatibility boundaries:
+
+- `apply_patch` keeps its operation-specific `anyOf` validation but advertises
+  a top-level JSON Schema `type: object`, as required by OpenAI-compatible
+  function providers;
+- Pi assistant messages ending in `stopReason: error|aborted` no longer become
+  successful assistant output. The Runtime records only the diagnostic hash
+  and settles the Run as failed or cancelled.
+
+One case and one live sample do not establish task success rate or superiority.
+Repeated trials, cross-model execution, reference-project runs, and the other
+P9 domains remain required.
+
 ### Workbench
 
 `@napier/web` maintains a projection of server state. It may optimistically

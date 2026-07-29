@@ -430,6 +430,7 @@ export class AgentRuntime {
         );
       }
 
+      abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const subagents =
         model && !safeReadOnlyRecovery
@@ -1956,8 +1957,17 @@ export class AgentRuntime {
             ),
           }));
         const hasToolCalls = toolCalls.length > 0;
+        const modelFailure =
+          event.message.stopReason === "error" ||
+          event.message.stopReason === "aborted";
+        const modelFailureDiagnostic =
+          event.message.errorMessage?.trim() ||
+          (event.message.stopReason === "aborted"
+            ? "Model call was aborted."
+            : "Model call failed.");
         const redactCandidate =
-          !hasToolCalls && modelAdvisorPolicy.mode === "enforce";
+          modelFailure ||
+          (!hasToolCalls && modelAdvisorPolicy.mode === "enforce");
         await this.record(
           {
             threadId: run.threadId,
@@ -1973,6 +1983,15 @@ export class AgentRuntime {
                     reasoningSha256: sha256Text(reasoning),
                     reasoningBytes: Buffer.byteLength(reasoning, "utf8"),
                     contentRedacted: true,
+                    ...(modelFailure
+                      ? {
+                          errorSha256: sha256Text(modelFailureDiagnostic),
+                          errorBytes: Buffer.byteLength(
+                            modelFailureDiagnostic,
+                            "utf8",
+                          ),
+                        }
+                      : {}),
                   }
                 : { text, reasoning }),
               model: `${event.message.provider}/${event.message.model}`,
@@ -1997,6 +2016,13 @@ export class AgentRuntime {
           onEvent,
         );
         budget.observePrimaryUsage(usage, Date.now(), usageAccounting);
+        if (modelFailure) {
+          throw new Error(
+            event.message.stopReason === "aborted"
+              ? "Model call was aborted."
+              : "Model call failed.",
+          );
+        }
         if (hasToolCalls) return undefined;
         await this.recordModelAdvisorGate(
           run,

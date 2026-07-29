@@ -6,6 +6,25 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added the first outcome-scored Coding benchmark. `npm run bench:coding`
+  copies a hash-bound fixture into a temporary workspace, configures a fixed
+  Agent revision, and drives the real one-shot CLI JSONL path. Success is
+  determined from complete workspace snapshots, an exact changed-path
+  allowlist, and a hidden whole-file TypeScript AST projection without
+  executing generated code or trusting the assistant summary. CAS-named result
+  and privacy-bounded Ledger artifacts retain model/version, cost, latency,
+  tool failure/repetition metrics, source event/snapshot hashes, the
+  `benchmark.evaluated` event, and receipts for non-delta events while omitting
+  prompt, response, reasoning, tool bodies, paths, and credentials. Offline
+  verification rejects malformed shapes, unknown-field injection, broken
+  receipt chains, inconsistent bindings, and content drift. Case assets are
+  hash-bound, path-confined, symlink-free, and size-limited; live providers
+  require an explicit credential environment reference. An opt-in DeepSeek
+  smoke and one checked-in successful sample exercise the real path, but do not
+  claim success rate or superiority. Dogfooding also fixed OpenAI-compatible
+  `apply_patch` function schema advertisement and made Pi
+  `stopReason: error|aborted` messages settle fail-closed with redacted
+  diagnostics instead of becoming successful assistant output.
 - Added a one-shot `napier run` CLI with human output and line-delimited
   `StreamFrame` JSONL. It creates a Thread or verifies an explicit existing
   Thread, then delegates execution to the same `AgentRuntime`, model registry,

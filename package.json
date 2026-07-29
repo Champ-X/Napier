@@ -11,6 +11,7 @@
     "node": ">=22.19.0"
   },
   "scripts": {
+    "bench:coding": "npm run build:core && npm run build -w @napier/cli && node scripts/run-coding-benchmark.mjs",
     "bench:store-scale": "npm run build:core && node scripts/benchmark-store-scale.mjs",
     "build": "npm run build:core && npm run build -w @napier/cli && npm run build -w @napier/server && npm run build -w @napier/web",
     "build:core": "npm run build -w @napier/contracts && npm run build -w @napier/runtime",
@@ -30,6 +31,7 @@
     "napier": "npm run build:core && npm run build -w @napier/cli && node apps/cli/dist/index.js",
     "test": "npm run test:root && npm run test --workspaces --if-present",
     "test:live-command": "npm run test:live-command -w @napier/runtime",
+    "test:live-coding-benchmark": "npm run test:live-coding-benchmark -w @napier/cli",
     "test:live-cli": "npm run test:live-deepseek -w @napier/cli",
     "test:live-files": "npm run test:live-files -w @napier/runtime",
     "test:live-lsp": "npm run test:live-lsp -w @napier/runtime",

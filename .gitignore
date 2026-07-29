@@ -14,3 +14,4 @@ dist/
 coverage/
 playwright-report/
 test-results/
+benchmark-results/

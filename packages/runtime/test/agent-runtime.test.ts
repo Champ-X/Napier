@@ -1423,6 +1423,68 @@ describe("AgentRuntime demo path", () => {
     expect(detail.thread.goal?.blocker).toBe("run_failed");
   });
 
+  it("fails closed on a provider error message without exposing diagnostics", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
+    temporaryRoots.push(root);
+    const store = new LocalStore({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    });
+    await store.initialize();
+    const thread = await store.createThread({
+      title: "Provider error response",
+      agentId: store.listAgents()[0]!.id,
+    });
+    const provider = fauxProvider({ provider: "faux-runtime-error" });
+    const diagnostic = "PRIVATE_PROVIDER_DIAGNOSTIC";
+    provider.setResponses([
+      fauxAssistantMessage("", {
+        stopReason: "error",
+        errorMessage: diagnostic,
+      }),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(store, registry);
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Exercise a provider error.",
+      model: { provider: "faux-runtime-error", id: "faux-1" },
+    });
+
+    expect(run).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        error: "Model call failed.",
+      }),
+    );
+    const events = await store.listEvents(thread.id);
+    expect(events.some((event) => event.type === "message.assistant")).toBe(
+      false,
+    );
+    expect(
+      events.find((event) => event.type === "model.response")?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        stopReason: "error",
+        contentRedacted: true,
+        errorSha256: createHash("sha256").update(diagnostic).digest("hex"),
+        errorBytes: diagnostic.length,
+      }),
+    );
+    expect(
+      events.find((event) => event.type === "run.failed")?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        message: "Model call failed.",
+      }),
+    );
+    expect(JSON.stringify(events)).not.toContain(diagnostic);
+    store.close();
+  });
+
   it("injects only approved memory into the live model context", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-runtime-"));
     temporaryRoots.push(root);

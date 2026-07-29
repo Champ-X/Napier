@@ -24,6 +24,26 @@ afterEach(async () => {
 });
 
 describe("workspace patch Agent tool", () => {
+  it("exposes an object-rooted conditional schema for function providers", async () => {
+    const fixture = await createFixture();
+    const tool = createWorkspacePatchTool({
+      ...fixture,
+      applyPatch: applyWorkspacePatch,
+    });
+
+    expect(tool.parameters).toEqual(
+      expect.objectContaining({
+        type: "object",
+        anyOf: expect.arrayContaining([
+          expect.objectContaining({ type: "object" }),
+        ]),
+      }),
+    );
+    expect(
+      (tool.parameters as { anyOf?: unknown[] }).anyOf,
+    ).toHaveLength(4);
+  });
+
   it("leaves the workspace unchanged when pre-write diagnostics fail", async () => {
     const fixture = await createFixture();
     const target = path.join(fixture.workspaceRoot, "target.ts");

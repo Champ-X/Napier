@@ -15,7 +15,7 @@ import {
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
 
-const CLI_VERSION = "0.1.0";
+export const CLI_VERSION = "0.1.0";
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1_000;
 const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 30 * 60 * 1_000;

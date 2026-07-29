@@ -13,7 +13,7 @@ const MAX_PATCH_EDITS = 32;
 const SHA256_PATTERN = "^[a-f0-9]{64}$";
 const SHA256_PATTERN_RE = /^[a-f0-9]{64}$/u;
 
-const applyPatchSchema = Type.Union([
+const applyPatchVariants = Type.Union([
   Type.Object(
     {
       operation: Type.Literal("create"),
@@ -152,6 +152,10 @@ const applyPatchSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+const applyPatchSchema = Type.Unsafe<WorkspacePatchInput>({
+  type: "object",
+  anyOf: applyPatchVariants.anyOf,
+});
 
 export interface WorkspacePatchObservationState {
   fileSha256: string;

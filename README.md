@@ -363,6 +363,55 @@ metrics without event content. Thread Detail, incremental event, Bootstrap,
 and terminal SSE projections also expose exact UTF-8 byte counts so payload
 growth can be audited independently of wall-clock noise.
 
+## Coding Outcome Benchmark
+
+The first fixed Outcome case asks the CLI Agent to repair one JavaScript
+boundary bug in an isolated temporary workspace. The scorer does not trust the
+assistant summary or execute generated code on the host. It requires the
+complete target-file AST to match the hidden expected AST, permits only the
+declared changed path, and records success, model usage, cost, latency, tool
+failures, and repeated calls.
+
+Run a deterministic failed demo baseline:
+
+```bash
+npm run bench:coding
+```
+
+Run the real provider case with an explicit credential locator:
+
+```bash
+source .env
+npm run bench:coding -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY
+```
+
+The command writes two CAS-named files under ignored `benchmark-results/`: a
+small result and a privacy-bounded Ledger bundle. The bundle retains the full
+source event-stream hash, event-type counts, Run configuration/usage, tool
+metrics, the `benchmark.evaluated` event, and chained receipts for important
+events. Prompt, assistant text, reasoning, tool bodies, paths, and credential
+values are omitted. Verification enforces exact nested schemas before checking
+hashes, so an injected raw field remains invalid even if an attacker recomputes
+the artifact's self-describing hashes. It refuses result files above 256 KiB
+and Ledger files above 4 MiB before parsing. Verify an archived pair without a
+model call:
+
+```bash
+npm run bench:coding -- \
+  --verify-result <napier-benchmark-result-...json> \
+  --ledger <napier-benchmark-ledger-...json>
+```
+
+The checked-in
+[DeepSeek result](docs/artifacts/benchmarks/napier-benchmark-result-coding_shipping_boundary_v1-ad31aff64f35d15a.json)
+and
+[Ledger bundle](docs/artifacts/benchmarks/napier-benchmark-ledger-coding_shipping_boundary_v1-c52d3c3d04232076.json)
+are one successful sample, not a success-rate or cross-project comparison.
+Research, Workflow, long-horizon, security, UX, repeated-trial, and reference
+project suites remain open.
+
 ## Live Models
 
 Napier resolves credentials on the server. Keys are never persisted in Napier

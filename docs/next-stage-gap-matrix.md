@@ -28,7 +28,7 @@ Audit date: 2026-07-30
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and one-shot human/JSONL CLI exist; interactive TUI, resume/branch CLI commands, SDK/RPC, ACP, and Desktop remain.                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
-| P9 outcome benchmark              | Not started    | Build fixed Coding, Research, Workflow, Long-horizon, Tooling, Security, and UX tasks with environment and Ledger evidence.                                                                                                                                  |
+| P9 outcome benchmark              | Started        | One fixed CLI Coding case now records deterministic AST/workspace outcomes, model cost/latency, tool retries, and privacy-bounded Ledger evidence; repeated/cross-model Coding plus Research, Workflow, Long-horizon, Security, and UX suites remain.        |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                             |
 
 ## Completed Slice: Read-Only Sandboxed Commands
@@ -782,5 +782,109 @@ Observed result:
 - `apps/server/src/app.ts` fell by 84 lines to 27,540 lines, no code entered
   `store.ts`, and `apps/cli` contains no model or tool loop;
 - the complete repository gate passed 930 tests with nine opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: CLI Coding Outcome Benchmark
+
+User scenario: a developer can run one fixed coding task through the real
+one-shot CLI, receive a deterministic task-success verdict rather than a
+model-authored completion claim, inspect cost/latency/tool retries, and
+archive privacy-bounded Ledger evidence for offline verification.
+
+Acceptance:
+
+- check in a versioned case manifest, prompt, broken fixture, hidden expected
+  target, exact asset hashes, allowed changed paths, required tools, and a
+  bounded timeout;
+- copy the fixture into a fresh temporary workspace and create a dedicated
+  revisioned Agent with fixed model, tool surface, policy, budgets, and
+  reasoning level; a live provider requires an explicit credential
+  environment-variable locator;
+- execute only through the existing one-shot CLI JSONL path and validate every
+  event hash, final snapshot, terminal status, event-stream hash, and process
+  exit code before scoring;
+- determine success from complete workspace before/after snapshots, the exact
+  changed-path allowlist, and a hidden full-file TypeScript AST projection;
+  comments, whitespace, and numeric separators may differ, but syntax and
+  behavior-bearing tokens may not;
+- never execute model-modified code on the benchmark host and never accept the
+  assistant summary as evidence;
+- append one `benchmark.evaluated` event to the same Run after deterministic
+  scoring;
+- record model/version, Agent revision/configuration, duration, input/output/
+  cache tokens, reported cost, tool starts/completions/failures/blocks,
+  repeated calls, workspace hashes, AST hashes, and Ledger bindings;
+- write CAS-named result and privacy-bounded Ledger artifacts, then
+  self-verify exact nested schemas, result/bundle hashes, receipt chains, event
+  aggregates, Run/tool bindings, and the evaluation event; unknown-field
+  injection remains invalid even when every self-describing hash is recomputed;
+- omit prompt, assistant text, reasoning, tool bodies, workspace paths, and
+  credential values from benchmark artifacts; summarize high-volume model
+  deltas by count and the source event-stream hash;
+- cover scripted success, completed-but-unsuccessful outcome, external
+  timeout/cancellation, unavailable credentials, credential redaction, AST
+  normalization, symlinked case assets, result tampering, self-consistent
+  unknown-field injection, malformed bundle input, real command execution, and
+  offline verification;
+- provide an opt-in real DeepSeek benchmark. Do not claim a success rate,
+  cross-model ranking, or superiority from one case/sample.
+
+Performance and complexity budget:
+
+- the fixed live case should normally settle within 60 seconds and remain
+  under its 120-second external timeout;
+- the result should stay below 8 KiB and the privacy Ledger bundle below
+  64 KiB for a normal two-tool execution, regardless of reasoning delta count;
+- no benchmark code enters `store.ts` or `apps/server/src/app.ts`; production
+  code is split into runner, case, contract, Ledger, session, stream, and type
+  modules rather than one new oversized file;
+- Web main entry and the 244-route HTTP surface remain unchanged.
+
+Threat boundary:
+
+- Case paths and asset contents are trusted repository inputs but are still
+  canonicalized, hash-bound, symlink-rejected, and limited to 256 files /
+  2 MiB. Generated workspace bytes are untrusted.
+- The scorer parses generated JavaScript but does not import or execute it.
+  Full AST equivalence intentionally accepts formatting but not alternative
+  implementations; broader semantic test execution requires a separately
+  managed untrusted-code Sandbox.
+- The temporary workspace and data root are deleted after artifacts are
+  written. Output paths are explicit operator inputs and CAS writes never
+  overwrite different bytes.
+- The Ledger bundle is a bounded evidence projection, not a full Replay
+  export. Its source event-stream/snapshot hashes bind the live Run while
+  avoiding a second raw-message or reasoning export path.
+
+Observed result:
+
+- the checked-in DeepSeek `deepseek-v4-flash` sample passed in 5,273 ms with
+  5,474 input, 523 output, and 10,240 cache-read tokens, reported cost
+  `$0.000941472`, two completed tool calls, zero failed/blocked/repeated calls,
+  one changed file, and exact hidden AST agreement;
+- the CAS result
+  `napier-benchmark-result-coding_shipping_boundary_v1-ad31aff64f35d15a.json`
+  is 3,008 bytes with logical content SHA-256
+  `ad31aff64f35d15a1b56d85e90301835ac3a48d9677c8b5eeed72cfcd70d1edb`;
+- the CAS Ledger bundle
+  `napier-benchmark-ledger-coding_shipping_boundary_v1-c52d3c3d04232076.json`
+  is 20,484 bytes with logical content SHA-256
+  `c52d3c3d042320765cb02ff15cb2da8637f0c4c22aabe0637e895d7ccc776d18`;
+  it binds 333 source events while retaining 30 important receipts and
+  summarizing 303 text/thinking deltas. Prompt, source, reasoning, and
+  credential probes were absent;
+- an actual offline command revalidated the archived pair with zero
+  diagnostics;
+- the benchmark exposed and fixed two execution defects before the successful
+  run: `apply_patch` advertised an OpenAI-incompatible union-root schema, and
+  Pi `stopReason: error` messages were incorrectly settled as completed Runs.
+  The schema now remains conditionally strict under a top-level object, while
+  provider errors become hash-redacted failed/cancelled evidence without an
+  assistant message;
+- repeated live executions varied from about 5.3 to 52.0 seconds and from two
+  to nine tool calls despite the same case/model. This variance is recorded,
+  not hidden, and is why repeated-trial aggregation is the next P9 requirement;
+- the complete repository gate passed 938 tests with ten opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.
