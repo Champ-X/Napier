@@ -6489,6 +6489,16 @@ button:disabled {
   color: var(--ink-soft);
 }
 
+.artifact-data-table caption {
+  padding: 7px 8px;
+  font-family: var(--sans);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+  border-bottom: 1px solid var(--rule);
+}
+
 .artifact-data-table th,
 .artifact-data-table td {
   max-width: 220px;
@@ -6505,6 +6515,12 @@ button:disabled {
   top: 0;
   color: var(--ink);
   background: var(--paper);
+}
+
+.artifact-data-table .artifact-data-table-empty {
+  color: var(--ink-muted);
+  font-family: var(--sans);
+  font-style: italic;
 }
 
 .artifact-directory-manifest ol {

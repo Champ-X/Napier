@@ -112,6 +112,7 @@ export const planCopy = {
     truncated: "Truncated",
     columnSet: "Columns hash",
     sample: "Sample hash",
+    sampleRowsCaption: "Bounded sample rows",
     noRows: "No rows in sample.",
     manifest: "View manifest",
     manifesting: "Reading manifest...",

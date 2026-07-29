@@ -77,6 +77,7 @@ import {
   projectArtifactManifestActions,
   projectArtifactManifestEvidence,
 } from "./artifact-manifest-view-model";
+import { projectArtifactDataProfileView } from "./artifact-data-profile-view-model";
 import {
   executionPlanArchiveFilename,
   executionPlanBlueprintFilename,
@@ -136,7 +137,6 @@ import {
   projectReplanRecoveryProgress,
   projectReplanStepRoles,
 } from "./replan-draft-view-model";
-import { structuredDataFormatLabel } from "./structured-data-format-view";
 
 const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_FILE_BYTES = 2 * 1024 * 1024;
@@ -2133,6 +2133,10 @@ export default function PlanPanel({
                   artifact,
                   artifactDriftCheck,
                 );
+                const dataProfileView =
+                  artifactDataProfile?.artifactId === artifact.id
+                    ? projectArtifactDataProfileView(artifactDataProfile)
+                    : undefined;
                 const missingLabel =
                   actions.missingMode === "drifted"
                     ? planCopy.artifactActions.markDrifted
@@ -2335,7 +2339,8 @@ export default function PlanPanel({
                         <pre>{artifactPreview.text}</pre>
                       </div>
                     ) : null}
-                    {artifactDataProfile?.artifactId === artifact.id ? (
+                    {artifactDataProfile?.artifactId === artifact.id &&
+                    dataProfileView ? (
                       <div
                         className="artifact-preview artifact-data-profile"
                         role="region"
@@ -2355,9 +2360,7 @@ export default function PlanPanel({
                         </header>
                         <small>
                           {planCopy.artifactActions.dataFormat}:{" "}
-                          {structuredDataFormatLabel(
-                            artifactDataProfile.format,
-                          )}
+                          {dataProfileView.formatLabel}
                           {" / "}
                           {planCopy.artifactActions.rows}:{" "}
                           {artifactDataProfile.rowCount}
@@ -2371,39 +2374,53 @@ export default function PlanPanel({
                         <small>
                           {planCopy.artifactActions.columnSet}:{" "}
                           <code title={artifactDataProfile.columnSetSha256}>
-                            {artifactDataProfile.columnSetSha256.slice(0, 16)}
+                            {dataProfileView.columnSetShortSha256}
                           </code>
                           {" / "}
                           {planCopy.artifactActions.sample}:{" "}
                           <code title={artifactDataProfile.sampleSha256}>
-                            {artifactDataProfile.sampleSha256.slice(0, 16)}
+                            {dataProfileView.sampleShortSha256}
                           </code>
                         </small>
-                        {artifactDataProfile.columns.length > 0 ? (
+                        {dataProfileView.hasColumns ? (
                           <div className="artifact-data-table">
                             <table>
+                              <caption>
+                                {planCopy.artifactActions.sampleRowsCaption}
+                              </caption>
                               <thead>
                                 <tr>
-                                  {artifactDataProfile.columns.map((column) => (
-                                    <th key={column}>{column}</th>
+                                  {dataProfileView.columns.map((column) => (
+                                    <th
+                                      key={column.id}
+                                      scope="col"
+                                      title={column.label}
+                                    >
+                                      {column.label}
+                                    </th>
                                   ))}
                                 </tr>
                               </thead>
                               <tbody>
-                                {artifactDataProfile.sampleRows.map(
-                                  (row, rowIndex) => (
-                                    <tr
-                                      key={`${artifactDataProfile.artifactId}:${rowIndex}`}
-                                    >
-                                      {artifactDataProfile.columns.map(
-                                        (column) => (
-                                          <td key={column}>
-                                            {formatDataCell(row[column])}
-                                          </td>
-                                        ),
-                                      )}
+                                {dataProfileView.hasSampleRows ? (
+                                  dataProfileView.rows.map((row) => (
+                                    <tr key={row.id}>
+                                      {row.cells.map((cell) => (
+                                        <td key={cell.id} title={cell.value}>
+                                          {cell.value}
+                                        </td>
+                                      ))}
                                     </tr>
-                                  ),
+                                  ))
+                                ) : (
+                                  <tr>
+                                    <td
+                                      className="artifact-data-table-empty"
+                                      colSpan={dataProfileView.columns.length}
+                                    >
+                                      {planCopy.artifactActions.noRows}
+                                    </td>
+                                  </tr>
                                 )}
                               </tbody>
                             </table>
@@ -4446,13 +4463,6 @@ function compareBlueprintRecords(
 
 function BookGlyph() {
   return <Download size={14} aria-hidden="true" />;
-}
-
-function formatDataCell(
-  value: string | number | boolean | null | undefined,
-): string {
-  if (value === undefined || value === null) return "";
-  return String(value);
 }
 
 function downloadJson(value: unknown, filename: string): void {
