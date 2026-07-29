@@ -3221,6 +3221,10 @@ entries. Each draft includes a deterministic evaluation projection with
 strategy-aligned checks, replacement-work counts, policy-size pressure, a
 score/risk pair, and `evaluationSha256`; the Plan Workbench and Agent tool
 surface show the score without treating it as authorization to mutate state.
+The Workbench also renders an inline draft-change summary before Apply,
+covering expected revision, superseded steps/artifacts, added steps/artifacts,
+and dependency rewrites so the operator can inspect the concrete recovery
+shape without invoking a model review.
 An active recommendation can also be reviewed from the Plan Workbench by a
 live model through a no-store
 `napier.execution-plan-replan-draft-review` artifact. That review hashes the

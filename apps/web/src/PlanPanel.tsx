@@ -116,6 +116,7 @@ import {
   type PlanBlueprintLibrarySelectionReceipt,
 } from "./plan-blueprint-library-view-model";
 import { listReceiptTrustAnchors } from "./receipt-trust-api";
+import { projectReplanDraftSummary } from "./replan-draft-view-model";
 
 const MAX_PLAN_ARCHIVE_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_FILE_BYTES = 2 * 1024 * 1024;
@@ -264,6 +265,9 @@ export default function PlanPanel({
   const criticalPathSet = new Set(criticalPath);
   const latestReplan = plan?.replans.at(-1);
   const replanRecommendation = plan?.replanRecommendation;
+  const replanDraftSummary = replanRecommendation
+    ? projectReplanDraftSummary(replanRecommendation)
+    : undefined;
   const recommendationHash = replanRecommendation?.recommendationSha256;
   const hasOpenPlan = plans.some(
     (candidate) =>
@@ -1486,6 +1490,82 @@ export default function PlanPanel({
                     ]
                   }
                 </small>
+                {replanDraftSummary ? (
+                  <div className="plan-replan-draft-summary">
+                    <span>{planCopy.draftChanges}</span>
+                    <strong>
+                      {replanDraftSummary.structuralChangeCount.toLocaleString()}{" "}
+                      {planCopy.changes}
+                      {" / "}
+                      {planCopy.expectedRevision} r
+                      {replanDraftSummary.expectedRevision}
+                    </strong>
+                    <dl>
+                      {replanDraftSummary.supersededStepIds.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.supersededSteps}</dt>
+                          <dd>
+                            {replanDraftSummary.supersededStepIds.join(", ")}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {replanDraftSummary.supersededArtifactIds.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.supersededArtifacts}</dt>
+                          <dd>
+                            {replanDraftSummary.supersededArtifactIds.join(
+                              ", ",
+                            )}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {replanDraftSummary.addedSteps.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.addedSteps}</dt>
+                          <dd>
+                            {replanDraftSummary.addedSteps
+                              .map((step) =>
+                                step.dependsOn.length > 0
+                                  ? `${step.id}: ${step.title} (${step.dependsOn.join(", ")})`
+                                  : `${step.id}: ${step.title}`,
+                              )
+                              .join(", ")}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {replanDraftSummary.addedArtifacts.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.addedArtifacts}</dt>
+                          <dd>
+                            {replanDraftSummary.addedArtifacts
+                              .map(
+                                (artifact) =>
+                                  `${artifact.id} (${artifact.kind}: ${artifact.path})`,
+                              )
+                              .join(", ")}
+                          </dd>
+                        </div>
+                      ) : null}
+                      {replanDraftSummary.dependencyUpdates.length > 0 ? (
+                        <div>
+                          <dt>{planCopy.dependencyUpdates}</dt>
+                          <dd>
+                            {replanDraftSummary.dependencyUpdates
+                              .map(
+                                (update) =>
+                                  `${update.stepId} -> ${
+                                    update.dependsOn.length > 0
+                                      ? update.dependsOn.join(", ")
+                                      : planCopy.none
+                                  }`,
+                              )
+                              .join(" / ")}
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </div>
+                ) : null}
                 <button
                   className="plan-review-action"
                   type="button"

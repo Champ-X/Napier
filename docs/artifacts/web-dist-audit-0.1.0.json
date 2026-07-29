@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 52,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-qH5ubhJd.js",
+    "path": "apps/web/dist/assets/index-i7g_LyHD.js",
     "sizeBytes": 150040,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "aaddd8a1e89ad1318020abb0c7e7f9afb9983893c059a74ae8bd8997fe08ce49"
+    "sha256": "ac4beccc38250f77be3b88dc9daee5c8ffe3aaebcd5cc47aeb253fb697d940f3"
   },
-  "distContentSha256": "aaddd8a1e89ad1318020abb0c7e7f9afb9983893c059a74ae8bd8997fe08ce49",
+  "distContentSha256": "ac4beccc38250f77be3b88dc9daee5c8ffe3aaebcd5cc47aeb253fb697d940f3",
   "errors": []
 }

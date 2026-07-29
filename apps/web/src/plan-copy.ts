@@ -15,6 +15,14 @@ export const planCopy = {
   replan: "Latest replan",
   replanSignal: "Replan signal",
   draft: "Draft",
+  draftChanges: "Draft changes",
+  changes: "changes",
+  expectedRevision: "Expected revision",
+  supersededSteps: "Superseded steps",
+  supersededArtifacts: "Superseded artifacts",
+  addedSteps: "Added steps",
+  addedArtifacts: "Added artifacts",
+  dependencyUpdates: "Dependency updates",
   reviewDraft: "Review draft",
   reviewingDraft: "Reviewing",
   modelUnavailableHint:
@@ -81,7 +89,8 @@ export const planCopy = {
     driftResults: {
       current: "Workspace bytes still match the verified digest.",
       drifted: "Workspace bytes drifted. Mark drifted to block and replan.",
-      missing: "Workspace artifact is missing. Mark drifted to block and replan.",
+      missing:
+        "Workspace artifact is missing. Mark drifted to block and replan.",
     },
     evidence: {
       produced: "Operator marked the artifact as produced from Workbench.",

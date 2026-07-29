@@ -363,6 +363,9 @@ All notable changes to Napier are recorded here.
 - Drift check result cards now offer the next safe recovery action inline:
   `current` results can recheck bytes, while `drifted` and `missing` results
   can mark the artifact drifted without leaving the evidence card.
+- Replan signals now show an inline draft-change summary before Apply:
+  superseded steps/artifacts, added steps/artifacts, dependency rewrites, and
+  the expected Plan revision are visible without opening model review.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`, and `artifact.drift_checked`
   receipts remain hash-only, so recomputed portable replay hashes cannot hide
