@@ -420,6 +420,85 @@ describe("thread replay bundles", () => {
     );
   });
 
+  it("rejects raw directory manifest entries when bundle hashes are recomputed", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Directory manifest bundle",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const plan = await store.createPlan(thread.id, {
+      objective: "Preview directory artifact evidence.",
+      steps: [
+        {
+          id: "manifest",
+          title: "Manifest artifact",
+          description: "Preview the directory manifest.",
+          verification: "The manifest receipt stays hash-only.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "bundle",
+          path: "artifacts/bundle",
+          kind: "directory",
+          description: "The bundle directory.",
+        },
+      ],
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.directory_manifested",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "bundle",
+        planRevision: plan.revision,
+        status: "verified",
+        kind: "directory",
+        pathSha256: sha256("artifacts/bundle"),
+        sha256: "b".repeat(64),
+        sizeBytes: 256,
+        entryCount: 3,
+        fileCount: 2,
+        directoryCount: 1,
+      },
+    });
+
+    const bundle = await exportThreadReplayBundle(store, thread.id);
+    expect(validateThreadReplayBundle(bundle).events).toEqual(bundle.events);
+    expect(JSON.stringify(bundle.events)).not.toContain("artifacts/bundle");
+
+    const tampered = structuredClone(bundle);
+    const event = tampered.events.find(
+      (candidate) => candidate.type === "artifact.directory_manifested",
+    );
+    if (
+      !event?.payload ||
+      Array.isArray(event.payload) ||
+      typeof event.payload !== "object"
+    ) {
+      throw new Error("Directory manifest event fixture is missing");
+    }
+    event.payload["entries"] = [{ path: "artifacts/bundle/report.md" }];
+    tampered.eventStreamSha256 = hashThreadEventStream(tampered.events);
+    const {
+      generatedAt: _generatedAt,
+      contentSha256: _contentSha256,
+      ...content
+    } = tampered;
+    tampered.contentSha256 = sha256(canonicalJson(content));
+    expect(() => validateThreadReplayBundle(tampered)).toThrow(
+      "hash-only artifact receipt is invalid",
+    );
+  });
+
   it("rebinds Agent milestone evidence after portable event remapping", async () => {
     const { store } = await createStore();
     const agent = store.listAgents()[0]!;

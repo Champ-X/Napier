@@ -449,6 +449,97 @@ describe("execution plan archives", () => {
     );
   });
 
+  it("keeps directory artifact manifest receipts hash-only in plan archives", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Directory manifest archive",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const plan = await store.createPlan(thread.id, {
+      objective: "Inspect a directory artifact manifest.",
+      steps: [
+        {
+          id: "inspect",
+          title: "Inspect directory manifest",
+          description: "Observe directory artifact contents.",
+          verification: "The manifest receipt stays hash-only.",
+        },
+      ],
+      artifacts: [
+        {
+          id: "bundle",
+          path: "artifacts/bundle",
+          kind: "directory",
+          description: "The bundle directory.",
+        },
+      ],
+    });
+    const pathSha256 = createHash("sha256")
+      .update("artifacts/bundle")
+      .digest("hex");
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.directory_manifested",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "bundle",
+        planRevision: plan.revision,
+        status: "verified",
+        kind: "directory",
+        pathSha256,
+        sha256: "b".repeat(64),
+        sizeBytes: 256,
+        entryCount: 3,
+        fileCount: 2,
+        directoryCount: 1,
+      },
+    });
+
+    const archive = await createExecutionPlanArchive(store, thread.id, plan.id);
+    expect(archive.events.map((event) => event.type)).toEqual([
+      "artifact.directory_manifested",
+    ]);
+    expect(JSON.stringify(archive.events)).not.toContain("artifacts/bundle");
+    expect(verifyExecutionPlanArchive(archive).status).toBe("valid");
+
+    const tampered = structuredClone(archive);
+    const manifestEvent = tampered.events[0];
+    if (
+      !manifestEvent?.payload ||
+      Array.isArray(manifestEvent.payload) ||
+      typeof manifestEvent.payload !== "object"
+    ) {
+      throw new Error("Directory manifest event fixture is missing");
+    }
+    manifestEvent.payload["entries"] = [{ path: "artifacts/bundle/report.md" }];
+    tampered.eventStreamSha256 = createHash("sha256")
+      .update(tampered.events.map((event) => JSON.stringify(event)).join("\n"))
+      .digest("hex");
+    tampered.contentSha256 = hashExecutionPlanArchiveContent({
+      kind: tampered.kind,
+      schemaVersion: tampered.schemaVersion,
+      apiVersion: tampered.apiVersion,
+      threadId: tampered.threadId,
+      plan: tampered.plan,
+      events: tampered.events,
+      eventStreamSha256: tampered.eventStreamSha256,
+    });
+    expect(verifyExecutionPlanArchive(tampered)).toEqual(
+      expect.objectContaining({
+        status: "invalid",
+        diagnostics: ["invalid_shape"],
+      }),
+    );
+  });
+
   it("distills a reusable workflow blueprint from a plan archive", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;
