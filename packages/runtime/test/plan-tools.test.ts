@@ -564,6 +564,33 @@ describe("plan tools", () => {
       ),
     });
 
+    const tsvContents = "name\tscore\nalpha\t1\nbeta\t2\n";
+    await writeFile(
+      path.join(workspaceRoot, "artifacts", "scores.tsv"),
+      tsvContents,
+      "utf8",
+    );
+    await expect(
+      previewWorkspaceDataArtifactProfile(workspaceRoot, {
+        ...artifact,
+        id: "scores-tsv",
+        path: "artifacts/scores.tsv",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        format: "tsv",
+        sha256: createHash("sha256").update(tsvContents).digest("hex"),
+        sizeBytes: Buffer.byteLength(tsvContents),
+        rowCount: 2,
+        columnCount: 2,
+        columns: ["name", "score"],
+        sampleRows: [
+          { name: "alpha", score: "1" },
+          { name: "beta", score: "2" },
+        ],
+      }),
+    );
+
     await writeFile(
       path.join(workspaceRoot, "artifacts", "scores.csv"),
       "name,score\ndrifted,9\n",

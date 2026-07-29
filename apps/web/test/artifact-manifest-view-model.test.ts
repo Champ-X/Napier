@@ -131,6 +131,19 @@ describe("artifact manifest view model", () => {
         canProfileData: true,
       }),
     );
+    expect(
+      projectArtifactManifestActions(
+        artifactFixture({
+          status: "produced",
+          kind: "file",
+          path: "artifacts/scores.tsv",
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        canProfileData: true,
+      }),
+    );
   });
 
   it("formats exact byte counts", () => {

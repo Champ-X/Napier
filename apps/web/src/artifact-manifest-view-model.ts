@@ -71,7 +71,7 @@ export function projectArtifactManifestActions(
     (artifact.status === "produced" || artifact.status === "verified");
   const canPreview = canDownload;
   const canProfileData =
-    canDownload && /\.(?:csv|json|jsonl|ndjson)$/iu.test(artifact.path);
+    canDownload && /\.(?:csv|json|jsonl|ndjson|tsv|tab)$/iu.test(artifact.path);
   const canInspectManifest =
     artifact.kind === "directory" &&
     (artifact.status === "produced" || artifact.status === "verified");

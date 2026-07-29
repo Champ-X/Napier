@@ -666,7 +666,7 @@ describe("Web JSON API wrappers", () => {
       pathSha256: "a".repeat(64),
       sha256: "b".repeat(64),
       sizeBytes: 21,
-      format: "csv",
+      format: "tsv",
       rowCount: 2,
       columnCount: 2,
       truncated: false,

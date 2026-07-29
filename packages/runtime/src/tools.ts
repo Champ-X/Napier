@@ -91,7 +91,7 @@ const listSymbolsSchema = Type.Object({
 
 const inspectDataSchema = Type.Object({
   path: Type.String({
-    description: "Workspace-relative JSON, JSONL, or CSV file path.",
+    description: "Workspace-relative JSON, JSONL, CSV, or TSV file path.",
   }),
   format: Type.Optional(
     Type.Union([
@@ -99,6 +99,7 @@ const inspectDataSchema = Type.Object({
       Type.Literal("json"),
       Type.Literal("jsonl"),
       Type.Literal("csv"),
+      Type.Literal("tsv"),
     ]),
   ),
   maxRows: Type.Optional(
@@ -1794,7 +1795,7 @@ export function createWorkspaceTools(
     name: "inspect_data",
     label: "Inspect data",
     description:
-      "Inspect a UTF-8 JSON, JSONL, or CSV workspace file and return bounded schema/sample evidence.",
+      "Inspect a UTF-8 JSON, JSONL, CSV, or TSV workspace file and return bounded schema/sample evidence.",
     parameters: inspectDataSchema,
     async execute(_toolCallId, input) {
       const resolved = await resolveWorkspacePath(workspaceRoot, input.path);

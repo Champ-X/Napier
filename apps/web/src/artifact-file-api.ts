@@ -35,7 +35,7 @@ export interface PlanArtifactDataProfile {
   pathSha256: string;
   sha256: string;
   sizeBytes: number;
-  format: "json" | "jsonl" | "csv";
+  format: "json" | "jsonl" | "csv" | "tsv";
   rowCount: number;
   columnCount: number;
   truncated: boolean;

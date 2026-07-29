@@ -273,7 +273,7 @@ All notable changes to Napier are recorded here.
   TypeScript, JavaScript, Python, and Go symbol maps. It returns symbols to the
   Agent while Trace renders only file/symbol/skipped counts, line/byte counts,
   truncation state, and root/language/file-set/symbol-set hashes.
-- Added a read-only `inspect_data` workspace tool for JSON, JSONL, and CSV
+- Added a read-only `inspect_data` workspace tool for JSON, JSONL, CSV, and TSV
   files. It returns bounded schema/sample evidence to the Agent while Trace
   renders only format, row/column counts, truncation state, and path/file/
   column-set/sample hashes.
@@ -363,7 +363,7 @@ All notable changes to Napier are recorded here.
   through the same workspace and digest boundary. Preview responses are
   no-store and hash-bound, while `artifact.previewed` Ledger events and Plan
   archives persist only content/text hashes, byte count, and line count.
-- Plan Workbench now profiles produced or verified CSV, JSON, JSONL, and
+- Plan Workbench now profiles produced or verified TSV, CSV, JSON, JSONL, and
   NDJSON file artifacts using the shared `inspect_data` parser. The no-store
   response shows columns and capped sample rows, while
   `artifact.data_profiled` Ledger receipts persist only format, counts,

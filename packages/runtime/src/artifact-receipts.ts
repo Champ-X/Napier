@@ -135,7 +135,12 @@ function assertArtifactDataProfiledPayload(
     throw new Error(`${label} hash-only artifact receipt is invalid`);
   }
   const format = payload["format"];
-  if (format !== "json" && format !== "jsonl" && format !== "csv") {
+  if (
+    format !== "json" &&
+    format !== "jsonl" &&
+    format !== "csv" &&
+    format !== "tsv"
+  ) {
     throw new Error(`${label} hash-only artifact receipt is invalid`);
   }
   if (typeof payload["truncated"] !== "boolean") {

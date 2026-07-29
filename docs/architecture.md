@@ -1574,7 +1574,7 @@ list_symbols
      Trace can show file/symbol/skipped counts, line/byte counts, truncation,
      and hashes without rendering paths, symbol names, or signatures
 inspect_data
-  -> resolve JSON / JSONL / CSV files through the same read-only realpath and
+  -> resolve JSON / JSONL / CSV / TSV files through the same read-only realpath and
      UTF-8 boundary as read_file
   -> reject oversized or malformed input and return at most 25 structured
      sample rows to the Agent
@@ -3585,7 +3585,7 @@ checks, returns text only in the no-store response, and appends an
 status/kind, `pathSha256`, artifact SHA-256, byte count, line count, and
 `textSha256`. Plan archive verification accepts only that hash-only preview
 receipt shape, so raw preview text or paths in the event payload fail closed.
-CSV, JSON, JSONL, and NDJSON file artifacts can also be profiled through the
+TSV, CSV, JSON, JSONL, and NDJSON file artifacts can also be profiled through the
 same produced/verified file boundary. The runtime reuses the Agent
 `inspect_data` parser, limits the source to 2 MiB, returns at most 10 sample
 rows in the no-store response, and computes column-set and sample SHA-256

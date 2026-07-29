@@ -2,7 +2,7 @@ export const MAX_STRUCTURED_DATA_SAMPLE_ROWS = 25;
 export const MAX_STRUCTURED_DATA_COLUMNS = 80;
 const MAX_STRUCTURED_DATA_CELL_BYTES = 4_096;
 
-export type WorkspaceDataFormat = "json" | "jsonl" | "csv";
+export type WorkspaceDataFormat = "json" | "jsonl" | "csv" | "tsv";
 export type WorkspaceDataCell = string | number | boolean | null;
 
 export interface WorkspaceStructuredDataInspection {
@@ -24,7 +24,9 @@ export function inspectStructuredData(
   const format = detectDataFormat(source, relativePath, requestedFormat);
   const inspected =
     format === "csv"
-      ? inspectCsvData(source, maxRows, errorPrefix)
+      ? inspectDelimitedData(source, maxRows, errorPrefix, ",", "CSV")
+      : format === "tsv"
+        ? inspectDelimitedData(source, maxRows, errorPrefix, "\t", "TSV")
       : format === "jsonl"
         ? inspectJsonLinesData(source, maxRows, errorPrefix)
         : inspectJsonData(source, maxRows, errorPrefix);
@@ -40,9 +42,12 @@ function detectDataFormat(
   const lower = relativePath.toLowerCase();
   if (lower.endsWith(".jsonl") || lower.endsWith(".ndjson")) return "jsonl";
   if (lower.endsWith(".json")) return "json";
+  if (lower.endsWith(".tsv") || lower.endsWith(".tab")) return "tsv";
   if (lower.endsWith(".csv")) return "csv";
   const trimmed = source.trimStart();
   if (trimmed.startsWith("{") || trimmed.startsWith("[")) return "json";
+  const firstLine = trimmed.split(/\r?\n/u, 1)[0] ?? "";
+  if (firstLine.includes("\t") && !firstLine.includes(",")) return "tsv";
   return "csv";
 }
 
@@ -80,12 +85,14 @@ function inspectJsonLinesData(
   return inspectStructuredRows(rows, maxRows);
 }
 
-function inspectCsvData(
+function inspectDelimitedData(
   source: string,
   maxRows: number,
   errorPrefix: string,
+  delimiter: "," | "\t",
+  label: "CSV" | "TSV",
 ): Omit<WorkspaceStructuredDataInspection, "format"> {
-  const rows = parseCsvRows(source, errorPrefix);
+  const rows = parseDelimitedRows(source, errorPrefix, delimiter, label);
   if (rows.length === 0) {
     return {
       rowCount: 0,
@@ -117,7 +124,12 @@ function inspectCsvData(
   };
 }
 
-function parseCsvRows(source: string, errorPrefix: string): string[][] {
+function parseDelimitedRows(
+  source: string,
+  errorPrefix: string,
+  delimiter: "," | "\t",
+  label: "CSV" | "TSV",
+): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
@@ -139,12 +151,12 @@ function parseCsvRows(source: string, errorPrefix: string): string[][] {
     }
     if (char === '"') {
       if (field.length !== 0) {
-        throw new Error(`${errorPrefix} CSV quote is invalid`);
+        throw new Error(`${errorPrefix} ${label} quote is invalid`);
       }
       quoted = true;
       continue;
     }
-    if (char === ",") {
+    if (char === delimiter) {
       row.push(field);
       field = "";
       continue;
@@ -161,7 +173,7 @@ function parseCsvRows(source: string, errorPrefix: string): string[][] {
     }
     field += char;
   }
-  if (quoted) throw new Error(`${errorPrefix} CSV quote is unterminated`);
+  if (quoted) throw new Error(`${errorPrefix} ${label} quote is unterminated`);
   if (field.length > 0 || row.length > 0) {
     row.push(field);
     rows.push(row);

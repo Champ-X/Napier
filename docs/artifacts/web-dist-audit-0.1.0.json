@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 54,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-TMmRKOGv.js",
+    "path": "apps/web/dist/assets/index-CcpyuaAh.js",
     "sizeBytes": 129736,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "3aa66a5f56a20b40bb8ea69aaa5c1f096c1993b4cce452a4012abb16fb1269c6"
+    "sha256": "97b28d4f4ee3d670314d7822775840326443ea18a80582104864c208d399ac6d"
   },
-  "distContentSha256": "3aa66a5f56a20b40bb8ea69aaa5c1f096c1993b4cce452a4012abb16fb1269c6",
+  "distContentSha256": "97b28d4f4ee3d670314d7822775840326443ea18a80582104864c208d399ac6d",
   "errors": []
 }

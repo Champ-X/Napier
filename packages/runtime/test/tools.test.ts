@@ -203,11 +203,13 @@ describe("workspace tools", () => {
   it("inspects structured data files with bounded sample receipts", async () => {
     const { workspaceRoot } = await createFixture();
     const csv = "name,score\nAda,98\nLinus,87\n";
+    const tsv = "name\tscore\nAda\t98\nLinus\t87\n";
     const jsonl = [
       JSON.stringify({ id: 1, status: "open", hidden: "alpha" }),
       JSON.stringify({ id: 2, status: "closed", hidden: "beta" }),
     ].join("\n");
     await writeFile(path.join(workspaceRoot, "scores.csv"), csv);
+    await writeFile(path.join(workspaceRoot, "scores.tsv"), tsv);
     await writeFile(path.join(workspaceRoot, "items.jsonl"), jsonl);
     const inspect = createWorkspaceTools(workspaceRoot).find(
       (tool) => tool.name === "inspect_data",
@@ -258,6 +260,32 @@ describe("workspace tools", () => {
       }),
     );
     expect(jsonlResult.content[0]!.text).toContain('"status": "open"');
+
+    const tsvResult = await inspect.execute("inspect-tsv", {
+      path: "scores.tsv",
+      maxRows: 2,
+    });
+    const tsvSample = [
+      { name: "Ada", score: "98" },
+      { name: "Linus", score: "87" },
+    ];
+    expect(tsvResult.details).toEqual({
+      path: "scores.tsv",
+      pathSha256: createHash("sha256").update("scores.tsv").digest("hex"),
+      format: "tsv",
+      sha256: createHash("sha256").update(tsv).digest("hex"),
+      sizeBytes: Buffer.byteLength(tsv),
+      rowCount: 2,
+      columnCount: 2,
+      truncated: false,
+      columnSetSha256: createHash("sha256")
+        .update(JSON.stringify(csvColumns))
+        .digest("hex"),
+      sampleSha256: createHash("sha256")
+        .update(JSON.stringify(tsvSample))
+        .digest("hex"),
+    });
+    expect(tsvResult.content[0]!.text).toContain('"format":"tsv"');
   });
 
   it("lists code symbols across a bounded workspace directory", async () => {
