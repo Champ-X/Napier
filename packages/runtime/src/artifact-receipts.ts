@@ -5,6 +5,7 @@ const ARTIFACT_RECEIPT_EVENTS = new Set([
   "artifact.data_profiled",
   "artifact.data_profile_verified",
   "artifact.directory_manifested",
+  "artifact.directory_manifest_verified",
   "artifact.drift_checked",
   "artifact.exported",
   "artifact.previewed",
@@ -98,6 +99,31 @@ const ARTIFACT_DIRECTORY_MANIFESTED_KEYS = [
   "directoryCount",
 ];
 
+const ARTIFACT_DIRECTORY_MANIFEST_VERIFIED_KEYS = [
+  "planId",
+  "artifactId",
+  "planRevision",
+  "status",
+  "kind",
+  "pathSha256",
+  "verificationStatus",
+  "diagnosticCount",
+  "diagnosticsSha256",
+  "declaredSha256",
+  "recomputedDeclaredSha256",
+  "observedSha256",
+  "declaredSizeBytes",
+  "observedSizeBytes",
+  "declaredEntryCount",
+  "observedEntryCount",
+  "declaredFileCount",
+  "observedFileCount",
+  "declaredDirectoryCount",
+  "observedDirectoryCount",
+  "declaredEntrySetSha256",
+  "observedEntrySetSha256",
+];
+
 export function isArtifactReceiptEvent(
   event: Pick<RunEvent, "type" | "category"> | Record<string, unknown>,
 ): boolean {
@@ -126,6 +152,10 @@ export function assertArtifactReceiptEventBoundary(
   }
   if (event["type"] === "artifact.directory_manifested") {
     assertArtifactDirectoryManifestedPayload(payload, label);
+    return;
+  }
+  if (event["type"] === "artifact.directory_manifest_verified") {
+    assertArtifactDirectoryManifestVerifiedPayload(payload, label);
     return;
   }
   if (event["type"] === "artifact.drift_checked") {
@@ -258,6 +288,44 @@ function assertArtifactDirectoryManifestedPayload(
   assertPositiveInteger(payload["entryCount"], label);
   assertNonNegativeInteger(payload["fileCount"], label);
   assertPositiveInteger(payload["directoryCount"], label);
+}
+
+function assertArtifactDirectoryManifestVerifiedPayload(
+  payload: Record<string, unknown>,
+  label: string,
+): void {
+  assertExactKeys(payload, ARTIFACT_DIRECTORY_MANIFEST_VERIFIED_KEYS, label);
+  assertNonEmptyString(payload["planId"], label);
+  assertNonEmptyString(payload["artifactId"], label);
+  assertPositiveInteger(payload["planRevision"], label);
+  if (payload["status"] !== "produced" && payload["status"] !== "verified") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (payload["kind"] !== "directory") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (
+    payload["verificationStatus"] !== "valid" &&
+    payload["verificationStatus"] !== "drifted"
+  ) {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  assertSha256(payload["pathSha256"], label);
+  assertSha256(payload["diagnosticsSha256"], label);
+  assertSha256(payload["declaredSha256"], label);
+  assertSha256(payload["recomputedDeclaredSha256"], label);
+  assertSha256(payload["observedSha256"], label);
+  assertSha256(payload["declaredEntrySetSha256"], label);
+  assertSha256(payload["observedEntrySetSha256"], label);
+  assertNonNegativeInteger(payload["diagnosticCount"], label);
+  assertNonNegativeInteger(payload["declaredSizeBytes"], label);
+  assertNonNegativeInteger(payload["observedSizeBytes"], label);
+  assertNonNegativeInteger(payload["declaredEntryCount"], label);
+  assertNonNegativeInteger(payload["observedEntryCount"], label);
+  assertNonNegativeInteger(payload["declaredFileCount"], label);
+  assertNonNegativeInteger(payload["observedFileCount"], label);
+  assertNonNegativeInteger(payload["declaredDirectoryCount"], label);
+  assertNonNegativeInteger(payload["observedDirectoryCount"], label);
 }
 
 function assertArtifactDriftCheckedPayload(

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 56,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BYDhnNEQ.js",
+    "path": "apps/web/dist/assets/index-CCsMSMr1.js",
     "sizeBytes": 129794,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "146c368a6c43570895544267d5c2fea9df7877f8fc1443d5b682027e40b68214"
+    "sha256": "09a1221f3f6c6049c21ff04f08e7938dd76e2e90b8767ce3af23c5a0dbd31c52"
   },
-  "distContentSha256": "146c368a6c43570895544267d5c2fea9df7877f8fc1443d5b682027e40b68214",
+  "distContentSha256": "09a1221f3f6c6049c21ff04f08e7938dd76e2e90b8767ce3af23c5a0dbd31c52",
   "errors": []
 }

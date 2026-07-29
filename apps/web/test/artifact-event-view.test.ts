@@ -259,6 +259,65 @@ describe("artifact event trace view", () => {
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects directory manifest verification receipts without entries or diagnostics", () => {
+    const event = artifactEvent("artifact.directory_manifest_verified", {
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 8,
+      status: "verified",
+      kind: "directory",
+      verificationStatus: "drifted",
+      diagnostics: ["TOP_SECRET_DIAGNOSTIC"],
+      entries: [{ path: "TOP_SECRET_ENTRY.md" }],
+      pathSha256: "a".repeat(64),
+      diagnosticsSha256: "b".repeat(64),
+      declaredSha256: "c".repeat(64),
+      recomputedDeclaredSha256: "d".repeat(64),
+      observedSha256: "e".repeat(64),
+      declaredSizeBytes: 512,
+      observedSizeBytes: 768,
+      declaredEntryCount: 3,
+      observedEntryCount: 4,
+      declaredFileCount: 2,
+      observedFileCount: 3,
+      declaredDirectoryCount: 1,
+      observedDirectoryCount: 1,
+      declaredEntrySetSha256: "f".repeat(64),
+      observedEntrySetSha256: "0".repeat(64),
+      diagnosticCount: 2,
+    });
+
+    expect(artifactEventTraceView(event)).toEqual({
+      action: "directory_manifest_verified",
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 8,
+      status: "verified",
+      kind: "directory",
+      verificationStatus: "drifted",
+      pathSha256: "a".repeat(64),
+      diagnosticsSha256: "b".repeat(64),
+      declaredSha256: "c".repeat(64),
+      recomputedDeclaredSha256: "d".repeat(64),
+      observedSha256: "e".repeat(64),
+      declaredSizeBytes: 512,
+      observedSizeBytes: 768,
+      declaredEntryCount: 3,
+      observedEntryCount: 4,
+      declaredFileCount: 2,
+      observedFileCount: 3,
+      declaredDirectoryCount: 1,
+      observedDirectoryCount: 1,
+      declaredEntrySetSha256: "f".repeat(64),
+      observedEntrySetSha256: "0".repeat(64),
+      diagnosticCount: 2,
+    });
+    expect(artifactEventTraceSummary(event)).toBe(
+      `artifact / directory_manifest_verified / plan 1234567890 / artifact 0987654321 / plan-r8 / status verified / kind directory / verification drifted / size-bytes 512->768 / diagnostics 2 / entries 3->4 / files 2->3 / directories 1->1 / path ${"a".repeat(12)} / declared ${"c".repeat(12)} / declared-self ${"d".repeat(12)} / observed ${"e".repeat(12)} / declared-entries ${"f".repeat(12)} / observed-entries ${"0".repeat(12)} / diagnostics ${"b".repeat(12)}`,
+    );
+    expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("falls back for malformed artifact receipts", () => {
     expect(
       artifactEventTraceSummary(artifactEvent("artifact.future", {})),

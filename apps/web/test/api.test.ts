@@ -90,10 +90,12 @@ import {
   checkPlanArtifactDrift,
   downloadPlanArtifactFile,
   type PlanArtifactDataProfile,
+  type PlanArtifactDirectoryManifest,
   previewPlanArtifactDataProfile,
   previewPlanArtifactDirectoryManifest,
   previewPlanArtifactText,
   verifyPlanArtifactDataProfile,
+  verifyPlanArtifactDirectoryManifest,
 } from "../src/artifact-file-api";
 
 describe("Web JSON API wrappers", () => {
@@ -825,7 +827,7 @@ describe("Web JSON API wrappers", () => {
   });
 
   it("previews plan directory artifact manifests through response hash verification", async () => {
-    const manifest = {
+    const manifest: PlanArtifactDirectoryManifest = {
       kind: "napier.plan-artifact-directory-manifest",
       schemaVersion: 1,
       planId: "plan_1",
@@ -868,6 +870,89 @@ describe("Web JSON API wrappers", () => {
     await expect(
       previewPlanArtifactDirectoryManifest("thread_1", "plan_1", "artifact_1"),
     ).resolves.toEqual(manifest);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies plan directory artifact manifests through response hash verification", async () => {
+    const manifest: PlanArtifactDirectoryManifest = {
+      kind: "napier.plan-artifact-directory-manifest",
+      schemaVersion: 1,
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "directory",
+      pathSha256: "a".repeat(64),
+      sha256: "b".repeat(64),
+      sizeBytes: 42,
+      entryCount: 2,
+      fileCount: 1,
+      directoryCount: 1,
+      entries: [
+        { kind: "directory", path: "." },
+        {
+          kind: "file",
+          path: "report.md",
+          sha256: "c".repeat(64),
+          sizeBytes: 42,
+        },
+      ],
+    };
+    const verification = {
+      kind: "napier.plan-artifact-directory-manifest-verification",
+      schemaVersion: 1,
+      threadId: "thread_1",
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "directory",
+      verificationStatus: "valid",
+      diagnostics: [],
+      pathSha256: "a".repeat(64),
+      declaredSha256: "b".repeat(64),
+      recomputedDeclaredSha256: "b".repeat(64),
+      observedSha256: "b".repeat(64),
+      declaredSizeBytes: 42,
+      observedSizeBytes: 42,
+      declaredEntryCount: 2,
+      observedEntryCount: 2,
+      declaredFileCount: 1,
+      observedFileCount: 1,
+      declaredDirectoryCount: 1,
+      observedDirectoryCount: 1,
+      declaredEntrySetSha256: "d".repeat(64),
+      observedEntrySetSha256: "d".repeat(64),
+      ledgerEventId: "event_manifest_1234567890",
+      ledgerEventSeq: 9,
+      ledgerEventSha256: "e".repeat(64),
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/manifest/verify",
+      );
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({ "Content-Type": "application/json" });
+      expect(init?.body).toBe(JSON.stringify({ manifest }));
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyPlanArtifactDirectoryManifest(
+        "thread_1",
+        "plan_1",
+        "artifact_1",
+        manifest,
+      ),
+    ).resolves.toEqual(verification);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

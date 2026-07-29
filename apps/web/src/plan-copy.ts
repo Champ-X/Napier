@@ -127,6 +127,13 @@ export const planCopy = {
     manifesting: "Reading manifest...",
     manifestTitle: "Directory manifest",
     downloadManifest: "Download manifest",
+    verifyManifest: "Verify manifest",
+    verifyingManifest: "Verifying...",
+    manifestVerifyInvalidJson: "Directory manifest JSON is invalid.",
+    manifestVerificationStatuses: {
+      valid: "Manifest verified",
+      drifted: "Manifest drifted",
+    },
     entries: "Entries",
     files: "Files",
     directories: "Directories",

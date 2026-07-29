@@ -119,6 +119,36 @@ export interface PlanArtifactDirectoryManifest {
   entries: PlanArtifactDirectoryManifestEntry[];
 }
 
+export interface PlanArtifactDirectoryManifestVerification {
+  kind: "napier.plan-artifact-directory-manifest-verification";
+  schemaVersion: 1;
+  threadId: string;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  verificationStatus: "valid" | "drifted";
+  diagnostics: string[];
+  pathSha256: string;
+  declaredSha256: string;
+  recomputedDeclaredSha256: string;
+  observedSha256: string;
+  declaredSizeBytes: number;
+  observedSizeBytes: number;
+  declaredEntryCount: number;
+  observedEntryCount: number;
+  declaredFileCount: number;
+  observedFileCount: number;
+  declaredDirectoryCount: number;
+  observedDirectoryCount: number;
+  declaredEntrySetSha256: string;
+  observedEntrySetSha256: string;
+  ledgerEventId: string;
+  ledgerEventSeq: number;
+  ledgerEventSha256: string;
+}
+
 export async function downloadPlanArtifactFile(
   threadId: string,
   planId: string,
@@ -208,6 +238,21 @@ export function previewPlanArtifactDirectoryManifest(
 ): Promise<PlanArtifactDirectoryManifest> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/manifest`,
+  );
+}
+
+export function verifyPlanArtifactDirectoryManifest(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+  manifest: PlanArtifactDirectoryManifest,
+): Promise<PlanArtifactDirectoryManifestVerification> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/manifest/verify`,
+    {
+      method: "POST",
+      body: JSON.stringify({ manifest }),
+    },
   );
 }
 

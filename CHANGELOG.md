@@ -399,6 +399,11 @@ All notable changes to Napier are recorded here.
   with artifact-relative entries and file hashes in the no-store response while
   recording only digest, byte, entry, file, and directory counts in
   `artifact.directory_manifested` Ledger receipts.
+- Downloaded directory manifest JSON can now be uploaded back through Workbench
+  for no-store verification; the resulting
+  `artifact.directory_manifest_verified` receipt records only status, diagnostic
+  count/hash, declared/recomputed/observed directory hashes, entry-set hashes,
+  and aggregate counts.
 - Plan Workbench now runs non-mutating drift checks for verified file and
   directory artifacts. The server observes workspace bytes, returns
   `current`/`drifted`/`missing`, and records a hash-only
@@ -429,10 +434,11 @@ All notable changes to Napier are recorded here.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`,
   `artifact.data_profiled`, `artifact.data_profile_verified`,
-  `artifact.directory_manifested`, and `artifact.drift_checked` receipts remain
-  hash-only, so recomputed portable replay hashes cannot hide raw artifact
-  paths, directory entries, preview text, columns, sample rows, or data profile
-  verification diagnostics in exported evidence.
+  `artifact.directory_manifested`, `artifact.directory_manifest_verified`, and
+  `artifact.drift_checked` receipts remain hash-only, so recomputed portable
+  replay hashes cannot hide raw artifact paths, directory entries, preview text,
+  columns, sample rows, or data/manifest verification diagnostics in exported
+  evidence.
 - SQLite restore now applies the same hash-only artifact receipt boundary to
   persisted Thread events, rejecting locally modified ledger rows that smuggle
   raw preview text back into startup state.

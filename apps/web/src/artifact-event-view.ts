@@ -20,6 +20,7 @@ export interface ArtifactEventTraceView {
   sha256?: string;
   expectedSha256?: string;
   declaredSha256?: string;
+  recomputedDeclaredSha256?: string;
   observedSha256?: string;
   textSha256?: string;
   columnSetSha256?: string;
@@ -31,6 +32,8 @@ export interface ArtifactEventTraceView {
   recomputedDeclaredSampleSha256?: string;
   observedSampleSha256?: string;
   diagnosticsSha256?: string;
+  declaredEntrySetSha256?: string;
+  observedEntrySetSha256?: string;
   sizeBytes?: number;
   declaredSizeBytes?: number;
   observedSizeBytes?: number;
@@ -43,12 +46,18 @@ export interface ArtifactEventTraceView {
   observedColumnCount?: number;
   diagnosticCount?: number;
   entryCount?: number;
+  declaredEntryCount?: number;
+  observedEntryCount?: number;
   fileCount?: number;
+  declaredFileCount?: number;
+  observedFileCount?: number;
   directoryCount?: number;
+  declaredDirectoryCount?: number;
+  observedDirectoryCount?: number;
 }
 
 const ARTIFACT_EVENT =
-  /^artifact\.(data_profile_verified|data_profiled|directory_manifested|drift_checked|exported|previewed)$/u;
+  /^artifact\.(data_profile_verified|data_profiled|directory_manifest_verified|directory_manifested|drift_checked|exported|previewed)$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ARTIFACT_RECEIPT_SUMMARY = "artifact receipt";
@@ -83,6 +92,7 @@ export function artifactEventTraceView(
     ...shaField(event.payload, "sha256"),
     ...shaField(event.payload, "expectedSha256"),
     ...shaField(event.payload, "declaredSha256"),
+    ...shaField(event.payload, "recomputedDeclaredSha256"),
     ...shaField(event.payload, "observedSha256"),
     ...shaField(event.payload, "textSha256"),
     ...shaField(event.payload, "columnSetSha256"),
@@ -94,6 +104,8 @@ export function artifactEventTraceView(
     ...shaField(event.payload, "recomputedDeclaredSampleSha256"),
     ...shaField(event.payload, "observedSampleSha256"),
     ...shaField(event.payload, "diagnosticsSha256"),
+    ...shaField(event.payload, "declaredEntrySetSha256"),
+    ...shaField(event.payload, "observedEntrySetSha256"),
     ...integerField(event.payload, "sizeBytes"),
     ...integerField(event.payload, "declaredSizeBytes"),
     ...integerField(event.payload, "observedSizeBytes"),
@@ -106,8 +118,14 @@ export function artifactEventTraceView(
     ...integerField(event.payload, "observedColumnCount"),
     ...integerField(event.payload, "diagnosticCount"),
     ...integerField(event.payload, "entryCount"),
+    ...integerField(event.payload, "declaredEntryCount"),
+    ...integerField(event.payload, "observedEntryCount"),
     ...integerField(event.payload, "fileCount"),
+    ...integerField(event.payload, "declaredFileCount"),
+    ...integerField(event.payload, "observedFileCount"),
     ...integerField(event.payload, "directoryCount"),
+    ...integerField(event.payload, "declaredDirectoryCount"),
+    ...integerField(event.payload, "observedDirectoryCount"),
   };
 }
 
@@ -168,14 +186,33 @@ export function artifactEventTraceSummary(event: RunEvent): string | undefined {
       ? [`diagnostics ${view.diagnosticCount}`]
       : []),
     ...(view.entryCount !== undefined ? [`entries ${view.entryCount}`] : []),
+    ...(view.declaredEntryCount !== undefined ||
+    view.observedEntryCount !== undefined
+      ? [
+          `entries ${formatNumberPair(view.declaredEntryCount, view.observedEntryCount)}`,
+        ]
+      : []),
     ...(view.fileCount !== undefined ? [`files ${view.fileCount}`] : []),
+    ...(view.declaredFileCount !== undefined ||
+    view.observedFileCount !== undefined
+      ? [
+          `files ${formatNumberPair(view.declaredFileCount, view.observedFileCount)}`,
+        ]
+      : []),
     ...(view.directoryCount !== undefined
       ? [`directories ${view.directoryCount}`]
+      : []),
+    ...(view.declaredDirectoryCount !== undefined ||
+    view.observedDirectoryCount !== undefined
+      ? [
+          `directories ${formatNumberPair(view.declaredDirectoryCount, view.observedDirectoryCount)}`,
+        ]
       : []),
     ...hashSummary("path", view.pathSha256),
     ...hashSummary("artifact", view.sha256),
     ...hashSummary("expected", view.expectedSha256),
     ...hashSummary("declared", view.declaredSha256),
+    ...hashSummary("declared-self", view.recomputedDeclaredSha256),
     ...hashSummary("observed", view.observedSha256),
     ...hashSummary("text", view.textSha256),
     ...hashSummary("columns", view.columnSetSha256),
@@ -189,6 +226,8 @@ export function artifactEventTraceSummary(event: RunEvent): string | undefined {
     ...hashSummary("declared-sample", view.declaredSampleSha256),
     ...hashSummary("declared-sample-self", view.recomputedDeclaredSampleSha256),
     ...hashSummary("observed-sample", view.observedSampleSha256),
+    ...hashSummary("declared-entries", view.declaredEntrySetSha256),
+    ...hashSummary("observed-entries", view.observedEntrySetSha256),
     ...hashSummary("diagnostics", view.diagnosticsSha256),
   ].join(" / ");
 }

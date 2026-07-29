@@ -7616,6 +7616,142 @@ describe("Napier HTTP goal flow", () => {
         ],
       }),
     );
+    const manifestVerifyResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({ manifest }),
+      },
+    );
+    expect(manifestVerifyResponse.status).toBe(200);
+    expect(manifestVerifyResponse.headers.get("Cache-Control")).toBe(
+      "no-store",
+    );
+    expect(
+      manifestVerifyResponse.headers.get("X-Napier-Verification-Status"),
+    ).toBe("valid");
+    const manifestVerifyBody = (await manifestVerifyResponse.json()) as {
+      ledgerEventId: string;
+      ledgerEventSeq: number;
+      ledgerEventSha256: string;
+      declaredEntrySetSha256: string;
+      observedEntrySetSha256: string;
+    };
+    expect(manifestVerifyBody).toEqual(
+      expect.objectContaining({
+        kind: "napier.plan-artifact-directory-manifest-verification",
+        schemaVersion: 1,
+        verificationStatus: "valid",
+        diagnostics: [],
+        declaredSha256: artifact.sha256,
+        recomputedDeclaredSha256: artifact.sha256,
+        observedSha256: artifact.sha256,
+        declaredEntryCount: 4,
+        observedEntryCount: 4,
+        declaredFileCount: 2,
+        observedFileCount: 2,
+        declaredDirectoryCount: 2,
+        observedDirectoryCount: 2,
+      }),
+    );
+    expect(manifestVerifyBody.declaredEntrySetSha256).toBe(
+      manifestVerifyBody.observedEntrySetSha256,
+    );
+    expect(manifestVerifyResponse.headers.get("X-Napier-Ledger-Event-Id")).toBe(
+      manifestVerifyBody.ledgerEventId,
+    );
+    expect(
+      manifestVerifyResponse.headers.get("X-Napier-Ledger-Event-Seq"),
+    ).toBe(String(manifestVerifyBody.ledgerEventSeq));
+    expect(
+      manifestVerifyResponse.headers.get("X-Napier-Ledger-Event-SHA256"),
+    ).toBe(manifestVerifyBody.ledgerEventSha256);
+    const tamperedManifestResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest/verify`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          manifest: {
+            ...manifest,
+            entries: [
+              ...manifest.entries,
+              {
+                kind: "file",
+                path: "tampered.txt",
+                sha256: "f".repeat(64),
+                sizeBytes: 1,
+              },
+            ],
+          },
+        }),
+      },
+    );
+    expect(tamperedManifestResponse.status).toBe(200);
+    expect(
+      tamperedManifestResponse.headers.get("X-Napier-Verification-Status"),
+    ).toBe("drifted");
+    await expect(tamperedManifestResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        verificationStatus: "drifted",
+        diagnostics: [
+          "declared_manifest_hash_mismatch",
+          "declared_entry_count_mismatch",
+          "declared_file_count_mismatch",
+          "entry_set_mismatch",
+        ],
+      }),
+    );
+    const manifestVerificationEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.directory_manifest_verified" &&
+        event.payload["artifactId"] === "bundle-dir",
+    );
+    expect(manifestVerificationEvents).toEqual([
+      expect.objectContaining({
+        id: manifestVerifyBody.ledgerEventId,
+        seq: manifestVerifyBody.ledgerEventSeq,
+        category: "artifact",
+        payload: expect.objectContaining({
+          artifactId: "bundle-dir",
+          verificationStatus: "valid",
+          diagnosticCount: 0,
+          declaredSha256: artifact.sha256,
+          recomputedDeclaredSha256: artifact.sha256,
+          observedSha256: artifact.sha256,
+          declaredEntrySetSha256: manifestVerifyBody.declaredEntrySetSha256,
+          observedEntrySetSha256: manifestVerifyBody.observedEntrySetSha256,
+        }),
+      }),
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          artifactId: "bundle-dir",
+          verificationStatus: "drifted",
+          diagnosticCount: 4,
+          declaredSha256: artifact.sha256,
+          observedSha256: artifact.sha256,
+        }),
+      }),
+    ]);
+    expect(
+      createHash("sha256")
+        .update(JSON.stringify(manifestVerificationEvents[0]))
+        .digest("hex"),
+    ).toBe(manifestVerifyBody.ledgerEventSha256);
+    expect(JSON.stringify(manifestVerificationEvents)).not.toContain(
+      "alpha.txt",
+    );
+    expect(JSON.stringify(manifestVerificationEvents)).not.toContain(
+      "nested/beta.txt",
+    );
+    expect(JSON.stringify(manifestVerificationEvents)).not.toContain(
+      "tampered.txt",
+    );
+    expect(JSON.stringify(manifestVerificationEvents)).not.toContain(
+      "entry_set_mismatch",
+    );
     const manifestEvents = (
       await services.store.listEvents(created.thread.id)
     ).filter(

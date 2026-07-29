@@ -3,12 +3,12 @@
   "schemaVersion": 1,
   "openapi": {
     "path": "docs/artifacts/management-openapi-0.1.0.json",
-    "sha256": "ad32b7b255c8c073adcdc38c2d64fbbda9d496d34f2665065e1f5d6faf1bab9c",
-    "routeCount": 235,
-    "routeSetSha256": "de2f6dec15dee5fa1aa7bdc8996731138f86451af2a139a4507df1736a643ce4"
+    "sha256": "ef6b5bbcd8274f780e2c930309afd41cc40710fb4f1ab982285007a58cf3d9fd",
+    "routeCount": 236,
+    "routeSetSha256": "de08456967d8ca79094f0405623c92ea4887d664b83db057af55788ab932688f"
   },
-  "operationCount": 235,
-  "operationSetSha256": "d96d64f1e720df0bed3aef2580c57a5d45984d7a451c11bf678f5d9ec8408b21",
+  "operationCount": 236,
+  "operationSetSha256": "d1d2c2c9866a266d4d9b3710991545dbadd71a2b13767fb4cc0933f0f549e33d",
   "operations": [
     {
       "key": "DELETE /api/threads/{threadId}/goal",
@@ -4475,6 +4475,30 @@
       "method": "post",
       "path": "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/drift-check",
       "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-drift-check",
+      "tags": [
+        "threads"
+      ],
+      "pathParameters": [
+        "artifactId",
+        "planId",
+        "threadId"
+      ],
+      "acceptsJsonRequestBody": true,
+      "jsonRequestSchemaRef": null,
+      "jsonResponseSchemaRefs": {},
+      "responseStatuses": [
+        "200",
+        "400",
+        "404",
+        "409",
+        "413"
+      ]
+    },
+    {
+      "key": "POST /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/manifest/verify",
+      "method": "post",
+      "path": "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/manifest/verify",
+      "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-manifest-verify",
       "tags": [
         "threads"
       ],

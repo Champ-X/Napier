@@ -67,9 +67,11 @@ import {
   type PlanArtifactDataProfileVerification,
   type PlanArtifactDriftCheck,
   type PlanArtifactDirectoryManifest,
+  type PlanArtifactDirectoryManifestVerification,
   type PlanArtifactTextPreview,
   previewPlanArtifactDirectoryManifest,
   verifyPlanArtifactDataProfile,
+  verifyPlanArtifactDirectoryManifest,
 } from "./artifact-file-api";
 import { formatApiErrorMessage, NapierApiError } from "./api-error";
 import {
@@ -333,6 +335,10 @@ export default function PlanPanel({
     useState<PlanArtifactDataProfileVerification>();
   const [artifactDirectoryManifest, setArtifactDirectoryManifest] =
     useState<PlanArtifactDirectoryManifest>();
+  const [
+    artifactDirectoryManifestVerification,
+    setArtifactDirectoryManifestVerification,
+  ] = useState<PlanArtifactDirectoryManifestVerification>();
   const [artifactDriftCheck, setArtifactDriftCheck] =
     useState<PlanArtifactDriftCheck>();
   const [archiveBusyAction, setArchiveBusyAction] = useState<
@@ -374,6 +380,7 @@ export default function PlanPanel({
     setArtifactDataProfile(undefined);
     setArtifactDataProfileVerification(undefined);
     setArtifactDirectoryManifest(undefined);
+    setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
     setArchiveReceipt(undefined);
     setArchiveError(undefined);
@@ -477,6 +484,7 @@ export default function PlanPanel({
     setArtifactDataProfile(undefined);
     setArtifactDataProfileVerification(undefined);
     setArtifactDirectoryManifest(undefined);
+    setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
     try {
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
@@ -525,6 +533,7 @@ export default function PlanPanel({
     setArtifactPreview(undefined);
     setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
+    setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
     try {
       const preview = await previewPlanArtifactText(
@@ -550,6 +559,7 @@ export default function PlanPanel({
     setArtifactPreview(undefined);
     setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
+    setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
     try {
       const profile = await previewPlanArtifactDataProfile(
@@ -605,6 +615,7 @@ export default function PlanPanel({
     setArtifactDataProfile(undefined);
     setArtifactDataProfileVerification(undefined);
     setArtifactDirectoryManifest(undefined);
+    setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
     try {
       const manifest = await previewPlanArtifactDirectoryManifest(
@@ -621,6 +632,37 @@ export default function PlanPanel({
     }
   };
 
+  const verifyDirectoryManifestFile = async (
+    artifact: ArtifactManifestEntry,
+    file: File,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:manifest-verify`);
+    setArtifactError(undefined);
+    setArtifactDirectoryManifestVerification(undefined);
+    try {
+      const manifest = JSON.parse(
+        await file.text(),
+      ) as PlanArtifactDirectoryManifest;
+      const verification = await verifyPlanArtifactDirectoryManifest(
+        threadId,
+        plan.id,
+        artifact.id,
+        manifest,
+      );
+      setArtifactDirectoryManifestVerification(verification);
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(
+        error instanceof SyntaxError
+          ? planCopy.artifactActions.manifestVerifyInvalidJson
+          : formatApiErrorMessage(error),
+      );
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
   const checkArtifactDrift = async (
     artifact: ArtifactManifestEntry,
   ): Promise<void> => {
@@ -630,6 +672,7 @@ export default function PlanPanel({
     setArtifactPreview(undefined);
     setArtifactDataProfile(undefined);
     setArtifactDirectoryManifest(undefined);
+    setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
     try {
       const check = await checkPlanArtifactDrift(
@@ -2606,12 +2649,42 @@ export default function PlanPanel({
                           >
                             {planCopy.artifactActions.downloadManifest}
                           </button>
+                          <label
+                            className="artifact-profile-file-action"
+                            aria-disabled={Boolean(artifactBusyId)}
+                          >
+                            {artifactBusyId === `${artifact.id}:manifest-verify`
+                              ? planCopy.artifactActions.verifyingManifest
+                              : planCopy.artifactActions.verifyManifest}
+                            <input
+                              className="fixture-file-input"
+                              type="file"
+                              accept="application/json,.json"
+                              disabled={Boolean(artifactBusyId)}
+                              aria-label={
+                                planCopy.artifactActions.verifyManifest
+                              }
+                              onChange={(event) => {
+                                const file = event.currentTarget.files?.[0];
+                                event.currentTarget.value = "";
+                                if (file) {
+                                  void verifyDirectoryManifestFile(
+                                    artifact,
+                                    file,
+                                  );
+                                }
+                              }}
+                            />
+                          </label>
                           <button
                             type="button"
                             aria-label={planCopy.artifactActions.closePreview}
-                            onClick={() =>
-                              setArtifactDirectoryManifest(undefined)
-                            }
+                            onClick={() => {
+                              setArtifactDirectoryManifest(undefined);
+                              setArtifactDirectoryManifestVerification(
+                                undefined,
+                              );
+                            }}
                           >
                             {planCopy.artifactActions.closePreview}
                           </button>
@@ -2636,6 +2709,79 @@ export default function PlanPanel({
                           {planCopy.artifactActions.directories}:{" "}
                           {artifactDirectoryManifest.directoryCount.toLocaleString()}
                         </small>
+                        {artifactDirectoryManifestVerification?.artifactId ===
+                        artifact.id ? (
+                          <div
+                            className={`artifact-data-profile-verification status-${artifactDirectoryManifestVerification.verificationStatus}`}
+                          >
+                            <strong>
+                              {
+                                planCopy.artifactActions
+                                  .manifestVerificationStatuses[
+                                  artifactDirectoryManifestVerification
+                                    .verificationStatus
+                                ]
+                              }
+                            </strong>
+                            <small>
+                              {planCopy.artifactActions.observed}:{" "}
+                              <code
+                                title={
+                                  artifactDirectoryManifestVerification.observedSha256
+                                }
+                              >
+                                {artifactDirectoryManifestVerification.observedSha256.slice(
+                                  0,
+                                  16,
+                                )}
+                              </code>
+                              {" / "}
+                              {planCopy.artifactActions.entries}:{" "}
+                              <code
+                                title={
+                                  artifactDirectoryManifestVerification.observedEntrySetSha256
+                                }
+                              >
+                                {artifactDirectoryManifestVerification.observedEntrySetSha256.slice(
+                                  0,
+                                  16,
+                                )}
+                              </code>
+                            </small>
+                            <small>
+                              {planCopy.receipt}:{" "}
+                              <code
+                                title={
+                                  artifactDirectoryManifestVerification.ledgerEventId
+                                }
+                              >
+                                #
+                                {String(
+                                  artifactDirectoryManifestVerification.ledgerEventSeq,
+                                ).padStart(3, "0")}
+                              </code>
+                              {" / "}
+                              <code
+                                title={
+                                  artifactDirectoryManifestVerification.ledgerEventSha256
+                                }
+                              >
+                                {artifactDirectoryManifestVerification.ledgerEventSha256.slice(
+                                  0,
+                                  16,
+                                )}
+                              </code>
+                            </small>
+                            {artifactDirectoryManifestVerification.diagnostics
+                              .length > 0 ? (
+                              <small>
+                                {artifactDirectoryManifestVerification.diagnostics.join(
+                                  ", ",
+                                )}
+                              </small>
+                            ) : null}
+                          </div>
+                        ) : null}
                         <ol>
                           {artifactDirectoryManifest.entries.map((entry) => (
                             <li key={`${entry.kind}:${entry.path}`}>

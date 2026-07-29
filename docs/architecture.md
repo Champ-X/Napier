@@ -3623,6 +3623,14 @@ the corresponding `artifact.directory_manifested` Ledger event stores only
 Plan/artifact IDs, Plan revision, status/kind, `pathSha256`, directory digest,
 byte count, and entry/file/directory counts. Raw directory entries in that
 receipt fail closed before persistence, replay export, or archive verification.
+Workbench can download the no-store manifest JSON and upload it to a sibling
+verifier; the verifier recomputes the current directory manifest, checks the
+uploaded entries against their own declared digest/counts, and appends
+`artifact.directory_manifest_verified` with only verification status,
+diagnostic count/hash, declared/recomputed/observed directory digest, entry-set
+hashes, byte counts, and aggregate entry/file/directory counts. Entry paths,
+file paths, and diagnostic strings remain no-store and fail closed if they
+appear in persisted artifact receipts.
 Verified file and directory artifacts also expose a non-mutating drift check
 from the Workbench. The server observes the current workspace bytes, returns
 `current`, `drifted`, or `missing`, and appends `artifact.drift_checked` with

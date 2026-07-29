@@ -9333,6 +9333,72 @@
         "x-napier-source-route": "GET /api/threads/:threadId/plans/:planId/artifacts/:artifactId/manifest"
       }
     },
+    "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/manifest/verify": {
+      "post": {
+        "operationId": "post-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-manifest-verify",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/manifest/verify",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artifactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/plans/:planId/artifacts/:artifactId/manifest/verify"
+      }
+    },
     "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/preview": {
       "get": {
         "operationId": "get-threads-by-threadId-plans-by-planId-artifacts-by-artifactId-preview",
@@ -13464,7 +13530,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "042c360783fd8ecd9bdc3298f3ef1aeec16b42fce53ce3e32054fb43df56c1ea",
-  "x-napier-route-count": 235,
-  "x-napier-route-set-sha256": "de2f6dec15dee5fa1aa7bdc8996731138f86451af2a139a4507df1736a643ce4"
+  "x-napier-source-sha256": "cb826f926216e989e36a96a7a2d12a55c83ddc63639e0f466da1c2480d800c6c",
+  "x-napier-route-count": 236,
+  "x-napier-route-set-sha256": "de08456967d8ca79094f0405623c92ea4887d664b83db057af55788ab932688f"
 }

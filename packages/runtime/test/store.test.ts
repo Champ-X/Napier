@@ -997,6 +997,44 @@ describe("LocalStore", () => {
       store.appendEvent({
         threadId: thread.id,
         runId: run.id,
+        type: "artifact.directory_manifest_verified",
+        category: "artifact",
+        visibility: "user",
+        payload: {
+          planId: "plan_append_preview",
+          artifactId: "artifact_append_bundle",
+          planRevision: 1,
+          status: "verified",
+          kind: "directory",
+          pathSha256: "a".repeat(64),
+          verificationStatus: "drifted",
+          diagnosticCount: 1,
+          diagnosticsSha256: "b".repeat(64),
+          declaredSha256: "c".repeat(64),
+          recomputedDeclaredSha256: "d".repeat(64),
+          observedSha256: "e".repeat(64),
+          declaredSizeBytes: 32,
+          observedSizeBytes: 48,
+          declaredEntryCount: 2,
+          observedEntryCount: 3,
+          declaredFileCount: 1,
+          observedFileCount: 2,
+          declaredDirectoryCount: 1,
+          observedDirectoryCount: 1,
+          declaredEntrySetSha256: "f".repeat(64),
+          observedEntrySetSha256: "0".repeat(64),
+          entries: [
+            { path: "Raw directory entries must not enter the Ledger." },
+          ],
+        },
+      }),
+    ).rejects.toThrow("hash-only artifact receipt is invalid");
+    expect(store.getThread(thread.id).eventCount).toBe(0);
+
+    await expect(
+      store.appendEvent({
+        threadId: thread.id,
+        runId: run.id,
         type: "artifact.data_profile_verified",
         category: "artifact",
         visibility: "user",
