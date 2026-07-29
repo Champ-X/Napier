@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 56,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CCsMSMr1.js",
+    "path": "apps/web/dist/assets/index-D0cbzuCt.js",
     "sizeBytes": 129794,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "09a1221f3f6c6049c21ff04f08e7938dd76e2e90b8767ce3af23c5a0dbd31c52"
+    "sha256": "a3643691908493e6191b4e3159663c1379e4f7d45e0488bb29717a16a8a51dab"
   },
-  "distContentSha256": "09a1221f3f6c6049c21ff04f08e7938dd76e2e90b8767ce3af23c5a0dbd31c52",
+  "distContentSha256": "a3643691908493e6191b4e3159663c1379e4f7d45e0488bb29717a16a8a51dab",
   "errors": []
 }

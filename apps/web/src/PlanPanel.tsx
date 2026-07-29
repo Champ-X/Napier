@@ -64,11 +64,14 @@ import {
   previewPlanArtifactDataProfile,
   previewPlanArtifactText,
   type PlanArtifactDataProfile,
+  type PlanArtifactDataProfileReceipt,
   type PlanArtifactDataProfileVerification,
-  type PlanArtifactDriftCheck,
+  type PlanArtifactDriftCheckReceipt,
   type PlanArtifactDirectoryManifest,
+  type PlanArtifactDirectoryManifestReceipt,
   type PlanArtifactDirectoryManifestVerification,
-  type PlanArtifactTextPreview,
+  type PlanArtifactLedgerEventReceipt,
+  type PlanArtifactTextPreviewReceipt,
   previewPlanArtifactDirectoryManifest,
   verifyPlanArtifactDataProfile,
   verifyPlanArtifactDirectoryManifest,
@@ -328,19 +331,19 @@ export default function PlanPanel({
   const [artifactBusyId, setArtifactBusyId] = useState<string>();
   const [artifactError, setArtifactError] = useState<string>();
   const [artifactPreview, setArtifactPreview] =
-    useState<PlanArtifactTextPreview>();
+    useState<PlanArtifactTextPreviewReceipt>();
   const [artifactDataProfile, setArtifactDataProfile] =
-    useState<PlanArtifactDataProfile>();
+    useState<PlanArtifactDataProfileReceipt>();
   const [artifactDataProfileVerification, setArtifactDataProfileVerification] =
     useState<PlanArtifactDataProfileVerification>();
   const [artifactDirectoryManifest, setArtifactDirectoryManifest] =
-    useState<PlanArtifactDirectoryManifest>();
+    useState<PlanArtifactDirectoryManifestReceipt>();
   const [
     artifactDirectoryManifestVerification,
     setArtifactDirectoryManifestVerification,
   ] = useState<PlanArtifactDirectoryManifestVerification>();
   const [artifactDriftCheck, setArtifactDriftCheck] =
-    useState<PlanArtifactDriftCheck>();
+    useState<PlanArtifactDriftCheckReceipt>();
   const [archiveBusyAction, setArchiveBusyAction] = useState<
     "export" | "verify" | undefined
   >();
@@ -2422,6 +2425,9 @@ export default function PlanPanel({
                           {" / "}
                           {planCopy.lineCount}: {artifactPreview.lineCount}
                         </small>
+                        <PlanArtifactLedgerReceiptLine
+                          receipt={artifactPreview}
+                        />
                         <pre>{artifactPreview.text}</pre>
                       </div>
                     ) : null}
@@ -2511,6 +2517,9 @@ export default function PlanPanel({
                             {dataProfileView.sampleShortSha256}
                           </code>
                         </small>
+                        <PlanArtifactLedgerReceiptLine
+                          receipt={artifactDataProfile}
+                        />
                         {dataProfileVerification ? (
                           <div
                             className={`artifact-data-profile-verification status-${dataProfileVerification.verificationStatus}`}
@@ -2546,28 +2555,9 @@ export default function PlanPanel({
                                 )}
                               </code>
                             </small>
-                            <small>
-                              {planCopy.receipt}:{" "}
-                              <code
-                                title={dataProfileVerification.ledgerEventId}
-                              >
-                                #
-                                {String(
-                                  dataProfileVerification.ledgerEventSeq,
-                                ).padStart(3, "0")}
-                              </code>
-                              {" / "}
-                              <code
-                                title={
-                                  dataProfileVerification.ledgerEventSha256
-                                }
-                              >
-                                {dataProfileVerification.ledgerEventSha256.slice(
-                                  0,
-                                  16,
-                                )}
-                              </code>
-                            </small>
+                            <PlanArtifactLedgerReceiptLine
+                              receipt={dataProfileVerification}
+                            />
                             {dataProfileVerification.diagnostics.length > 0 ? (
                               <small>
                                 {dataProfileVerification.diagnostics.join(", ")}
@@ -2709,6 +2699,9 @@ export default function PlanPanel({
                           {planCopy.artifactActions.directories}:{" "}
                           {artifactDirectoryManifest.directoryCount.toLocaleString()}
                         </small>
+                        <PlanArtifactLedgerReceiptLine
+                          receipt={artifactDirectoryManifest}
+                        />
                         {artifactDirectoryManifestVerification?.artifactId ===
                         artifact.id ? (
                           <div
@@ -2748,30 +2741,9 @@ export default function PlanPanel({
                                 )}
                               </code>
                             </small>
-                            <small>
-                              {planCopy.receipt}:{" "}
-                              <code
-                                title={
-                                  artifactDirectoryManifestVerification.ledgerEventId
-                                }
-                              >
-                                #
-                                {String(
-                                  artifactDirectoryManifestVerification.ledgerEventSeq,
-                                ).padStart(3, "0")}
-                              </code>
-                              {" / "}
-                              <code
-                                title={
-                                  artifactDirectoryManifestVerification.ledgerEventSha256
-                                }
-                              >
-                                {artifactDirectoryManifestVerification.ledgerEventSha256.slice(
-                                  0,
-                                  16,
-                                )}
-                              </code>
-                            </small>
+                            <PlanArtifactLedgerReceiptLine
+                              receipt={artifactDirectoryManifestVerification}
+                            />
                             {artifactDirectoryManifestVerification.diagnostics
                               .length > 0 ? (
                               <small>
@@ -2841,6 +2813,9 @@ export default function PlanPanel({
                             </>
                           ) : null}
                         </small>
+                        <PlanArtifactLedgerReceiptLine
+                          receipt={artifactDriftCheck}
+                        />
                         {driftCheckAction.hasAction ? (
                           <div className="artifact-drift-check__actions">
                             <button
@@ -2916,6 +2891,25 @@ function shortId(value: string): string {
   return value.length > 15
     ? `${value.slice(0, 7)}...${value.slice(-5)}`
     : value;
+}
+
+function PlanArtifactLedgerReceiptLine({
+  receipt,
+}: {
+  receipt: PlanArtifactLedgerEventReceipt;
+}) {
+  return (
+    <small>
+      {planCopy.receipt}:{" "}
+      <code title={receipt.ledgerEventId}>
+        #{String(receipt.ledgerEventSeq).padStart(3, "0")}
+      </code>
+      {" / "}
+      <code title={receipt.ledgerEventSha256}>
+        {receipt.ledgerEventSha256.slice(0, 16)}
+      </code>
+    </small>
+  );
 }
 
 function PlanArchiveCard({

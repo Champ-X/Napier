@@ -7230,7 +7230,7 @@ export function createApp(services: NapierServices): Hono {
             ? { sizeBytes: inspection.sizeBytes }
             : {}),
         };
-        await services.store.appendEvent({
+        const ledgerEvent = await services.store.appendEvent({
           threadId,
           runId: createId("runctl"),
           type: "artifact.drift_checked",
@@ -7253,8 +7253,12 @@ export function createApp(services: NapierServices): Hono {
               : {}),
           },
         });
-        setPlanArtifactDriftCheckHeaders(context, plan, artifact, payload);
-        return context.json(payload);
+        const response = {
+          ...payload,
+          ...createLedgerEventReceiptProjection(ledgerEvent),
+        };
+        setPlanArtifactDriftCheckHeaders(context, plan, artifact, response);
+        return context.json(response);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -7343,7 +7347,7 @@ export function createApp(services: NapierServices): Hono {
           directoryCount: manifest.directoryCount,
           entries: manifest.entries,
         };
-        await services.store.appendEvent({
+        const ledgerEvent = await services.store.appendEvent({
           threadId,
           runId: createId("runctl"),
           type: "artifact.directory_manifested",
@@ -7363,13 +7367,17 @@ export function createApp(services: NapierServices): Hono {
             directoryCount: manifest.directoryCount,
           },
         });
+        const response = {
+          ...payload,
+          ...createLedgerEventReceiptProjection(ledgerEvent),
+        };
         setPlanArtifactDirectoryManifestHeaders(
           context,
           plan,
           artifact,
-          payload,
+          response,
         );
-        return context.json(payload);
+        return context.json(response);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -7441,9 +7449,7 @@ export function createApp(services: NapierServices): Hono {
         });
         const response = {
           ...verification,
-          ledgerEventId: ledgerEvent.id,
-          ledgerEventSeq: ledgerEvent.seq,
-          ledgerEventSha256: sha256Json(ledgerEvent as unknown as JsonValue),
+          ...createLedgerEventReceiptProjection(ledgerEvent),
         };
         setPlanArtifactDirectoryManifestVerificationHeaders(context, response);
         return context.json(response);
@@ -7486,7 +7492,7 @@ export function createApp(services: NapierServices): Hono {
           textSha256: sha256Text(preview.text),
           text: preview.text,
         };
-        await services.store.appendEvent({
+        const ledgerEvent = await services.store.appendEvent({
           threadId,
           runId: createId("runctl"),
           type: "artifact.previewed",
@@ -7505,8 +7511,12 @@ export function createApp(services: NapierServices): Hono {
             textSha256: payload.textSha256,
           },
         });
-        setPlanArtifactTextPreviewHeaders(context, plan, artifact, payload);
-        return context.json(payload);
+        const response = {
+          ...payload,
+          ...createLedgerEventReceiptProjection(ledgerEvent),
+        };
+        setPlanArtifactTextPreviewHeaders(context, plan, artifact, response);
+        return context.json(response);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -7551,7 +7561,7 @@ export function createApp(services: NapierServices): Hono {
           columns: profile.columns,
           sampleRows: profile.sampleRows,
         };
-        await services.store.appendEvent({
+        const ledgerEvent = await services.store.appendEvent({
           threadId,
           runId: createId("runctl"),
           type: "artifact.data_profiled",
@@ -7574,8 +7584,12 @@ export function createApp(services: NapierServices): Hono {
             sampleSha256: profile.sampleSha256,
           },
         });
-        setPlanArtifactDataProfileHeaders(context, plan, artifact, payload);
-        return context.json(payload);
+        const response = {
+          ...payload,
+          ...createLedgerEventReceiptProjection(ledgerEvent),
+        };
+        setPlanArtifactDataProfileHeaders(context, plan, artifact, response);
+        return context.json(response);
       } catch (error) {
         return jsonError(context, errorMessage(error), 400);
       }
@@ -7645,9 +7659,7 @@ export function createApp(services: NapierServices): Hono {
         });
         const response = {
           ...verification,
-          ledgerEventId: ledgerEvent.id,
-          ledgerEventSeq: ledgerEvent.seq,
-          ledgerEventSha256: sha256Json(ledgerEvent as unknown as JsonValue),
+          ...createLedgerEventReceiptProjection(ledgerEvent),
         };
         setPlanArtifactDataProfileVerificationHeaders(context, response);
         return context.json(response);
@@ -18056,6 +18068,37 @@ function setExecutionPlanHeaders(context: Context, plan: ExecutionPlan): void {
   }
 }
 
+type LedgerEventReceiptProjection = {
+  ledgerEventId: string;
+  ledgerEventSeq: number;
+  ledgerEventSha256: string;
+};
+
+function createLedgerEventReceiptProjection(
+  event: RunEvent,
+): LedgerEventReceiptProjection {
+  return {
+    ledgerEventId: event.id,
+    ledgerEventSeq: event.seq,
+    ledgerEventSha256: sha256Json(event as unknown as JsonValue),
+  };
+}
+
+function setLedgerEventReceiptHeaders(
+  context: Context,
+  receipt: Partial<LedgerEventReceiptProjection>,
+): void {
+  if (receipt.ledgerEventId) {
+    context.header("X-Napier-Ledger-Event-Id", receipt.ledgerEventId);
+  }
+  if (receipt.ledgerEventSeq !== undefined) {
+    context.header("X-Napier-Ledger-Event-Seq", String(receipt.ledgerEventSeq));
+  }
+  if (receipt.ledgerEventSha256) {
+    context.header("X-Napier-Ledger-Event-SHA256", receipt.ledgerEventSha256);
+  }
+}
+
 function setPlanArtifactFileExportHeaders(
   context: Context,
   plan: ExecutionPlan,
@@ -18093,7 +18136,7 @@ function setPlanArtifactTextPreviewHeaders(
     sizeBytes: number;
     lineCount: number;
     textSha256: string;
-  },
+  } & Partial<LedgerEventReceiptProjection>,
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, preview);
@@ -18116,6 +18159,7 @@ function setPlanArtifactTextPreviewHeaders(
     String(preview.lineCount),
   );
   context.header("X-Napier-Plan-Artifact-Text-SHA256", preview.textSha256);
+  setLedgerEventReceiptHeaders(context, preview);
 }
 
 function setPlanArtifactDataProfileHeaders(
@@ -18131,7 +18175,7 @@ function setPlanArtifactDataProfileHeaders(
     truncated: boolean;
     columnSetSha256: string;
     sampleSha256: string;
-  },
+  } & Partial<LedgerEventReceiptProjection>,
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, profile);
@@ -18164,6 +18208,7 @@ function setPlanArtifactDataProfileHeaders(
     profile.columnSetSha256,
   );
   context.header("X-Napier-Plan-Artifact-Sample-SHA256", profile.sampleSha256);
+  setLedgerEventReceiptHeaders(context, profile);
 }
 
 type PlanArtifactDataProfilePayload = {
@@ -18247,21 +18292,7 @@ function setPlanArtifactDataProfileVerificationHeaders(
     "X-Napier-Observed-Sample-SHA256",
     verification.observedSampleSha256,
   );
-  if (verification.ledgerEventId) {
-    context.header("X-Napier-Ledger-Event-Id", verification.ledgerEventId);
-  }
-  if (verification.ledgerEventSeq !== undefined) {
-    context.header(
-      "X-Napier-Ledger-Event-Seq",
-      String(verification.ledgerEventSeq),
-    );
-  }
-  if (verification.ledgerEventSha256) {
-    context.header(
-      "X-Napier-Ledger-Event-SHA256",
-      verification.ledgerEventSha256,
-    );
-  }
+  setLedgerEventReceiptHeaders(context, verification);
 }
 
 function verifyPlanArtifactDataProfileProjection(
@@ -18818,21 +18849,7 @@ function setPlanArtifactDirectoryManifestVerificationHeaders(
     "X-Napier-Observed-Entry-Set-SHA256",
     verification.observedEntrySetSha256,
   );
-  if (verification.ledgerEventId) {
-    context.header("X-Napier-Ledger-Event-Id", verification.ledgerEventId);
-  }
-  if (verification.ledgerEventSeq !== undefined) {
-    context.header(
-      "X-Napier-Ledger-Event-Seq",
-      String(verification.ledgerEventSeq),
-    );
-  }
-  if (verification.ledgerEventSha256) {
-    context.header(
-      "X-Napier-Ledger-Event-SHA256",
-      verification.ledgerEventSha256,
-    );
-  }
+  setLedgerEventReceiptHeaders(context, verification);
 }
 
 function setPlanArtifactDirectoryManifestHeaders(
@@ -18845,7 +18862,7 @@ function setPlanArtifactDirectoryManifestHeaders(
     entryCount: number;
     fileCount: number;
     directoryCount: number;
-  },
+  } & Partial<LedgerEventReceiptProjection>,
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, manifest);
@@ -18875,6 +18892,7 @@ function setPlanArtifactDirectoryManifestHeaders(
     "X-Napier-Plan-Artifact-Directory-Count",
     String(manifest.directoryCount),
   );
+  setLedgerEventReceiptHeaders(context, manifest);
 }
 
 function setPlanArtifactDriftCheckHeaders(
@@ -18886,7 +18904,7 @@ function setPlanArtifactDriftCheckHeaders(
     result: string;
     observedSha256?: string;
     sizeBytes?: number;
-  },
+  } & Partial<LedgerEventReceiptProjection>,
 ): void {
   context.header("Cache-Control", "no-store");
   setBodyContentSha256Header(context, inspection);
@@ -18915,6 +18933,7 @@ function setPlanArtifactDriftCheckHeaders(
       String(inspection.sizeBytes),
     );
   }
+  setLedgerEventReceiptHeaders(context, inspection);
 }
 
 function planArtifactDownloadFilename(

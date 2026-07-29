@@ -90,7 +90,11 @@ import {
   checkPlanArtifactDrift,
   downloadPlanArtifactFile,
   type PlanArtifactDataProfile,
+  type PlanArtifactDataProfileReceipt,
   type PlanArtifactDirectoryManifest,
+  type PlanArtifactDirectoryManifestReceipt,
+  type PlanArtifactDriftCheckReceipt,
+  type PlanArtifactTextPreviewReceipt,
   previewPlanArtifactDataProfile,
   previewPlanArtifactDirectoryManifest,
   previewPlanArtifactText,
@@ -621,7 +625,7 @@ describe("Web JSON API wrappers", () => {
   });
 
   it("previews plan text artifacts through response hash verification", async () => {
-    const preview = {
+    const preview: PlanArtifactTextPreviewReceipt = {
       kind: "napier.plan-artifact-text-preview",
       schemaVersion: 1,
       planId: "plan_1",
@@ -635,6 +639,9 @@ describe("Web JSON API wrappers", () => {
       lineCount: 2,
       textSha256: "c".repeat(64),
       text: "previewed artifact\n",
+      ledgerEventId: "event_preview_1234567890",
+      ledgerEventSeq: 7,
+      ledgerEventSha256: "d".repeat(64),
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe(
@@ -659,7 +666,7 @@ describe("Web JSON API wrappers", () => {
   });
 
   it("profiles plan data artifacts through response hash verification", async () => {
-    const profile: PlanArtifactDataProfile = {
+    const profile: PlanArtifactDataProfileReceipt = {
       kind: "napier.plan-artifact-data-profile",
       schemaVersion: 1,
       planId: "plan_1",
@@ -681,6 +688,9 @@ describe("Web JSON API wrappers", () => {
         { name: "alpha", score: "1" },
         { name: "beta", score: "2" },
       ],
+      ledgerEventId: "event_profile_1234567890",
+      ledgerEventSeq: 8,
+      ledgerEventSha256: "e".repeat(64),
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe(
@@ -789,7 +799,7 @@ describe("Web JSON API wrappers", () => {
   });
 
   it("checks plan artifact drift through response hash verification", async () => {
-    const check = {
+    const check: PlanArtifactDriftCheckReceipt = {
       kind: "napier.plan-artifact-drift-check",
       schemaVersion: 1,
       planId: "plan_1",
@@ -802,6 +812,9 @@ describe("Web JSON API wrappers", () => {
       result: "drifted",
       observedSha256: "c".repeat(64),
       sizeBytes: 42,
+      ledgerEventId: "event_drift_1234567890",
+      ledgerEventSeq: 10,
+      ledgerEventSha256: "d".repeat(64),
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe(
@@ -827,7 +840,7 @@ describe("Web JSON API wrappers", () => {
   });
 
   it("previews plan directory artifact manifests through response hash verification", async () => {
-    const manifest: PlanArtifactDirectoryManifest = {
+    const manifest: PlanArtifactDirectoryManifestReceipt = {
       kind: "napier.plan-artifact-directory-manifest",
       schemaVersion: 1,
       planId: "plan_1",
@@ -850,6 +863,9 @@ describe("Web JSON API wrappers", () => {
           sizeBytes: 42,
         },
       ],
+      ledgerEventId: "event_manifest_preview_1234567890",
+      ledgerEventSeq: 11,
+      ledgerEventSha256: "e".repeat(64),
     };
     const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
       expect(path).toBe(

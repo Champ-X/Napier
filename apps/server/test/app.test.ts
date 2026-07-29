@@ -4811,7 +4811,7 @@ describe("Napier HTTP goal flow", () => {
       sha256: string;
       sizeBytes: number;
       lineCount: number;
-    };
+    } & LedgerEventReceiptBody;
     expect(previewArtifactResponse.headers.get("X-Napier-Content-SHA256")).toBe(
       createHash("sha256").update(previewText).digest("hex"),
     );
@@ -4833,6 +4833,11 @@ describe("Napier HTTP goal flow", () => {
       (event) =>
         event.type === "artifact.previewed" &&
         event.payload["artifactId"] === "report",
+    );
+    expectLedgerEventReceiptProjection(
+      previewArtifactResponse,
+      previewBody,
+      previewEvents[0],
     );
     expect(previewEvents).toEqual([
       expect.objectContaining({
@@ -4908,7 +4913,7 @@ describe("Napier HTTP goal flow", () => {
       sampleRows: Array<Record<string, string>>;
       columnSetSha256: string;
       sampleSha256: string;
-    };
+    } & LedgerEventReceiptBody;
     expect(dataProfileResponse.headers.get("X-Napier-Content-SHA256")).toBe(
       createHash("sha256").update(dataProfileText).digest("hex"),
     );
@@ -4938,6 +4943,11 @@ describe("Napier HTTP goal flow", () => {
       (event) =>
         event.type === "artifact.data_profiled" &&
         event.payload["artifactId"] === "scores",
+    );
+    expectLedgerEventReceiptProjection(
+      dataProfileResponse,
+      dataProfileBody,
+      dataProfileEvents[0],
     );
     expect(dataProfileEvents).toEqual([
       expect.objectContaining({
@@ -5163,7 +5173,15 @@ describe("Napier HTTP goal flow", () => {
     expect(
       currentDriftCheckResponse.headers.get("X-Napier-Content-SHA256"),
     ).toBe(createHash("sha256").update(currentDriftText).digest("hex"));
-    expect(JSON.parse(currentDriftText)).toEqual(
+    const currentDriftBody = JSON.parse(
+      currentDriftText,
+    ) as LedgerEventReceiptBody & {
+      result: string;
+      expectedSha256: string;
+      observedSha256?: string;
+      sizeBytes?: number;
+    };
+    expect(currentDriftBody).toEqual(
       expect.objectContaining({
         kind: "napier.plan-artifact-drift-check",
         artifactId: "report",
@@ -5196,7 +5214,14 @@ describe("Napier HTTP goal flow", () => {
         "X-Napier-Plan-Artifact-Observed-SHA256",
       ),
     ).toBe(driftedReportSha256);
-    await expect(driftedCheckResponse.json()).resolves.toEqual(
+    const driftedCheckBody =
+      (await driftedCheckResponse.json()) as LedgerEventReceiptBody & {
+        result: string;
+        expectedSha256: string;
+        observedSha256?: string;
+        sizeBytes?: number;
+      };
+    expect(driftedCheckBody).toEqual(
       expect.objectContaining({
         result: "drifted",
         expectedSha256: expectedReportSha256,
@@ -5231,6 +5256,16 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     ]);
+    expectLedgerEventReceiptProjection(
+      currentDriftCheckResponse,
+      currentDriftBody,
+      driftCheckEvents[0],
+    );
+    expectLedgerEventReceiptProjection(
+      driftedCheckResponse,
+      driftedCheckBody,
+      driftCheckEvents[1],
+    );
     expect(JSON.stringify(driftCheckEvents)).not.toContain("Drifted report");
     const driftedPreviewResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/preview`,
@@ -7587,7 +7622,7 @@ describe("Napier HTTP goal flow", () => {
         sha256?: string;
         sizeBytes?: number;
       }>;
-    };
+    } & LedgerEventReceiptBody;
     expect(manifest).toEqual(
       expect.objectContaining({
         kind: "napier.plan-artifact-directory-manifest",
@@ -7657,15 +7692,6 @@ describe("Napier HTTP goal flow", () => {
     expect(manifestVerifyBody.declaredEntrySetSha256).toBe(
       manifestVerifyBody.observedEntrySetSha256,
     );
-    expect(manifestVerifyResponse.headers.get("X-Napier-Ledger-Event-Id")).toBe(
-      manifestVerifyBody.ledgerEventId,
-    );
-    expect(
-      manifestVerifyResponse.headers.get("X-Napier-Ledger-Event-Seq"),
-    ).toBe(String(manifestVerifyBody.ledgerEventSeq));
-    expect(
-      manifestVerifyResponse.headers.get("X-Napier-Ledger-Event-SHA256"),
-    ).toBe(manifestVerifyBody.ledgerEventSha256);
     const tamperedManifestResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/bundle-dir/manifest/verify`,
       {
@@ -7758,6 +7784,16 @@ describe("Napier HTTP goal flow", () => {
       (event) =>
         event.type === "artifact.directory_manifested" &&
         event.payload["artifactId"] === "bundle-dir",
+    );
+    expectLedgerEventReceiptProjection(
+      manifestResponse,
+      manifest,
+      manifestEvents[0],
+    );
+    expectLedgerEventReceiptProjection(
+      manifestVerifyResponse,
+      manifestVerifyBody,
+      manifestVerificationEvents[0],
     );
     expect(manifestEvents).toEqual([
       expect.objectContaining({
@@ -10631,6 +10667,40 @@ function inboundSignature(
 
 function responseSha256(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+type LedgerEventReceiptBody = {
+  ledgerEventId: string;
+  ledgerEventSeq: number;
+  ledgerEventSha256: string;
+};
+
+function expectLedgerEventReceiptProjection(
+  response: Response,
+  body: LedgerEventReceiptBody,
+  event: { id: string; seq: number } | undefined,
+): void {
+  expect(response.headers.get("X-Napier-Ledger-Event-Id")).toBe(
+    body.ledgerEventId,
+  );
+  expect(response.headers.get("X-Napier-Ledger-Event-Seq")).toBe(
+    String(body.ledgerEventSeq),
+  );
+  expect(response.headers.get("X-Napier-Ledger-Event-SHA256")).toBe(
+    body.ledgerEventSha256,
+  );
+  expect(body.ledgerEventId).toMatch(/^event_[a-z0-9]+$/);
+  expect(body.ledgerEventSeq).toBeGreaterThan(0);
+  expect(body.ledgerEventSha256).toMatch(/^[a-f0-9]{64}$/);
+  expect(event).toEqual(
+    expect.objectContaining({
+      id: body.ledgerEventId,
+      seq: body.ledgerEventSeq,
+    }),
+  );
+  if (event) {
+    expect(responseSha256(event)).toBe(body.ledgerEventSha256);
+  }
 }
 
 function optionalNumberHeader(value: number | undefined): string | null {

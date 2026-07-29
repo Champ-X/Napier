@@ -8,6 +8,12 @@ export interface PlanArtifactFileDownload {
   sizeBytes: number;
 }
 
+export interface PlanArtifactLedgerEventReceipt {
+  ledgerEventId: string;
+  ledgerEventSeq: number;
+  ledgerEventSha256: string;
+}
+
 export interface PlanArtifactTextPreview {
   kind: "napier.plan-artifact-text-preview";
   schemaVersion: 1;
@@ -23,6 +29,9 @@ export interface PlanArtifactTextPreview {
   textSha256: string;
   text: string;
 }
+
+export type PlanArtifactTextPreviewReceipt = PlanArtifactTextPreview &
+  PlanArtifactLedgerEventReceipt;
 
 export interface PlanArtifactDataProfile {
   kind: "napier.plan-artifact-data-profile";
@@ -44,6 +53,9 @@ export interface PlanArtifactDataProfile {
   columns: string[];
   sampleRows: Array<Record<string, string | number | boolean | null>>;
 }
+
+export type PlanArtifactDataProfileReceipt = PlanArtifactDataProfile &
+  PlanArtifactLedgerEventReceipt;
 
 export interface PlanArtifactDataProfileVerification {
   kind: "napier.plan-artifact-data-profile-verification";
@@ -95,6 +107,9 @@ export interface PlanArtifactDriftCheck {
   sizeBytes?: number;
 }
 
+export type PlanArtifactDriftCheckReceipt = PlanArtifactDriftCheck &
+  PlanArtifactLedgerEventReceipt;
+
 export interface PlanArtifactDirectoryManifestEntry {
   kind: "directory" | "file";
   path: string;
@@ -118,6 +133,9 @@ export interface PlanArtifactDirectoryManifest {
   directoryCount: number;
   entries: PlanArtifactDirectoryManifestEntry[];
 }
+
+export type PlanArtifactDirectoryManifestReceipt =
+  PlanArtifactDirectoryManifest & PlanArtifactLedgerEventReceipt;
 
 export interface PlanArtifactDirectoryManifestVerification {
   kind: "napier.plan-artifact-directory-manifest-verification";
@@ -189,7 +207,7 @@ export function previewPlanArtifactText(
   threadId: string,
   planId: string,
   artifactId: string,
-): Promise<PlanArtifactTextPreview> {
+): Promise<PlanArtifactTextPreviewReceipt> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/preview`,
   );
@@ -199,7 +217,7 @@ export function previewPlanArtifactDataProfile(
   threadId: string,
   planId: string,
   artifactId: string,
-): Promise<PlanArtifactDataProfile> {
+): Promise<PlanArtifactDataProfileReceipt> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/data`,
   );
@@ -224,7 +242,7 @@ export function checkPlanArtifactDrift(
   threadId: string,
   planId: string,
   artifactId: string,
-): Promise<PlanArtifactDriftCheck> {
+): Promise<PlanArtifactDriftCheckReceipt> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/drift-check`,
     { method: "POST" },
@@ -235,7 +253,7 @@ export function previewPlanArtifactDirectoryManifest(
   threadId: string,
   planId: string,
   artifactId: string,
-): Promise<PlanArtifactDirectoryManifest> {
+): Promise<PlanArtifactDirectoryManifestReceipt> {
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/manifest`,
   );
