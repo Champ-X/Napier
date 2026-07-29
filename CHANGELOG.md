@@ -6,6 +6,21 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added workspace-confined TypeScript/JavaScript reference discovery. The
+  opt-in `lsp_references` Agent tool sends standard
+  `textDocument/references` requests with explicit declaration inclusion
+  through the existing read-only, offline, exact-version LSP Sandbox. It
+  returns up to 64 canonical workspace locations with live-only paths, ranges,
+  hashes, and bounded previews, while omitted or truncated results are
+  explicitly incomplete. Durable model-call, Ledger, Replay, OTLP, and Trace
+  projections retain only mode, counts, versions, latency, and stable
+  source/reference/target-file/result hashes. Definition and references now
+  share one position and Location confinement module; Web LSP projections moved
+  out of the generic tool Trace module, reducing it from 1,516 to 1,249 lines.
+  The shared catalog, policy, safe-recovery gate, Server SSE, fixed multi-file
+  example, and opt-in OS-Sandbox smoke expose the same capability. This slice
+  does not claim rename, Code Actions, persistent synchronization, complete
+  external dependency navigation, or complete impact when results are omitted.
 - Added workspace-confined TypeScript/JavaScript definition lookup. The opt-in
   `lsp_definition` Agent tool sends standard `textDocument/definition`
   requests through the existing exact-version, read-only, offline LSP Sandbox
@@ -17,8 +32,8 @@ All notable changes to Napier are recorded here.
   stable set/result hashes. The shared Agent catalog, policy, Tool Loop Guard,
   Context, Server SSE, Web Trace, fixed cross-file example, and opt-in real
   OS-Sandbox smoke expose the same capability. This slice does not claim
-  references, rename, Code Actions, persistent synchronization, or external
-  dependency navigation.
+  rename, Code Actions, persistent synchronization, or external dependency
+  navigation.
 - Added write-linked TypeScript diagnostics for `apply_patch`. When a frozen
   Agent revision enables both `apply_patch` and `lsp_diagnostics`, supported
   TypeScript and JavaScript files receive automatic pre-write and post-write

@@ -227,6 +227,25 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "workspace",
+        "lsp_references",
+        {
+          path: "src/index.ts",
+          line: 1,
+          character: 1,
+          includeDeclaration: true,
+        },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "read-only sandboxed language-server reference lookup",
+      }),
+    );
+    expect(
+      assessToolCall(
         "observe",
         "run_command",
         { runtime: "node", args: ["--version"] },

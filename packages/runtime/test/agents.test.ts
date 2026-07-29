@@ -247,6 +247,7 @@ describe("Agent profile updates", () => {
           "read_file",
           "lsp_diagnostics",
           "lsp_definition",
+          "lsp_references",
           "run_command",
           "workspace_process",
         ],
@@ -254,6 +255,7 @@ describe("Agent profile updates", () => {
     ).toEqual([
       "lsp_definition",
       "lsp_diagnostics",
+      "lsp_references",
       "read_file",
       "run_command",
       "workspace_process",

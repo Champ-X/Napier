@@ -25,7 +25,11 @@ const WRITE_TOOLS = new Set(["apply_patch"]);
 const WORKSPACE_FILE_PREVIEW_TOOLS = new Set(["workspace_file_preview"]);
 const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
-const LSP_TOOLS = new Set(["lsp_diagnostics", "lsp_definition"]);
+const LSP_TOOLS = new Set([
+  "lsp_diagnostics",
+  "lsp_definition",
+  "lsp_references",
+]);
 const PROCESS_TOOLS = new Set(["run_command", "workspace_process"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
@@ -207,7 +211,7 @@ export function assessToolCall(
       return {
         allowed: false,
         risk: "high",
-        reason: "LSP diagnostics must target a path inside the workspace",
+        reason: "LSP tool must target a path inside the workspace",
       };
     }
     if (mode === "observe") {
@@ -223,7 +227,9 @@ export function assessToolCall(
       reason:
         toolName === "lsp_diagnostics"
           ? "read-only sandboxed language-server diagnostics"
-          : "read-only sandboxed language-server definition lookup",
+          : toolName === "lsp_definition"
+            ? "read-only sandboxed language-server definition lookup"
+            : "read-only sandboxed language-server reference lookup",
     };
   }
 

@@ -78,10 +78,10 @@ Version `0.1.0` includes:
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
-- `lsp_diagnostics` and `lsp_definition` tools that drive the standard
-  TypeScript language server against TypeScript or JavaScript workspace files
-  through the same read-only, offline OS sandbox, with bounded live compiler
-  evidence and hash-only durable projections;
+- `lsp_diagnostics`, `lsp_definition`, and `lsp_references` tools that drive
+  the standard TypeScript language server against TypeScript or JavaScript
+  workspace files through the same read-only, offline OS sandbox, with bounded
+  live compiler evidence and hash-only durable projections;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -1312,9 +1312,17 @@ tool calls, Ledger events, Replay, and Trace retain only counts, versions,
 latency, and hashes. Language-server source is untrusted evidence rather than
 instructions.
 
+`lsp_references` uses standard `textDocument/references` with explicit
+declaration inclusion to reveal a symbol's bounded workspace impact set before
+an edit. It returns up to 64 canonical locations using the same target
+confinement and live-only previews as definition lookup. Omitted or truncated
+results are marked incomplete and must not be treated as all usages. Durable
+evidence retains include-declaration mode, counts, versions, latency, and
+stable reference/target-file hashes without paths, exact positions, or source.
+
 These are one-shot operations rather than a persistent editor session. Napier
-does not yet claim references, rename, Code Actions, project-wide
-synchronization, external dependency navigation, or test selection.
+does not yet claim rename, Code Actions, project-wide synchronization,
+external dependency navigation, or test selection.
 
 When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
 TypeScript and JavaScript writes automatically run LSP diagnostics before and
@@ -1341,9 +1349,11 @@ npm run test:live-lsp
 ```
 
 The repository includes `examples/lsp-diagnostics/semantic-error.ts` as a
-fixed `TS2322` example and `examples/lsp-definition/` as a fixed cross-file
-definition example. The live suite diagnoses and fixes the first example, then
-resolves `usage.ts:3:22` to `definition.ts` through the Agent tool.
+fixed `TS2322` example, `examples/lsp-definition/` as a cross-file definition
+example, and `examples/lsp-references/` as a multi-file impact example. The
+live suite diagnoses and fixes the first example, resolves
+`usage.ts:3:22` to `definition.ts`, and finds six declaration-inclusive
+references to `normalizeTitle`.
 macOS rejects nested `sandbox-exec`, so launching the live smoke from an IDE
 process that is itself sandboxed fails closed rather than falling back to an
 unsandboxed language server.
@@ -2706,8 +2716,9 @@ anchors, **Sandbox verify** is read-only, offline, and command-closed, and
 shell or inherited environment. **Background process** adds bounded
 start/input/poll/cancel lifecycle control over the same sandbox boundary.
 **LSP diagnostics** adds one-file TypeScript/JavaScript semantic diagnostics
-and **LSP definition** adds workspace-confined source navigation over standard
-LSP without granting workspace writes or network access.
+while **LSP definition** and **LSP references** add workspace-confined source
+navigation and impact discovery over standard LSP without granting workspace
+writes or network access.
 Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.

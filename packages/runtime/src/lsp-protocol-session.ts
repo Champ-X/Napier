@@ -132,6 +132,7 @@ export async function runLspProtocolSession<T>(
           workspace: { configuration: false, workspaceFolders: true },
           textDocument: {
             definition: { linkSupport: true },
+            references: {},
             publishDiagnostics: {
               relatedInformation: false,
               tagSupport: { valueSet: [1, 2] },

@@ -316,6 +316,141 @@ describe("LSP diagnostics HTTP Agent path", () => {
     expect(JSON.stringify(events)).not.toContain(targetPath);
     expect(JSON.stringify(events)).not.toContain(privatePreview);
   }, 30_000);
+
+  it("streams real workspace-confined references with hash-only evidence", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-lsp-references-test-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const sourcePath = "src/private-reference-source.ts";
+    const firstPath = "src/private-reference-first.ts";
+    const secondPath = "src/private-reference-second.ts";
+    const privateSymbol = "serverPrivateReference";
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({
+          compilerOptions: {
+            strict: true,
+            noEmit: true,
+            module: "NodeNext",
+            moduleResolution: "NodeNext",
+          },
+        }),
+      ),
+      writeFile(
+        path.join(workspaceRoot, sourcePath),
+        [
+          `export function ${privateSymbol}(value: string): string {`,
+          "  return value.trim();",
+          "}",
+          "",
+          `export const local = ${privateSymbol}(" local ");`,
+          "",
+        ].join("\n"),
+      ),
+      writeFile(
+        path.join(workspaceRoot, firstPath),
+        [
+          `import { ${privateSymbol} } from "./private-reference-source.js";`,
+          `export const first = ${privateSymbol}(" first ");`,
+          "",
+        ].join("\n"),
+      ),
+      writeFile(
+        path.join(workspaceRoot, secondPath),
+        [
+          `import { ${privateSymbol} } from "./private-reference-source.js";`,
+          `export const second = ${privateSymbol}(" second ");`,
+          "",
+        ].join("\n"),
+      ),
+    ]);
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: directSandbox(),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agentId = services.store.listAgents()[0]!.id;
+    expect(
+      (
+        await app.request(`/api/agents/${agentId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolPolicy: "workspace",
+            enabledTools: ["lsp_references"],
+          }),
+        })
+      ).status,
+    ).toBe(200);
+    const thread = await services.store.createThread({
+      title: "Server LSP references",
+      agentId,
+    });
+    const provider = fauxProvider({ provider: "faux-server-references" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_references", {
+          path: sourcePath,
+          line: 1,
+          character: 17,
+          includeDeclaration: true,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(firstPath);
+        expect(messages).toContain(secondPath);
+        expect(messages).toContain(privateSymbol);
+        return fauxAssistantMessage(
+          "The standard language server located the workspace references.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    services.models.registerProvider(provider.provider);
+
+    const response = await app.request(`/api/threads/${thread.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Locate the workspace references.",
+        model: { provider: "faux-server-references", id: "faux-1" },
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('"status":"completed"');
+    const events = await services.store.listEvents(thread.id);
+    const referenceEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_references",
+    );
+    expect(referenceEvent?.payload["details"]).toEqual(
+      expect.objectContaining({
+        kind: "napier.lsp-references",
+        status: "found",
+        includeDeclaration: true,
+        referenceCount: 6,
+        omittedReferenceCount: 0,
+      }),
+    );
+    const durable = JSON.stringify(events);
+    expect(durable).not.toContain(sourcePath);
+    expect(durable).not.toContain(firstPath);
+    expect(durable).not.toContain(secondPath);
+    expect(durable).not.toContain(privateSymbol);
+  }, 30_000);
 });
 
 function directSandbox(): OsSandboxAdapter {

@@ -273,6 +273,56 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes LSP reference evidence without paths or source previews", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_references",
+      status: "completed",
+      effect: "read",
+      output: "TOP_SECRET_REFERENCE_SOURCE",
+      details: {
+        kind: "napier.lsp-references",
+        schemaVersion: 1,
+        status: "found",
+        language: "typescript",
+        includeDeclaration: false,
+        referenceCount: 6,
+        omittedReferenceCount: 2,
+        truncated: true,
+        durationMs: 840,
+        protocolBytes: 3200,
+        sourcePath: "TOP_SECRET_PATH",
+        sourcePathSha256: "1".repeat(64),
+        sourceFileSha256: "2".repeat(64),
+        referenceSetSha256: "3".repeat(64),
+        targetFileSetSha256: "4".repeat(64),
+        resultSha256: "5".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "lsp_references",
+      status: "completed",
+      effect: "read",
+      lspReferencesStatus: "found",
+      lspReferencesLanguage: "typescript",
+      lspReferencesIncludeDeclaration: false,
+      lspReferencesCount: 6,
+      lspReferencesOmittedCount: 2,
+      lspReferencesTruncated: true,
+      lspReferencesDurationMs: 840,
+      lspReferencesProtocolBytes: 3200,
+      lspReferencesSourcePathSha256: "1".repeat(64),
+      lspReferencesSourceFileSha256: "2".repeat(64),
+      lspReferencesSetSha256: "3".repeat(64),
+      lspReferencesTargetFileSetSha256: "4".repeat(64),
+      lspReferencesResultSha256: "5".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / lsp_references / completed / effect read / references found / reference-language typescript / reference-declarations excluded / reference-count 6 / reference-omitted 2 / reference-ms 840 / reference-protocol 3200 / reference-truncated / reference-source-path ${"1".repeat(12)} / reference-source-file ${"2".repeat(12)} / reference-set ${"3".repeat(12)} / reference-files ${"4".repeat(12)} / reference-result ${"5".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes search_files hash evidence without match text", () => {
     const event = toolEvent("tool.completed", {
       toolName: "search_files",

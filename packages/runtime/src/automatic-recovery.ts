@@ -30,6 +30,7 @@ const SAFE_READ_ONLY_TOOLS = new Set([
   "read_symbol",
   "lsp_diagnostics",
   "lsp_definition",
+  "lsp_references",
   "run_command",
   "workspace_file_preview",
   "verify_workspace",

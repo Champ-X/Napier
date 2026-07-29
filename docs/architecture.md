@@ -1630,6 +1630,13 @@ lsp_definition
      invalid UTF-8 targets
   -> return relative paths, ranges, hashes, and source previews live-only
   -> persist only counts, versions, latency, truncation, and set/result hashes
+lsp_references
+  -> validate a 1-based TypeScript or JavaScript symbol position
+  -> issue standard textDocument/references with explicit declaration mode
+  -> cap, canonicalize, and deduplicate workspace Location results
+  -> mark omitted or truncated results as an incomplete impact set
+  -> return paths, ranges, hashes, and source previews live-only
+  -> persist only mode/count/version/latency plus set/result hashes
 apply_patch create
   -> require workspace policy + enabled tool + expectedSha256 null
   -> require a missing target
@@ -1678,8 +1685,8 @@ Subagents call the read-only tool factory and never receive `apply_patch`.
 The LSP tools are implemented outside the oversized workspace-tool module.
 `lsp-diagnostics.ts` owns shared target/runtime preparation plus diagnostic
 projection, `lsp-protocol-session.ts` owns the generic bounded JSON-RPC
-lifecycle, and the diagnostic/definition tool adapters own Agent schemas plus
-Ledger redaction:
+lifecycle, `lsp-locations.ts` owns position/Location confinement, and the
+diagnostic/navigation tool adapters own Agent schemas plus Ledger redaction:
 
 ```text
 Agent selects lsp_diagnostics + workspace-relative source path
@@ -1721,6 +1728,28 @@ Agent selects lsp_definition + source path + 1-based UTF-16 position
   -> retain counts, versions, latency, truncation, and hashes in Ledger/Trace
 ```
 
+Reference lookup consumes the same location boundary:
+
+```text
+Agent selects lsp_references + source path + position + declaration mode
+  -> apply the same source, runtime, Sandbox, semantic-readiness, and timeout
+     gates as definition lookup
+  -> issue standard textDocument/references
+  -> accept Location results and cap the response at 64 candidates
+  -> independently canonicalize every target and omit external, virtual,
+     protected, symlinked, missing, oversized, or invalid UTF-8 files
+  -> deduplicate and sort canonical receipts independently of server ordering
+  -> rehash the source and bound runtime assets after protocol settlement
+  -> return relative paths, ranges, file hashes, and bounded previews live-only
+  -> persist declaration mode, counts, latency, and stable set/result hashes
+  -> label any omitted or truncated result as an incomplete impact set
+```
+
+The Web projection follows the same module boundary: `lsp-tool-event-view.ts`
+validates and summarizes all LSP receipts, while generic
+`tool-event-view.ts` only dispatches by tool name. Adding references therefore
+reduced the generic module from 1,516 to 1,249 lines.
+
 The Sandbox launch contract supports at most eight explicit absolute
 non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
 adds read-only binds, and OCI adds read-only mounts. Existing command and
@@ -1731,10 +1760,10 @@ is defined.
 The language server runs as untrusted code output inside the Capability Plane:
 diagnostic prose is not treated as instructions, related-information paths are
 discarded, workspace edits are rejected, and no package/plugin installation or
-network access is available. Definition URIs and previews receive the same
-treatment and cannot expand read/write scope. The implementation remains
-one-shot and does not expose references, rename, Code Actions, persistent
-synchronization, external dependency navigation, or project-wide indexing.
+network access is available. Definition/reference URIs and previews receive the
+same treatment and cannot expand read/write scope. The implementation remains
+one-shot and does not expose rename, Code Actions, persistent synchronization,
+external dependency navigation, or project-wide indexing.
 
 ## Write-linked Diagnostics Flow
 

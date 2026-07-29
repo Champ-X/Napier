@@ -1,4 +1,4 @@
-import type { LspDefinitionDetails } from "@napier/contracts";
+import type { LspReferencesDetails } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
@@ -8,11 +8,6 @@ import {
   type LspDiagnosticsRunnerOptions,
   runBoundLspSourceSession,
 } from "./lsp-diagnostics.js";
-import {
-  MAX_LSP_PROTOCOL_BYTES,
-  MAX_LSP_STDERR_CHARS,
-  runLspProtocolSession,
-} from "./lsp-protocol-session.js";
 import {
   canonicalLspLocations,
   lspLocationReceipt,
@@ -25,37 +20,50 @@ import {
   waitForLspTargetReady,
   workspaceLspLocation,
 } from "./lsp-locations.js";
+import {
+  MAX_LSP_PROTOCOL_BYTES,
+  MAX_LSP_STDERR_CHARS,
+  runLspProtocolSession,
+} from "./lsp-protocol-session.js";
 
-export const MAX_LSP_DEFINITIONS = 32;
-export const MAX_LSP_DEFINITION_PREVIEW_CHARS = MAX_LSP_LOCATION_PREVIEW_CHARS;
+export const MAX_LSP_REFERENCES = 64;
+export const MAX_LSP_REFERENCE_PREVIEW_CHARS = MAX_LSP_LOCATION_PREVIEW_CHARS;
 
-export interface LspDefinitionRequest {
+export interface LspReferencesRequest {
   path: string;
   line: number;
   character: number;
+  includeDeclaration?: boolean;
   timeoutMs?: number;
   signal?: AbortSignal;
 }
 
-export type LspDefinitionLocation = LspWorkspaceLocation;
+export type LspReferenceLocation = LspWorkspaceLocation;
 
-export interface LspDefinitionResult {
-  details: LspDefinitionDetails;
-  locations: LspDefinitionLocation[];
+export interface LspReferencesResult {
+  details: LspReferencesDetails;
+  locations: LspReferenceLocation[];
   relativePath: string;
 }
 
-export class LspDefinitionRunner {
+export class LspReferencesRunner {
   constructor(private readonly options: LspDiagnosticsRunnerOptions) {}
 
-  async run(request: LspDefinitionRequest): Promise<LspDefinitionResult> {
-    validateLspPositionShape(request, "LSP definition");
+  async run(request: LspReferencesRequest): Promise<LspReferencesResult> {
+    validateLspPositionShape(request, "LSP references");
+    if (
+      request.includeDeclaration !== undefined &&
+      typeof request.includeDeclaration !== "boolean"
+    ) {
+      throw new Error("LSP references includeDeclaration must be a boolean");
+    }
+    const includeDeclaration = request.includeDeclaration ?? true;
     const bound = await runBoundLspSourceSession(
       this.options,
       request,
       {
-        label: "LSP definition",
-        abortedMessage: "LSP definition was aborted",
+        label: "LSP references",
+        abortedMessage: "LSP references were aborted",
       },
       (child, protocolRequest, signal) =>
         runLspProtocolSession(
@@ -65,38 +73,39 @@ export class LspDefinitionRunner {
             const ready = waitForLspTargetReady(connection, targetUri);
             return async () => {
               await ready;
-              return connection.sendRequest("textDocument/definition", {
+              return connection.sendRequest("textDocument/references", {
                 textDocument: { uri: targetUri },
                 position: {
                   line: request.line - 1,
                   character: request.character - 1,
                 },
+                context: { includeDeclaration },
               });
             };
           },
           signal,
         ),
       (prepared) =>
-        validateLspSourcePosition(prepared.source, request, "LSP definition"),
+        validateLspSourcePosition(prepared.source, request, "LSP references"),
     );
     const { prepared, execution, durationMs } = bound;
     const candidates = parseLspLocationResponse(
       execution.value,
-      "LSP definition",
-      { allowLocationLinks: true },
+      "LSP references",
+      { allowLocationLinks: false, requireArray: true },
     );
-    const truncated = candidates.length > MAX_LSP_DEFINITIONS;
-    const selected = candidates.slice(0, MAX_LSP_DEFINITIONS);
-    const locations: LspDefinitionLocation[] = [];
-    let omittedDefinitionCount = candidates.length - selected.length;
+    const truncated = candidates.length > MAX_LSP_REFERENCES;
+    const selected = candidates.slice(0, MAX_LSP_REFERENCES);
+    const locations: LspReferenceLocation[] = [];
+    let omittedReferenceCount = candidates.length - selected.length;
     for (const candidate of selected) {
       const location = await workspaceLspLocation(
         prepared.workspaceRoot,
         candidate,
-        "LSP definition",
+        "LSP references",
       );
       if (!location) {
-        omittedDefinitionCount += 1;
+        omittedReferenceCount += 1;
         continue;
       }
       locations.push(location);
@@ -105,7 +114,7 @@ export class LspDefinitionRunner {
     const receipts = distinct.map(lspLocationReceipt);
     const targetFiles = lspTargetFileReceipts(receipts);
     const base = {
-      kind: "napier.lsp-definition" as const,
+      kind: "napier.lsp-references" as const,
       schemaVersion: 1 as const,
       status: distinct.length > 0 ? ("found" as const) : ("not_found" as const),
       language: prepared.language,
@@ -119,10 +128,11 @@ export class LspDefinitionRunner {
       positionSha256: sha256(
         canonicalJson({ line: request.line, character: request.character }),
       ),
-      definitionCount: distinct.length,
-      omittedDefinitionCount,
+      includeDeclaration,
+      referenceCount: distinct.length,
+      omittedReferenceCount,
       truncated,
-      definitionSetSha256: sha256(canonicalJson(receipts)),
+      referenceSetSha256: sha256(canonicalJson(receipts)),
       targetFileSetSha256: sha256(canonicalJson(targetFiles)),
       nodeExecutableSha256: prepared.assets.nodeExecutableSha256,
       languageServerVersion: prepared.assets.languageServerVersion,
@@ -135,8 +145,8 @@ export class LspDefinitionRunner {
           timeoutMs: request.timeoutMs ?? DEFAULT_LSP_DIAGNOSTICS_TIMEOUT_MS,
           maxSourceFileBytes: MAX_LSP_DIAGNOSTIC_FILE_BYTES,
           maxTargetFileBytes: MAX_LSP_DIAGNOSTIC_FILE_BYTES,
-          maxDefinitions: MAX_LSP_DEFINITIONS,
-          maxPreviewChars: MAX_LSP_DEFINITION_PREVIEW_CHARS,
+          maxReferences: MAX_LSP_REFERENCES,
+          maxPreviewChars: MAX_LSP_REFERENCE_PREVIEW_CHARS,
           maxProtocolBytes: MAX_LSP_PROTOCOL_BYTES,
           maxStderrChars: MAX_LSP_STDERR_CHARS,
           workspaceConfined: true,

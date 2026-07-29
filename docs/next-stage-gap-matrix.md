@@ -21,7 +21,7 @@ Audit date: 2026-07-29
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                  |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain. |
-| P2 coding intelligence            | Partial        | Hashline, bounded symbols, one-file TypeScript LSP diagnostics, and automatic write-linked diagnostic deltas exist; persistent LSP navigation/rename/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain.          |
+| P2 coding intelligence            | Partial        | Hashline, bounded symbols, TypeScript LSP diagnostics/definitions, and automatic write-linked diagnostic deltas exist; references, persistent LSP/rename/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain.      |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
 | P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
@@ -593,6 +593,99 @@ Observed result:
   main entry at 129.13 KiB against the 150 KiB budget;
 - all three opt-in OS-Sandbox LSP cases remain blocked from this IDE-launched
   process because macOS rejects nested `sandbox-exec`. Definition produced no
+  completed tool event and write-linked diagnostics preserved the original
+  file, so the boundary failed closed and is not claimed as a passed live
+  smoke in this environment.
+
+## Completed Slice: Workspace-confined LSP References
+
+User scenario: before changing or removing a TypeScript/JavaScript symbol, an
+Agent can ask the real language server for all bounded workspace references and
+inspect exact files, ranges, hashes, and source previews. This gives multi-file
+impact evidence that regex search cannot reliably provide, without granting
+rename or write authority.
+
+Acceptance:
+
+- add one opt-in `lsp_references` Agent tool using standard
+  `textDocument/references` with an explicit `includeDeclaration` flag through
+  the existing exact-version, read-only, offline LSP Sandbox;
+- accept one canonical source path and 1-based UTF-16 position, bind it to
+  current source bytes, and reject invalid positions before process launch;
+- extract shared position validation, semantic readiness, Location parsing,
+  workspace URI confinement, bounded preview, stable receipt ordering, and
+  target-file projection from definition rather than duplicating a new runner;
+- cap references at 64 and each preview at 1,000 characters; expose relative
+  paths, ranges, file hashes, and previews only to the live Agent;
+- persist only include-declaration mode, counts, versions, latency,
+  source/runtime/limit hashes, stable reference/target-file set hashes, and
+  truncation; raw paths, symbol positions, previews, and server prose remain
+  absent from model-call, Ledger, Replay, Trace, and OTLP evidence;
+- expose the tool through the shared catalog, Context, policy, Tool Loop Guard,
+  automatic-recovery effect classification, workspace guidance, Server SSE,
+  and existing Trace surface;
+- move LSP-specific Trace parsing/summary composition out of the already large
+  generic `tool-event-view.ts`, preserving current diagnostic/definition
+  behavior while references are added;
+- cover real cross-file references, declaration include/exclude, same-file,
+  not-found, duplicate/multiple/truncated/malformed responses,
+  external/virtual/protected/symlinked/missing/oversized/invalid UTF-8 targets,
+  source/runtime drift, timeout, cancellation, concurrency, redaction, Replay,
+  Server SSE, and Web projection;
+- provide a fixed multi-file example and an opt-in real OS-Sandbox Agent smoke;
+  do not claim rename, completeness when omitted/truncated, persistent
+  synchronization, or external dependency navigation.
+
+Performance and complexity budget:
+
+- fixed real-language-server and public Server reference tasks should settle
+  within 2 seconds on the current machine, under the existing 10-second wall,
+  2 MiB protocol, and 16,000-character stderr bounds;
+- no new code enters `store.ts` or `apps/server/src/app.ts`; Agent Runtime and
+  Contracts receive only catalog/wiring types, while shared LSP location code
+  replaces definition-local duplication;
+- Web main entry remains below 150 KiB, and the generic tool Trace module
+  should not grow from its current 1,516-line baseline.
+
+Threat boundary:
+
+- Reference URIs and ranges are untrusted language-server output. Every target
+  is independently canonicalized before reading and cannot expand workspace,
+  process, network, or write capabilities.
+- Dependency, standard-library, virtual, protected, symlinked, and
+  out-of-workspace references are omitted and counted. A truncated or omitted
+  result is never described as a complete impact set.
+- Source previews are bounded live evidence, not instructions, and never enter
+  durable state.
+- References are a read effect and are unavailable in observe policy, advisor
+  correction, safe automatic recovery, or profiles that omit the tool.
+
+Observed result:
+
+- the fixed `examples/lsp-references/` project returns six
+  declaration-inclusive and five declaration-excluding references across three
+  files through the real TypeScript language server; the test performs both
+  cold one-shot calls in about 3.0 seconds total;
+- the public Server SSE Agent path resolves the same six-reference shape in
+  about 0.95 seconds, under the 2-second product-path budget, and persists no
+  source/target path or symbol preview;
+- real cross-file and same-file references, declaration mode, not-found,
+  duplicate/stable ordering, 64-result truncation, malformed/out-of-range
+  responses, all target confinement classes, source/runtime drift, timeout,
+  cancellation, concurrency, Agent redaction, Replay, Server SSE, safe
+  recovery, and Web projection are covered;
+- shared `lsp-locations.ts` now owns position validation, semantic readiness,
+  Location parsing, canonical workspace reads, bounded previews, and stable
+  receipts. The definition runner fell from 420 to 162 lines rather than
+  duplicating those rules for references;
+- Web LSP evidence moved into `lsp-tool-event-view.ts`; generic
+  `tool-event-view.ts` fell from 1,516 to 1,249 lines after adding the new
+  capability;
+- the complete repository gate passed 919 tests with eight opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget;
+- all four opt-in OS-Sandbox LSP cases remain blocked from this IDE-launched
+  process because macOS rejects nested `sandbox-exec`. References produced no
   completed tool event and write-linked diagnostics preserved the original
   file, so the boundary failed closed and is not claimed as a passed live
   smoke in this environment.

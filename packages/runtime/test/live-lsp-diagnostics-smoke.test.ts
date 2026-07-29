@@ -207,6 +207,99 @@ describeLive("live LSP diagnostics smoke", () => {
     store.close();
   }, 30_000);
 
+  it("finds fixed multi-file references through the Agent sandbox", async () => {
+    const workspaceRoot = await realpath(
+      fileURLToPath(
+        new URL("../../../examples/lsp-references/", import.meta.url),
+      ),
+    );
+    const stateRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-references-"),
+    );
+    temporaryRoots.push(stateRoot);
+    const sourcePath = "definition.ts";
+    const firstPath = "first.ts";
+    const secondPath = "second.ts";
+    const sourcePreview = "normalizeTitle";
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(stateRoot, "data"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_references"],
+    });
+    const thread = await store.createThread({
+      title: "Live LSP references smoke",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "live-lsp-references-smoke" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_references", {
+          path: sourcePath,
+          line: 1,
+          character: 17,
+          includeDeclaration: true,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(firstPath);
+        expect(messages).toContain(secondPath);
+        expect(messages).toContain(sourcePreview);
+        return fauxAssistantMessage(
+          "The real language server resolved the workspace references.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Find the TypeScript references through standard LSP.",
+      model: { provider: "live-lsp-references-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const events = await store.listEvents(thread.id);
+    const completed = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_references",
+    );
+    expect(completed?.payload["details"]).toEqual(
+      expect.objectContaining({
+        status: "found",
+        includeDeclaration: true,
+        referenceCount: 6,
+        omittedReferenceCount: 0,
+        sandbox: "macos-sandbox-exec",
+        languageServerVersion: "5.3.0",
+        typescriptVersion: "5.9.3",
+      }),
+    );
+    const durable = JSON.stringify(events);
+    expect(durable).not.toContain(sourcePath);
+    expect(durable).not.toContain(firstPath);
+    expect(durable).not.toContain(secondPath);
+    expect(durable).not.toContain(sourcePreview);
+    store.close();
+  }, 30_000);
+
   it("fixes TS2322 with automatic before and after diagnostics", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-lsp-patch-workspace-"),

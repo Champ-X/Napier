@@ -2624,6 +2624,7 @@ export const AGENT_TOOL_NAMES = [
   "read_symbol",
   "lsp_diagnostics",
   "lsp_definition",
+  "lsp_references",
   "apply_patch",
   "workspace_file_preview",
   "workspace_file_apply",
@@ -3042,6 +3043,41 @@ export interface LspDefinitionDetails {
   omittedDefinitionCount: number;
   truncated: boolean;
   definitionSetSha256: string;
+  targetFileSetSha256: string;
+  nodeExecutableSha256: string;
+  languageServerVersion: string;
+  languageServerSha256: string;
+  typescriptVersion: string;
+  typescriptServerSha256: string;
+  environmentSha256: string;
+  resourceLimitsSha256: string;
+  timeoutMs: number;
+  durationMs: number;
+  protocolBytes: number;
+  stderrChars: number;
+  stderrSha256: string;
+  stderrTruncated: boolean;
+  resultSha256: string;
+}
+
+export interface LspReferencesDetails {
+  kind: "napier.lsp-references";
+  schemaVersion: 1;
+  status: "found" | "not_found";
+  language: LspDiagnosticLanguage;
+  sandbox: string;
+  workspaceAccess: "read_only";
+  networkAccess: "denied";
+  workspaceRootSha256: string;
+  sourcePathSha256: string;
+  sourceFileSha256: string;
+  sourceFileBytes: number;
+  positionSha256: string;
+  includeDeclaration: boolean;
+  referenceCount: number;
+  omittedReferenceCount: number;
+  truncated: boolean;
+  referenceSetSha256: string;
   targetFileSetSha256: string;
   nodeExecutableSha256: string;
   languageServerVersion: string;
