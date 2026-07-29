@@ -3,6 +3,7 @@ import type { RunEvent } from "@napier/contracts";
 const SHA256 = /^[a-f0-9]{64}$/;
 const ARTIFACT_RECEIPT_EVENTS = new Set([
   "artifact.data_profiled",
+  "artifact.data_profile_verified",
   "artifact.directory_manifested",
   "artifact.drift_checked",
   "artifact.exported",
@@ -34,6 +35,36 @@ const ARTIFACT_DATA_PROFILED_KEYS = [
   "truncated",
   "columnSetSha256",
   "sampleSha256",
+];
+
+const ARTIFACT_DATA_PROFILE_VERIFIED_KEYS = [
+  "planId",
+  "artifactId",
+  "planRevision",
+  "status",
+  "kind",
+  "pathSha256",
+  "verificationStatus",
+  "diagnosticCount",
+  "diagnosticsSha256",
+  "declaredSha256",
+  "observedSha256",
+  "declaredSizeBytes",
+  "observedSizeBytes",
+  "declaredFormat",
+  "observedFormat",
+  "declaredRowCount",
+  "observedRowCount",
+  "declaredColumnCount",
+  "observedColumnCount",
+  "declaredTruncated",
+  "observedTruncated",
+  "declaredColumnSetSha256",
+  "recomputedDeclaredColumnSetSha256",
+  "observedColumnSetSha256",
+  "declaredSampleSha256",
+  "recomputedDeclaredSampleSha256",
+  "observedSampleSha256",
 ];
 
 const ARTIFACT_DRIFT_CHECKED_BASE_KEYS = [
@@ -87,6 +118,10 @@ export function assertArtifactReceiptEventBoundary(
   const payload = recordField(event["payload"], label);
   if (event["type"] === "artifact.data_profiled") {
     assertArtifactDataProfiledPayload(payload, label);
+    return;
+  }
+  if (event["type"] === "artifact.data_profile_verified") {
+    assertArtifactDataProfileVerifiedPayload(payload, label);
     return;
   }
   if (event["type"] === "artifact.directory_manifested") {
@@ -154,6 +189,53 @@ function assertArtifactDataProfiledPayload(
   assertNonNegativeInteger(payload["sizeBytes"], label);
   assertNonNegativeInteger(payload["rowCount"], label);
   assertNonNegativeInteger(payload["columnCount"], label);
+}
+
+function assertArtifactDataProfileVerifiedPayload(
+  payload: Record<string, unknown>,
+  label: string,
+): void {
+  assertExactKeys(payload, ARTIFACT_DATA_PROFILE_VERIFIED_KEYS, label);
+  assertNonEmptyString(payload["planId"], label);
+  assertNonEmptyString(payload["artifactId"], label);
+  assertPositiveInteger(payload["planRevision"], label);
+  if (payload["status"] !== "produced" && payload["status"] !== "verified") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (payload["kind"] !== "file") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (
+    payload["verificationStatus"] !== "valid" &&
+    payload["verificationStatus"] !== "drifted"
+  ) {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  assertSha256(payload["pathSha256"], label);
+  assertSha256(payload["diagnosticsSha256"], label);
+  assertSha256(payload["declaredSha256"], label);
+  assertSha256(payload["observedSha256"], label);
+  assertSha256(payload["declaredColumnSetSha256"], label);
+  assertSha256(payload["recomputedDeclaredColumnSetSha256"], label);
+  assertSha256(payload["observedColumnSetSha256"], label);
+  assertSha256(payload["declaredSampleSha256"], label);
+  assertSha256(payload["recomputedDeclaredSampleSha256"], label);
+  assertSha256(payload["observedSampleSha256"], label);
+  assertNonNegativeInteger(payload["diagnosticCount"], label);
+  assertNonNegativeInteger(payload["declaredSizeBytes"], label);
+  assertNonNegativeInteger(payload["observedSizeBytes"], label);
+  assertNonNegativeInteger(payload["declaredRowCount"], label);
+  assertNonNegativeInteger(payload["observedRowCount"], label);
+  assertNonNegativeInteger(payload["declaredColumnCount"], label);
+  assertNonNegativeInteger(payload["observedColumnCount"], label);
+  if (
+    !isArtifactDataFormat(payload["declaredFormat"]) ||
+    !isArtifactDataFormat(payload["observedFormat"]) ||
+    typeof payload["declaredTruncated"] !== "boolean" ||
+    typeof payload["observedTruncated"] !== "boolean"
+  ) {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
 }
 
 function assertArtifactDirectoryManifestedPayload(
@@ -240,6 +322,16 @@ function assertSha256(value: unknown, label: string): void {
   if (typeof value !== "string" || !SHA256.test(value)) {
     throw new Error(`${label} hash-only artifact receipt is invalid`);
   }
+}
+
+function isArtifactDataFormat(value: unknown): boolean {
+  return (
+    value === "json" ||
+    value === "jsonl" ||
+    value === "csv" ||
+    value === "tsv" ||
+    value === "markdown_table"
+  );
 }
 
 function assertPositiveInteger(value: unknown, label: string): void {

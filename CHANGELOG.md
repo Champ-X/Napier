@@ -291,6 +291,10 @@ All notable changes to Napier are recorded here.
 - Downloaded Plan artifact data profile JSON can now be uploaded back through
   Workbench for no-store verification against freshly recomputed workspace
   bytes and self-declared column/sample hashes.
+- Data profile verification now appends a hash-only
+  `artifact.data_profile_verified` Ledger receipt with status, diagnostic
+  count/hash, declared/recomputed/observed profile hashes, and no raw columns,
+  samples, or diagnostics.
 - `inspect_data` and Plan artifact data profiles now normalize duplicate or
   blank tabular headers into unique names such as `name_2` or `column_3`, so
   bounded samples do not silently overwrite earlier columns.
@@ -421,10 +425,11 @@ All notable changes to Napier are recorded here.
   states without creating another recovery status source.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`,
-  `artifact.data_profiled`, `artifact.directory_manifested`, and
-  `artifact.drift_checked` receipts remain hash-only, so recomputed portable
-  replay hashes cannot hide raw artifact paths, directory entries, preview
-  text, columns, or sample rows in exported evidence.
+  `artifact.data_profiled`, `artifact.data_profile_verified`,
+  `artifact.directory_manifested`, and `artifact.drift_checked` receipts remain
+  hash-only, so recomputed portable replay hashes cannot hide raw artifact
+  paths, directory entries, preview text, columns, sample rows, or data profile
+  verification diagnostics in exported evidence.
 - SQLite restore now applies the same hash-only artifact receipt boundary to
   persisted Thread events, rejecting locally modified ledger rows that smuggle
   raw preview text back into startup state.

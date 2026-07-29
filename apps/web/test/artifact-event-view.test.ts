@@ -117,6 +117,76 @@ describe("artifact event trace view", () => {
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects data profile verification receipts without diagnostics or samples", () => {
+    const event = artifactEvent("artifact.data_profile_verified", {
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 6,
+      status: "verified",
+      kind: "file",
+      verificationStatus: "drifted",
+      diagnostics: ["TOP_SECRET_DIAGNOSTIC"],
+      columns: ["TOP_SECRET_COLUMN"],
+      sampleRows: [{ TOP_SECRET_COLUMN: "TOP_SECRET_VALUE" }],
+      pathSha256: "a".repeat(64),
+      diagnosticsSha256: "3".repeat(64),
+      declaredSha256: "b".repeat(64),
+      observedSha256: "c".repeat(64),
+      declaredSizeBytes: 128,
+      observedSizeBytes: 256,
+      declaredFormat: "csv",
+      observedFormat: "json",
+      declaredRowCount: 3,
+      observedRowCount: 4,
+      declaredColumnCount: 2,
+      observedColumnCount: 3,
+      declaredTruncated: false,
+      observedTruncated: true,
+      declaredColumnSetSha256: "d".repeat(64),
+      recomputedDeclaredColumnSetSha256: "e".repeat(64),
+      observedColumnSetSha256: "f".repeat(64),
+      declaredSampleSha256: "0".repeat(64),
+      recomputedDeclaredSampleSha256: "1".repeat(64),
+      observedSampleSha256: "2".repeat(64),
+      diagnosticCount: 1,
+    });
+
+    expect(artifactEventTraceView(event)).toEqual({
+      action: "data_profile_verified",
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 6,
+      status: "verified",
+      kind: "file",
+      verificationStatus: "drifted",
+      pathSha256: "a".repeat(64),
+      diagnosticsSha256: "3".repeat(64),
+      declaredSha256: "b".repeat(64),
+      observedSha256: "c".repeat(64),
+      declaredSizeBytes: 128,
+      observedSizeBytes: 256,
+      declaredFormat: "csv",
+      observedFormat: "json",
+      declaredRowCount: 3,
+      observedRowCount: 4,
+      declaredColumnCount: 2,
+      observedColumnCount: 3,
+      declaredTruncated: false,
+      observedTruncated: true,
+      declaredColumnSetSha256: "d".repeat(64),
+      recomputedDeclaredColumnSetSha256: "e".repeat(64),
+      observedColumnSetSha256: "f".repeat(64),
+      declaredSampleSha256: "0".repeat(64),
+      recomputedDeclaredSampleSha256: "1".repeat(64),
+      observedSampleSha256: "2".repeat(64),
+      diagnosticCount: 1,
+    });
+    expect(artifactEventTraceSummary(event)).toBe(
+      `artifact / data_profile_verified / plan 1234567890 / artifact 0987654321 / plan-r6 / status verified / kind file / verification drifted / formats CSV->JSON / truncated false->true / size-bytes 128->256 / rows 3->4 / columns 2->3 / diagnostics 1 / path ${"a".repeat(12)} / declared ${"b".repeat(12)} / observed ${"c".repeat(12)} / declared-columns ${"d".repeat(12)} / declared-columns-self ${"e".repeat(12)} / observed-columns ${"f".repeat(12)} / declared-sample ${"0".repeat(12)} / declared-sample-self ${"1".repeat(12)} / observed-sample ${"2".repeat(12)} / diagnostics ${"3".repeat(12)}`,
+    );
+    expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("projects artifact drift checks without paths or file contents", () => {
     const event = artifactEvent("artifact.drift_checked", {
       planId: "plan_1234567890",

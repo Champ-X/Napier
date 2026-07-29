@@ -7555,6 +7555,15 @@ export function createApp(services: NapierServices): Hono {
           profile,
           observed,
         );
+        await services.store.appendEvent({
+          threadId,
+          runId: createId("runctl"),
+          type: "artifact.data_profile_verified",
+          category: "artifact",
+          visibility: "user",
+          payload:
+            createPlanArtifactDataProfileVerificationEventPayload(verification),
+        });
         setPlanArtifactDataProfileVerificationHeaders(context, verification);
         return context.json(verification);
       } catch (error) {
@@ -18237,6 +18246,41 @@ function verifyPlanArtifactDataProfileProjection(
     declaredSampleSha256: declared.sampleSha256,
     recomputedDeclaredSampleSha256,
     observedSampleSha256: observed.sampleSha256,
+  };
+}
+
+function createPlanArtifactDataProfileVerificationEventPayload(
+  verification: ReturnType<typeof verifyPlanArtifactDataProfileProjection>,
+) {
+  return {
+    planId: verification.planId,
+    artifactId: verification.artifactId,
+    planRevision: verification.planRevision,
+    status: verification.status,
+    kind: verification.artifactKind,
+    pathSha256: verification.pathSha256,
+    verificationStatus: verification.verificationStatus,
+    diagnosticCount: verification.diagnostics.length,
+    diagnosticsSha256: sha256Json(verification.diagnostics),
+    declaredSha256: verification.declaredSha256,
+    observedSha256: verification.observedSha256,
+    declaredSizeBytes: verification.declaredSizeBytes,
+    observedSizeBytes: verification.observedSizeBytes,
+    declaredFormat: verification.declaredFormat,
+    observedFormat: verification.observedFormat,
+    declaredRowCount: verification.declaredRowCount,
+    observedRowCount: verification.observedRowCount,
+    declaredColumnCount: verification.declaredColumnCount,
+    observedColumnCount: verification.observedColumnCount,
+    declaredTruncated: verification.declaredTruncated,
+    observedTruncated: verification.observedTruncated,
+    declaredColumnSetSha256: verification.declaredColumnSetSha256,
+    recomputedDeclaredColumnSetSha256:
+      verification.recomputedDeclaredColumnSetSha256,
+    observedColumnSetSha256: verification.observedColumnSetSha256,
+    declaredSampleSha256: verification.declaredSampleSha256,
+    recomputedDeclaredSampleSha256: verification.recomputedDeclaredSampleSha256,
+    observedSampleSha256: verification.observedSampleSha256,
   };
 }
 

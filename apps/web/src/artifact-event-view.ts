@@ -9,26 +9,46 @@ export interface ArtifactEventTraceView {
   status?: string;
   kind?: string;
   result?: string;
+  verificationStatus?: string;
   format?: string;
+  declaredFormat?: string;
+  observedFormat?: string;
   truncated?: boolean;
+  declaredTruncated?: boolean;
+  observedTruncated?: boolean;
   pathSha256?: string;
   sha256?: string;
   expectedSha256?: string;
+  declaredSha256?: string;
   observedSha256?: string;
   textSha256?: string;
   columnSetSha256?: string;
+  declaredColumnSetSha256?: string;
+  recomputedDeclaredColumnSetSha256?: string;
+  observedColumnSetSha256?: string;
   sampleSha256?: string;
+  declaredSampleSha256?: string;
+  recomputedDeclaredSampleSha256?: string;
+  observedSampleSha256?: string;
+  diagnosticsSha256?: string;
   sizeBytes?: number;
+  declaredSizeBytes?: number;
+  observedSizeBytes?: number;
   lineCount?: number;
   rowCount?: number;
+  declaredRowCount?: number;
+  observedRowCount?: number;
   columnCount?: number;
+  declaredColumnCount?: number;
+  observedColumnCount?: number;
+  diagnosticCount?: number;
   entryCount?: number;
   fileCount?: number;
   directoryCount?: number;
 }
 
 const ARTIFACT_EVENT =
-  /^artifact\.(data_profiled|directory_manifested|drift_checked|exported|previewed)$/u;
+  /^artifact\.(data_profile_verified|data_profiled|directory_manifested|drift_checked|exported|previewed)$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ARTIFACT_RECEIPT_SUMMARY = "artifact receipt";
@@ -52,19 +72,39 @@ export function artifactEventTraceView(
     ...safeTokenField(event.payload, "status"),
     ...safeTokenField(event.payload, "kind"),
     ...safeTokenField(event.payload, "result"),
+    ...safeTokenField(event.payload, "verificationStatus"),
     ...safeTokenField(event.payload, "format"),
+    ...safeTokenField(event.payload, "declaredFormat"),
+    ...safeTokenField(event.payload, "observedFormat"),
     ...booleanField(event.payload, "truncated"),
+    ...booleanField(event.payload, "declaredTruncated"),
+    ...booleanField(event.payload, "observedTruncated"),
     ...shaField(event.payload, "pathSha256"),
     ...shaField(event.payload, "sha256"),
     ...shaField(event.payload, "expectedSha256"),
+    ...shaField(event.payload, "declaredSha256"),
     ...shaField(event.payload, "observedSha256"),
     ...shaField(event.payload, "textSha256"),
     ...shaField(event.payload, "columnSetSha256"),
+    ...shaField(event.payload, "declaredColumnSetSha256"),
+    ...shaField(event.payload, "recomputedDeclaredColumnSetSha256"),
+    ...shaField(event.payload, "observedColumnSetSha256"),
     ...shaField(event.payload, "sampleSha256"),
+    ...shaField(event.payload, "declaredSampleSha256"),
+    ...shaField(event.payload, "recomputedDeclaredSampleSha256"),
+    ...shaField(event.payload, "observedSampleSha256"),
+    ...shaField(event.payload, "diagnosticsSha256"),
     ...integerField(event.payload, "sizeBytes"),
+    ...integerField(event.payload, "declaredSizeBytes"),
+    ...integerField(event.payload, "observedSizeBytes"),
     ...integerField(event.payload, "lineCount"),
     ...integerField(event.payload, "rowCount"),
+    ...integerField(event.payload, "declaredRowCount"),
+    ...integerField(event.payload, "observedRowCount"),
     ...integerField(event.payload, "columnCount"),
+    ...integerField(event.payload, "declaredColumnCount"),
+    ...integerField(event.payload, "observedColumnCount"),
+    ...integerField(event.payload, "diagnosticCount"),
     ...integerField(event.payload, "entryCount"),
     ...integerField(event.payload, "fileCount"),
     ...integerField(event.payload, "directoryCount"),
@@ -84,14 +124,49 @@ export function artifactEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.status ? [`status ${view.status}`] : []),
     ...(view.kind ? [`kind ${view.kind}`] : []),
     ...(view.result ? [`result ${view.result}`] : []),
+    ...(view.verificationStatus
+      ? [`verification ${view.verificationStatus}`]
+      : []),
     ...(view.format
       ? [`format ${structuredDataFormatLabel(view.format)}`]
       : []),
+    ...(view.declaredFormat || view.observedFormat
+      ? [
+          `formats ${formatDataFormatPair(view.declaredFormat, view.observedFormat)}`,
+        ]
+      : []),
     ...(view.truncated !== undefined ? [`truncated ${view.truncated}`] : []),
+    ...(view.declaredTruncated !== undefined ||
+    view.observedTruncated !== undefined
+      ? [
+          `truncated ${formatBooleanPair(view.declaredTruncated, view.observedTruncated)}`,
+        ]
+      : []),
     ...(view.sizeBytes !== undefined ? [`size-bytes ${view.sizeBytes}`] : []),
+    ...(view.declaredSizeBytes !== undefined ||
+    view.observedSizeBytes !== undefined
+      ? [
+          `size-bytes ${formatNumberPair(view.declaredSizeBytes, view.observedSizeBytes)}`,
+        ]
+      : []),
     ...(view.lineCount !== undefined ? [`lines ${view.lineCount}`] : []),
     ...(view.rowCount !== undefined ? [`rows ${view.rowCount}`] : []),
+    ...(view.declaredRowCount !== undefined ||
+    view.observedRowCount !== undefined
+      ? [
+          `rows ${formatNumberPair(view.declaredRowCount, view.observedRowCount)}`,
+        ]
+      : []),
     ...(view.columnCount !== undefined ? [`columns ${view.columnCount}`] : []),
+    ...(view.declaredColumnCount !== undefined ||
+    view.observedColumnCount !== undefined
+      ? [
+          `columns ${formatNumberPair(view.declaredColumnCount, view.observedColumnCount)}`,
+        ]
+      : []),
+    ...(view.diagnosticCount !== undefined
+      ? [`diagnostics ${view.diagnosticCount}`]
+      : []),
     ...(view.entryCount !== undefined ? [`entries ${view.entryCount}`] : []),
     ...(view.fileCount !== undefined ? [`files ${view.fileCount}`] : []),
     ...(view.directoryCount !== undefined
@@ -100,10 +175,21 @@ export function artifactEventTraceSummary(event: RunEvent): string | undefined {
     ...hashSummary("path", view.pathSha256),
     ...hashSummary("artifact", view.sha256),
     ...hashSummary("expected", view.expectedSha256),
+    ...hashSummary("declared", view.declaredSha256),
     ...hashSummary("observed", view.observedSha256),
     ...hashSummary("text", view.textSha256),
     ...hashSummary("columns", view.columnSetSha256),
+    ...hashSummary("declared-columns", view.declaredColumnSetSha256),
+    ...hashSummary(
+      "declared-columns-self",
+      view.recomputedDeclaredColumnSetSha256,
+    ),
+    ...hashSummary("observed-columns", view.observedColumnSetSha256),
     ...hashSummary("sample", view.sampleSha256),
+    ...hashSummary("declared-sample", view.declaredSampleSha256),
+    ...hashSummary("declared-sample-self", view.recomputedDeclaredSampleSha256),
+    ...hashSummary("observed-sample", view.observedSampleSha256),
+    ...hashSummary("diagnostics", view.diagnosticsSha256),
   ].join(" / ");
 }
 
@@ -161,4 +247,29 @@ function idSummary(label: string, value: string | undefined): string[] {
 
 function hashSummary(label: string, value: string | undefined): string[] {
   return value ? [`${label} ${value.slice(0, 12)}`] : [];
+}
+
+function formatNumberPair(
+  declared: number | undefined,
+  observed: number | undefined,
+): string {
+  return `${declared ?? "?"}->${observed ?? "?"}`;
+}
+
+function formatBooleanPair(
+  declared: boolean | undefined,
+  observed: boolean | undefined,
+): string {
+  return `${declared ?? "?"}->${observed ?? "?"}`;
+}
+
+function formatDataFormatPair(
+  declared: string | undefined,
+  observed: string | undefined,
+): string {
+  return `${formatDataFormat(declared)}->${formatDataFormat(observed)}`;
+}
+
+function formatDataFormat(value: string | undefined): string {
+  return value ? structuredDataFormatLabel(value) : "?";
 }

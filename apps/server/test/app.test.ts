@@ -5026,6 +5026,12 @@ describe("Napier HTTP goal flow", () => {
     expect(
       tamperedProfileResponse.headers.get("X-Napier-Diagnostic-Count"),
     ).toBe("1");
+    const tamperedProfileDiagnosticsSha256 =
+      tamperedProfileResponse.headers.get("X-Napier-Diagnostics-SHA256");
+    if (!tamperedProfileDiagnosticsSha256) {
+      throw new Error("Expected profile diagnostics hash header");
+    }
+    expect(tamperedProfileDiagnosticsSha256).toMatch(/^[a-f0-9]{64}$/);
     await expect(tamperedProfileResponse.json()).resolves.toEqual(
       expect.objectContaining({
         verificationStatus: "drifted",
@@ -5033,6 +5039,78 @@ describe("Napier HTTP goal flow", () => {
         declaredSampleSha256: dataProfileBody.sampleSha256,
         observedSampleSha256: dataProfileBody.sampleSha256,
       }),
+    );
+    const dataProfileVerificationEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.data_profile_verified" &&
+        event.payload["artifactId"] === "scores",
+    );
+    expect(dataProfileVerificationEvents).toEqual([
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          planId: plan.id,
+          artifactId: "scores",
+          status: "verified",
+          kind: "file",
+          verificationStatus: "valid",
+          diagnosticCount: 0,
+          diagnosticsSha256: createHash("sha256")
+            .update(JSON.stringify([]))
+            .digest("hex"),
+          pathSha256: createHash("sha256").update("scores.csv").digest("hex"),
+          declaredSha256: expectedScoresSha256,
+          observedSha256: expectedScoresSha256,
+          declaredSizeBytes: Buffer.byteLength(scoresContents),
+          observedSizeBytes: Buffer.byteLength(scoresContents),
+          declaredFormat: "csv",
+          observedFormat: "csv",
+          declaredRowCount: 2,
+          observedRowCount: 2,
+          declaredColumnCount: 2,
+          observedColumnCount: 2,
+          declaredTruncated: false,
+          observedTruncated: false,
+          declaredColumnSetSha256: dataProfileBody.columnSetSha256,
+          recomputedDeclaredColumnSetSha256: dataProfileBody.columnSetSha256,
+          observedColumnSetSha256: dataProfileBody.columnSetSha256,
+          declaredSampleSha256: dataProfileBody.sampleSha256,
+          recomputedDeclaredSampleSha256: dataProfileBody.sampleSha256,
+          observedSampleSha256: dataProfileBody.sampleSha256,
+        }),
+      }),
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          artifactId: "scores",
+          verificationStatus: "valid",
+          diagnosticCount: 0,
+          recomputedDeclaredSampleSha256: dataProfileBody.sampleSha256,
+        }),
+      }),
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          artifactId: "scores",
+          verificationStatus: "drifted",
+          diagnosticCount: 1,
+          diagnosticsSha256: tamperedProfileDiagnosticsSha256,
+          declaredSampleSha256: dataProfileBody.sampleSha256,
+          observedSampleSha256: dataProfileBody.sampleSha256,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain(
+      "alpha",
+    );
+    expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain("beta");
+    expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain(
+      "tampered",
+    );
+    expect(JSON.stringify(dataProfileVerificationEvents)).not.toContain(
+      "declared_sample_hash_mismatch",
     );
     const currentDriftCheckResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/drift-check`,
@@ -5226,7 +5304,10 @@ describe("Napier HTTP goal flow", () => {
     expect(verifyArchiveResponse.status).toBe(200);
     const archiveVerification =
       (await verifyArchiveResponse.json()) as ExecutionPlanArchiveVerification;
-    expect(archiveVerification.status).toBe("valid");
+    expect(
+      archiveVerification.status,
+      JSON.stringify(archiveVerification),
+    ).toBe("valid");
     expectExecutionPlanArchiveVerificationHeaders(
       verifyArchiveResponse,
       archiveVerification,

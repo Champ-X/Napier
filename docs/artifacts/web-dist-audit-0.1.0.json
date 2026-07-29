@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 56,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BBC30etP.js",
+    "path": "apps/web/dist/assets/index-DVXrXPeX.js",
     "sizeBytes": 129794,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "4b17656d9c13297792d10ffda7d95477f2c837ae7d45703e58a969fee8a62773"
+    "sha256": "69dda25abdf5773003452705960a723c74a231d36a380b16e08ac90fd31c7e5e"
   },
-  "distContentSha256": "4b17656d9c13297792d10ffda7d95477f2c837ae7d45703e58a969fee8a62773",
+  "distContentSha256": "69dda25abdf5773003452705960a723c74a231d36a380b16e08ac90fd31c7e5e",
   "errors": []
 }

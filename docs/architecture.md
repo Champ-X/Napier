@@ -3606,7 +3606,13 @@ verification boundaries. Workbench can download the no-store data profile JSON
 and upload it back to a sibling verifier; the verifier recomputes the current
 profile, checks the uploaded columns/sample against their declared hashes, and
 returns only valid/drifted status, diagnostics, counts, and declared/observed
-hashes.
+hashes. Each accepted verifier call appends an
+`artifact.data_profile_verified` Ledger receipt containing only Plan/artifact
+IDs, Plan revision, status/kind, `pathSha256`, verification status, diagnostic
+count/hash, declared/recomputed/observed artifact, column-set, sample, count,
+format, truncation, and byte-size evidence. Uploaded columns, sample rows, and
+diagnostic strings remain no-store and fail closed if they appear in persisted
+artifact receipts.
 Produced or verified directory artifacts expose a sibling manifest preview.
 The response is no-store and may include artifact-relative entry paths, file
 hashes, byte counts, and aggregate directory digest for operator inspection;
