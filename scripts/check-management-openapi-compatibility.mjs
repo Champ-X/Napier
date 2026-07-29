@@ -136,6 +136,11 @@ export function extractCompatibleOperations(openApi) {
       const tags = Array.isArray(operation.tags)
         ? operation.tags.filter((tag) => typeof tag === "string").sort()
         : [];
+      const requestContentTypes =
+        isRecord(operation.requestBody) &&
+        isRecord(operation.requestBody.content)
+          ? Object.keys(operation.requestBody.content).sort()
+          : [];
       const jsonResponseSchemaRefs = {};
       for (const status of responses) {
         const response = operation.responses[status];
@@ -154,11 +159,13 @@ export function extractCompatibleOperations(openApi) {
             : "",
         tags,
         pathParameters,
-        acceptsJsonRequestBody: Boolean(
-          isRecord(operation.requestBody) &&
-          isRecord(operation.requestBody.content) &&
-          operation.requestBody.content["application/json"] !== undefined,
-        ),
+        ...(requestContentTypes.some(
+          (contentType) => contentType !== "application/json",
+        )
+          ? { requestContentTypes }
+          : {}),
+        acceptsJsonRequestBody:
+          requestContentTypes.includes("application/json"),
         jsonRequestSchemaRef:
           getJsonSchemaRef(
             operation.requestBody?.content?.["application/json"]?.schema,
@@ -330,6 +337,13 @@ function validateCompatibilityFixtureShape(fixture, errors) {
       typeof operation.operationId !== "string" ||
       !Array.isArray(operation.tags) ||
       !Array.isArray(operation.pathParameters) ||
+      !(
+        operation.requestContentTypes === undefined ||
+        (Array.isArray(operation.requestContentTypes) &&
+          operation.requestContentTypes.every(
+            (value) => typeof value === "string",
+          ))
+      ) ||
       typeof operation.acceptsJsonRequestBody !== "boolean" ||
       !(
         operation.jsonRequestSchemaRef === null ||

@@ -114,6 +114,10 @@ const PROMOTED_OPERATION_SCHEMAS = {
       200: "#/components/schemas/SubagentOutcomeReview",
     },
   },
+  "POST /api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file/verify":
+    {
+      requestContentType: "application/octet-stream",
+    },
   "GET /api/threads/{threadId}/runs/{runId}/control-messages": {
     responses: {
       200: "#/components/schemas/RunControlMessageList",
@@ -2149,6 +2153,17 @@ function applyPromotedOperationSchemas(route, operation) {
   let promotedRequestSchemaRef;
   if (overlay.request === false) {
     delete operation.requestBody;
+  } else if (overlay.requestContentType) {
+    operation.requestBody ??= {
+      required: true,
+      content: {},
+    };
+    operation.requestBody.content = {
+      [overlay.requestContentType]: {
+        schema: { type: "string", format: "binary" },
+      },
+    };
+    operation.requestBody.required = true;
   } else if (overlay.request) {
     operation.requestBody ??= {
       required: true,

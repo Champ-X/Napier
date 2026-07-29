@@ -94,10 +94,12 @@ import {
   type PlanArtifactDirectoryManifest,
   type PlanArtifactDirectoryManifestReceipt,
   type PlanArtifactDriftCheckReceipt,
+  type PlanArtifactFileVerification,
   type PlanArtifactTextPreviewReceipt,
   previewPlanArtifactDataProfile,
   previewPlanArtifactDirectoryManifest,
   previewPlanArtifactText,
+  verifyPlanArtifactFile,
   verifyPlanArtifactDataProfile,
   verifyPlanArtifactDirectoryManifest,
 } from "../src/artifact-file-api";
@@ -620,6 +622,56 @@ describe("Web JSON API wrappers", () => {
     ).rejects.toThrow(
       "Response ledger receipt invalid for /api/threads/thread_1/plans/plan_1/artifacts/artifact_1/file",
     );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("verifies uploaded plan artifact files through response hash verification", async () => {
+    const file = new File(["downloadable artifact\n"], "report.txt", {
+      type: "text/plain",
+    });
+    const verification: PlanArtifactFileVerification = {
+      kind: "napier.plan-artifact-file-verification",
+      schemaVersion: 1,
+      threadId: "thread_1",
+      planId: "plan_1",
+      artifactId: "artifact_1",
+      planRevision: 4,
+      status: "verified",
+      artifactKind: "file",
+      verificationStatus: "valid",
+      diagnostics: [],
+      pathSha256: "a".repeat(64),
+      expectedSha256: "b".repeat(64),
+      observedSha256: "b".repeat(64),
+      expectedSizeBytes: 22,
+      observedSizeBytes: 22,
+      ledgerEventId: "event_fileverify1234567890",
+      ledgerEventSeq: 7,
+      ledgerEventSha256: "c".repeat(64),
+    };
+    const fetchMock = vi.fn(async (path: string, init?: RequestInit) => {
+      expect(path).toBe(
+        "/api/threads/thread_1/plans/plan_1/artifacts/artifact_1/file/verify",
+      );
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toEqual({
+        "Content-Type": "application/octet-stream",
+      });
+      expect(await (init?.body as File).text()).toBe("downloadable artifact\n");
+      const text = JSON.stringify(verification);
+      return new Response(text, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Napier-Content-SHA256": sha256Text(text),
+          "X-Napier-Content-SHA256-Mode": "body",
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      verifyPlanArtifactFile("thread_1", "plan_1", "artifact_1", file),
+    ).resolves.toEqual(verification);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

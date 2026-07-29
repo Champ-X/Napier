@@ -4796,6 +4796,182 @@ describe("Napier HTTP goal flow", () => {
         }),
       }),
     ]);
+    const invalidFileVerifyMediaTypeResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ contents: reportContents }),
+      },
+    );
+    expect(invalidFileVerifyMediaTypeResponse.status).toBe(400);
+    await expect(invalidFileVerifyMediaTypeResponse.json()).resolves.toEqual({
+      error:
+        "Plan artifact file verification request must use application/octet-stream",
+    });
+    const fileVerifyResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/octet-stream" },
+        body: reportContents,
+      },
+    );
+    expect(fileVerifyResponse.status).toBe(200);
+    expect(fileVerifyResponse.headers.get("Cache-Control")).toBe("no-store");
+    expect(fileVerifyResponse.headers.get("X-Napier-Verification-Status")).toBe(
+      "valid",
+    );
+    const fileVerifyBody = (await fileVerifyResponse.json()) as {
+      ledgerEventId: string;
+      ledgerEventSeq: number;
+      ledgerEventSha256: string;
+      verificationStatus: string;
+      diagnostics: string[];
+      expectedSha256: string;
+      observedSha256: string;
+      expectedSizeBytes: number;
+      observedSizeBytes: number;
+    };
+    expect(fileVerifyBody).toEqual(
+      expect.objectContaining({
+        kind: "napier.plan-artifact-file-verification",
+        schemaVersion: 1,
+        verificationStatus: "valid",
+        diagnostics: [],
+        expectedSha256: expectedReportSha256,
+        observedSha256: expectedReportSha256,
+        expectedSizeBytes: Buffer.byteLength(reportContents),
+        observedSizeBytes: Buffer.byteLength(reportContents),
+      }),
+    );
+    expect(fileVerifyResponse.headers.get("X-Napier-Content-SHA256")).toBe(
+      responseSha256(fileVerifyBody),
+    );
+    expect(
+      fileVerifyResponse.headers.get("X-Napier-Expected-Artifact-SHA256"),
+    ).toBe(expectedReportSha256);
+    expect(
+      fileVerifyResponse.headers.get("X-Napier-Observed-Artifact-SHA256"),
+    ).toBe(expectedReportSha256);
+    const tamperedFileContents = `${reportContents}\nTampered archive copy.\n`;
+    const tamperedFileSha256 = createHash("sha256")
+      .update(tamperedFileContents)
+      .digest("hex");
+    const tamperedFileVerifyResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/octet-stream" },
+        body: tamperedFileContents,
+      },
+    );
+    expect(tamperedFileVerifyResponse.status).toBe(200);
+    expect(
+      tamperedFileVerifyResponse.headers.get("X-Napier-Verification-Status"),
+    ).toBe("drifted");
+    await expect(tamperedFileVerifyResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        verificationStatus: "drifted",
+        diagnostics: ["artifact_hash_mismatch", "size_mismatch"],
+        expectedSha256: expectedReportSha256,
+        observedSha256: tamperedFileSha256,
+        expectedSizeBytes: Buffer.byteLength(reportContents),
+        observedSizeBytes: Buffer.byteLength(tamperedFileContents),
+      }),
+    );
+    const emptyFileSha256 = createHash("sha256").update("").digest("hex");
+    const emptyFileVerifyResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/octet-stream" },
+        body: new Uint8Array(0),
+      },
+    );
+    expect(emptyFileVerifyResponse.status).toBe(200);
+    await expect(emptyFileVerifyResponse.json()).resolves.toEqual(
+      expect.objectContaining({
+        verificationStatus: "drifted",
+        diagnostics: ["artifact_hash_mismatch", "size_mismatch"],
+        observedSha256: emptyFileSha256,
+        observedSizeBytes: 0,
+      }),
+    );
+    const oversizedFileVerifyResponse = await app.request(
+      `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/file/verify`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/octet-stream",
+          "content-length": String(32 * 1024 * 1024 + 1),
+        },
+        body: "x",
+      },
+    );
+    expect(oversizedFileVerifyResponse.status).toBe(413);
+    await expect(oversizedFileVerifyResponse.json()).resolves.toEqual({
+      error: "Plan artifact file verification request exceeds 33554432 bytes",
+    });
+    const fileVerificationEvents = (
+      await services.store.listEvents(created.thread.id)
+    ).filter(
+      (event) =>
+        event.type === "artifact.file_verified" &&
+        event.payload["artifactId"] === "report",
+    );
+    expectLedgerEventReceiptProjection(
+      fileVerifyResponse,
+      fileVerifyBody,
+      fileVerificationEvents[0],
+    );
+    expect(fileVerificationEvents).toEqual([
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          planId: plan.id,
+          artifactId: "report",
+          status: "verified",
+          kind: "file",
+          pathSha256: createHash("sha256").update("report.md").digest("hex"),
+          verificationStatus: "valid",
+          diagnosticCount: 0,
+          expectedSha256: expectedReportSha256,
+          observedSha256: expectedReportSha256,
+          expectedSizeBytes: Buffer.byteLength(reportContents),
+          observedSizeBytes: Buffer.byteLength(reportContents),
+        }),
+      }),
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          artifactId: "report",
+          verificationStatus: "drifted",
+          diagnosticCount: 2,
+          diagnosticsSha256: responseSha256([
+            "artifact_hash_mismatch",
+            "size_mismatch",
+          ]),
+          expectedSha256: expectedReportSha256,
+          observedSha256: tamperedFileSha256,
+        }),
+      }),
+      expect.objectContaining({
+        category: "artifact",
+        payload: expect.objectContaining({
+          artifactId: "report",
+          verificationStatus: "drifted",
+          diagnosticCount: 2,
+          expectedSha256: expectedReportSha256,
+          observedSha256: emptyFileSha256,
+          observedSizeBytes: 0,
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(fileVerificationEvents)).not.toContain(
+      "Verified report",
+    );
+    expect(JSON.stringify(fileVerificationEvents)).not.toContain("Tampered");
     const previewArtifactResponse = await app.request(
       `/api/threads/${created.thread.id}/plans/${plan.id}/artifacts/report/preview`,
     );

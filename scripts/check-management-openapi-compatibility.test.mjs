@@ -43,6 +43,33 @@ describe("management OpenAPI compatibility fixture", () => {
       },
       responseStatuses: ["200", "400", "404"],
     });
+
+    const artifact = createOpenApiArtifact(["/api/health"]);
+    artifact.paths["/api/artifacts/verify"] = {
+      post: {
+        operationId: "post-artifacts-verify",
+        tags: ["artifacts"],
+        requestBody: {
+          content: {
+            "application/octet-stream": {
+              schema: { type: "string", format: "binary" },
+            },
+          },
+        },
+        responses: { 200: { description: "OK" } },
+      },
+    };
+    expect(
+      extractCompatibleOperations(artifact).find(
+        (operation) => operation.key === "POST /api/artifacts/verify",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        requestContentTypes: ["application/octet-stream"],
+        acceptsJsonRequestBody: false,
+        jsonRequestSchemaRef: null,
+      }),
+    );
   });
 
   it("writes and verifies a compatibility fixture through the CLI", async () => {

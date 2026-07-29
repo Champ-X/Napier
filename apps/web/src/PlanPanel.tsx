@@ -70,9 +70,11 @@ import {
   type PlanArtifactDirectoryManifest,
   type PlanArtifactDirectoryManifestReceipt,
   type PlanArtifactDirectoryManifestVerification,
+  type PlanArtifactFileVerification,
   type PlanArtifactLedgerEventReceipt,
   type PlanArtifactTextPreviewReceipt,
   previewPlanArtifactDirectoryManifest,
+  verifyPlanArtifactFile,
   verifyPlanArtifactDataProfile,
   verifyPlanArtifactDirectoryManifest,
 } from "./artifact-file-api";
@@ -339,6 +341,8 @@ export default function PlanPanel({
         sizeBytes: number;
       }
     >();
+  const [artifactFileVerification, setArtifactFileVerification] =
+    useState<PlanArtifactFileVerification>();
   const [artifactPreview, setArtifactPreview] =
     useState<PlanArtifactTextPreviewReceipt>();
   const [artifactDataProfile, setArtifactDataProfile] =
@@ -499,6 +503,7 @@ export default function PlanPanel({
     setArtifactDirectoryManifestVerification(undefined);
     setArtifactDriftCheck(undefined);
     setArtifactFileDownloadReceipt(undefined);
+    setArtifactFileVerification(undefined);
     try {
       await updatePlanArtifact(threadId, plan.id, artifact.id, {
         status: action,
@@ -565,6 +570,30 @@ export default function PlanPanel({
         artifact.id,
       );
       setArtifactPreview(preview);
+      await onDraftApplied();
+    } catch (error) {
+      setArtifactError(formatApiErrorMessage(error));
+    } finally {
+      setArtifactBusyId(undefined);
+    }
+  };
+
+  const verifyArtifactFile = async (
+    artifact: ArtifactManifestEntry,
+    file: File,
+  ): Promise<void> => {
+    if (!threadId || !plan || artifactBusyId) return;
+    setArtifactBusyId(`${artifact.id}:file-verify`);
+    setArtifactError(undefined);
+    setArtifactFileVerification(undefined);
+    try {
+      const verification = await verifyPlanArtifactFile(
+        threadId,
+        plan.id,
+        artifact.id,
+        file,
+      );
+      setArtifactFileVerification(verification);
       await onDraftApplied();
     } catch (error) {
       setArtifactError(formatApiErrorMessage(error));
@@ -2374,6 +2403,29 @@ export default function PlanPanel({
                               : planCopy.artifactActions.download}
                           </button>
                         ) : null}
+                        {actions.canVerifyFileArchive ? (
+                          <label
+                            className="artifact-profile-file-action"
+                            aria-disabled={Boolean(artifactBusyId)}
+                          >
+                            {artifactBusyId === `${artifact.id}:file-verify`
+                              ? planCopy.artifactActions.verifyingFile
+                              : planCopy.artifactActions.verifyFile}
+                            <input
+                              className="fixture-file-input"
+                              type="file"
+                              disabled={Boolean(artifactBusyId)}
+                              aria-label={planCopy.artifactActions.verifyFile}
+                              onChange={(event) => {
+                                const file = event.currentTarget.files?.[0];
+                                event.currentTarget.value = "";
+                                if (file) {
+                                  void verifyArtifactFile(artifact, file);
+                                }
+                              }}
+                            />
+                          </label>
+                        ) : null}
                         {actions.canVerify ? (
                           <button
                             type="button"
@@ -2438,6 +2490,55 @@ export default function PlanPanel({
                         <PlanArtifactLedgerReceiptLine
                           receipt={artifactFileDownloadReceipt}
                         />
+                      </div>
+                    ) : null}
+                    {artifactFileVerification?.artifactId === artifact.id ? (
+                      <div
+                        className={`artifact-data-profile-verification status-${artifactFileVerification.verificationStatus}`}
+                        role="status"
+                      >
+                        <strong>
+                          {
+                            planCopy.artifactActions.fileVerificationStatuses[
+                              artifactFileVerification.verificationStatus
+                            ]
+                          }
+                        </strong>
+                        <small>
+                          {planCopy.expected}:{" "}
+                          <code title={artifactFileVerification.expectedSha256}>
+                            {artifactFileVerification.expectedSha256.slice(
+                              0,
+                              16,
+                            )}
+                          </code>
+                          {" / "}
+                          {planCopy.observed}:{" "}
+                          <code title={artifactFileVerification.observedSha256}>
+                            {artifactFileVerification.observedSha256.slice(
+                              0,
+                              16,
+                            )}
+                          </code>
+                        </small>
+                        <small>
+                          {planCopy.size}:{" "}
+                          {formatArtifactSizeBytes(
+                            artifactFileVerification.expectedSizeBytes,
+                          )}
+                          {" -> "}
+                          {formatArtifactSizeBytes(
+                            artifactFileVerification.observedSizeBytes,
+                          )}
+                        </small>
+                        <PlanArtifactLedgerReceiptLine
+                          receipt={artifactFileVerification}
+                        />
+                        {artifactFileVerification.diagnostics.length > 0 ? (
+                          <small>
+                            {artifactFileVerification.diagnostics.join(", ")}
+                          </small>
+                        ) : null}
                       </div>
                     ) : null}
                     {artifactPreview?.artifactId === artifact.id ? (

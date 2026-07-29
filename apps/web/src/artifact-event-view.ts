@@ -36,6 +36,7 @@ export interface ArtifactEventTraceView {
   observedEntrySetSha256?: string;
   sizeBytes?: number;
   declaredSizeBytes?: number;
+  expectedSizeBytes?: number;
   observedSizeBytes?: number;
   lineCount?: number;
   rowCount?: number;
@@ -57,7 +58,7 @@ export interface ArtifactEventTraceView {
 }
 
 const ARTIFACT_EVENT =
-  /^artifact\.(data_profile_verified|data_profiled|directory_manifest_verified|directory_manifested|drift_checked|exported|previewed)$/u;
+  /^artifact\.(data_profile_verified|data_profiled|directory_manifest_verified|directory_manifested|drift_checked|exported|file_verified|previewed)$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const ARTIFACT_RECEIPT_SUMMARY = "artifact receipt";
@@ -108,6 +109,7 @@ export function artifactEventTraceView(
     ...shaField(event.payload, "observedEntrySetSha256"),
     ...integerField(event.payload, "sizeBytes"),
     ...integerField(event.payload, "declaredSizeBytes"),
+    ...integerField(event.payload, "expectedSizeBytes"),
     ...integerField(event.payload, "observedSizeBytes"),
     ...integerField(event.payload, "lineCount"),
     ...integerField(event.payload, "rowCount"),
@@ -161,10 +163,14 @@ export function artifactEventTraceSummary(event: RunEvent): string | undefined {
         ]
       : []),
     ...(view.sizeBytes !== undefined ? [`size-bytes ${view.sizeBytes}`] : []),
-    ...(view.declaredSizeBytes !== undefined ||
-    view.observedSizeBytes !== undefined
+    ...(view.declaredSizeBytes !== undefined
       ? [
           `size-bytes ${formatNumberPair(view.declaredSizeBytes, view.observedSizeBytes)}`,
+        ]
+      : []),
+    ...(view.expectedSizeBytes !== undefined
+      ? [
+          `size-bytes ${formatNumberPair(view.expectedSizeBytes, view.observedSizeBytes)}`,
         ]
       : []),
     ...(view.lineCount !== undefined ? [`lines ${view.lineCount}`] : []),

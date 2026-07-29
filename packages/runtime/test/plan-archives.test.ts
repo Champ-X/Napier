@@ -216,7 +216,7 @@ describe("execution plan archives", () => {
     );
   });
 
-  it("keeps artifact preview receipts hash-only in plan archives", async () => {
+  it("keeps artifact file evidence receipts hash-only in plan archives", async () => {
     const store = await createStore();
     const agent = store.listAgents()[0]!;
     const thread = await store.createThread({
@@ -273,10 +273,42 @@ describe("execution plan archives", () => {
         textSha256: reportSha256,
       },
     });
+    plan = await store.updatePlanArtifact(plan.id, "report", {
+      status: "verified",
+      sourceRunId: run.id,
+      evidence: "The report bytes were verified.",
+      sha256: reportSha256,
+      sizeBytes: Buffer.byteLength(reportContents),
+    });
+    await store.appendEvent({
+      threadId: thread.id,
+      runId: run.id,
+      type: "artifact.file_verified",
+      category: "artifact",
+      visibility: "user",
+      payload: {
+        planId: plan.id,
+        artifactId: "report",
+        planRevision: plan.revision,
+        status: "verified",
+        kind: "file",
+        pathSha256: createHash("sha256").update("report.md").digest("hex"),
+        verificationStatus: "valid",
+        diagnosticCount: 0,
+        diagnosticsSha256: createHash("sha256")
+          .update(JSON.stringify([]))
+          .digest("hex"),
+        expectedSha256: reportSha256,
+        observedSha256: reportSha256,
+        expectedSizeBytes: Buffer.byteLength(reportContents),
+        observedSizeBytes: Buffer.byteLength(reportContents),
+      },
+    });
 
     const archive = await createExecutionPlanArchive(store, thread.id, plan.id);
     expect(archive.events.map((event) => event.type)).toEqual([
       "artifact.previewed",
+      "artifact.file_verified",
     ]);
     expect(JSON.stringify(archive.events)).not.toContain(reportContents);
     expect(verifyExecutionPlanArchive(archive).status).toBe("valid");

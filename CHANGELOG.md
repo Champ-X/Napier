@@ -386,6 +386,11 @@ All notable changes to Napier are recorded here.
   with safe artifact IDs plus content-hash prefixes. Workbench fallback
   filenames now use the same safe hash-addressed form when a browser response
   lacks a usable attachment name.
+- Verified file artifact downloads can now be uploaded back through a no-store
+  verifier. The server hashes the uploaded bytes, compares SHA-256 and byte
+  count with the current verified Plan artifact digest, appends hash-only
+  `artifact.file_verified` receipts, and Workbench renders the returned
+  valid/drifted receipt beside the artifact card.
 - Plan Workbench now previews small UTF-8 produced or verified file artifacts
   through the same workspace and digest boundary. Preview responses are
   no-store and hash-bound, while `artifact.previewed` Ledger events and Plan
@@ -433,10 +438,11 @@ All notable changes to Napier are recorded here.
   states without creating another recovery status source.
 - Thread replay bundles and Run replay snapshots now enforce that
   `artifact.exported`, `artifact.previewed`,
-  `artifact.data_profiled`, `artifact.data_profile_verified`,
-  `artifact.directory_manifested`, `artifact.directory_manifest_verified`, and
-  `artifact.drift_checked` receipts remain hash-only, so recomputed portable
-  replay hashes cannot hide raw artifact paths, directory entries, preview text,
+  `artifact.file_verified`, `artifact.data_profiled`,
+  `artifact.data_profile_verified`, `artifact.directory_manifested`,
+  `artifact.directory_manifest_verified`, and `artifact.drift_checked` receipts
+  remain hash-only, so recomputed portable replay hashes cannot hide raw
+  artifact paths, directory entries, preview text, uploaded file contents,
   columns, sample rows, or data/manifest verification diagnostics in exported
   evidence.
 - SQLite restore now applies the same hash-only artifact receipt boundary to

@@ -8,6 +8,7 @@ const ARTIFACT_RECEIPT_EVENTS = new Set([
   "artifact.directory_manifest_verified",
   "artifact.drift_checked",
   "artifact.exported",
+  "artifact.file_verified",
   "artifact.previewed",
 ]);
 
@@ -66,6 +67,22 @@ const ARTIFACT_DATA_PROFILE_VERIFIED_KEYS = [
   "declaredSampleSha256",
   "recomputedDeclaredSampleSha256",
   "observedSampleSha256",
+];
+
+const ARTIFACT_FILE_VERIFIED_KEYS = [
+  "planId",
+  "artifactId",
+  "planRevision",
+  "status",
+  "kind",
+  "pathSha256",
+  "verificationStatus",
+  "diagnosticCount",
+  "diagnosticsSha256",
+  "expectedSha256",
+  "observedSha256",
+  "expectedSizeBytes",
+  "observedSizeBytes",
 ];
 
 const ARTIFACT_DRIFT_CHECKED_BASE_KEYS = [
@@ -162,6 +179,10 @@ export function assertArtifactReceiptEventBoundary(
     assertArtifactDriftCheckedPayload(payload, label);
     return;
   }
+  if (event["type"] === "artifact.file_verified") {
+    assertArtifactFileVerifiedPayload(payload, label);
+    return;
+  }
   const allowedKeys =
     event["type"] === "artifact.previewed"
       ? ARTIFACT_PREVIEWED_KEYS
@@ -183,6 +204,35 @@ export function assertArtifactReceiptEventBoundary(
     assertNonNegativeInteger(payload["lineCount"], label);
     assertSha256(payload["textSha256"], label);
   }
+}
+
+function assertArtifactFileVerifiedPayload(
+  payload: Record<string, unknown>,
+  label: string,
+): void {
+  assertExactKeys(payload, ARTIFACT_FILE_VERIFIED_KEYS, label);
+  assertNonEmptyString(payload["planId"], label);
+  assertNonEmptyString(payload["artifactId"], label);
+  assertPositiveInteger(payload["planRevision"], label);
+  if (payload["status"] !== "verified") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (payload["kind"] !== "file") {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  if (
+    payload["verificationStatus"] !== "valid" &&
+    payload["verificationStatus"] !== "drifted"
+  ) {
+    throw new Error(`${label} hash-only artifact receipt is invalid`);
+  }
+  assertSha256(payload["pathSha256"], label);
+  assertSha256(payload["diagnosticsSha256"], label);
+  assertSha256(payload["expectedSha256"], label);
+  assertSha256(payload["observedSha256"], label);
+  assertNonNegativeInteger(payload["diagnosticCount"], label);
+  assertNonNegativeInteger(payload["expectedSizeBytes"], label);
+  assertNonNegativeInteger(payload["observedSizeBytes"], label);
 }
 
 function assertArtifactDataProfiledPayload(

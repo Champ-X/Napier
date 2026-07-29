@@ -3584,7 +3584,14 @@ SHA-256, and byte count. Direct attachments use
 and Workbench fallbacks keep the same safe artifact/hash prefix even if a
 browser response lacks a usable attachment header. The event is included in
 Plan archives as scoped artifact evidence and has a bounded Trace summary that
-never renders the path or file contents. The same produced/verified file
+never renders the path or file contents. Verified file artifact downloads can
+also be uploaded back to a no-store verifier. The verifier reads the uploaded
+bytes on the server, enforces the same artifact hash limit, compares the
+computed SHA-256 and byte count with the current verified Plan artifact digest,
+and appends `artifact.file_verified` with only verification status, diagnostic
+count/hash, expected/observed hashes, expected/observed sizes, and `pathSha256`;
+uploaded filenames and file contents never enter durable Ledger receipts. The
+same produced/verified file
 artifacts can be previewed in place when their bytes are valid UTF-8 and no
 larger than 64 KiB. Preview
 uses the same workspace confinement, symbolic-link, and verified-digest drift

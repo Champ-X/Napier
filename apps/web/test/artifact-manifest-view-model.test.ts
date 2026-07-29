@@ -46,6 +46,7 @@ describe("artifact manifest view model", () => {
       canVerify: false,
       canMarkMissing: true,
       canDownload: false,
+      canVerifyFileArchive: false,
       canPreview: false,
       canProfileData: false,
       canInspectManifest: false,
@@ -63,6 +64,7 @@ describe("artifact manifest view model", () => {
       canVerify: true,
       canMarkMissing: true,
       canDownload: false,
+      canVerifyFileArchive: false,
       canPreview: false,
       canProfileData: false,
       canInspectManifest: true,
@@ -77,6 +79,8 @@ describe("artifact manifest view model", () => {
           status: "verified",
           kind: "file",
           path: "artifacts/report.txt",
+          sha256: "a".repeat(64),
+          sizeBytes: 128,
         }),
       ),
     ).toEqual({
@@ -84,6 +88,7 @@ describe("artifact manifest view model", () => {
       canVerify: true,
       canMarkMissing: true,
       canDownload: true,
+      canVerifyFileArchive: true,
       canPreview: true,
       canProfileData: false,
       canInspectManifest: false,
@@ -94,11 +99,26 @@ describe("artifact manifest view model", () => {
     });
     expect(
       projectArtifactManifestActions(
+        artifactFixture({
+          status: "verified",
+          kind: "file",
+          sha256: "a".repeat(64),
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        canDownload: true,
+        canVerifyFileArchive: false,
+      }),
+    );
+    expect(
+      projectArtifactManifestActions(
         artifactFixture({ status: "verified", kind: "directory" }),
       ),
     ).toEqual(
       expect.objectContaining({
         canDownload: false,
+        canVerifyFileArchive: false,
         canPreview: false,
         canProfileData: false,
         canInspectManifest: true,
@@ -114,6 +134,7 @@ describe("artifact manifest view model", () => {
       canVerify: false,
       canMarkMissing: false,
       canDownload: false,
+      canVerifyFileArchive: false,
       canPreview: false,
       canProfileData: false,
       canInspectManifest: false,

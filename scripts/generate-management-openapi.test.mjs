@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(18);
+    expect(generated.routeCount).toBe(19);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,7 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 18,
+        "x-napier-route-count": 19,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -152,6 +152,18 @@ describe("management OpenAPI generator", () => {
         "/api/threads/{threadId}/subagents/{taskId}/outcome/verify"
       ].post,
     ).not.toHaveProperty("requestBody");
+    expect(
+      generated.artifact.paths[
+        "/api/threads/{threadId}/plans/{planId}/artifacts/{artifactId}/file/verify"
+      ].post.requestBody,
+    ).toEqual({
+      required: true,
+      content: {
+        "application/octet-stream": {
+          schema: { type: "string", format: "binary" },
+        },
+      },
+    });
     expect(
       generated.artifact.components.schemas.SubagentOutcomeEvidenceVerification,
     ).toEqual(
@@ -722,10 +734,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 18 routes",
+      "Wrote docs/artifacts/management-openapi.json: 19 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(18);
+    expect(artifact["x-napier-route-count"]).toBe(19);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -784,6 +796,7 @@ async function createFixture() {
       app.post("/api/receipt-trust/verify", () => undefined);
       app.post("/api/threads/:threadId/subagents/:taskId/outcome/verify", () => undefined);
       app.post("/api/threads/:threadId/subagents/:taskId/outcome/review", () => undefined);
+      app.post("/api/threads/:threadId/plans/:planId/artifacts/:artifactId/file/verify", () => undefined);
       app.post(
         "/api/threads/:threadId/runs",
         () => undefined,

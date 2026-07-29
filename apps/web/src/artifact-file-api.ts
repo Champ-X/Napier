@@ -14,6 +14,24 @@ export interface PlanArtifactFileDownload extends PlanArtifactLedgerEventReceipt
   sizeBytes: number;
 }
 
+export interface PlanArtifactFileVerification extends PlanArtifactLedgerEventReceipt {
+  kind: "napier.plan-artifact-file-verification";
+  schemaVersion: 1;
+  threadId: string;
+  planId: string;
+  artifactId: string;
+  planRevision: number;
+  status: string;
+  artifactKind: string;
+  verificationStatus: "valid" | "drifted";
+  diagnostics: string[];
+  pathSha256: string;
+  expectedSha256: string;
+  observedSha256: string;
+  expectedSizeBytes: number;
+  observedSizeBytes: number;
+}
+
 export interface PlanArtifactTextPreview {
   kind: "napier.plan-artifact-text-preview";
   schemaVersion: 1;
@@ -203,6 +221,22 @@ export async function downloadPlanArtifactFile(
     sizeBytes,
     ...receipt,
   };
+}
+
+export function verifyPlanArtifactFile(
+  threadId: string,
+  planId: string,
+  artifactId: string,
+  file: File,
+): Promise<PlanArtifactFileVerification> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/plans/${encodeURIComponent(planId)}/artifacts/${encodeURIComponent(artifactId)}/file/verify`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: file,
+    },
+  );
 }
 
 export function previewPlanArtifactText(

@@ -73,6 +73,48 @@ describe("artifact event trace view", () => {
     expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects uploaded file verification receipts without file names or contents", () => {
+    const event = artifactEvent("artifact.file_verified", {
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 5,
+      status: "verified",
+      kind: "file",
+      verificationStatus: "drifted",
+      filename: "TOP_SECRET_REPORT.md",
+      contents: "TOP_SECRET_CONTENTS",
+      diagnostics: ["TOP_SECRET_DIAGNOSTIC"],
+      pathSha256: "a".repeat(64),
+      diagnosticsSha256: "b".repeat(64),
+      expectedSha256: "c".repeat(64),
+      observedSha256: "d".repeat(64),
+      expectedSizeBytes: 128,
+      observedSizeBytes: 256,
+      diagnosticCount: 2,
+    });
+
+    expect(artifactEventTraceView(event)).toEqual({
+      action: "file_verified",
+      planId: "plan_1234567890",
+      artifactId: "artifact_0987654321",
+      planRevision: 5,
+      status: "verified",
+      kind: "file",
+      verificationStatus: "drifted",
+      pathSha256: "a".repeat(64),
+      diagnosticsSha256: "b".repeat(64),
+      expectedSha256: "c".repeat(64),
+      observedSha256: "d".repeat(64),
+      expectedSizeBytes: 128,
+      observedSizeBytes: 256,
+      diagnosticCount: 2,
+    });
+    expect(artifactEventTraceSummary(event)).toBe(
+      `artifact / file_verified / plan 1234567890 / artifact 0987654321 / plan-r5 / status verified / kind file / verification drifted / size-bytes 128->256 / diagnostics 2 / path ${"a".repeat(12)} / expected ${"c".repeat(12)} / observed ${"d".repeat(12)} / diagnostics ${"b".repeat(12)}`,
+    );
+    expect(artifactEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("projects data profiles without columns or sample rows", () => {
     const event = artifactEvent("artifact.data_profiled", {
       planId: "plan_1234567890",

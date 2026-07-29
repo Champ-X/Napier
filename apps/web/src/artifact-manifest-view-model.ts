@@ -12,6 +12,7 @@ export interface ArtifactManifestActionsProjection {
   canVerify: boolean;
   canMarkMissing: boolean;
   canDownload: boolean;
+  canVerifyFileArchive: boolean;
   canPreview: boolean;
   canProfileData: boolean;
   canInspectManifest: boolean;
@@ -69,6 +70,11 @@ export function projectArtifactManifestActions(
   const canDownload =
     artifact.kind === "file" &&
     (artifact.status === "produced" || artifact.status === "verified");
+  const canVerifyFileArchive =
+    artifact.kind === "file" &&
+    artifact.status === "verified" &&
+    Boolean(artifact.sha256) &&
+    artifact.sizeBytes !== undefined;
   const canPreview = canDownload;
   const canProfileData =
     canDownload &&
@@ -84,6 +90,7 @@ export function projectArtifactManifestActions(
     canVerify,
     canMarkMissing,
     canDownload,
+    canVerifyFileArchive,
     canPreview,
     canProfileData,
     canInspectManifest,
@@ -96,6 +103,7 @@ export function projectArtifactManifestActions(
         canVerify ||
         canMarkMissing ||
         canDownload ||
+        canVerifyFileArchive ||
         canPreview ||
         canProfileData ||
         canInspectManifest ||

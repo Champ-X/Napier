@@ -140,6 +140,12 @@ export const planCopy = {
     closePreview: "Close preview",
     download: "Download file",
     downloading: "Downloading...",
+    verifyFile: "Verify file",
+    verifyingFile: "Verifying...",
+    fileVerificationStatuses: {
+      valid: "File verified",
+      drifted: "File drifted",
+    },
     recheck: "Recheck bytes",
     rechecking: "Rechecking...",
     checkDrift: "Check drift",
