@@ -131,6 +131,14 @@ export async function runLspProtocolSession<T>(
         capabilities: {
           workspace: { configuration: false, workspaceFolders: true },
           textDocument: {
+            codeAction: {
+              codeActionLiteralSupport: {
+                codeActionKind: { valueSet: ["quickfix"] },
+              },
+              dataSupport: false,
+              disabledSupport: true,
+              isPreferredSupport: true,
+            },
             definition: { linkSupport: true },
             references: {},
             rename: { prepareSupport: true },

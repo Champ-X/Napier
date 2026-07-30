@@ -378,6 +378,102 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes bounded LSP quick-fix evidence without action content", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_code_actions",
+      status: "completed",
+      effect: "read",
+      output: "TOP_SECRET_QUICK_FIX_EDIT",
+      details: {
+        kind: "napier.lsp-code-actions",
+        schemaVersion: 1,
+        status: "found",
+        complete: false,
+        truncated: true,
+        language: "typescript",
+        diagnosticCount: 2,
+        actionCount: 16,
+        omittedActionCount: 2,
+        preferredActionCount: 1,
+        commandIgnoredCount: 3,
+        fileCount: 3,
+        editCount: 6,
+        previewBytes: 256,
+        durationMs: 940,
+        protocolBytes: 3800,
+        sourcePath: "TOP_SECRET_PATH",
+        sourcePathSha256: "1".repeat(64),
+        sourceFileSha256: "2".repeat(64),
+        diagnosticMessage: "TOP_SECRET_DIAGNOSTIC",
+        diagnosticSetSha256: "3".repeat(64),
+        actionTitle: "TOP_SECRET_ACTION",
+        actionSetSha256: "4".repeat(64),
+        targetFileSetSha256: "5".repeat(64),
+        resultSha256: "6".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "lsp_code_actions",
+      status: "completed",
+      effect: "read",
+      lspCodeActionsStatus: "found",
+      lspCodeActionsLanguage: "typescript",
+      lspCodeActionsComplete: false,
+      lspCodeActionsTruncated: true,
+      lspCodeActionsDiagnosticCount: 2,
+      lspCodeActionsActionCount: 16,
+      lspCodeActionsOmittedActionCount: 2,
+      lspCodeActionsPreferredActionCount: 1,
+      lspCodeActionsCommandIgnoredCount: 3,
+      lspCodeActionsFileCount: 3,
+      lspCodeActionsEditCount: 6,
+      lspCodeActionsPreviewBytes: 256,
+      lspCodeActionsDurationMs: 940,
+      lspCodeActionsProtocolBytes: 3800,
+      lspCodeActionsSourcePathSha256: "1".repeat(64),
+      lspCodeActionsSourceFileSha256: "2".repeat(64),
+      lspCodeActionsDiagnosticSetSha256: "3".repeat(64),
+      lspCodeActionsActionSetSha256: "4".repeat(64),
+      lspCodeActionsTargetFileSetSha256: "5".repeat(64),
+      lspCodeActionsResultSha256: "6".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / lsp_code_actions / completed / effect read / quick-fixes found / quick-fix-language typescript / quick-fixes-truncated / quick-fix-diagnostics 2 / quick-fix-actions 16 / quick-fix-omitted 2 / quick-fix-preferred 1 / quick-fix-commands-ignored 3 / quick-fix-files 3 / quick-fix-edits 6 / quick-fix-preview-bytes 256 / quick-fix-ms 940 / quick-fix-protocol 3800 / quick-fix-source-path ${"1".repeat(12)} / quick-fix-source-file ${"2".repeat(12)} / quick-fix-diagnostic-set ${"3".repeat(12)} / quick-fix-action-set ${"4".repeat(12)} / quick-fix-target-files ${"5".repeat(12)} / quick-fix-result ${"6".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
+  it("rejects impossible truncated LSP quick-fix receipts", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_code_actions",
+      status: "completed",
+      effect: "read",
+      details: {
+        kind: "napier.lsp-code-actions",
+        schemaVersion: 1,
+        status: "found",
+        complete: false,
+        truncated: true,
+        language: "typescript",
+        diagnosticCount: 1,
+        actionCount: 1,
+        omittedActionCount: 1,
+        preferredActionCount: 1,
+        commandIgnoredCount: 0,
+        fileCount: 1,
+        editCount: 1,
+        previewBytes: 1,
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "lsp_code_actions",
+      status: "completed",
+      effect: "read",
+    });
+  });
+
   it("summarizes search_files hash evidence without match text", () => {
     const event = toolEvent("tool.completed", {
       toolName: "search_files",

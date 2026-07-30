@@ -265,6 +265,24 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "workspace",
+        "lsp_code_actions",
+        {
+          path: "src/index.ts",
+          line: 1,
+          character: 1,
+        },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "read-only sandboxed language-server quick-fix preview",
+      }),
+    );
+    expect(
+      assessToolCall(
         "observe",
         "run_command",
         { runtime: "node", args: ["--version"] },

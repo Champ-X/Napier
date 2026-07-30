@@ -1,4 +1,9 @@
 import {
+  lspCodeActionsEventEvidence,
+  lspCodeActionsSummaryParts,
+  type LspCodeActionsToolEventTraceView,
+} from "./lsp-code-actions-event-view";
+import {
   lspRenameEventEvidence,
   lspRenameSummaryParts,
   type LspRenameToolEventTraceView,
@@ -10,7 +15,8 @@ type LspLanguage =
   | "javascript"
   | "javascriptreact";
 
-export interface LspToolEventTraceView extends LspRenameToolEventTraceView {
+export interface LspToolEventTraceView
+  extends LspRenameToolEventTraceView, LspCodeActionsToolEventTraceView {
   lspStatus?: "clean" | "diagnostics";
   lspLanguage?: LspLanguage;
   lspDiagnosticCount?: number;
@@ -59,6 +65,8 @@ export function lspToolEventEvidence(
   if (toolName === "lsp_definition") return definitionEvidence(value);
   if (toolName === "lsp_references") return referencesEvidence(value);
   if (toolName === "lsp_rename") return lspRenameEventEvidence(value);
+  if (toolName === "lsp_code_actions")
+    return lspCodeActionsEventEvidence(value);
   return undefined;
 }
 
@@ -187,6 +195,7 @@ export function lspToolEventSummaryParts(
       ? [`reference-result ${view.lspReferencesResultSha256.slice(0, 12)}`]
       : []),
     ...lspRenameSummaryParts(view),
+    ...lspCodeActionsSummaryParts(view),
   ];
 }
 

@@ -17,19 +17,19 @@ Audit date: 2026-07-30
 
 ## Priority Matrix
 
-| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                |
-| --------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain.               |
-| P2 coding intelligence            | Partial        | Hashline, bounded symbols, TypeScript LSP diagnostics/definitions/references/rename previews, and write-linked diagnostic deltas exist; persistent LSP, direct rename apply/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain. |
-| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                     |
-| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                         |
-| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                               |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                                   |
-| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                            |
-| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                  |
-| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                  |
-| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                           |
+| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                        |
+| --------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                        |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain.                                                                       |
+| P2 coding intelligence            | Partial        | Hashline, bounded symbols, TypeScript LSP diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, plus write-linked diagnostic deltas exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain. |
+| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                             |
+| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                                                                                 |
+| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                                                                                       |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                                                                                           |
+| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                    |
+| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                          |
+| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                          |
+| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                   |
 
 ## Completed Slice: Read-Only Sandboxed Commands
 
@@ -1185,8 +1185,9 @@ Acceptance:
   WorkspaceEdit, 32 KiB aggregate preview text, and 64 KiB final tool output;
   over-limit responses fail rather than truncate;
 - support standard `changes` and text-only `documentChanges`, while rejecting
-  mixed representations, create/rename/delete operations, annotations, empty
-  ranges, overlap, and malformed versions;
+  create/rename/delete operations, annotations, empty ranges, overlap, and
+  malformed versions; standard `documentChanges` takes precedence when both
+  representations are present;
 - canonicalize every target and reject the whole preview for external,
   virtual, protected, symlinked, missing, oversized, invalid UTF-8,
   out-of-range, or hash-inconsistent files;
@@ -1242,3 +1243,93 @@ Observed result:
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget. Rename Trace parsing
   added only to the lazy trace chunk.
+
+## Completed Slice: Diagnostic-Driven LSP Quick-Fix Preview
+
+User scenario: a coding Agent can ask the real language server for quick fixes
+at a current TypeScript or JavaScript diagnostic, compare bounded alternatives,
+select one preferred text edit, apply it through Napier's existing CAS write
+boundary, and prove the diagnostic was resolved.
+
+Acceptance:
+
+- add opt-in `lsp_code_actions` with a workspace-relative source, 1-based
+  UTF-16 diagnostic position, and bounded timeout;
+- collect current diagnostics in the same one-shot read-only/offline LSP
+  session and issue standard `textDocument/codeAction` restricted to
+  `quickfix`;
+- accept at most 64 response entries and expose at most 16 actionable
+  alternatives; count command-only, disabled, edit-free, and truncated entries
+  as omitted and mark the response incomplete;
+- accept only text-edit WorkspaceEdits, including zero-length insertion ranges,
+  while rejecting resource operations, annotations, unknown fields, overlap,
+  malformed versions, and unsafe targets; prefer standard `documentChanges`
+  when both representations are present;
+- discard command and opaque data payloads before materialization. An edit
+  action that carried a command is explicitly marked, but no command is
+  executed, shown to the Agent, persisted, or sent to a write primitive;
+- enforce aggregate limits across alternatives: 32 target files, 256 edits,
+  32 KiB old/replacement text, and 64 KiB formatted Agent output;
+- return bounded action titles, paths, current file hashes, ranges, old text,
+  and replacement text only to the live Agent;
+- retain only completeness/truncation, counts, preview bytes, versions,
+  latency, and diagnostic/action/target/result hashes in Agent, Ledger, Replay,
+  Server SSE, and Web Trace projections;
+- apply a selected action only through `apply_patch`, then prove clean
+  write-linked and explicit LSP diagnostics;
+- cover real TypeScript behavior, parser shapes, EOF/CRLF insertion
+  normalization, confinement, source/runtime drift, timeout, cancellation,
+  concurrency, aggregate limits, Agent output limits, policy, Agent apply,
+  Server SSE, Web projection, Replay privacy, and an optional OS-Sandbox smoke.
+
+Threat boundary:
+
+- Diagnostics, action titles, source, and replacements are untrusted live
+  evidence. They can influence the model but cannot bypass tool policy,
+  workspace confinement, file hashes, or the write lock.
+- `workspace/applyEdit` remains denied. `lsp_code_actions` is a sandboxed read;
+  no response can mutate the workspace or invoke a language-server command.
+- Alternatives are mutually exclusive proposals. Napier never merges them or
+  silently picks one. The Agent must choose one action and use current
+  per-file hashes through `apply_patch`.
+- `complete` means no returned alternative was omitted or truncated. It does
+  not mean an ignored command ran, that the quick fix is behaviorally correct,
+  or that the project has no other diagnostics.
+- TypeScript 5.9.3 emits one-character-past-line-break positions for one
+  missing-declaration alternative. Napier normalizes only that exact
+  zero-length Code Action insertion to the next line; rename and replacement
+  ranges remain strict.
+- Aggregate candidate limits are checked before filesystem I/O. Edit locations
+  are materialized serially with a cache, source version/hash must still match
+  the one-shot `didOpen`, and source plus target hashes are rechecked before
+  return.
+- This slice does not provide persistent LSP synchronization, Code Action
+  resolve, command execution, direct multi-file apply, DAP, AST rewrite, or
+  automatic test selection.
+
+Observed result:
+
+- the real TypeScript 5.9.3 / typescript-language-server 5.3.0 runner returned
+  two missing-name quick fixes. The preferred alternative inserted the
+  cross-file import; the second inserted a local declaration. Both remained
+  preview-only;
+- real protocol probing found `_typescript.applyCodeActionCommand` arguments
+  containing paths, diagnostics, and source. Parser, Agent, Server, Replay, and
+  Web tests prove those command/data bodies never cross the parser boundary
+  into Agent output or durable evidence;
+- a deterministic Agent Run selected the preferred import, committed one
+  hash-bound patch, changed write-linked diagnostics from one error to zero,
+  reran explicit diagnostics as clean, and produced a valid Replay without
+  path, source, diagnostic, command, argument, or replacement leakage;
+- the public HTTP/SSE path ran the real language server, exposed two
+  alternatives to the live Agent, retained hash-only durable evidence, and
+  left the source file unchanged;
+- aggregate tests fail closed above 256 edits, 32 files, 32 KiB preview text,
+  or 64 KiB escaped output. Review additionally removed 256-way file-read
+  concurrency and added source-version plus post-materialization target drift
+  checks;
+- the sixth opt-in macOS LSP smoke remains unavailable from this nested IDE
+  host and fails during Sandbox startup with no direct-process fallback;
+- the complete repository gate passed 1014 tests with 14 opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.

@@ -2626,6 +2626,7 @@ export const AGENT_TOOL_NAMES = [
   "lsp_definition",
   "lsp_references",
   "lsp_rename",
+  "lsp_code_actions",
   "apply_patch",
   "workspace_file_preview",
   "workspace_file_apply",
@@ -3116,6 +3117,48 @@ export interface LspRenameDetails {
   editCount: number;
   previewBytes: number;
   editSetSha256: string;
+  targetFileSetSha256: string;
+  nodeExecutableSha256: string;
+  languageServerVersion: string;
+  languageServerSha256: string;
+  typescriptVersion: string;
+  typescriptServerSha256: string;
+  environmentSha256: string;
+  resourceLimitsSha256: string;
+  timeoutMs: number;
+  durationMs: number;
+  protocolBytes: number;
+  stderrChars: number;
+  stderrSha256: string;
+  stderrTruncated: boolean;
+  resultSha256: string;
+}
+
+export interface LspCodeActionsDetails {
+  kind: "napier.lsp-code-actions";
+  schemaVersion: 1;
+  status: "found" | "not_found";
+  complete: boolean;
+  truncated: boolean;
+  language: LspDiagnosticLanguage;
+  sandbox: string;
+  workspaceAccess: "read_only";
+  networkAccess: "denied";
+  workspaceRootSha256: string;
+  sourcePathSha256: string;
+  sourceFileSha256: string;
+  sourceFileBytes: number;
+  positionSha256: string;
+  diagnosticCount: number;
+  actionCount: number;
+  omittedActionCount: number;
+  preferredActionCount: number;
+  commandIgnoredCount: number;
+  fileCount: number;
+  editCount: number;
+  previewBytes: number;
+  diagnosticSetSha256: string;
+  actionSetSha256: string;
   targetFileSetSha256: string;
   nodeExecutableSha256: string;
   languageServerVersion: string;

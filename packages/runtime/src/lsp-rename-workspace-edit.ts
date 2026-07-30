@@ -8,17 +8,28 @@ export const MAX_LSP_RENAME_REPLACEMENT_CHARS = 1_000;
 export const MAX_LSP_RENAME_PREVIEW_BYTES = 32 * 1024;
 export const MAX_LSP_RENAME_TOOL_OUTPUT_BYTES = 64 * 1024;
 
-export interface LspRenameCandidate {
+export interface LspWorkspaceTextEditCandidate {
   uri: string;
   range: LspRange;
   newText: string;
+  documentVersion?: number | null;
+}
+
+export type LspRenameCandidate = LspWorkspaceTextEditCandidate;
+
+export interface LspWorkspaceEditParseOptions {
+  label: string;
+  maxFiles: number;
+  maxEdits: number;
+  maxReplacementChars: number;
+  allowInsertions: boolean;
 }
 
 export type PrepareRenameResult =
   | { kind: "range"; range: LspRange; placeholderSha256?: string }
   | { kind: "default" };
 
-export interface LspRenameEdit {
+export interface LspWorkspaceTextEdit {
   path: string;
   pathSha256: string;
   fileSha256: string;
@@ -33,12 +44,16 @@ export interface LspRenameEdit {
   newTextSha256: string;
 }
 
-export interface LspRenameFile {
+export type LspRenameEdit = LspWorkspaceTextEdit;
+
+export interface LspWorkspaceTextEditFile {
   path: string;
   pathSha256: string;
   fileSha256: string;
-  edits: LspRenameEdit[];
+  edits: LspWorkspaceTextEdit[];
 }
+
+export type LspRenameFile = LspWorkspaceTextEditFile;
 
 export function validateLspRenameNewName(value: string): void {
   if (
@@ -109,36 +124,53 @@ export function prepareRenameReceipt(
 export function parseLspRenameWorkspaceEdit(
   value: unknown,
 ): LspRenameCandidate[] {
+  return parseLspWorkspaceEdit(value, {
+    label: "LSP rename",
+    maxFiles: MAX_LSP_RENAME_FILES,
+    maxEdits: MAX_LSP_RENAME_EDITS,
+    maxReplacementChars: MAX_LSP_RENAME_REPLACEMENT_CHARS,
+    allowInsertions: false,
+  });
+}
+
+export function parseLspWorkspaceEdit(
+  value: unknown,
+  options: LspWorkspaceEditParseOptions,
+): LspWorkspaceTextEditCandidate[] {
   if (value === null || value === undefined) return [];
   if (!record(value)) {
-    throw new Error("LSP rename response must be a WorkspaceEdit or null");
+    throw new Error(
+      `${options.label} response must be a WorkspaceEdit or null`,
+    );
   }
   const changes = value["changes"];
   const documentChanges = value["documentChanges"];
-  if (changes !== undefined && documentChanges !== undefined) {
-    throw new Error(
-      "LSP rename response cannot contain both changes and documentChanges",
-    );
-  }
   if (value["changeAnnotations"] !== undefined) {
-    throw new Error("LSP rename annotated edits are not supported");
+    throw new Error(`${options.label} annotated edits are not supported`);
   }
   if (!hasOnlyKeys(value, ["changes", "documentChanges"])) {
-    throw new Error("LSP rename response contains unsupported fields");
+    throw new Error(`${options.label} response contains unsupported fields`);
   }
   const candidates =
-    changes !== undefined
-      ? parseChanges(changes)
-      : documentChanges !== undefined
-        ? parseDocumentChanges(documentChanges)
+    documentChanges !== undefined
+      ? parseDocumentChanges(documentChanges, options)
+      : changes !== undefined
+        ? parseChanges(changes, options)
         : [];
-  assertRenameLimits(candidates);
+  assertWorkspaceEditLimits(candidates, options);
   return candidates;
 }
 
 export function canonicalLspRenameEdits(
   edits: LspRenameEdit[],
 ): LspRenameEdit[] {
+  return canonicalLspWorkspaceTextEdits(edits, "LSP rename");
+}
+
+export function canonicalLspWorkspaceTextEdits(
+  edits: LspWorkspaceTextEdit[],
+  label: string,
+): LspWorkspaceTextEdit[] {
   const sorted = edits.slice().sort((left, right) => {
     const pathOrder = left.path.localeCompare(right.path);
     if (pathOrder !== 0) return pathOrder;
@@ -154,7 +186,7 @@ export function canonicalLspRenameEdits(
     if (endOrder !== 0) return endOrder;
     return left.newText.localeCompare(right.newText);
   });
-  let previous: LspRenameEdit | undefined;
+  let previous: LspWorkspaceTextEdit | undefined;
   for (const edit of sorted) {
     if (
       previous?.path === edit.path &&
@@ -166,7 +198,7 @@ export function canonicalLspRenameEdits(
         (previous.startLine === edit.startLine &&
           previous.startCharacter === edit.startCharacter))
     ) {
-      throw new Error("LSP rename returned overlapping or drifting edits");
+      throw new Error(`${label} returned overlapping or drifting edits`);
     }
     previous = edit;
   }
@@ -201,7 +233,10 @@ export function lspRenameEditReceipt(edit: LspRenameEdit): unknown {
   };
 }
 
-export function assertLspRenamePreviewBytes(edits: LspRenameEdit[]): number {
+export function assertLspWorkspacePreviewBytes(
+  edits: LspWorkspaceTextEdit[],
+  label: string,
+): number {
   const previewBytes = edits.reduce(
     (total, edit) =>
       total +
@@ -211,24 +246,37 @@ export function assertLspRenamePreviewBytes(edits: LspRenameEdit[]): number {
   );
   if (previewBytes > MAX_LSP_RENAME_PREVIEW_BYTES) {
     throw new Error(
-      `LSP rename preview exceeds ${MAX_LSP_RENAME_PREVIEW_BYTES} UTF-8 bytes`,
+      `${label} preview exceeds ${MAX_LSP_RENAME_PREVIEW_BYTES} UTF-8 bytes`,
     );
   }
   return previewBytes;
 }
 
-function parseChanges(value: unknown): LspRenameCandidate[] {
+export function assertLspRenamePreviewBytes(edits: LspRenameEdit[]): number {
+  return assertLspWorkspacePreviewBytes(edits, "LSP rename");
+}
+
+export const lspWorkspaceTextEditFiles = lspRenameFiles;
+export const lspWorkspaceTextEditReceipt = lspRenameEditReceipt;
+
+function parseChanges(
+  value: unknown,
+  options: LspWorkspaceEditParseOptions,
+): LspWorkspaceTextEditCandidate[] {
   if (!record(value)) {
-    throw new Error("LSP rename changes must be an object");
+    throw new Error(`${options.label} changes must be an object`);
   }
   return Object.entries(value).flatMap(([uri, edits]) =>
-    parseTextEdits(uri, edits),
+    parseTextEdits(uri, edits, options),
   );
 }
 
-function parseDocumentChanges(value: unknown): LspRenameCandidate[] {
+function parseDocumentChanges(
+  value: unknown,
+  options: LspWorkspaceEditParseOptions,
+): LspWorkspaceTextEditCandidate[] {
   if (!Array.isArray(value)) {
-    throw new Error("LSP rename documentChanges must be an array");
+    throw new Error(`${options.label} documentChanges must be an array`);
   }
   return value.flatMap((change, index) => {
     if (
@@ -240,7 +288,7 @@ function parseDocumentChanges(value: unknown): LspRenameCandidate[] {
       !hasOnlyKeys(change["textDocument"], ["uri", "version"])
     ) {
       throw new Error(
-        `LSP rename document change ${index + 1} is not a text edit`,
+        `${options.label} document change ${index + 1} is not a text edit`,
       );
     }
     const version = change["textDocument"]["version"];
@@ -250,50 +298,73 @@ function parseDocumentChanges(value: unknown): LspRenameCandidate[] {
       !Number.isSafeInteger(version)
     ) {
       throw new Error(
-        `LSP rename document change ${index + 1} has an invalid version`,
+        `${options.label} document change ${index + 1} has an invalid version`,
       );
     }
-    return parseTextEdits(change["textDocument"]["uri"], change["edits"]);
+    return parseTextEdits(
+      change["textDocument"]["uri"],
+      change["edits"],
+      options,
+      version === null || typeof version === "number" ? version : undefined,
+    );
   });
 }
 
-function parseTextEdits(uri: string, value: unknown): LspRenameCandidate[] {
+function parseTextEdits(
+  uri: string,
+  value: unknown,
+  options: LspWorkspaceEditParseOptions,
+  documentVersion?: number | null,
+): LspWorkspaceTextEditCandidate[] {
   if (!Array.isArray(value)) {
-    throw new Error("LSP rename text edits must be an array");
+    throw new Error(`${options.label} text edits must be an array`);
   }
   return value.map((edit, index) => {
     if (record(edit) && edit["annotationId"] !== undefined) {
-      throw new Error("LSP rename annotated edits are not supported");
+      throw new Error(`${options.label} annotated edits are not supported`);
     }
     if (
       !record(edit) ||
       !hasOnlyKeys(edit, ["range", "newText"]) ||
       typeof edit["newText"] !== "string" ||
-      edit["newText"].length > MAX_LSP_RENAME_REPLACEMENT_CHARS ||
+      edit["newText"].length > options.maxReplacementChars ||
       edit["newText"].includes("\u0000")
     ) {
-      throw new Error(`LSP rename text edit ${index + 1} is malformed`);
+      throw new Error(`${options.label} text edit ${index + 1} is malformed`);
     }
     const range = parseLspRange(edit["range"]);
-    if (!range || samePosition(range.start, range.end)) {
-      throw new Error(`LSP rename text edit ${index + 1} has an invalid range`);
+    if (
+      !range ||
+      (!options.allowInsertions && samePosition(range.start, range.end))
+    ) {
+      throw new Error(
+        `${options.label} text edit ${index + 1} has an invalid range`,
+      );
     }
-    return { uri, range, newText: edit["newText"] };
+    return {
+      uri,
+      range,
+      newText: edit["newText"],
+      ...(documentVersion !== undefined ? { documentVersion } : {}),
+    };
   });
 }
 
-function assertRenameLimits(candidates: LspRenameCandidate[]): void {
-  if (candidates.length > MAX_LSP_RENAME_EDITS) {
+function assertWorkspaceEditLimits(
+  candidates: LspWorkspaceTextEditCandidate[],
+  options: LspWorkspaceEditParseOptions,
+): void {
+  if (candidates.length > options.maxEdits) {
     throw new Error(
-      `LSP rename returned more than ${MAX_LSP_RENAME_EDITS} edits`,
+      `${options.label} returned more than ${options.maxEdits} edits`,
     );
   }
   if (
     new Set(candidates.map((candidate) => candidate.uri)).size >
-    MAX_LSP_RENAME_FILES
+    options.maxFiles
   ) {
     throw new Error(
-      `LSP rename returned more than ${MAX_LSP_RENAME_FILES} files`,
+      `${options.label} returned more than ${options.maxFiles} files`,
     );
   }
 }

@@ -249,11 +249,13 @@ describe("Agent profile updates", () => {
           "lsp_definition",
           "lsp_references",
           "lsp_rename",
+          "lsp_code_actions",
           "run_command",
           "workspace_process",
         ],
       }).enabledTools,
     ).toEqual([
+      "lsp_code_actions",
       "lsp_definition",
       "lsp_diagnostics",
       "lsp_references",

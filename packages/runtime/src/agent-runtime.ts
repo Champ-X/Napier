@@ -89,6 +89,7 @@ import {
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
 } from "./memory.js";
+import { createLspCodeActionsTool } from "./lsp-code-actions-tool.js";
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import { createLspDefinitionTool } from "./lsp-definition-tool.js";
 import { LspWorkspacePatchObserver } from "./lsp-patch-diagnostics.js";
@@ -1243,6 +1244,19 @@ export class AgentRuntime {
     ) {
       tools.push(
         createLspRenameTool({
+          workspaceRoot: this.store.workspaceRoot,
+          sandbox: this.verificationSandbox,
+        }),
+      );
+    }
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("lsp_code_actions")
+    ) {
+      tools.push(
+        createLspCodeActionsTool({
           workspaceRoot: this.store.workspaceRoot,
           sandbox: this.verificationSandbox,
         }),
@@ -3413,6 +3427,7 @@ function builtInToolEffect(
     toolName === "lsp_definition" ||
     toolName === "lsp_references" ||
     toolName === "lsp_rename" ||
+    toolName === "lsp_code_actions" ||
     toolName === "workspace_file_preview" ||
     toolName === "run_command" ||
     toolName === "verify_workspace" ||

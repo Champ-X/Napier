@@ -25,6 +25,10 @@ export interface LspLocationCandidate {
   range: LspRange;
 }
 
+export interface LspWorkspaceLocationOptions {
+  allowLineBreakInsertion?: boolean;
+}
+
 export interface LspWorkspaceLocation {
   path: string;
   pathSha256: string;
@@ -134,6 +138,7 @@ export async function workspaceLspLocation(
   workspaceRoot: string,
   candidate: LspLocationCandidate,
   label: string,
+  options: LspWorkspaceLocationOptions = {},
 ): Promise<LspWorkspaceLocation | undefined> {
   let lexical: string;
   try {
@@ -177,15 +182,20 @@ export async function workspaceLspLocation(
   } catch {
     return undefined;
   }
-  const preview = rangePreview(source, candidate.range);
+  const normalizedRange = normalizeLineBreakInsertion(
+    source,
+    candidate.range,
+    options.allowLineBreakInsertion === true,
+  );
+  const preview = rangePreview(source, normalizedRange);
   if (!preview) {
     throw new Error(`${label} returned an out-of-range workspace target`);
   }
   const range = {
-    startLine: candidate.range.start.line + 1,
-    startCharacter: candidate.range.start.character + 1,
-    endLine: candidate.range.end.line + 1,
-    endCharacter: candidate.range.end.character + 1,
+    startLine: normalizedRange.start.line + 1,
+    startCharacter: normalizedRange.start.character + 1,
+    endLine: normalizedRange.end.line + 1,
+    endCharacter: normalizedRange.end.character + 1,
   };
   return {
     path: relativePath,
@@ -284,8 +294,8 @@ function rangePreview(
   if (
     startLine === undefined ||
     endLine === undefined ||
-    range.start.character > startLine.length ||
-    range.end.character > endLine.length
+    range.start.character > lspLineLength(startLine) ||
+    range.end.character > lspLineLength(endLine)
   ) {
     return undefined;
   }
@@ -301,6 +311,35 @@ function rangePreview(
     text: selected.slice(0, MAX_LSP_LOCATION_PREVIEW_CHARS),
     truncated: selected.length > MAX_LSP_LOCATION_PREVIEW_CHARS,
   };
+}
+
+function normalizeLineBreakInsertion(
+  source: string,
+  range: LspRange,
+  allowed: boolean,
+): LspRange {
+  if (
+    !allowed ||
+    range.start.line !== range.end.line ||
+    range.start.character !== range.end.character
+  ) {
+    return range;
+  }
+  const lines = source.split("\n");
+  const line = lines[range.start.line];
+  if (
+    line === undefined ||
+    range.start.line >= lines.length - 1 ||
+    range.start.character !== lspLineLength(line) + 1
+  ) {
+    return range;
+  }
+  const position = { line: range.start.line + 1, character: 0 };
+  return { start: position, end: position };
+}
+
+function lspLineLength(line: string): number {
+  return line.endsWith("\r") ? line.length - 1 : line.length;
 }
 
 function isPathInside(candidate: string, root: string): boolean {

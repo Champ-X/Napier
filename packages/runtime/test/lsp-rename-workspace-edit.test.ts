@@ -48,6 +48,30 @@ describe("LSP rename WorkspaceEdit contract", () => {
         uri: "file:///workspace/second.ts",
         range: range(1, 0, 1, 7),
         newText: "nextName",
+        documentVersion: 2,
+      },
+    ]);
+    expect(
+      parseLspRenameWorkspaceEdit({
+        changes: {
+          "file:///workspace/ignored.ts": [textEdit("ignored", 0, 0, 0, 1)],
+        },
+        documentChanges: [
+          {
+            textDocument: {
+              uri: "file:///workspace/preferred.ts",
+              version: null,
+            },
+            edits: [textEdit("preferred", 0, 0, 0, 1)],
+          },
+        ],
+      }),
+    ).toEqual([
+      {
+        uri: "file:///workspace/preferred.ts",
+        range: range(0, 0, 0, 1),
+        newText: "preferred",
+        documentVersion: null,
       },
     ]);
   });
@@ -72,13 +96,7 @@ describe("LSP rename WorkspaceEdit contract", () => {
     expect(fallback).toEqual({ kind: "default" });
   });
 
-  it("rejects resource operations, annotations, mixed shapes, and invalid edits", () => {
-    expect(() =>
-      parseLspRenameWorkspaceEdit({
-        changes: {},
-        documentChanges: [],
-      }),
-    ).toThrow("cannot contain both");
+  it("rejects resource operations, annotations, unknown fields, and invalid edits", () => {
     expect(() =>
       parseLspRenameWorkspaceEdit({
         documentChanges: [

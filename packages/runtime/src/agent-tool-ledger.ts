@@ -1,6 +1,11 @@
 import type { JsonValue } from "@napier/contracts";
 
 import {
+  lspCodeActionsToolCallArgumentsLedgerProjection,
+  lspCodeActionsToolInputLedgerProjection,
+  lspCodeActionsToolOutputLedgerProjection,
+} from "./lsp-code-actions-tool.js";
+import {
   lspDiagnosticsToolCallArgumentsLedgerProjection,
   lspDiagnosticsToolInputLedgerProjection,
   lspDiagnosticsToolOutputLedgerProjection,
@@ -60,6 +65,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "lsp_rename") {
     return lspRenameToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "lsp_code_actions") {
+    return lspCodeActionsToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "apply_patch") {
     return workspacePatchToolCallArgumentsLedgerProjection(args);
   }
@@ -93,6 +101,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "lsp_rename") {
     return lspRenameToolInputLedgerProjection(args);
+  }
+  if (toolName === "lsp_code_actions") {
+    return lspCodeActionsToolInputLedgerProjection(args);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolInputLedgerProjection(args);
@@ -128,6 +139,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "lsp_rename") {
     return lspRenameToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "lsp_code_actions") {
+    return lspCodeActionsToolOutputLedgerProjection(output, result);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolOutputLedgerProjection(output, result);

@@ -82,11 +82,11 @@ Version `0.1.0` includes:
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
-- `lsp_diagnostics`, `lsp_definition`, `lsp_references`, and
-  preview-only `lsp_rename` tools that drive the standard TypeScript language
-  server against TypeScript or JavaScript workspace files through the same
-  read-only, offline OS sandbox, with bounded live compiler/edit evidence and
-  hash-only durable projections;
+- `lsp_diagnostics`, `lsp_definition`, `lsp_references`, preview-only
+  `lsp_rename`, and quick-fix-only `lsp_code_actions` tools that drive the
+  standard TypeScript language server against TypeScript or JavaScript
+  workspace files through the same read-only, offline OS sandbox, with bounded
+  live compiler/edit evidence and hash-only durable projections;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -1501,10 +1501,11 @@ complete preview. It accepts at most 32 regular workspace files and 256
 non-overlapping text edits, with at most 32 KiB of aggregate old/replacement
 text and 64 KiB of final tool output. External, virtual, protected, missing,
 symlinked, oversized, invalid UTF-8, drifting, resource-operation, annotated,
-mixed-shape, empty-range, overlapping, and over-limit results fail the whole
-request rather than producing a partial rename. Relative paths, current file
-hashes, exact ranges, old text, and replacement text are available only to the
-live Agent. Ledger, Replay, Trace, and model-call evidence retain only
+empty-range, overlapping, and over-limit results fail the whole request rather
+than producing a partial rename. When a server sends both WorkspaceEdit
+representations, standard `documentChanges` takes precedence over `changes`.
+Relative paths, current file hashes, exact ranges, old text, and replacement
+text are available only to the live Agent. Ledger, Replay, Trace, and model-call evidence retain only
 completeness, counts, preview bytes, versions, latency, and
 source/name/prepare/edit/file/result hashes. `complete` means Napier omitted no
 edit returned by the current language-server project; it does not prove
@@ -1517,10 +1518,42 @@ returned file SHA, apply each file through the existing hash-bound
 per-file atomicity and stale-write rejection without falsely claiming a
 portable atomic transaction across multiple files.
 
+`lsp_code_actions` waits for the opened file's current diagnostics, selects
+only diagnostics intersecting the requested 1-based UTF-16 position, and
+issues standard `textDocument/codeAction` with `only: ["quickfix"]`. It accepts
+at most 64 returned entries and exposes at most 16 text-edit alternatives.
+Command-only, disabled, and edit-free entries are counted as omitted; a
+truncated or omitted response is marked incomplete. A text-edit action may
+carry an LSP command, but Napier drops the command and opaque data, marks the
+action `commandIgnored`, and never executes, returns, or persists either.
+`complete` therefore describes alternative exposure only and is not a claim
+that an ignored command side effect occurred.
+
+Each alternative reuses the strict WorkspaceEdit boundary, with zero-length
+insertion ranges explicitly allowed. Across all alternatives, Napier caps
+targets at 32 files, edits at 256, aggregate old/replacement text at 32 KiB,
+and final Agent output at 64 KiB. Resource operations, annotations,
+external/protected/symlinked targets, malformed or overlapping edits, source
+or runtime drift, and over-limit responses fail closed. Candidate totals are
+checked before filesystem reads; locations are materialized serially with a
+cache, source document version/hash is revalidated, and every target hash is
+checked again before returning. TypeScript's
+one-character-past-line-break insertion quirk is normalized only for
+zero-length Code Action edits and remains strict for rename and replacement
+ranges.
+
+The live Agent sees bounded titles, paths, file hashes, ranges, old text, and
+replacement text as untrusted evidence. Ledger, Replay, Trace, and Server SSE
+retain only completeness/truncation, counts, preview bytes, versions, latency,
+and diagnostic/action/target/result hashes. The Agent must choose one
+alternative, re-read every selected file SHA, apply it through `apply_patch`,
+then run diagnostics and relevant behavior checks. Napier does not
+automatically combine mutually exclusive alternatives.
+
 These are one-shot operations rather than a persistent editor session. Napier
-does not yet claim direct LSP writes, atomic multi-file rename, Code Actions,
-project-wide synchronization, external dependency navigation, or test
-selection.
+does not yet claim direct LSP writes, atomic multi-file rename, Code Action
+resolve or command execution, project-wide synchronization, external
+dependency navigation, or test selection.
 
 When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
 TypeScript and JavaScript writes automatically run LSP diagnostics before and
@@ -1551,7 +1584,8 @@ fixed `TS2322` example, `examples/lsp-definition/` as a cross-file definition
 example, and `examples/lsp-references/` as a multi-file impact example. The
 live suite diagnoses and fixes the first example, resolves
 `usage.ts:3:22` to `definition.ts`, and finds six declaration-inclusive
-references to `normalizeTitle`.
+references to `normalizeTitle`; it also creates a temporary missing-import
+fixture and previews the preferred import quick fix without writing it.
 macOS rejects nested `sandbox-exec`, so launching the live smoke from an IDE
 process that is itself sandboxed fails closed rather than falling back to an
 unsandboxed language server.
@@ -2916,8 +2950,10 @@ start/input/poll/cancel lifecycle control over the same sandbox boundary.
 **LSP diagnostics** adds one-file TypeScript/JavaScript semantic diagnostics,
 **LSP definition** and **LSP references** add workspace-confined navigation,
 and **LSP rename preview** supplies a complete bounded WorkspaceEdit that must
-still pass through Atomic patch. None grants language-server workspace writes
-or network access.
+still pass through Atomic patch. **LSP quick fixes** supplies bounded
+diagnostic-driven text-edit alternatives while dropping every returned command
+and opaque data. None grants language-server workspace writes, command
+execution, or network access.
 Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.

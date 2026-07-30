@@ -6,6 +6,27 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added diagnostic-driven TypeScript/JavaScript quick-fix previews. The opt-in
+  `lsp_code_actions` Agent tool collects current diagnostics and issues real
+  `textDocument/codeAction` requests restricted to `quickfix` through the
+  existing read-only, offline, exact-version LSP Sandbox. It exposes at most 16
+  text-edit alternatives under aggregate 32-file, 256-edit, 32 KiB preview,
+  and 64 KiB Agent-output limits. Command-only, disabled, edit-free, and
+  truncated entries are counted as omitted; commands and opaque data attached
+  to an edit are dropped before output or persistence and are never executed.
+  The shared WorkspaceEdit boundary allows insertion edits but still rejects
+  resource operations, annotations, overlap, unsafe targets, drift, timeout,
+  and cancellation. Standard `documentChanges` takes precedence when both
+  WorkspaceEdit representations are returned. Candidate totals are checked
+  before file I/O; edit locations are materialized serially with caching, and
+  source versions plus all final target hashes are revalidated. A real
+  TypeScript missing-import run returned two alternatives; an Agent selected
+  the preferred import, applied it through hash-bound `apply_patch`, changed
+  write-linked diagnostics from one error to zero, reran explicit diagnostics
+  as clean, and produced a valid path- and content-redacted Replay. Independent
+  dogfood applied the real preferred edit through production CAS and passed
+  real `tsc --noEmit`. HTTP/SSE and Web Trace expose only bounded counts,
+  completeness, latency, and hashes.
 - Added workspace-confined TypeScript/JavaScript rename previews. The opt-in
   `lsp_rename` Agent tool drives real `textDocument/prepareRename` and
   `textDocument/rename` requests through the existing exact-version,
@@ -14,7 +35,7 @@ All notable changes to Napier are recorded here.
   capped at 32 KiB aggregate preview text and 64 KiB formatted output, while
   durable Agent, Ledger, Replay, Server SSE, and Web Trace projections retain
   only completeness, counts, preview bytes, versions, latency, and hashes. Any
-  resource operation, annotation, mixed edit shape, overlap, truncation,
+  resource operation, annotation, overlap, truncation,
   external/protected/symlinked target, malformed range, source/runtime drift,
   timeout, or cancellation fails closed. The tool never writes; Agents apply
   reviewed edits through existing hash-bound `apply_patch`. Real dogfood

@@ -408,6 +408,115 @@ describeLive("live LSP diagnostics smoke", () => {
     store.close();
   }, 30_000);
 
+  it("previews a real missing-import quick fix through the Agent sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-code-actions-workspace-"),
+    );
+    const stateRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-code-actions-state-"),
+    );
+    temporaryRoots.push(workspaceRoot, stateRoot);
+    const targetPath = "private-usage.ts";
+    const source = 'export const title = formatTitle(" value ");\n';
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { strict: true, noEmit: true } }),
+      ),
+      writeFile(path.join(workspaceRoot, targetPath), source),
+      writeFile(
+        path.join(workspaceRoot, "private-definition.ts"),
+        [
+          "export function formatTitle(value: string): string {",
+          "  return value.trim();",
+          "}",
+          "",
+        ].join("\n"),
+      ),
+    ]);
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(stateRoot, "data"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_code_actions"],
+    });
+    const thread = await store.createThread({
+      title: "Live LSP Code Actions smoke",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({
+      provider: "live-lsp-code-actions-smoke",
+    });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_code_actions", {
+          path: targetPath,
+          line: 1,
+          character: 22,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("Preferred: true");
+        expect(messages).toContain("private-definition");
+        expect(messages).toContain("formatTitle");
+        return fauxAssistantMessage(
+          "The real language server returned the preferred import fix.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Preview the missing-import quick fix through standard LSP.",
+      model: { provider: "live-lsp-code-actions-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const events = await store.listEvents(thread.id);
+    const completed = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_code_actions",
+    );
+    expect(completed?.payload["details"]).toEqual(
+      expect.objectContaining({
+        status: "found",
+        diagnosticCount: 1,
+        actionCount: 2,
+        preferredActionCount: 1,
+        sandbox: "macos-sandbox-exec",
+        languageServerVersion: "5.3.0",
+        typescriptVersion: "5.9.3",
+      }),
+    );
+    const durable = JSON.stringify(events);
+    expect(durable).not.toContain(targetPath);
+    expect(durable).not.toContain("private-definition");
+    expect(durable).not.toContain("formatTitle");
+    expect(durable).not.toContain("_typescript.applyCodeActionCommand");
+    expect(await readFile(path.join(workspaceRoot, targetPath), "utf8")).toBe(
+      source,
+    );
+    store.close();
+  }, 30_000);
+
   it("fixes TS2322 with automatic before and after diagnostics", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-lsp-patch-workspace-"),

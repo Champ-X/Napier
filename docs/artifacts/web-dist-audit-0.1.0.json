@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 60,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-BMZae_3a.js",
+    "path": "apps/web/dist/assets/index-CMnpXikt.js",
     "sizeBytes": 132225,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "3e86d085c43e79907c0ae493f049ea9de2a019787e6da3ad333cee84685e722e"
+    "sha256": "29bd681387924f509a10a988afb45ae28f634f3c5ca2eab45c350bb7aec5191e"
   },
-  "distContentSha256": "3e86d085c43e79907c0ae493f049ea9de2a019787e6da3ad333cee84685e722e",
+  "distContentSha256": "29bd681387924f509a10a988afb45ae28f634f3c5ca2eab45c350bb7aec5191e",
   "errors": []
 }

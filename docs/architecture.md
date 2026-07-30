@@ -1903,9 +1903,10 @@ Agent selects lsp_rename + source path + position + proposed new name
   -> apply the same policy, source, runtime, Sandbox, readiness, and timeout
      gates as definition/references
   -> issue textDocument/prepareRename, then textDocument/rename
-  -> accept either changes or text-only documentChanges, never both
+  -> accept changes or text-only documentChanges; when both are present,
+     prefer documentChanges as required by LSP 3.17
   -> reject create/rename/delete resource operations, annotated edits,
-     empty/overlapping ranges, mixed shapes, or malformed versions
+     empty/overlapping ranges, or malformed versions
   -> cap the complete result at 32 files, 256 edits, 1,000 replacement
      characters per edit, 32 KiB aggregate old/replacement text, and 64 KiB
      final tool output; exceeding any limit fails rather than truncates
@@ -1921,11 +1922,45 @@ Agent selects lsp_rename + source path + position + proposed new name
      preserving the existing per-file lock, CAS, diagnostics, and evidence
 ```
 
+Quick-fix preview composes the diagnostic and WorkspaceEdit boundaries without
+granting the language server a write or command capability:
+
+```text
+Agent selects lsp_code_actions + source path + diagnostic position
+  -> apply the same policy, source, runtime, Sandbox, and timeout gates
+  -> collect at most 64 current diagnostics for the opened source
+  -> select only half-open ranges intersecting the requested UTF-16 position
+  -> issue textDocument/codeAction with only=["quickfix"]
+  -> omit command-only, disabled, and edit-free entries; expose at most
+     16 text-edit alternatives and report omission/truncation explicitly
+  -> discard every returned command and opaque data without execution,
+     live output, or persistence; mark edit actions that carried a command
+  -> parse each WorkspaceEdit with exact keys, text edits only, no resource
+     operations or annotations, while allowing zero-length insertions
+  -> cap all alternatives together at 32 target files, 256 edits, 32 KiB
+     old/replacement text, and 64 KiB final Agent output
+  -> enforce candidate totals before file I/O; materialize serially with a
+     location cache, require source version 1 when versioned, and bind source
+     edits to the exact didOpen file hash
+  -> canonicalize targets and reject malformed, external, protected,
+     symlinked, drifting, overlapping, or over-limit responses
+  -> rehash the source and every target after materialization before return
+  -> return titles, paths, hashes, ranges, old text, and replacements live-only
+  -> persist counts, completeness/truncation, command-ignored count, latency,
+     and diagnostic/action/target/result hashes
+  -> perform no write; the Agent chooses one action, uses hash-bound
+     apply_patch, then reruns diagnostics and behavior verification
+```
+
 The Web projection follows the same module boundary: `lsp-tool-event-view.ts`
 validates and summarizes all LSP receipts, while generic
-`tool-event-view.ts` only dispatches by tool name. Rename protocol parsing and
-canonicalization live in `lsp-rename-workspace-edit.ts`, separate from Sandbox
-lifecycle and Agent projection code.
+`tool-event-view.ts` only dispatches by tool name. Rename and Code Action
+WorkspaceEdit parsing share `lsp-rename-workspace-edit.ts`.
+`lsp-code-action-diagnostics.ts`, `lsp-code-action-edits.ts`, and
+`lsp-code-actions.ts` separately own diagnostic selection, confined edit
+materialization, and session/receipt assembly. Web quick-fix projection lives
+in `lsp-code-actions-event-view.ts` and never reads action titles, paths,
+diagnostic messages, commands, or edit bodies.
 
 The Sandbox launch contract supports at most eight explicit absolute
 non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
@@ -1936,11 +1971,13 @@ is defined.
 
 The language server runs as untrusted code output inside the Capability Plane:
 diagnostic prose is not treated as instructions, related-information paths are
-discarded, workspace edits are rejected, and no package/plugin installation or
-network access is available. Definition/reference URIs and previews receive the
-same treatment and cannot expand read/write scope. The implementation remains
-one-shot and does not expose rename, Code Actions, persistent synchronization,
-external dependency navigation, or project-wide indexing.
+discarded, server-initiated `workspace/applyEdit` requests are rejected, and no
+package/plugin installation or network access is available.
+Definition/reference URIs and previews receive the same treatment and cannot
+expand read/write scope. Rename and quick-fix WorkspaceEdits are previews only;
+Code Action commands, resolve requests, and opaque data remain unavailable.
+The implementation remains one-shot and does not expose persistent
+synchronization, external dependency navigation, or project-wide indexing.
 
 ## Write-linked Diagnostics Flow
 
@@ -4321,13 +4358,18 @@ The current boundary has thirty-two parts:
     previews with canonical target files, bounded live-only source edits,
     strict rejection of unsupported WorkspaceEdit operations, Agent/Server/
     Context/Trace integration, and hash-only durable evidence.
+34. diagnostic-driven LSP quick-fix previews with bounded alternatives,
+    insertion-aware text-only WorkspaceEdits, ignored command/data payloads,
+    aggregate context/output budgets, Agent/Server/Context/Trace integration,
+    and a real preferred-fix-to-hash-bound-patch verification path.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
-verification, read-only/offline TypeScript LSP diagnostics/navigation/rename
-previews, explicit-argv command execution, and bounded background Process
-Session lifecycle control. `unrestricted` is reserved for future sandboxed
-shell execution, but known destructive command patterns are still denied.
+verification, read-only/offline TypeScript LSP diagnostics/navigation/rename/
+quick-fix previews, explicit-argv command execution, and bounded background
+Process Session lifecycle control. `unrestricted` is reserved for future
+sandboxed shell execution, but known destructive command patterns are still
+denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and
@@ -4352,8 +4394,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- persistent LSP sessions with rename application and Code Actions, DAP, AST
-  edits, write-linked test/symbol association, and isolated subagent worktrees;
+- persistent LSP sessions with rename application, Code Action resolve/command
+  policy, DAP, AST edits, write-linked test/symbol association, and isolated
+  subagent worktrees;
 - typed executable Workflow nodes, checkpoint recovery, single-node tests,
   JSONL events, and a TypeScript SDK;
 - controlled re-execution from model, tool, and Workflow checkpoints.
