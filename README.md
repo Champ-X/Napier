@@ -29,10 +29,10 @@ Version `0.1.0` includes:
 - a Pi-powered multi-provider runtime for OpenAI, Anthropic, Google, and
   OpenRouter;
 - a deterministic zero-key demo model for onboarding and CI;
-- `napier run` and `napier resume` CLI commands with human output or
-  hash-bound `StreamFrame` JSONL, backed by the same Agent Runtime, model
-  registry, policy, Sandbox, SQLite Ledger, and Thread Run lease as the
-  HTTP/Web path;
+- `napier run`, `napier resume`, and sequence-accurate `napier branch` CLI
+  commands with human output or hash-bound `StreamFrame` JSONL, backed by the
+  same Agent Runtime, model registry, policy, Sandbox, SQLite Ledger, and
+  domain services as the HTTP/Web path;
 - an authoritative SQLite WAL that commits workspace projections and ordered
   events atomically, uses revision CAS for concurrent local writers, and
   migrates legacy `workspace.json`/JSONL state without evidence loss;
@@ -357,8 +357,30 @@ Run, creates a recovery child linked by `parentRunId`, and asks the Agent to
 inspect durable evidence before acting. Unknown tool side effects are not
 silently replayed. Human and JSONL output, model overrides, timeout,
 cancellation, credential resolution, Run leases, and shutdown use the same
-path as `run`. The CLI still does not claim an interactive TUI, branch command,
-RPC, ACP, or Desktop packaging.
+path as `run`.
+
+Create an independently continuable Thread from an exact source Ledger
+sequence:
+
+```bash
+npm run --silent napier -- branch \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --from-seq 42 \
+  --title "Alternative investigation" \
+  --jsonl
+```
+
+The branch copies only message events visible through `--from-seq`, links its
+materialization Run to the last source Run visible at that sequence, and
+records `branch.created` source lineage. Human mode prints the new Thread ID;
+JSONL emits every new branch event followed by its authoritative snapshot and
+done frame. A future or missing source sequence fails before creating a
+Thread. The new ID can be passed to `napier run --thread` to continue through
+the normal Agent Runtime. This is message-history branching, not model/tool
+checkpoint re-execution or side-effect replay. The CLI still does not claim an
+interactive TUI, RPC, ACP, or Desktop packaging.
 
 ## Store Scale Baseline
 

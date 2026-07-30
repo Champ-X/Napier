@@ -25,10 +25,10 @@ Audit date: 2026-07-30
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
 | P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume exist; interactive TUI, branch CLI, SDK/RPC, ACP, and Desktop remain.                                                                                                                               |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                     |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
-| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain. |
+| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.    |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                             |
 
 ## Completed Slice: Read-Only Sandboxed Commands
@@ -1105,3 +1105,65 @@ Observed result:
 - the complete repository gate passed 960 tests with 12 opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: Sequence-Accurate CLI Thread Branch
+
+User scenario: a developer can fork a durable Thread from the exact evidence
+boundary they are inspecting, continue the alternative through the terminal,
+and retain correct source-Run lineage even when the source has newer Runs.
+
+Acceptance:
+
+- add `napier branch --workspace <path> --thread <thread-id> --from-seq <n>`
+  with optional data root, title, and JSONL output;
+- reject execution-only, duplicate, malformed, future, missing, zero, and
+  unsafe-integer options before branch materialization;
+- resolve the branch `parentRunId` from the last source Run represented at or
+  before `fromSeq`, never from the source Thread's latest Run;
+- materialize `branch.created` plus only message events visible through the
+  selected sequence under one leased, terminal branch Run;
+- preserve imported Thread provenance and its branch-local historical cutoff;
+- make Server and CLI call one Runtime domain service instead of maintaining
+  separate Store orchestration;
+- emit the new Thread ID in human mode or its complete ordered event stream,
+  authoritative snapshot, and done frame in JSONL mode;
+- continue the resulting Thread through the existing built
+  `napier run --thread` path without introducing another Agent loop;
+- cover early-Run lineage, invalid/future sequences, invalid titles,
+  pre-abort, concurrent branches, imported provenance, Server compatibility,
+  and a built subprocess continuation.
+
+Threat boundary:
+
+- Branching copies message evidence only. It does not re-execute a model call,
+  reuse a tool result, simulate a side effect, restore an environment, or
+  claim controlled Replay.
+- Source sequence validation and title normalization complete before a Thread
+  is created. A future boundary cannot silently become a branch at the current
+  Ledger tail.
+- The materialization Run uses the normal lease boundary and records only
+  source Thread ID and sequence in `branch.created`; no message body is added
+  to lifecycle metadata or error frames.
+- An already aborted CLI request stops before local Runtime initialization or
+  state mutation. Branch creation is otherwise a short local SQLite operation,
+  not a cancellable model/tool execution.
+
+Observed result:
+
+- Runtime tests proved that a branch from the first of two source Runs links
+  to the first Run, excludes the second Run's messages, preserves imported
+  provenance, rejects invalid boundaries without a new Thread, and allows two
+  independent concurrent branches;
+- CLI tests exercised human and complete ordered JSONL output, stable
+  redacted errors, pre-abort, and a real built-process branch followed by a
+  built-process `run --thread` continuation;
+- Server integration retained the public response contract while adding a
+  future-sequence no-mutation regression; the route's branch orchestration was
+  replaced by the shared Runtime service;
+- an independent built-CLI dogfood branched sequence 2 of a two-Run source,
+  proved that `parentRunId` selected the first Run, excluded both future
+  messages, then completed a normal continuation with 18 total branch events;
+- the focused Runtime/CLI/Server gate passed 53 tests. The complete repository
+  gate passed 969 tests with 12 opt-in live tests skipped by default, verified
+  244/244 OpenAPI operations, and kept the Web main entry at 129.13 KiB
+  against the 150 KiB budget.

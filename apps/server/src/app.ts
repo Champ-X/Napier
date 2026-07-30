@@ -336,6 +336,7 @@ import {
   compareRuns,
   type CredentialReferenceStore,
   createLocalAgentRuntime,
+  createThreadBranch,
   EvaluationCasebookQualificationService,
   EvaluationSuiteService,
   type KeychainSecretStore,
@@ -404,6 +405,7 @@ import {
   streamRunDoneFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
+  ThreadBranchRequestError,
   reviewReceiptTrustAnchorDirectoryQuorumPromotionBaselineImportPolicy,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionRotationProposalSubscriptionApprovalPolicyBaseline,
   verifyReceiptTrustAnchorDirectoryQuorumActivationSelectionTransparencyCheckpointRegistryQuorumBaseline,
@@ -10605,62 +10607,20 @@ export function createApp(services: NapierServices): Hono {
     if (!body) {
       return jsonError(context, "Thread branch request is invalid", 400);
     }
-    const source = services.store.getThread(sourceThreadId);
-    const sourceEvents = (
-      await services.store.listEvents(sourceThreadId)
-    ).filter(
-      (event) => event.seq <= body.fromSeq && event.category === "message",
-    );
-    const branch = await services.store.createThread({
-      title: normalizeTitle(body.title ?? `${source.title} / branch`),
-      agentId: source.agentId,
-      ...(source.importProvenance
-        ? {
-            importProvenance: {
-              ...source.importProvenance,
-              localImportedThroughSeq: sourceEvents.length + 1,
-            },
-          }
-        : {}),
-    });
-    const parentRunId = source.runIds.at(-1);
-    const branchLease = await services.store.createLeasedRun(
-      {
-        threadId: branch.id,
-        agentId: source.agentId,
-        ...(parentRunId ? { parentRunId } : {}),
-        branchFromSeq: body.fromSeq,
-      },
-      {
-        ownerId: createId("branch"),
-        ttlMs: 10 * 60_000,
-      },
-    );
-    const branchRun = branchLease.run;
-    await services.store.appendEvent({
-      threadId: branch.id,
-      runId: branchRun.id,
-      type: "branch.created",
-      category: "lifecycle",
-      visibility: "user",
-      payload: { sourceThreadId, sourceSeq: body.fromSeq },
-    });
-    for (const event of sourceEvents) {
-      await services.store.appendEvent({
-        threadId: branch.id,
-        runId: branchRun.id,
-        type: event.type,
-        category: event.category,
-        visibility: event.visibility,
-        payload: event.payload,
-      });
+    try {
+      const { detail } = await createThreadBranch(
+        services.store,
+        sourceThreadId,
+        body,
+      );
+      setThreadDetailProjectionHeaders(context, detail);
+      return context.json(detail, 201);
+    } catch (error) {
+      if (error instanceof ThreadBranchRequestError) {
+        return jsonError(context, error.message, 400);
+      }
+      throw error;
     }
-    await services.store.finishRun(branchRun.id, "completed", {
-      leaseToken: branchLease.token,
-    });
-    const detail = await services.store.getDetail(branch.id);
-    setThreadDetailProjectionHeaders(context, detail);
-    return context.json(detail, 201);
   });
 
   app.get(

@@ -6,6 +6,18 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added sequence-accurate CLI Thread branching. `napier branch` accepts an
+  exact existing source Ledger sequence, optional title, and human or complete
+  ordered-JSONL output; its new Thread can immediately continue through
+  `napier run --thread`. The branch Run links to the last source Run visible at
+  the selected sequence rather than a newer Thread tail, copies only visible
+  message events, records bounded `branch.created` lineage, and preserves
+  imported provenance. Future or malformed boundaries and pre-aborted CLI
+  requests create no branch. CLI and HTTP now share one Runtime domain service,
+  removing inline Store orchestration from the oversized Server route.
+  Runtime, CLI, Server, concurrency, imported-provenance, and built-subprocess
+  tests cover the full path. This is durable message-history branching, not
+  controlled model/tool re-execution or side-effect replay.
 - Added `napier resume` for continuing a waiting Thread from a requested or
   latest interrupted Run. It reuses `AgentRuntime.resumeInterruptedRun`,
   creates a `source=recovery` child bound by `parentRunId`, and supports the

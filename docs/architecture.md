@@ -167,6 +167,17 @@ resume` selects a waiting Thread plus an optional interrupted Run and calls
 streaming, cancellation, and shutdown path; neither implements a second
 model/tool loop or talks directly to Store for Run execution.
 
+`napier branch` and the HTTP Branch route share
+`createThreadBranch()`, a Runtime domain service rather than duplicating
+materialization inside either Experience Plane adapter. It validates an exact
+existing source sequence, resolves `parentRunId` from the last source Run with
+evidence at or before that sequence, creates a leased materialization Run,
+records `branch.created`, and copies only the visible message events. Imported
+provenance is retained with the branch-local historical cutoff. A future,
+missing, zero, or unsafe-integer sequence is rejected before Thread creation.
+The resulting Thread is ordinary Runtime input and can be continued through
+`napier run --thread`; branch creation itself invokes no model or tool.
+
 The Server and CLI both construct local services through
 `createLocalAgentRuntime()`. That bootstrap owns initialization and idempotent
 shutdown ordering for SQLite, MCP transports, Process Sessions, file mutation
@@ -175,13 +186,16 @@ evaluation, automation, channel, and recovery services remain layered above
 it.
 
 Human mode writes the final assistant message to stdout and a bounded status
-line to stderr. `--jsonl` writes the shared `StreamFrame` contract as one JSON
-object per line: zero or more event frames, then a final snapshot and terminal
-done frame. HTTP SSE and CLI JSONL use the same event, snapshot, done, and
-error constructors, including event/snapshot/event-stream hashes and the
-terminal-status guard. JSONL writes await stdout backpressure. Invalid
-preflight input and bootstrap failures produce only the stable public error
-frame and a diagnostic hash; raw provider, credential, Sandbox, and tool
+line to stderr; branch human mode instead writes the new Thread ID to stdout
+and its bounded source lineage to stderr. `--jsonl` writes the shared
+`StreamFrame` contract as one JSON object per line: zero or more event frames,
+then a final snapshot and terminal done frame. Branch JSONL starts at sequence
+one and includes its complete materialized Ledger; run/resume JSONL streams the
+events appended by that invocation. HTTP SSE and CLI JSONL use the same event,
+snapshot, done, and error constructors, including event/snapshot/event-stream
+hashes and the terminal-status guard. JSONL writes await stdout backpressure.
+Invalid preflight input and bootstrap failures produce only the stable public
+error frame and a diagnostic hash; raw provider, credential, Sandbox, and tool
 errors are not written.
 
 Model and tool callbacks may complete concurrently even though SQLite assigns
@@ -204,7 +218,9 @@ settles Napier-owned Process Sessions and MCP transports before closing
 SQLite; it does not kill unrelated workspace processes or delete state.
 Environment credentials remain unavailable unless the selected data root
 already contains an active credential reference. This adapter does not yet
-provide an interactive TUI, branch command, RPC, ACP, or Desktop packaging.
+provide an interactive TUI, RPC, ACP, or Desktop packaging. Thread branching
+is durable message-history materialization; it is not controlled model/tool
+re-execution, dependency substitution, or side-effect simulation.
 
 ### Coding Outcome Benchmark
 
@@ -4313,9 +4329,8 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- interactive TUI, branch CLI command, SDK/RPC, ACP, Desktop,
-  persistent browser, and data/research capability slices over the same
-  Runtime and Ledger;
+- interactive TUI, SDK/RPC, ACP, Desktop, persistent browser, and
+  data/research capability slices over the same Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;
 - fixed Capability & Outcome benchmarks centered on task success, recovery,

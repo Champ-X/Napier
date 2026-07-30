@@ -9966,6 +9966,46 @@ describe("Napier HTTP goal flow", () => {
       threadCountBeforeInvalidBranch,
     );
 
+    const missingSourceResponse = await app.request(
+      "/api/threads/thread_missing_branch/branches",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          fromSeq: 1,
+          title: "Missing source branch",
+        }),
+      },
+    );
+    expect(missingSourceResponse.status).toBe(404);
+    expect(await missingSourceResponse.json()).toEqual({
+      error: "Thread not found: thread_missing_branch",
+    });
+    expect(services.store.listThreads()).toHaveLength(
+      threadCountBeforeInvalidBranch,
+    );
+
+    const futureBranchResponse = await app.request(
+      `/api/threads/${created.thread.id}/branches`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          fromSeq: detail.events.at(-1)!.seq + 1,
+          title: "Future branch",
+        }),
+      },
+    );
+    expect(futureBranchResponse.status).toBe(400);
+    expect(await futureBranchResponse.json()).toEqual(
+      expect.objectContaining({
+        error: "Thread branch sequence exceeds the source Ledger",
+      }),
+    );
+    expect(services.store.listThreads()).toHaveLength(
+      threadCountBeforeInvalidBranch,
+    );
+
     const branchResponse = await app.request(
       `/api/threads/${created.thread.id}/branches`,
       {

@@ -6,6 +6,7 @@ import type { Writable } from "node:stream";
 import type { RunEvent, RunRecord, StreamFrame } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
+  createThreadBranch,
   hashEventStream,
   streamRunDoneFrame,
   streamRunErrorFrame,
@@ -19,6 +20,7 @@ import {
   CLI_VERSION,
   parseCliArgs,
   type CliAction,
+  type CliBranchOptions,
   type CliExecutionOptions,
   type CliResumeOptions,
   type CliRunOptions,
@@ -72,9 +74,13 @@ export async function runCli(
     await writeLine(io.stdout, CLI_VERSION);
     return 0;
   }
-  return action.kind === "run"
-    ? executeRun(action.options, io, dependencies, parentSignal)
-    : executeResume(action.options, io, dependencies, parentSignal);
+  if (action.kind === "run") {
+    return executeRun(action.options, io, dependencies, parentSignal);
+  }
+  if (action.kind === "resume") {
+    return executeResume(action.options, io, dependencies, parentSignal);
+  }
+  return executeBranch(action.options, io, dependencies, parentSignal);
 }
 
 async function executeRun(
@@ -137,6 +143,79 @@ async function executeResume(
   );
 }
 
+async function executeBranch(
+  options: CliBranchOptions,
+  io: CliIo,
+  dependencies: RunCliDependencies,
+  parentSignal?: AbortSignal,
+): Promise<number> {
+  let services: LocalAgentRuntimeServices | undefined;
+  try {
+    parentSignal?.throwIfAborted();
+    const workspaceRoot = await canonicalWorkspace(options.workspace, io.cwd);
+    const dataRoot = path.resolve(
+      io.cwd,
+      options.dataRoot ?? path.join(workspaceRoot, ".napier"),
+    );
+    services = await dependencies.createRuntime({
+      workspaceRoot,
+      dataRoot,
+      env: io.env,
+    });
+    parentSignal?.throwIfAborted();
+    const result = await createThreadBranch(services.store, options.threadId, {
+      fromSeq: options.fromSeq,
+      ...(options.title ? { title: options.title } : {}),
+    });
+    if (options.jsonl) {
+      const eventWriter = new OrderedEventFrameWriter(
+        io.stdout,
+        result.detail.thread.id,
+        1,
+      );
+      for (const event of result.detail.events) {
+        await eventWriter.write(event);
+      }
+      await eventWriter.finish(result.detail.thread.eventCount);
+      const snapshot = streamSnapshotFrame(result.detail);
+      await writeJsonLine(io.stdout, snapshot);
+      await writeJsonLine(
+        io.stdout,
+        streamRunDoneFrame(
+          result.detail.thread.id,
+          result.run.id,
+          result.run.status,
+          snapshot.detailSha256,
+          snapshot.detailBytes,
+          snapshot.detail.thread.eventCount,
+          snapshot.eventBytes,
+          hashEventStream(snapshot.detail.events),
+        ),
+      );
+    } else {
+      await writeLine(io.stdout, result.detail.thread.id);
+      await writeLine(
+        io.stderr,
+        `Napier branch ${result.detail.thread.id} from ${result.sourceThreadId}#${String(result.sourceSeq)}`,
+      );
+    }
+    return 0;
+  } catch (error) {
+    const frame = streamRunErrorFrame(options.threadId, error);
+    if (options.jsonl) {
+      await writeJsonLine(io.stdout, frame);
+    } else {
+      await writeLine(
+        io.stderr,
+        `Napier branch failed: ${frame.message} (${frame.diagnosticSha256.slice(0, 12)})`,
+      );
+    }
+    return 1;
+  } finally {
+    await services?.shutdown().catch(() => undefined);
+  }
+}
+
 interface PreparedCliInvocation {
   threadId: string;
   invoke(
@@ -177,11 +256,7 @@ async function executeInvocation(
     threadId = invocation.threadId;
     const thread = services.store.getThread(threadId);
     const eventWriter = options.jsonl
-      ? new OrderedEventFrameWriter(
-          io.stdout,
-          thread.id,
-          thread.eventCount + 1,
-        )
+      ? new OrderedEventFrameWriter(io.stdout, thread.id, thread.eventCount + 1)
       : undefined;
     const onEvent = eventWriter
       ? async (event: RunEvent): Promise<void> => eventWriter.write(event)

@@ -6,14 +6,18 @@ const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 30 * 60 * 1_000;
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
+const MAX_BRANCH_TITLE_CHARS = 100;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
 
-export interface CliExecutionOptions {
+export interface CliWorkspaceOptions {
   workspace: string;
   dataRoot?: string;
+  jsonl: boolean;
+}
+
+export interface CliExecutionOptions extends CliWorkspaceOptions {
   model?: ModelRef;
   timeoutMs: number;
-  jsonl: boolean;
 }
 
 export interface CliRunOptions extends CliExecutionOptions {
@@ -28,11 +32,18 @@ export interface CliResumeOptions extends CliExecutionOptions {
   runId?: string;
 }
 
+export interface CliBranchOptions extends CliWorkspaceOptions {
+  threadId: string;
+  fromSeq: number;
+  title?: string;
+}
+
 export type CliAction =
   | { kind: "help" }
   | { kind: "version" }
   | { kind: "run"; options: CliRunOptions }
-  | { kind: "resume"; options: CliResumeOptions };
+  | { kind: "resume"; options: CliResumeOptions }
+  | { kind: "branch"; options: CliBranchOptions };
 
 const RUN_VALUE_OPTIONS = new Set([
   "--workspace",
@@ -52,6 +63,13 @@ const RESUME_VALUE_OPTIONS = new Set([
   "--run",
   "--timeout-ms",
 ]);
+const BRANCH_VALUE_OPTIONS = new Set([
+  "--workspace",
+  "--data-root",
+  "--thread",
+  "--from-seq",
+  "--title",
+]);
 
 export function parseCliArgs(argv: string[]): CliAction {
   if (argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
@@ -62,7 +80,7 @@ export function parseCliArgs(argv: string[]): CliAction {
     return { kind: "version" };
   }
   const command = argv[0];
-  if (command !== "run" && command !== "resume") {
+  if (command !== "run" && command !== "resume" && command !== "branch") {
     throw new Error("Unknown command");
   }
   if (argv.length === 2 && (argv[1] === "--help" || argv[1] === "-h")) {
@@ -70,11 +88,15 @@ export function parseCliArgs(argv: string[]): CliAction {
   }
   const { values, jsonl } = parseOptions(
     argv.slice(1),
-    command === "run" ? RUN_VALUE_OPTIONS : RESUME_VALUE_OPTIONS,
+    command === "run"
+      ? RUN_VALUE_OPTIONS
+      : command === "resume"
+        ? RESUME_VALUE_OPTIONS
+        : BRANCH_VALUE_OPTIONS,
   );
-  return command === "run"
-    ? parseRunOptions(values, jsonl)
-    : parseResumeOptions(values, jsonl);
+  if (command === "run") return parseRunOptions(values, jsonl);
+  if (command === "resume") return parseResumeOptions(values, jsonl);
+  return parseBranchOptions(values, jsonl);
 }
 
 function parseRunOptions(
@@ -137,6 +159,36 @@ function parseResumeOptions(
   };
 }
 
+function parseBranchOptions(
+  values: Map<string, string>,
+  jsonl: boolean,
+): Extract<CliAction, { kind: "branch" }> {
+  const rawTitle = values.get("--title");
+  const title = rawTitle?.replace(/\s+/gu, " ").trim();
+  if (
+    rawTitle !== undefined &&
+    (!title || title.length > MAX_BRANCH_TITLE_CHARS)
+  ) {
+    throw new Error(`--title must be 1-${MAX_BRANCH_TITLE_CHARS} characters`);
+  }
+  return {
+    kind: "branch",
+    options: {
+      workspace: requiredValue(values, "--workspace"),
+      threadId: requiredResourceId(values, "--thread"),
+      fromSeq: parsePositiveInteger(
+        requiredValue(values, "--from-seq"),
+        "--from-seq",
+      ),
+      jsonl,
+      ...(values.has("--data-root")
+        ? { dataRoot: requiredValue(values, "--data-root") }
+        : {}),
+      ...(title ? { title } : {}),
+    },
+  };
+}
+
 function parseOptions(
   argv: string[],
   allowedValues: ReadonlySet<string>,
@@ -168,10 +220,7 @@ function requiredValue(values: Map<string, string>, flag: string): string {
   return value;
 }
 
-function requiredResourceId(
-  values: Map<string, string>,
-  flag: string,
-): string {
+function requiredResourceId(values: Map<string, string>, flag: string): string {
   const value = requiredValue(values, flag);
   if (!RESOURCE_ID.test(value)) throw new Error(`${flag} is invalid`);
   return value;
@@ -185,9 +234,7 @@ function optionalResourceId(
   return requiredResourceId(values, flag);
 }
 
-function optionalModelRef(
-  values: Map<string, string>,
-): ModelRef | undefined {
+function optionalModelRef(values: Map<string, string>): ModelRef | undefined {
   return values.has("--model")
     ? parseModelRef(requiredValue(values, "--model"))
     : undefined;
@@ -205,6 +252,15 @@ function parseTimeout(value: string | undefined): number {
     throw new Error(`--timeout-ms must be ${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS}`);
   }
   return timeoutMs;
+}
+
+function parsePositiveInteger(value: string, flag: string): number {
+  if (!/^[0-9]+$/u.test(value)) throw new Error(`${flag} is invalid`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new Error(`${flag} must be a positive integer`);
+  }
+  return parsed;
 }
 
 function parseModelRef(value: string): ModelRef {
@@ -226,16 +282,20 @@ export const CLI_HELP = `Napier CLI ${CLI_VERSION}
 Usage:
   napier run --workspace <path> --prompt <text> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
+  napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
 
 Commands:
   run                    Start a new Run on a new or existing Thread
   resume                 Continue an interrupted Run as a linked child
+  branch                 Fork message history at an exact Ledger sequence
 
-Shared options:
+Workspace options:
   --data-root <path>     Napier state directory (default: <workspace>/.napier)
+  --jsonl                Emit StreamFrame JSON objects on stdout
+
+Run and resume options:
   --model <provider/id>  Model for this Run
   --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
-  --jsonl                Emit StreamFrame JSON objects on stdout
 
 Run options:
   --prompt <text>        User prompt for the Run
@@ -246,6 +306,11 @@ Run options:
 Resume options:
   --thread <thread-id>   Waiting Thread containing an interrupted Run
   --run <run-id>         Specific interrupted Run (default: latest)
+
+Branch options:
+  --thread <thread-id>   Source Thread
+  --from-seq <n>         Existing source Ledger sequence
+  --title <text>         Optional branch title
 
 Other:
   -h, --help             Show help
