@@ -102,6 +102,7 @@ import {
 } from "./model-context-envelope.js";
 import { JavascriptKernelManager } from "./javascript-kernel.js";
 import { createJavascriptKernelTool } from "./javascript-kernel-tool.js";
+import { createTypescriptAstTools } from "./typescript-ast-tool.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
   CombinedModelAdvisorBlockedError,
@@ -1176,6 +1177,13 @@ export class AgentRuntime {
           dataRoot: this.store.dataRoot,
           ...(patchObserver ? { patchObserver } : {}),
         }).filter((tool) => profile.enabledTools.includes(tool.name));
+    if (!advisorCorrection) {
+      tools.push(
+        ...createTypescriptAstTools(this.store.workspaceRoot).filter((tool) =>
+          profile.enabledTools.includes(tool.name),
+        ),
+      );
+    }
     if (
       !advisorCorrection &&
       profile.enabledTools.includes("workspace_file_preview") &&
@@ -3469,6 +3477,8 @@ function builtInToolEffect(
     toolName === "inspect_data" ||
     toolName === "inspect_code" ||
     toolName === "read_symbol" ||
+    toolName === "ast_query" ||
+    toolName === "ast_edit_preview" ||
     toolName === "lsp_diagnostics" ||
     toolName === "lsp_symbols" ||
     toolName === "lsp_definition" ||

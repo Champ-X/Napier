@@ -17,19 +17,19 @@ Audit date: 2026-07-30
 
 ## Priority Matrix
 
-| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                            |
-| --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                            |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, and a persistent synchronous JavaScript kernel now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                               |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, semantic TypeScript/JavaScript LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, plus write-linked diagnostic deltas exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP, AST edits, write-linked test/symbol association, and isolated subagent worktrees remain. |
-| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                 |
-| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                                                                                                                                                     |
-| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                                                                                                                                                           |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                                                                                                                                                               |
-| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                        |
-| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                              |
-| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                              |
-| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                       |
+| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                  |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, and a persistent synchronous JavaScript kernel now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                     |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, plus write-linked diagnostic deltas exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP, broader multi-node AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain. |
+| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                       |
+| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                                                                                                                                                                                                           |
+| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                                                                                                                                                                                                                 |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                                                                                                                                                                                                                     |
+| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                              |
+| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                    |
+| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                    |
+| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                             |
 
 ## Completed Slice: Read-Only Sandboxed Commands
 
@@ -1525,5 +1525,94 @@ Observed result:
   `sandbox-exec: sandbox_apply: Operation not permitted`; no direct-process
   fallback is used;
 - the complete repository gate passed 1057 tests with 16 opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: TypeScript AST Query and Edit Preview
+
+User scenario: a coding Agent can select an exact TypeScript or JavaScript
+syntax node, preview one structural change against current bytes, apply the
+reviewed result through the existing CAS primitive, and prove the result with
+real TypeScript rather than relying on regex ranges or model-reported success.
+
+Acceptance:
+
+- add opt-in `ast_query` and `ast_edit_preview` tools through the shared Agent
+  Runtime, profile, policy, safe recovery, Context guidance, Server SSE, and
+  Web Trace paths;
+- parse TypeScript, TSX, JavaScript, JSX, MTS, CTS, MJS, and CJS with the pinned
+  TypeScript compiler without starting a process, network client, or second
+  state system;
+- confine one <=1 MiB UTF-8 source file to the canonical workspace, reject
+  protected roots and symlinks, cap traversal at 100,000 nodes, and expose at
+  most 64 selected nodes under independent range/display/output budgets;
+- support bounded kind/name/ancestor selection for declarations, members,
+  imports, calls, parameters, variables, and arrow functions while returning
+  exact UTF-16 ranges and stable file/node hashes;
+- require both the current file SHA-256 and selected node SHA-256 before an
+  edit preview; reject stale file or node evidence;
+- preview replace, remove, insert-before, and insert-after without writing;
+  rebuild and parse the complete candidate source, reject syntax regressions,
+  expand line context until OLD text is unique, and return an exact OLD/NEW
+  replacement for `apply_patch`;
+- fail closed when insert/remove would reassign leading or trailing comments
+  to a different node; require an explicit reviewed replace for that case;
+- rehash the source after materialization and map native filesystem errors to
+  fixed path-free tool errors before they can reach a remote model;
+- keep paths, selector names, signatures, source, and replacements live-only;
+  retain only bounded metadata and hashes in Ledger, Replay, SSE history, and
+  Trace;
+- cover exact and missing selectors, duplicate-node context expansion, all
+  edit operations, malformed and oversized source, invalid UTF-8, path escape,
+  protected roots, symlinks, stale evidence, syntax regression, comment
+  trivia, cancellation, concurrency, policy, safe recovery, live-error privacy,
+  Replay, Agent apply, public SSE, Web projection, and real CAS-to-typecheck
+  dogfood.
+
+Threat boundary:
+
+- TypeScript source, symbol names, signatures, and replacement text are
+  untrusted model context. They cannot write a file, select another path, or
+  bypass policy and CAS freshness.
+- The compiler API parses syntax in the Runtime process but does not execute
+  source, load project plugins, resolve imports, invoke package managers, or
+  access the network. The 1 MiB file and 100,000-node limits bound this
+  in-process slice; hostile project-wide analysis remains in the OS-sandboxed
+  LSP path.
+- `ast_edit_preview` proves that one complete candidate file parses. It does
+  not prove type correctness, test success, formatting, semantic intent, or
+  behavior. Diagnostics and relevant verification remain mandatory after
+  `apply_patch`.
+- Node identity binds the exact file hash, kind, name, depth, range, text, and
+  nearest categorized parent. A fresh query is required after any write.
+- Comment ownership is not guessed. Ambiguous insert/remove operations fail
+  before preview instead of silently attaching documentation or trailing notes
+  to a new node.
+- Query and preview are read effects and may participate in safe read-only
+  recovery. The resulting `apply_patch` remains a write effect and is never
+  replayed automatically.
+- This slice does not provide a general transformation DSL, multi-node atomic
+  rewrite, cross-file refactor, formatter, typechecker, persistent compiler
+  session, DAP, or direct AST write.
+
+Observed result:
+
+- deterministic Agent and public HTTP/SSE runs completed
+  `ast_query -> ast_edit_preview -> apply_patch` through the shared Runtime,
+  changed the exact selected method, and produced valid path/name/source-free
+  durable evidence;
+- independent dogfood selected a real TypeScript method, generated the unique
+  exact replacement, committed it through production `applyWorkspacePatch`,
+  re-queried the changed node, and passed pinned `tsc --noEmit`;
+- review reproduced JSDoc and same-line trailing-comment reassociation in the
+  initial insertion implementation. The final boundary rejects those previews
+  and has regressions for insert-before, insert-after, and remove;
+- review also reproduced an absolute workspace path in a native `realpath`
+  error. The final Agent regression proves the next model call and Ledger see
+  only a fixed path-free failure;
+- Runtime, Agent, Server, Replay, and Web tests cover the vertical path, while
+  the main production code remains split across focused AST model, source,
+  runner, tool, and Trace modules rather than extending Store or Server.
+- the complete repository gate passed 1069 tests with 16 opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.

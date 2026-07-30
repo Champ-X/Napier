@@ -41,6 +41,11 @@ import {
   commandToolOutputLedgerProjection,
 } from "./command-execution.js";
 import {
+  typescriptAstToolCallArgumentsLedgerProjection,
+  typescriptAstToolInputLedgerProjection,
+  typescriptAstToolOutputLedgerProjection,
+} from "./typescript-ast-tool.js";
+import {
   workspaceFileToolCallArgumentsLedgerProjection,
   workspaceFileToolInputLedgerProjection,
   workspaceFileToolOutputLedgerProjection,
@@ -65,6 +70,9 @@ export function agentToolCallArgumentsLedgerProjection(
   }
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "ast_query" || toolName === "ast_edit_preview") {
+    return typescriptAstToolCallArgumentsLedgerProjection(toolName, args);
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolCallArgumentsLedgerProjection(args);
@@ -109,6 +117,9 @@ export function agentToolInputLedgerProjection(
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolInputLedgerProjection(args);
   }
+  if (toolName === "ast_query" || toolName === "ast_edit_preview") {
+    return typescriptAstToolInputLedgerProjection(toolName, args);
+  }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolInputLedgerProjection(args);
   }
@@ -152,6 +163,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "ast_query" || toolName === "ast_edit_preview") {
+    return typescriptAstToolOutputLedgerProjection(output, result);
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolOutputLedgerProjection(output, result);

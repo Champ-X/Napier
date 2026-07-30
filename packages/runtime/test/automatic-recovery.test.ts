@@ -366,6 +366,8 @@ describe("safe automatic recovery", () => {
         "inspect_data",
         "inspect_code",
         "read_symbol",
+        "ast_query",
+        "ast_edit_preview",
         "lsp_diagnostics",
         "lsp_symbols",
         "lsp_definition",
@@ -422,6 +424,8 @@ describe("safe automatic recovery", () => {
           "inspect_data",
           "inspect_code",
           "read_symbol",
+          "ast_query",
+          "ast_edit_preview",
         ]);
         expect(JSON.stringify(context.messages)).toContain(
           "safe read-only recovery attempt",
@@ -477,6 +481,8 @@ describe("safe automatic recovery", () => {
         executionMode: "safe_read_only_recovery",
         toolPolicy: "observe",
         enabledTools: [
+          "ast_edit_preview",
+          "ast_query",
           "inspect_code",
           "inspect_data",
           "list_files",

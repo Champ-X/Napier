@@ -18,6 +18,8 @@ const READ_ONLY_TOOLS = new Set([
   "inspect_data",
   "inspect_code",
   "read_symbol",
+  "ast_query",
+  "ast_edit_preview",
   "web_fetch",
   "web_search",
 ]);

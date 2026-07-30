@@ -6,6 +6,24 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added real TypeScript/JavaScript AST query and no-write structural edit
+  previews. The opt-in `ast_query` tool uses the pinned TypeScript compiler to
+  select bounded syntax nodes by kind, name, and ancestor and returns exact
+  live-only ranges, signatures, file hashes, and node hashes.
+  `ast_edit_preview` binds a replace, remove, insert-before, or insert-after to
+  the current file and node hashes, reparses the complete candidate file,
+  expands context until the OLD text is unique, rechecks source freshness, and
+  returns one exact replacement for the existing CAS `apply_patch` tool.
+  Ambiguous comment trivia fails closed instead of silently reassigning JSDoc
+  or trailing comments. Canonical path, protected-root, symlink, UTF-8, file,
+  traversal, range, replacement, and output limits apply before source reaches
+  the Agent; native filesystem errors are converted to path-free live
+  diagnostics. Source, paths, names, signatures, and replacements remain
+  absent from Ledger, Replay, Server SSE history, and Web Trace. Agent and
+  public HTTP dogfood complete query-to-preview-to-CAS application through the
+  shared Runtime, while independent dogfood re-queries the written node and
+  passes real TypeScript 5.9.3 `tsc --noEmit`. Review regressions cover comment
+  ownership and absolute-path error disclosure.
 - Added a persistent synchronous JavaScript kernel. The opt-in
   `javascript_kernel` Agent tool starts, evaluates, and cancels a Run-owned
   context through the existing `WorkspaceProcessManager`, fixed secret-free

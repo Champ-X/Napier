@@ -222,6 +222,121 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("PRIVATE_KERNEL");
   });
 
+  it("summarizes TypeScript AST evidence without paths, names, or source", () => {
+    const query = toolEvent("tool.completed", {
+      toolName: "ast_query",
+      status: "completed",
+      effect: "read",
+      output: "PRIVATE_AST_SOURCE",
+      details: {
+        kind: "napier.typescript-ast",
+        schemaVersion: 1,
+        action: "query",
+        status: "found",
+        complete: true,
+        truncated: false,
+        language: "typescript",
+        pathSha256: "1".repeat(64),
+        fileSha256: "2".repeat(64),
+        fileBytes: 500,
+        parseDiagnosticCount: 0,
+        visitedNodeCount: 40,
+        matchedNodeCount: 2,
+        returnedNodeCount: 2,
+        omittedNodeCount: 0,
+        rangeChars: 120,
+        displayBytes: 600,
+        nodeSetSha256: "3".repeat(64),
+        kindCountsSha256: "4".repeat(64),
+        typescriptVersion: "5.9.3",
+        durationMs: 7,
+        resultSha256: "5".repeat(64),
+        nodes: [{ name: "PRIVATE_AST_NAME" }],
+      },
+    });
+    const edit = toolEvent("tool.completed", {
+      toolName: "ast_edit_preview",
+      status: "completed",
+      effect: "read",
+      output: "PRIVATE_AST_REPLACEMENT",
+      details: {
+        kind: "napier.typescript-ast",
+        schemaVersion: 1,
+        action: "edit_preview",
+        operation: "replace",
+        language: "typescript",
+        targetKind: "method",
+        pathSha256: "1".repeat(64),
+        fileSha256: "2".repeat(64),
+        fileBytes: 500,
+        parseDiagnosticCount: 0,
+        targetNodeSha256: "6".repeat(64),
+        targetTextSha256: "7".repeat(64),
+        replacementBytes: 50,
+        replacementSha256: "8".repeat(64),
+        applicationOldBytes: 40,
+        applicationNewBytes: 50,
+        applicationOldSha256: "9".repeat(64),
+        applicationNewSha256: "a".repeat(64),
+        applicationContextExpanded: true,
+        afterFileSha256: "b".repeat(64),
+        afterFileBytes: 510,
+        visitedNodeCount: 40,
+        typescriptVersion: "5.9.3",
+        durationMs: 8,
+        resultSha256: "c".repeat(64),
+        replacement: "PRIVATE_AST_REPLACEMENT",
+      },
+    });
+
+    expect(toolEventTraceView(query)).toEqual({
+      toolName: "ast_query",
+      status: "completed",
+      effect: "read",
+      typescriptAstAction: "query",
+      typescriptAstStatus: "found",
+      typescriptAstLanguage: "typescript",
+      typescriptAstComplete: true,
+      typescriptAstTruncated: false,
+      typescriptAstVisitedNodeCount: 40,
+      typescriptAstMatchedNodeCount: 2,
+      typescriptAstReturnedNodeCount: 2,
+      typescriptAstOmittedNodeCount: 0,
+      typescriptAstDisplayBytes: 600,
+      typescriptAstDurationMs: 7,
+      typescriptAstVersion: "5.9.3",
+      typescriptAstPathSha256: "1".repeat(64),
+      typescriptAstFileSha256: "2".repeat(64),
+      typescriptAstNodeSetSha256: "3".repeat(64),
+      typescriptAstResultSha256: "5".repeat(64),
+    });
+    expect(toolEventTraceSummary(query)).toContain(
+      "ast query / ast-status found / ast-language typescript / ast-visited 40 / ast-matches 2 / ast-returned 2 / ast-omitted 0 / ast-display 600 / ast-complete",
+    );
+    expect(toolEventTraceView(edit)).toEqual({
+      toolName: "ast_edit_preview",
+      status: "completed",
+      effect: "read",
+      typescriptAstAction: "edit_preview",
+      typescriptAstLanguage: "typescript",
+      typescriptAstOperation: "replace",
+      typescriptAstTargetKind: "method",
+      typescriptAstApplicationContextExpanded: true,
+      typescriptAstDurationMs: 8,
+      typescriptAstVersion: "5.9.3",
+      typescriptAstPathSha256: "1".repeat(64),
+      typescriptAstFileSha256: "2".repeat(64),
+      typescriptAstTargetNodeSha256: "6".repeat(64),
+      typescriptAstAfterFileSha256: "b".repeat(64),
+      typescriptAstResultSha256: "c".repeat(64),
+    });
+    expect(toolEventTraceSummary(edit)).toContain(
+      "ast edit_preview / ast-language typescript / ast-operation replace / ast-target method / ast-context-expanded",
+    );
+    expect(toolEventTraceSummary(query)).not.toContain("PRIVATE_AST");
+    expect(toolEventTraceSummary(edit)).not.toContain("PRIVATE_AST");
+  });
+
   it("summarizes LSP diagnostic evidence without paths or messages", () => {
     const event = toolEvent("tool.completed", {
       toolName: "lsp_diagnostics",

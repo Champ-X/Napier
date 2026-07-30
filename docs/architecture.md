@@ -46,9 +46,9 @@ removal is a versioned contract change.
 - Pi model registration and agent-loop execution;
 - conversion from Pi events to Napier events;
 - tool assembly, canonical workspace-path checks, hash-aware literal search,
-  hash-bound atomic editing with Hashline-style line anchors, sandboxed
-  structured verification, explicit-argv read-only Node command
-  execution, and
+  bounded TypeScript AST query/edit previews, hash-bound atomic editing with
+  Hashline-style line anchors, sandboxed structured verification,
+  explicit-argv read-only Node command execution, and
   last-moment policy checks;
 - configurable Model Advisor gates that combine deterministic output checks
   with an optional distinct zero-tool review model before the user-visible
@@ -1758,6 +1758,25 @@ read_symbol
      range, and line-anchor set so Trace can show kind, range, counts,
      truncation, and hashes without rendering source, paths, names, or
      signatures
+ast_query
+  -> canonicalize one <=1 MiB TypeScript or JavaScript workspace file without
+     starting a process or granting a write capability
+  -> parse with the pinned TypeScript compiler and traverse at most 100,000
+     nodes using a bounded kind/name/ancestor selector
+  -> return exact live-only node names, UTF-16 ranges, signatures, and hashes
+  -> rehash the source after materialization; persist only language,
+     completeness, counts, budgets, version, latency, and hashes
+ast_edit_preview
+  -> require the current file SHA-256 plus one exact node SHA-256 from
+     ast_query and select the same node against freshly parsed bytes
+  -> build replace/remove/insert-before/insert-after output without writing,
+     rejecting insert/remove when comment trivia could change ownership
+  -> reparse the complete candidate file and expand line context until the
+     OLD text is unique under the existing exact-replacement semantics
+  -> recheck source freshness and return live-only OLD/NEW text for one
+     hash-bound apply_patch call
+  -> persist only operation, kind, byte counts, TypeScript version, latency,
+     and source/node/replacement/application/result hashes
 lsp_diagnostics
   -> canonicalize one TypeScript or JavaScript file inside the workspace
   -> reject symlinks, protected roots, invalid UTF-8, and files over 1 MiB
@@ -1996,10 +2015,11 @@ Agent selects lsp_code_actions + source path + diagnostic position
      apply_patch, then reruns diagnostics and behavior verification
 ```
 
-The Web projection follows the same module boundary: `lsp-tool-event-view.ts`
-dispatches strict LSP receipt views, while generic `tool-event-view.ts` only
-dispatches by tool name. Symbol, rename, and Code Action views live in separate
-lazy Trace modules. Rename and Code Action WorkspaceEdit parsing share
+The Web projection follows the same module boundary:
+`typescript-ast-event-view.ts` and `lsp-tool-event-view.ts` dispatch strict AST
+and LSP receipt views, while generic `tool-event-view.ts` only dispatches by
+tool name. Symbol, rename, and Code Action views live in separate lazy Trace
+modules. Rename and Code Action WorkspaceEdit parsing share
 `lsp-rename-workspace-edit.ts`.
 `lsp-code-action-diagnostics.ts`, `lsp-code-action-edits.ts`, and
 `lsp-code-actions.ts` separately own diagnostic selection, confined edit
@@ -4510,8 +4530,13 @@ The current boundary has thirty-two parts:
     reusing bounded Process Sessions and the read-only/offline OS Sandbox,
     with in-realm result rendering, terminal uncertain-state handling,
     hash-only durable evidence, and Agent/Server/Trace integration.
+37. bounded in-process TypeScript/JavaScript AST query and no-write structural
+    edit previews with file/node freshness, complete-file syntax reparse,
+    comment-trivia rejection, unique exact-patch output, CAS/typecheck
+    dogfood, hash-only durable evidence, and Agent/Server/Trace integration.
 
-`observe` permits only in-process read operations. `workspace` additionally
+`observe` permits only in-process read operations, including AST query and
+edit preview. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
 verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
 rename/quick-fix previews, explicit-argv command execution, persistent
@@ -4545,8 +4570,8 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 2: Coding and workflow
 
 - persistent LSP sessions with rename application, Code Action resolve/command
-  policy, DAP, AST edits, write-linked test/symbol association, and isolated
-  subagent worktrees;
+  policy, DAP, broader multi-node AST transforms, write-linked test/symbol
+  association, and isolated subagent worktrees;
 - typed executable Workflow nodes, checkpoint recovery, single-node tests,
   JSONL events, and a TypeScript SDK;
 - controlled re-execution from model, tool, and Workflow checkpoints.

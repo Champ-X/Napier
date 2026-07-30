@@ -2622,6 +2622,8 @@ export const AGENT_TOOL_NAMES = [
   "inspect_data",
   "inspect_code",
   "read_symbol",
+  "ast_query",
+  "ast_edit_preview",
   "lsp_diagnostics",
   "lsp_symbols",
   "lsp_definition",

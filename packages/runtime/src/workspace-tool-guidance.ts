@@ -16,6 +16,8 @@ export function formatWorkspaceToolGuidance(
     toolNames.has("inspect_code") ||
     toolNames.has("list_symbols") ||
     toolNames.has("read_symbol");
+  const hasAstQuery = toolNames.has("ast_query");
+  const hasAstEditPreview = toolNames.has("ast_edit_preview");
   const hasPatch = toolNames.has("apply_patch");
   const hasFilePreview = toolNames.has("workspace_file_preview");
   const hasFileApply = toolNames.has("workspace_file_apply");
@@ -31,6 +33,8 @@ export function formatWorkspaceToolGuidance(
   const hasLspCodeActions = toolNames.has("lsp_code_actions");
   if (
     !hasWorkspaceRead &&
+    !hasAstQuery &&
+    !hasAstEditPreview &&
     !hasPatch &&
     !hasFilePreview &&
     !hasFileApply &&
@@ -60,6 +64,16 @@ export function formatWorkspaceToolGuidance(
   if (hasCodeNavigation) {
     lines.push(
       "For code changes, use list_symbols, inspect_code, and read_symbol to bind edits to symbol lines, file hashes, and range hashes when available.",
+    );
+  }
+  if (hasAstQuery) {
+    lines.push(
+      "Use ast_query for exact TypeScript or JavaScript syntax nodes when heuristic symbols or LSP ranges are insufficient. Retain the file SHA-256 and nodeSha256 for any follow-up structural preview.",
+    );
+  }
+  if (hasAstEditPreview) {
+    lines.push(
+      "ast_edit_preview never writes. It requires the current file SHA-256 and a nodeSha256 from ast_query, reparses the complete result, and returns one unique OLD/NEW exact patch. Apply it through apply_patch and verify diagnostics plus behavior afterward.",
     );
   }
   if (hasLspDiagnostics) {

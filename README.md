@@ -65,6 +65,10 @@ Version `0.1.0` includes:
 - workspace-confined read, list, literal search, and structured data inspection
   tools with canonical realpath checks plus complete-file, entry-set,
   line-anchor, column-set, and sample SHA-256 evidence;
+- `ast_query` and `ast_edit_preview` tools for bounded, in-process
+  TypeScript/JavaScript syntax selection and no-write structural previews
+  bound to current file and node hashes; reviewed changes still pass through
+  the existing CAS patch and verification path;
 - a hash-bound `apply_patch` tool for atomic UTF-8 file creation, exact
   replacement, and Hashline-style line-anchor replacement under the explicit
   `workspace` policy, without general shell or file deletion;
@@ -1523,6 +1527,29 @@ optional context, emits line anchors for follow-up Hashline edits, and records
 file/range/signature/name hashes. Trace summaries show only kind, range,
 counts, truncation state, and hashes, never source text, paths, symbol names, or
 signatures.
+
+`ast_query` parses one current TypeScript, TSX, JavaScript, JSX, MTS, CTS, MJS,
+or CJS file with the pinned TypeScript compiler in the Runtime process. A
+bounded kind/name/ancestor selector returns exact syntax nodes, UTF-16 source
+ranges, signature previews, file hashes, and node hashes to the live Agent.
+The file is limited to 1 MiB and 100,000 visited nodes; paths must remain
+canonical workspace files outside protected roots, and malformed UTF-8 or
+syntax fails closed. Query source, paths, names, and signatures remain
+live-only. Ledger, Replay, Server SSE history, and Trace retain only language,
+completeness, counts, budgets, TypeScript version, latency, and hashes.
+
+`ast_edit_preview` binds a replace, remove, insert-before, or insert-after
+request to both the current file SHA-256 and one exact node SHA-256 from
+`ast_query`. It performs no write. Napier rebuilds and reparses the complete
+file, expands surrounding line context until the old text is unique, rechecks
+source freshness, and returns one exact OLD/NEW replacement for
+`apply_patch`. Insert/remove operations fail closed when leading or trailing
+comments could be reassociated with another node; a reviewed replacement can
+handle that case explicitly. Syntax validity is not type or behavior
+correctness, so the Agent must still run LSP diagnostics and relevant
+verification after CAS application. Native filesystem failures are mapped to
+path-free live errors, and durable evidence contains no source or replacement
+text.
 
 `lsp_diagnostics` establishes the semantic IDE runtime. It launches
 `typescript-language-server` 5.3.0 with TypeScript 5.9.3 over standard framed
@@ -3020,7 +3047,8 @@ channels should accept only intended operational data.
 
 The default Agent policy is `observe`:
 
-- read/list/search inside the workspace are allowed;
+- in-process read/list/search and AST preview operations inside the workspace
+  are allowed;
 - `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`, and
   `workspace_process` are not exposed;
 - workspace writes and process execution are blocked;
@@ -3036,6 +3064,9 @@ shell or inherited environment. **Background process** adds bounded
 start/input/poll/cancel lifecycle control over the same sandbox boundary.
 **JavaScript kernel** adds persistent synchronous state within one Agent Run,
 with bounded live-only values and fail-closed terminal outcomes.
+**TypeScript AST** adds exact in-process syntax queries and no-write structural
+previews; every resulting edit still returns through Atomic patch and explicit
+verification.
 **LSP diagnostics** adds one-file TypeScript/JavaScript semantic diagnostics,
 **LSP semantic symbols** adds exact current-document declarations and
 hierarchy, **LSP definition** and **LSP references** add workspace-confined

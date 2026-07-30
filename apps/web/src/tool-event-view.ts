@@ -5,6 +5,11 @@ import {
   type JavascriptKernelToolEventTraceView,
 } from "./javascript-kernel-event-view";
 import {
+  typescriptAstEventEvidence,
+  typescriptAstSummaryParts,
+  type TypescriptAstToolEventTraceView,
+} from "./typescript-ast-event-view";
+import {
   commandToolEventEvidence,
   commandToolEventSummaryParts,
   type CommandToolEventTraceView,
@@ -24,7 +29,8 @@ export interface ToolEventTraceView
   extends
     CommandToolEventTraceView,
     LspToolEventTraceView,
-    JavascriptKernelToolEventTraceView {
+    JavascriptKernelToolEventTraceView,
+    TypescriptAstToolEventTraceView {
   toolName: string;
   status: string;
   effect?: "read" | "write";
@@ -213,6 +219,10 @@ export function toolEventTraceView(
     toolName === "javascript_kernel"
       ? javascriptKernelEventEvidence(event.payload["details"])
       : undefined;
+  const typescriptAstEvidence =
+    toolName === "ast_query" || toolName === "ast_edit_preview"
+      ? typescriptAstEventEvidence(event.payload["details"])
+      : undefined;
   const patchEvidence =
     toolName === "apply_patch"
       ? applyPatchEvidence(event.payload["details"])
@@ -244,6 +254,7 @@ export function toolEventTraceView(
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
+    ...(typescriptAstEvidence ? typescriptAstEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(fileMutationEvidence ? fileMutationEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
@@ -426,6 +437,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
     ...commandToolEventSummaryParts(view),
     ...javascriptKernelSummaryParts(view),
+    ...typescriptAstSummaryParts(view),
     ...(view.patchOperation ? [`patch ${view.patchOperation}`] : []),
     ...(view.patchEditCount !== undefined
       ? [`edits ${view.patchEditCount}`]

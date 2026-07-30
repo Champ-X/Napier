@@ -21,6 +21,34 @@ describe("workspace policy", () => {
     expect(
       assessToolCall(
         "observe",
+        "ast_query",
+        { path: "src/index.ts", selector: { kind: "function" } },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "low",
+        reason: "read-only workspace operation",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "observe",
+        "ast_edit_preview",
+        {
+          path: "../outside.ts",
+          selector: { kind: "function" },
+          expectedSha256: "0".repeat(64),
+          nodeSha256: "1".repeat(64),
+          operation: "remove",
+        },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "observe",
         "apply_patch",
         { path: "README.md" },
         "/workspace",

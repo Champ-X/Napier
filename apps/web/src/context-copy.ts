@@ -121,6 +121,8 @@ export const contextCopy = {
     inspect_data: "Inspect data",
     inspect_code: "Inspect code",
     read_symbol: "Read symbol",
+    ast_query: "AST query",
+    ast_edit_preview: "AST edit preview",
     lsp_diagnostics: "LSP diagnostics",
     lsp_symbols: "LSP semantic symbols",
     lsp_definition: "LSP definition",

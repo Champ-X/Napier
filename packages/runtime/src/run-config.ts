@@ -57,6 +57,8 @@ const SAFE_RECOVERY_TOOLS = new Set([
   "inspect_data",
   "inspect_code",
   "read_symbol",
+  "ast_query",
+  "ast_edit_preview",
 ]);
 const V1_FINGERPRINT_KEYS = new Set([
   "schemaVersion",

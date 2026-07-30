@@ -28,6 +28,8 @@ const SAFE_READ_ONLY_TOOLS = new Set([
   "inspect_data",
   "inspect_code",
   "read_symbol",
+  "ast_query",
+  "ast_edit_preview",
   "lsp_diagnostics",
   "lsp_symbols",
   "lsp_definition",
