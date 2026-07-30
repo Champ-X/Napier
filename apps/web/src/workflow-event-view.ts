@@ -7,6 +7,7 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.failed",
   "workflow.node.reused",
   "workflow.approval.requested",
+  "workflow.deterministic.completed",
   "workflow.experiment.started",
   "workflow.experiment.compared",
   "workflow.experiment.failed",
@@ -142,6 +143,34 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `input-schema ${inputSchemaSha256.slice(0, 12)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,
     );
+  } else if (event.type === "workflow.deterministic.completed") {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const attempt = boundedInteger(payload["attempt"], 1, 3);
+    const templateSha256 = hash(payload["templateSha256"]);
+    const inputSha256 = hash(payload["inputSha256"]);
+    const outputSha256 = hash(payload["outputSha256"]);
+    const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
+    const outputBytes = boundedInteger(payload["outputBytes"], 0, 32 * 1024);
+    if (
+      !nodeIdValue ||
+      attempt === undefined ||
+      !templateSha256 ||
+      !inputSha256 ||
+      !outputSha256 ||
+      !outputSchemaSha256 ||
+      outputBytes === undefined
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `attempt ${String(attempt)}`,
+      `template ${templateSha256.slice(0, 12)}`,
+      `input ${inputSha256.slice(0, 12)}`,
+      `output ${outputSha256.slice(0, 12)}`,
+      `bytes ${String(outputBytes)}`,
+      `output-schema ${outputSchemaSha256.slice(0, 12)}`,
+    );
   } else if (event.type === "workflow.approval.requested") {
     const nodeIdValue = nodeId(payload["nodeId"]);
     const decisionId = safeDecisionId(payload["decisionId"]);
@@ -199,6 +228,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       const questionSha256 = hash(payload["questionSha256"]);
       if (!questionSha256) return undefined;
       parts.push(`approval ${questionSha256.slice(0, 12)}`);
+    } else if (payload["nodeType"] === "deterministic") {
+      const templateSha256 = hash(payload["templateSha256"]);
+      if (!templateSha256) return undefined;
+      parts.push(`deterministic ${templateSha256.slice(0, 12)}`);
     } else if (
       payload["nodeType"] !== undefined &&
       payload["nodeType"] !== "agent"

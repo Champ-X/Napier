@@ -832,6 +832,24 @@ export type ExecutionPlanWorkflowInputBinding =
       path?: ExecutionPlanWorkflowValuePathSegment[];
     };
 
+export type ExecutionPlanWorkflowDeterministicTemplate =
+  | {
+      kind: "literal";
+      value: JsonValue;
+    }
+  | {
+      kind: "input";
+      path?: ExecutionPlanWorkflowValuePathSegment[];
+    }
+  | {
+      kind: "object";
+      properties: Record<string, ExecutionPlanWorkflowDeterministicTemplate>;
+    }
+  | {
+      kind: "array";
+      items: ExecutionPlanWorkflowDeterministicTemplate[];
+    };
+
 export interface ExecutionPlanWorkflowAgentNode {
   id: string;
   type: "agent";
@@ -839,6 +857,17 @@ export interface ExecutionPlanWorkflowAgentNode {
   inputSchema: WorkflowObjectSchema;
   outputSchema: WorkflowValueSchema;
   model?: ModelRef;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
+export interface ExecutionPlanWorkflowDeterministicNode {
+  id: string;
+  type: "deterministic";
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowValueSchema;
+  template: ExecutionPlanWorkflowDeterministicTemplate;
   timeoutMs: number;
   maxAttempts: number;
 }
@@ -924,6 +953,7 @@ export const EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA = {
 
 export type ExecutionPlanWorkflowNode =
   | ExecutionPlanWorkflowAgentNode
+  | ExecutionPlanWorkflowDeterministicNode
   | ExecutionPlanWorkflowToolNode
   | ExecutionPlanWorkflowApprovalNode;
 

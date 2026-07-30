@@ -232,7 +232,7 @@ ExecutionPlanBlueprint
   -> defineExecutionPlanWorkflow()
   -> hash-bound napier.execution-plan-workflow manifest
   -> existing ExecutionPlan projection
-  -> source=workflow Run per ready Agent, Tool, or Approval node
+  -> source=workflow Run per ready Agent, Deterministic, Tool, or Approval node
   -> strict typed node result
   -> existing Plan transition and Work Ledger
 ```
@@ -246,6 +246,11 @@ timeouts; `workflow-tool-runtime.ts` owns leased direct execution; and
 `workflow-approval-node.ts` owns Approval Plan/recovery state,
 `workflow-approval-runtime.ts` owns leased request/continuation Runs, and
 `workflow-approval-model.ts` is the pure answer-to-output contract.
+`workflow-deterministic-model.ts` validates and resolves pure templates,
+`workflow-deterministic-runtime.ts` owns the leased model-free Run,
+`workflow-deterministic-node.ts` coordinates Plan transitions, and
+`workflow-deterministic-evidence.ts` verifies terminal evidence without
+growing the central Ledger coordinator.
 `workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
 reconstruction. `workflow-protocol.ts` validates HTTP/CLI requests, typed
 results, and final snapshot/event-stream-bound result frames. This keeps
@@ -257,14 +262,17 @@ creating state, creates the normal `ExecutionPlan`, freezes the target Agent
 revision in `workflow.started`, and executes one dependency-ready node at a
 time. Agent nodes are normal `AgentRuntime.runPrompt()` invocations with their
 manifest model override, timeout, AbortSignal, Run lease, policy, Sandbox,
-tools, and Ledger. Tool nodes create the same leased `source=workflow` Run but
-perform no model call. They select one of 18 stateless built-ins, validate
-literal/Workflow/dependency field-path bindings, TypeBox arguments, declared
-effect, enabled capability, Agent policy, workspace scope, and freshness before
-`tool.started`. JavaScript/Python kernels, Node debugger, and background
-Process Sessions and preview-bound workspace file mutations stay Run-owned
-Agent tools because a one-shot Tool node cannot honestly provide their
-persistent session lifecycle.
+tools, and Ledger. Deterministic nodes create the same leased Run and resolve a
+bounded pure JSON template over their typed input. The only primitives are
+literal JSON, bounded field selection, object construction, and array
+construction; there is no model, tool, JavaScript, JSONPath, interpolation, or
+expression evaluation. Tool nodes also perform no model call. They select one
+of 18 stateless built-ins, validate literal/Workflow/dependency field-path
+bindings, TypeBox arguments, declared effect, enabled capability, Agent policy,
+workspace scope, and freshness before `tool.started`. JavaScript/Python
+kernels, Node debugger, background Process Sessions, and preview-bound
+workspace file mutations stay Run-owned Agent tools because a one-shot node
+cannot honestly provide their persistent session lifecycle.
 
 Approval nodes reuse the existing operator-decision state machine rather than
 adding approval storage. The first leased `source=workflow` Run transitions the
@@ -276,33 +284,41 @@ unblocks descendants. Rejection, cancellation, invalid selection, or durable
 deadline expiry blocks the Plan.
 
 The Agent-node prompt labels Workflow input as untrusted data and requires
-exactly one JSON value. Tool-node output is its structured `details`, never the
-tool's model-facing text body. Runtime schema validation occurs before the Plan
-step completes. Generic tool arguments and text are reduced to bytes/hash in
-Tool-node Ledger evidence, while the typed structured output remains bound for
-recovery and delivery. Workflow-specific Trace summaries retain only safe
-identifiers, declared effect, status, error codes, and hash prefixes.
+exactly one JSON value. Deterministic output is schema-checked before terminal
+evidence and stored as hidden assistant data; the terminal Workflow event
+contains only template/input/output/schema hashes and output bytes. Tool-node
+output is its structured `details`, never the tool's model-facing text body.
+Runtime schema validation occurs before the Plan step completes. Generic tool
+arguments and text are reduced to bytes/hash in Tool-node Ledger evidence,
+while typed structured output remains bound for recovery and delivery.
+Workflow-specific Trace summaries retain only safe identifiers, declared
+effect, status, byte counts, error codes, and hash prefixes.
 
 Resume accepts the original Manifest plus Plan ID, recovers the original input
 and frozen Agent revision from `workflow.started`, and revalidates both against
-the target Thread. Agent output is reconstructed from its bound assistant
-event; Tool output requires a unique terminal tool event bound to
+the target Thread. Agent and Deterministic output are reconstructed from bound
+assistant evidence; Deterministic recovery additionally requires one terminal
+event bound to template, attempt, input, output, bytes, and schema. Tool output
+requires a unique terminal tool event bound to
 Plan/node/tool/effect/input/output hashes. Recovery also handles process-exit
-windows between tool completion, Run settlement, Plan transition, and Workflow
+windows between terminal output, Run settlement, Plan transition, and Workflow
 event commits. `tool.started` without terminal evidence becomes
 `run_interrupted` and is never rerun silently. A valid `tool.completed` can
 settle the same interrupted Run through the internal blocked-step recovery
-transition without manufacturing a second Run or tool call. Approval recovery
+transition without manufacturing a second Run or tool call. A started-only
+interrupted Deterministic node may be recomputed automatically up to its
+Manifest `maxAttempts`; a valid terminal output is recovered instead, and
+tampered or duplicate terminal evidence fails closed. Approval recovery
 recomputes expiry from the decision timestamp plus Manifest timeout, validates
 unique request and continuation evidence, and reconstructs output from the
-authoritative operator-decision projection. Duplicate or mismatched bindings
-fail closed.
+authoritative operator-decision projection.
 
 Workflow-owned Runs are excluded from generic manual and automatic Run
-recovery. Only Workflow resume may inspect them, and only explicit
-`retryBlocked=true` reopens a node whose attempt limit is not exhausted.
-Unknown side effects are never silently rerun. Concurrent execution of two
-Workflows on one Thread is rejected by the shared Runtime instance.
+recovery. Only Workflow resume may inspect them. It automatically reopens only
+a proved started-only Deterministic attempt; all other blocked nodes require
+explicit `retryBlocked=true` and an unexhausted attempt limit. Unknown side
+effects are never silently rerun. Concurrent execution of two Workflows on one
+Thread is rejected by the shared Runtime instance.
 
 CLI JSONL and HTTP SSE emit normal event frames followed by one snapshot and a
 `workflow_result` frame. The frame independently validates every node/output
@@ -321,7 +337,7 @@ source Thread + Plan + source Manifest
   -> require exact preview confirmation for write/unknown effects
   -> create independent target Thread and normal ExecutionPlan
   -> materialize verified ancestors as source=workflow_reuse control Runs
-  -> execute selected Agent/Tool/Approval node and descendants through Workflow Runtime
+  -> execute selected Agent/Deterministic/Tool/Approval node and descendants through Workflow Runtime
   -> align source/target node evidence and derive target-minus-source metrics
   -> append privacy-bounded workflow.experiment.compared evidence
   -> emit target snapshot + workflow_experiment_result
@@ -387,13 +403,13 @@ bounds cover the Runtime's 5.5 MiB legal terminal-frame maximum plus the new
 target Thread Snapshot. Experiment SSE responses override the streaming
 helper's default cache policy with `Cache-Control: no-store`.
 
-Schema version 1 is intentionally narrow: Agent nodes, stateless built-in Tool
-nodes, durable binary Approval gates, literal/field-path typed bindings,
-sequential dependency-ready DAG scheduling, cancellation, timeout, explicit
-retry, and restart recovery. It does not yet implement deterministic nodes,
-general multi-option decision nodes, stateful session Tool nodes, parallel
-execution, conditions, loops, Map/Reduce, compensation, per-node breakpoints,
-external Agent adapters, or artifact settlement.
+Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
+nodes, stateless built-in Tool nodes, durable binary Approval gates,
+literal/field-path typed bindings, sequential dependency-ready DAG scheduling,
+cancellation, timeout, explicit retry, and restart recovery. It does not yet
+implement general multi-option decision nodes, stateful session Tool nodes,
+parallel execution, conditions, loops, Map/Reduce, compensation, per-node
+breakpoints, external Agent adapters, or artifact settlement.
 
 ### Coding Outcome Benchmark
 
@@ -4921,10 +4937,10 @@ deferred until the local P0-P9 product loop is stable.
   policy, Node attach/source-map/multi-thread DAP and debugger UX, broader
   multi-node AST transforms, write-linked test/symbol association, and isolated
   subagent worktrees;
-- extend typed Agent/Tool/Approval DAG execution with deterministic and
-  stateful session nodes, parallelism, control flow, compensation, single-node
-  tests and breakpoints, external Agent adapters, artifact settlement, and a
-  visual builder;
+- extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
+  session nodes, parallelism, control flow, compensation, single-node tests and
+  breakpoints, external Agent adapters, artifact settlement, and a visual
+  builder;
 - extend controlled Workflow checkpoint re-execution with model-call/tool-call
   checkpoints, side-effect simulation, dependency replacement, batch
   experiments, interactive root-cause views, and evaluation promotion.

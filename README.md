@@ -35,9 +35,11 @@ Version `0.1.0` includes:
   and domain services as the HTTP/Web path;
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
-  nodes, model-free Tool nodes, and durable human Approval gates, strict JSON
-  output, declared tool effects, policy/schema preflight, explicit retry,
-  restart reconstruction, and shared CLI/HTTP/Web/Trace evidence;
+  nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
+  nodes, and durable human Approval gates, strict JSON output, declared tool
+  effects, policy/schema preflight, explicit retry, safe pure-node
+  recomputation, restart reconstruction, and shared CLI/HTTP/Web/Trace
+  evidence;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -421,11 +423,11 @@ npm run --silent napier -- workflow \
 Generate manifests from an existing `ExecutionPlanBlueprint` with the exported
 TypeScript `defineExecutionPlanWorkflow()` helper. It binds the Blueprint DAG,
 runtime input/output schemas, literal or field-path node input bindings,
-Agent-node models, Tool-node names/effects, Approval questions/choices,
-timeouts, and attempt limits into one stable content hash. JSONL emits ordered
-Ledger event frames, one authoritative snapshot, and one hash-bound
-`workflow_result` frame. Resume or explicitly retry a blocked node without
-supplying the input again:
+Agent-node models, bounded Deterministic templates, Tool-node names/effects,
+Approval questions/choices, timeouts, and attempt limits into one stable
+content hash. JSONL emits ordered Ledger event frames, one authoritative
+snapshot, and one hash-bound `workflow_result` frame. Resume or explicitly
+retry a blocked node without supplying the input again:
 
 ```bash
 npm run --silent napier -- workflow \
@@ -2337,14 +2339,17 @@ items, strings, enums, and encoded bytes before execution.
 `ExecutionPlanWorkflowRuntime` creates the normal durable `ExecutionPlan` and a
 real `source=workflow` Run for every ready node. The Workflow freezes the target
 Thread's Agent revision at start. Agent nodes invoke `AgentRuntime` with
-isolated message history and strict JSON output. Tool nodes invoke one
-allowlisted stateless built-in directly, with no model call, after enabled-tool,
-TypeBox argument, declared `read`/`write` effect, Agent policy, workspace scope,
-and freshness checks. Their schema-validated structured details become the
-typed node output. Stateful JavaScript/Python kernels, Node debugger,
-background Process Sessions, and preview-bound workspace file mutations remain
-Run-owned Agent tools rather than pretending to persist across one-shot Tool
-nodes.
+isolated message history and strict JSON output. Deterministic nodes resolve a
+bounded recursive template made only of literal JSON, input field selection,
+object construction, and array construction. They perform no model or tool
+call and expose no JavaScript, JSONPath, interpolation, or expression engine.
+Tool nodes invoke one allowlisted stateless built-in directly, with no model
+call, after enabled-tool, TypeBox argument, declared `read`/`write` effect,
+Agent policy, workspace scope, and freshness checks. Their schema-validated
+structured details become the typed node output. Stateful JavaScript/Python
+kernels, Node debugger, background Process Sessions, and preview-bound
+workspace file mutations remain Run-owned Agent tools rather than pretending
+to persist across one-shot nodes.
 
 Approval nodes create a leased model-free request Run, bind a fixed
 approve/reject question and the upstream input hash, record the existing
@@ -2355,16 +2360,18 @@ deadline expiry blocks the Plan. The question and choices are Manifest code,
 not an evaluated template. The generic Agent continuation path rejects
 Workflow-owned decisions.
 
-Resume reconstructs Agent output from bound assistant evidence and Tool output
-from the exact terminal tool event, then verifies node identity, effect,
-input/output/schema hashes, and Run ownership. Approval recovery additionally
-binds the unique decision request, request digest, attempt, expiry, answer, and
-continuation Run. A restart with only `tool.started` becomes one
-`run_interrupted` blocked attempt and is never rerun automatically. If
-`tool.completed` committed before Run settlement was interrupted, the same
-terminal Run can recover the Plan step without executing the tool again.
-Generic manual and automatic Run recovery reject Workflow-owned Runs; only
-Workflow resume and explicit bounded `--retry-blocked` can continue the graph.
+Resume reconstructs Agent and Deterministic output from bound assistant
+evidence and Tool output from the exact terminal tool event, then verifies
+node/template identity, effect, input/output/schema hashes, and Run ownership.
+Approval recovery additionally binds the unique decision request, request
+digest, attempt, expiry, answer, and continuation Run. A restart with only
+`tool.started` becomes one `run_interrupted` blocked attempt and is never
+rerun automatically. If `tool.completed` committed before Run settlement was
+interrupted, the same terminal Run can recover the Plan step without executing
+the tool again. A Deterministic node with no terminal output can be
+automatically recomputed inside the same Manifest up to `maxAttempts`; a bound
+terminal output repairs commit gaps instead of being recomputed. Generic
+manual and automatic Run recovery still reject Workflow-owned Runs.
 
 `POST /api/threads/:threadId/workflows` exposes the same execution as SSE.
 Both HTTP and CLI finish with `ExecutionPlanWorkflowResultFrame`, binding the
@@ -2415,12 +2422,12 @@ answered gates instruct the user to resume through the original Workflow
 Manifest. Approval checkpoints can be reused after verification or rerun into
 an isolated `waiting` experiment target, and never accept a model override.
 
-Version 1 intentionally supports Agent, stateless built-in Tool, and durable
-Approval nodes with sequential dependency-ready DAG scheduling. Deterministic
-nodes, stateful session Tool nodes, parallel execution, Map/Reduce, conditions,
-loops, compensation, per-node breakpoints, adapter runtimes, artifact
-settlement, and a visual builder remain open. Checkpoint experiments do not yet
-provide model-call/tool-call
+Version 1 intentionally supports Agent, bounded Deterministic, stateless
+built-in Tool, and durable Approval nodes with sequential dependency-ready DAG
+scheduling. Stateful session Tool nodes, parallel execution, Map/Reduce,
+conditions, loops, compensation, per-node breakpoints, adapter runtimes,
+artifact settlement, and a visual builder remain open. Checkpoint experiments
+do not yet provide model-call/tool-call
 single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
 batch experiments, an interactive root-cause timeline, or Evaluation
 promotion. The opt-in DeepSeek CLI smoke executes and checkpoint-reruns one

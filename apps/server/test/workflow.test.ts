@@ -312,6 +312,115 @@ describe("Workflow HTTP path", () => {
     ).toEqual(["workflow"]);
   });
 
+  it("executes a model-free Deterministic Workflow through the public SSE route", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-deterministic-workflow-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: new UnsupportedSandboxAdapter(
+        "server-deterministic-workflow-test",
+      ),
+    });
+    openServices.push(services);
+    const blueprintThread = services.store.listThreads()[0]!;
+    const blueprintPlan = await services.store.createPlan(blueprintThread.id, {
+      objective: "Shape one typed HTTP result without a model.",
+      steps: [
+        {
+          id: "report",
+          title: "Report",
+          description: "Shape the Workflow input.",
+          verification: "Return a deterministic typed report.",
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      blueprintThread.id,
+      blueprintPlan.id,
+    );
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP Deterministic report",
+      version: 1,
+      description: "Execute one model-free Deterministic node.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: reportSchema(),
+      outputNodeId: "report",
+      nodes: [
+        {
+          id: "report",
+          type: "deterministic",
+          inputBindings: {
+            workflow: { source: "workflow" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: { workflow: requestSchema() },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema: reportSchema(),
+          template: {
+            kind: "object",
+            properties: {
+              report: {
+                kind: "literal",
+                value: "PRIVATE_HTTP_DETERMINISTIC_OUTPUT",
+              },
+              approved: { kind: "literal", value: true },
+            },
+          },
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+    });
+    const targetThread = await services.store.createThread({
+      title: "HTTP Deterministic Workflow target",
+      agentId: blueprintThread.agentId,
+    });
+    const response = await createApp(services).request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { request: "Shape the HTTP result." },
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const frames = parseSseFrames(await response.text());
+    const frame = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(frame.result.output).toEqual({
+      report: "PRIVATE_HTTP_DETERMINISTIC_OUTPUT",
+      approved: true,
+    });
+    const events = await services.store.listEvents(targetThread.id);
+    expect(events.some((event) => event.type === "model.response")).toBe(false);
+    expect(
+      events.filter(
+        (event) => event.type === "workflow.deterministic.completed",
+      ),
+    ).toHaveLength(1);
+    expect(
+      JSON.stringify(
+        events.filter((event) => event.type.startsWith("workflow.")),
+      ),
+    ).not.toContain("PRIVATE_HTTP_DETERMINISTIC_OUTPUT");
+    expect(
+      services.store.listRuns(targetThread.id).map((run) => run.source),
+    ).toEqual(["workflow"]);
+  });
+
   it("answers and resumes a model-free Approval through public HTTP routes", async () => {
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-server-approval-workflow-"),

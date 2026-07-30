@@ -2,19 +2,21 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type {
-  ExecutionPlan,
-  ExecutionPlanWorkflowManifest,
-  JsonValue,
-  WorkflowObjectSchema,
+import {
+  emptyUsage,
+  EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+  type ExecutionPlan,
+  type ExecutionPlanWorkflowManifest,
+  type JsonValue,
+  type WorkflowObjectSchema,
 } from "@napier/contracts";
-import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
+import { executionPlanWorkflowDeterministicTemplateSha256 } from "../src/workflow-deterministic-model.js";
 import {
   createExecutionPlanBlueprint,
   executionPlanRequestFromBlueprint,
@@ -320,6 +322,70 @@ describe("Execution Plan Workflow recovery", () => {
     reopened.store.close();
   });
 
+  it("automatically recomputes a started-only Deterministic node after restart", async () => {
+    const fixture = await createDeterministicFixture();
+    const seeded = await seedRunningDeterministicNode(fixture, false);
+    fixture.store.close();
+
+    const reopened = await reopen(fixture);
+    const result = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: seeded.plan.id,
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { summary: "Recover deterministic input.", count: 1 },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            attempt: 2,
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    expect(
+      reopened.store.listRuns(fixture.threadId).map((run) => run.status),
+    ).toEqual(["interrupted", "completed"]);
+    const events = await reopened.store.listEvents(fixture.threadId);
+    expect(
+      events.filter((event) => event.type === "workflow.node.started"),
+    ).toHaveLength(2);
+    expect(
+      events.filter(
+        (event) => event.type === "workflow.deterministic.completed",
+      ),
+    ).toHaveLength(1);
+    reopened.store.close();
+  });
+
+  it("fails closed on a tampered terminal Deterministic output after restart", async () => {
+    const fixture = await createDeterministicFixture();
+    const seeded = await seedRunningDeterministicNode(fixture, true, true);
+    fixture.store.close();
+
+    const reopened = await reopen(fixture);
+    await expect(
+      reopened.workflows.run({
+        threadId: fixture.threadId,
+        request: {
+          manifest: fixture.manifest,
+          planId: seeded.plan.id,
+        },
+      }),
+    ).rejects.toThrow("output evidence hash mismatch");
+    expect(reopened.store.listRuns(fixture.threadId)).toHaveLength(1);
+    expect(reopened.store.getPlan(seeded.plan.id).steps[0]?.status).toBe(
+      "blocked",
+    );
+    reopened.store.close();
+  });
+
   it("resumes a durable Approval answer after restart", async () => {
     const fixture = await createApprovalFixture();
     const runtime = new ExecutionPlanWorkflowRuntime(
@@ -504,6 +570,48 @@ async function createToolFixture(): Promise<RecoveryFixture> {
           additionalProperties: false,
         },
         outputSchema: listFilesReceiptSchema(),
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  return fixture;
+}
+
+async function createDeterministicFixture(): Promise<RecoveryFixture> {
+  const fixture = await createFixture();
+  fixture.manifest = defineExecutionPlanWorkflow({
+    name: "Recovery deterministic projection",
+    version: 1,
+    description: "Recover one pure Deterministic node.",
+    blueprint: fixture.manifest.blueprint,
+    inputSchema: requestSchema(),
+    outputSchema: inspectionSchema(),
+    outputNodeId: "inspect",
+    nodes: [
+      {
+        id: "inspect",
+        type: "deterministic",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: inspectionSchema(),
+        template: {
+          kind: "object",
+          properties: {
+            summary: {
+              kind: "input",
+              path: ["workflow", "request"],
+            },
+            count: { kind: "literal", value: 1 },
+          },
+        },
         timeoutMs: 5_000,
         maxAttempts: 2,
       },
@@ -769,6 +877,126 @@ async function seedRunningToolNode(
         workflowOutputSha256: tamperedOutputSha256
           ? "f".repeat(64)
           : sha256(canonicalJson(output)),
+      },
+    });
+  }
+  return { plan, runId: run.id };
+}
+
+async function seedRunningDeterministicNode(
+  fixture: RecoveryFixture,
+  terminal: boolean,
+  tamperedOutputSha256 = false,
+): Promise<{ plan: ExecutionPlan; runId: string }> {
+  const input: JsonValue = { request: "Recover deterministic input." };
+  const thread = fixture.store.getThread(fixture.threadId);
+  const agent = fixture.store.getAgent(thread.agentId);
+  const node = fixture.manifest.nodes[0]!;
+  if (node.type !== "deterministic") {
+    throw new Error("Deterministic recovery fixture is invalid");
+  }
+  const plan = await fixture.store.createPlan(
+    fixture.threadId,
+    executionPlanRequestFromBlueprint(fixture.manifest.blueprint),
+  );
+  await fixture.store.appendEvent({
+    threadId: fixture.threadId,
+    runId: "runctl_workflow_deterministic_recovery",
+    type: "workflow.started",
+    category: "plan",
+    visibility: "user",
+    payload: {
+      schemaVersion: 1,
+      planId: plan.id,
+      manifestSha256: fixture.manifest.contentSha256,
+      blueprintSha256: fixture.manifest.blueprint.contentSha256,
+      workflowVersion: fixture.manifest.version,
+      nodeCount: 1,
+      agentId: agent.id,
+      agentRevision: agent.revision,
+      input,
+      inputSha256: sha256(canonicalJson(input)),
+      inputSchemaSha256: workflowSchemaSha256(fixture.manifest.inputSchema),
+      outputSchemaSha256: workflowSchemaSha256(fixture.manifest.outputSchema),
+      outputNodeId: fixture.manifest.outputNodeId,
+    },
+  });
+  const run = await fixture.store.createRun({
+    threadId: fixture.threadId,
+    agentId: thread.agentId,
+    agentRevision: agent.revision,
+    model: agent.model,
+    source: "workflow",
+  });
+  const started = await fixture.store.transitionPlanStep(plan.id, "inspect", {
+    action: "start",
+    runId: run.id,
+  });
+  const nodeInput: JsonValue = { workflow: input };
+  const inputSha256 = sha256(canonicalJson(nodeInput));
+  const templateSha256 = executionPlanWorkflowDeterministicTemplateSha256(
+    node.template,
+  );
+  await fixture.store.appendEvent({
+    threadId: fixture.threadId,
+    runId: run.id,
+    type: "workflow.node.started",
+    category: "plan",
+    visibility: "user",
+    payload: {
+      schemaVersion: 1,
+      planId: plan.id,
+      nodeId: node.id,
+      nodeType: "deterministic",
+      templateSha256,
+      attempt: 1,
+      manifestSha256: fixture.manifest.contentSha256,
+      inputSha256,
+      inputSchemaSha256: workflowSchemaSha256(node.inputSchema),
+      outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
+      planRevisionBefore: plan.revision,
+      planRevisionAfter: started.revision,
+      recovered: false,
+    },
+  });
+  if (terminal) {
+    const output: JsonValue = {
+      summary: "Recover deterministic input.",
+      count: 1,
+    };
+    const serializedOutput = canonicalJson(output);
+    await fixture.store.appendEvent({
+      threadId: fixture.threadId,
+      runId: run.id,
+      type: "message.assistant",
+      category: "message",
+      visibility: "hidden",
+      payload: {
+        role: "assistant",
+        text: serializedOutput,
+        model: "napier/workflow-deterministic",
+        usage: emptyUsage(),
+      },
+    });
+    await fixture.store.appendEvent({
+      threadId: fixture.threadId,
+      runId: run.id,
+      type: "workflow.deterministic.completed",
+      category: "plan",
+      visibility: "user",
+      payload: {
+        schemaVersion: 1,
+        planId: plan.id,
+        nodeId: node.id,
+        attempt: 1,
+        manifestSha256: fixture.manifest.contentSha256,
+        templateSha256,
+        inputSha256,
+        outputSha256: tamperedOutputSha256
+          ? "f".repeat(64)
+          : sha256(serializedOutput),
+        outputBytes: Buffer.byteLength(serializedOutput, "utf8"),
+        outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
       },
     });
   }

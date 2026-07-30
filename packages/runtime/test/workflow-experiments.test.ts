@@ -807,6 +807,110 @@ describe("Execution Plan Workflow experiments", () => {
     fixture.store.close();
   });
 
+  it("reruns and reuses a Deterministic checkpoint without a model call", async () => {
+    const fixture = await createFixture({ deterministicInspect: true });
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Deterministic checkpoint rerun","approved":true}',
+      ),
+    ]);
+    const preview = await fixture.experiments.preview(fixture.sourceThreadId, {
+      ...experimentRequest(fixture),
+      fromNodeId: "inspect",
+    });
+    expect(preview).toEqual(
+      expect.objectContaining({
+        reusedNodeIds: [],
+        rerunNodeIds: ["inspect", "report"],
+        requiresSideEffectConfirmation: false,
+        toolEffects: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            attemptCount: 1,
+            toolCallCount: 0,
+          }),
+          expect.objectContaining({ nodeId: "report" }),
+        ],
+      }),
+    );
+
+    const rerun = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+      },
+    });
+    expect(rerun.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Deterministic checkpoint rerun",
+          approved: true,
+        },
+      }),
+    );
+    expect(rerun.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "rerun",
+        modelChanged: false,
+        source: expect.objectContaining({ toolNames: [] }),
+        target: expect.objectContaining({ toolNames: [] }),
+      }),
+    );
+    const targetEvents = await fixture.store.listEvents(rerun.targetThreadId);
+    const deterministicRunId = rerun.result.nodeResults[0]?.runId;
+    expect(
+      targetEvents.filter(
+        (event) =>
+          event.type === "workflow.deterministic.completed" &&
+          event.runId === deterministicRunId,
+      ),
+    ).toHaveLength(1);
+    expect(
+      targetEvents.some(
+        (event) =>
+          event.type === "model.response" && event.runId === deterministicRunId,
+      ),
+    ).toBe(false);
+
+    await expect(
+      fixture.experiments.preview(fixture.sourceThreadId, {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+        modelOverrides: {
+          inspect: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      }),
+    ).rejects.toThrow("non-Agent node model");
+
+    fixture.alternate.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Deterministic checkpoint reused","approved":true}',
+      ),
+    ]);
+    const reused = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: experimentRequest(fixture, {
+        modelOverrides: {
+          report: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      }),
+    });
+    expect(reused.result.output).toEqual({
+      report: "Deterministic checkpoint reused",
+      approved: true,
+    });
+    expect(reused.result.nodeResults[0]?.output).toEqual(
+      fixture.sourceResult.nodeResults[0]?.output,
+    );
+    expect(
+      fixture.store.listRuns(reused.targetThreadId).map((run) => run.source),
+    ).toEqual(["workflow_reuse", "workflow"]);
+    fixture.store.close();
+  });
+
   it("reuses a verified Approval and reruns it as an isolated waiting checkpoint", async () => {
     const fixture = await createFixture({ approvalInspect: true });
     fixture.alternate.setResponses([
@@ -899,7 +1003,11 @@ interface Fixture {
 }
 
 async function createFixture(
-  options: { toolInspect?: boolean; approvalInspect?: boolean } = {},
+  options: {
+    toolInspect?: boolean;
+    approvalInspect?: boolean;
+    deterministicInspect?: boolean;
+  } = {},
 ): Promise<Fixture> {
   const root = await mkdtemp(
     path.join(tmpdir(), "napier-workflow-experiment-"),
@@ -1016,25 +1124,51 @@ async function createFixture(
                 timeoutMs: 5_000,
                 maxAttempts: 2,
               }
-            : {
-                type: "agent" as const,
-                inputBindings: {
-                  workflow: { source: "workflow" as const },
-                },
-                inputSchema: {
-                  type: "object" as const,
-                  properties: { workflow: requestSchema() },
-                  required: ["workflow"],
-                  additionalProperties: false as const,
-                },
-                outputSchema: inspectionSchema(),
-                model: {
-                  provider: "faux-workflow-primary",
-                  id: "faux-1",
-                },
-                timeoutMs: 5_000,
-                maxAttempts: 2,
-              }),
+            : options.deterministicInspect
+              ? {
+                  type: "deterministic" as const,
+                  inputBindings: {
+                    workflow: { source: "workflow" as const },
+                  },
+                  inputSchema: {
+                    type: "object" as const,
+                    properties: { workflow: requestSchema() },
+                    required: ["workflow"],
+                    additionalProperties: false as const,
+                  },
+                  outputSchema: inspectionSchema(),
+                  template: {
+                    kind: "object" as const,
+                    properties: {
+                      summary: {
+                        kind: "input" as const,
+                        path: ["workflow", "request"],
+                      },
+                      count: { kind: "literal" as const, value: 1 },
+                    },
+                  },
+                  timeoutMs: 5_000,
+                  maxAttempts: 2,
+                }
+              : {
+                  type: "agent" as const,
+                  inputBindings: {
+                    workflow: { source: "workflow" as const },
+                  },
+                  inputSchema: {
+                    type: "object" as const,
+                    properties: { workflow: requestSchema() },
+                    required: ["workflow"],
+                    additionalProperties: false as const,
+                  },
+                  outputSchema: inspectionSchema(),
+                  model: {
+                    provider: "faux-workflow-primary",
+                    id: "faux-1",
+                  },
+                  timeoutMs: 5_000,
+                  maxAttempts: 2,
+                }),
       },
       {
         id: "report",
@@ -1082,7 +1216,9 @@ async function createFixture(
     ],
   });
   primary.setResponses(
-    options.toolInspect || options.approvalInspect
+    options.toolInspect ||
+      options.approvalInspect ||
+      options.deterministicInspect
       ? [fauxAssistantMessage('{"report":"Source report","approved":true}')]
       : [
           fauxAssistantMessage('{"summary":"Source inspection","count":1}'),

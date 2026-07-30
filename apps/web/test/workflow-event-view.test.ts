@@ -108,6 +108,48 @@ describe("Workflow event Trace projection", () => {
     );
     expect(workflowEventTraceSummary(toolCompleted)).not.toContain("PRIVATE");
 
+    const deterministicStarted = workflowEvent("workflow.node.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "shape",
+      nodeType: "deterministic",
+      templateSha256: "8".repeat(64),
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      planRevisionBefore: 1,
+      planRevisionAfter: 2,
+      recovered: false,
+      template: "PRIVATE_TEMPLATE",
+    });
+    const deterministicCompleted = workflowEvent(
+      "workflow.deterministic.completed",
+      {
+        schemaVersion: 1,
+        planId: "plan_abcdefghijklmnopqrst",
+        nodeId: "shape",
+        attempt: 1,
+        manifestSha256: "1".repeat(64),
+        templateSha256: "8".repeat(64),
+        inputSha256: "2".repeat(64),
+        outputSha256: "5".repeat(64),
+        outputBytes: 42,
+        outputSchemaSha256: "4".repeat(64),
+        output: "PRIVATE_DETERMINISTIC_OUTPUT",
+      },
+    );
+    expect(workflowEventTraceSummary(deterministicStarted)).toContain(
+      `deterministic ${"8".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(deterministicCompleted)).toContain(
+      `template ${"8".repeat(12)} / input ${"2".repeat(12)} / output ${"5".repeat(12)} / bytes 42`,
+    );
+    expect(
+      `${workflowEventTraceSummary(deterministicStarted)} ${workflowEventTraceSummary(deterministicCompleted)}`,
+    ).not.toContain("PRIVATE");
+
     const approvalStarted = workflowEvent("workflow.node.started", {
       schemaVersion: 1,
       planId: "plan_abcdefghijklmnopqrst",

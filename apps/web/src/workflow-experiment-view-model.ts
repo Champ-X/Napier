@@ -11,6 +11,7 @@ import {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256Text } from "./stable-digest";
+import { validateWorkflowDeterministicTemplate } from "./workflow-deterministic-template-view";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const NODE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
@@ -111,6 +112,7 @@ export async function validateWorkflowManifest(
       !NODE_ID.test(nodeInput["id"]) ||
       nodeIds.has(nodeInput["id"]) ||
       (nodeInput["type"] !== "agent" &&
+        nodeInput["type"] !== "deterministic" &&
         nodeInput["type"] !== "tool" &&
         nodeInput["type"] !== "approval") ||
       !record(nodeInput["inputBindings"]) ||
@@ -128,6 +130,9 @@ export async function validateWorkflowManifest(
         (nodeInput["effect"] !== "read" && nodeInput["effect"] !== "write"))
     ) {
       throw new Error("Workflow manifest Tool node is invalid");
+    }
+    if (nodeInput["type"] === "deterministic") {
+      validateWorkflowDeterministicTemplate(nodeInput["template"]);
     }
     if (
       nodeInput["type"] === "approval" &&

@@ -14,7 +14,7 @@ export const workflowExperimentCopy = {
   overrideHint:
     "Only the selected checkpoint is replaced. Descendants keep their manifest models.",
   toolModelUnavailable:
-    "Tool and Approval checkpoints have no replaceable model.",
+    "Deterministic, Tool, and Approval checkpoints have no replaceable model.",
   preview: "Preview experiment",
   previewing: "Projecting evidence...",
   execute: "Run isolated fork",

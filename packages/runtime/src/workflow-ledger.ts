@@ -15,6 +15,12 @@ import {
   resolveWorkflowApproval,
   workflowApprovalDecisionContractMatches,
 } from "./workflow-approval-model.js";
+import {
+  hasWorkflowDeterministicCompletionEvent,
+  readWorkflowDeterministicOutputEvidence,
+  workflowDeterministicNodeMetadata,
+  workflowDeterministicNodeMetadataMatches,
+} from "./workflow-deterministic-evidence.js";
 import { workflowPlanStepPayload } from "./workflow-runtime-model.js";
 import {
   assertWorkflowValue,
@@ -141,6 +147,27 @@ export class ExecutionPlanWorkflowLedger {
       );
       return resolution.output;
     }
+    if (node.type === "deterministic") {
+      const attempt = await this.attemptForRun(
+        context.threadId,
+        context.plan.id,
+        node.id,
+        runId,
+      );
+      return readWorkflowDeterministicOutputEvidence({
+        events: await this.store.listEvents(context.threadId),
+        node,
+        runId,
+        planId: context.plan.id,
+        manifestSha256: context.manifest.contentSha256,
+        inputSha256,
+        attempt,
+        assistantOutput: await this.nodeAssistantOutput(
+          context.threadId,
+          runId,
+        ),
+      });
+    }
     const completions = (await this.store.listEvents(context.threadId)).filter(
       (event) =>
         event.runId === runId &&
@@ -264,6 +291,20 @@ export class ExecutionPlanWorkflowLedger {
         isWorkflowRecord(event.payload) &&
         event.payload["workflowPlanId"] === context.plan.id &&
         event.payload["workflowNodeId"] === node.id,
+    );
+  }
+
+  async hasNodeDeterministicCompletionEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    runId: string,
+  ): Promise<boolean> {
+    if (node.type !== "deterministic") return false;
+    return hasWorkflowDeterministicCompletionEvent(
+      await this.store.listEvents(context.threadId),
+      context.plan.id,
+      node.id,
+      runId,
     );
   }
 
@@ -619,6 +660,9 @@ export function workflowNodeEventMetadataMatches(
       payload["questionSha256"] === sha256(node.question)
     );
   }
+  if (node.type === "deterministic") {
+    return workflowDeterministicNodeMetadataMatches(node, payload);
+  }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
 }
 
@@ -637,6 +681,9 @@ export function workflowNodeEventMetadata(
       nodeType: "approval",
       questionSha256: sha256(node.question),
     };
+  }
+  if (node.type === "deterministic") {
+    return workflowDeterministicNodeMetadata(node);
   }
   return { nodeType: "agent" };
 }

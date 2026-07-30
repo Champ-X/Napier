@@ -46,6 +46,22 @@ describe("Workflow experiment Workbench view model", () => {
     ).rejects.toThrow("path segment");
   });
 
+  it("accepts bounded Deterministic templates and rejects unsafe paths", async () => {
+    const manifest = workflowDeterministicManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const unsafe = structuredClone(manifest);
+    (unsafe.nodes[0] as { template: unknown }).template = {
+      kind: "input",
+      path: ["constructor"],
+    };
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafe)),
+    ).rejects.toThrow("path segment");
+  });
+
   it("accepts content-bound Approval nodes and rejects output drift", async () => {
     const manifest = workflowApprovalManifest();
     await expect(
@@ -287,6 +303,48 @@ function workflowApprovalManifest() {
         },
         outputSchema,
         timeoutMs: 60_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowDeterministicManifest() {
+  const base = workflowManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const content = {
+    ...baseContent,
+    nodes: [
+      {
+        id: "report",
+        type: "deterministic" as const,
+        inputBindings: {
+          workflow: { source: "workflow" as const },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            workflow: base.inputSchema,
+          },
+          required: ["workflow"],
+          additionalProperties: false as const,
+        },
+        outputSchema: base.outputSchema,
+        template: {
+          kind: "object" as const,
+          properties: {
+            report: {
+              kind: "input" as const,
+              path: ["workflow", "request"],
+            },
+          },
+        },
+        timeoutMs: 5_000,
         maxAttempts: 2,
       },
     ],

@@ -55,6 +55,7 @@ import {
 import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
+import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deterministic-node.js";
 import { ExecutionPlanWorkflowToolNodeExecutor } from "./workflow-tool-node.js";
 
 export interface RunExecutionPlanWorkflowOptions {
@@ -76,6 +77,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
   private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
+  private readonly deterministicNodeExecutor: ExecutionPlanWorkflowDeterministicNodeExecutor;
   private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
   constructor(
@@ -93,6 +95,13 @@ export class ExecutionPlanWorkflowRuntime {
           this.completePlanStep(context, nodeId, runId, outputSha256),
       },
     );
+    this.deterministicNodeExecutor =
+      new ExecutionPlanWorkflowDeterministicNodeExecutor(store, this.ledger, {
+        blockNode: (context, node, failure) =>
+          this.blockNode(context, node, failure),
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      });
     this.toolNodeExecutor = new ExecutionPlanWorkflowToolNodeExecutor(
       store,
       agentRuntime,
@@ -297,6 +306,7 @@ export class ExecutionPlanWorkflowRuntime {
     await this.recovery.recoverCompletedAndInterruptedNodes(context);
     await this.approvalNodeExecutor.recoverRunning(context);
     await this.recovery.recoverBlockedNodeResults(context);
+    await this.recovery.reopenInterruptedDeterministicNodes(context);
     if (context.reusedNodes.length > 0) {
       await this.reuseMaterializer.reopenInterrupted(
         context,
@@ -396,6 +406,15 @@ export class ExecutionPlanWorkflowRuntime {
         }),
         cancelled: false,
       };
+    }
+    if (node.type === "deterministic") {
+      return this.deterministicNodeExecutor.execute(
+        context,
+        node,
+        input,
+        inputSha256,
+        attempt,
+      );
     }
     if (node.type === "approval") {
       return this.approvalNodeExecutor.execute(

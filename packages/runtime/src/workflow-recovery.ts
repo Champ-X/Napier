@@ -75,7 +75,7 @@ export class ExecutionPlanWorkflowRecovery {
           step.status !== "running" &&
           !(
             step.status === "blocked" &&
-            node.type === "tool" &&
+            (node.type === "tool" || node.type === "deterministic") &&
             step.runId !== undefined
           )
         ) {
@@ -108,14 +108,24 @@ export class ExecutionPlanWorkflowRecovery {
           run.id,
           inputSha256,
         );
-        let knownToolOutput;
+        let knownRecoverableOutput;
         if (
-          node.type === "tool" &&
+          (node.type === "tool" || node.type === "deterministic") &&
           run.status !== "running" &&
           run.status !== "queued" &&
-          (await this.ledger.hasNodeToolCompletionEvent(context, node, run.id))
+          (node.type === "tool"
+            ? await this.ledger.hasNodeToolCompletionEvent(
+                context,
+                node,
+                run.id,
+              )
+            : await this.ledger.hasNodeDeterministicCompletionEvent(
+                context,
+                node,
+                run.id,
+              ))
         ) {
-          knownToolOutput = await this.ledger.nodeOutput(
+          knownRecoverableOutput = await this.ledger.nodeOutput(
             context,
             node,
             run.id,
@@ -123,12 +133,12 @@ export class ExecutionPlanWorkflowRecovery {
           );
         }
         if (step.status === "blocked") {
-          if (knownToolOutput === undefined) continue;
-          context.plan = await this.store.recoverCompletedWorkflowToolPlanStep(
+          if (knownRecoverableOutput === undefined) continue;
+          context.plan = await this.store.recoverCompletedWorkflowPlanStep(
             context.plan.id,
             node.id,
             run.id,
-            `Workflow output ${sha256(canonicalJson(knownToolOutput))} passed its runtime schema before Run settlement was interrupted.`,
+            `Workflow output ${sha256(canonicalJson(knownRecoverableOutput))} passed its runtime schema before Run settlement was interrupted.`,
           );
           step = context.plan.steps.find(
             (candidate) => candidate.id === nodeId,
@@ -139,7 +149,7 @@ export class ExecutionPlanWorkflowRecovery {
             throw new Error("Workflow node Run is still active");
           }
           if (run.status !== "completed") {
-            if (knownToolOutput === undefined) {
+            if (knownRecoverableOutput === undefined) {
               const blocked = await this.operations.blockNode(context, node, {
                 runId: run.id,
                 inputSha256,
@@ -161,14 +171,14 @@ export class ExecutionPlanWorkflowRecovery {
         if (
           run.status !== "completed" &&
           !(node.type === "approval" && run.status === "interrupted") &&
-          knownToolOutput === undefined
+          knownRecoverableOutput === undefined
         ) {
           throw new Error("Completed Workflow step has a non-completed Run");
         }
         let output;
         try {
           output =
-            knownToolOutput ??
+            knownRecoverableOutput ??
             (await this.ledger.nodeOutput(context, node, run.id, inputSha256));
         } catch (error) {
           if (step.status !== "running") throw error;
@@ -227,6 +237,53 @@ export class ExecutionPlanWorkflowRecovery {
         context.outputs.set(node.id, structuredClone(output));
         context.nodeResults.set(node.id, result);
         madeProgress = true;
+      }
+    }
+  }
+
+  async reopenInterruptedDeterministicNodes(
+    context: WorkflowExecutionContext,
+  ): Promise<void> {
+    context.plan = this.store.getPlan(context.plan.id);
+    for (const node of context.manifest.nodes) {
+      if (node.type !== "deterministic") continue;
+      const result = context.nodeResults.get(node.id);
+      const step = context.plan.steps.find(
+        (candidate) => candidate.id === node.id,
+      );
+      if (
+        !result ||
+        result.status !== "blocked" ||
+        result.errorCode !== "run_interrupted" ||
+        result.attempt >= node.maxAttempts ||
+        step?.status !== "blocked" ||
+        !step.runId
+      ) {
+        continue;
+      }
+      const run = this.store
+        .listRuns(context.threadId)
+        .find((candidate) => candidate.id === step.runId);
+      if (!run || run.source !== "workflow" || run.status !== "interrupted") {
+        throw new Error(
+          "Interrupted deterministic Workflow Run binding is invalid",
+        );
+      }
+      const before = context.plan;
+      context.plan = await this.store.transitionPlanStep(
+        context.plan.id,
+        node.id,
+        { action: "reopen" },
+      );
+      if (context.plan.revision !== before.revision) {
+        await this.ledger.appendPlanStepEvent(
+          context,
+          context.plan,
+          node.id,
+          "reopened",
+          createId("runctl"),
+        );
+        context.nodeResults.delete(node.id);
       }
     }
   }

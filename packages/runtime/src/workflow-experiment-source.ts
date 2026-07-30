@@ -12,6 +12,7 @@ import { collectRunToolEffectObservations } from "./automatic-recovery.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import type { WorkflowReusedNode } from "./workflow-context.js";
+import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-deterministic-model.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import {
   defineExecutionPlanWorkflow,
@@ -510,6 +511,13 @@ function sourceNodeMetadataMatches(
     return (
       payload["nodeType"] === "approval" &&
       payload["questionSha256"] === sha256(node.question)
+    );
+  }
+  if (node.type === "deterministic") {
+    return (
+      payload["nodeType"] === "deterministic" &&
+      payload["templateSha256"] ===
+        executionPlanWorkflowDeterministicTemplateSha256(node.template)
     );
   }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";

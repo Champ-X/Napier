@@ -6,6 +6,26 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added bounded Deterministic nodes to typed Plan Workflows. A Manifest can now
+  bind a pure recursive JSON template that selects typed input fields and
+  constructs literal, object, or array output without a model or tool call.
+  JavaScript, JSONPath, interpolation, expressions, prototype-sensitive paths,
+  and unbounded templates remain unavailable. Each node executes in a leased
+  `source=workflow` Run at the frozen Agent revision, schema-checks output,
+  stores the recoverable body as hidden assistant data, and records only
+  template/input/output/schema hashes plus output bytes in its terminal
+  Workflow receipt. Resume repairs terminal commit gaps, fails closed on
+  duplicate or tampered output evidence, and automatically recomputes only a
+  proved started-only interrupted pure node within `maxAttempts`; Agent, Tool,
+  Approval, and unknown-effect retries remain explicit. Checkpoint experiments
+  can rerun or reuse verified Deterministic output and reject model replacement
+  on the non-Agent node. Real CLI JSONL and HTTP SSE execute model-free
+  Deterministic-only Manifests, while Workbench Manifest validation and Trace
+  enforce the same bounds and omit template/input/output bodies. Runtime,
+  failure, cancellation, timeout-at-commit, restart, tamper, experiment, Web
+  privacy, CLI, and Server coverage exercise the complete path. The
+  implementation is split across pure model, leased execution, node
+  coordination, evidence, recovery, and browser validation modules.
 - Added durable human Approval nodes to typed Plan Workflows. A Manifest now
   binds one fixed approve/reject question, typed input context, standard output
   schema, deadline, and retry limit. Execution creates a leased model-free
@@ -119,9 +139,10 @@ All notable changes to Napier are recorded here.
   codes, and hashes. Runtime, restart, CLI, Server, Web, Replay, tamper,
   concurrency, cancellation, timeout, path, context-isolation, and
   no-mutation regressions cover the vertical path, with an opt-in real
-  DeepSeek Workflow smoke. Manifest v1 is sequential Agent DAG execution;
-  deterministic/Tool/approval nodes, parallel/control-flow constructs,
-  external adapters, artifact settlement, and visual editing remain.
+  DeepSeek Workflow smoke. This initial slice is sequential Agent DAG
+  execution; later entries add Deterministic, Tool, and Approval nodes.
+  Parallel/control-flow constructs, external adapters, artifact settlement,
+  and visual editing remain.
 - Added Run-owned Node DAP launch debugging. The opt-in `node_debugger` Agent
   tool launches one canonical workspace JavaScript or Node-executable
   TypeScript target through the existing private `WorkspaceProcessManager`

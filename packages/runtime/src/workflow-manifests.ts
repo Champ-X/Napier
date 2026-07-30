@@ -8,13 +8,13 @@ import {
   type ExecutionPlanWorkflowManifestVerification,
   type ExecutionPlanWorkflowNode,
   type ExecutionPlanWorkflowToolName,
-  type ExecutionPlanWorkflowValuePathSegment,
   type JsonValue,
   type WorkflowObjectSchema,
   type WorkflowValueSchema,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { validateExecutionPlanWorkflowDeterministicTemplate } from "./workflow-deterministic-model.js";
 import { validateExecutionPlanBlueprint } from "./workflow-blueprints.js";
 import {
   assertWorkflowEncodedBytes,
@@ -22,6 +22,7 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
   MAX_WORKFLOW_SCHEMA_BYTES,
   MAX_WORKFLOW_SCHEMA_PROPERTIES,
+  validateExecutionPlanWorkflowValuePath,
   validateWorkflowSchema,
   WORKFLOW_BINDING_NAME,
   workflowSchemaSha256,
@@ -47,13 +48,7 @@ const MAX_WORKFLOW_ATTEMPTS = 3;
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u;
-const MAX_WORKFLOW_BINDING_PATH_DEPTH = 8;
 const WORKFLOW_TOOL_NAMES = new Set<string>(EXECUTION_PLAN_WORKFLOW_TOOL_NAMES);
-const FORBIDDEN_PATH_SEGMENTS = new Set([
-  "__proto__",
-  "constructor",
-  "prototype",
-]);
 
 export type ExecutionPlanWorkflowManifestContent = Omit<
   ExecutionPlanWorkflowManifest,
@@ -323,6 +318,21 @@ function validateWorkflowNode(
       label,
       new Set(["model"]),
     );
+  } else if (type === "deterministic") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "template",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+    );
   } else if (type === "tool") {
     assertExactKeys(
       node,
@@ -392,7 +402,10 @@ function validateWorkflowNode(
         `${label} workflow binding`,
         new Set(["path"]),
       );
-      const path = validateBindingPath(binding["path"], `${label} binding`);
+      const path = validateExecutionPlanWorkflowValuePath(
+        binding["path"],
+        `${label} binding`,
+      );
       inputBindings[name] = {
         source: "workflow",
         ...(path ? { path } : {}),
@@ -408,7 +421,10 @@ function validateWorkflowNode(
       `${label} node binding`,
       new Set(["path"]),
     );
-    const path = validateBindingPath(binding["path"], `${label} binding`);
+    const path = validateExecutionPlanWorkflowValuePath(
+      binding["path"],
+      `${label} binding`,
+    );
     inputBindings[name] = {
       source: "node",
       nodeId: resourceId(binding["nodeId"], `${label} binding node ID`),
@@ -465,6 +481,21 @@ function validateWorkflowNode(
       binding.value,
       `${label} literal binding ${name}`,
     );
+  }
+  if (type === "deterministic") {
+    return {
+      id,
+      type,
+      inputBindings,
+      inputSchema: inputSchema as WorkflowObjectSchema,
+      outputSchema,
+      template: validateExecutionPlanWorkflowDeterministicTemplate(
+        node["template"],
+        `${label} template`,
+      ),
+      timeoutMs,
+      maxAttempts,
+    };
   }
   if (type === "tool") {
     if (
@@ -562,37 +593,6 @@ function validateApprovalChoice(
       `${label} description`,
     ),
   };
-}
-
-function validateBindingPath(
-  input: unknown,
-  label: string,
-): ExecutionPlanWorkflowValuePathSegment[] | undefined {
-  if (input === undefined) return undefined;
-  if (
-    !Array.isArray(input) ||
-    input.length < 1 ||
-    input.length > MAX_WORKFLOW_BINDING_PATH_DEPTH
-  ) {
-    throw new Error(`${label} path is invalid`);
-  }
-  return input.map((segment) => {
-    if (
-      typeof segment === "number" &&
-      Number.isSafeInteger(segment) &&
-      segment >= 0
-    ) {
-      return segment;
-    }
-    if (
-      typeof segment === "string" &&
-      WORKFLOW_BINDING_NAME.test(segment) &&
-      !FORBIDDEN_PATH_SEGMENTS.has(segment)
-    ) {
-      return segment;
-    }
-    throw new Error(`${label} path segment is invalid`);
-  });
 }
 
 function validateModel(

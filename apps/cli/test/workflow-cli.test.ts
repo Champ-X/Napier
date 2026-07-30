@@ -332,6 +332,64 @@ describe("Napier Workflow CLI", () => {
     expect(frames.at(-2)?.type).toBe("snapshot");
   });
 
+  it("streams a model-free Deterministic Workflow through ordered JSONL", async () => {
+    const fixture = await createDeterministicFixture();
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        '{"request":"Shape through CLI JSONL."}',
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout),
+      {
+        createRuntime: (options) =>
+          createLocalAgentRuntime({
+            ...options,
+            sandbox: new UnsupportedSandboxAdapter(
+              "workflow-deterministic-cli-test",
+            ),
+          }),
+      },
+    );
+
+    expect(code).toBe(0);
+    const frames = parseFrames(stdout.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: {
+            report: "Shape through CLI JSONL.",
+            approved: true,
+          },
+        }),
+      }),
+    );
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    expect(events.some((event) => event.type === "model.response")).toBe(false);
+    expect(
+      events.filter(
+        (event) => event.type === "workflow.deterministic.completed",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        payload: expect.not.objectContaining({ output: expect.anything() }),
+      }),
+    ]);
+    expect(frames.at(-2)?.type).toBe("snapshot");
+  });
+
   it("answers and resumes a model-free Approval Workflow through JSONL", async () => {
     const fixture = await createApprovalFixture();
     const dependencies: RunCliDependencies = {
@@ -850,6 +908,85 @@ async function createToolFixture(): Promise<{
           additionalProperties: false,
         },
         outputSchema,
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
+async function createDeterministicFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-deterministic-workflow-cli-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-deterministic-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Shape one typed CLI result without a model.",
+    steps: [
+      {
+        id: "report",
+        title: "Report",
+        description: "Shape the Workflow input into a typed result.",
+        verification: "Return the deterministic report.",
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI Deterministic report",
+    version: 1,
+    description: "Execute a model-free Deterministic node through CLI JSONL.",
+    blueprint,
+    inputSchema: requestSchema(),
+    outputSchema: reportSchema(),
+    outputNodeId: "report",
+    nodes: [
+      {
+        id: "report",
+        type: "deterministic",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: reportSchema(),
+        template: {
+          kind: "object",
+          properties: {
+            report: {
+              kind: "input",
+              path: ["workflow", "request"],
+            },
+            approved: { kind: "literal", value: true },
+          },
+        },
         timeoutMs: 5_000,
         maxAttempts: 2,
       },

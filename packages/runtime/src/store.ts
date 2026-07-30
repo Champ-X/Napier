@@ -5658,7 +5658,7 @@ export class LocalStore {
     });
   }
 
-  async recoverCompletedWorkflowToolPlanStep(
+  async recoverCompletedWorkflowPlanStep(
     planId: string,
     stepId: string,
     runId: string,
@@ -5679,7 +5679,7 @@ export class LocalStore {
         (run.status !== "completed" && run.status !== "interrupted")
       ) {
         throw new Error(
-          "Recovered Workflow Tool completion requires its completed or interrupted Run",
+          "Recovered Workflow completion requires its completed or interrupted Run",
         );
       }
       const updated = recoverCompletedPlanStepProjection(
@@ -11013,10 +11013,7 @@ export class LocalStore {
         createdAt: nowIso(),
         payload: input.payload,
       };
-      assertArtifactReceiptEventBoundary(
-        event,
-        `Ledger event ${input.type}`,
-      );
+      assertArtifactReceiptEventBoundary(event, `Ledger event ${input.type}`);
       thread.eventCount = event.seq;
       thread.updatedAt = event.createdAt;
       const message = extractMessagePreview(event);

@@ -12,6 +12,7 @@ import type {
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
+import { executeExecutionPlanWorkflowDeterministicTemplate } from "../src/workflow-deterministic-model.js";
 import {
   assertWorkflowValue,
   buildExecutionPlanWorkflowNodeInput,
@@ -275,6 +276,112 @@ describe("Execution Plan Workflow manifests", () => {
     ).toThrow("tool contract is invalid");
   });
 
+  it("defines bounded recursive Deterministic templates without expressions", async () => {
+    const blueprint = await createBlueprint([
+      {
+        id: "shape",
+        title: "Shape",
+        description: "Build one deterministic typed value.",
+        verification: "Return the projected JSON value.",
+      },
+    ]);
+    const outputSchema = deterministicOutputSchema();
+    const definition = {
+      name: "Deterministic projection",
+      version: 1,
+      description: "Project typed input without a model or tool.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema,
+      outputNodeId: "shape",
+      nodes: [
+        {
+          id: "shape",
+          type: "deterministic" as const,
+          inputBindings: {
+            workflow: { source: "workflow" as const },
+          },
+          inputSchema: {
+            type: "object" as const,
+            properties: { workflow: requestSchema() },
+            required: ["workflow"],
+            additionalProperties: false as const,
+          },
+          outputSchema,
+          template: {
+            kind: "object" as const,
+            properties: {
+              selected: {
+                kind: "input" as const,
+                path: ["workflow", "request"],
+              },
+              meta: {
+                kind: "object" as const,
+                properties: {
+                  source: {
+                    kind: "literal" as const,
+                    value: "deterministic",
+                  },
+                  flags: {
+                    kind: "array" as const,
+                    items: [
+                      { kind: "literal" as const, value: true },
+                      { kind: "literal" as const, value: false },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+    };
+    const manifest = defineExecutionPlanWorkflow(definition);
+    expect(validateExecutionPlanWorkflowManifest(manifest)).toEqual(manifest);
+    const node = manifest.nodes[0]!;
+    expect(node.type).toBe("deterministic");
+    if (node.type !== "deterministic") throw new Error("Unexpected node type");
+    expect(
+      executeExecutionPlanWorkflowDeterministicTemplate(node.template, {
+        workflow: { request: "ship" },
+      }),
+    ).toEqual({
+      selected: "ship",
+      meta: { source: "deterministic", flags: [true, false] },
+    });
+
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...definition.nodes[0]!,
+            template: {
+              kind: "input",
+              path: ["workflow", "__proto__"],
+            },
+          },
+        ],
+      }),
+    ).toThrow("path segment is invalid");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...definition.nodes[0]!,
+            template: {
+              kind: "javascript",
+              source: "return input",
+            },
+          },
+        ] as typeof definition.nodes,
+      }),
+    ).toThrow("kind is unsupported");
+  });
+
   it("binds Approval copy, timeout, and its fixed output schema", async () => {
     const blueprint = await createBlueprint([
       {
@@ -425,6 +532,36 @@ function reportSchema(): WorkflowObjectSchema {
       approved: { type: "boolean" },
     },
     required: ["report", "approved"],
+    additionalProperties: false,
+  };
+}
+
+function deterministicOutputSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      selected: { type: "string", minLength: 1, maxLength: 500 },
+      meta: {
+        type: "object",
+        properties: {
+          source: {
+            type: "string",
+            enum: ["deterministic"],
+            minLength: 13,
+            maxLength: 13,
+          },
+          flags: {
+            type: "array",
+            items: { type: "boolean" },
+            minItems: 2,
+            maxItems: 2,
+          },
+        },
+        required: ["source", "flags"],
+        additionalProperties: false,
+      },
+    },
+    required: ["selected", "meta"],
     additionalProperties: false,
   };
 }

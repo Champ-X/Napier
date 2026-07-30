@@ -12,12 +12,18 @@ export const MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES = 32 * 1024;
 export const MAX_WORKFLOW_SCHEMA_BYTES = 32 * 1024;
 export const MAX_WORKFLOW_SCHEMA_PROPERTIES = 32;
 export const WORKFLOW_BINDING_NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/u;
+export const MAX_EXECUTION_PLAN_WORKFLOW_VALUE_PATH_DEPTH = 8;
 
 const MAX_SCHEMA_DEPTH = 8;
 const MAX_SCHEMA_NODES = 128;
 const MAX_SCHEMA_ARRAY_ITEMS = 256;
 const MAX_SCHEMA_STRING_LENGTH = 16_384;
 const MAX_SCHEMA_ENUM_VALUES = 32;
+const FORBIDDEN_VALUE_PATH_SEGMENTS = new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+]);
 
 export function workflowSchemaSha256(schema: WorkflowValueSchema): string {
   validateWorkflowSchema(schema, "Workflow schema", 0, { nodes: 0 });
@@ -48,7 +54,7 @@ export function buildExecutionPlanWorkflowNodeInput(
       continue;
     }
     if (binding.source === "workflow") {
-      input[name] = resolveWorkflowBindingValue(
+      input[name] = resolveExecutionPlanWorkflowValuePath(
         workflowInput,
         binding.path,
         `${node.id}.${name}`,
@@ -59,12 +65,17 @@ export function buildExecutionPlanWorkflowNodeInput(
     if (output === undefined) {
       throw new Error(`Workflow dependency output is unavailable: ${node.id}`);
     }
-    input[name] = resolveWorkflowBindingValue(
+    input[name] = resolveExecutionPlanWorkflowValuePath(
       output,
       binding.path,
       `${node.id}.${name}`,
     );
   }
+  assertWorkflowEncodedBytes(
+    input,
+    MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
+    `Workflow node input ${node.id}`,
+  );
   assertWorkflowValue(
     node.inputSchema,
     input,
@@ -101,7 +112,7 @@ export function workflowNodeBindingContextSha256(
   );
 }
 
-function resolveWorkflowBindingValue(
+export function resolveExecutionPlanWorkflowValuePath(
   source: JsonValue,
   path: ExecutionPlanWorkflowValuePathSegment[] | undefined,
   label: string,
@@ -132,6 +143,37 @@ function resolveWorkflowBindingValue(
     value = value[segment]!;
   }
   return structuredClone(value);
+}
+
+export function validateExecutionPlanWorkflowValuePath(
+  input: unknown,
+  label: string,
+): ExecutionPlanWorkflowValuePathSegment[] | undefined {
+  if (input === undefined) return undefined;
+  if (
+    !Array.isArray(input) ||
+    input.length < 1 ||
+    input.length > MAX_EXECUTION_PLAN_WORKFLOW_VALUE_PATH_DEPTH
+  ) {
+    throw new Error(`${label} path is invalid`);
+  }
+  return input.map((segment) => {
+    if (
+      typeof segment === "number" &&
+      Number.isSafeInteger(segment) &&
+      segment >= 0
+    ) {
+      return segment;
+    }
+    if (
+      typeof segment === "string" &&
+      WORKFLOW_BINDING_NAME.test(segment) &&
+      !FORBIDDEN_VALUE_PATH_SEGMENTS.has(segment)
+    ) {
+      return segment;
+    }
+    throw new Error(`${label} path segment is invalid`);
+  });
 }
 
 export function parseExecutionPlanWorkflowNodeOutput(

@@ -6,6 +6,7 @@ import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
   ExecutionPlanBlueprint,
+  ExecutionPlanWorkflowDeterministicTemplate,
   ExecutionPlanWorkflowManifest,
   RunEvent,
   WorkflowObjectSchema,
@@ -230,6 +231,417 @@ describe("Execution Plan Workflow runtime", () => {
       ),
     ).toHaveLength(1);
     fixture.store.close();
+  }, 20_000);
+
+  it("executes one recursive Deterministic node before an Agent without a model proxy", async () => {
+    const fixture = await createFixture();
+    const manifest = deterministicWorkflowManifest(fixture.manifest.blueprint);
+    fixture.provider.setResponses([
+      (context) => {
+        const prompt = JSON.stringify(context.messages);
+        expect(prompt).toContain('\\"summary\\":\\"Shape this input.\\"');
+        expect(prompt).toContain('\\"count\\":1');
+        return fauxAssistantMessage(
+          '{"report":"Deterministic input verified","approved":true}',
+        );
+      },
+    ]);
+
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Shape this input." },
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Deterministic input verified",
+          approved: true,
+        },
+      }),
+    );
+    expect(result.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        status: "completed",
+        output: { summary: "Shape this input.", count: 1 },
+      }),
+    );
+    const events = await fixture.store.listEvents(fixture.targetThreadId);
+    expect(
+      events.filter(
+        (event) => event.type === "workflow.deterministic.completed",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          outputBytes: expect.any(Number),
+        }),
+      }),
+    ]);
+    expect(
+      JSON.stringify(
+        events.find(
+          (event) => event.type === "workflow.deterministic.completed",
+        )?.payload,
+      ),
+    ).not.toContain("Shape this input.");
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "message.assistant" &&
+          event.runId === result.nodeResults[0]?.runId &&
+          event.visibility === "hidden",
+      ),
+    ).toHaveLength(1);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "model.response" &&
+          event.runId === result.nodeResults[0]?.runId,
+      ),
+    ).toHaveLength(0);
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, fixture.targetThreadId),
+      ).status,
+    ).toBe("valid");
+
+    const resumed = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: result.planId },
+    });
+    expect(resumed.output).toEqual(result.output);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    fixture.store.close();
+  });
+
+  it("blocks unresolved paths and schema-invalid Deterministic output", async () => {
+    const missingFixture = await createFixture();
+    const missingManifest = deterministicWorkflowManifest(
+      missingFixture.manifest.blueprint,
+      {
+        kind: "object",
+        properties: {
+          summary: {
+            kind: "input",
+            path: ["workflow", "missing"],
+          },
+          count: { kind: "literal", value: 1 },
+        },
+      },
+    );
+    const missing = await missingFixture.workflows.run({
+      threadId: missingFixture.targetThreadId,
+      request: {
+        manifest: missingManifest,
+        input: { request: "Missing path." },
+      },
+    });
+    expect(missing.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        errorCode: "template_failed",
+      }),
+    ]);
+    missingFixture.store.close();
+
+    const invalidFixture = await createFixture();
+    const invalidManifest = deterministicWorkflowManifest(
+      invalidFixture.manifest.blueprint,
+      {
+        kind: "object",
+        properties: {
+          summary: {
+            kind: "input",
+            path: ["workflow", "request"],
+          },
+          count: { kind: "literal", value: "not-an-integer" },
+        },
+      },
+    );
+    const invalid = await invalidFixture.workflows.run({
+      threadId: invalidFixture.targetThreadId,
+      request: {
+        manifest: invalidManifest,
+        input: { request: "Reject invalid output." },
+      },
+    });
+    expect(invalid.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        errorCode: "output_invalid",
+      }),
+    ]);
+    invalidFixture.store.close();
+  });
+
+  it("blocks Deterministic output amplification beyond the node byte limit", async () => {
+    const fixture = await createFixture();
+    const definition = workflowDefinition(fixture.manifest.blueprint);
+    const largeRequestSchema: WorkflowObjectSchema = {
+      type: "object",
+      properties: {
+        request: { type: "string", minLength: 1, maxLength: 16_384 },
+      },
+      required: ["request"],
+      additionalProperties: false,
+    };
+    const largeOutputSchema: WorkflowObjectSchema = {
+      type: "object",
+      properties: {
+        first: { type: "string", minLength: 1, maxLength: 16_384 },
+        second: { type: "string", minLength: 1, maxLength: 16_384 },
+        third: { type: "string", minLength: 1, maxLength: 16_384 },
+      },
+      required: ["first", "second", "third"],
+      additionalProperties: false,
+    };
+    const manifest = defineExecutionPlanWorkflow({
+      ...definition,
+      inputSchema: largeRequestSchema,
+      outputSchema: largeOutputSchema,
+      nodes: [
+        {
+          id: "inspect",
+          type: "deterministic",
+          inputBindings: {
+            workflow: { source: "workflow" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: { workflow: largeRequestSchema },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema: inspectionSchema(),
+          template: {
+            kind: "object",
+            properties: {
+              summary: { kind: "literal", value: "Input accepted." },
+              count: { kind: "literal", value: 1 },
+            },
+          },
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+        {
+          id: "report",
+          type: "deterministic",
+          inputBindings: {
+            workflow: { source: "workflow" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: { workflow: largeRequestSchema },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema: largeOutputSchema,
+          template: {
+            kind: "object",
+            properties: {
+              first: {
+                kind: "input",
+                path: ["workflow", "request"],
+              },
+              second: {
+                kind: "input",
+                path: ["workflow", "request"],
+              },
+              third: {
+                kind: "input",
+                path: ["workflow", "request"],
+              },
+            },
+          },
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+    });
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "x".repeat(12_000) },
+      },
+    });
+
+    expect(result.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        status: "completed",
+      }),
+      expect.objectContaining({
+        nodeId: "report",
+        status: "blocked",
+        errorCode: "output_invalid",
+      }),
+    ]);
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).some(
+        (event) =>
+          event.type === "workflow.deterministic.completed" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toBe(false);
+    fixture.store.close();
+  });
+
+  it("recovers a terminal Deterministic output after Plan completion fails", async () => {
+    const fixture = await createFixture();
+    const manifest = deterministicWorkflowManifest(fixture.manifest.blueprint);
+    fixture.provider.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Deterministic commit recovered","approved":true}',
+      ),
+    ]);
+    const transitionPlanStep = fixture.store.transitionPlanStep.bind(
+      fixture.store,
+    );
+    let failCompletion = true;
+    fixture.store.transitionPlanStep = async (planId, stepId, request) => {
+      if (
+        stepId === "inspect" &&
+        request.action === "complete" &&
+        failCompletion
+      ) {
+        failCompletion = false;
+        throw new Error("Injected deterministic Plan completion failure");
+      }
+      return transitionPlanStep(planId, stepId, request);
+    };
+    const blocked = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Recover deterministic output." },
+      },
+    });
+    expect(blocked).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            errorCode: "deterministic_failed",
+          }),
+        ],
+      }),
+    );
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(1);
+
+    fixture.store.transitionPlanStep = transitionPlanStep;
+    const recovered = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: blocked.planId },
+    });
+    expect(recovered).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Deterministic commit recovered",
+          approved: true,
+        },
+      }),
+    );
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).filter(
+        (event) => event.type === "workflow.deterministic.completed",
+      ),
+    ).toHaveLength(1);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    fixture.store.close();
+  });
+
+  it("cancels preflight and times out before Deterministic commitment", async () => {
+    const cancelledFixture = await createFixture();
+    const cancelledManifest = deterministicWorkflowManifest(
+      cancelledFixture.manifest.blueprint,
+    );
+    const controller = new AbortController();
+    const cancelled = await cancelledFixture.workflows.run({
+      threadId: cancelledFixture.targetThreadId,
+      request: {
+        manifest: cancelledManifest,
+        input: { request: "Cancel deterministic output." },
+      },
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeType"] === "deterministic"
+        ) {
+          controller.abort();
+        }
+      },
+    });
+    expect(cancelled).toEqual(
+      expect.objectContaining({
+        status: "cancelled",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            errorCode: "cancelled",
+          }),
+        ],
+      }),
+    );
+    expect(
+      (
+        await cancelledFixture.store.listEvents(cancelledFixture.targetThreadId)
+      ).some((event) => event.type === "workflow.deterministic.completed"),
+    ).toBe(false);
+    cancelledFixture.store.close();
+
+    const timeoutFixture = await createFixture();
+    const timeoutManifest = deterministicWorkflowManifest(
+      timeoutFixture.manifest.blueprint,
+      undefined,
+      1_000,
+    );
+    const timedOut = await timeoutFixture.workflows.run({
+      threadId: timeoutFixture.targetThreadId,
+      request: {
+        manifest: timeoutManifest,
+        input: { request: "Time out deterministic preflight." },
+      },
+      onEvent: async (event) => {
+        if (
+          event.type === "message.assistant" &&
+          record(event.payload)?.["model"] === "napier/workflow-deterministic"
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, 1_100));
+        }
+      },
+    });
+    expect(timedOut.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        errorCode: "timeout",
+      }),
+    ]);
+    expect(
+      (
+        await timeoutFixture.store.listEvents(timeoutFixture.targetThreadId)
+      ).some((event) => event.type === "workflow.deterministic.completed"),
+    ).toBe(false);
+    expect(
+      (
+        await timeoutFixture.store.listEvents(timeoutFixture.targetThreadId)
+      ).some(
+        (event) =>
+          event.type === "message.assistant" &&
+          record(event.payload)?.["model"] === "napier/workflow-deterministic",
+      ),
+    ).toBe(true);
+    timeoutFixture.store.close();
   }, 20_000);
 
   it("executes a policy-checked Tool node before one Agent node and resumes without rerun", async () => {
@@ -1702,6 +2114,46 @@ function reportSchema(): WorkflowObjectSchema {
     required: ["report", "approved"],
     additionalProperties: false,
   };
+}
+
+function deterministicWorkflowManifest(
+  blueprint: ExecutionPlanBlueprint,
+  template: ExecutionPlanWorkflowDeterministicTemplate = {
+    kind: "object",
+    properties: {
+      summary: {
+        kind: "input",
+        path: ["workflow", "request"],
+      },
+      count: { kind: "literal", value: 1 },
+    },
+  },
+  timeoutMs = 5_000,
+): ExecutionPlanWorkflowManifest {
+  const definition = workflowDefinition(blueprint);
+  return defineExecutionPlanWorkflow({
+    ...definition,
+    nodes: [
+      {
+        id: "inspect",
+        type: "deterministic",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: inspectionSchema(),
+        template,
+        timeoutMs,
+        maxAttempts: 2,
+      },
+      definition.nodes[1]!,
+    ],
+  });
 }
 
 function approvalWorkflowManifest(
