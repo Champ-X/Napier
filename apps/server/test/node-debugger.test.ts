@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -33,14 +33,25 @@ afterEach(async () => {
   );
 });
 
-describe("Python kernel HTTP Agent path", () => {
-  it("streams persistent evaluations with hash-only durable evidence", async () => {
+describe("Node debugger HTTP Agent path", () => {
+  it("streams a real DAP pause, evaluation, step, and completion with hash-only history", async () => {
     const root = await mkdtemp(
-      path.join(tmpdir(), "napier-server-python-kernel-"),
+      path.join(tmpdir(), "napier-server-node-debugger-"),
     );
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
-    await mkdir(workspaceRoot, { recursive: true });
+    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    await writeFile(
+      path.join(workspaceRoot, "src/debug-target.mjs"),
+      [
+        "function serverCalculation(input) {",
+        "  const doubled = input * 2;",
+        "  const adjusted = doubled + 1;",
+        "  return adjusted;",
+        "}",
+        "globalThis.PRIVATE_SERVER_DEBUG = serverCalculation(20);",
+      ].join("\n"),
+    );
     const services = await createServices({
       workspaceRoot,
       dataRoot: path.join(root, "data"),
@@ -56,20 +67,23 @@ describe("Python kernel HTTP Agent path", () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             toolPolicy: "workspace",
-            enabledTools: ["python_kernel"],
+            enabledTools: ["node_debugger"],
           }),
         })
       ).status,
     ).toBe(200);
     const thread = await services.store.createThread({
-      title: "Server Python kernel",
+      title: "Server Node debugger",
       agentId,
     });
-    const provider = fauxProvider({ provider: "faux-server-python-kernel" });
+    const provider = fauxProvider({ provider: "faux-server-node-debugger" });
     provider.setResponses([
       fauxAssistantMessage(
-        fauxToolCall("python_kernel", {
-          action: "start",
+        fauxToolCall("node_debugger", {
+          action: "launch",
+          path: "src/debug-target.mjs",
+          breakpoints: [{ line: 2 }],
+          timeoutMs: 2_000,
           sessionTimeoutMs: 20_000,
         }),
         { stopReason: "toolUse" },
@@ -77,12 +91,13 @@ describe("Python kernel HTTP Agent path", () => {
       (context) => {
         const messages = JSON.stringify(context.messages);
         const processId = messages.match(/process_[a-z0-9]{20}/u)?.[0];
+        const frameId = messages.match(/#(\d+) serverCalculation/u)?.[1];
         return fauxAssistantMessage(
-          fauxToolCall("python_kernel", {
+          fauxToolCall("node_debugger", {
             action: "evaluate",
             processId,
-            code: 'PRIVATE_SERVER_VALUES = [8, 13, 21]\nprint("PRIVATE_SERVER_CONSOLE")\nsum(PRIVATE_SERVER_VALUES)',
-            timeoutMs: 2_000,
+            frameId: Number(frameId),
+            expression: "input + 1",
           }),
           { stopReason: "toolUse" },
         );
@@ -90,19 +105,28 @@ describe("Python kernel HTTP Agent path", () => {
       (context) => {
         const messages = JSON.stringify(context.messages);
         const processId = messages.match(/process_[a-z0-9]{20}/u)?.[0];
-        expect(messages).toContain("PRIVATE_SERVER_CONSOLE");
-        expect(messages).toContain("VALUE (untrusted live output)\\n42");
+        expect(messages).toContain("ok: 21 (number)");
         return fauxAssistantMessage(
-          fauxToolCall("python_kernel", {
-            action: "cancel",
+          fauxToolCall("node_debugger", {
+            action: "next",
             processId,
           }),
           { stopReason: "toolUse" },
         );
       },
-      fauxAssistantMessage(
-        "The persistent Python session returned 42 and was closed.",
-      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        const processId = messages.match(/process_[a-z0-9]{20}/u)?.[0];
+        expect(messages).toContain("src/debug-target.mjs:3:");
+        return fauxAssistantMessage(
+          fauxToolCall("node_debugger", {
+            action: "continue",
+            processId,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage("The server DAP path completed with exit code 0."),
       fauxAssistantMessage('{"facts":[]}'),
     ]);
     services.models.registerProvider(provider.provider);
@@ -111,8 +135,8 @@ describe("Python kernel HTTP Agent path", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        text: "Use one persistent Python session for this calculation.",
-        model: { provider: "faux-server-python-kernel", id: "faux-1" },
+        text: "Debug the real server fixture, evaluate the local input, step, and complete.",
+        model: { provider: "faux-server-node-debugger", id: "faux-1" },
       }),
     });
 
@@ -124,35 +148,42 @@ describe("Python kernel HTTP Agent path", () => {
     const completed = events.filter(
       (event) =>
         event.type === "tool.completed" &&
-        record(event.payload)?.["toolName"] === "python_kernel",
+        record(event.payload)?.["toolName"] === "node_debugger",
     );
-    expect(completed).toHaveLength(3);
-    expect(completed[1]?.payload["details"]).toEqual(
+    expect(completed).toHaveLength(4);
+    expect(completed[0]?.payload["details"]).toEqual(
       expect.objectContaining({
-        kind: "napier.python-kernel",
-        action: "evaluate",
-        evaluationStatus: "ok",
-        processStatus: "running",
-        valueType: "integer",
-        consoleCount: 1,
-        pythonVersion: expect.stringMatching(/^\d+\.\d+\.\d+$/u),
+        kind: "napier.node-debugger",
+        action: "launch",
+        state: "paused",
+        reason: "breakpoint",
+        frameCount: 2,
+        moduleCount: 1,
+      }),
+    );
+    expect(completed.at(-1)?.payload["details"]).toEqual(
+      expect.objectContaining({
+        action: "continue",
+        state: "terminated",
+        exitCode: 0,
       }),
     );
     const processResponse = await app.request(
       `/api/threads/${thread.id}/processes`,
     );
     expect(processResponse.status).toBe(200);
-    const [kernelSession] =
+    const [debugSession] =
       (await processResponse.json()) as WorkspaceProcessSession[];
-    expect(kernelSession).toEqual(
+    expect(debugSession).toEqual(
       expect.objectContaining({
-        runtime: "python",
+        runtime: "node",
         outputAvailable: false,
         stdinOpen: false,
+        status: "cancelled",
       }),
     );
     const outputResponse = await app.request(
-      `/api/threads/${thread.id}/processes/${kernelSession?.id}/output`,
+      `/api/threads/${thread.id}/processes/${debugSession?.id}/output`,
     );
     expect(outputResponse.status).toBe(200);
     expect((await outputResponse.json()) as WorkspaceProcessOutput).toEqual(
@@ -161,16 +192,23 @@ describe("Python kernel HTTP Agent path", () => {
         chunks: [],
       }),
     );
-    const durable = JSON.stringify(events);
-    expect(durable).not.toContain("PRIVATE_SERVER_VALUES");
-    expect(durable).not.toContain("PRIVATE_SERVER_CONSOLE");
-    expect(durable).not.toContain("untrusted live output");
+    const durableTools = JSON.stringify(
+      events.filter(
+        (event) =>
+          event.type.startsWith("tool.") ||
+          event.type.startsWith("workspace.process."),
+      ),
+    );
+    expect(durableTools).not.toContain("debug-target.mjs");
+    expect(durableTools).not.toContain("PRIVATE_SERVER_DEBUG");
+    expect(durableTools).not.toContain("input + 1");
+    expect(durableTools).not.toContain("21 (number)");
   }, 20_000);
 });
 
 function directSandbox(): OsSandboxAdapter {
   return {
-    id: "direct-server-python-kernel-test",
+    id: "direct-server-node-debugger-test",
     async launch(request) {
       const child = spawn(request.command, request.args, {
         cwd: request.cwd,
@@ -198,6 +236,19 @@ function directSandbox(): OsSandboxAdapter {
               } catch {
                 child.kill("SIGTERM");
               }
+            }
+          }
+          const stopped = await Promise.race([
+            exit.then(() => true),
+            new Promise<false>((resolve) =>
+              setTimeout(() => resolve(false), 500),
+            ),
+          ]);
+          if (!stopped && child.pid !== undefined) {
+            try {
+              process.kill(-child.pid, "SIGKILL");
+            } catch {
+              child.kill("SIGKILL");
             }
           }
           await exit;

@@ -24,6 +24,7 @@ export function formatWorkspaceToolGuidance(
   const hasCommand = toolNames.has("run_command");
   const hasJavascriptKernel = toolNames.has("javascript_kernel");
   const hasPythonKernel = toolNames.has("python_kernel");
+  const hasNodeDebugger = toolNames.has("node_debugger");
   const hasProcess = toolNames.has("workspace_process");
   const hasVerification = toolNames.has("verify_workspace");
   const hasLspDiagnostics = toolNames.has("lsp_diagnostics");
@@ -42,6 +43,7 @@ export function formatWorkspaceToolGuidance(
     !hasCommand &&
     !hasJavascriptKernel &&
     !hasPythonKernel &&
+    !hasNodeDebugger &&
     !hasProcess &&
     !hasVerification &&
     !hasLspDiagnostics &&
@@ -160,6 +162,12 @@ export function formatWorkspaceToolGuidance(
     lines.push(
       "Use python_kernel for multi-step pure Python calculations that benefit from state across evaluations. Start one kernel, retain its processId, and cancel it when finished.",
       "Python kernel code and live values are untrusted and ephemeral. Imports, classes, async/yield, private or dunder access, dynamic compilation, files, subprocesses, networking, and workspace writes are unavailable. A timeout, resource failure, background thread, cancellation, or unknown protocol outcome terminates the entire kernel.",
+    );
+  }
+  if (hasNodeDebugger) {
+    lines.push(
+      "Use node_debugger to launch a real workspace JavaScript or Node-executable TypeScript program under DAP when stack, local variables, or single-step evidence is needed. Set at least one source breakpoint, retain the processId and frame/reference IDs, and cancel a paused session when finished.",
+      "Debugger source, paths, expressions, arguments, stack names, variable names/values, and target output are live-only. Evaluation rejects side effects. Source or loaded-module drift, malformed or unauthenticated DAP frames, timeout, cancellation, or unknown protocol state terminates the complete session.",
     );
   }
   if (hasProcess) {

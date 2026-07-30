@@ -11,6 +11,11 @@ import {
   pythonKernelToolOutputLedgerProjection,
 } from "./python-kernel-tool.js";
 import {
+  nodeDebuggerToolCallArgumentsLedgerProjection,
+  nodeDebuggerToolInputLedgerProjection,
+  nodeDebuggerToolOutputLedgerProjection,
+} from "./node-debugger-tool.js";
+import {
   lspCodeActionsToolCallArgumentsLedgerProjection,
   lspCodeActionsToolInputLedgerProjection,
   lspCodeActionsToolOutputLedgerProjection,
@@ -79,6 +84,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "python_kernel") {
     return pythonKernelToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "node_debugger") {
+    return nodeDebuggerToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolCallArgumentsLedgerProjection(toolName, args);
   }
@@ -127,6 +135,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "python_kernel") {
     return pythonKernelToolInputLedgerProjection(args);
+  }
+  if (toolName === "node_debugger") {
+    return nodeDebuggerToolInputLedgerProjection(args);
   }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolInputLedgerProjection(toolName, args);
@@ -177,6 +188,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "python_kernel") {
     return pythonKernelToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "node_debugger") {
+    return nodeDebuggerToolOutputLedgerProjection(output, result);
   }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolOutputLedgerProjection(output, result);

@@ -6,6 +6,28 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added Run-owned Node DAP launch debugging. The opt-in `node_debugger` Agent
+  tool launches one canonical workspace JavaScript or Node-executable
+  TypeScript target through the existing private `WorkspaceProcessManager`
+  protocol and read-only/offline OS Sandbox. A controller Worker attaches
+  `node:inspector` to the target main thread without opening a TCP listener and
+  supports source/exception stops, stack, scopes, bounded variables, target
+  argv/output, side-effect-rejected evaluation, continue, step over/in/out, and
+  cancellation. Strict bounded `Content-Length` framing plus a random
+  per-process authenticator prevents raw target output from forging accepted
+  DAP evidence. Source and loaded workspace modules are hash-bound and
+  revalidated before every paused-state action; drift, malformed or
+  unauthenticated frames, timeout, cancellation, protocol exhaustion, and
+  unknown outcomes terminate the complete session. Shared
+  `AgentSessionRuntime` closes omitted paused sessions before terminal Run
+  events. Paths, source, expressions, argv, stack/scope/variable names and
+  values, and target output remain live-only; Ledger, Replay, public SSE, and
+  Web Trace retain bounded metadata and hashes. Real Agent and HTTP dogfood,
+  protocol/security/failure regressions, and an opt-in OS-Sandbox smoke cover
+  the vertical path. Review fixed stale dependency inspection and an
+  inaccurate adapter-side output truncation flag. This slice is launch-only;
+  attach, source maps, multi-thread/child debugging, debugger UI, and
+  cross-restart recovery remain.
 - Added a persistent restricted synchronous Python kernel. The opt-in
   `python_kernel` Agent tool starts, evaluates, and cancels a Run-owned
   pure-computation context through the existing private

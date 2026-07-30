@@ -10,6 +10,11 @@ import {
   type PythonKernelToolEventTraceView,
 } from "./python-kernel-event-view";
 import {
+  nodeDebuggerEventEvidence,
+  nodeDebuggerSummaryParts,
+  type NodeDebuggerToolEventTraceView,
+} from "./node-debugger-event-view";
+import {
   typescriptAstEventEvidence,
   typescriptAstSummaryParts,
   type TypescriptAstToolEventTraceView,
@@ -36,6 +41,7 @@ export interface ToolEventTraceView
     LspToolEventTraceView,
     JavascriptKernelToolEventTraceView,
     PythonKernelToolEventTraceView,
+    NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView {
   toolName: string;
   status: string;
@@ -229,6 +235,10 @@ export function toolEventTraceView(
     toolName === "python_kernel"
       ? pythonKernelEventEvidence(event.payload["details"])
       : undefined;
+  const nodeDebuggerEvidence =
+    toolName === "node_debugger"
+      ? nodeDebuggerEventEvidence(event.payload["details"])
+      : undefined;
   const typescriptAstEvidence =
     toolName === "ast_query" || toolName === "ast_edit_preview"
       ? typescriptAstEventEvidence(event.payload["details"])
@@ -265,6 +275,7 @@ export function toolEventTraceView(
     ...(commandEvidence ? commandEvidence : {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
     ...(pythonKernelEvidence ? pythonKernelEvidence : {}),
+    ...(nodeDebuggerEvidence ? nodeDebuggerEvidence : {}),
     ...(typescriptAstEvidence ? typescriptAstEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(fileMutationEvidence ? fileMutationEvidence : {}),
@@ -449,6 +460,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...commandToolEventSummaryParts(view),
     ...javascriptKernelSummaryParts(view),
     ...pythonKernelSummaryParts(view),
+    ...nodeDebuggerSummaryParts(view),
     ...typescriptAstSummaryParts(view),
     ...(view.patchOperation ? [`patch ${view.patchOperation}`] : []),
     ...(view.patchEditCount !== undefined

@@ -51,4 +51,16 @@ describe("workspace tool guidance", () => {
       "Imports, classes, async/yield, private or dunder access",
     );
   });
+
+  it("describes the DAP session and live-only debug boundary", () => {
+    const guidance = formatWorkspaceToolGuidance([
+      { name: "node_debugger" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain(
+      "Use node_debugger to launch a real workspace JavaScript",
+    );
+    expect(guidance).toContain("Evaluation rejects side effects");
+    expect(guidance).toContain("loaded-module drift");
+  });
 });

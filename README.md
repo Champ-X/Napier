@@ -1528,6 +1528,46 @@ The nested IDE host used for this revision rejects the Python probe with exit
 71 and `sandbox-exec: sandbox_apply: Operation not permitted`, matching the
 existing Process/JavaScript smoke limitation. No unsandboxed fallback is used.
 
+## Run-Owned Node Debugger
+
+The opt-in `node_debugger` tool launches one workspace JavaScript or
+Node-executable TypeScript entry under a fixed Node Debug Adapter Protocol
+adapter. The adapter runs through the existing private
+`WorkspaceProcessManager` protocol in a read-only, network-denied OS Sandbox.
+It supports source breakpoints, exception stops, stack traces, scopes,
+variables, side-effect-rejected expression evaluation, continue, step over,
+step in, step out, and explicit cancellation.
+
+The launch path is canonical, workspace-relative, non-symlinked, protected-root
+free, valid UTF-8, and capped at 1 MiB. The adapter controller runs in a Worker
+and attaches `node:inspector` to the target main thread without opening a TCP
+listener. DAP frames, message count, session/action time, breakpoints, stack,
+scopes, variables, references, expressions, target output, and Agent output
+are independently bounded. Every adapter response and event carries a random
+per-process authenticator, so target stdout cannot forge a stop, stack, or
+variable result.
+
+The source hash and loaded workspace module graph are captured at each stop.
+Every paused-state action revalidates both before returning data; source or
+dependency drift terminates the complete session. Unknown post-write outcomes,
+malformed or unauthenticated frames, target/adapter exit, timeout, caller
+cancellation, and protocol exhaustion also fail closed. `AgentSessionRuntime`
+cancels any debugger left paused before the owning Run records a terminal
+event.
+
+Paths, stack/scope/variable names and values, expressions, argv, source, and
+target output are live-only untrusted model context. Ledger, Replay, public SSE
+history, and Web Trace retain only bounded status/count/version metadata and
+source/module/worker/runtime/DAP/result hashes. Generic Process APIs expose
+neither private protocol output nor writable stdin.
+
+This is a Node launch-debugging slice, not attach, hot breakpoint mutation,
+multi-thread/child debugging, a generic third-party DAP host, debugger UI,
+cross-restart recovery, or write-capable execution. The opt-in real OS-Sandbox
+smoke is part of `npm run test:live-process`; the nested IDE host used for this
+revision rejects even a minimal `sandbox-exec` probe with exit 71, so that
+smoke is inconclusive here and no unsandboxed fallback is used.
+
 ## Controlled Workspace Editing
 
 When workspace tools are available, the Runtime injects a concise
@@ -3135,7 +3175,7 @@ The default Agent policy is `observe`:
 - in-process read/list/search and AST preview operations inside the workspace
   are allowed;
 - `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`,
-  `python_kernel`, and `workspace_process` are not exposed;
+  `python_kernel`, `node_debugger`, and `workspace_process` are not exposed;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
@@ -3151,6 +3191,9 @@ start/input/poll/cancel lifecycle control over the same sandbox boundary.
 with bounded live-only values and fail-closed terminal outcomes.
 **Python kernel** adds persistent restricted pure-computation state with fixed
 runtime assets, traced-heap enforcement, and fail-closed terminal outcomes.
+**Node debugger** adds Run-owned Node launch debugging with breakpoints,
+stack/scopes/variables, side-effect-rejected evaluation, and single-step
+control over the same read-only/offline Process boundary.
 **TypeScript AST** adds exact in-process syntax queries and no-write structural
 previews; every resulting edit still returns through Atomic patch and explicit
 verification.
@@ -3167,17 +3210,17 @@ Authorization is checked again immediately before every call.
 This in-process policy is defense in depth, not an operating-system sandbox.
 General shell execution remains disabled. Stdio MCP, structured workspace
 verification, the foreground command runner, Workspace Process Sessions, and
-the JavaScript/Python kernels are the narrow process exceptions: macOS uses
-`/usr/bin/sandbox-exec`; Linux requires `/usr/bin/bwrap` and usable kernel or
-setuid namespace support. Windows or explicitly containerized deployments can
-opt into an OCI adapter by configuring `NAPIER_CONTAINER_SANDBOX_IMAGE`; it
-uses an absolute Docker-compatible executable, read-only root filesystem,
-capability-derived workspace mounts, and `--network none` unless networking is
-approved. These adapters launch only an explicitly selected absolute
-executable, avoid shell invocation, and derive network and workspace access
-from reviewed capabilities. Missing sandbox prerequisites and unsupported
-platforms fail closed; a container or VM remains the recommended outer
-boundary for production third-party code.
+the JavaScript/Python kernels, and the Node debugger are the narrow process
+exceptions: macOS uses `/usr/bin/sandbox-exec`; Linux requires
+`/usr/bin/bwrap` and usable kernel or setuid namespace support. Windows or
+explicitly containerized deployments can opt into an OCI adapter by configuring
+`NAPIER_CONTAINER_SANDBOX_IMAGE`; it uses an absolute Docker-compatible
+executable, read-only root filesystem, capability-derived workspace mounts,
+and `--network none` unless networking is approved. These adapters launch only
+an explicitly selected absolute executable, avoid shell invocation, and derive
+network and workspace access from reviewed capabilities. Missing sandbox
+prerequisites and unsupported platforms fail closed; a container or VM remains
+the recommended outer boundary for production third-party code.
 
 ## License
 

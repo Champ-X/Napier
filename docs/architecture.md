@@ -2253,7 +2253,7 @@ descendants and cross-restart reattachment. PTY, workspace writes, hard total
 RSS quotas, package-backed Python, and remote sandboxes remain outside this
 slice. Interactive stdin is a pipe protocol and does not imply terminal resize,
 job control, foreground process groups, attach semantics, or a persistent
-language kernel. The JavaScript and restricted Python kernels below are
+language kernel. The JavaScript/Python kernels and Node debugger below are
 separate typed protocols over the same Process Session service.
 
 ## Persistent JavaScript Kernel Flow
@@ -2437,6 +2437,76 @@ frames.
 This is a persistent restricted calculation context, not general Python,
 package installation, DataFrame/SQL, Notebook, async I/O, a filesystem tool
 bridge, snapshot, or cross-restart recovery.
+
+## Run-Owned Node DAP Flow
+
+`node_debugger` adds a fixed Node launch adapter over the same private Process
+Session boundary without introducing another durable session graph:
+
+```text
+Agent selects launch + source + breakpoints
+  -> require non-observe policy + enabled node_debugger tool
+  -> canonicalize one <=1 MiB workspace source without symlinks
+  -> hash source/path and launch the fixed compressed adapter worker
+  -> use a fixed secret-free environment, read-only workspace, and denied network
+  -> connect a controller Worker to the target main thread with node:inspector
+  -> initialize DAP, bind source breakpoints and exception policy
+  -> evaluate require(canonical target) without opening an inspector TCP port
+  -> capture the loaded workspace module graph and stop at a real source frame
+Agent selects stack/scopes/variables/evaluate/step
+  -> require the same live Thread, Run, Process, and paused registration
+  -> rehash the launch source and ask the authenticated adapter to rehash modules
+  -> terminate the session if source or any loaded workspace module drifted
+  -> exchange one bounded Content-Length-framed DAP request/response sequence
+  -> reject expression side effects through throwOnSideEffect
+  -> return bounded stack/value/output text to the live Agent only
+  -> retain counts, versions, lifecycle state, and aggregate hashes in Ledger
+Target terminates, Agent cancels, or Run settles
+  -> terminate the adapter Process and discard the in-memory registration
+  -> settle authoritative workspace.process evidence before the Run terminal event
+```
+
+The adapter controller executes in a Worker and calls
+`inspector.Session.connectToMainThread()`, leaving the main thread as the real
+debug target. `Runtime.evaluate(require(realpath))` supports JavaScript and the
+TypeScript syntax directly executable by the selected Node runtime. The fixed
+adapter implements DAP initialize, launch, breakpoint/exception configuration,
+stack, scopes, variables, evaluate, continue, step over/in/out, pause, and
+disconnect. The Agent surface intentionally omits pause because its current
+continue/step calls synchronously wait for the next stop or termination; an
+unreachable action is not advertised.
+
+DAP input and output use strict `Content-Length` framing with independent
+header, message, cumulative byte, and message-count limits. A random 128-bit
+per-process authenticator is injected into every adapter response/event and
+removed by the Manager after verification. Target stdout/stderr is redirected
+through a separate random Inspector binding, while adapter frames use direct
+file-descriptor writes. Raw target writes can only cause fail-closed protocol
+termination; they cannot forge accepted stack, variable, stop, or exit
+evidence.
+
+Only workspace call frames are projected. Script IDs are resolved through
+`Debugger.scriptParsed`, relocated breakpoints must still match the requested
+source line, and internal/external-only pauses resume automatically. Each
+accepted stop emits a hash over the sorted workspace module path/content set.
+Before every paused-state action, a private `napierVerifyModules` DAP extension
+rehashes that set in the Sandbox. A stale snapshot is an unknown evidence state
+and cancels the complete Process.
+
+Paths, source, argv, expressions, stack/scope/variable names and values, and
+target output are live-only. `tool.*`, `workspace.process.*`, Replay, public
+SSE history, and Web Trace retain only bounded action/state/status/reason,
+counts, Node version, truncation flags, exit code, and
+source/module/worker/runtime/request/response/event/result hashes. Generic
+Process output and stdin remain unavailable for the private protocol.
+
+This slice does not provide attach, breakpoint mutation after launch,
+multi-thread or child-process debugging, source maps, a third-party adapter
+host, write-capable targets, debugger UI, checkpoint recovery, or cross-restart
+adoption. The opt-in macOS Sandbox smoke is inconclusive in the reviewed nested
+IDE: both the existing JavaScript smoke and a minimal `sandbox-exec` invocation
+fail with exit 71 and `sandbox_apply: Operation not permitted`. No host fallback
+exists.
 
 ## Workspace Verification Flow
 
@@ -4491,7 +4561,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has thirty-two parts:
+The current boundary has thirty-nine parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -4630,22 +4700,27 @@ The current boundary has thirty-two parts:
     Run, with fixed interpreter/runtime-asset binding, pure-computation
     syntax/builtins, uncatchable traced-heap enforcement, private Process
     protocol, hash-only evidence, and Agent/Server/Trace integration.
+39. Run-owned Node launch debugging through an authenticated private DAP
+    protocol, canonical source and loaded-module freshness, read-only/offline
+    Sandbox execution, bounded stack/value/output projection, terminal unknown
+    outcomes, and hash-only Agent/Server/Trace evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
 verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
 rename/quick-fix previews, explicit-argv command execution, persistent
-synchronous JavaScript and restricted Python calculations, and bounded
-background Process Session lifecycle control. `unrestricted` is reserved for
-future sandboxed shell execution, but known destructive command patterns are
-still denied.
+synchronous JavaScript and restricted Python calculations, Run-owned Node
+launch debugging, and bounded background Process Session lifecycle control.
+`unrestricted` is reserved for future sandboxed shell execution, but known
+destructive command patterns are still denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and
-Workspace Process Sessions, including the JavaScript and Python kernels, use
-narrow macOS sandbox-exec or Linux Bubblewrap adapters; a container or VM
-remains the recommended outer boundary for production third-party code.
+Workspace Process Sessions, including the JavaScript/Python kernels and Node
+debugger, use narrow macOS sandbox-exec or Linux Bubblewrap adapters; a
+container or VM remains the recommended outer boundary for production
+third-party code.
 
 ## Capability Roadmap
 
@@ -4667,8 +4742,9 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 2: Coding and workflow
 
 - persistent LSP sessions with rename application, Code Action resolve/command
-  policy, DAP, broader multi-node AST transforms, write-linked test/symbol
-  association, and isolated subagent worktrees;
+  policy, Node attach/source-map/multi-thread DAP and debugger UX, broader
+  multi-node AST transforms, write-linked test/symbol association, and isolated
+  subagent worktrees;
 - typed executable Workflow nodes, checkpoint recovery, single-node tests,
   JSONL events, and a TypeScript SDK;
 - controlled re-execution from model, tool, and Workflow checkpoints.

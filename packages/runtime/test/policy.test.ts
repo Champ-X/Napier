@@ -391,6 +391,36 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "node_debugger",
+        { action: "launch", path: "src/example.mjs" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "node_debugger",
+        { action: "launch", path: "src/example.mjs" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "high",
+        reason: "persistent sandboxed Node DAP lifecycle",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
+        "node_debugger",
+        { action: "launch", path: "../outside.mjs" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
         "workspace",
         "run_command",
         { runtime: "node", args: ["--version"], cwd: "../outside" },

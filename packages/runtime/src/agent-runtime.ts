@@ -57,7 +57,7 @@ import {
   agentToolInputLedgerProjection as toolInputLedgerProjection,
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
-import { AgentKernelRuntime } from "./agent-kernels.js";
+import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import {
   createWorkspaceFileApplyTool,
@@ -226,7 +226,7 @@ class OperatorDecisionPendingError extends Error {
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, ActiveRun>();
   private readonly workerId = createId("worker");
-  private readonly kernels: AgentKernelRuntime;
+  private readonly sessions: AgentSessionRuntime;
 
   constructor(
     readonly store: LocalStore,
@@ -236,7 +236,10 @@ export class AgentRuntime {
     readonly workspaceProcesses?: WorkspaceProcessManager,
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
   ) {
-    this.kernels = new AgentKernelRuntime(workspaceProcesses);
+    this.sessions = new AgentSessionRuntime(
+      workspaceProcesses,
+      store.workspaceRoot,
+    );
   }
 
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
@@ -623,7 +626,7 @@ export class AgentRuntime {
         );
       }
       budget.throwIfExhausted();
-      await this.kernels.cancelRun({
+      await this.sessions.cancelRun({
         threadId: thread.id,
         runId: run.id,
       });
@@ -663,7 +666,7 @@ export class AgentRuntime {
         leaseToken: leasedRun.token,
       });
     } catch (error) {
-      await this.kernels
+      await this.sessions
         .cancelRun({
           threadId: thread.id,
           runId: run.id,
@@ -1317,7 +1320,7 @@ export class AgentRuntime {
       profile.toolPolicy !== "observe"
     ) {
       tools.push(
-        ...this.kernels.createTools(profile.enabledTools, {
+        ...this.sessions.createTools(profile.enabledTools, {
           threadId: run.threadId,
           runId: run.id,
         }),
@@ -3462,6 +3465,15 @@ function builtInToolEffect(
 ): "read" | "write" | undefined {
   if (toolName === "javascript_kernel") return "write";
   if (toolName === "python_kernel") return "write";
+  if (toolName === "node_debugger") {
+    return recordValue(args) &&
+      (args["action"] === "stack_trace" ||
+        args["action"] === "scopes" ||
+        args["action"] === "variables" ||
+        args["action"] === "evaluate")
+      ? "read"
+      : "write";
+  }
   if (toolName === "workspace_process") {
     return recordValue(args) && args["action"] === "poll" ? "read" : "write";
   }

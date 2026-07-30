@@ -2636,6 +2636,7 @@ export const AGENT_TOOL_NAMES = [
   "run_command",
   "javascript_kernel",
   "python_kernel",
+  "node_debugger",
   "workspace_process",
   "verify_workspace",
 ] as const;

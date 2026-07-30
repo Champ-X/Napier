@@ -135,6 +135,7 @@ export const contextCopy = {
     run_command: "Sandbox command",
     javascript_kernel: "JavaScript kernel",
     python_kernel: "Python kernel",
+    node_debugger: "Node debugger",
     workspace_process: "Background process",
     verify_workspace: "Sandbox verify",
   },

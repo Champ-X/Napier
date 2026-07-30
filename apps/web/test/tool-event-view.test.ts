@@ -281,6 +281,78 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("PRIVATE_PYTHON");
   });
 
+  it("summarizes Node debugger evidence without paths, expressions, or values", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "node_debugger",
+      status: "completed",
+      effect: "read",
+      output: "PRIVATE_DEBUG_OUTPUT",
+      details: {
+        kind: "napier.node-debugger",
+        schemaVersion: 1,
+        action: "evaluate",
+        processId: "process_12345678901234567890",
+        state: "paused",
+        processStatus: "running",
+        reason: "breakpoint",
+        sourcePathSha256: "1".repeat(64),
+        sourceSha256: "2".repeat(64),
+        sourceBytes: 321,
+        moduleCount: 2,
+        moduleSetSha256: "3".repeat(64),
+        breakpointCount: 1,
+        frameCount: 0,
+        scopeCount: 0,
+        variableCount: 0,
+        variablesTruncated: false,
+        evaluationStatus: "ok",
+        evaluationType: "number",
+        outputCount: 0,
+        outputTruncated: false,
+        nodeVersion: "24.16.0",
+        workerSha256: "4".repeat(64),
+        runtimeExecutableSha256: "5".repeat(64),
+        runtimeCommandSha256: "6".repeat(64),
+        dapRequestSequenceSha256: "7".repeat(64),
+        dapResponseSequenceSha256: "8".repeat(64),
+        dapEventSequenceSha256: "9".repeat(64),
+        resultSha256: "a".repeat(64),
+        path: "PRIVATE_DEBUG_PATH",
+        expression: "PRIVATE_DEBUG_EXPRESSION",
+        value: "PRIVATE_DEBUG_VALUE",
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual(
+      expect.objectContaining({
+        toolName: "node_debugger",
+        status: "completed",
+        effect: "read",
+        nodeDebuggerAction: "evaluate",
+        nodeDebuggerState: "paused",
+        nodeDebuggerProcessStatus: "running",
+        nodeDebuggerReason: "breakpoint",
+        nodeDebuggerModuleCount: 2,
+        nodeDebuggerBreakpointCount: 1,
+        nodeDebuggerEvaluationStatus: "ok",
+        nodeDebuggerEvaluationType: "number",
+        nodeDebuggerNodeVersion: "24.16.0",
+        nodeDebuggerSourceSha256: "2".repeat(64),
+        nodeDebuggerModuleSetSha256: "3".repeat(64),
+        nodeDebuggerDapRequestSha256: "7".repeat(64),
+        nodeDebuggerDapResponseSha256: "8".repeat(64),
+        nodeDebuggerDapEventSha256: "9".repeat(64),
+        nodeDebuggerResultSha256: "a".repeat(64),
+      }),
+    );
+    const summary = toolEventTraceSummary(event);
+    expect(summary).toContain(
+      `node-debugger evaluate / debug paused / stop breakpoint`,
+    );
+    expect(summary).toContain(`modules 2 / node 24.16.0`);
+    expect(summary).not.toContain("PRIVATE_DEBUG");
+  });
+
   it("summarizes TypeScript AST evidence without paths, names, or source", () => {
     const query = toolEvent("tool.completed", {
       toolName: "ast_query",

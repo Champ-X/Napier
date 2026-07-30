@@ -15,6 +15,7 @@ import {
   JavascriptKernelManager,
   LocalStore,
   ModelRegistry,
+  NodeDebuggerManager,
   PythonKernelManager,
   WorkspaceProcessManager,
 } from "../src/index.js";
@@ -321,6 +322,110 @@ describeLive("live Workspace Process smoke", () => {
     const durable = JSON.stringify(await store.listEvents(thread.id));
     expect(durable).not.toContain("LIVE_PRIVATE_VALUES");
     expect(durable).not.toContain("[3, 5, 7]");
+    await processes.shutdown();
+    store.close();
+  }, 30_000);
+
+  it("pauses and steps a real Node DAP target in the OS sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-node-debugger-workspace-"),
+    );
+    const dataRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-node-debugger-"),
+    );
+    temporaryRoots.push(workspaceRoot, dataRoot);
+    await writeFile(
+      path.join(workspaceRoot, "debug-target.mjs"),
+      [
+        "function liveCalculation(input) {",
+        "  const doubled = input * 2;",
+        "  return doubled + 1;",
+        "}",
+        "globalThis.LIVE_PRIVATE_DEBUG = liveCalculation(20);",
+      ].join("\n"),
+    );
+    const store = new LocalStore({ workspaceRoot, dataRoot });
+    await store.initialize();
+    const sandbox = createPlatformSandboxAdapter();
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      sandbox,
+    });
+    await processes.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Live Node debugger smoke",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const debuggerManager = new NodeDebuggerManager(processes, workspaceRoot);
+    const launched = await debuggerManager.launch({
+      threadId: thread.id,
+      runId: run.id,
+      path: "debug-target.mjs",
+      breakpoints: [{ line: 2 }],
+      actionTimeoutMs: 5_000,
+      sessionTimeoutMs: 20_000,
+    });
+    const evaluated = await debuggerManager.evaluate({
+      threadId: thread.id,
+      runId: run.id,
+      processId: launched.processId,
+      frameId: launched.frames[0]!.id,
+      expression: "input + 1",
+    });
+    const stepped = await debuggerManager.resume({
+      threadId: thread.id,
+      runId: run.id,
+      processId: launched.processId,
+      action: "next",
+    });
+    const completed = await debuggerManager.resume({
+      threadId: thread.id,
+      runId: run.id,
+      processId: launched.processId,
+      action: "continue",
+    });
+
+    expect(launched).toEqual(
+      expect.objectContaining({
+        state: "paused",
+        reason: "breakpoint",
+        moduleCount: 1,
+      }),
+    );
+    expect(evaluated.evaluation).toEqual(
+      expect.objectContaining({ status: "ok", result: "21" }),
+    );
+    expect(stepped.frames[0]).toEqual(
+      expect.objectContaining({ name: "liveCalculation", line: 3 }),
+    );
+    expect(completed).toEqual(
+      expect.objectContaining({
+        state: "terminated",
+        processStatus: "cancelled",
+        exitCode: 0,
+      }),
+    );
+    const [session] = (await processes.list(thread.id)).filter(
+      (candidate) => candidate.id === launched.processId,
+    );
+    expect(session).toEqual(
+      expect.objectContaining({
+        sandbox:
+          process.platform === "darwin"
+            ? "macos-sandbox-exec"
+            : "linux-bubblewrap",
+        workspaceDeltaStatus: "unchanged",
+      }),
+    );
+    const durable = JSON.stringify(await store.listEvents(thread.id));
+    expect(durable).not.toContain("LIVE_PRIVATE_DEBUG");
+    expect(durable).not.toContain("input + 1");
     await processes.shutdown();
     store.close();
   }, 30_000);

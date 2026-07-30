@@ -39,6 +39,7 @@ const PROCESS_TOOLS = new Set([
   "run_command",
   "javascript_kernel",
   "python_kernel",
+  "node_debugger",
   "workspace_process",
 ]);
 const INTERNAL_LEDGER_TOOLS = new Set([
@@ -250,6 +251,23 @@ export function assessToolCall(
   }
 
   if (PROCESS_TOOLS.has(toolName)) {
+    if (
+      toolName === "node_debugger" &&
+      getStringField(input, "action") === "launch"
+    ) {
+      const candidate = getStringField(input, "path");
+      if (
+        !candidate ||
+        path.isAbsolute(candidate) ||
+        !isPathInsideWorkspace(candidate, workspaceRoot)
+      ) {
+        return {
+          allowed: false,
+          risk: "high",
+          reason: "Node debugger must target a path inside the workspace",
+        };
+      }
+    }
     const cwd = getStringField(input, "cwd");
     if (cwd && !isPathInsideWorkspace(cwd, workspaceRoot)) {
       return {
@@ -270,7 +288,8 @@ export function assessToolCall(
       risk:
         toolName === "workspace_process" ||
         toolName === "javascript_kernel" ||
-        toolName === "python_kernel"
+        toolName === "python_kernel" ||
+        toolName === "node_debugger"
           ? "high"
           : "medium",
       reason:
@@ -280,7 +299,9 @@ export function assessToolCall(
             ? "persistent sandboxed JavaScript state lifecycle"
             : toolName === "python_kernel"
               ? "persistent sandboxed Python state lifecycle"
-              : "read-only sandboxed command execution",
+              : toolName === "node_debugger"
+                ? "persistent sandboxed Node DAP lifecycle"
+                : "read-only sandboxed command execution",
     };
   }
 
