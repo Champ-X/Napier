@@ -221,7 +221,7 @@ function parseWorkspaceProcessSession(
     !RESOURCE_ID.test(value["threadId"]) ||
     typeof value["runId"] !== "string" ||
     !RESOURCE_ID.test(value["runId"]) ||
-    value["runtime"] !== "node" ||
+    (value["runtime"] !== "node" && value["runtime"] !== "python") ||
     typeof value["sandbox"] !== "string" ||
     value["workspaceAccess"] !== "read_only" ||
     value["networkAccess"] !== "denied" ||

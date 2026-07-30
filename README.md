@@ -104,6 +104,10 @@ Version `0.1.0` includes:
   within one Agent Run, reusing the same read-only/offline Process Session
   boundary with bounded evaluations, live-only values, cancellation, and
   terminal handling for uncertain state;
+- a `python_kernel` tool for persistent restricted synchronous Python
+  calculations within one Agent Run, with fixed interpreter/runtime assets,
+  pure-computation syntax and builtins, traced-heap enforcement, and the same
+  private Process/Ledger boundary;
 - preview-bound `workspace_file_preview` / `workspace_file_apply` tools plus a
   lazy Files recovery panel for directory creation, no-overwrite-intent moves,
   reversible trash, and explicit restore without shell access;
@@ -1383,7 +1387,8 @@ write-capable sessions require a managed guardian or OCI backend and are not
 claimed by this implementation. Interactive stdin is a pipe protocol; it does
 not provide terminal resize, foreground process groups, job control, attach
 semantics. The separate JavaScript kernel below builds on this Process Session
-boundary; a persistent Python kernel remains future work.
+boundary. The restricted Python kernel below shares the same Process service;
+full package-backed Python and Notebook execution remain future work.
 
 ## Persistent JavaScript Kernel
 
@@ -1442,6 +1447,86 @@ Python execution. The opt-in real OS-Sandbox smoke is included in:
 ```bash
 npm run test:live-process
 ```
+
+## Persistent Restricted Python Kernel
+
+An Agent with `workspace` or `unrestricted` policy can opt into
+`python_kernel`. It starts one isolated Python process, preserves pure
+calculation variables and functions across synchronous evaluations, and
+explicitly cancels the state when finished. It reuses
+`WorkspaceProcessManager`, per-Thread admission, Run ownership, canonical cwd,
+read-only workspace, denied network, private protocol projection, process-group
+cancellation, and terminal-before-Run Ledger ordering. If the model omits
+`cancel`, every successful, failed, cancelled, or operator-waiting Run closes
+its remaining JavaScript and Python kernels.
+
+Napier resolves a fixed system Python executable rather than the macOS
+`/usr/bin/python3` Developer Tools shim. On macOS it accepts only recognized
+Command Line Tools or Xcode framework locations; Linux uses the fixed
+`/usr/bin/python3` runtime. The executable, bounded no-site worker bootstrap
+dependency set, existing bytecode, native extensions, fixed environment,
+compressed worker bytes, argv, resource limits, and versioned runtime root are
+hash-bound. The OS Sandbox mounts the exact Python version root read-only.
+Runtime preparation and post-settlement verification rehash the executable and
+bound assets; a host regression proves that set covers every module file
+actually loaded by the worker. OCI execution remains fail-closed until
+host/image runtime identity is defined.
+
+Each snippet is limited to 16 KiB and 1-2,000 ms; the whole kernel lasts
+10-120 seconds. Live previews are capped at 4,096 characters, console capture
+at 12 entries of 256 characters, cumulative private protocol output at 30 KiB,
+and complete Agent output at 32 KiB. Code requests use canonical base64 and the
+fixed worker uses zlib plus canonical base64 to stay inside the unchanged
+16 KiB explicit-argv budget. Result strings use canonical UTF-16LE base64.
+The interpreter starts with `-I -B -S -u`, so system/user site initialization
+does not run. A trusted signal handler enforces each wall timeout with an
+uncatchable process exit; CPU time, child processes, output file size, core
+dumps, and file descriptors also have hard worker limits. A second uncatchable
+exit enforces a 32 MiB `tracemalloc` Python-heap budget even around a user
+`except:` block. This is not a hard total-RSS limit for arbitrary native
+extensions; extensions and imports are unavailable, while OCI/VM memory quotas
+remain the stronger future boundary.
+
+The worker exposes a deliberately narrow pure-computation language. Imports,
+classes, async/await, yield and generator expressions, context managers,
+global/nonlocal declarations, decorators, private or dunder names/attributes,
+frame/traceback access, dynamic compilation, file APIs, environment access,
+subprocesses, and networking are unavailable. The globals dictionary contains
+only bounded arithmetic, container, iteration, conversion, exception, and
+printing builtins. Regression tests cover import, dunder, generator-frame
+introspection, bare-except memory-limit bypass, oversized input,
+worker-enforced wall timeout, external cancellation, concurrency, cross-Run
+access, protocol spoofing boundaries, complete loaded-asset coverage, and
+cumulative output exhaustion. The OS Sandbox remains the outer host security
+boundary; the Python restrictions reduce capability and protect protocol/state
+integrity rather than replacing process isolation.
+
+Synchronous syntax and runtime errors are live and non-terminal, preserving
+earlier valid state. Wall/CPU timeout, traced-memory exit, output-budget
+exhaustion, background thread detection, caller cancellation, malformed
+protocol, worker exit, or any unknown post-write result destroys the complete
+kernel. Another Run or recreated manager cannot adopt the state. Generic
+Process APIs expose neither protocol stdout nor writable stdin, while operator
+cancellation remains available.
+
+Code, values, console text, cwd paths, and fixed memory-limit markers are never
+stored as event text. Ledger, Replay, public SSE history, and Web Trace retain
+only action/status/type, Python version, counts, timing, memory peak/limit, and
+request/worker/runtime/command/result/output hashes. Deterministic Agent and
+public HTTP dogfood preserve a list across turns, calculate a result through
+real Python, cancel the process, and verify a privacy-safe Replay.
+
+This slice is not general Python, a package environment, DataFrame/SQL runtime,
+Notebook, async kernel, filesystem tool bridge, checkpoint, or cross-restart
+session. Run the opt-in real OS-Sandbox smoke from a non-sandboxed Terminal:
+
+```bash
+npm run test:live-process
+```
+
+The nested IDE host used for this revision rejects the Python probe with exit
+71 and `sandbox-exec: sandbox_apply: Operation not permitted`, matching the
+existing Process/JavaScript smoke limitation. No unsandboxed fallback is used.
 
 ## Controlled Workspace Editing
 
@@ -3049,8 +3134,8 @@ The default Agent policy is `observe`:
 
 - in-process read/list/search and AST preview operations inside the workspace
   are allowed;
-- `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`, and
-  `workspace_process` are not exposed;
+- `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`,
+  `python_kernel`, and `workspace_process` are not exposed;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
@@ -3064,6 +3149,8 @@ shell or inherited environment. **Background process** adds bounded
 start/input/poll/cancel lifecycle control over the same sandbox boundary.
 **JavaScript kernel** adds persistent synchronous state within one Agent Run,
 with bounded live-only values and fail-closed terminal outcomes.
+**Python kernel** adds persistent restricted pure-computation state with fixed
+runtime assets, traced-heap enforcement, and fail-closed terminal outcomes.
 **TypeScript AST** adds exact in-process syntax queries and no-write structural
 previews; every resulting edit still returns through Atomic patch and explicit
 verification.
@@ -3080,7 +3167,7 @@ Authorization is checked again immediately before every call.
 This in-process policy is defense in depth, not an operating-system sandbox.
 General shell execution remains disabled. Stdio MCP, structured workspace
 verification, the foreground command runner, Workspace Process Sessions, and
-the JavaScript kernel are the narrow process exceptions: macOS uses
+the JavaScript/Python kernels are the narrow process exceptions: macOS uses
 `/usr/bin/sandbox-exec`; Linux requires `/usr/bin/bwrap` and usable kernel or
 setuid namespace support. Windows or explicitly containerized deployments can
 opt into an OCI adapter by configuring `NAPIER_CONTAINER_SANDBOX_IMAGE`; it

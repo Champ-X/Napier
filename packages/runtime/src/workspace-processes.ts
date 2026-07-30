@@ -750,7 +750,8 @@ export class WorkspaceProcessManager {
       await assertCommandRuntimeStable(entry.prepared);
     } catch {
       status = "failed";
-      interruptionReason = "The bound Node runtime changed during execution.";
+      interruptionReason =
+        "The bound command runtime changed during execution.";
     }
     const afterSnapshot = await createWorkspacePathSnapshot(
       entry.prepared.workspaceRoot,

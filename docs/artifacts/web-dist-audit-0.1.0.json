@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 60,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CZqLTctZ.js",
+    "path": "apps/web/dist/assets/index-daHMaxMe.js",
     "sizeBytes": 132225,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "5d5cd44117f8c4c9a0f7cc34ed31cc4b84d011fddc2e79d2f723ce54da43fb20"
+    "sha256": "109b80215b577b9790ca2c4531938784415dba250cc21c3a6bae9fa3310b034d"
   },
-  "distContentSha256": "5d5cd44117f8c4c9a0f7cc34ed31cc4b84d011fddc2e79d2f723ce54da43fb20",
+  "distContentSha256": "109b80215b577b9790ca2c4531938784415dba250cc21c3a6bae9fa3310b034d",
   "errors": []
 }

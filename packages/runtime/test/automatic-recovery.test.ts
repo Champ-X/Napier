@@ -373,6 +373,7 @@ describe("safe automatic recovery", () => {
         "lsp_definition",
         "lsp_references",
         "javascript_kernel",
+        "python_kernel",
         "apply_patch",
         "verify_workspace",
       ],

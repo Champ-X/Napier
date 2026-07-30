@@ -2635,6 +2635,7 @@ export const AGENT_TOOL_NAMES = [
   "workspace_file_apply",
   "run_command",
   "javascript_kernel",
+  "python_kernel",
   "workspace_process",
   "verify_workspace",
 ] as const;
@@ -3280,7 +3281,7 @@ export interface WorkspaceProcessSession {
   id: string;
   threadId: string;
   runId: string;
-  runtime: "node";
+  runtime: "node" | "python";
   status: WorkspaceProcessStatus;
   sandbox: string;
   workspaceAccess: "read_only";

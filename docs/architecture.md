@@ -2174,9 +2174,11 @@ runtime identity binding exists. Wall time, output, and process-group
 termination are enforced; hard per-command CPU/memory quotas require an OCI or
 managed session backend and remain an explicit gap. PTY, writes, package
 installation, and inherited environment variables are not part of this slice.
-Python and Git remain outside the public runtime enum until a managed backend
-can bind their transitive runtime dependencies without broadening the local
-macOS profile.
+The public generic command/process runtime remains Node-only. Restricted
+Python uses a separate typed private protocol that binds a recognized system
+interpreter and a bounded no-site bootstrap dependency set proven to cover the
+worker's loaded module files, without granting models an arbitrary Python argv
+surface. Git remains outside the runtime enum.
 
 ## Workspace Process Session Flow
 
@@ -2247,12 +2249,12 @@ An abrupt host or Runtime loss cannot prove that a macOS sandbox wrapper died,
 because `sandbox-exec` has no parent-death contract; startup therefore records
 unknown interruption rather than completion or reattachment. A guardian or OCI
 identity is required for proved cleanup of abrupt or deliberately detached
-descendants and cross-restart reattachment. PTY, workspace writes, hard
-CPU/memory/process quotas, Python, and remote sandboxes remain outside this
+descendants and cross-restart reattachment. PTY, workspace writes, hard total
+RSS quotas, package-backed Python, and remote sandboxes remain outside this
 slice. Interactive stdin is a pipe protocol and does not imply terminal resize,
 job control, foreground process groups, attach semantics, or a persistent
-language kernel. The JavaScript kernel below is a separate typed protocol over
-the same Process Session service.
+language kernel. The JavaScript and restricted Python kernels below are
+separate typed protocols over the same Process Session service.
 
 ## Persistent JavaScript Kernel Flow
 
@@ -2345,6 +2347,96 @@ projection also prevents the generic Processes panel from rendering or
 injecting the reversible transport. The current slice does not provide
 modules, timers, async I/O, tool callbacks, snapshots, cross-restart recovery,
 or Python.
+
+## Persistent Restricted Python Kernel Flow
+
+`python_kernel` composes the same Process Session lifecycle with a separately
+bound Python runtime and a narrower pure-computation language:
+
+```text
+Agent selects start
+  -> require non-observe policy + enabled python_kernel tool
+  -> resolve a recognized CLT/Xcode or fixed Linux Python executable
+  -> hash the executable and bounded no-site bootstrap dependency asset set
+  -> mount the exact version root read-only in the local OS Sandbox
+  -> launch -I -B -S -u with fixed PYTHONHASHSEED and no inherited environment
+  -> enforce CPU/process/file/core/fd limits before reading requests
+  -> register the private Process ID to the current Thread and Run
+Agent selects evaluate + Process ID + Python
+  -> require the same live Thread/Run registration and Python Process Session
+  -> validate 1-16 KiB UTF-8 code and a 1-2,000 ms wall budget
+  -> append one hash-only workspace.process.input receipt
+  -> parse Python AST and reject imports, class/async/yield/generator syntax,
+     decorators, private/dunder names, and frame/traceback attributes
+  -> execute with a fixed pure-computation builtin dictionary
+  -> arm a trusted per-evaluation wall timer that exits the worker on expiry
+  -> capture bounded print output and render built-in values without user repr
+  -> terminate the process from a trusted trace hook above 32 MiB Python heap
+  -> return canonical request-ID-bound UTF-16LE base64 result text live-only
+  -> retain status/type/version/count/time/memory plus runtime/result hashes
+Agent selects cancel, or evaluation becomes uncertain
+  -> terminate the complete Process Session and discard the registration
+Run settles without explicit cancel
+  -> AgentKernelRuntime cancels every JavaScript and Python kernel for the Run
+  -> settle Process evidence before the terminal Run event
+```
+
+The command layer keeps its public Node-only schemas while its internal
+`CommandRuntime` can prepare Python for the typed private kernel. On macOS it
+does not launch the `/usr/bin/python3` Developer Tools shim; it resolves the
+versioned framework executable, permits process-exec only for that file, and
+adds one read-only runtime root. Linux resolves `/usr/bin/python3` and its exact
+stdlib version directory. The receipt binds executable, fixed environment,
+argv, resource limits, runtime path hashes, and hashes for the bounded
+bootstrap dependency source, existing bytecode, and native-extension files.
+The worker disables site initialization, and a host regression proves the set
+covers every module file loaded by the real worker imports. Preparation and
+settlement rehash those assets. Python remains fail-closed for OCI until
+image runtime identity is defined.
+
+The fixed worker source is zlib-compressed and canonical-base64 chunked across
+bounded ASCII argv items; the uncompressed bytes are bound by
+`workerSha256`. User snippets use a second canonical-base64 request envelope.
+The worker independently validates exact request keys, request ID, encoding,
+UTF-8, code bytes, and timeout. Result frames have exact keys, canonical
+UTF-16LE base64, bounded console entries, Python version, traced-memory
+peak/limit, and a cumulative 30 KiB protocol budget with a reserved terminal
+response.
+
+Restricted execution is intentionally not described as a secure Python
+language sandbox. The globals map has only selected arithmetic, container,
+iteration, conversion, exception, and print builtins. AST checks deny dynamic
+capability recovery through imports, dunder/private access, generator frames,
+and frame/traceback fields. A regression executes the concrete
+`gi_frame.f_back.f_globals` generator-expression escape and receives a
+non-terminal denial. The outer macOS/Bubblewrap process sandbox remains the
+host boundary, with a read-only workspace, denied network, fixed environment,
+and only the selected executable permitted.
+
+For each evaluation, the worker arms `ITIMER_REAL`; expiry writes one fixed
+private stderr marker and calls trusted `os._exit(71)`, so user `except:`
+cannot extend its wall budget. A 30-second process CPU hard limit remains the
+session backstop. The worker also sets no-child-process, zero-output-file,
+zero-core, and 32-descriptor limits. `tracemalloc` observes the persistent
+Python heap; crossing 32 MiB writes a separate fixed private marker and calls
+trusted `os._exit(70)`. The Manager maps only those markers to fixed path-free
+failures and destroys the registration. This bounds Python allocations exposed
+by the restricted builtins, but it is not a hard total-RSS guarantee for
+arbitrary native extensions; those extensions are unavailable, and OCI/VM
+memory quotas remain the future stronger boundary.
+
+Synchronous syntax/runtime errors preserve earlier state. Wall/CPU timeout,
+memory exit, caller abort, background-thread detection, protocol/output
+exhaustion, malformed response, early worker exit, or unknown input outcome
+terminates the kernel. Code, values, console entries, cwd, and fixed stderr
+markers remain live-only. Ledger, Replay, public SSE, and Trace retain only
+action/status/type, Python version, counts, timing, memory numbers, Process ID,
+and hashes. Generic Process output/input cannot expose or inject the private
+frames.
+
+This is a persistent restricted calculation context, not general Python,
+package installation, DataFrame/SQL, Notebook, async I/O, a filesystem tool
+bridge, snapshot, or cross-restart recovery.
 
 ## Workspace Verification Flow
 
@@ -4534,21 +4626,26 @@ The current boundary has thirty-two parts:
     edit previews with file/node freshness, complete-file syntax reparse,
     comment-trivia rejection, unique exact-patch output, CAS/typecheck
     dogfood, hash-only durable evidence, and Agent/Server/Trace integration.
+38. persistent restricted synchronous Python calculations within one Agent
+    Run, with fixed interpreter/runtime-asset binding, pure-computation
+    syntax/builtins, uncatchable traced-heap enforcement, private Process
+    protocol, hash-only evidence, and Agent/Server/Trace integration.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
 verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
 rename/quick-fix previews, explicit-argv command execution, persistent
-synchronous JavaScript calculations, and bounded background Process Session
-lifecycle control. `unrestricted` is reserved for future sandboxed shell
-execution, but known destructive command patterns are still denied.
+synchronous JavaScript and restricted Python calculations, and bounded
+background Process Session lifecycle control. `unrestricted` is reserved for
+future sandboxed shell execution, but known destructive command patterns are
+still denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and
-Workspace Process Sessions, including the JavaScript kernel, use narrow macOS
-sandbox-exec or Linux Bubblewrap adapters; a container or VM remains the
-recommended outer boundary for production third-party code.
+Workspace Process Sessions, including the JavaScript and Python kernels, use
+narrow macOS sandbox-exec or Linux Bubblewrap adapters; a container or VM
+remains the recommended outer boundary for production third-party code.
 
 ## Capability Roadmap
 
@@ -4560,8 +4657,8 @@ deferred until the local P0-P9 product loop is stable.
 
 - extend bounded Workspace Process Sessions with PTY, a managed guardian,
   proved orphan cleanup, and cross-restart reattachment;
-- add a persistent Python kernel and managed tool callbacks without weakening
-  the JavaScript kernel's Run ownership or Sandbox boundary;
+- extend restricted Python into package-backed data/Notebook sessions and add
+  managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;
 - domain extraction from the oversized Server and Store modules;
 - startup, first-token, tool-latency, long-thread, memory, Web bundle, and

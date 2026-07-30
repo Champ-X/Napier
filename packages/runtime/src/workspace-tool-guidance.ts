@@ -23,6 +23,7 @@ export function formatWorkspaceToolGuidance(
   const hasFileApply = toolNames.has("workspace_file_apply");
   const hasCommand = toolNames.has("run_command");
   const hasJavascriptKernel = toolNames.has("javascript_kernel");
+  const hasPythonKernel = toolNames.has("python_kernel");
   const hasProcess = toolNames.has("workspace_process");
   const hasVerification = toolNames.has("verify_workspace");
   const hasLspDiagnostics = toolNames.has("lsp_diagnostics");
@@ -40,6 +41,7 @@ export function formatWorkspaceToolGuidance(
     !hasFileApply &&
     !hasCommand &&
     !hasJavascriptKernel &&
+    !hasPythonKernel &&
     !hasProcess &&
     !hasVerification &&
     !hasLspDiagnostics &&
@@ -152,6 +154,12 @@ export function formatWorkspaceToolGuidance(
     lines.push(
       "Use javascript_kernel for multi-step synchronous JavaScript calculations that benefit from state across evaluations. Start one kernel, retain its processId, and cancel it when finished.",
       "Kernel code and live values are untrusted and ephemeral. The context is read-only/offline with no process, require, fetch, WebAssembly, shared-memory Atomics, GC callbacks, or dynamic code generation. Promise microtasks drain inside the evaluation timeout; a returned Promise or thenable, VM timeout, cancellation, or unknown protocol outcome terminates the entire kernel.",
+    );
+  }
+  if (hasPythonKernel) {
+    lines.push(
+      "Use python_kernel for multi-step pure Python calculations that benefit from state across evaluations. Start one kernel, retain its processId, and cancel it when finished.",
+      "Python kernel code and live values are untrusted and ephemeral. Imports, classes, async/yield, private or dunder access, dynamic compilation, files, subprocesses, networking, and workspace writes are unavailable. A timeout, resource failure, background thread, cancellation, or unknown protocol outcome terminates the entire kernel.",
     );
   }
   if (hasProcess) {

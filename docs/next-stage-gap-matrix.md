@@ -20,7 +20,7 @@ Audit date: 2026-07-30
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                  |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, and a persistent synchronous JavaScript kernel now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                     |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                        |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, plus write-linked diagnostic deltas exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP, broader multi-node AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain. |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                       |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                                                                                                                                                                                                           |
@@ -1501,7 +1501,7 @@ Threat boundary:
   reports output/stdin unavailable, while restart already removes all live
   handles.
 - This slice is not a Notebook, async JavaScript runtime, module environment,
-  persistent Python kernel, cross-restart checkpoint, or tool-calling runtime.
+  Python runtime, cross-restart checkpoint, or tool-calling runtime.
 
 Observed result:
 
@@ -1614,5 +1614,119 @@ Observed result:
   the main production code remains split across focused AST model, source,
   runner, tool, and Trace modules rather than extending Store or Server.
 - the complete repository gate passed 1069 tests with 16 opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: Persistent Restricted Python Kernel
+
+User scenario: an Agent can keep pure Python calculation state across model
+turns, inspect bounded values and print output, recover from ordinary syntax or
+runtime errors, and explicitly close the context without receiving imports,
+files, packages, network, subprocess, or host-shell access.
+
+Acceptance:
+
+- add opt-in `python_kernel` start/evaluate/cancel actions through the shared
+  Agent Runtime, profile, policy, Context guidance, Server SSE, Web Trace, and
+  private Process Session APIs;
+- keep the public generic command/background-process schema Node-only while
+  preparing Python only for the typed private kernel path;
+- resolve only fixed Linux or recognized macOS CLT/Xcode Python executables,
+  bind the exact version root read-only, hash the executable and bounded
+  no-site bootstrap dependency source/existing-bytecode/native-extension set
+  before start and after settlement, prove that it covers every module file
+  loaded by the real worker imports, and fail closed for unavailable or
+  drifting runtime bytes;
+- launch with isolated/no-bytecode/no-site/unbuffered flags, a fixed
+  secret-free and deterministic-hash environment, no network, read-only
+  workspace, and hard CPU/process/output-file/core/file-descriptor limits;
+- expose only selected arithmetic, container, iterator, conversion, exception,
+  and print builtins; reject imports, classes, async/await, yield/generators,
+  context managers, global/nonlocal, decorators, private/dunder names, and
+  frame/traceback access before execution;
+- accept 1-16 KiB UTF-8 snippets with independent 1-2,000 ms wall budgets and
+  a 10-120 second total session lifetime;
+- cap live previews at 4,096 characters, console at 12 entries of 256
+  characters, cumulative private protocol at 30 KiB, Agent output at 32 KiB,
+  and persistent traced Python heap at 32 MiB;
+- make memory termination uncatchable by writing one fixed private marker and
+  exiting the trusted worker process; map only that marker to a fixed
+  path-free error and never persist it as text;
+- enforce each evaluation's wall budget inside the worker with a separate
+  trusted signal marker and uncatchable process exit rather than treating the
+  Manager's protocol grace period as executable time;
+- use zlib plus canonical base64 for the fixed worker under the unchanged 16
+  KiB explicit-argv budget, canonical base64 for requests, and canonical
+  UTF-16LE base64 for result/console strings;
+- cancel every remaining JavaScript and Python kernel before all terminal Run
+  paths through a focused `AgentKernelRuntime`, reducing rather than expanding
+  the oversized Agent module;
+- keep code, values, console, cwd, runtime paths, and raw stderr live-only;
+  retain only action/status/type/version/count/time/memory and
+  request/worker/runtime/command/result/output hashes;
+- cover persistence, synchronous error reuse, import/dunder/frame denial,
+  generator-frame exploit, worker-enforced wall timeout, bare-except memory
+  bypass, external cancellation, concurrent evaluations, oversized input,
+  preview/console/protocol limits, cross-Run and recreated-manager denial,
+  policy, recovery exclusion, Replay privacy, Agent dogfood, public SSE,
+  Process projection, Web Trace, loaded-runtime-asset binding, and optional
+  real OS-Sandbox smoke.
+
+Threat boundary:
+
+- Python restrictions protect the typed protocol and reduce available
+  capability; they are not presented as a replacement for process isolation.
+  The local OS Sandbox remains the host boundary.
+- User code cannot import modules or recover worker globals through dunder,
+  generator frames, normal frames, or traceback fields. The concrete
+  `gi_frame.f_back.f_globals` path is a regression case.
+- The selected worker may read its fixed runtime and the Sandbox may read the
+  workspace, but restricted user globals contain no file/import/environment
+  entry point. Workspace writes and network remain denied independently by the
+  OS Sandbox.
+- A trusted trace hook observes Python allocations. Crossing 32 MiB invokes
+  `os._exit(70)`, which user `except:` cannot catch. This is not a hard total
+  RSS quota for arbitrary native extensions; extensions/imports are
+  unavailable and OCI/VM quotas remain required for full Python.
+- A trusted `ITIMER_REAL` handler separately invokes `os._exit(71)` at the
+  requested evaluation deadline. The Manager maps only its fixed private
+  marker to a path-free timeout and destroys the registration.
+- Synchronous errors may leave partial user-state mutations and are reported
+  as such while preserving the context. Timeout, memory exit, background
+  thread, malformed protocol, output exhaustion, cancellation, or unknown
+  input outcome destroys the whole context.
+- State is ephemeral. Another Run, recreated manager, or restart cannot adopt
+  or replay prior snippets. Safe automatic recovery excludes every Python
+  kernel action.
+- Generic Process list/output/input reports private protocol output/stdin
+  unavailable. Operator cancellation still settles the same authoritative
+  Process Ledger.
+- This slice does not provide general Python, package installation,
+  DataFrame/SQL, Notebook, async I/O, filesystem or Napier-tool callbacks,
+  snapshots, cross-restart recovery, or hard total-RSS accounting.
+
+Observed result:
+
+- deterministic Agent dogfood preserved `[3, 5, 7]` across turns, calculated
+  `15` in a real Python child, explicitly cancelled the context, and produced a
+  valid Replay without code, values, console, or cwd paths;
+- the public HTTP/SSE path ran start/evaluate/cancel through the shared
+  Runtime, returned `42` live-only, retained three hash-only tool results, and
+  exposed no generic Process output or stdin;
+- worker/runtime preparation takes approximately 10 ms and post-run asset
+  verification approximately 10 ms in steady state on the reviewed macOS host
+  (the first observed preparation was 16 ms); 60 assets cover the worker's
+  actual loaded files, and compressed worker argv is 5,017 characters under
+  the unchanged 16 KiB budget;
+- review found and fixed a catchable memory-guard exception, a generator-frame
+  worker-global escape, an unenforced per-evaluation timeout, and an incomplete
+  runtime-asset manifest before release; all four concrete failures now have
+  executable regressions;
+- `AgentKernelRuntime` centralizes both language managers and Run cleanup;
+  `agent-runtime.ts` is four lines smaller than the prior committed baseline;
+- the opt-in production Sandbox probe fails closed in this nested IDE with
+  exit 71 and `sandbox-exec: sandbox_apply: Operation not permitted`; no
+  unsandboxed fallback is used.
+- the complete repository gate passed 1082 tests with 17 opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.

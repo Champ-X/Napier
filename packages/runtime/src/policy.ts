@@ -38,6 +38,7 @@ const LSP_TOOLS = new Set([
 const PROCESS_TOOLS = new Set([
   "run_command",
   "javascript_kernel",
+  "python_kernel",
   "workspace_process",
 ]);
 const INTERNAL_LEDGER_TOOLS = new Set([
@@ -267,7 +268,9 @@ export function assessToolCall(
     return {
       allowed: true,
       risk:
-        toolName === "workspace_process" || toolName === "javascript_kernel"
+        toolName === "workspace_process" ||
+        toolName === "javascript_kernel" ||
+        toolName === "python_kernel"
           ? "high"
           : "medium",
       reason:
@@ -275,7 +278,9 @@ export function assessToolCall(
           ? "bounded background Process Session lifecycle"
           : toolName === "javascript_kernel"
             ? "persistent sandboxed JavaScript state lifecycle"
-            : "read-only sandboxed command execution",
+            : toolName === "python_kernel"
+              ? "persistent sandboxed Python state lifecycle"
+              : "read-only sandboxed command execution",
     };
   }
 

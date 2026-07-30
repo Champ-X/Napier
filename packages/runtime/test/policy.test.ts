@@ -369,6 +369,28 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "python_kernel",
+        { action: "start" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "python_kernel",
+        { action: "start", cwd: "packages/runtime" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "high",
+        reason: "persistent sandboxed Python state lifecycle",
+      }),
+    );
+    expect(
+      assessToolCall(
         "workspace",
         "run_command",
         { runtime: "node", args: ["--version"], cwd: "../outside" },

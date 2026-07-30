@@ -6,6 +6,31 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a persistent restricted synchronous Python kernel. The opt-in
+  `python_kernel` Agent tool starts, evaluates, and cancels a Run-owned
+  pure-computation context through the existing private
+  `WorkspaceProcessManager` protocol and read-only/offline OS Sandbox. State
+  survives model turns, while imports, classes, async/yield, context managers,
+  private/dunder and frame access, dynamic compilation, files, subprocesses,
+  networking, packages, and inherited environment access remain unavailable.
+  A fixed CLT/Xcode or Linux interpreter launches with `-I -B -S -u`; its
+  executable, no-site bootstrap dependency set, existing bytecode, native
+  extensions, fixed environment, worker, argv, and resource limits are bound
+  and rechecked. A host regression proves the bounded asset set covers every
+  module file loaded by the worker. Snippets, session lifetime, AST size,
+  output, protocol bytes, CPU, child processes, files, descriptors, and traced
+  Python heap are independently bounded. Trusted signal and trace handlers
+  turn per-evaluation wall timeout and 32 MiB traced-heap excess into
+  uncatchable process exits, including around user `except:` blocks. Review
+  regressions close an initially unused evaluation timeout, an incomplete
+  runtime-asset manifest, a catchable memory guard, and a
+  generator-frame-to-worker-globals escape. Code, values, console, cwd,
+  stderr, and runtime paths remain live-only; Ledger, Replay, Server SSE, and
+  Web Trace retain bounded lifecycle metadata and hashes. Deterministic Agent
+  and public HTTP dogfood preserve state in a real Python child, calculate a
+  result, close the context, and verify privacy-safe evidence. This is not a
+  package environment, Notebook, DataFrame runtime, filesystem bridge, or
+  replacement for the OS Sandbox.
 - Added real TypeScript/JavaScript AST query and no-write structural edit
   previews. The opt-in `ast_query` tool uses the pinned TypeScript compiler to
   select bounded syntax nodes by kind, name, and ancestor and returns exact

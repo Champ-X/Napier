@@ -1,3 +1,4 @@
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { describe, expect, it } from "vitest";
 
 import { createLspSymbolsTool } from "../src/lsp-symbols-tool.js";
@@ -36,5 +37,18 @@ describe("workspace tool guidance", () => {
     );
     expect(guidance).toContain("ast_edit_preview never writes");
     expect(guidance).toContain("Apply it through apply_patch");
+  });
+
+  it("describes the restricted Python state boundary", () => {
+    const guidance = formatWorkspaceToolGuidance([
+      { name: "python_kernel" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain(
+      "Use python_kernel for multi-step pure Python calculations",
+    );
+    expect(guidance).toContain(
+      "Imports, classes, async/yield, private or dunder access",
+    );
   });
 });

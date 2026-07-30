@@ -1,4 +1,4 @@
-import type { RunEvent } from "@napier/contracts";
+import type { JsonValue, RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import { workspaceProcessEventTraceSummary } from "../src/workspace-process-event-view";
@@ -67,5 +67,14 @@ describe("Workspace Process event view", () => {
       `process / settled / id abcdef1234 / status succeeded / runtime node / args 2 / stdout-chars 12 / stderr-chars 0 / cursor 1 / command ${"a".repeat(12)} / stdout ${"b".repeat(12)} / stderr ${"c".repeat(12)} / workspace changed / changed-files 2 / changed-paths ${"d".repeat(12)}`,
     );
     expect(summary).not.toContain("TOP_SECRET");
+    expect(
+      workspaceProcessEventTraceSummary({
+        ...event,
+        payload: {
+          ...(event.payload as Record<string, JsonValue>),
+          runtime: "python",
+        },
+      }),
+    ).toContain("runtime python");
   });
 });

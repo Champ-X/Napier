@@ -6,6 +6,11 @@ import {
   javascriptKernelToolOutputLedgerProjection,
 } from "./javascript-kernel-tool.js";
 import {
+  pythonKernelToolCallArgumentsLedgerProjection,
+  pythonKernelToolInputLedgerProjection,
+  pythonKernelToolOutputLedgerProjection,
+} from "./python-kernel-tool.js";
+import {
   lspCodeActionsToolCallArgumentsLedgerProjection,
   lspCodeActionsToolInputLedgerProjection,
   lspCodeActionsToolOutputLedgerProjection,
@@ -71,6 +76,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "python_kernel") {
+    return pythonKernelToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolCallArgumentsLedgerProjection(toolName, args);
   }
@@ -116,6 +124,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolInputLedgerProjection(args);
+  }
+  if (toolName === "python_kernel") {
+    return pythonKernelToolInputLedgerProjection(args);
   }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolInputLedgerProjection(toolName, args);
@@ -163,6 +174,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "javascript_kernel") {
     return javascriptKernelToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "python_kernel") {
+    return pythonKernelToolOutputLedgerProjection(output, result);
   }
   if (toolName === "ast_query" || toolName === "ast_edit_preview") {
     return typescriptAstToolOutputLedgerProjection(output, result);

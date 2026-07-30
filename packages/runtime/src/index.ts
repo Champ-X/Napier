@@ -1,4 +1,5 @@
 export * from "./agent-runtime.js";
+export * from "./agent-kernels.js";
 export * from "./agent-milestones.js";
 export * from "./agents.js";
 export * from "./automatic-recovery.js";
@@ -61,6 +62,10 @@ export * from "./plans.js";
 export * from "./policy.js";
 export * from "./prompt-packages.js";
 export * from "./prompt-variables.js";
+export * from "./python-kernel.js";
+export * from "./python-kernel-protocol.js";
+export * from "./python-kernel-tool.js";
+export * from "./python-kernel-worker.js";
 export * from "./replan-policies.js";
 export * from "./replan-review.js";
 export * from "./replay.js";

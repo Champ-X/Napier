@@ -50,7 +50,10 @@ export function workspaceProcessEventTraceSummary(
   }
   const processId = stringMatch(event.payload["id"], PROCESS_ID);
   const status = stringMatch(event.payload["status"], STATUS);
-  const runtime = event.payload["runtime"] === "node" ? "node" : undefined;
+  const runtime =
+    event.payload["runtime"] === "node" || event.payload["runtime"] === "python"
+      ? event.payload["runtime"]
+      : undefined;
   const argumentCount = integer(event.payload["argumentCount"]);
   const stdoutChars = integer(event.payload["stdoutChars"]);
   const stderrChars = integer(event.payload["stderrChars"]);

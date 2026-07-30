@@ -47,6 +47,7 @@ const UNSAFE_TOOLS = new Set([
   "workspace_file_apply",
   "bash",
   "javascript_kernel",
+  "python_kernel",
   "workspace_process",
   "create_plan",
   "update_plan_step",

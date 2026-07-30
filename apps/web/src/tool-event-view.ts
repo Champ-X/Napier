@@ -5,6 +5,11 @@ import {
   type JavascriptKernelToolEventTraceView,
 } from "./javascript-kernel-event-view";
 import {
+  pythonKernelEventEvidence,
+  pythonKernelSummaryParts,
+  type PythonKernelToolEventTraceView,
+} from "./python-kernel-event-view";
+import {
   typescriptAstEventEvidence,
   typescriptAstSummaryParts,
   type TypescriptAstToolEventTraceView,
@@ -30,6 +35,7 @@ export interface ToolEventTraceView
     CommandToolEventTraceView,
     LspToolEventTraceView,
     JavascriptKernelToolEventTraceView,
+    PythonKernelToolEventTraceView,
     TypescriptAstToolEventTraceView {
   toolName: string;
   status: string;
@@ -219,6 +225,10 @@ export function toolEventTraceView(
     toolName === "javascript_kernel"
       ? javascriptKernelEventEvidence(event.payload["details"])
       : undefined;
+  const pythonKernelEvidence =
+    toolName === "python_kernel"
+      ? pythonKernelEventEvidence(event.payload["details"])
+      : undefined;
   const typescriptAstEvidence =
     toolName === "ast_query" || toolName === "ast_edit_preview"
       ? typescriptAstEventEvidence(event.payload["details"])
@@ -254,6 +264,7 @@ export function toolEventTraceView(
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
+    ...(pythonKernelEvidence ? pythonKernelEvidence : {}),
     ...(typescriptAstEvidence ? typescriptAstEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(fileMutationEvidence ? fileMutationEvidence : {}),
@@ -437,6 +448,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
     ...commandToolEventSummaryParts(view),
     ...javascriptKernelSummaryParts(view),
+    ...pythonKernelSummaryParts(view),
     ...typescriptAstSummaryParts(view),
     ...(view.patchOperation ? [`patch ${view.patchOperation}`] : []),
     ...(view.patchEditCount !== undefined

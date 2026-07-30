@@ -222,6 +222,65 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("PRIVATE_KERNEL");
   });
 
+  it("summarizes Python kernel evidence without code or values", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "python_kernel",
+      status: "completed",
+      effect: "write",
+      output: "PRIVATE_PYTHON_OUTPUT",
+      details: {
+        kind: "napier.python-kernel",
+        schemaVersion: 1,
+        action: "evaluate",
+        processId: "process_12345678901234567890",
+        processStatus: "running",
+        evaluationStatus: "ok",
+        terminal: false,
+        valueType: "integer",
+        previewTruncated: false,
+        consoleCount: 1,
+        consoleTruncated: false,
+        durationMs: 9,
+        pythonVersion: "3.9.6",
+        memoryPeakBytes: 12_345,
+        memoryLimitBytes: 33_554_432,
+        requestSha256: "1".repeat(64),
+        workerSha256: "2".repeat(64),
+        runtimeExecutableSha256: "3".repeat(64),
+        runtimeCommandSha256: "4".repeat(64),
+        resultSha256: "5".repeat(64),
+        code: "PRIVATE_PYTHON_CODE",
+        preview: "PRIVATE_PYTHON_VALUE",
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "python_kernel",
+      status: "completed",
+      effect: "write",
+      pythonKernelAction: "evaluate",
+      pythonKernelProcessId: "process_12345678901234567890",
+      pythonKernelProcessStatus: "running",
+      pythonKernelEvaluationStatus: "ok",
+      pythonKernelTerminal: false,
+      pythonKernelValueType: "integer",
+      pythonKernelConsoleCount: 1,
+      pythonKernelDurationMs: 9,
+      pythonKernelVersion: "3.9.6",
+      pythonKernelMemoryPeakBytes: 12_345,
+      pythonKernelMemoryLimitBytes: 33_554_432,
+      pythonKernelRequestSha256: "1".repeat(64),
+      pythonKernelWorkerSha256: "2".repeat(64),
+      pythonKernelRuntimeExecutableSha256: "3".repeat(64),
+      pythonKernelRuntimeCommandSha256: "4".repeat(64),
+      pythonKernelResultSha256: "5".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / python_kernel / completed / effect write / python-kernel evaluate / py-process running / py-result ok / py-type integer / py-console 1 / py-ms 9 / python 3.9.6 / py-memory 12345/33554432 / py-request ${"1".repeat(12)} / py-worker ${"2".repeat(12)} / py-runtime ${"3".repeat(12)} / py-command ${"4".repeat(12)} / py-result-hash ${"5".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("PRIVATE_PYTHON");
+  });
+
   it("summarizes TypeScript AST evidence without paths, names, or source", () => {
     const query = toolEvent("tool.completed", {
       toolName: "ast_query",

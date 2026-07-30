@@ -57,6 +57,7 @@ import {
   agentToolInputLedgerProjection as toolInputLedgerProjection,
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
+import { AgentKernelRuntime } from "./agent-kernels.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import {
   createWorkspaceFileApplyTool,
@@ -100,8 +101,6 @@ import {
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
 } from "./model-context-envelope.js";
-import { JavascriptKernelManager } from "./javascript-kernel.js";
-import { createJavascriptKernelTool } from "./javascript-kernel-tool.js";
 import { createTypescriptAstTools } from "./typescript-ast-tool.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
@@ -227,7 +226,7 @@ class OperatorDecisionPendingError extends Error {
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, ActiveRun>();
   private readonly workerId = createId("worker");
-  private readonly javascriptKernels: JavascriptKernelManager | undefined;
+  private readonly kernels: AgentKernelRuntime;
 
   constructor(
     readonly store: LocalStore,
@@ -237,9 +236,7 @@ export class AgentRuntime {
     readonly workspaceProcesses?: WorkspaceProcessManager,
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
   ) {
-    this.javascriptKernels = workspaceProcesses
-      ? new JavascriptKernelManager(workspaceProcesses)
-      : undefined;
+    this.kernels = new AgentKernelRuntime(workspaceProcesses);
   }
 
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
@@ -626,7 +623,7 @@ export class AgentRuntime {
         );
       }
       budget.throwIfExhausted();
-      await this.javascriptKernels?.cancelRun({
+      await this.kernels.cancelRun({
         threadId: thread.id,
         runId: run.id,
       });
@@ -666,8 +663,8 @@ export class AgentRuntime {
         leaseToken: leasedRun.token,
       });
     } catch (error) {
-      await this.javascriptKernels
-        ?.cancelRun({
+      await this.kernels
+        .cancelRun({
           threadId: thread.id,
           runId: run.id,
         })
@@ -1317,12 +1314,10 @@ export class AgentRuntime {
     if (
       !safeReadOnlyRecovery &&
       !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("javascript_kernel") &&
-      this.javascriptKernels
+      profile.toolPolicy !== "observe"
     ) {
       tools.push(
-        createJavascriptKernelTool(this.javascriptKernels, {
+        ...this.kernels.createTools(profile.enabledTools, {
           threadId: run.threadId,
           runId: run.id,
         }),
@@ -3466,6 +3461,7 @@ function builtInToolEffect(
   args?: unknown,
 ): "read" | "write" | undefined {
   if (toolName === "javascript_kernel") return "write";
+  if (toolName === "python_kernel") return "write";
   if (toolName === "workspace_process") {
     return recordValue(args) && args["action"] === "poll" ? "read" : "write";
   }

@@ -1,3 +1,4 @@
+import { execFile } from "node:child_process";
 import {
   chmod,
   mkdir,
@@ -10,10 +11,15 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
+import { promisify } from "node:util";
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CommandRunner, createCommandTool } from "../src/command-execution.js";
+import {
+  CommandRunner,
+  createCommandTool,
+  prepareCommandExecution,
+} from "../src/command-execution.js";
 import type {
   OsSandboxAdapter,
   SandboxedProcess,
@@ -22,6 +28,7 @@ import type {
 import { UnsupportedSandboxAdapter } from "../src/sandbox.js";
 
 const temporaryRoots: string[] = [];
+const execFileAsync = promisify(execFile);
 
 afterEach(async () => {
   vi.useRealTimers();
@@ -128,6 +135,90 @@ function createFakeSandbox(
 }
 
 describe("sandboxed command execution", () => {
+  it("binds the fixed Python interpreter and runtime assets without host environment", async () => {
+    const { workspaceRoot } = await createWorkspace();
+    const fake = createFakeSandbox();
+    const prepared = await prepareCommandExecution(
+      {
+        workspaceRoot,
+        sandbox: fake.sandbox,
+      },
+      {
+        runtime: "python",
+        args: ["--version"],
+      },
+    );
+
+    expect(prepared).toEqual(
+      expect.objectContaining({
+        runtime: "python",
+        executable: expect.stringMatching(/python3(?:\.\d+)?$/u),
+        executableSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        runtimeAssets: expect.arrayContaining([
+          expect.objectContaining({
+            path: expect.any(String),
+            sha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          }),
+        ]),
+        launch: expect.objectContaining({
+          approvedCapabilities: ["process.spawn", "workspace.read"],
+          runtimeReadPaths: [expect.any(String)],
+          env: {
+            CI: "1",
+            FORCE_COLOR: "0",
+            LANG: "C",
+            LC_ALL: "C",
+            NO_COLOR: "1",
+            PYTHONDONTWRITEBYTECODE: "1",
+            PYTHONHASHSEED: "0",
+            PYTHONNOUSERSITE: "1",
+          },
+        }),
+        receipt: expect.objectContaining({
+          runtimeAssetSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          workspaceAccess: "read_only",
+          networkAccess: "denied",
+        }),
+      }),
+    );
+    expect(prepared.runtimeAssets.length).toBeGreaterThanOrEqual(40);
+    expect(prepared.runtimeAssets.length).toBeLessThanOrEqual(128);
+    expect(
+      prepared.runtimeAssets.some((asset) => asset.path.endsWith("/os.py")),
+    ).toBe(true);
+    expect(
+      prepared.runtimeAssets.some((asset) =>
+        asset.path.endsWith("/tracemalloc.py"),
+      ),
+    ).toBe(true);
+    const { stdout } = await execFileAsync(
+      prepared.executable,
+      [
+        "-I",
+        "-B",
+        "-S",
+        "-c",
+        [
+          "import ast,base64,builtins,json,os,resource,signal,sys,threading,time,tracemalloc,types,zlib",
+          '"probe".encode("utf-16-le")',
+          "paths=set()",
+          '[paths.add(os.path.realpath(value)) for module in sys.modules.values() for value in (getattr(module,"__file__",None),getattr(module,"__cached__",None)) if isinstance(value,str) and os.path.isfile(value)]',
+          "print(json.dumps(sorted(paths)))",
+        ].join(";"),
+      ],
+      {
+        env: prepared.launch.env,
+        maxBuffer: 64 * 1024,
+      },
+    );
+    const loadedAssets = JSON.parse(stdout) as string[];
+    const boundAssets = new Set(
+      prepared.runtimeAssets.map((asset) => asset.path),
+    );
+    expect(loadedAssets.filter((asset) => !boundAssets.has(asset))).toEqual([]);
+    expect(fake.launchRequests).toEqual([]);
+  });
+
   it("runs explicit argv with read-only offline capabilities and no inherited secrets", async () => {
     const { workspaceRoot, executables } = await createWorkspace();
     const fake = createFakeSandbox({ stdout: "42\n" });
