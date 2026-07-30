@@ -3,7 +3,7 @@ import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
 import type { Writable } from "node:stream";
 
-import type { ModelRef, RunEvent, StreamFrame } from "@napier/contracts";
+import type { RunEvent, RunRecord, StreamFrame } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
   hashEventStream,
@@ -14,15 +14,18 @@ import {
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
 
+import {
+  CLI_HELP,
+  CLI_VERSION,
+  parseCliArgs,
+  type CliAction,
+  type CliExecutionOptions,
+  type CliResumeOptions,
+  type CliRunOptions,
+} from "./cli-options.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 
-export const CLI_VERSION = "0.1.0";
-const DEFAULT_TIMEOUT_MS = 10 * 60 * 1_000;
-const MIN_TIMEOUT_MS = 1_000;
-const MAX_TIMEOUT_MS = 30 * 60 * 1_000;
-const MAX_PROMPT_BYTES = 64 * 1_024;
-const MAX_TITLE_CHARS = 160;
-const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
+export { CLI_HELP, CLI_VERSION, parseCliArgs };
 
 export interface CliIo {
   cwd: string;
@@ -36,23 +39,6 @@ export interface RunCliDependencies {
     options: LocalAgentRuntimeOptions,
   ): Promise<LocalAgentRuntimeServices>;
 }
-
-interface CliRunOptions {
-  workspace: string;
-  dataRoot?: string;
-  prompt: string;
-  model?: ModelRef;
-  agentId?: string;
-  threadId?: string;
-  title?: string;
-  timeoutMs: number;
-  jsonl: boolean;
-}
-
-type CliAction =
-  | { kind: "help" }
-  | { kind: "version" }
-  | { kind: "run"; options: CliRunOptions };
 
 const DEFAULT_DEPENDENCIES: RunCliDependencies = {
   createRuntime: createLocalAgentRuntime,
@@ -74,7 +60,7 @@ export async function runCli(
       await writeJsonLine(io.stdout, frame);
     } else {
       await writeLine(io.stderr, `Napier CLI error: ${errorMessage(error)}`);
-      await writeLine(io.stderr, "Run `napier run --help` for usage.");
+      await writeLine(io.stderr, "Run `napier --help` for usage.");
     }
     return 2;
   }
@@ -86,7 +72,9 @@ export async function runCli(
     await writeLine(io.stdout, CLI_VERSION);
     return 0;
   }
-  return executeRun(action.options, io, dependencies, parentSignal);
+  return action.kind === "run"
+    ? executeRun(action.options, io, dependencies, parentSignal)
+    : executeResume(action.options, io, dependencies, parentSignal);
 }
 
 async function executeRun(
@@ -95,8 +83,80 @@ async function executeRun(
   dependencies: RunCliDependencies,
   parentSignal?: AbortSignal,
 ): Promise<number> {
+  return executeInvocation(
+    options,
+    io,
+    dependencies,
+    parentSignal,
+    options.threadId ?? "thread_cli_preflight",
+    async (services) => {
+      const thread = options.threadId
+        ? existingThread(services, options)
+        : await newThread(services, options);
+      return {
+        threadId: thread.id,
+        invoke: (signal, onEvent) =>
+          services.runtime.runPrompt({
+            threadId: thread.id,
+            text: options.prompt,
+            ...(options.model ? { model: options.model } : {}),
+            signal,
+            ...(onEvent ? { onEvent } : {}),
+          }),
+      };
+    },
+  );
+}
+
+async function executeResume(
+  options: CliResumeOptions,
+  io: CliIo,
+  dependencies: RunCliDependencies,
+  parentSignal?: AbortSignal,
+): Promise<number> {
+  return executeInvocation(
+    options,
+    io,
+    dependencies,
+    parentSignal,
+    options.threadId,
+    (services) => {
+      services.store.getThread(options.threadId);
+      return {
+        threadId: options.threadId,
+        invoke: (signal, onEvent) =>
+          services.runtime.resumeInterruptedRun({
+            threadId: options.threadId,
+            ...(options.runId ? { runId: options.runId } : {}),
+            ...(options.model ? { model: options.model } : {}),
+            signal,
+            ...(onEvent ? { onEvent } : {}),
+          }),
+      };
+    },
+  );
+}
+
+interface PreparedCliInvocation {
+  threadId: string;
+  invoke(
+    signal: AbortSignal,
+    onEvent?: (event: RunEvent) => Promise<void>,
+  ): Promise<RunRecord>;
+}
+
+async function executeInvocation(
+  options: CliExecutionOptions,
+  io: CliIo,
+  dependencies: RunCliDependencies,
+  parentSignal: AbortSignal | undefined,
+  initialThreadId: string,
+  prepare: (
+    services: LocalAgentRuntimeServices,
+  ) => PreparedCliInvocation | Promise<PreparedCliInvocation>,
+): Promise<number> {
   let services: LocalAgentRuntimeServices | undefined;
-  let threadId = options.threadId ?? "thread_cli_preflight";
+  let threadId = initialThreadId;
   const controller = new AbortController();
   const forwardAbort = (): void => controller.abort();
   parentSignal?.addEventListener("abort", forwardAbort, { once: true });
@@ -113,10 +173,9 @@ async function executeRun(
       dataRoot,
       env: io.env,
     });
-    const thread = options.threadId
-      ? existingThread(services, options)
-      : await newThread(services, options);
-    threadId = thread.id;
+    const invocation = await prepare(services);
+    threadId = invocation.threadId;
+    const thread = services.store.getThread(threadId);
     const eventWriter = options.jsonl
       ? new OrderedEventFrameWriter(
           io.stdout,
@@ -124,19 +183,10 @@ async function executeRun(
           thread.eventCount + 1,
         )
       : undefined;
-    const run = await services.runtime.runPrompt({
-      threadId,
-      text: options.prompt,
-      ...(options.model ? { model: options.model } : {}),
-      signal: controller.signal,
-      ...(eventWriter
-        ? {
-            onEvent: async (event: RunEvent) => {
-              await eventWriter.write(event);
-            },
-          }
-        : {}),
-    });
+    const onEvent = eventWriter
+      ? async (event: RunEvent): Promise<void> => eventWriter.write(event)
+      : undefined;
+    const run = await invocation.invoke(controller.signal, onEvent);
     const detail = await services.store.getDetail(threadId);
     if (eventWriter) {
       await eventWriter.finish(detail.thread.eventCount);
@@ -215,130 +265,6 @@ async function canonicalWorkspace(
   return workspaceRoot;
 }
 
-export function parseCliArgs(argv: string[]): CliAction {
-  if (argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
-    return { kind: "help" };
-  }
-  if (argv[0] === "--version" || argv[0] === "-v") {
-    if (argv.length !== 1) throw new Error("--version accepts no arguments");
-    return { kind: "version" };
-  }
-  if (argv[0] !== "run") {
-    throw new Error("Unknown command");
-  }
-  if (argv.length === 2 && (argv[1] === "--help" || argv[1] === "-h")) {
-    return { kind: "help" };
-  }
-  const values = new Map<string, string>();
-  const booleans = new Set<string>();
-  for (let index = 1; index < argv.length; index += 1) {
-    const flag = argv[index]!;
-    if (flag === "--jsonl") {
-      if (booleans.has(flag)) throw new Error(`Duplicate option: ${flag}`);
-      booleans.add(flag);
-      continue;
-    }
-    if (!VALUE_OPTIONS.has(flag)) throw new Error("Unknown option");
-    if (values.has(flag)) throw new Error(`Duplicate option: ${flag}`);
-    const value = argv[index + 1];
-    if (value === undefined || value.startsWith("--")) {
-      throw new Error(`Missing value for ${flag}`);
-    }
-    values.set(flag, value);
-    index += 1;
-  }
-  const workspace = requiredValue(values, "--workspace");
-  const prompt = requiredValue(values, "--prompt");
-  if (Buffer.byteLength(prompt, "utf8") > MAX_PROMPT_BYTES) {
-    throw new Error(`--prompt exceeds ${MAX_PROMPT_BYTES} UTF-8 bytes`);
-  }
-  const threadId = optionalResourceId(values, "--thread");
-  const agentId = optionalResourceId(values, "--agent");
-  if (threadId && values.has("--title")) {
-    throw new Error("--title cannot be used with an existing --thread");
-  }
-  const rawTitle = values.get("--title");
-  const title = rawTitle?.trim();
-  if (rawTitle !== undefined && (!title || title.length > MAX_TITLE_CHARS)) {
-    throw new Error(`--title must be 1-${MAX_TITLE_CHARS} characters`);
-  }
-  const timeoutMs = parseTimeout(values.get("--timeout-ms"));
-  const model = values.has("--model")
-    ? parseModelRef(values.get("--model")!)
-    : undefined;
-  return {
-    kind: "run",
-    options: {
-      workspace,
-      prompt,
-      timeoutMs,
-      jsonl: booleans.has("--jsonl"),
-      ...(values.has("--data-root")
-        ? { dataRoot: requiredValue(values, "--data-root") }
-        : {}),
-      ...(model ? { model } : {}),
-      ...(agentId ? { agentId } : {}),
-      ...(threadId ? { threadId } : {}),
-      ...(title ? { title } : {}),
-    },
-  };
-}
-
-const VALUE_OPTIONS = new Set([
-  "--workspace",
-  "--data-root",
-  "--prompt",
-  "--model",
-  "--agent",
-  "--thread",
-  "--title",
-  "--timeout-ms",
-]);
-
-function requiredValue(values: Map<string, string>, flag: string): string {
-  const value = values.get(flag)?.trim();
-  if (!value) throw new Error(`${flag} is required`);
-  return value;
-}
-
-function optionalResourceId(
-  values: Map<string, string>,
-  flag: string,
-): string | undefined {
-  const value = values.get(flag);
-  if (value === undefined) return undefined;
-  if (!RESOURCE_ID.test(value)) throw new Error(`${flag} is invalid`);
-  return value;
-}
-
-function parseTimeout(value: string | undefined): number {
-  if (value === undefined) return DEFAULT_TIMEOUT_MS;
-  if (!/^[0-9]+$/u.test(value)) throw new Error("--timeout-ms is invalid");
-  const timeoutMs = Number(value);
-  if (
-    !Number.isSafeInteger(timeoutMs) ||
-    timeoutMs < MIN_TIMEOUT_MS ||
-    timeoutMs > MAX_TIMEOUT_MS
-  ) {
-    throw new Error(`--timeout-ms must be ${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS}`);
-  }
-  return timeoutMs;
-}
-
-function parseModelRef(value: string): ModelRef {
-  const separator = value.indexOf("/");
-  const provider = value.slice(0, separator);
-  const id = value.slice(separator + 1);
-  if (
-    separator < 1 ||
-    !/^[a-z][a-z0-9_-]{0,63}$/u.test(provider) ||
-    !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u.test(id)
-  ) {
-    throw new Error("--model must be provider/model-id");
-  }
-  return { provider, id };
-}
-
 function latestAssistantText(events: RunEvent[], runId: string): string {
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index]!;
@@ -370,20 +296,3 @@ async function writeLine(stream: Writable, text: string): Promise<void> {
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
-
-export const CLI_HELP = `Napier CLI ${CLI_VERSION}
-
-Usage:
-  napier run --workspace <path> --prompt <text> [options]
-
-Options:
-  --data-root <path>     Napier state directory (default: <workspace>/.napier)
-  --model <provider/id>  Model for this Run
-  --agent <agent-id>     Agent for a new Thread
-  --thread <thread-id>   Append to an existing Thread
-  --title <text>         Title for a new Thread
-  --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
-  --jsonl                Emit StreamFrame JSON objects on stdout
-  -h, --help             Show help
-  -v, --version          Show version
-`;

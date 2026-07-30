@@ -158,12 +158,14 @@ explicit cancellation uses the stop endpoint.
 
 ### CLI
 
-`@napier/cli` is a one-shot Experience Plane adapter over the same local
-Runtime and Ledger as the Server. `napier run` canonicalizes an explicit
-workspace, opens an explicit or workspace-default data root, creates a Thread
-or verifies a selected existing Thread, and calls only
-`AgentRuntime.runPrompt()`. It does not implement a second model/tool loop or
-talk directly to Store for Run execution.
+`@napier/cli` is an Experience Plane adapter over the same local Runtime and
+Ledger as the Server. `napier run` canonicalizes an explicit workspace, opens
+an explicit or workspace-default data root, creates a Thread or verifies a
+selected existing Thread, and calls `AgentRuntime.runPrompt()`. `napier
+resume` selects a waiting Thread plus an optional interrupted Run and calls
+`AgentRuntime.resumeInterruptedRun()`. Both commands share one invocation,
+streaming, cancellation, and shutdown path; neither implements a second
+model/tool loop or talks directly to Store for Run execution.
 
 The Server and CLI both construct local services through
 `createLocalAgentRuntime()`. That bootstrap owns initialization and idempotent
@@ -188,13 +190,21 @@ writes only the contiguous prefix, and verifies the final sequence before the
 snapshot. Out-of-order arrivals remain live-streamed once their gap closes;
 missing, duplicate, or cross-Thread sequences fail closed.
 
+Resume startup first runs normal Store reconciliation, so an abandoned
+running Run becomes immutable `interrupted` evidence before CLI selection.
+The continuation is a new `source=recovery` child bound by `parentRunId`; the
+recovery prompt is derived from bounded durable evidence and explicitly treats
+unfinished side effects as unknown. `--run` can pin one interrupted parent,
+otherwise the latest is selected. A non-waiting Thread, missing parent, second
+concurrent resume, timeout, or cancellation fails or settles through the same
+Run lease and terminal frame rules as Web/SSE recovery.
+
 Timeout, SIGINT, and SIGTERM flow into the active Runtime AbortSignal. Shutdown
 settles Napier-owned Process Sessions and MCP transports before closing
 SQLite; it does not kill unrelated workspace processes or delete state.
 Environment credentials remain unavailable unless the selected data root
-already contains an active credential reference. This adapter is intentionally
-one-shot and does not yet provide an interactive TUI, resume/branch commands,
-RPC, ACP, or Desktop packaging.
+already contains an active credential reference. This adapter does not yet
+provide an interactive TUI, branch command, RPC, ACP, or Desktop packaging.
 
 ### Coding Outcome Benchmark
 
@@ -4303,7 +4313,7 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- interactive TUI, resume/branch CLI commands, SDK/RPC, ACP, Desktop,
+- interactive TUI, branch CLI command, SDK/RPC, ACP, Desktop,
   persistent browser, and data/research capability slices over the same
   Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility

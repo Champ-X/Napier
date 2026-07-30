@@ -29,9 +29,10 @@ Version `0.1.0` includes:
 - a Pi-powered multi-provider runtime for OpenAI, Anthropic, Google, and
   OpenRouter;
 - a deterministic zero-key demo model for onboarding and CI;
-- a one-shot `napier run` CLI with human output or hash-bound `StreamFrame`
-  JSONL, backed by the same Agent Runtime, model registry, policy, Sandbox,
-  SQLite Ledger, and Thread Run lease as the HTTP/Web path;
+- `napier run` and `napier resume` CLI commands with human output or
+  hash-bound `StreamFrame` JSONL, backed by the same Agent Runtime, model
+  registry, policy, Sandbox, SQLite Ledger, and Thread Run lease as the
+  HTTP/Web path;
 - an authoritative SQLite WAL that commits workspace projections and ordered
   events atomically, uses revision CAS for concurrent local writers, and
   migrates legacy `workspace.json`/JSONL state without evidence loss;
@@ -338,8 +339,26 @@ npm run --silent napier -- run \
 Live models use `--model provider/model-id` and the same credential-reference
 store as Web. An ambient API key alone is insufficient: register its
 environment-variable name through **Context -> Provider credentials** in the
-selected data root first. This CLI slice is one-shot; it does not claim an
-interactive TUI, resume/branch commands, RPC, ACP, or Desktop packaging.
+selected data root first.
+
+Resume a Thread left waiting after a process interruption:
+
+```bash
+npm run --silent napier -- resume \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --run run_interrupted_example \
+  --jsonl
+```
+
+`resume` accepts no new prompt. It selects the requested or latest interrupted
+Run, creates a recovery child linked by `parentRunId`, and asks the Agent to
+inspect durable evidence before acting. Unknown tool side effects are not
+silently replayed. Human and JSONL output, model overrides, timeout,
+cancellation, credential resolution, Run leases, and shutdown use the same
+path as `run`. The CLI still does not claim an interactive TUI, branch command,
+RPC, ACP, or Desktop packaging.
 
 ## Store Scale Baseline
 

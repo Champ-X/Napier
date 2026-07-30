@@ -6,6 +6,17 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added `napier resume` for continuing a waiting Thread from a requested or
+  latest interrupted Run. It reuses `AgentRuntime.resumeInterruptedRun`,
+  creates a `source=recovery` child bound by `parentRunId`, and supports the
+  same human/ordered-JSONL output, model override, timeout, cancellation,
+  credentials, Run lease, and shutdown path as `napier run`. It accepts no new
+  prompt and never silently replays unknown tool side effects. Resume-specific
+  tests cover parsing, exact parent selection, human and JSONL output,
+  non-waiting and missing parents, external cancellation, concurrent recovery
+  contention, a real built subprocess, and an opt-in DeepSeek provider smoke.
+  CLI option parsing was split from execution while run/resume now share one
+  Runtime invocation adapter.
 - Added a second fixed Coding outcome case for a multi-file pricing API
   migration. The Agent must inspect the API, run real TypeScript LSP
   References, update two independent call sites, and satisfy hash-bound hidden

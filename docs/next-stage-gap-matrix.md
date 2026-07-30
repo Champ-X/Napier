@@ -25,7 +25,7 @@ Audit date: 2026-07-30
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
 | P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and one-shot human/JSONL CLI exist; interactive TUI, resume/branch CLI commands, SDK/RPC, ACP, and Desktop remain.                                                                                                                  |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume exist; interactive TUI, branch CLI, SDK/RPC, ACP, and Desktop remain.                                                                                                                               |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain. |
@@ -1042,5 +1042,66 @@ Observed result:
   `e8ef307d538aab402e648bb02f178104c85a659dd6daa28a31d8ecacdcfc0898`.
   Offline verification returns zero diagnostics;
 - the complete repository gate passed 952 tests with 11 opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: CLI Interrupted Run Resume
+
+User scenario: after Napier or the machine stops during a long task, a
+developer can continue the durable interrupted Run from the terminal without
+opening Web, inventing a new prompt, or losing the parent/child evidence chain.
+
+Acceptance:
+
+- add `napier resume --workspace <path> --thread <thread-id>` with optional
+  data root, interrupted Run id, model override, timeout, and JSONL output;
+- reject prompt, title, Agent, unknown, duplicate, malformed, and conflicting
+  resume options before invoking a model;
+- initialize the normal local Runtime first so abandoned running Runs become
+  durable interrupted evidence through existing reconciliation;
+- call only `AgentRuntime.resumeInterruptedRun`, selecting the requested or
+  latest interrupted parent and creating a `source=recovery` child linked by
+  `parentRunId`;
+- share canonical workspace/data-root handling, credentials, Run lease,
+  ordered event writer, terminal snapshot/done frames, human output,
+  cancellation, and shutdown with `napier run`;
+- cover explicit/default parent selection, human/JSONL success, missing parent,
+  non-waiting Thread, external cancellation, concurrent resume contention,
+  built subprocess execution, and a real-provider smoke;
+- split CLI option parsing from Runtime execution instead of growing the
+  existing adapter or adding another Agent loop.
+
+Threat boundary:
+
+- Resume accepts no new prompt. The recovery prompt comes from bounded durable
+  events and marks unfinished side effects as unknown; the CLI never retries a
+  historical tool call itself.
+- Only a waiting Thread with an interrupted Run is eligible. A second recovery
+  sees the active child lease and fails closed before model execution.
+- A model override still uses the selected data root's credential-reference
+  policy. Ambient keys, raw provider errors, and tool diagnostics do not enter
+  CLI error frames.
+- Cancellation and timeout settle the new child as cancelled. They do not
+  mutate the interrupted parent or kill unrelated processes.
+- JSONL streams only events appended after resume starts, then returns the
+  complete authoritative snapshot. Sequence numbers therefore continue from
+  the existing Thread rather than restarting at one.
+
+Observed result:
+
+- a real built CLI subprocess reconciled a persisted running Run, created one
+  completed recovery child with the exact parent Run id, streamed 17
+  contiguous events at sequences 4 through 20, and retained
+  `run.recovery.started`, `run.recovery.prompt`, and
+  `run.recovery.completed`;
+- the opt-in DeepSeek suite passed both the existing one-shot command and the
+  new interrupted resume against the real provider; resume completed in about
+  1.5 seconds without exposing the API key;
+- cancellation produced a linked cancelled child, while two simultaneous
+  resume attempts admitted one model call and returned a stable error frame
+  for the other;
+- CLI option parsing now lives in a 253-line module and the shared execution
+  adapter fell from 389 to 298 lines. No code entered Server or Store;
+- the complete repository gate passed 960 tests with 12 opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.
