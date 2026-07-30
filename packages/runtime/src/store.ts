@@ -538,6 +538,10 @@ import {
   validateThreadReplayBundle,
   verifyThreadReplayBundle,
 } from "./thread-bundles.js";
+import {
+  WORKFLOW_NODE_EXECUTION,
+  type WorkflowNodeExecution,
+} from "./workflow-node-execution.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
@@ -603,6 +607,7 @@ const MAX_INBOUND_RETRY_BASE_MS = 60_000;
 const MIN_INBOUND_SIGNATURE_TOLERANCE_SECONDS = 30;
 const MAX_INBOUND_SIGNATURE_TOLERANCE_SECONDS = 900;
 const MAX_INBOUND_RETRY_DELAY_MS = 24 * 60 * 60 * 1_000;
+const MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD = 4;
 const THREAD_IMPORTED_EVENT = "thread.imported";
 const MEMORY_STATUSES = new Set([
   "proposed",
@@ -734,6 +739,7 @@ export interface CreateRunInput {
   branchFromSeq?: number;
   source?: RunInvocationSource;
   triggerId?: string;
+  [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
 }
 
 export interface RunLeaseOptions {
@@ -7941,6 +7947,9 @@ export class LocalStore {
           agentId,
           status: active ? "interrupted" : source.status,
           ...(source.source ? { source: source.source } : {}),
+          ...(source.workflowPlanId
+            ? { workflowPlanId: planIds.get(source.workflowPlanId)! }
+            : {}),
           startedAt: source.startedAt,
           ...(active
             ? {
@@ -8596,6 +8605,9 @@ export class LocalStore {
       this.stateQueue.run(async () => {
         const thread = this.mutableThread(input.threadId);
         const run = this.mutableRun(input.runId);
+        if (run.source === "workflow") {
+          throw new Error("Workflow node Runs do not record Agent milestones");
+        }
         if (
           run.threadId !== thread.id ||
           run.status !== "running" ||
@@ -8939,6 +8951,11 @@ export class LocalStore {
       this.stateQueue.run(async () => {
         const thread = this.mutableThread(input.threadId);
         const run = this.mutableRun(input.runId);
+        if (run.source === "workflow") {
+          throw new Error(
+            "Workflow node Runs do not accept live Run control messages",
+          );
+        }
         if (
           run.threadId !== thread.id ||
           run.status !== "running" ||
@@ -9016,6 +9033,7 @@ export class LocalStore {
         const thread = this.mutableThread(threadId);
         const run = this.mutableRun(runId);
         if (
+          run.source === "workflow" ||
           run.threadId !== thread.id ||
           run.status !== "running" ||
           thread.currentRunId !== run.id
@@ -9171,17 +9189,24 @@ export class LocalStore {
       if (options.usage) run.usage = structuredClone(options.usage);
       delete run.lease;
       delete run.leaseTokenSha256;
-      thread.status = waitingDecision
-        ? "waiting"
-        : status === "completed"
-          ? "idle"
-          : status === "cancelled"
-            ? "idle"
-            : status === "interrupted"
-              ? "waiting"
-              : "failed";
-      delete thread.currentRunId;
       thread.updatedAt = run.finishedAt;
+      const remainingActiveRuns = this.state.runs
+        .filter(
+          (candidate) =>
+            candidate.threadId === thread.id &&
+            candidate.id !== run.id &&
+            (candidate.status === "queued" || candidate.status === "running"),
+        )
+        .sort(
+          (left, right) =>
+            left.startedAt.localeCompare(right.startedAt) ||
+            left.id.localeCompare(right.id),
+        );
+      if (thread.currentRunId === run.id) {
+        const replacement = remainingActiveRuns[0];
+        if (replacement) thread.currentRunId = replacement.id;
+        else delete thread.currentRunId;
+      }
       const cancellationEvents = [
         ...this.cancelPendingRunControlMessages(
           thread,
@@ -9195,6 +9220,23 @@ export class LocalStore {
           waitingDecision?.id,
         ),
       ];
+      const openDecision = projectOperatorDecisions([
+        ...this.requireLedger().listEvents(thread.id),
+        ...cancellationEvents,
+      ]).find(
+        (decision) =>
+          decision.status === "pending" || decision.status === "answered",
+      );
+      thread.status =
+        remainingActiveRuns.length > 0
+          ? "running"
+          : waitingDecision || openDecision
+            ? "waiting"
+            : status === "completed" || status === "cancelled"
+              ? "idle"
+              : status === "interrupted"
+                ? "waiting"
+                : "failed";
       await this.persistState(cancellationEvents);
       return structuredClone(stripRunSecrets(run));
     });
@@ -10138,6 +10180,21 @@ export class LocalStore {
       const agent = state.agents.find(
         (candidate) => candidate.id === run.agentId,
       );
+      if (run.workflowPlanId !== undefined) {
+        this.validateResourceId(run.workflowPlanId);
+        const workflowPlan = state.plans.find(
+          (candidate) => candidate.id === run.workflowPlanId,
+        );
+        if (
+          run.source !== "workflow" ||
+          !workflowPlan ||
+          workflowPlan.threadId !== run.threadId
+        ) {
+          throw new Error(
+            `Persisted Workflow Run Plan binding is invalid: ${run.id}`,
+          );
+        }
+      }
       const configuration = run.configuration
         ? validateRunConfigurationFingerprint(run.configuration)
         : undefined;
@@ -11083,9 +11140,45 @@ export class LocalStore {
     },
   ): PersistedRunRecord {
     const thread = this.mutableThread(input.threadId);
-    if (thread.currentRunId) {
+    const workflowExecution = input[WORKFLOW_NODE_EXECUTION];
+    if (input.source === "workflow") {
+      const plan = workflowExecution
+        ? this.state.plans.find(
+            (candidate) => candidate.id === workflowExecution.planId,
+          )
+        : undefined;
+      if (!plan || plan.threadId !== thread.id || plan.status !== "active") {
+        throw new Error(
+          "Workflow Run requires its active same-Thread Plan capability",
+        );
+      }
+    } else if (workflowExecution) {
       throw new Error(
-        `Thread already has an active run: ${thread.currentRunId}`,
+        "Workflow Plan capability requires a Workflow Run source",
+      );
+    }
+    const activeRuns = this.state.runs.filter(
+      (run) =>
+        run.threadId === thread.id &&
+        (run.status === "queued" || run.status === "running"),
+    );
+    const concurrentWorkflowRun =
+      input.source === "workflow" &&
+      activeRuns.length > 0 &&
+      activeRuns.every(
+        (run) =>
+          run.source === "workflow" &&
+          run.workflowPlanId === workflowExecution?.planId,
+      );
+    if (activeRuns.length > 0 && !concurrentWorkflowRun) {
+      throw new Error(`Thread already has an active run: ${activeRuns[0]!.id}`);
+    }
+    if (
+      concurrentWorkflowRun &&
+      activeRuns.length >= MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD
+    ) {
+      throw new Error(
+        `Thread reached its concurrent Workflow Run limit (${MAX_CONCURRENT_WORKFLOW_RUNS_PER_THREAD})`,
       );
     }
     const openOperatorDecision = projectOperatorDecisions(
@@ -11192,6 +11285,9 @@ export class LocalStore {
       agentId: input.agentId,
       status: "running",
       ...(input.source ? { source: input.source } : {}),
+      ...(workflowExecution
+        ? { workflowPlanId: workflowExecution.planId }
+        : {}),
       ...(input.triggerId ? { triggerId: input.triggerId } : {}),
       startedAt: nowIso(),
       usage: emptyUsage(),
@@ -11225,7 +11321,7 @@ export class LocalStore {
     };
     this.state.runs.push(run);
     thread.runIds.push(run.id);
-    thread.currentRunId = run.id;
+    thread.currentRunId ??= run.id;
     thread.status = "running";
     thread.updatedAt = run.startedAt;
     return run;

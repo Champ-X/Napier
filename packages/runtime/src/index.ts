@@ -62,6 +62,7 @@ export * from "./node-debugger-tool.js";
 export * from "./node-debugger-worker.js";
 export * from "./opentelemetry.js";
 export * from "./operator-decisions.js";
+export * from "./ordered-run-event-writer.js";
 export * from "./plan-archives.js";
 export * from "./plan-tools.js";
 export * from "./plans.js";

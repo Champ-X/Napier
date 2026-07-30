@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import {
   emptyUsage,
   EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
@@ -17,6 +18,7 @@ import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { ModelRegistry } from "../src/models.js";
 import { LocalStore } from "../src/store.js";
 import { executionPlanWorkflowDeterministicTemplateSha256 } from "../src/workflow-deterministic-model.js";
+import { WORKFLOW_NODE_EXECUTION } from "../src/workflow-node-execution.js";
 import {
   createExecutionPlanBlueprint,
   executionPlanRequestFromBlueprint,
@@ -386,6 +388,71 @@ describe("Execution Plan Workflow recovery", () => {
     reopened.store.close();
   });
 
+  it("reconstructs every interrupted node in a parallel batch and retries together", async () => {
+    const fixture = await createParallelFixture();
+    const seeded = await seedRunningParallelNodes(fixture);
+    fixture.store.close();
+
+    const reopened = await reopen(fixture);
+    expect(
+      reopened.store.listRuns(fixture.threadId).map((run) => run.status),
+    ).toEqual(["interrupted", "interrupted"]);
+    const blocked = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: seeded.plan.id,
+      },
+    });
+    expect(blocked.status).toBe("blocked");
+    expect(blocked.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        status: "blocked",
+        errorCode: "run_interrupted",
+      }),
+      expect.objectContaining({
+        nodeId: "analyze_b",
+        status: "blocked",
+        errorCode: "run_interrupted",
+      }),
+    ]);
+
+    const provider = fauxProvider({ provider: "faux-workflow-recovery" });
+    provider.setResponses([
+      fauxAssistantMessage('{"summary":"Recovered left","count":1}'),
+      fauxAssistantMessage('{"summary":"Recovered right","count":1}'),
+      fauxAssistantMessage(
+        '{"report":"Recovered parallel report","approved":true}',
+      ),
+    ]);
+    reopened.agentRuntime.modelRegistry.registerProvider(provider.provider);
+    const completed = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: seeded.plan.id,
+        retryBlocked: true,
+      },
+    });
+    expect(completed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Recovered parallel report",
+          approved: true,
+        },
+        nodeResults: [
+          expect.objectContaining({ nodeId: "analyze_a", attempt: 2 }),
+          expect.objectContaining({ nodeId: "analyze_b", attempt: 2 }),
+          expect.objectContaining({ nodeId: "report", attempt: 1 }),
+        ],
+      }),
+    );
+    expect(reopened.store.listRuns(fixture.threadId)).toHaveLength(5);
+    reopened.store.close();
+  });
+
   it("resumes a durable Approval answer after restart", async () => {
     const fixture = await createApprovalFixture();
     const runtime = new ExecutionPlanWorkflowRuntime(
@@ -620,6 +687,109 @@ async function createDeterministicFixture(): Promise<RecoveryFixture> {
   return fixture;
 }
 
+async function createParallelFixture(): Promise<RecoveryFixture> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-workflow-parallel-recovery-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const store = new LocalStore({ workspaceRoot, dataRoot });
+  await store.initialize();
+  const sourceThread = store.listThreads()[0]!;
+  const sourcePlan = await store.createPlan(sourceThread.id, {
+    objective: "Recover two parallel analyses and one report.",
+    steps: [
+      {
+        id: "analyze_a",
+        title: "Analyze left",
+        description: "Analyze the left input.",
+        verification: "Return typed left analysis.",
+      },
+      {
+        id: "analyze_b",
+        title: "Analyze right",
+        description: "Analyze the right input.",
+        verification: "Return typed right analysis.",
+      },
+      {
+        id: "report",
+        title: "Report",
+        description: "Join both recovered analyses.",
+        verification: "Return one typed report.",
+        dependsOn: ["analyze_a", "analyze_b"],
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const thread = await store.createThread({
+    title: "Parallel Workflow recovery target",
+    agentId: sourceThread.agentId,
+  });
+  const branchNode = (id: "analyze_a" | "analyze_b") => ({
+    id,
+    type: "agent" as const,
+    inputBindings: { workflow: { source: "workflow" as const } },
+    inputSchema: {
+      type: "object" as const,
+      properties: { workflow: requestSchema() },
+      required: ["workflow"],
+      additionalProperties: false as const,
+    },
+    outputSchema: inspectionSchema(),
+    model: { provider: "faux-workflow-recovery", id: "faux-1" },
+    timeoutMs: 5_000,
+    maxAttempts: 2,
+  });
+  const manifest = defineExecutionPlanWorkflow({
+    name: "Parallel recovery report",
+    version: 1,
+    description: "Recover two interrupted nodes from one parallel batch.",
+    blueprint,
+    inputSchema: requestSchema(),
+    outputSchema: reportSchema(),
+    outputNodeId: "report",
+    maxConcurrency: 2,
+    nodes: [
+      branchNode("analyze_a"),
+      branchNode("analyze_b"),
+      {
+        id: "report",
+        type: "agent",
+        inputBindings: {
+          left: { source: "node", nodeId: "analyze_a" },
+          right: { source: "node", nodeId: "analyze_b" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            left: inspectionSchema(),
+            right: inspectionSchema(),
+          },
+          required: ["left", "right"],
+          additionalProperties: false,
+        },
+        outputSchema: reportSchema(),
+        model: { provider: "faux-workflow-recovery", id: "faux-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  return {
+    workspaceRoot,
+    dataRoot,
+    store,
+    threadId: thread.id,
+    manifest,
+  };
+}
+
 async function createApprovalFixture(): Promise<RecoveryFixture> {
   const fixture = await createFixture();
   const outputSchema = structuredClone(
@@ -708,6 +878,7 @@ async function seedRunningNode(
     agentId: thread.agentId,
     model: { provider: "faux-workflow-recovery", id: "faux-1" },
     source: "workflow",
+    [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
   });
   const started = await fixture.store.transitionPlanStep(plan.id, "inspect", {
     action: "start",
@@ -765,6 +936,84 @@ async function seedRunningNode(
   return { plan, runId: run.id };
 }
 
+async function seedRunningParallelNodes(
+  fixture: RecoveryFixture,
+): Promise<{ plan: ExecutionPlan; runIds: string[] }> {
+  const input: JsonValue = { request: "Recover both parallel branches." };
+  const thread = fixture.store.getThread(fixture.threadId);
+  const agent = fixture.store.getAgent(thread.agentId);
+  const plan = await fixture.store.createPlan(
+    fixture.threadId,
+    executionPlanRequestFromBlueprint(fixture.manifest.blueprint),
+  );
+  await fixture.store.appendEvent({
+    threadId: fixture.threadId,
+    runId: "runctl_workflow_parallel_recovery",
+    type: "workflow.started",
+    category: "plan",
+    visibility: "user",
+    payload: {
+      schemaVersion: 1,
+      planId: plan.id,
+      manifestSha256: fixture.manifest.contentSha256,
+      blueprintSha256: fixture.manifest.blueprint.contentSha256,
+      workflowVersion: fixture.manifest.version,
+      nodeCount: fixture.manifest.nodeCount,
+      maxConcurrency: 2,
+      agentId: agent.id,
+      agentRevision: agent.revision,
+      input,
+      inputSha256: sha256(canonicalJson(input)),
+      inputSchemaSha256: workflowSchemaSha256(fixture.manifest.inputSchema),
+      outputSchemaSha256: workflowSchemaSha256(fixture.manifest.outputSchema),
+      outputNodeId: fixture.manifest.outputNodeId,
+    },
+  });
+  const runIds: string[] = [];
+  for (const nodeId of ["analyze_a", "analyze_b"] as const) {
+    const node = fixture.manifest.nodes.find(
+      (candidate) => candidate.id === nodeId,
+    )!;
+    const run = await fixture.store.createRun({
+      threadId: fixture.threadId,
+      agentId: thread.agentId,
+      agentRevision: agent.revision,
+      model: { provider: "faux-workflow-recovery", id: "faux-1" },
+      source: "workflow",
+      [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
+    });
+    const before = fixture.store.getPlan(plan.id);
+    const started = await fixture.store.transitionPlanStep(plan.id, nodeId, {
+      action: "start",
+      runId: run.id,
+    });
+    const nodeInput = { workflow: input };
+    await fixture.store.appendEvent({
+      threadId: fixture.threadId,
+      runId: run.id,
+      type: "workflow.node.started",
+      category: "plan",
+      visibility: "user",
+      payload: {
+        schemaVersion: 1,
+        planId: plan.id,
+        nodeId,
+        nodeType: "agent",
+        attempt: 1,
+        manifestSha256: fixture.manifest.contentSha256,
+        inputSha256: sha256(canonicalJson(nodeInput)),
+        inputSchemaSha256: workflowSchemaSha256(node.inputSchema),
+        outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
+        planRevisionBefore: before.revision,
+        planRevisionAfter: started.revision,
+        recovered: false,
+      },
+    });
+    runIds.push(run.id);
+  }
+  return { plan, runIds };
+}
+
 async function seedRunningToolNode(
   fixture: RecoveryFixture,
   terminal: boolean,
@@ -805,6 +1054,7 @@ async function seedRunningToolNode(
     agentRevision: agent.revision,
     model: agent.model,
     source: "workflow",
+    [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
   });
   const started = await fixture.store.transitionPlanStep(plan.id, "inspect", {
     action: "start",
@@ -927,6 +1177,7 @@ async function seedRunningDeterministicNode(
     agentRevision: agent.revision,
     model: agent.model,
     source: "workflow",
+    [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
   });
   const started = await fixture.store.transitionPlanStep(plan.id, "inspect", {
     action: "start",
@@ -1040,6 +1291,18 @@ function inspectionSchema(): WorkflowObjectSchema {
       count: { type: "integer", minimum: 0, maximum: 20 },
     },
     required: ["summary", "count"],
+    additionalProperties: false,
+  };
+}
+
+function reportSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      report: { type: "string", minLength: 1, maxLength: 1_000 },
+      approved: { type: "boolean" },
+    },
+    required: ["report", "approved"],
     additionalProperties: false,
   };
 }

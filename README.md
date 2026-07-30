@@ -37,9 +37,9 @@ Version `0.1.0` includes:
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
   nodes, and durable human Approval gates, strict JSON output, declared tool
-  effects, policy/schema preflight, explicit retry, safe pure-node
-  recomputation, restart reconstruction, and shared CLI/HTTP/Web/Trace
-  evidence;
+  effects, policy/schema preflight, optional bounded parallel waves, explicit
+  retry, safe pure-node recomputation, restart reconstruction, and shared
+  CLI/HTTP/Web/Trace evidence;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -424,10 +424,11 @@ Generate manifests from an existing `ExecutionPlanBlueprint` with the exported
 TypeScript `defineExecutionPlanWorkflow()` helper. It binds the Blueprint DAG,
 runtime input/output schemas, literal or field-path node input bindings,
 Agent-node models, bounded Deterministic templates, Tool-node names/effects,
-Approval questions/choices, timeouts, and attempt limits into one stable
-content hash. JSONL emits ordered Ledger event frames, one authoritative
-snapshot, and one hash-bound `workflow_result` frame. Resume or explicitly
-retry a blocked node without supplying the input again:
+Approval questions/choices, timeouts, attempt limits, and optional
+`maxConcurrency` into one stable content hash. Concurrency defaults to `1` and
+is bounded to `4`. JSONL emits ordered Ledger event frames, one authoritative
+snapshot, and one hash-bound `workflow_result` frame. Resume or explicitly retry
+a blocked node without supplying the input again:
 
 ```bash
 npm run --silent napier -- workflow \
@@ -2351,6 +2352,17 @@ kernels, Node debugger, background Process Sessions, and preview-bound
 workspace file mutations remain Run-owned Agent tools rather than pretending
 to persist across one-shot nodes.
 
+Manifests may opt into `maxConcurrency` from `1` to `4`; omission preserves
+legacy sequential execution. The scheduler starts only dependency-ready
+non-Approval nodes, gives each an isolated Plan/output/result snapshot, and
+merges settled outcomes in Manifest order. Approval is an exclusive barrier.
+One failed branch does not discard an independently completed sibling, while
+parent cancellation reaches every active branch. Concurrent node Runs carry a
+persisted `workflowPlanId` derived from a package-internal capability, so only
+Runs for the same active Plan can coexist. `Thread.currentRunId` remains a
+compatibility pointer to one active Run; the Run list and Plan steps are the
+complete projection.
+
 Approval nodes create a leased model-free request Run, bind a fixed
 approve/reject question and the upstream input hash, record the existing
 operator-decision receipt, and settle the Run with the Thread in `waiting`.
@@ -2372,13 +2384,18 @@ the tool again. A Deterministic node with no terminal output can be
 automatically recomputed inside the same Manifest up to `maxAttempts`; a bound
 terminal output repairs commit gaps instead of being recomputed. Generic
 manual and automatic Run recovery still reject Workflow-owned Runs.
+On restart, every in-flight parallel Run is interrupted and every bound Plan
+step is reconstructed independently; explicit retry can then reopen the
+eligible batch without losing completed siblings.
 
 `POST /api/threads/:threadId/workflows` exposes the same execution as SSE.
 Both HTTP and CLI finish with `ExecutionPlanWorkflowResultFrame`, binding the
 typed result to the Thread snapshot and complete event-stream hash. Web Trace
-renders only status, counts, safe IDs, error codes, and hash prefixes; raw
-Workflow input, node output, and diagnostics are not copied into Trace
-summaries.
+renders only status, counts, concurrency, safe IDs, error codes, and hash
+prefixes; raw Workflow input, node output, and diagnostics are not copied into
+Trace summaries. JSONL and SSE share the same ordered event writer, which
+buffers concurrent callbacks until the authoritative Ledger sequence is
+contiguous.
 
 `ExecutionPlanWorkflowExperimentRuntime` adds the first controlled
 re-execution path. `POST

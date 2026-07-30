@@ -2315,3 +2315,72 @@ Observed result:
   skipped by default, verified 247 current OpenAPI routes against the 244/244
   compatibility baseline, and kept the Web main entry at 130.08 KiB against
   the 150 KiB budget.
+
+## Completed Slice: Bounded Parallel Workflow Waves
+
+User scenario: a Workflow author can run independent typed branches at the
+same time, join their outputs deterministically, cancel or recover the whole
+batch, and consume the same ordered evidence through Runtime, CLI JSONL, HTTP
+SSE, experiments, and Web Trace.
+
+Acceptance:
+
+- add optional Manifest `maxConcurrency` with a backward-compatible default of
+  `1` and a hard bound of `4`;
+- schedule only dependency-ready non-Approval nodes, isolate each node's
+  mutable execution context, and merge settled outcomes in Manifest order;
+- keep Approval nodes exclusive, preserve successful work when a sibling
+  blocks, and propagate parent cancellation to every active sibling;
+- allow multiple same-Thread Runs only for package-authorized
+  `source=workflow` nodes bound to the same active Plan;
+- persist Run-to-Plan provenance, retain a compatible representative
+  `currentRunId`, and keep the Thread running until the final sibling settles;
+- reconstruct every interrupted branch after restart and require the existing
+  explicit retry rules before re-execution;
+- preserve concurrency in checkpoint experiment source/candidate Manifests and
+  bind it into `workflow.started` recovery evidence;
+- emit sequence-contiguous CLI JSONL and HTTP/experiment SSE despite concurrent
+  event callbacks, then finish with the existing snapshot/result contracts;
+- expose bounded concurrency through HTTP headers and privacy-safe Web Trace
+  without adding output bodies or a second scheduler state.
+
+Threat boundary:
+
+- a public `source=workflow` string is not authorization. Only a
+  package-internal symbol can request a node Run, and Store admission validates
+  an active same-Thread Plan before persisting `workflowPlanId`;
+- every active sibling must carry the same persisted Plan ID. An ordinary Run,
+  second Workflow, legacy unbound Workflow Run, mismatched Plan, or fifth node
+  Run is rejected;
+- each branch sees a cloned Plan/output/result context. Store mutations, Plan
+  revisions, and Ledger sequence remain serialized authorities;
+- Approval cannot overlap another node. Workflow nodes cannot accept detached
+  Run-control messages or Agent milestones;
+- restart converts all unleased active siblings to interrupted Runs and blocks
+  their exact Plan steps. It does not infer success or repeat side effects;
+- the ordered event writer fails closed on duplicate sequence, foreign Thread,
+  missing event, or downstream write failure.
+
+Observed result:
+
+- two independent real Agent Runs overlap before a typed join consumes both
+  outputs; their Run intervals and simultaneous running state prove actual
+  concurrency rather than interleaved simulation;
+- one unavailable-model branch blocks while its independent sibling completes
+  and remains recoverable; cancellation settles both active Runs as cancelled;
+- an Approval waits until all parallel-ready non-Approval work completes;
+- restart reconstructs two interrupted branch attempts, and explicit retry
+  executes both as attempt two before the downstream report;
+- two Store instances sharing one SQLite Ledger admit the second same-Plan Run
+  from persisted provenance; Replay import remaps `workflowPlanId` and rejects
+  an unknown Plan binding;
+- real CLI JSONL and Hono HTTP SSE run parallel Agent branches before the join,
+  prove both starts precede either completion, and retain contiguous Ledger
+  sequence; Workflow experiment SSE uses the same ordered writer;
+- experiments preserve `maxConcurrency`, browser Manifest validation enforces
+  `1..4`, and Trace exposes only the bounded concurrency value;
+- the complete repository gate passed 1198 tests with 19 opt-in live tests
+  skipped by default, verified 247 current OpenAPI routes against the 244/244
+  compatibility baseline, and kept the Web main entry at 130.08 KiB against
+  the 150 KiB budget. The 69-file Web dist is bound to `41ac89f7ab9a2a00`;
+  the six-artifact release set is bound to `681bddee8e310656`.

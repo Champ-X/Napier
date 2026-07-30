@@ -390,6 +390,69 @@ describe("Napier Workflow CLI", () => {
     expect(frames.at(-2)?.type).toBe("snapshot");
   });
 
+  it("streams parallel Agent nodes and their typed join through ordered JSONL", async () => {
+    const fixture = await createParallelFixture();
+    const provider = fauxProvider({
+      provider: "faux-workflow-cli",
+      tokensPerSecond: 20,
+    });
+    provider.setResponses([
+      fauxAssistantMessage(`{"summary":"${"L".repeat(120)}","count":1}`),
+      fauxAssistantMessage(`{"summary":"${"R".repeat(120)}","count":1}`),
+      fauxAssistantMessage('{"report":"Parallel CLI report","approved":true}'),
+    ]);
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        '{"request":"Run parallel CLI branches."}',
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout),
+      providerDependencies(provider),
+    );
+
+    expect(code).toBe(0);
+    const frames = parseFrames(stdout.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result.result.output).toEqual({
+      report: "Parallel CLI report",
+      approved: true,
+    });
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    const branchStarts = events.filter(
+      (event) =>
+        event.type === "workflow.node.started" &&
+        ["analyze_a", "analyze_b"].includes(
+          String(record(event.payload)?.["nodeId"]),
+        ),
+    );
+    const branchCompletions = events.filter(
+      (event) =>
+        event.type === "workflow.node.completed" &&
+        ["analyze_a", "analyze_b"].includes(
+          String(record(event.payload)?.["nodeId"]),
+        ),
+    );
+    expect(branchStarts).toHaveLength(2);
+    expect(branchCompletions).toHaveLength(2);
+    expect(Math.max(...branchStarts.map((event) => event.seq))).toBeLessThan(
+      Math.min(...branchCompletions.map((event) => event.seq)),
+    );
+    expect(events.map((event) => event.seq)).toEqual(
+      events.map((_, index) => index + 1),
+    );
+  }, 20_000);
+
   it("answers and resumes a model-free Approval Workflow through JSONL", async () => {
     const fixture = await createApprovalFixture();
     const dependencies: RunCliDependencies = {
@@ -921,6 +984,111 @@ async function createToolFixture(): Promise<{
   return { root, workspaceRoot, dataRoot };
 }
 
+async function createParallelFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-parallel-workflow-cli-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-parallel-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Run two CLI analyses and join one report.",
+    steps: [
+      {
+        id: "analyze_a",
+        title: "Analyze left",
+        description: "Analyze the left branch.",
+        verification: "Return typed left analysis.",
+      },
+      {
+        id: "analyze_b",
+        title: "Analyze right",
+        description: "Analyze the right branch.",
+        verification: "Return typed right analysis.",
+      },
+      {
+        id: "report",
+        title: "Report",
+        description: "Join both analyses.",
+        verification: "Return one typed report.",
+        dependsOn: ["analyze_a", "analyze_b"],
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const branchNode = (id: "analyze_a" | "analyze_b") => ({
+    id,
+    type: "agent" as const,
+    inputBindings: { workflow: { source: "workflow" as const } },
+    inputSchema: {
+      type: "object" as const,
+      properties: { workflow: requestSchema() },
+      required: ["workflow"],
+      additionalProperties: false as const,
+    },
+    outputSchema: inspectionSchema(),
+    model: { provider: "faux-workflow-cli", id: "faux-1" },
+    timeoutMs: 5_000,
+    maxAttempts: 2,
+  });
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI parallel report",
+    version: 1,
+    description: "Execute two Agent nodes concurrently through CLI JSONL.",
+    blueprint,
+    inputSchema: requestSchema(),
+    outputSchema: reportSchema(),
+    outputNodeId: "report",
+    maxConcurrency: 2,
+    nodes: [
+      branchNode("analyze_a"),
+      branchNode("analyze_b"),
+      {
+        id: "report",
+        type: "agent",
+        inputBindings: {
+          left: { source: "node", nodeId: "analyze_a" },
+          right: { source: "node", nodeId: "analyze_b" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            left: inspectionSchema(),
+            right: inspectionSchema(),
+          },
+          required: ["left", "right"],
+          additionalProperties: false,
+        },
+        outputSchema: reportSchema(),
+        model: { provider: "faux-workflow-cli", id: "faux-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
 async function createDeterministicFixture(): Promise<{
   root: string;
   workspaceRoot: string;
@@ -1144,6 +1312,12 @@ function listFilesReceiptSchema(): WorkflowObjectSchema {
     required: ["count", "truncated", "pathSha256", "entrySetSha256"],
     additionalProperties: false,
   };
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 function parseFrames(

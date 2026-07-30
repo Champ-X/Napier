@@ -263,6 +263,9 @@ export function validateExecutionPlanWorkflowExperimentResult(
         ? { model: structuredClone(preview.modelOverrides[node.id]) }
         : {}),
     })),
+    ...(sourceManifest.maxConcurrency !== undefined
+      ? { maxConcurrency: sourceManifest.maxConcurrency }
+      : {}),
     generatedAt: sourceManifest.generatedAt,
   });
   if (

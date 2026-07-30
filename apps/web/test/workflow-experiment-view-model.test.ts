@@ -60,6 +60,12 @@ describe("Workflow experiment Workbench view model", () => {
     await expect(
       parseWorkflowManifestText(JSON.stringify(unsafe)),
     ).rejects.toThrow("path segment");
+
+    const unbounded = structuredClone(manifest);
+    unbounded.maxConcurrency = 5;
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unbounded)),
+    ).rejects.toThrow("shape");
   });
 
   it("accepts content-bound Approval nodes and rejects output drift", async () => {
@@ -319,6 +325,7 @@ function workflowDeterministicManifest() {
   const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
   const content = {
     ...baseContent,
+    maxConcurrency: 2,
     nodes: [
       {
         id: "report",

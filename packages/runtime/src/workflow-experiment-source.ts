@@ -84,6 +84,9 @@ export async function projectExecutionPlanWorkflowExperimentSource(
         ? { model: structuredClone(modelOverrides[node.id]) }
         : {}),
     })),
+    ...(manifest.maxConcurrency !== undefined
+      ? { maxConcurrency: manifest.maxConcurrency }
+      : {}),
     generatedAt: manifest.generatedAt,
   });
   const source = await projectExecutionPlanWorkflowSourceEvidence(
@@ -160,6 +163,7 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
     sourceThreadId,
     sourcePlan.id,
     sourceManifestSha256,
+    manifest.maxConcurrency ?? 1,
   );
   if (start.agentId !== sourceThread.agentId) {
     throw new Error("Workflow experiment source Agent does not match");

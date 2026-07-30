@@ -59,6 +59,7 @@ export class ExecutionPlanWorkflowLedger {
     threadId: string,
     planId: string,
     manifestSha256: string,
+    maxConcurrency = 1,
   ): Promise<RecoveredWorkflowStart> {
     const events = await this.store.listEvents(threadId);
     const started = events.find(
@@ -74,6 +75,7 @@ export class ExecutionPlanWorkflowLedger {
       started.payload["manifestSha256"] !== manifestSha256 ||
       started.payload["input"] === undefined ||
       typeof started.payload["inputSha256"] !== "string" ||
+      (started.payload["maxConcurrency"] ?? 1) !== maxConcurrency ||
       typeof started.payload["agentId"] !== "string" ||
       !/^[a-z][a-z0-9_]{2,80}$/u.test(started.payload["agentId"]) ||
       !positiveInteger(started.payload["agentRevision"])

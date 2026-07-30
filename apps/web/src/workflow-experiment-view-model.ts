@@ -96,6 +96,10 @@ export async function validateWorkflowManifest(
     input["nodes"].length < 1 ||
     input["nodes"].length > 30 ||
     input["nodeCount"] !== input["nodes"].length ||
+    (input["maxConcurrency"] !== undefined &&
+      (!Number.isSafeInteger(input["maxConcurrency"]) ||
+        Number(input["maxConcurrency"]) < 1 ||
+        Number(input["maxConcurrency"]) > 4)) ||
     typeof input["contentSha256"] !== "string" ||
     !SHA256.test(input["contentSha256"]) ||
     !record(input["blueprint"]) ||
@@ -172,6 +176,9 @@ export async function validateWorkflowManifest(
     outputNodeId: input["outputNodeId"],
     nodes: input["nodes"],
     nodeCount: input["nodeCount"],
+    ...(input["maxConcurrency"] !== undefined
+      ? { maxConcurrency: input["maxConcurrency"] }
+      : {}),
   };
   if ((await sha256Text(canonicalJson(content))) !== input["contentSha256"]) {
     throw new Error("Workflow manifest content hash is invalid");

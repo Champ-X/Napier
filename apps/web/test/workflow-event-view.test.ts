@@ -13,6 +13,7 @@ describe("Workflow event Trace projection", () => {
       blueprintSha256: "2".repeat(64),
       workflowVersion: 3,
       nodeCount: 2,
+      maxConcurrency: 2,
       input: { secret: "PRIVATE_WORKFLOW_INPUT" },
       inputSha256: "3".repeat(64),
       inputSchemaSha256: "4".repeat(64),
@@ -33,7 +34,7 @@ describe("Workflow event Trace projection", () => {
     });
 
     expect(workflowEventTraceSummary(started)).toBe(
-      `workflow started / version 3 / nodes 2 / input ${"3".repeat(12)} / input-schema ${"4".repeat(12)} / output-schema ${"5".repeat(12)} / manifest ${"1".repeat(12)}`,
+      `workflow started / version 3 / nodes 2 / concurrency 2 / input ${"3".repeat(12)} / input-schema ${"4".repeat(12)} / output-schema ${"5".repeat(12)} / manifest ${"1".repeat(12)}`,
     );
     expect(workflowEventTraceSummary(completed)).toBe(
       `workflow completed / status completed / completed 2/2 / result ${"7".repeat(12)} / output ${"6".repeat(12)} / manifest ${"1".repeat(12)}`,

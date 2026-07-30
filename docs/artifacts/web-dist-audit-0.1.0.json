@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 69,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-xx4td8RU.js",
+    "path": "apps/web/dist/assets/index-BE601mpC.js",
     "sizeBytes": 133200,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "fbf1bbab0e77a83440161732881d708342cdf298647b42819f9bc5c8bb67d0e8"
+    "sha256": "41ac89f7ab9a2a00059a07517b7f59264080187759b7237463a09c5bd35e3f38"
   },
-  "distContentSha256": "fbf1bbab0e77a83440161732881d708342cdf298647b42819f9bc5c8bb67d0e8",
+  "distContentSha256": "41ac89f7ab9a2a00059a07517b7f59264080187759b7237463a09c5bd35e3f38",
   "errors": []
 }

@@ -43,6 +43,7 @@ export const MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS = 1_000;
 export const MAX_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS = 30 * 60 * 1_000;
 export const MAX_EXECUTION_PLAN_WORKFLOW_APPROVAL_TIMEOUT_MS =
   7 * 24 * 60 * 60 * 1_000;
+export const MAX_EXECUTION_PLAN_WORKFLOW_CONCURRENCY = 4;
 
 const MAX_WORKFLOW_ATTEMPTS = 3;
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
@@ -64,6 +65,7 @@ export interface DefineExecutionPlanWorkflowInput {
   outputSchema: WorkflowValueSchema;
   outputNodeId: string;
   nodes: ExecutionPlanWorkflowNode[];
+  maxConcurrency?: number;
   generatedAt?: string;
 }
 
@@ -87,6 +89,9 @@ export function defineExecutionPlanWorkflow(
     outputNodeId: input.outputNodeId,
     nodes: structuredClone(input.nodes),
     nodeCount: input.nodes.length,
+    ...(input.maxConcurrency !== undefined
+      ? { maxConcurrency: input.maxConcurrency }
+      : {}),
   };
   return validateExecutionPlanWorkflowManifest({
     ...content,
@@ -143,9 +148,11 @@ export function validateExecutionPlanWorkflowManifest(
       "outputNodeId",
       "nodes",
       "nodeCount",
+      "maxConcurrency",
       "contentSha256",
     ],
     "Workflow manifest",
+    new Set(["maxConcurrency"]),
   );
   if (manifest["kind"] !== "napier.execution-plan-workflow") {
     throw new Error("Workflow manifest kind is invalid");
@@ -164,6 +171,15 @@ export function validateExecutionPlanWorkflowManifest(
     Number(manifest["version"]) < 1
   ) {
     throw new Error("Workflow version is invalid");
+  }
+  if (
+    manifest["maxConcurrency"] !== undefined &&
+    (!Number.isSafeInteger(manifest["maxConcurrency"]) ||
+      Number(manifest["maxConcurrency"]) < 1 ||
+      Number(manifest["maxConcurrency"]) >
+        MAX_EXECUTION_PLAN_WORKFLOW_CONCURRENCY)
+  ) {
+    throw new Error("Workflow maxConcurrency is invalid");
   }
   const blueprint = validateExecutionPlanBlueprint(manifest["blueprint"]);
   if ((blueprint.artifacts?.length ?? 0) > 0) {
@@ -285,6 +301,9 @@ export function executionPlanWorkflowManifestContent(
     outputNodeId: manifest.outputNodeId,
     nodes: structuredClone(manifest.nodes),
     nodeCount: manifest.nodeCount,
+    ...(manifest.maxConcurrency !== undefined
+      ? { maxConcurrency: manifest.maxConcurrency }
+      : {}),
   };
 }
 

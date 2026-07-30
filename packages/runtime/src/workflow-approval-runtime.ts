@@ -15,6 +15,7 @@ import {
   workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
 import { workflowSchemaSha256 } from "./workflow-schemas.js";
+import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
@@ -35,6 +36,7 @@ export interface RequestWorkflowApprovalOptions {
 
 export interface ContinueWorkflowApprovalOptions {
   threadId: string;
+  planId: string;
   agentId: string;
   agentRevision: number;
   originRun: RunRecord;
@@ -81,6 +83,7 @@ export class ExecutionPlanWorkflowApprovalRuntime {
         agentRevision: options.agentRevision,
         model: profile.model,
         source: "workflow",
+        [WORKFLOW_NODE_EXECUTION]: { planId: options.planId },
       },
       {
         ownerId: this.workerId,
@@ -263,6 +266,7 @@ export class ExecutionPlanWorkflowApprovalRuntime {
         agentRevision: options.agentRevision,
         model: profile.model,
         source: "workflow",
+        [WORKFLOW_NODE_EXECUTION]: { planId: options.planId },
         parentRunId: options.originRun.id,
         operatorDecisionId: options.decision.id,
       },

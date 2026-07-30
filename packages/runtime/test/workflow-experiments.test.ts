@@ -83,6 +83,8 @@ describe("Execution Plan Workflow experiments", () => {
     expect(experiment).toEqual(
       expect.objectContaining({
         targetThreadId,
+        sourceManifest: expect.objectContaining({ maxConcurrency: 2 }),
+        candidateManifest: expect.objectContaining({ maxConcurrency: 2 }),
         result: expect.objectContaining({
           status: "completed",
           output: { report: "Experimental report", approved: true },
@@ -1063,6 +1065,7 @@ async function createFixture(
     inputSchema: requestSchema(),
     outputSchema: reportSchema(),
     outputNodeId: "report",
+    maxConcurrency: 2,
     nodes: [
       {
         id: "inspect",

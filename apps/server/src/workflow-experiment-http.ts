@@ -6,6 +6,7 @@ import {
   createExecutionPlanWorkflowExperimentResultFrame,
   hashEventStream,
   MAX_EXECUTION_PLAN_WORKFLOW_REQUEST_BYTES,
+  OrderedRunEventWriter,
   streamEventFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
@@ -111,6 +112,7 @@ export async function executeWorkflowExperimentHttp(
 
   const response = streamSSE(context, async (stream) => {
     let targetThreadId = prepared.sourceThreadId;
+    let eventWriter: OrderedRunEventWriter | undefined;
     const writeFrame = async (
       frame: StreamFrame | ExecutionPlanWorkflowExperimentResultFrame,
       id?: string,
@@ -128,12 +130,25 @@ export async function executeWorkflowExperimentHttp(
         signal: context.req.raw.signal,
         onTargetCreated: (thread) => {
           targetThreadId = thread.id;
+          eventWriter = new OrderedRunEventWriter(
+            thread.id,
+            thread.eventCount + 1,
+            async (event) =>
+              writeFrame(streamEventFrame(event), String(event.seq)),
+          );
         },
         onEvent: async (event) => {
-          await writeFrame(streamEventFrame(event), String(event.seq));
+          if (!eventWriter) {
+            throw new Error("Workflow experiment target stream is unavailable");
+          }
+          await eventWriter.write(event);
         },
       });
       const detail = await services.store.getDetail(experiment.targetThreadId);
+      if (!eventWriter) {
+        throw new Error("Workflow experiment target stream is unavailable");
+      }
+      await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);
       const resultFrame = createExecutionPlanWorkflowExperimentResultFrame(
         experiment,

@@ -5,6 +5,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { LocalStore } from "../src/store.js";
+import { createThreadReplayBundle } from "../src/thread-bundles.js";
+import { WORKFLOW_NODE_EXECUTION } from "../src/workflow-node-execution.js";
 
 const temporaryRoots: string[] = [];
 
@@ -133,6 +135,152 @@ describe("LocalStore", () => {
     expect(JSON.stringify(after)).not.toContain(
       "must-not-appear-in-persistence-metrics",
     );
+  });
+
+  it("allows only a bounded group of concurrent Workflow Runs per Thread", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Concurrent Workflow Runs",
+      agentId: agent.id,
+    });
+    const plan = await store.createPlan(thread.id, {
+      objective: "Exercise bounded Workflow Run concurrency.",
+      steps: [
+        {
+          id: "run",
+          title: "Run",
+          description: "Hold one active Workflow Plan.",
+          verification: "Concurrent Runs stay Plan-scoped.",
+        },
+      ],
+    });
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        source: "workflow",
+      }),
+    ).rejects.toThrow("Plan capability");
+    const runs = [];
+    for (let index = 0; index < 4; index += 1) {
+      runs.push(
+        await store.createRun({
+          threadId: thread.id,
+          agentId: agent.id,
+          source: "workflow",
+          [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
+        }),
+      );
+    }
+    expect(store.getThread(thread.id).currentRunId).toBe(runs[0]!.id);
+    expect(runs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ workflowPlanId: plan.id }),
+      ]),
+    );
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        source: "workflow",
+        [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
+      }),
+    ).rejects.toThrow("concurrent Workflow Run limit");
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        source: "user",
+      }),
+    ).rejects.toThrow("active run");
+
+    await store.finishRun(runs[0]!.id, "completed");
+    expect(store.getThread(thread.id)).toEqual(
+      expect.objectContaining({
+        status: "running",
+        currentRunId: runs[1]!.id,
+      }),
+    );
+    await store.finishRun(runs[2]!.id, "failed");
+    expect(store.getThread(thread.id).status).toBe("running");
+    await store.finishRun(runs[1]!.id, "completed");
+    expect(store.getThread(thread.id).currentRunId).toBe(runs[3]!.id);
+    await store.finishRun(runs[3]!.id, "completed");
+    expect(store.getThread(thread.id).status).toBe("idle");
+    expect(store.getThread(thread.id).currentRunId).toBeUndefined();
+    store.close();
+  });
+
+  it("persists Workflow Plan admission across Store instances and replay import", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-store-"));
+    temporaryRoots.push(root);
+    const options = {
+      dataRoot: path.join(root, "data"),
+      workspaceRoot: path.join(root, "workspace"),
+    };
+    const first = new LocalStore(options);
+    const second = new LocalStore(options);
+    await first.initialize();
+    await second.initialize();
+    const agent = first.listAgents()[0]!;
+    const thread = await first.createThread({
+      title: "Cross-store Workflow Runs",
+      agentId: agent.id,
+    });
+    const plan = await first.createPlan(thread.id, {
+      objective: "Prove Workflow Run Plan admission survives Store refresh.",
+      steps: [
+        {
+          id: "parallel",
+          title: "Parallel",
+          description: "Keep the Workflow Plan active.",
+          verification: "Both Stores observe the same persisted Plan binding.",
+        },
+      ],
+    });
+    const firstRun = await first.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      source: "workflow",
+      [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
+    });
+    const secondRun = await second.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      source: "workflow",
+      [WORKFLOW_NODE_EXECUTION]: { planId: plan.id },
+    });
+    expect(firstRun.workflowPlanId).toBe(plan.id);
+    expect(secondRun.workflowPlanId).toBe(plan.id);
+
+    await second.finishRun(secondRun.id, "completed");
+    await first.finishRun(firstRun.id, "completed");
+    const bundle = createThreadReplayBundle(await first.getDetail(thread.id));
+    const tampered = structuredClone(bundle);
+    tampered.runs[0]!.workflowPlanId = "plan_unknown";
+    await expect(first.importThreadReplayBundle(tampered)).rejects.toThrow(
+      "unknown Plan",
+    );
+    const imported = await first.importThreadReplayBundle(bundle);
+    expect(imported.plans).toHaveLength(1);
+    expect(imported.runs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "workflow",
+          workflowPlanId: imported.plans[0]!.id,
+        }),
+        expect.objectContaining({
+          source: "workflow",
+          workflowPlanId: imported.plans[0]!.id,
+        }),
+      ]),
+    );
+    expect(imported.runs.map((run) => run.workflowPlanId)).not.toContain(
+      plan.id,
+    );
+    first.close();
+    second.close();
   });
 
   it("persists Agent revision history and rolls back through a new revision", async () => {

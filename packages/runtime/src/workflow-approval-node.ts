@@ -328,6 +328,7 @@ export class ExecutionPlanWorkflowApprovalNodeExecutor {
       decision.status === "answered"
         ? await this.runtime.continue({
             threadId: context.threadId,
+            planId: context.plan.id,
             agentId: context.agentId,
             agentRevision: context.agentRevision,
             originRun,

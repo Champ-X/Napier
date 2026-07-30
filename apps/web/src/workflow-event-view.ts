@@ -126,9 +126,14 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const inputSha256 = hash(payload["inputSha256"]);
     const inputSchemaSha256 = hash(payload["inputSchemaSha256"]);
     const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
+    const maxConcurrency =
+      payload["maxConcurrency"] === undefined
+        ? 1
+        : boundedInteger(payload["maxConcurrency"], 1, 4);
     if (
       version === undefined ||
       nodeCount === undefined ||
+      maxConcurrency === undefined ||
       !inputSha256 ||
       !inputSchemaSha256 ||
       !outputSchemaSha256 ||
@@ -139,6 +144,7 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     parts.push(
       `version ${String(version)}`,
       `nodes ${String(nodeCount)}`,
+      `concurrency ${String(maxConcurrency)}`,
       `input ${inputSha256.slice(0, 12)}`,
       `input-schema ${inputSchemaSha256.slice(0, 12)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,

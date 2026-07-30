@@ -6,6 +6,26 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added bounded parallel waves to typed Plan Workflows. Manifests can opt into
+  `maxConcurrency` from 1 to 4 while omission preserves legacy sequential
+  execution. The scheduler selects dependency-ready non-Approval nodes, gives
+  each an isolated Plan/output/result context, merges outcomes in Manifest
+  order, keeps Approval exclusive, preserves independently completed siblings,
+  and propagates cancellation across the batch. AgentRuntime and Store now
+  support multiple active same-Thread node Runs only when a package-internal
+  capability binds every Run to the same active Plan; persisted
+  `workflowPlanId` survives Store synchronization and is remapped and validated
+  by portable Replay import. Ordinary Runs, second Workflows, detached control
+  messages, Agent milestones, mismatched Plans, legacy unbound Runs, and a
+  fifth concurrent node fail closed. Restart recovery reconstructs every
+  interrupted branch before explicit retry. Checkpoint experiments preserve
+  concurrency, HTTP exposes the bound value, and Web Manifest/Trace enforce the
+  same 1–4 privacy-safe projection. A shared `OrderedRunEventWriter` now gives
+  CLI JSONL, Workflow SSE, and experiment SSE one contiguous Ledger-sequence
+  contract under concurrent callbacks. Runtime overlap, typed join, partial
+  failure, cancellation, Approval barrier, restart, cross-Store admission,
+  Replay tamper, experiment, CLI, Server, and Web tests cover the vertical
+  path.
 - Added bounded Deterministic nodes to typed Plan Workflows. A Manifest can now
   bind a pure recursive JSON template that selects typed input fields and
   constructs literal, object, or array output without a model or tool call.

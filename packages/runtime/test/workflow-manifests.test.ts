@@ -46,6 +46,7 @@ describe("Execution Plan Workflow manifests", () => {
       outputSchema: reportSchema(),
       outputNodeId: "report",
       nodes: workflowNodes(),
+      maxConcurrency: 2,
       generatedAt: "2026-07-30T00:00:00.000Z",
     });
 
@@ -64,6 +65,7 @@ describe("Execution Plan Workflow manifests", () => {
       "inspect",
       "report",
     ]);
+    expect(manifest.maxConcurrency).toBe(2);
 
     const workflowInput = { request: "Summarize three findings." };
     assertWorkflowValue(manifest.inputSchema, workflowInput, "Workflow input");
@@ -137,6 +139,19 @@ describe("Execution Plan Workflow manifests", () => {
         ],
       }),
     ).toThrow("direct dependency");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        name: "Invalid parallelism",
+        version: 1,
+        description: "Reject an unbounded Workflow batch.",
+        blueprint,
+        inputSchema: requestSchema(),
+        outputSchema: reportSchema(),
+        outputNodeId: "report",
+        nodes: workflowNodes(),
+        maxConcurrency: 5,
+      }),
+    ).toThrow("maxConcurrency");
     expect(() =>
       defineExecutionPlanWorkflow({
         name: "Bad output",

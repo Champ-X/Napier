@@ -56,6 +56,11 @@ import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materia
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deterministic-node.js";
+import {
+  DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
+  executeExecutionPlanWorkflowReadyBatch,
+} from "./workflow-parallel-scheduler.js";
+import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
 import { ExecutionPlanWorkflowToolNodeExecutor } from "./workflow-tool-node.js";
 
 export interface RunExecutionPlanWorkflowOptions {
@@ -210,6 +215,9 @@ export class ExecutionPlanWorkflowRuntime {
           inputSchemaSha256: workflowSchemaSha256(manifest.inputSchema),
           outputSchemaSha256: workflowSchemaSha256(manifest.outputSchema),
           outputNodeId: manifest.outputNodeId,
+          maxConcurrency:
+            manifest.maxConcurrency ??
+            DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
         },
       },
       options.onEvent,
@@ -267,6 +275,7 @@ export class ExecutionPlanWorkflowRuntime {
       options.threadId,
       plan.id,
       manifest.contentSha256,
+      manifest.maxConcurrency ?? DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
     );
     const thread = this.store.getThread(options.threadId);
     if (started.agentId !== thread.agentId) {
@@ -326,22 +335,21 @@ export class ExecutionPlanWorkflowRuntime {
         return this.finish(context, "cancelled");
       }
       context.plan = this.store.getPlan(context.plan.id);
-      const readyNode = context.manifest.nodes.find(
-        (node) =>
-          context.plan.steps.find((step) => step.id === node.id)?.status ===
-          "ready",
+      const batch = await executeExecutionPlanWorkflowReadyBatch(
+        context,
+        (nodeContext, node) => this.executeNode(nodeContext, node),
       );
-      if (!readyNode) break;
-      const outcome = await this.executeNode(context, readyNode);
-      context.nodeResults.set(readyNode.id, outcome.result);
-      if (outcome.result.output !== undefined) {
-        context.outputs.set(
-          readyNode.id,
-          structuredClone(outcome.result.output),
-        );
+      if (batch.length === 0) break;
+      let cancelled = false;
+      for (const { node, outcome } of batch) {
+        context.nodeResults.set(node.id, outcome.result);
+        if (outcome.result.output !== undefined) {
+          context.outputs.set(node.id, structuredClone(outcome.result.output));
+        }
+        cancelled ||= outcome.cancelled;
       }
       context.plan = this.store.getPlan(context.plan.id);
-      if (outcome.cancelled) {
+      if (cancelled) {
         return this.finish(context, "cancelled");
       }
     }
@@ -451,6 +459,7 @@ export class ExecutionPlanWorkflowRuntime {
         threadId: context.threadId,
         text: prompt,
         source: "workflow",
+        [WORKFLOW_NODE_EXECUTION]: { planId: context.plan.id },
         agentRevision: context.agentRevision,
         signal: controller.signal,
         ...(node.model ? { model: node.model } : {}),
@@ -792,6 +801,14 @@ export class ExecutionPlanWorkflowRuntime {
         context.onEvent,
       );
     }
+    await this.store.setThreadStatus(
+      context.threadId,
+      status === "waiting"
+        ? "waiting"
+        : status === "blocked"
+          ? "failed"
+          : "idle",
+    );
     return result;
   }
 }

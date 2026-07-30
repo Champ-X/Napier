@@ -583,6 +583,14 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     if (run["source"] !== undefined) {
       assertEnum(run["source"], RUN_SOURCES, `runs[${index}].source`);
     }
+    if (run["workflowPlanId"] !== undefined) {
+      assertResourceId(run["workflowPlanId"], `runs[${index}].workflowPlanId`);
+      if (run["source"] !== "workflow") {
+        throw new Error(
+          `Thread replay bundle Workflow Run Plan binding is invalid: ${runId}`,
+        );
+      }
+    }
     assertIsoDate(run["startedAt"], `runs[${index}].startedAt`);
     for (const key of ["finishedAt", "interruptedAt"]) {
       if (run[key] !== undefined) {
@@ -1003,6 +1011,16 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       ) {
         throw new Error("Thread replay bundle artifact references unknown run");
       }
+    }
+  }
+  for (const [index, run] of runRecords.entries()) {
+    if (
+      run["workflowPlanId"] !== undefined &&
+      !planIds.has(String(run["workflowPlanId"]))
+    ) {
+      throw new Error(
+        `Thread replay bundle Workflow Run references an unknown Plan: runs[${index}]`,
+      );
     }
   }
 

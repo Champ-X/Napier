@@ -24,6 +24,7 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
+import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
@@ -83,6 +84,7 @@ export class ExecutionPlanWorkflowDeterministicRuntime {
         agentRevision: options.agentRevision,
         model: profile.model,
         source: "workflow",
+        [WORKFLOW_NODE_EXECUTION]: { planId: options.planId },
       },
       {
         ownerId: this.workerId,

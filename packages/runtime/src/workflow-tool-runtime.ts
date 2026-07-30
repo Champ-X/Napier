@@ -18,6 +18,7 @@ import { createStatelessAgentTools } from "./stateless-agent-tools.js";
 import type { LocalStore } from "./store.js";
 import { assertWorkflowValue } from "./workflow-schemas.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
+import { WORKFLOW_NODE_EXECUTION } from "./workflow-node-execution.js";
 
 const RUN_LEASE_TTL_MS = 60_000;
 const RUN_LEASE_HEARTBEAT_MS = 20_000;
@@ -77,6 +78,7 @@ export class ExecutionPlanWorkflowToolRuntime {
         agentRevision: options.agentRevision,
         model: profile.model,
         source: "workflow",
+        [WORKFLOW_NODE_EXECUTION]: { planId: options.planId },
       },
       {
         ownerId: this.workerId,

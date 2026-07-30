@@ -421,6 +421,169 @@ describe("Workflow HTTP path", () => {
     ).toEqual(["workflow"]);
   });
 
+  it("streams parallel Agent nodes before their typed join through public SSE", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-parallel-workflow-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: new UnsupportedSandboxAdapter("server-parallel-workflow-test"),
+    });
+    openServices.push(services);
+    const blueprintThread = services.store.listThreads()[0]!;
+    const blueprintPlan = await services.store.createPlan(blueprintThread.id, {
+      objective: "Run two HTTP analyses and join one report.",
+      steps: [
+        {
+          id: "analyze_a",
+          title: "Analyze left",
+          description: "Analyze the left branch.",
+          verification: "Return typed left analysis.",
+        },
+        {
+          id: "analyze_b",
+          title: "Analyze right",
+          description: "Analyze the right branch.",
+          verification: "Return typed right analysis.",
+        },
+        {
+          id: "report",
+          title: "Report",
+          description: "Join both analyses.",
+          verification: "Return one typed report.",
+          dependsOn: ["analyze_a", "analyze_b"],
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      blueprintThread.id,
+      blueprintPlan.id,
+    );
+    const branchNode = (id: "analyze_a" | "analyze_b") => ({
+      id,
+      type: "agent" as const,
+      inputBindings: { workflow: { source: "workflow" as const } },
+      inputSchema: {
+        type: "object" as const,
+        properties: { workflow: requestSchema() },
+        required: ["workflow"],
+        additionalProperties: false as const,
+      },
+      outputSchema: inspectionSchema(),
+      model: { provider: "faux-server-parallel", id: "faux-1" },
+      timeoutMs: 5_000,
+      maxAttempts: 2,
+    });
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP parallel report",
+      version: 1,
+      description: "Execute two Agent nodes concurrently through HTTP SSE.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: reportSchema(),
+      outputNodeId: "report",
+      maxConcurrency: 2,
+      nodes: [
+        branchNode("analyze_a"),
+        branchNode("analyze_b"),
+        {
+          id: "report",
+          type: "agent",
+          inputBindings: {
+            left: { source: "node", nodeId: "analyze_a" },
+            right: { source: "node", nodeId: "analyze_b" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              left: inspectionSchema(),
+              right: inspectionSchema(),
+            },
+            required: ["left", "right"],
+            additionalProperties: false,
+          },
+          outputSchema: reportSchema(),
+          model: { provider: "faux-server-parallel", id: "faux-1" },
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+    });
+    const targetThread = await services.store.createThread({
+      title: "HTTP parallel Workflow target",
+      agentId: blueprintThread.agentId,
+    });
+    const provider = fauxProvider({
+      provider: "faux-server-parallel",
+      tokensPerSecond: 20,
+    });
+    provider.setResponses([
+      fauxAssistantMessage(`{"summary":"${"L".repeat(120)}","count":1}`),
+      fauxAssistantMessage(`{"summary":"${"R".repeat(120)}","count":1}`),
+      fauxAssistantMessage('{"report":"Parallel HTTP report","approved":true}'),
+    ]);
+    services.models.registerProvider(provider.provider);
+    const response = await createApp(services).request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { request: "Run parallel HTTP branches." },
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-napier-workflow-max-concurrency")).toBe("2");
+    const frames = parseSseFrames(await response.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result.result.output).toEqual({
+      report: "Parallel HTTP report",
+      approved: true,
+    });
+    const events = frames.flatMap((frame) => {
+      const value = record(frame);
+      return value?.["type"] === "event" && record(value["event"])
+        ? [
+            value["event"] as unknown as {
+              seq: number;
+              type: string;
+              payload: unknown;
+            },
+          ]
+        : [];
+    });
+    const branchStarts = events.filter(
+      (event) =>
+        event.type === "workflow.node.started" &&
+        ["analyze_a", "analyze_b"].includes(
+          String(record(event.payload)?.["nodeId"]),
+        ),
+    );
+    const branchCompletions = events.filter(
+      (event) =>
+        event.type === "workflow.node.completed" &&
+        ["analyze_a", "analyze_b"].includes(
+          String(record(event.payload)?.["nodeId"]),
+        ),
+    );
+    expect(branchStarts).toHaveLength(2);
+    expect(branchCompletions).toHaveLength(2);
+    expect(Math.max(...branchStarts.map((event) => event.seq))).toBeLessThan(
+      Math.min(...branchCompletions.map((event) => event.seq)),
+    );
+    expect(events.map((event) => event.seq)).toEqual(
+      events.map((_, index) => index + 1),
+    );
+  }, 20_000);
+
   it("answers and resumes a model-free Approval through public HTTP routes", async () => {
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-server-approval-workflow-"),
@@ -634,6 +797,12 @@ function reportSchema(): WorkflowObjectSchema {
     required: ["report", "approved"],
     additionalProperties: false,
   };
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }
 
 function parseSseFrames(text: string): unknown[] {

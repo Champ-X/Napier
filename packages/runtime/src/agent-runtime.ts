@@ -62,6 +62,10 @@ import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
+import {
+  WORKFLOW_NODE_EXECUTION,
+  type WorkflowNodeExecution,
+} from "./workflow-node-execution.js";
 import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
 import {
   createAgentMilestoneContextProjection,
@@ -159,6 +163,7 @@ export interface RunPromptOptions {
   operatorDecisionId?: string;
   source?: Exclude<RunInvocationSource, "workflow_reuse">;
   triggerId?: string;
+  [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
   recovery?: {
     mode: "manual" | "automatic";
     attemptId?: string;
@@ -193,6 +198,7 @@ export interface ContinueOperatorDecisionOptions {
 interface ActiveRun {
   runId: string;
   abort: () => void;
+  source: RunInvocationSource;
 }
 
 type TurnSource =
@@ -211,7 +217,7 @@ class OperatorDecisionPendingError extends Error {
 }
 
 export class AgentRuntime {
-  private readonly activeRuns = new Map<string, ActiveRun>();
+  private readonly activeRuns = new Map<string, Map<string, ActiveRun>>();
   private readonly workerId = createId("worker");
   private readonly sessions: AgentSessionRuntime;
 
@@ -240,7 +246,13 @@ export class AgentRuntime {
         "Workflow reuse Runs can only be created by the Workflow materializer",
       );
     }
-    if (this.activeRuns.has(options.threadId)) {
+    const activeRuns = this.activeRuns.get(options.threadId);
+    if (
+      activeRuns &&
+      activeRuns.size > 0 &&
+      (requestedSource !== "workflow" ||
+        [...activeRuns.values()].some((active) => active.source !== "workflow"))
+    ) {
       throw new Error("This thread already has an active run");
     }
 
@@ -286,6 +298,11 @@ export class AgentRuntime {
           ? { executionMode: options.executionMode }
           : {}),
         ...(options.triggerId ? { triggerId: options.triggerId } : {}),
+        ...(options[WORKFLOW_NODE_EXECUTION]
+          ? {
+              [WORKFLOW_NODE_EXECUTION]: options[WORKFLOW_NODE_EXECUTION],
+            }
+          : {}),
         ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
         ...(options.operatorDecisionId
           ? { operatorDecisionId: options.operatorDecisionId }
@@ -311,7 +328,13 @@ export class AgentRuntime {
     const forwardAbort = (): void => abortController.abort();
     options.signal?.addEventListener("abort", forwardAbort, { once: true });
     if (options.signal?.aborted) abortController.abort();
-    this.activeRuns.set(thread.id, { runId: run.id, abort: forwardAbort });
+    const threadRuns = this.activeRuns.get(thread.id) ?? new Map();
+    threadRuns.set(run.id, {
+      runId: run.id,
+      abort: forwardAbort,
+      source: invocationSource,
+    });
+    this.activeRuns.set(thread.id, threadRuns);
     const budgetTimeout = setTimeout(
       () => {
         budget.exhaustTimeout();
@@ -779,7 +802,9 @@ export class AgentRuntime {
       clearTimeout(budgetTimeout);
       clearInterval(heartbeat);
       options.signal?.removeEventListener("abort", forwardAbort);
-      this.activeRuns.delete(thread.id);
+      const threadRuns = this.activeRuns.get(thread.id);
+      threadRuns?.delete(run.id);
+      if (threadRuns?.size === 0) this.activeRuns.delete(thread.id);
     }
   }
 
@@ -956,9 +981,9 @@ export class AgentRuntime {
   }
 
   stop(threadId: string): boolean {
-    const active = this.activeRuns.get(threadId);
-    if (!active) return false;
-    active.abort();
+    const activeRuns = this.activeRuns.get(threadId);
+    if (!activeRuns || activeRuns.size === 0) return false;
+    for (const active of activeRuns.values()) active.abort();
     return true;
   }
 

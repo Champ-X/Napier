@@ -6,6 +6,7 @@ import {
   createExecutionPlanWorkflowResultFrame,
   hashEventStream,
   MAX_EXECUTION_PLAN_WORKFLOW_REQUEST_BYTES,
+  OrderedRunEventWriter,
   streamEventFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
@@ -84,6 +85,10 @@ export async function executeWorkflowHttp(
     "X-Napier-Workflow-Node-Count",
     String(request.manifest.nodeCount),
   );
+  context.header(
+    "X-Napier-Workflow-Max-Concurrency",
+    String(request.manifest.maxConcurrency ?? 1),
+  );
 
   return streamSSE(context, async (stream) => {
     const writeFrame = async (
@@ -96,16 +101,20 @@ export async function executeWorkflowHttp(
         ...(id ? { id } : {}),
       });
     };
+    const eventWriter = new OrderedRunEventWriter(
+      threadId,
+      services.store.getThread(threadId).eventCount + 1,
+      async (event) => writeFrame(streamEventFrame(event), String(event.seq)),
+    );
     try {
       const result = await services.workflows.run({
         threadId,
         request,
         signal: context.req.raw.signal,
-        onEvent: async (event) => {
-          await writeFrame(streamEventFrame(event), String(event.seq));
-        },
+        onEvent: async (event) => eventWriter.write(event),
       });
       const detail = await services.store.getDetail(threadId);
+      await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);
       const resultFrame = createExecutionPlanWorkflowResultFrame(
         result,

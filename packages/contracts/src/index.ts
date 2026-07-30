@@ -971,6 +971,7 @@ export interface ExecutionPlanWorkflowManifest {
   outputNodeId: string;
   nodes: ExecutionPlanWorkflowNode[];
   nodeCount: number;
+  maxConcurrency?: number;
   contentSha256: string;
 }
 
@@ -3365,6 +3366,7 @@ export interface RunRecord {
   agentId: string;
   status: RunStatus;
   source?: RunInvocationSource;
+  workflowPlanId?: string;
   triggerId?: string;
   startedAt: string;
   finishedAt?: string;

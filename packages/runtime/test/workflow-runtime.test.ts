@@ -21,6 +21,7 @@ import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
 import { defineExecutionPlanWorkflow } from "../src/workflow-manifests.js";
+import { WORKFLOW_NODE_EXECUTION } from "../src/workflow-node-execution.js";
 import {
   validateExecuteExecutionPlanWorkflowRequest,
   validateExecutionPlanWorkflowResult,
@@ -1070,6 +1071,7 @@ describe("Execution Plan Workflow runtime", () => {
       agentRevision: originRun.agentRevision,
       model: originRun.configuration!.model,
       source: "workflow",
+      [WORKFLOW_NODE_EXECUTION]: { planId: lateWaiting.planId },
       parentRunId: originRun.id,
       operatorDecisionId: lateDecision.id,
     });
@@ -1871,6 +1873,286 @@ describe("Execution Plan Workflow runtime", () => {
     fixture.store.close();
   }, 20_000);
 
+  it("executes independent Agent nodes concurrently before a typed join", async () => {
+    const fixture = await createParallelFixture();
+    const branchResponse = (context: { messages: unknown[] }) => {
+      const prompt = JSON.stringify(context.messages);
+      return fauxAssistantMessage(
+        prompt.includes("analyze_a")
+          ? '{"summary":"Left analysis","count":1}'
+          : '{"summary":"Right analysis","count":1}',
+      );
+    };
+    fixture.provider.setResponses([
+      branchResponse,
+      branchResponse,
+      (context) => {
+        const prompt = JSON.stringify(context.messages);
+        expect(prompt).toContain('\\"summary\\":\\"Left analysis\\"');
+        expect(prompt).toContain('\\"summary\\":\\"Right analysis\\"');
+        return fauxAssistantMessage(
+          '{"report":"Parallel join complete","approved":true}',
+        );
+      },
+    ]);
+    const startedNodeIds = new Set<string>();
+    let releaseBranches!: () => void;
+    const branchGate = new Promise<void>((resolve) => {
+      releaseBranches = resolve;
+    });
+    let resolveBothStarted!: () => void;
+    const bothStarted = new Promise<void>((resolve) => {
+      resolveBothStarted = resolve;
+    });
+    const execution = fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest: fixture.manifest,
+        input: { request: "Run both analyses concurrently." },
+      },
+      onEvent: async (event) => {
+        if (event.type !== "workflow.node.started") return;
+        const nodeId = record(event.payload)?.["nodeId"];
+        if (nodeId !== "analyze_a" && nodeId !== "analyze_b") return;
+        startedNodeIds.add(nodeId);
+        if (startedNodeIds.size === 2) resolveBothStarted();
+        await branchGate;
+      },
+    });
+    await Promise.race([
+      bothStarted,
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Parallel Workflow nodes did not overlap")),
+          2_000,
+        ),
+      ),
+    ]);
+
+    const activeRuns = fixture.store
+      .listRuns(fixture.targetThreadId)
+      .filter((run) => run.status === "running");
+    expect(activeRuns).toHaveLength(2);
+    expect(fixture.store.getThread(fixture.targetThreadId).currentRunId).toBe(
+      activeRuns[0]?.id,
+    );
+    await expect(
+      fixture.store.queueRunControlMessage({
+        threadId: fixture.targetThreadId,
+        runId: activeRuns[0]!.id,
+        mode: "steering",
+        text: "Do not inject detached control into a Workflow node.",
+      }),
+    ).rejects.toThrow("Workflow node Runs");
+    releaseBranches();
+    const result = await execution;
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { report: "Parallel join complete", approved: true },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "analyze_a",
+            status: "completed",
+          }),
+          expect.objectContaining({
+            nodeId: "analyze_b",
+            status: "completed",
+          }),
+          expect.objectContaining({
+            nodeId: "report",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    const branchRuns = fixture.store
+      .listRuns(fixture.targetThreadId)
+      .filter((run) =>
+        result.nodeResults.slice(0, 2).some((node) => node.runId === run.id),
+      );
+    expect(branchRuns).toHaveLength(2);
+    expect(
+      Math.max(...branchRuns.map((run) => Date.parse(run.startedAt))),
+    ).toBeLessThan(
+      Math.min(...branchRuns.map((run) => Date.parse(run.finishedAt!))),
+    );
+    expect(fixture.store.getThread(fixture.targetThreadId)).toEqual(
+      expect.objectContaining({
+        status: "idle",
+      }),
+    );
+    expect(
+      fixture.store.getThread(fixture.targetThreadId).currentRunId,
+    ).toBeUndefined();
+    fixture.store.close();
+  }, 20_000);
+
+  it("preserves a successful parallel sibling when another Agent node fails", async () => {
+    const fixture = await createParallelFixture();
+    const manifest = defineExecutionPlanWorkflow({
+      ...parallelWorkflowDefinition(fixture.manifest.blueprint),
+      maxConcurrency: 2,
+      nodes: parallelWorkflowDefinition(fixture.manifest.blueprint).nodes.map(
+        (node) =>
+          node.id === "analyze_a"
+            ? {
+                ...node,
+                model: { provider: "missing-parallel", id: "missing-1" },
+              }
+            : node,
+      ),
+    });
+    fixture.provider.setResponses([
+      fauxAssistantMessage('{"summary":"Right survived","count":1}'),
+    ]);
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Preserve independent successful work." },
+      },
+    });
+
+    expect(result.status).toBe("blocked");
+    expect(result.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        status: "blocked",
+      }),
+      expect.objectContaining({
+        nodeId: "analyze_b",
+        status: "completed",
+        output: { summary: "Right survived", count: 1 },
+      }),
+    ]);
+    expect(
+      fixture.store
+        .listRuns(fixture.targetThreadId)
+        .map((run) => run.status)
+        .sort(),
+    ).toEqual(["completed", "failed"]);
+    expect(fixture.store.getThread(fixture.targetThreadId).status).toBe(
+      "failed",
+    );
+    fixture.store.close();
+  });
+
+  it("cancels every active node in one parallel batch", async () => {
+    const fixture = await createParallelFixture();
+    fixture.provider.setResponses([
+      fauxAssistantMessage('{"summary":"Left cancelled","count":1}'),
+      fauxAssistantMessage('{"summary":"Right cancelled","count":1}'),
+    ]);
+    const controller = new AbortController();
+    const startedNodeIds = new Set<string>();
+    let releaseBranches!: () => void;
+    const branchGate = new Promise<void>((resolve) => {
+      releaseBranches = resolve;
+    });
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest: fixture.manifest,
+        input: { request: "Cancel the parallel batch." },
+      },
+      signal: controller.signal,
+      onEvent: async (event) => {
+        if (event.type !== "workflow.node.started") return;
+        const nodeId = record(event.payload)?.["nodeId"];
+        if (nodeId !== "analyze_a" && nodeId !== "analyze_b") return;
+        startedNodeIds.add(nodeId);
+        if (startedNodeIds.size === 2) {
+          controller.abort();
+          releaseBranches();
+        }
+        await branchGate;
+      },
+    });
+
+    expect(result.status).toBe("cancelled");
+    expect(result.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        status: "cancelled",
+      }),
+      expect.objectContaining({
+        nodeId: "analyze_b",
+        status: "cancelled",
+      }),
+    ]);
+    expect(
+      fixture.store.listRuns(fixture.targetThreadId).map((run) => run.status),
+    ).toEqual(["cancelled", "cancelled"]);
+    expect(fixture.store.getThread(fixture.targetThreadId)).toEqual(
+      expect.objectContaining({
+        status: "idle",
+      }),
+    );
+    expect(
+      fixture.store.getThread(fixture.targetThreadId).currentRunId,
+    ).toBeUndefined();
+    fixture.store.close();
+  }, 20_000);
+
+  it("runs an Approval as an exclusive barrier after parallel-ready work", async () => {
+    const fixture = await createParallelFixture();
+    const manifest = parallelApprovalWorkflowManifest(
+      fixture.manifest.blueprint,
+    );
+    fixture.provider.setResponses([
+      fauxAssistantMessage('{"summary":"Independent work complete","count":1}'),
+    ]);
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Complete work before requesting approval." },
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "waiting",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "analyze_a",
+            status: "waiting",
+          }),
+          expect.objectContaining({
+            nodeId: "analyze_b",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    const events = await fixture.store.listEvents(fixture.targetThreadId);
+    const rightCompleted = events.find(
+      (event) =>
+        event.type === "workflow.node.completed" &&
+        record(event.payload)?.["nodeId"] === "analyze_b",
+    );
+    const approvalStarted = events.find(
+      (event) =>
+        event.type === "workflow.node.started" &&
+        record(event.payload)?.["nodeId"] === "analyze_a",
+    );
+    expect(rightCompleted?.seq).toBeLessThan(approvalStarted!.seq);
+    expect(
+      await fixture.store.listOperatorDecisions(fixture.targetThreadId),
+    ).toEqual([
+      expect.objectContaining({
+        status: "pending",
+        question: "Approve the completed parallel work?",
+      }),
+    ]);
+    expect(fixture.store.getThread(fixture.targetThreadId).status).toBe(
+      "waiting",
+    );
+    fixture.store.close();
+  });
+
   it("binds an unavailable model failure to a Run and still exhausts attempts", async () => {
     const fixture = await createFixture();
     await fixture.store.setGoal(
@@ -1960,6 +2242,75 @@ describe("Execution Plan Workflow runtime", () => {
   });
 });
 
+async function createParallelFixture(): Promise<{
+  store: LocalStore;
+  provider: ReturnType<typeof fauxProvider>;
+  agentRuntime: AgentRuntime;
+  workflows: ExecutionPlanWorkflowRuntime;
+  targetThreadId: string;
+  manifest: ExecutionPlanWorkflowManifest;
+}> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-workflow-parallel-runtime-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  await mkdir(workspaceRoot, { recursive: true });
+  const store = new LocalStore({
+    workspaceRoot,
+    dataRoot: path.join(root, "data"),
+  });
+  await store.initialize();
+  const sourceThread = store.listThreads()[0]!;
+  const sourcePlan = await store.createPlan(sourceThread.id, {
+    objective: "Analyze two independent inputs and join one typed report.",
+    steps: [
+      {
+        id: "analyze_a",
+        title: "Analyze left",
+        description: "Analyze the left branch.",
+        verification: "Return typed left analysis.",
+      },
+      {
+        id: "analyze_b",
+        title: "Analyze right",
+        description: "Analyze the right branch.",
+        verification: "Return typed right analysis.",
+      },
+      {
+        id: "report",
+        title: "Join report",
+        description: "Join both typed analyses.",
+        verification: "Return one typed report.",
+        dependsOn: ["analyze_a", "analyze_b"],
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const targetThread = await store.createThread({
+    title: "Parallel Workflow target",
+    agentId: sourceThread.agentId,
+  });
+  const provider = fauxProvider({ provider: "faux-workflow" });
+  const models = new ModelRegistry();
+  models.registerProvider(provider.provider);
+  const agentRuntime = new AgentRuntime(store, models);
+  return {
+    store,
+    provider,
+    agentRuntime,
+    workflows: new ExecutionPlanWorkflowRuntime(store, agentRuntime),
+    targetThreadId: targetThread.id,
+    manifest: defineExecutionPlanWorkflow(
+      parallelWorkflowDefinition(blueprint),
+    ),
+  };
+}
+
 async function createFixture(
   options: { tokensPerSecond?: number } = {},
 ): Promise<{
@@ -2027,6 +2378,136 @@ async function createFixture(
     manifest: defineExecutionPlanWorkflow(workflowDefinition(blueprint)),
     workspaceRoot,
   };
+}
+
+function parallelWorkflowDefinition(blueprint: ExecutionPlanBlueprint) {
+  return {
+    name: "Parallel typed report",
+    version: 1,
+    description: "Run two independent typed analyses before one join.",
+    blueprint,
+    inputSchema: requestSchema(),
+    outputSchema: reportSchema(),
+    outputNodeId: "report",
+    maxConcurrency: 2,
+    nodes: [
+      {
+        id: "analyze_a",
+        type: "agent" as const,
+        inputBindings: {
+          workflow: { source: "workflow" as const },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false as const,
+        },
+        outputSchema: inspectionSchema(),
+        model: { provider: "faux-workflow", id: "faux-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+      {
+        id: "analyze_b",
+        type: "agent" as const,
+        inputBindings: {
+          workflow: { source: "workflow" as const },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false as const,
+        },
+        outputSchema: inspectionSchema(),
+        model: { provider: "faux-workflow", id: "faux-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+      {
+        id: "report",
+        type: "agent" as const,
+        inputBindings: {
+          workflow: { source: "workflow" as const },
+          left: { source: "node" as const, nodeId: "analyze_a" },
+          right: { source: "node" as const, nodeId: "analyze_b" },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            workflow: requestSchema(),
+            left: inspectionSchema(),
+            right: inspectionSchema(),
+          },
+          required: ["workflow", "left", "right"],
+          additionalProperties: false as const,
+        },
+        outputSchema: reportSchema(),
+        model: { provider: "faux-workflow", id: "faux-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+}
+
+function parallelApprovalWorkflowManifest(
+  blueprint: ExecutionPlanBlueprint,
+): ExecutionPlanWorkflowManifest {
+  const definition = parallelWorkflowDefinition(blueprint);
+  return defineExecutionPlanWorkflow({
+    ...definition,
+    nodes: [
+      {
+        id: "analyze_a",
+        type: "approval",
+        header: "Release",
+        question: "Approve the completed parallel work?",
+        approve: {
+          label: "Approve",
+          description: "Continue to the typed join.",
+        },
+        reject: {
+          label: "Reject",
+          description: "Block the final report.",
+        },
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: structuredClone(
+          EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+        ),
+        timeoutMs: 60_000,
+        maxAttempts: 2,
+      },
+      definition.nodes[1]!,
+      {
+        ...definition.nodes[2]!,
+        inputBindings: {
+          approval: { source: "node", nodeId: "analyze_a" },
+          right: { source: "node", nodeId: "analyze_b" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            approval: structuredClone(
+              EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+            ),
+            right: inspectionSchema(),
+          },
+          required: ["approval", "right"],
+          additionalProperties: false,
+        },
+      },
+    ],
+  });
 }
 
 function workflowDefinition(blueprint: ExecutionPlanBlueprint) {

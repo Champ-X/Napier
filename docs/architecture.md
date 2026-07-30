@@ -253,17 +253,23 @@ timeouts; `workflow-tool-runtime.ts` owns leased direct execution; and
 growing the central Ledger coordinator.
 `workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
 reconstruction. `workflow-protocol.ts` validates HTTP/CLI requests, typed
-results, and final snapshot/event-stream-bound result frames. This keeps
+results, and final snapshot/event-stream-bound result frames.
+`workflow-parallel-scheduler.ts` owns ready-batch selection, per-node context
+snapshots, Approval exclusivity, and batch abort propagation.
+`workflow-node-execution.ts` defines the package-internal capability that binds
+new node Runs to an active Plan. `ordered-run-event-writer.ts` gives CLI JSONL
+and HTTP SSE one sequence-accurate concurrent event projection. This keeps
 Workflow logic outside the oversized Store and Server modules and removes the
 former tool-construction block from `agent-runtime.ts`.
 
 A new execution validates the complete manifest and typed input before
 creating state, creates the normal `ExecutionPlan`, freezes the target Agent
-revision in `workflow.started`, and executes one dependency-ready node at a
-time. Agent nodes are normal `AgentRuntime.runPrompt()` invocations with their
+revision in `workflow.started`, and executes dependency-ready nodes with
+Manifest concurrency `1..4`; an omitted value preserves sequential behavior.
+Agent nodes are normal `AgentRuntime.runPrompt()` invocations with their
 manifest model override, timeout, AbortSignal, Run lease, policy, Sandbox,
-tools, and Ledger. Deterministic nodes create the same leased Run and resolve a
-bounded pure JSON template over their typed input. The only primitives are
+tools, and Ledger. Deterministic nodes create the same leased Run and resolve
+a bounded pure JSON template over their typed input. The only primitives are
 literal JSON, bounded field selection, object construction, and array
 construction; there is no model, tool, JavaScript, JSONPath, interpolation, or
 expression evaluation. Tool nodes also perform no model call. They select one
@@ -273,6 +279,23 @@ workspace scope, and freshness before `tool.started`. JavaScript/Python
 kernels, Node debugger, background Process Sessions, and preview-bound
 workspace file mutations stay Run-owned Agent tools because a one-shot node
 cannot honestly provide their persistent session lifecycle.
+
+Each concurrent node receives an isolated copy of the current Plan, outputs,
+node results, and reused-node lineage. Store transitions and Ledger sequence
+assignment remain serialized authorities; outcomes merge only after the full
+batch settles and in Manifest order. Approval nodes never share a batch. A
+blocked branch preserves independently completed siblings, cancellation
+aborts every active branch, and an unexpected scheduler rejection aborts the
+rest of the batch before surfacing the error.
+
+The Store admits concurrent Runs only when every active Run has
+`source=workflow` and the same persisted `workflowPlanId`. That field is
+derived only from a package-internal capability after validating an active
+same-Thread Plan; public source strings are insufficient authorization. Four
+active Workflow Runs is the hard Store bound. `Thread.currentRunId` remains a
+backward-compatible pointer to the oldest representative active Run and moves
+to the next sibling on settlement. The complete active set is derived from Run
+status and Plan step bindings.
 
 Approval nodes reuse the existing operator-decision state machine rather than
 adding approval storage. The first leased `source=workflow` Run transitions the
@@ -317,13 +340,18 @@ Workflow-owned Runs are excluded from generic manual and automatic Run
 recovery. Only Workflow resume may inspect them. It automatically reopens only
 a proved started-only Deterministic attempt; all other blocked nodes require
 explicit `retryBlocked=true` and an unexhausted attempt limit. Unknown side
-effects are never silently rerun. Concurrent execution of two Workflows on one
-Thread is rejected by the shared Runtime instance.
+effects are never silently rerun. Restart reconciliation interrupts every
+in-flight sibling and binds each affected Plan step to its own
+`run_interrupted` evidence. A second Workflow or an ordinary Run on the same
+Thread remains rejected.
 
 CLI JSONL and HTTP SSE emit normal event frames followed by one snapshot and a
 `workflow_result` frame. The frame independently validates every node/output
 hash, final result hash, Thread/Plan/Manifest binding, snapshot size/hash,
-event counts/bytes, and event-stream hash.
+event counts/bytes, and event-stream hash. Both transports use
+`OrderedRunEventWriter`, which tolerates concurrent callback arrival but writes
+only contiguous authoritative Ledger sequence and fails closed on duplicates,
+foreign Threads, or gaps.
 
 Workflow checkpoint experiments build controlled re-execution on that same
 scheduler:
