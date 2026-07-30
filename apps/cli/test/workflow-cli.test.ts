@@ -5,6 +5,7 @@ import { Writable } from "node:stream";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import type {
+  ExecutionPlanWorkflowExperimentResultFrame,
   ExecutionPlanWorkflowResultFrame,
   StreamFrame,
   WorkflowObjectSchema,
@@ -14,6 +15,7 @@ import {
   createLocalAgentRuntime,
   defineExecutionPlanWorkflow,
   UnsupportedSandboxAdapter,
+  validateExecutionPlanWorkflowExperimentResultFrame,
   validateExecutionPlanWorkflowResultFrame,
   type LocalAgentRuntimeOptions,
 } from "@napier/runtime";
@@ -108,7 +110,37 @@ describe("Napier Workflow CLI", () => {
         "--input-json",
         "{}",
       ]),
-    ).toThrow("cannot be used with --plan");
+    ).toThrow("normal Workflow resume");
+    expect(
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "report",
+        "--preview-experiment",
+        "--jsonl",
+      ]),
+    ).toEqual({
+      kind: "workflow",
+      options: {
+        workspace: ".",
+        manifestPath: "workflow.json",
+        threadId: "thread_abcdefghijklmnopqrst",
+        planId: "plan_abcdefghijklmnopqrst",
+        fromNodeId: "report",
+        previewExperiment: true,
+        timeoutMs: 600_000,
+        jsonl: true,
+        retryBlocked: false,
+      },
+    });
   });
 
   it("streams one typed Workflow through the shared Runtime and resumes from Ledger", async () => {
@@ -198,6 +230,116 @@ describe("Napier Workflow CLI", () => {
         output: { report: "CLI report", approved: true },
       }),
     );
+  }, 20_000);
+
+  it("previews and executes a checkpoint experiment through ordered JSONL", async () => {
+    const fixture = await createFixture();
+    const provider = fauxProvider({ provider: "faux-workflow-cli" });
+    provider.setResponses([
+      fauxAssistantMessage('{"summary":"Experiment source","count":1}'),
+      fauxAssistantMessage('{"report":"Experiment source","approved":true}'),
+    ]);
+    const dependencies = providerDependencies(provider);
+    const sourceStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--input-json",
+          '{"request":"Create an experiment source."}',
+          "--jsonl",
+        ],
+        cliIo(fixture.root, sourceStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const source = validateExecutionPlanWorkflowResultFrame(
+      parseFrames(sourceStdout.text()).at(-1),
+    );
+
+    const previewStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "report",
+          "--preview-experiment",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, previewStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    expect(JSON.parse(previewStdout.text()) as unknown).toEqual(
+      expect.objectContaining({
+        kind: "napier.execution-plan-workflow-experiment-preview",
+        reusedNodeIds: ["inspect"],
+        rerunNodeIds: ["report"],
+      }),
+    );
+
+    provider.setResponses([
+      fauxAssistantMessage('{"report":"CLI experiment","approved":true}'),
+    ]);
+    const experimentStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "report",
+          "--model-overrides-json",
+          '{"report":{"provider":"faux-workflow-cli","id":"faux-1"}}',
+          "--jsonl",
+        ],
+        cliIo(fixture.root, experimentStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const frames = parseFrames(experimentStdout.text());
+    const experiment = validateExecutionPlanWorkflowExperimentResultFrame(
+      frames.at(-1),
+    );
+    expect(experiment).toEqual(
+      expect.objectContaining({
+        type: "workflow_experiment_result",
+        sourceThreadId: source.threadId,
+        status: "completed",
+        experiment: expect.objectContaining({
+          result: expect.objectContaining({
+            output: { report: "CLI experiment", approved: true },
+          }),
+        }),
+      }),
+    );
+    expect(experiment.targetThreadId).not.toBe(source.threadId);
   }, 20_000);
 
   it("returns blocked evidence and requires explicit retry for a failed node", async () => {
@@ -474,14 +616,21 @@ function reportSchema(): WorkflowObjectSchema {
 
 function parseFrames(
   value: string,
-): Array<StreamFrame | ExecutionPlanWorkflowResultFrame> {
+): Array<
+  | StreamFrame
+  | ExecutionPlanWorkflowResultFrame
+  | ExecutionPlanWorkflowExperimentResultFrame
+> {
   return value
     .trim()
     .split("\n")
     .filter(Boolean)
     .map(
       (line) =>
-        JSON.parse(line) as StreamFrame | ExecutionPlanWorkflowResultFrame,
+        JSON.parse(line) as
+          | StreamFrame
+          | ExecutionPlanWorkflowResultFrame
+          | ExecutionPlanWorkflowExperimentResultFrame,
     );
 }
 

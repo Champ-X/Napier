@@ -20,7 +20,8 @@ export type RunInvocationSource =
   | "recovery"
   | "schedule"
   | "channel"
-  | "workflow";
+  | "workflow"
+  | "workflow_reuse";
 export type GoalStatus = "active" | "completed" | "blocked";
 export type GoalBlocker =
   | "none"
@@ -905,6 +906,57 @@ export type ExecuteExecutionPlanWorkflowRequest =
       retryBlocked?: boolean;
       input?: never;
     };
+
+export interface ExecutionPlanWorkflowExperimentToolEffects {
+  nodeId: string;
+  attemptCount: number;
+  toolCallCount: number;
+  readOnlyCount: number;
+  writeCount: number;
+  unknownCount: number;
+  unresolvedCount: number;
+  writeToolNames: string[];
+  unknownToolNames: string[];
+}
+
+export interface ExecutionPlanWorkflowExperimentPreview {
+  kind: "napier.execution-plan-workflow-experiment-preview";
+  schemaVersion: 1;
+  sourceThreadId: string;
+  sourcePlanId: string;
+  sourcePlanRevision: number;
+  sourceManifestSha256: string;
+  candidateManifestSha256: string;
+  sourceAgentId: string;
+  sourceAgentRevision: number;
+  fromNodeId: string;
+  reusedNodeIds: string[];
+  rerunNodeIds: string[];
+  modelOverrides: Record<string, ModelRef>;
+  toolEffects: ExecutionPlanWorkflowExperimentToolEffects[];
+  requiresSideEffectConfirmation: boolean;
+  previewSha256: string;
+}
+
+export interface CreateExecutionPlanWorkflowExperimentRequest {
+  manifest: ExecutionPlanWorkflowManifest;
+  planId: string;
+  fromNodeId: string;
+  title?: string;
+  modelOverrides?: Record<string, ModelRef>;
+  confirmSideEffects?: boolean;
+  expectedPreviewSha256?: string;
+}
+
+export interface ExecutionPlanWorkflowExperimentResult {
+  kind: "napier.execution-plan-workflow-experiment-result";
+  schemaVersion: 1;
+  preview: ExecutionPlanWorkflowExperimentPreview;
+  sourceManifest: ExecutionPlanWorkflowManifest;
+  candidateManifest: ExecutionPlanWorkflowManifest;
+  targetThreadId: string;
+  result: ExecutionPlanWorkflowResult;
+}
 
 export type ExecutionPlanBlueprintRecordStatus = "active" | "archived";
 
@@ -7444,6 +7496,24 @@ export interface ExecutionPlanWorkflowResultFrame {
   status: ExecutionPlanWorkflowStatus;
   manifestSha256: string;
   result: ExecutionPlanWorkflowResult;
+  snapshotSha256: string;
+  snapshotBytes: number;
+  eventCount: number;
+  eventBytes: number;
+  eventStreamSha256: string;
+  contentSha256: string;
+}
+
+export interface ExecutionPlanWorkflowExperimentResultFrame {
+  type: "workflow_experiment_result";
+  sourceThreadId: string;
+  sourcePlanId: string;
+  targetThreadId: string;
+  targetPlanId: string;
+  status: ExecutionPlanWorkflowStatus;
+  previewSha256: string;
+  candidateManifestSha256: string;
+  experiment: ExecutionPlanWorkflowExperimentResult;
   snapshotSha256: string;
   snapshotBytes: number;
   eventCount: number;

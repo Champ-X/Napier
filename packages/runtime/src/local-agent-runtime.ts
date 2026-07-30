@@ -13,6 +13,7 @@ import {
 import { LocalStore } from "./store.js";
 import { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { WorkspaceProcessManager } from "./workspace-processes.js";
+import { ExecutionPlanWorkflowExperimentRuntime } from "./workflow-experiments.js";
 import { ExecutionPlanWorkflowRuntime } from "./workflow-runtime.js";
 
 export interface LocalAgentRuntimeOptions {
@@ -35,6 +36,7 @@ export interface LocalAgentRuntimeServices {
   workspaceFileMutations: WorkspaceFileMutationManager;
   runtime: AgentRuntime;
   workflows: ExecutionPlanWorkflowRuntime;
+  workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
   shutdown(): Promise<void>;
 }
 
@@ -83,6 +85,10 @@ export async function createLocalAgentRuntime(
       workspaceFileMutations,
     );
     const workflows = new ExecutionPlanWorkflowRuntime(store, runtime);
+    const workflowExperiments = new ExecutionPlanWorkflowExperimentRuntime(
+      store,
+      workflows,
+    );
     let closed = false;
     return {
       workspaceRoot,
@@ -96,6 +102,7 @@ export async function createLocalAgentRuntime(
       workspaceFileMutations,
       runtime,
       workflows,
+      workflowExperiments,
       async shutdown() {
         if (closed) return;
         closed = true;

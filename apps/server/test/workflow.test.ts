@@ -128,6 +128,21 @@ describe("Workflow HTTP path", () => {
     services.models.registerProvider(provider.provider);
     const app = createApp(services);
 
+    const rejectedRevision = await app.request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { request: "Attempt to pin a historical Agent policy." },
+          agentRevision: 1,
+        }),
+      },
+    );
+    expect(rejectedRevision.status).toBe(400);
+    expect(services.store.listPlans(targetThread.id)).toEqual([]);
+
     const response = await app.request(
       `/api/threads/${targetThread.id}/workflows`,
       {

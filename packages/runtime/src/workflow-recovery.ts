@@ -193,6 +193,12 @@ export class ExecutionPlanWorkflowRecovery {
         (candidate) => candidate.id === node.id,
       )!;
       if (step.status !== "blocked") continue;
+      const run = step.runId
+        ? this.store
+            .listRuns(context.threadId)
+            .find((candidate) => candidate.id === step.runId)
+        : undefined;
+      if (run?.source === "workflow_reuse") continue;
       const attempts =
         (await this.ledger.nextAttempt(
           context.threadId,

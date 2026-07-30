@@ -20,6 +20,7 @@ export interface WorkflowExecutionContext {
   signal?: AbortSignal;
   outputs: Map<string, JsonValue>;
   nodeResults: Map<string, ExecutionPlanWorkflowNodeResult>;
+  reusedNodes: WorkflowReusedNode[];
 }
 
 export interface WorkflowNodeFailure {
@@ -28,4 +29,27 @@ export interface WorkflowNodeFailure {
   attempt: number;
   errorCode: string;
   diagnosticSha256: string;
+}
+
+export interface WorkflowReusedNode {
+  nodeId: string;
+  output: JsonValue;
+  sourceThreadId: string;
+  sourcePlanId: string;
+  sourceRunId: string;
+  sourceAttempt: number;
+  sourceInputSha256: string;
+  sourceOutputSha256: string;
+}
+
+export interface WorkflowExperimentLineage {
+  sourceThreadId: string;
+  sourcePlanId: string;
+  sourcePlanRevision: number;
+  sourceManifestSha256: string;
+  fromNodeId: string;
+  reusedNodeIds: string[];
+  rerunNodeIds: string[];
+  previewSha256: string;
+  sideEffectsConfirmed: boolean;
 }

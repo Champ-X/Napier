@@ -5,6 +5,9 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.started",
   "workflow.node.completed",
   "workflow.node.failed",
+  "workflow.node.reused",
+  "workflow.experiment.started",
+  "workflow.experiment.failed",
   "workflow.completed",
   "workflow.blocked",
   "workflow.cancelled",
@@ -24,7 +27,55 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     return undefined;
   }
   const parts = [event.type.replaceAll(".", " ")];
-  if (event.type === "workflow.started") {
+  if (event.type === "workflow.experiment.started") {
+    const fromNodeId = nodeId(payload["fromNodeId"]);
+    const reusedNodeIds = nodeIds(payload["reusedNodeIds"]);
+    const rerunNodeIds = nodeIds(payload["rerunNodeIds"]);
+    const previewSha256 = hash(payload["previewSha256"]);
+    if (
+      !fromNodeId ||
+      !reusedNodeIds ||
+      !rerunNodeIds ||
+      !previewSha256 ||
+      typeof payload["sideEffectsConfirmed"] !== "boolean"
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `from ${fromNodeId}`,
+      `reused ${String(reusedNodeIds.length)}`,
+      `rerun ${String(rerunNodeIds.length)}`,
+      `preview ${previewSha256.slice(0, 12)}`,
+      payload["sideEffectsConfirmed"] ? "side-effects confirmed" : "read-only",
+    );
+  } else if (event.type === "workflow.node.reused") {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const inputSha256 = hash(payload["inputSha256"]);
+    const outputSha256 = hash(payload["outputSha256"]);
+    const sourceAttempt = boundedInteger(payload["sourceAttempt"], 1, 3);
+    if (
+      !nodeIdValue ||
+      !inputSha256 ||
+      !outputSha256 ||
+      sourceAttempt === undefined
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `source-attempt ${String(sourceAttempt)}`,
+      `input ${inputSha256.slice(0, 12)}`,
+      `output ${outputSha256.slice(0, 12)}`,
+    );
+  } else if (event.type === "workflow.experiment.failed") {
+    const previewSha256 = hash(payload["previewSha256"]);
+    const diagnosticSha256 = hash(payload["diagnosticSha256"]);
+    if (!previewSha256 || !diagnosticSha256) return undefined;
+    parts.push(
+      `preview ${previewSha256.slice(0, 12)}`,
+      `diagnostic ${diagnosticSha256.slice(0, 12)}`,
+    );
+  } else if (event.type === "workflow.started") {
     const version = boundedInteger(payload["workflowVersion"], 1, 1_000_000);
     const nodeCount = boundedInteger(payload["nodeCount"], 1, 30);
     const inputSha256 = hash(payload["inputSha256"]);
@@ -128,6 +179,18 @@ function nodeId(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-z][a-z0-9_-]{0,63}$/u.test(value)
     ? value
     : undefined;
+}
+
+function nodeIds(value: unknown): string[] | undefined {
+  if (
+    !Array.isArray(value) ||
+    value.length > 30 ||
+    value.some((item) => !nodeId(item)) ||
+    new Set(value).size !== value.length
+  ) {
+    return undefined;
+  }
+  return value as string[];
 }
 
 function safeToken(value: unknown): string | undefined {

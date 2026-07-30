@@ -117,6 +117,7 @@ const RUN_SOURCES = new Set([
   "schedule",
   "channel",
   "workflow",
+  "workflow_reuse",
 ]);
 const EVENT_CATEGORIES = new Set([
   "lifecycle",

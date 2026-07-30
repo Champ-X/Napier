@@ -425,6 +425,7 @@ import {
   verifyUsagePriceTableCatalog,
   type WorkspaceFileMutationManager,
   type WorkspaceProcessManager,
+  type ExecutionPlanWorkflowExperimentRuntime,
   type ExecutionPlanWorkflowRuntime,
   executionPlanRequestFromBlueprint,
 } from "@napier/runtime";
@@ -457,6 +458,10 @@ import {
   type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
 } from "./receipt-trust-directory-subscriptions.js";
 import { executeWorkflowHttp } from "./workflow-http.js";
+import {
+  executeWorkflowExperimentHttp,
+  previewWorkflowExperimentHttp,
+} from "./workflow-experiment-http.js";
 
 export interface NapierServices {
   store: LocalStore;
@@ -464,6 +469,7 @@ export interface NapierServices {
   extensions: McpExtensionManager;
   runtime: AgentRuntime;
   workflows: ExecutionPlanWorkflowRuntime;
+  workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
   evaluations: RunEvaluationService;
   evaluationCasebookQualifications: EvaluationCasebookQualificationService;
   evaluationSuites: EvaluationSuiteService;
@@ -690,6 +696,7 @@ export async function createServices(options?: {
     workspaceFileMutations,
     runtime,
     workflows,
+    workflowExperiments,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
@@ -720,6 +727,7 @@ export async function createServices(options?: {
     extensions,
     runtime,
     workflows,
+    workflowExperiments,
     evaluations,
     evaluationCasebookQualifications,
     evaluationSuites,
@@ -10992,6 +11000,26 @@ export function createApp(services: NapierServices): Hono {
 
   app.post("/api/threads/:threadId/workflows", (context) =>
     executeWorkflowHttp(context, services, {
+      readJson: readLimitedJson,
+      jsonError: (target, message, status) =>
+        jsonError(target, message, status),
+      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    }),
+  );
+
+  app.post(
+    "/api/threads/:threadId/workflows/:planId/experiments/preview",
+    (context) =>
+      previewWorkflowExperimentHttp(context, services, {
+        readJson: readLimitedJson,
+        jsonError: (target, message, status) =>
+          jsonError(target, message, status),
+        isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+      }),
+  );
+
+  app.post("/api/threads/:threadId/workflows/:planId/experiments", (context) =>
+    executeWorkflowExperimentHttp(context, services, {
       readJson: readLimitedJson,
       jsonError: (target, message, status) =>
         jsonError(target, message, status),

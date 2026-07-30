@@ -47,6 +47,11 @@ export interface CliWorkflowOptions extends CliExecutionOptions {
   planId?: string;
   title?: string;
   retryBlocked: boolean;
+  fromNodeId?: string;
+  modelOverridesJson?: string;
+  expectedPreviewSha256?: string;
+  previewExperiment?: boolean;
+  confirmSideEffects?: boolean;
 }
 
 export type CliAction =
@@ -92,8 +97,15 @@ const WORKFLOW_VALUE_OPTIONS = new Set([
   "--plan",
   "--title",
   "--timeout-ms",
+  "--from-node",
+  "--model-overrides-json",
+  "--expected-preview",
 ]);
-const WORKFLOW_FLAG_OPTIONS = new Set(["--retry-blocked"]);
+const WORKFLOW_FLAG_OPTIONS = new Set([
+  "--retry-blocked",
+  "--preview-experiment",
+  "--confirm-side-effects",
+]);
 
 export function parseCliArgs(argv: string[]): CliAction {
   if (argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
@@ -232,17 +244,65 @@ function parseWorkflowOptions(
   const planId = optionalResourceId(values, "--plan");
   const threadId = optionalResourceId(values, "--thread");
   const agentId = optionalResourceId(values, "--agent");
+  const fromNodeId = optionalResourceId(values, "--from-node");
   const inputJson = values.get("--input-json");
+  const modelOverridesJson = values.get("--model-overrides-json");
+  const expectedPreviewSha256 = values.get("--expected-preview")?.trim();
   const rawTitle = values.get("--title");
   const title = rawTitle?.replace(/\s+/gu, " ").trim();
   if (rawTitle !== undefined && (!title || title.length > MAX_TITLE_CHARS)) {
     throw new Error(`--title must be 1-${MAX_TITLE_CHARS} characters`);
   }
-  if (planId) {
-    if (!threadId) throw new Error("--thread is required with --plan");
-    if (inputJson !== undefined || agentId || title) {
+  if (
+    expectedPreviewSha256 !== undefined &&
+    !/^[a-f0-9]{64}$/u.test(expectedPreviewSha256)
+  ) {
+    throw new Error("--expected-preview must be a SHA-256 digest");
+  }
+  if (
+    modelOverridesJson !== undefined &&
+    Buffer.byteLength(modelOverridesJson, "utf8") > MAX_WORKFLOW_INPUT_BYTES
+  ) {
+    throw new Error(
+      `--model-overrides-json exceeds ${MAX_WORKFLOW_INPUT_BYTES} UTF-8 bytes`,
+    );
+  }
+  if (fromNodeId) {
+    if (!planId || !threadId) {
+      throw new Error("--from-node requires --thread and --plan");
+    }
+    if (inputJson !== undefined || agentId) {
       throw new Error(
-        "--input-json, --agent, and --title cannot be used with --plan",
+        "--input-json and --agent cannot be used with --from-node",
+      );
+    }
+    if (flags.has("--retry-blocked")) {
+      throw new Error("--retry-blocked cannot be used with --from-node");
+    }
+    if (flags.has("--confirm-side-effects") && !expectedPreviewSha256) {
+      throw new Error("--confirm-side-effects requires --expected-preview");
+    }
+    if (
+      flags.has("--preview-experiment") &&
+      (flags.has("--confirm-side-effects") || expectedPreviewSha256)
+    ) {
+      throw new Error(
+        "--preview-experiment cannot include execution confirmation",
+      );
+    }
+  } else if (planId) {
+    if (!threadId) throw new Error("--thread is required with --plan");
+    if (
+      inputJson !== undefined ||
+      agentId ||
+      title ||
+      modelOverridesJson !== undefined ||
+      expectedPreviewSha256 !== undefined ||
+      flags.has("--preview-experiment") ||
+      flags.has("--confirm-side-effects")
+    ) {
+      throw new Error(
+        "Experiment options cannot be used with a normal Workflow resume",
       );
     }
   } else if (inputJson === undefined) {
@@ -259,8 +319,17 @@ function parseWorkflowOptions(
   if (flags.has("--retry-blocked") && !planId) {
     throw new Error("--retry-blocked requires --plan");
   }
-  if (threadId && title) {
+  if (!fromNodeId && threadId && title) {
     throw new Error("--title cannot be used with an existing --thread");
+  }
+  if (
+    !fromNodeId &&
+    (modelOverridesJson !== undefined ||
+      expectedPreviewSha256 !== undefined ||
+      flags.has("--preview-experiment") ||
+      flags.has("--confirm-side-effects"))
+  ) {
+    throw new Error("Workflow experiment options require --from-node");
   }
   return {
     kind: "workflow",
@@ -278,6 +347,13 @@ function parseWorkflowOptions(
       ...(threadId ? { threadId } : {}),
       ...(planId ? { planId } : {}),
       ...(title ? { title } : {}),
+      ...(fromNodeId ? { fromNodeId } : {}),
+      ...(modelOverridesJson !== undefined ? { modelOverridesJson } : {}),
+      ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
+      ...(flags.has("--preview-experiment") ? { previewExperiment: true } : {}),
+      ...(flags.has("--confirm-side-effects")
+        ? { confirmSideEffects: true }
+        : {}),
     },
   };
 }
@@ -426,6 +502,11 @@ Workflow options:
   --title <text>         Title for a new target Thread
   --plan <plan-id>       Resume an existing Workflow Plan
   --retry-blocked        Explicitly reopen retryable blocked nodes
+  --from-node <node-id>  Fork an experiment from this Workflow node
+  --model-overrides-json Per-node ModelRef overrides for rerun nodes
+  --preview-experiment   Preview a checkpoint experiment without mutation
+  --confirm-side-effects Confirm the exact current side-effect preview
+  --expected-preview     SHA-256 returned by experiment preview
 
 Other:
   -h, --help             Show help

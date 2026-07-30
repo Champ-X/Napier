@@ -89,7 +89,7 @@ interface AssessmentOptions {
   assessedAt?: Date;
 }
 
-interface ToolObservation {
+export interface RunToolEffectObservation {
   toolName: string;
   effect: "read" | "write" | "unknown";
   unresolved: boolean;
@@ -114,7 +114,7 @@ export function assessAutomaticRecovery(
   const policy = options.run.configuration
     ? fingerprintAutomaticRecovery(options.run.configuration)
     : structuredClone(DEFAULT_AUTOMATIC_RECOVERY_POLICY);
-  const observations = collectToolObservations(runEvents);
+  const observations = collectRunToolEffectObservations(runEvents);
   const unsafeToolNames = canonicalNames(
     observations
       .filter((observation) => observation.effect === "write")
@@ -141,7 +141,10 @@ export function assessAutomaticRecovery(
   if (options.run.status !== "interrupted") {
     blockReasons.add("run_not_interrupted");
   }
-  if (options.run.source === "workflow") {
+  if (
+    options.run.source === "workflow" ||
+    options.run.source === "workflow_reuse"
+  ) {
     blockReasons.add("workflow_managed");
   }
   if (
@@ -545,7 +548,9 @@ export function validateAutomaticRecoveryAttempt(
   return structuredClone(normalized);
 }
 
-function collectToolObservations(events: RunEvent[]): ToolObservation[] {
+export function collectRunToolEffectObservations(
+  events: RunEvent[],
+): RunToolEffectObservation[] {
   const terminals = new Map<string, RunEvent[]>();
   for (const event of events) {
     if (event.type !== "tool.completed" && event.type !== "tool.failed") {
@@ -557,7 +562,7 @@ function collectToolObservations(events: RunEvent[]): ToolObservation[] {
     bucket.push(event);
     terminals.set(callId, bucket);
   }
-  return events.flatMap((event): ToolObservation[] => {
+  return events.flatMap((event): RunToolEffectObservation[] => {
     if (event.type !== "tool.started") return [];
     const callId = payloadString(event.payload, "callId");
     const toolName = payloadString(event.payload, "toolName") ?? "unknown_tool";

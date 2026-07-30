@@ -4,6 +4,7 @@ import path from "node:path";
 import { Writable } from "node:stream";
 
 import type {
+  ExecutionPlanWorkflowExperimentResultFrame,
   ExecutionPlanWorkflowResultFrame,
   StreamFrame,
   WorkflowObjectSchema,
@@ -12,6 +13,7 @@ import {
   createExecutionPlanBlueprint,
   createLocalAgentRuntime,
   defineExecutionPlanWorkflow,
+  validateExecutionPlanWorkflowExperimentResultFrame,
   validateExecutionPlanWorkflowResultFrame,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
@@ -191,7 +193,7 @@ describeLive("live DeepSeek CLI smoke", () => {
     expect(stdout.text()).not.toContain(apiKey);
   }, 60_000);
 
-  it("executes a typed Workflow through the real model and JSONL CLI", async () => {
+  it("executes and checkpoint-reruns a typed Workflow through the real model", async () => {
     const apiKey = process.env["DEEPSEEK_API_KEY"]?.trim();
     if (!apiKey) {
       throw new Error(
@@ -306,16 +308,61 @@ describeLive("live DeepSeek CLI smoke", () => {
         (line) =>
           JSON.parse(line) as StreamFrame | ExecutionPlanWorkflowResultFrame,
       );
-    expect(
-      validateExecutionPlanWorkflowResultFrame(frames.at(-1)).result,
-    ).toEqual(
+    const sourceWorkflow = validateExecutionPlanWorkflowResultFrame(
+      frames.at(-1),
+    );
+    expect(sourceWorkflow.result).toEqual(
       expect.objectContaining({
         status: "completed",
         output: "NAPIER_WORKFLOW_LIVE_OK",
       }),
     );
+    const experimentStdout = new CaptureWritable();
+    const experimentStderr = new CaptureWritable();
+    const experimentCode = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        workspaceRoot,
+        "--data-root",
+        dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        sourceWorkflow.threadId,
+        "--plan",
+        sourceWorkflow.planId,
+        "--from-node",
+        "answer",
+        "--jsonl",
+      ],
+      {
+        cwd: root,
+        env: { DEEPSEEK_API_KEY: apiKey },
+        stdout: experimentStdout,
+        stderr: experimentStderr,
+      },
+    );
+    expect(experimentCode).toBe(0);
+    expect(experimentStderr.text()).toBe("");
+    const experimentFrames = experimentStdout
+      .text()
+      .split("\n")
+      .filter(Boolean)
+      .map(
+        (line) =>
+          JSON.parse(line) as
+            | StreamFrame
+            | ExecutionPlanWorkflowExperimentResultFrame,
+      );
+    expect(
+      validateExecutionPlanWorkflowExperimentResultFrame(
+        experimentFrames.at(-1),
+      ).experiment.result.output,
+    ).toBe("NAPIER_WORKFLOW_LIVE_OK");
     expect(stdout.text()).not.toContain(apiKey);
-  }, 60_000);
+    expect(experimentStdout.text()).not.toContain(apiKey);
+  }, 90_000);
 });
 
 function liveWorkflowInputSchema(): WorkflowObjectSchema {

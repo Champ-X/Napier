@@ -396,9 +396,9 @@ records `branch.created` source lineage. Human mode prints the new Thread ID;
 JSONL emits every new branch event followed by its authoritative snapshot and
 done frame. A future or missing source sequence fails before creating a
 Thread. The new ID can be passed to `napier run --thread` to continue through
-the normal Agent Runtime. This is message-history branching, not model/tool
-checkpoint re-execution or side-effect replay. The CLI still does not claim an
-interactive TUI, RPC, ACP, or Desktop packaging.
+the normal Agent Runtime. The `branch` command itself is message-history
+branching, not model/tool checkpoint re-execution or side-effect replay. The
+CLI still does not claim an interactive TUI, RPC, ACP, or Desktop packaging.
 
 Execute a versioned typed Workflow manifest through the same Runtime:
 
@@ -432,6 +432,33 @@ npm run --silent napier -- workflow \
 
 The original input is recovered and hash-checked from the Work Ledger. A retry
 never reuses an unknown side effect automatically.
+
+Preview a controlled experiment from one Workflow checkpoint without creating
+a target Thread:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_source \
+  --plan plan_source \
+  --from-node report \
+  --model-overrides-json \
+    '{"report":{"provider":"deepseek","id":"deepseek-chat"}}' \
+  --preview-experiment \
+  --jsonl
+```
+
+Remove `--preview-experiment` to execute the fork. Completed nodes outside the
+selected node's descendant subgraph are re-materialized from verified source
+Run/Ledger evidence as `source=workflow_reuse`; the selected node and all
+descendants execute in a new Thread with the candidate Manifest. If prior
+attempts in the rerun subgraph contain write, unknown, or unresolved tool
+effects, execution requires both `--confirm-side-effects` and the exact
+`--expected-preview <sha256>` returned by the current preview. A stale preview
+fails before target creation. JSONL ends with a hash-bound
+`workflow_experiment_result` frame.
 
 ## Store Scale Baseline
 
@@ -2289,13 +2316,30 @@ renders only status, counts, safe IDs, error codes, and hash prefixes; raw
 Workflow input, node output, and diagnostics are not copied into Trace
 summaries.
 
+`ExecutionPlanWorkflowExperimentRuntime` adds the first controlled
+re-execution path. `POST
+/api/threads/:threadId/workflows/:planId/experiments/preview` derives a
+read-only rerun subgraph, candidate Manifest, historical tool-effect summary,
+and stable preview hash. `POST
+/api/threads/:threadId/workflows/:planId/experiments` creates an independent
+target only after preview and confirmation checks pass. Reused nodes bind both
+their original input and output hashes and use synthetic `workflow_reuse` Runs;
+revision pinning and reuse materialization are internal Runtime capabilities,
+not fields accepted by ordinary Workflow execution requests. Cancellation or
+restart before reuse completes reconstructs remaining reused nodes from source
+Ledger evidence instead of executing them as Agent nodes. Source drift fails
+closed.
+
 Version 1 intentionally supports Agent nodes and sequential dependency-ready
 DAG scheduling only. Deterministic and Tool nodes, human approval nodes,
 parallel execution, Map/Reduce, conditions, loops, compensation, per-node
 breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
-open. The opt-in DeepSeek CLI smoke executes one real typed node when
-`DEEPSEEK_API_KEY` is available; default tests use deterministic providers and
-perform no network call.
+open. Checkpoint experiments do not yet provide model-call/tool-call
+single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
+batch experiments, or diff/evaluation promotion. The opt-in DeepSeek CLI smoke
+executes and checkpoint-reruns one real typed node when `DEEPSEEK_API_KEY` is
+available; default tests use deterministic providers and perform no network
+call.
 
 ## Portable Replay Fixtures
 

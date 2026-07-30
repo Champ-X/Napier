@@ -6,7 +6,7 @@ benchmarks.
 
 ## Baseline
 
-Audit date: 2026-07-30
+Audit date: 2026-07-31
 
 - The Work Ledger, replay artifacts, Plans, evaluation, recovery, and
   extension governance are substantially ahead of the execution surface.
@@ -24,7 +24,7 @@ Audit date: 2026-07-30
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, write-linked diagnostic deltas, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain. |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | P4 executable Workflows           | Partial        | Versioned typed Agent DAG manifests, runtime schemas, explicit bindings, real Run-backed nodes, explicit retry, restart recovery, CLI JSONL, HTTP SSE, and privacy-bounded Trace now exist. Deterministic/Tool/approval nodes, true parallelism, control flow, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain.                                                                                                                                                                |
-| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified ancestor reuse, descendant rerun, per-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, CLI JSONL, HTTP SSE, and Trace evidence. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, diffs, root-cause views, and evaluation promotion remain.                                                                                                |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch/Workflow execution exist over one Runtime; interactive TUI, generic SDK/RPC, ACP, Desktop, and a visual Workflow entry remain.                                                                                                                                                                                                                                                                                                                                                                          |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -1894,3 +1894,72 @@ Observed result:
   skipped by default, generated 245 OpenAPI routes while preserving the
   244/244 compatibility baseline, and kept the Web main entry at 129.13 KiB
   against the 150 KiB budget.
+
+## Completed Slice: Workflow Checkpoint Experiments
+
+User scenario: a developer can preview and fork a completed or blocked typed
+Workflow from one node, replace models for the rerun subgraph, reuse verified
+ancestor results, and inspect an independent result without mutating the source
+Plan.
+
+Acceptance:
+
+- derive the rerun set as the selected node plus every descendant and require
+  every node outside that set to have verified completed source evidence;
+- bind reused node source/target input hashes, source output hash, source
+  Thread/Plan/Run/attempt, frozen Agent revision, model, schemas, and unique
+  start/completion evidence;
+- execute reused ancestors as explicit `source=workflow_reuse` control Runs,
+  then execute rerun nodes through the normal Agent Runtime and policy path;
+- allow model replacement only for rerun nodes and include both source and
+  deterministically derived candidate Manifests in the final result;
+- summarize all historical rerun-attempt tool effects and require explicit
+  confirmation of the exact current preview for write, unknown, or unresolved
+  effects;
+- create no target Thread during preview, stale confirmation, malformed source
+  evidence, or pre-abort;
+- recover blocked rerun nodes through normal Workflow resume and reconstruct
+  unmaterialized reused ancestors after cancellation/restart without executing
+  them as Agent nodes;
+- expose the same Runtime through CLI preview/JSONL execution and HTTP
+  no-store preview/SSE execution, ending with a snapshot-bound
+  `workflow_experiment_result`;
+- project only bounded IDs, counts, confirmation state, and hashes into Web
+  Trace while preserving full local result delivery.
+
+Threat boundary:
+
+- ordinary Workflow requests cannot pin historical Agent revisions or inject
+  reused outputs; those values enter the scheduler only through a
+  package-internal experiment capability after source projection;
+- source Plan state is never mutated. Incomplete reuse recovery requires the
+  exact source Plan revision and input; drift fails closed;
+- synthetic reuse cannot enter generic manual/automatic Run recovery or
+  ordinary blocked-node retry. An interrupted reuse is re-materialized only
+  from verified source evidence;
+- confirmation covers observed historical tool effects, not permission for
+  future effects. Rerun tools still pass normal capability, policy, scope,
+  freshness, and Sandbox checks;
+- this slice is Workflow-node controlled re-execution, not complete Replay
+  debugging. User/model/tool checkpoints, side-effect simulation,
+  Prompt/Skill/Memory/environment replacement, single-step, batch comparison,
+  and promotion remain open.
+
+Observed result:
+
+- deterministic Runtime dogfood forks a two-node source, reuses its ancestor,
+  replaces the selected model, validates Replay/result-frame tampering, and
+  creates a second experiment from the first experiment;
+- cancellation before ancestor materialization resumes from Ledger with one
+  synthetic reuse Run and no accidental ancestor model call;
+- Runtime/HTTP regressions reject public Agent revision pinning, fabricated
+  reuse internals, stale preview confirmation, ambiguous source evidence, and
+  model overrides on reused nodes;
+- CLI and HTTP complete the same experiment path, Web Trace omits raw source
+  bodies, and an opt-in DeepSeek smoke checkpoint-reruns a real typed node;
+- the complete repository gate passed 1133 tests with 19 opt-in live tests
+  skipped by default, generated 247 OpenAPI routes while preserving the
+  244/244 compatibility baseline, and kept the Web main entry at 129.13 KiB
+  against the 150 KiB budget. One first-pass high-parallel Server Python kernel
+  timing assertion passed both standalone and in the complete 75/75 Server
+  suite; the second complete repository gate passed without failures.

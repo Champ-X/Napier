@@ -85,6 +85,46 @@ describe("Workflow event Trace projection", () => {
     );
   });
 
+  it("summarizes experiment lineage and reused outputs without source bodies", () => {
+    const started = workflowEvent("workflow.experiment.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      sourceThreadId: "thread_source_private",
+      sourcePlanId: "plan_source_private",
+      sourceManifestSha256: "2".repeat(64),
+      fromNodeId: "report",
+      reusedNodeIds: ["inspect"],
+      rerunNodeIds: ["report"],
+      previewSha256: "3".repeat(64),
+      sideEffectsConfirmed: true,
+      sourceOutput: "PRIVATE_SOURCE_OUTPUT",
+    });
+    const reused = workflowEvent("workflow.node.reused", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      nodeId: "inspect",
+      inputSha256: "4".repeat(64),
+      outputSha256: "5".repeat(64),
+      sourceThreadId: "thread_source_private",
+      sourcePlanId: "plan_source_private",
+      sourceRunId: "run_source_private",
+      sourceAttempt: 2,
+      output: "PRIVATE_REUSED_OUTPUT",
+    });
+
+    expect(workflowEventTraceSummary(started)).toContain(
+      `from report / reused 1 / rerun 1 / preview ${"3".repeat(12)} / side-effects confirmed`,
+    );
+    expect(workflowEventTraceSummary(reused)).toContain(
+      `node inspect / source-attempt 2 / input ${"4".repeat(12)} / output ${"5".repeat(12)}`,
+    );
+    expect(
+      `${workflowEventTraceSummary(started)} ${workflowEventTraceSummary(reused)}`,
+    ).not.toContain("PRIVATE");
+  });
+
   it("rejects malformed Workflow evidence", () => {
     expect(
       workflowEventTraceSummary(

@@ -20,6 +20,11 @@ import type {
   WorkflowNodeFailure,
 } from "./workflow-context.js";
 import {
+  WORKFLOW_EXPERIMENT_EXECUTION,
+  type WorkflowExperimentExecution,
+} from "./workflow-experiment-execution.js";
+import { recoverExecutionPlanWorkflowExperimentTarget } from "./workflow-experiment-recovery.js";
+import {
   ExecutionPlanWorkflowLedger,
   WORKFLOW_BLOCKED_EVENT,
   WORKFLOW_CANCELLED_EVENT,
@@ -44,6 +49,7 @@ import {
   workflowNodePrompt,
   workflowPlanCreatedPayload,
 } from "./workflow-runtime-model.js";
+import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 
 export interface RunExecutionPlanWorkflowOptions {
@@ -51,6 +57,7 @@ export interface RunExecutionPlanWorkflowOptions {
   request: ExecuteExecutionPlanWorkflowRequest;
   signal?: AbortSignal;
   onEvent?: EventSink;
+  [WORKFLOW_EXPERIMENT_EXECUTION]?: WorkflowExperimentExecution;
 }
 
 interface NodeExecutionOutcome {
@@ -62,6 +69,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly activeThreads = new Set<string>();
   private readonly ledger: ExecutionPlanWorkflowLedger;
   private readonly recovery: ExecutionPlanWorkflowRecovery;
+  private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
 
   constructor(
     private readonly store: LocalStore,
@@ -74,6 +82,14 @@ export class ExecutionPlanWorkflowRuntime {
       completePlanStep: (context, nodeId, runId, outputSha256) =>
         this.completePlanStep(context, nodeId, runId, outputSha256),
     });
+    this.reuseMaterializer = new ExecutionPlanWorkflowReuseMaterializer(
+      store,
+      this.ledger,
+      {
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      },
+    );
   }
 
   async run(
@@ -114,6 +130,12 @@ export class ExecutionPlanWorkflowRuntime {
     options.signal?.throwIfAborted();
     const thread = this.store.getThread(options.threadId);
     const agent = this.store.getAgent(thread.agentId);
+    const experiment = options[WORKFLOW_EXPERIMENT_EXECUTION];
+    const agentRevision =
+      experiment?.agentRevision === undefined
+        ? agent.revision
+        : experiment.agentRevision;
+    this.store.getAgentRevision(agent.id, agentRevision);
     const plan = await this.store.createPlan(
       options.threadId,
       executionPlanRequestFromBlueprint(manifest.blueprint),
@@ -145,7 +167,7 @@ export class ExecutionPlanWorkflowRuntime {
           workflowVersion: manifest.version,
           nodeCount: manifest.nodeCount,
           agentId: agent.id,
-          agentRevision: agent.revision,
+          agentRevision,
           input,
           inputSha256: sha256(canonicalJson(input)),
           inputSchemaSha256: workflowSchemaSha256(manifest.inputSchema),
@@ -155,12 +177,12 @@ export class ExecutionPlanWorkflowRuntime {
       },
       options.onEvent,
     );
-    return {
+    const context: WorkflowExecutionContext = {
       threadId: options.threadId,
       manifest,
       input,
       agentId: agent.id,
-      agentRevision: agent.revision,
+      agentRevision,
       plan,
       resumed: false,
       retryBlocked: false,
@@ -168,7 +190,28 @@ export class ExecutionPlanWorkflowRuntime {
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       outputs: new Map(),
       nodeResults: new Map(),
+      reusedNodes:
+        experiment?.reusedNodes.map((node) => structuredClone(node)) ?? [],
     };
+    if (experiment) {
+      await this.ledger.append(
+        {
+          threadId: options.threadId,
+          runId: createId("runctl"),
+          type: "workflow.experiment.started",
+          category: "plan",
+          visibility: "user",
+          payload: {
+            schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
+            planId: plan.id,
+            manifestSha256: manifest.contentSha256,
+            ...experiment.lineage,
+          },
+        },
+        options.onEvent,
+      );
+    }
+    return context;
   }
 
   private async resumeContext(
@@ -194,6 +237,15 @@ export class ExecutionPlanWorkflowRuntime {
     }
     this.store.getAgentRevision(started.agentId, started.agentRevision);
     assertWorkflowValue(manifest.inputSchema, started.input, "Workflow input");
+    const experiment = await recoverExecutionPlanWorkflowExperimentTarget(
+      this.store,
+      options.threadId,
+      plan,
+      manifest,
+      started.input,
+      started.agentId,
+      started.agentRevision,
+    );
     return {
       threadId: options.threadId,
       manifest,
@@ -207,6 +259,7 @@ export class ExecutionPlanWorkflowRuntime {
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       outputs: new Map(),
       nodeResults: new Map(),
+      reusedNodes: experiment.reusedNodes,
     };
   }
 
@@ -215,6 +268,16 @@ export class ExecutionPlanWorkflowRuntime {
   ): Promise<ExecutionPlanWorkflowResult> {
     await this.recovery.recoverCompletedAndInterruptedNodes(context);
     await this.recovery.recoverBlockedNodeResults(context);
+    if (context.reusedNodes.length > 0) {
+      await this.reuseMaterializer.reopenInterrupted(
+        context,
+        context.reusedNodes,
+      );
+      await this.reuseMaterializer.materialize(context, context.reusedNodes);
+      if (context.signal?.aborted) {
+        return this.finish(context, "cancelled");
+      }
+    }
     if (context.retryBlocked) {
       await this.recovery.reopenRetryableNodes(context);
     }

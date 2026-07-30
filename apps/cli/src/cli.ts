@@ -4,6 +4,7 @@ import path from "node:path";
 import type { Writable } from "node:stream";
 
 import type {
+  ExecutionPlanWorkflowExperimentResultFrame,
   ExecutionPlanWorkflowResultFrame,
   RunEvent,
   RunRecord,
@@ -11,6 +12,7 @@ import type {
 } from "@napier/contracts";
 import {
   canonicalJson,
+  createExecutionPlanWorkflowExperimentResultFrame,
   createExecutionPlanWorkflowResultFrame,
   createLocalAgentRuntime,
   createThreadBranch,
@@ -20,6 +22,7 @@ import {
   streamRunDoneFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
+  validateCreateExecutionPlanWorkflowExperimentRequest,
   validateExecuteExecutionPlanWorkflowRequest,
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
@@ -257,18 +260,40 @@ async function executeWorkflow(
       },
     );
     const manifest = parseJson(manifestFile.source, "Workflow manifest");
-    const request = validateExecuteExecutionPlanWorkflowRequest(
-      options.planId
-        ? {
-            manifest,
-            planId: options.planId,
-            ...(options.retryBlocked ? { retryBlocked: true } : {}),
-          }
-        : {
-            manifest,
-            input: parseJson(options.inputJson!, "Workflow input"),
-          },
-    );
+    const request = options.fromNodeId
+      ? undefined
+      : validateExecuteExecutionPlanWorkflowRequest(
+          options.planId
+            ? {
+                manifest,
+                planId: options.planId,
+                ...(options.retryBlocked ? { retryBlocked: true } : {}),
+              }
+            : {
+                manifest,
+                input: parseJson(options.inputJson!, "Workflow input"),
+              },
+        );
+    const experimentRequest = options.fromNodeId
+      ? validateCreateExecutionPlanWorkflowExperimentRequest({
+          manifest,
+          planId: options.planId,
+          fromNodeId: options.fromNodeId,
+          ...(options.title ? { title: options.title } : {}),
+          ...(options.modelOverridesJson
+            ? {
+                modelOverrides: parseJson(
+                  options.modelOverridesJson,
+                  "Workflow model overrides",
+                ),
+              }
+            : {}),
+          ...(options.confirmSideEffects ? { confirmSideEffects: true } : {}),
+          ...(options.expectedPreviewSha256
+            ? { expectedPreviewSha256: options.expectedPreviewSha256 }
+            : {}),
+        })
+      : undefined;
     const dataRoot = path.resolve(
       io.cwd,
       options.dataRoot ?? path.join(workspaceRoot, ".napier"),
@@ -278,6 +303,78 @@ async function executeWorkflow(
       dataRoot,
       env: io.env,
     });
+    if (experimentRequest) {
+      if (options.previewExperiment) {
+        const preview = await services.workflowExperiments.preview(
+          options.threadId!,
+          experimentRequest,
+        );
+        await writeJsonLine(io.stdout, preview);
+        if (!options.jsonl) {
+          await writeLine(
+            io.stderr,
+            `Napier workflow experiment preview ${preview.previewSha256.slice(0, 12)} (${preview.requiresSideEffectConfirmation ? "confirmation required" : "ready"})`,
+          );
+        }
+        return 0;
+      }
+      let eventWriter: OrderedEventFrameWriter | undefined;
+      const experiment = await services.workflowExperiments.run({
+        sourceThreadId: options.threadId!,
+        request: experimentRequest,
+        signal: controller.signal,
+        onTargetCreated: (thread) => {
+          threadId = thread.id;
+          if (options.jsonl) {
+            eventWriter = new OrderedEventFrameWriter(
+              io.stdout,
+              thread.id,
+              thread.eventCount + 1,
+            );
+          }
+        },
+        ...(options.jsonl
+          ? {
+              onEvent: async (event: RunEvent): Promise<void> => {
+                if (!eventWriter) {
+                  throw new Error(
+                    "Workflow experiment target stream is unavailable",
+                  );
+                }
+                await eventWriter.write(event);
+              },
+            }
+          : {}),
+      });
+      const detail = await services.store.getDetail(experiment.targetThreadId);
+      const snapshot = streamSnapshotFrame(detail);
+      const resultFrame = createExecutionPlanWorkflowExperimentResultFrame(
+        experiment,
+        snapshot,
+        hashEventStream(detail.events),
+      );
+      if (eventWriter) {
+        await eventWriter.finish(detail.thread.eventCount);
+        await writeJsonLine(io.stdout, snapshot);
+        await writeJsonLine(io.stdout, resultFrame);
+      } else {
+        await writeLine(
+          io.stdout,
+          experiment.result.output === undefined
+            ? canonicalJson({
+                planId: experiment.result.planId,
+                status: experiment.result.status,
+                previewSha256: experiment.preview.previewSha256,
+              })
+            : canonicalJson(experiment.result.output),
+        );
+        await writeLine(
+          io.stderr,
+          `Napier workflow experiment ${experiment.result.planId} ${experiment.result.status} (thread ${experiment.targetThreadId})`,
+        );
+      }
+      return experiment.result.status === "completed" ? 0 : 1;
+    }
     const thread = options.threadId
       ? services.store.getThread(options.threadId)
       : await createWorkflowThread(services, options);
@@ -290,7 +387,7 @@ async function executeWorkflow(
       : undefined;
     const result = await services.workflows.run({
       threadId,
-      request,
+      request: request!,
       signal: controller.signal,
       ...(eventWriter
         ? {
@@ -501,7 +598,11 @@ function latestAssistantText(events: RunEvent[], runId: string): string {
 
 async function writeJsonLine(
   stream: Writable,
-  frame: StreamFrame | ExecutionPlanWorkflowResultFrame,
+  frame:
+    | StreamFrame
+    | ExecutionPlanWorkflowResultFrame
+    | ExecutionPlanWorkflowExperimentResultFrame
+    | unknown,
 ): Promise<void> {
   await writeLine(stream, JSON.stringify(frame));
 }

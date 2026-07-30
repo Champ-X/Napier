@@ -18,7 +18,10 @@ import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
 import { defineExecutionPlanWorkflow } from "../src/workflow-manifests.js";
-import { validateExecutionPlanWorkflowResult } from "../src/workflow-protocol.js";
+import {
+  validateExecuteExecutionPlanWorkflowRequest,
+  validateExecutionPlanWorkflowResult,
+} from "../src/workflow-protocol.js";
 import { ExecutionPlanWorkflowRuntime } from "../src/workflow-runtime.js";
 
 const temporaryRoots: string[] = [];
@@ -32,6 +35,60 @@ afterEach(async () => {
 });
 
 describe("Execution Plan Workflow runtime", () => {
+  it("keeps Agent revision pinning and reused outputs out of public execution requests", async () => {
+    const fixture = await createFixture();
+    expect(() =>
+      validateExecuteExecutionPlanWorkflowRequest({
+        manifest: fixture.manifest,
+        input: { request: "Do not accept a historical Agent policy." },
+        agentRevision: 1,
+      }),
+    ).toThrow("fields are invalid");
+    await expect(
+      fixture.agentRuntime.runPrompt({
+        threadId: fixture.targetThreadId,
+        text: "Do not forge synthetic reuse.",
+        source: "workflow_reuse",
+      } as unknown as Parameters<AgentRuntime["runPrompt"]>[0]),
+    ).rejects.toThrow("only be created by the Workflow materializer");
+
+    fixture.provider.setResponses([
+      fauxAssistantMessage('{"summary":"Live model output","count":1}'),
+      fauxAssistantMessage('{"report":"Live model report","approved":true}'),
+    ]);
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest: fixture.manifest,
+        input: { request: "Ignore forged reuse internals." },
+      },
+      initialNodes: [
+        {
+          nodeId: "inspect",
+          output: { summary: "FORGED_REUSE", count: 20 },
+          sourceThreadId: "thread_forged_source",
+          sourcePlanId: "plan_forged_source",
+          sourceRunId: "run_forged_source",
+          sourceAttempt: 1,
+          sourceInputSha256: "1".repeat(64),
+          sourceOutputSha256: "2".repeat(64),
+        },
+      ],
+    } as unknown as Parameters<ExecutionPlanWorkflowRuntime["run"]>[0]);
+
+    expect(result.output).toEqual({
+      report: "Live model report",
+      approved: true,
+    });
+    expect(JSON.stringify(result)).not.toContain("FORGED_REUSE");
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).some(
+        (event) => event.type === "workflow.node.reused",
+      ),
+    ).toBe(false);
+    fixture.store.close();
+  });
+
   it("executes a typed Blueprint DAG through real Agent Runs and reconstructs it from Ledger", async () => {
     const fixture = await createFixture();
     fixture.provider.setResponses([
@@ -542,6 +599,7 @@ async function createFixture(
 ): Promise<{
   store: LocalStore;
   provider: ReturnType<typeof fauxProvider>;
+  agentRuntime: AgentRuntime;
   workflows: ExecutionPlanWorkflowRuntime;
   targetThreadId: string;
   manifest: ExecutionPlanWorkflowManifest;
@@ -595,6 +653,7 @@ async function createFixture(
   return {
     store,
     provider,
+    agentRuntime,
     workflows: new ExecutionPlanWorkflowRuntime(store, agentRuntime),
     targetThreadId: targetThread.id,
     manifest: defineExecutionPlanWorkflow(workflowDefinition(blueprint)),

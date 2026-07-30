@@ -6,6 +6,25 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added controlled typed-Workflow checkpoint experiments. CLI
+  `napier workflow --from-node` and HTTP preview/SSE routes derive the selected
+  node plus descendants as an isolated rerun subgraph, verify and
+  re-materialize completed ancestors as explicit `source=workflow_reuse`
+  control Runs, and allow per-rerun-node model replacement without mutating the
+  source Plan. Preview summarizes historical read/write/unknown tool effects;
+  write, unknown, or unresolved evidence requires explicit confirmation bound
+  to the exact current preview hash before target creation. Results carry both
+  source and deterministically derived candidate Manifests and end in a
+  snapshot/event-stream-bound `workflow_experiment_result`. Cancellation,
+  blocked-node retry, restart recovery, nested experiment forks, concurrency,
+  stale confirmation, source ambiguity, Replay, tampering, CLI, Server, Web
+  Trace, and opt-in real DeepSeek coverage exercise the vertical path. Review
+  moved historical Agent-revision pinning and reused-output injection behind a
+  package-internal Runtime capability, bound reused source/target input hashes,
+  prevented synthetic reuse from degrading into a real Agent retry, and sized
+  result limits from the existing Manifest/Workflow bounds. This is controlled
+  Workflow-node re-execution, not yet user/model/tool single-step Replay,
+  side-effect simulation, batch experiments, or evaluation promotion.
 - Added typed executable Plan Workflows. The exported
   `defineExecutionPlanWorkflow()` helper turns an existing
   `ExecutionPlanBlueprint` into a versioned, hash-bound Agent DAG manifest with

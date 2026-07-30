@@ -170,7 +170,7 @@ export interface RunPromptOptions {
   onRunCreated?: (run: RunRecord) => Promise<void> | void;
   parentRunId?: string;
   operatorDecisionId?: string;
-  source?: RunInvocationSource;
+  source?: Exclude<RunInvocationSource, "workflow_reuse">;
   triggerId?: string;
   recovery?: {
     mode: "manual" | "automatic";
@@ -245,6 +245,14 @@ export class AgentRuntime {
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
     const prompt = options.text.trim();
     if (!prompt) throw new Error("Prompt must not be empty");
+    const requestedSource = (
+      options as unknown as { source?: RunInvocationSource }
+    ).source;
+    if (requestedSource === "workflow_reuse") {
+      throw new Error(
+        "Workflow reuse Runs can only be created by the Workflow materializer",
+      );
+    }
     if (this.activeRuns.has(options.threadId)) {
       throw new Error("This thread already has an active run");
     }
@@ -257,8 +265,8 @@ export class AgentRuntime {
         : this.store.getAgentRevision(currentAgent.id, options.agentRevision)
             .profile;
     const modelRef = options.model ?? agentSnapshot.model;
-    const invocationSource = options.source ?? "user";
-    const workflowInvocation = invocationSource === "workflow";
+    const invocationSource = requestedSource ?? "user";
+    const workflowInvocation = isWorkflowRunSource(invocationSource);
     const skillCatalog = await loadWorkspaceSkills(
       this.store.workspaceRoot,
       agentSnapshot.enabledSkills,
@@ -800,7 +808,7 @@ export class AgentRuntime {
       .filter((run) => run.status === "interrupted")
       .findLast((run) => !options.runId || run.id === options.runId);
     if (!interrupted) throw new Error("Interrupted run not found");
-    if (interrupted.source === "workflow") {
+    if (isWorkflowRunSource(interrupted.source)) {
       throw new Error(
         "Workflow node Runs must be resumed through their Workflow Plan",
       );
@@ -895,7 +903,7 @@ export class AgentRuntime {
     if (
       !interrupted ||
       interrupted.status !== "interrupted" ||
-      interrupted.source === "workflow" ||
+      isWorkflowRunSource(interrupted.source) ||
       !interrupted.configuration ||
       !modernRunConfiguration(interrupted.configuration) ||
       interrupted.configuration.automaticRecovery.mode !== "safe_read_only" ||
@@ -995,12 +1003,11 @@ export class AgentRuntime {
         category: "model",
         visibility: "debug",
         payload: {
-          messageCount:
-            source === "workflow"
-              ? 0
-              : (await this.store.listEvents(run.threadId)).filter(
-                  (event) => event.category === "message",
-                ).length,
+          messageCount: isWorkflowRunSource(source)
+            ? 0
+            : (await this.store.listEvents(run.threadId)).filter(
+                (event) => event.category === "message",
+              ).length,
           skills: profile.enabledSkills,
           policy: profile.toolPolicy,
         },
@@ -1108,7 +1115,7 @@ export class AgentRuntime {
     nextModelContextEnvelopeTurnIndex: () => number,
     onEvent?: EventSink,
   ): Promise<string> {
-    const workflowInvocation = run.source === "workflow";
+    const workflowInvocation = isWorkflowRunSource(run.source);
     const history = await this.buildModelHistory(
       run,
       model,
@@ -2359,7 +2366,7 @@ export class AgentRuntime {
     rawMessageCount: number;
     compacted: boolean;
   }> {
-    if (run.source === "workflow") {
+    if (isWorkflowRunSource(run.source)) {
       return {
         messages: [],
         rawMessageCount: 0,
@@ -3359,7 +3366,7 @@ function turnPromptEvent(source: TurnSource) {
       visibility: "user",
     } as const;
   }
-  if (source === "workflow") {
+  if (isWorkflowRunSource(source)) {
     return {
       type: "workflow.node.prompt",
       category: "plan",
@@ -3378,6 +3385,10 @@ function turnPromptEvent(source: TurnSource) {
     category: "lifecycle",
     visibility: "hidden",
   } as const;
+}
+
+function isWorkflowRunSource(source: TurnSource | undefined): boolean {
+  return source === "workflow" || source === "workflow_reuse";
 }
 
 function recoveryEventSummary(event: RunEvent): string {

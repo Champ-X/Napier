@@ -287,6 +287,44 @@ CLI JSONL and HTTP SSE emit normal event frames followed by one snapshot and a
 hash, final result hash, Thread/Plan/Manifest binding, snapshot size/hash,
 event counts/bytes, and event-stream hash.
 
+Workflow checkpoint experiments build controlled re-execution on that same
+scheduler:
+
+```text
+source Thread + Plan + source Manifest
+  -> verify completed source Run/node evidence
+  -> derive selected-node descendant rerun subgraph
+  -> summarize historical read/write/unknown tool effects
+  -> bind candidate model replacements and preview hash
+  -> require exact preview confirmation for write/unknown effects
+  -> create independent target Thread and normal ExecutionPlan
+  -> materialize verified ancestors as source=workflow_reuse control Runs
+  -> execute selected node and descendants through AgentRuntime
+  -> emit target snapshot + workflow_experiment_result
+```
+
+The source Plan is read-only. Reused outputs are accepted only when source
+Plan/Run ownership, frozen Agent revision, model, node input/output/schema
+hashes, and unique start/completion evidence agree. Each target reuse binds the
+source and target input hash as well as the source output hash. Revision
+pinning and reused-node injection use a package-internal symbol capability;
+ordinary HTTP, CLI, and SDK Workflow requests cannot select historical Agent
+policy or submit synthetic reused outputs.
+
+The target stores experiment lineage in the same Work Ledger. On resume, a
+completed synthetic reuse is reconstructed like any completed Workflow node.
+If cancellation or restart happened before all reuse nodes were materialized,
+the Runtime reprojects only the declared reused subgraph from the exact source
+Plan revision and input; source drift fails closed. An interrupted
+`workflow_reuse` Run may be reopened only for deterministic re-materialization
+and is excluded from generic Workflow node retry, manual Run recovery, and
+automatic recovery.
+
+Preview and execution are available through CLI JSONL and dedicated HTTP
+preview/SSE routes. Web Trace projects only node IDs, counts, confirmation
+state, and hash prefixes. Source/output bodies, tool arguments, diagnostics,
+and paths are not copied into experiment-specific Trace summaries.
+
 Schema version 1 is intentionally narrow: Agent nodes, direct typed bindings,
 sequential dependency-ready DAG scheduling, cancellation, timeout, explicit
 retry, and restart recovery. It does not yet implement deterministic or Tool
@@ -2905,7 +2943,8 @@ content SHA-256, and mirrors assessment/attempt counts in headers.
 
 ## Replay And Evaluation Flow
 
-Replay is evidence export, not tool re-execution:
+Portable Run Replay remains evidence export, not tool re-execution. Controlled
+Workflow checkpoint experiments are a separate live Runtime path:
 
 ```text
 select terminal run
@@ -4820,7 +4859,9 @@ deferred until the local P0-P9 product loop is stable.
 - extend typed Agent DAG execution with deterministic/Tool/approval nodes,
   parallelism, control flow, compensation, single-node tests and breakpoints,
   external Agent adapters, artifact settlement, and a visual builder;
-- controlled re-execution from model, tool, and Workflow checkpoints.
+- extend controlled Workflow checkpoint re-execution with model-call/tool-call
+  checkpoints, side-effect simulation, dependency replacement, batch
+  experiments, diffs, and evaluation promotion.
 
 ### Layer 3: Product and outcome proof
 
