@@ -284,10 +284,10 @@ export function parseLspRange(value: unknown): LspRange | undefined {
   };
 }
 
-function rangePreview(
+export function lspRangeText(
   source: string,
   range: LspRange,
-): { text: string; truncated: boolean } | undefined {
+): string | undefined {
   const lines = source.split("\n");
   const startLine = lines[range.start.line];
   const endLine = lines[range.end.line];
@@ -299,14 +299,21 @@ function rangePreview(
   ) {
     return undefined;
   }
-  const selected =
-    range.start.line === range.end.line
-      ? startLine.slice(range.start.character, range.end.character)
-      : [
-          startLine.slice(range.start.character),
-          ...lines.slice(range.start.line + 1, range.end.line),
-          endLine.slice(0, range.end.character),
-        ].join("\n");
+  return range.start.line === range.end.line
+    ? startLine.slice(range.start.character, range.end.character)
+    : [
+        startLine.slice(range.start.character),
+        ...lines.slice(range.start.line + 1, range.end.line),
+        endLine.slice(0, range.end.character),
+      ].join("\n");
+}
+
+function rangePreview(
+  source: string,
+  range: LspRange,
+): { text: string; truncated: boolean } | undefined {
+  const selected = lspRangeText(source, range);
+  if (selected === undefined) return undefined;
   return {
     text: selected.slice(0, MAX_LSP_LOCATION_PREVIEW_CHARS),
     truncated: selected.length > MAX_LSP_LOCATION_PREVIEW_CHARS,

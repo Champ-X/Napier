@@ -82,11 +82,12 @@ Version `0.1.0` includes:
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
-- `lsp_diagnostics`, `lsp_definition`, `lsp_references`, preview-only
-  `lsp_rename`, and quick-fix-only `lsp_code_actions` tools that drive the
-  standard TypeScript language server against TypeScript or JavaScript
-  workspace files through the same read-only, offline OS sandbox, with bounded
-  live compiler/edit evidence and hash-only durable projections;
+- `lsp_diagnostics`, semantic `lsp_symbols`, `lsp_definition`,
+  `lsp_references`, preview-only `lsp_rename`, and quick-fix-only
+  `lsp_code_actions` tools that drive the standard TypeScript language server
+  against TypeScript or JavaScript workspace files through the same read-only,
+  offline OS sandbox, with bounded live compiler/edit evidence and hash-only
+  durable projections;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -1476,6 +1477,29 @@ versions, severity counts, diagnostic/code-set hashes, protocol bytes, latency,
 stderr hash, resource limits, and result hash. Trace renders that bounded view
 without path or message text.
 
+`lsp_symbols` issues standard `textDocument/documentSymbol` for the opened
+file. Napier explicitly advertises hierarchical symbol support and also accepts
+the flat `SymbolInformation[]` fallback. Hierarchical parent/child ranges,
+selection ranges, SymbolKind values, current-document URIs, UTF-16 positions,
+and source bounds are validated before any result reaches the Agent. The
+protocol response is capped at 1,024 nodes, depth 32, and 16 MiB of aggregate
+symbol/name range characters before materialization; the tool exposes at
+most 256 canonical symbols under a 48 KiB UTF-8 display budget and 64 KiB final
+output budget.
+
+The live Agent receives names, kinds, details, containers, exact
+server-provided symbol/name ranges, current file hash, bounded signature
+previews, and range hashes as untrusted source evidence. Hierarchical responses
+carry the full `DocumentSymbol` range; a flat fallback preserves only its
+`SymbolInformation.location.range` and does not invent declaration extent or
+depth. Durable calls, Ledger events, Replay, Server SSE, and Trace retain only
+response shape, completeness, counts, depth, display bytes, versions, latency,
+and path/file/symbol/kind/result hashes. `complete` means no distinct symbol was
+dropped by the requested count or display budget; it does not claim
+project-wide indexing. A coding Agent can read the reported range, then use the
+existing complete-file CAS `apply_patch` boundary and diagnostics rather than
+trusting heuristic symbol inference.
+
 `lsp_definition` uses the same runtime and standard
 `textDocument/definition` request to resolve a 1-based source position. It
 accepts Location and LocationLink responses, independently canonicalizes every
@@ -1552,7 +1576,7 @@ automatically combine mutually exclusive alternatives.
 
 These are one-shot operations rather than a persistent editor session. Napier
 does not yet claim direct LSP writes, atomic multi-file rename, Code Action
-resolve or command execution, project-wide synchronization, external
+resolve or command execution, project-wide synchronization/indexing, external
 dependency navigation, or test selection.
 
 When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
@@ -2948,12 +2972,13 @@ anchors, **Sandbox verify** is read-only, offline, and command-closed, and
 shell or inherited environment. **Background process** adds bounded
 start/input/poll/cancel lifecycle control over the same sandbox boundary.
 **LSP diagnostics** adds one-file TypeScript/JavaScript semantic diagnostics,
-**LSP definition** and **LSP references** add workspace-confined navigation,
-and **LSP rename preview** supplies a complete bounded WorkspaceEdit that must
-still pass through Atomic patch. **LSP quick fixes** supplies bounded
-diagnostic-driven text-edit alternatives while dropping every returned command
-and opaque data. None grants language-server workspace writes, command
-execution, or network access.
+**LSP semantic symbols** adds exact current-document declarations and
+hierarchy, **LSP definition** and **LSP references** add workspace-confined
+navigation, and **LSP rename preview** supplies a complete bounded
+WorkspaceEdit that must still pass through Atomic patch. **LSP quick fixes**
+supplies bounded diagnostic-driven text-edit alternatives while dropping every
+returned command and opaque data. None grants language-server workspace
+writes, command execution, or network access.
 Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.

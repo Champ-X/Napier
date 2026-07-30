@@ -367,6 +367,7 @@ describe("safe automatic recovery", () => {
         "inspect_code",
         "read_symbol",
         "lsp_diagnostics",
+        "lsp_symbols",
         "lsp_definition",
         "lsp_references",
         "apply_patch",

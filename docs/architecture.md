@@ -1769,6 +1769,21 @@ lsp_diagnostics
   -> return source locations, codes, and messages only to the live Agent
   -> persist only language/version/count/latency plus runtime, file,
      diagnostic-set, code-set, stderr, limit, and result hashes
+lsp_symbols
+  -> reuse the same canonical source, exact runtime, read-only/offline Sandbox,
+     framed JSON-RPC, timeout, cancellation, and post-run drift checks
+  -> advertise hierarchical document symbols and issue
+     textDocument/documentSymbol for the one didOpen target
+  -> accept hierarchical DocumentSymbol[] or flat SymbolInformation[] while
+     rejecting mixed/malformed shapes and flat URIs outside the current target
+  -> validate SymbolKind, tags, parent containment, selection containment,
+     UTF-16 source bounds, 1,024 protocol nodes, depth <= 32, and <=16 MiB
+     aggregate symbol/name range characters before materialization
+  -> canonicalize and deduplicate by exact source/range receipts; expose at
+     most 256 symbols under 48 KiB display and 64 KiB final-output budgets
+  -> return live-only names, containers, details, ranges, signatures, and
+     hashes; persist only shape/completeness/count/depth/version/latency plus
+     source/symbol/kind/result hashes
 lsp_definition
   -> validate a 1-based TypeScript or JavaScript usage position
   -> reuse the bound read-only/offline LSP process lifecycle
@@ -1834,8 +1849,10 @@ Subagents call the read-only tool factory and never receive `apply_patch`.
 The LSP tools are implemented outside the oversized workspace-tool module.
 `lsp-diagnostics.ts` owns shared target/runtime preparation plus diagnostic
 projection, `lsp-protocol-session.ts` owns the generic bounded JSON-RPC
-lifecycle, `lsp-locations.ts` owns position/Location confinement, and the
-diagnostic/navigation tool adapters own Agent schemas plus Ledger redaction:
+lifecycle, `lsp-locations.ts` owns position/Location confinement,
+`lsp-symbol-parser.ts` and `lsp-symbol-model.ts` separate strict protocol
+parsing from range materialization/receipts, and the diagnostic/navigation tool
+adapters own Agent schemas plus Ledger redaction:
 
 ```text
 Agent selects lsp_diagnostics + workspace-relative source path
@@ -1857,6 +1874,33 @@ Agent selects lsp_diagnostics + workspace-relative source path
   -> rehash runtime assets after settlement
   -> return diagnostic locations/codes/messages to the current Agent only
   -> retain counts, versions, latency, and hashes in tool.completed and Trace
+```
+
+Document symbols reuse the same one-shot lifecycle without heuristic source
+parsing:
+
+```text
+Agent selects lsp_symbols + source path + optional result limit
+  -> apply the same policy, canonical source, runtime, Sandbox, readiness,
+     timeout, cancellation, protocol, stderr, and drift gates
+  -> advertise hierarchicalDocumentSymbolSupport, all standard SymbolKind
+     values, standard deprecated tags, and no dynamic write capability
+  -> issue textDocument/documentSymbol for exactly the didOpen target URI
+  -> accept hierarchical DocumentSymbol[] or flat SymbolInformation[] fallback
+  -> require exact standard keys, valid kind/tags/text, selection inside symbol
+     range, children inside parent range, and flat URI equal to the target
+  -> validate every UTF-16 range against the exact preflight source bytes
+  -> split the source into lines once, reject more than 16 MiB aggregate
+     symbol/name range characters before slicing or hashing, then
+     canonicalize by source position/range and deduplicate by receipt hash
+  -> return at most the requested 256-symbol ceiling while a 48 KiB UTF-8
+     display budget reserves room under the 64 KiB final Agent-output limit
+  -> expose names, hierarchy, exact ranges, source hashes, and bounded
+     signatures only to the current Agent
+  -> persist shape, completeness, counts, depth, bytes, versions, latency, and
+     source/symbol/kind/result hashes in Ledger/Replay/Trace
+  -> perform no write; the Agent re-reads the current file SHA, applies through
+     existing hash-bound apply_patch, and reruns diagnostics/tests
 ```
 
 Definition lookup reuses that lifecycle without adding a second process or
@@ -1953,13 +1997,14 @@ Agent selects lsp_code_actions + source path + diagnostic position
 ```
 
 The Web projection follows the same module boundary: `lsp-tool-event-view.ts`
-validates and summarizes all LSP receipts, while generic
-`tool-event-view.ts` only dispatches by tool name. Rename and Code Action
-WorkspaceEdit parsing share `lsp-rename-workspace-edit.ts`.
+dispatches strict LSP receipt views, while generic `tool-event-view.ts` only
+dispatches by tool name. Symbol, rename, and Code Action views live in separate
+lazy Trace modules. Rename and Code Action WorkspaceEdit parsing share
+`lsp-rename-workspace-edit.ts`.
 `lsp-code-action-diagnostics.ts`, `lsp-code-action-edits.ts`, and
 `lsp-code-actions.ts` separately own diagnostic selection, confined edit
-materialization, and session/receipt assembly. Web quick-fix projection lives
-in `lsp-code-actions-event-view.ts` and never reads action titles, paths,
+materialization, and session/receipt assembly. Web symbol and quick-fix
+projections never read symbol names/details/signatures, action titles, paths,
 diagnostic messages, commands, or edit bodies.
 
 The Sandbox launch contract supports at most eight explicit absolute
@@ -1973,11 +2018,13 @@ The language server runs as untrusted code output inside the Capability Plane:
 diagnostic prose is not treated as instructions, related-information paths are
 discarded, server-initiated `workspace/applyEdit` requests are rejected, and no
 package/plugin installation or network access is available.
-Definition/reference URIs and previews receive the same treatment and cannot
-expand read/write scope. Rename and quick-fix WorkspaceEdits are previews only;
-Code Action commands, resolve requests, and opaque data remain unavailable.
-The implementation remains one-shot and does not expose persistent
-synchronization, external dependency navigation, or project-wide indexing.
+Symbol names/details/signatures and definition/reference URIs/previews receive
+the same treatment and cannot expand read/write scope. Flat symbol results must
+target the opened URI; hierarchical children cannot escape parent/source
+ranges. Rename and quick-fix WorkspaceEdits are previews only; Code Action
+commands, resolve requests, and opaque data remain unavailable. The
+implementation remains one-shot and does not expose persistent synchronization,
+external dependency navigation, or project-wide indexing.
 
 ## Write-linked Diagnostics Flow
 
@@ -4362,14 +4409,18 @@ The current boundary has thirty-two parts:
     insertion-aware text-only WorkspaceEdits, ignored command/data payloads,
     aggregate context/output budgets, Agent/Server/Context/Trace integration,
     and a real preferred-fix-to-hash-bound-patch verification path.
+35. semantic TypeScript/JavaScript document symbols with hierarchical and flat
+    LSP compatibility, exact server-provided symbol/name ranges, bounded output,
+    Agent/Server/Context/Trace integration, hash-only durable evidence, and a
+    real symbol-range-to-CAS-patch-to-typecheck path.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
-verification, read-only/offline TypeScript LSP diagnostics/navigation/rename/
-quick-fix previews, explicit-argv command execution, and bounded background
-Process Session lifecycle control. `unrestricted` is reserved for future
-sandboxed shell execution, but known destructive command patterns are still
-denied.
+verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
+rename/quick-fix previews, explicit-argv command execution, and bounded
+background Process Session lifecycle control. `unrestricted` is reserved for
+future sandboxed shell execution, but known destructive command patterns are
+still denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and

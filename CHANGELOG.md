@@ -6,6 +6,22 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added semantic TypeScript/JavaScript document symbols. The opt-in
+  `lsp_symbols` Agent tool issues real `textDocument/documentSymbol` requests
+  through the existing exact-version, read-only, offline LSP Sandbox,
+  advertises hierarchical support, and accepts the standard flat fallback. It
+  validates exact response keys, SymbolKind values, target URI, UTF-16 source
+  bounds, selection/parent containment, protocol node/depth limits, a 16 MiB
+  pre-materialization aggregate range budget, and source/runtime freshness. The
+  live Agent receives bounded names, hierarchy, exact server-provided
+  symbol/name ranges, signatures, file/range hashes, and completeness;
+  Ledger, Replay, Server SSE, and Web Trace retain only shape, counts, depth,
+  display bytes, versions, latency, and hashes. Real Agent dogfood narrowed a
+  read to the returned method range, applied a production CAS patch, and
+  verified clean diagnostics. Independent dogfood patched the exact semantic
+  range through `applyWorkspacePatch` and passed real `tsc --noEmit`. Parser
+  and materialization/receipt responsibilities remain split across focused
+  modules.
 - Added diagnostic-driven TypeScript/JavaScript quick-fix previews. The opt-in
   `lsp_code_actions` Agent tool collects current diagnostics and issues real
   `textDocument/codeAction` requests restricted to `quickfix` through the

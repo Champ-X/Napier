@@ -95,6 +95,7 @@ import { createLspDefinitionTool } from "./lsp-definition-tool.js";
 import { LspWorkspacePatchObserver } from "./lsp-patch-diagnostics.js";
 import { createLspReferencesTool } from "./lsp-references-tool.js";
 import { createLspRenameTool } from "./lsp-rename-tool.js";
+import { createLspSymbolsTool } from "./lsp-symbols-tool.js";
 import {
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
@@ -1205,6 +1206,19 @@ export class AgentRuntime {
     ) {
       tools.push(
         createLspDiagnosticsTool({
+          workspaceRoot: this.store.workspaceRoot,
+          sandbox: this.verificationSandbox,
+        }),
+      );
+    }
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("lsp_symbols")
+    ) {
+      tools.push(
+        createLspSymbolsTool({
           workspaceRoot: this.store.workspaceRoot,
           sandbox: this.verificationSandbox,
         }),
@@ -3424,6 +3438,7 @@ function builtInToolEffect(
     toolName === "inspect_code" ||
     toolName === "read_symbol" ||
     toolName === "lsp_diagnostics" ||
+    toolName === "lsp_symbols" ||
     toolName === "lsp_definition" ||
     toolName === "lsp_references" ||
     toolName === "lsp_rename" ||

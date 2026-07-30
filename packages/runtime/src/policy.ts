@@ -27,6 +27,7 @@ const WORKSPACE_FILE_APPLY_TOOLS = new Set(["workspace_file_apply"]);
 const VERIFICATION_TOOLS = new Set(["verify_workspace"]);
 const LSP_TOOLS = new Set([
   "lsp_diagnostics",
+  "lsp_symbols",
   "lsp_definition",
   "lsp_references",
   "lsp_rename",
@@ -229,13 +230,15 @@ export function assessToolCall(
       reason:
         toolName === "lsp_diagnostics"
           ? "read-only sandboxed language-server diagnostics"
-          : toolName === "lsp_definition"
-            ? "read-only sandboxed language-server definition lookup"
-            : toolName === "lsp_references"
-              ? "read-only sandboxed language-server reference lookup"
-              : toolName === "lsp_rename"
-                ? "read-only sandboxed language-server rename preview"
-                : "read-only sandboxed language-server quick-fix preview",
+          : toolName === "lsp_symbols"
+            ? "read-only sandboxed language-server symbol outline"
+            : toolName === "lsp_definition"
+              ? "read-only sandboxed language-server definition lookup"
+              : toolName === "lsp_references"
+                ? "read-only sandboxed language-server reference lookup"
+                : toolName === "lsp_rename"
+                  ? "read-only sandboxed language-server rename preview"
+                  : "read-only sandboxed language-server quick-fix preview",
     };
   }
 

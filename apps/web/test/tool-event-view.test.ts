@@ -273,6 +273,68 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes semantic LSP symbols without names or signatures", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_symbols",
+      status: "completed",
+      effect: "read",
+      output: "TOP_SECRET_SYMBOL_OUTPUT",
+      details: {
+        kind: "napier.lsp-symbols",
+        schemaVersion: 1,
+        status: "found",
+        complete: false,
+        truncated: true,
+        responseShape: "hierarchical",
+        language: "typescript",
+        responseSymbolCount: 12,
+        symbolCount: 10,
+        omittedSymbolCount: 2,
+        maxDepth: 2,
+        deprecatedSymbolCount: 1,
+        displayBytes: 4096,
+        durationMs: 750,
+        protocolBytes: 3000,
+        sourcePath: "TOP_SECRET_PATH",
+        sourcePathSha256: "1".repeat(64),
+        sourceFileSha256: "2".repeat(64),
+        symbolName: "TOP_SECRET_SYMBOL",
+        signaturePreview: "TOP_SECRET_SIGNATURE",
+        symbolSetSha256: "3".repeat(64),
+        kindCountsSha256: "4".repeat(64),
+        resultSha256: "5".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "lsp_symbols",
+      status: "completed",
+      effect: "read",
+      lspSymbolsStatus: "found",
+      lspSymbolsLanguage: "typescript",
+      lspSymbolsComplete: false,
+      lspSymbolsTruncated: true,
+      lspSymbolsResponseShape: "hierarchical",
+      lspSymbolsResponseCount: 12,
+      lspSymbolsCount: 10,
+      lspSymbolsOmittedCount: 2,
+      lspSymbolsMaxDepth: 2,
+      lspSymbolsDeprecatedCount: 1,
+      lspSymbolsDisplayBytes: 4096,
+      lspSymbolsDurationMs: 750,
+      lspSymbolsProtocolBytes: 3000,
+      lspSymbolsSourcePathSha256: "1".repeat(64),
+      lspSymbolsSourceFileSha256: "2".repeat(64),
+      lspSymbolsSetSha256: "3".repeat(64),
+      lspSymbolsKindCountsSha256: "4".repeat(64),
+      lspSymbolsResultSha256: "5".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / lsp_symbols / completed / effect read / semantic-symbols found / symbol-language typescript / symbol-shape hierarchical / symbols-truncated / symbol-response 12 / symbols 10 / symbol-omitted 2 / symbol-depth 2 / symbol-deprecated 1 / symbol-display-bytes 4096 / symbol-ms 750 / symbol-protocol 3000 / symbol-source-path ${"1".repeat(12)} / symbol-source-file ${"2".repeat(12)} / symbol-set ${"3".repeat(12)} / symbol-kinds ${"4".repeat(12)} / symbol-result ${"5".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes LSP reference evidence without paths or source previews", () => {
     const event = toolEvent("tool.completed", {
       toolName: "lsp_references",

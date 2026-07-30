@@ -8,6 +8,11 @@ import {
   lspRenameSummaryParts,
   type LspRenameToolEventTraceView,
 } from "./lsp-rename-event-view";
+import {
+  lspSymbolsEventEvidence,
+  lspSymbolsSummaryParts,
+  type LspSymbolsToolEventTraceView,
+} from "./lsp-symbols-event-view";
 
 type LspLanguage =
   | "typescript"
@@ -16,7 +21,10 @@ type LspLanguage =
   | "javascriptreact";
 
 export interface LspToolEventTraceView
-  extends LspRenameToolEventTraceView, LspCodeActionsToolEventTraceView {
+  extends
+    LspRenameToolEventTraceView,
+    LspCodeActionsToolEventTraceView,
+    LspSymbolsToolEventTraceView {
   lspStatus?: "clean" | "diagnostics";
   lspLanguage?: LspLanguage;
   lspDiagnosticCount?: number;
@@ -62,6 +70,7 @@ export function lspToolEventEvidence(
   value: unknown,
 ): LspToolEventTraceView | undefined {
   if (toolName === "lsp_diagnostics") return diagnosticsEvidence(value);
+  if (toolName === "lsp_symbols") return lspSymbolsEventEvidence(value);
   if (toolName === "lsp_definition") return definitionEvidence(value);
   if (toolName === "lsp_references") return referencesEvidence(value);
   if (toolName === "lsp_rename") return lspRenameEventEvidence(value);
@@ -107,6 +116,7 @@ export function lspToolEventSummaryParts(
     ...(view.lspResultSha256
       ? [`lsp-result ${view.lspResultSha256.slice(0, 12)}`]
       : []),
+    ...lspSymbolsSummaryParts(view),
     ...(view.lspDefinitionStatus
       ? [`definition ${view.lspDefinitionStatus}`]
       : []),

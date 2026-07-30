@@ -2623,6 +2623,7 @@ export const AGENT_TOOL_NAMES = [
   "inspect_code",
   "read_symbol",
   "lsp_diagnostics",
+  "lsp_symbols",
   "lsp_definition",
   "lsp_references",
   "lsp_rename",
@@ -3012,6 +3013,45 @@ export interface LspDiagnosticsDetails {
   truncated: boolean;
   diagnosticSetSha256: string;
   codeSetSha256: string;
+  nodeExecutableSha256: string;
+  languageServerVersion: string;
+  languageServerSha256: string;
+  typescriptVersion: string;
+  typescriptServerSha256: string;
+  environmentSha256: string;
+  resourceLimitsSha256: string;
+  timeoutMs: number;
+  durationMs: number;
+  protocolBytes: number;
+  stderrChars: number;
+  stderrSha256: string;
+  stderrTruncated: boolean;
+  resultSha256: string;
+}
+
+export interface LspSymbolsDetails {
+  kind: "napier.lsp-symbols";
+  schemaVersion: 1;
+  status: "found" | "not_found";
+  complete: boolean;
+  truncated: boolean;
+  responseShape: "empty" | "hierarchical" | "flat";
+  language: LspDiagnosticLanguage;
+  sandbox: string;
+  workspaceAccess: "read_only";
+  networkAccess: "denied";
+  workspaceRootSha256: string;
+  sourcePathSha256: string;
+  sourceFileSha256: string;
+  sourceFileBytes: number;
+  responseSymbolCount: number;
+  symbolCount: number;
+  omittedSymbolCount: number;
+  maxDepth: number;
+  deprecatedSymbolCount: number;
+  displayBytes: number;
+  symbolSetSha256: string;
+  kindCountsSha256: string;
   nodeExecutableSha256: string;
   languageServerVersion: string;
   languageServerSha256: string;

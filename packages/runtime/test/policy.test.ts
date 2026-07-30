@@ -214,6 +214,20 @@ describe("workspace policy", () => {
     expect(
       assessToolCall(
         "workspace",
+        "lsp_symbols",
+        { path: "src/index.ts", maxSymbols: 80 },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "read-only sandboxed language-server symbol outline",
+      }),
+    );
+    expect(
+      assessToolCall(
+        "workspace",
         "lsp_definition",
         { path: "src/index.ts", line: 1, character: 1 },
         "/workspace",

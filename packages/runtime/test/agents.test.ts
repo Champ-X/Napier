@@ -246,6 +246,7 @@ describe("Agent profile updates", () => {
         enabledTools: [
           "read_file",
           "lsp_diagnostics",
+          "lsp_symbols",
           "lsp_definition",
           "lsp_references",
           "lsp_rename",
@@ -260,6 +261,7 @@ describe("Agent profile updates", () => {
       "lsp_diagnostics",
       "lsp_references",
       "lsp_rename",
+      "lsp_symbols",
       "read_file",
       "run_command",
       "workspace_process",

@@ -140,6 +140,14 @@ export async function runLspProtocolSession<T>(
               isPreferredSupport: true,
             },
             definition: { linkSupport: true },
+            documentSymbol: {
+              hierarchicalDocumentSymbolSupport: true,
+              labelSupport: true,
+              symbolKind: {
+                valueSet: Array.from({ length: 26 }, (_, index) => index + 1),
+              },
+              tagSupport: { valueSet: [1] },
+            },
             references: {},
             rename: { prepareSupport: true },
             publishDiagnostics: {

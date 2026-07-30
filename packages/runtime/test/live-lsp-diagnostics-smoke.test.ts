@@ -119,6 +119,104 @@ describeLive("live LSP diagnostics smoke", () => {
     store.close();
   }, 30_000);
 
+  it("returns real semantic document symbols through the Agent sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-symbols-workspace-"),
+    );
+    temporaryRoots.push(workspaceRoot);
+    const targetPath = "private-formatter.ts";
+    const privateName = "LivePrivateFormatter";
+    const source = [
+      `export class ${privateName} {`,
+      "  format(value: string): string {",
+      "    return value.trim();",
+      "  }",
+      "}",
+      "",
+    ].join("\n");
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { strict: true, noEmit: true } }),
+      ),
+      writeFile(path.join(workspaceRoot, targetPath), source),
+    ]);
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(workspaceRoot, ".napier"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_symbols"],
+    });
+    const thread = await store.createThread({
+      title: "Live LSP symbols smoke",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "live-lsp-symbols-smoke" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_symbols", { path: targetPath, maxSymbols: 20 }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(privateName);
+        expect(messages).toContain("Range: 2:3-4:4");
+        return fauxAssistantMessage(
+          "The real language server returned the semantic outline.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Inspect the TypeScript document through semantic LSP symbols.",
+      model: { provider: "live-lsp-symbols-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const events = await store.listEvents(thread.id);
+    const completed = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_symbols",
+    );
+    expect(completed?.payload["details"]).toEqual(
+      expect.objectContaining({
+        status: "found",
+        responseShape: "hierarchical",
+        symbolCount: 2,
+        omittedSymbolCount: 0,
+        maxDepth: 1,
+        sandbox: "macos-sandbox-exec",
+        languageServerVersion: "5.3.0",
+        typescriptVersion: "5.9.3",
+      }),
+    );
+    const durable = JSON.stringify(events);
+    expect(durable).not.toContain(targetPath);
+    expect(durable).not.toContain(privateName);
+    expect(durable).not.toContain("return value.trim()");
+    expect(await readFile(path.join(workspaceRoot, targetPath), "utf8")).toBe(
+      source,
+    );
+    store.close();
+  }, 30_000);
+
   it("resolves the fixed cross-file definition through the Agent sandbox", async () => {
     const workspaceRoot = await realpath(
       fileURLToPath(

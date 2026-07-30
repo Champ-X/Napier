@@ -29,6 +29,7 @@ const SAFE_READ_ONLY_TOOLS = new Set([
   "inspect_code",
   "read_symbol",
   "lsp_diagnostics",
+  "lsp_symbols",
   "lsp_definition",
   "lsp_references",
   "lsp_rename",

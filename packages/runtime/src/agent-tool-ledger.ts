@@ -26,6 +26,11 @@ import {
   lspRenameToolOutputLedgerProjection,
 } from "./lsp-rename-tool.js";
 import {
+  lspSymbolsToolCallArgumentsLedgerProjection,
+  lspSymbolsToolInputLedgerProjection,
+  lspSymbolsToolOutputLedgerProjection,
+} from "./lsp-symbols-tool.js";
+import {
   commandToolCallArgumentsLedgerProjection,
   commandToolInputLedgerProjection,
   commandToolOutputLedgerProjection,
@@ -55,6 +60,9 @@ export function agentToolCallArgumentsLedgerProjection(
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolCallArgumentsLedgerProjection(args);
+  }
+  if (toolName === "lsp_symbols") {
+    return lspSymbolsToolCallArgumentsLedgerProjection(args);
   }
   if (toolName === "lsp_definition") {
     return lspDefinitionToolCallArgumentsLedgerProjection(args);
@@ -93,6 +101,9 @@ export function agentToolInputLedgerProjection(
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolInputLedgerProjection(args);
   }
+  if (toolName === "lsp_symbols") {
+    return lspSymbolsToolInputLedgerProjection(args);
+  }
   if (toolName === "lsp_definition") {
     return lspDefinitionToolInputLedgerProjection(args);
   }
@@ -130,6 +141,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "lsp_symbols") {
+    return lspSymbolsToolOutputLedgerProjection(output, result);
   }
   if (toolName === "lsp_definition") {
     return lspDefinitionToolOutputLedgerProjection(output, result);
