@@ -246,6 +246,25 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "workspace",
+        "lsp_rename",
+        {
+          path: "src/index.ts",
+          line: 1,
+          character: 1,
+          newName: "nextName",
+        },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "read-only sandboxed language-server rename preview",
+      }),
+    );
+    expect(
+      assessToolCall(
         "observe",
         "run_command",
         { runtime: "node", args: ["--version"] },

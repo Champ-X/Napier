@@ -29,6 +29,7 @@ const LSP_TOOLS = new Set([
   "lsp_diagnostics",
   "lsp_definition",
   "lsp_references",
+  "lsp_rename",
 ]);
 const PROCESS_TOOLS = new Set(["run_command", "workspace_process"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
@@ -229,7 +230,9 @@ export function assessToolCall(
           ? "read-only sandboxed language-server diagnostics"
           : toolName === "lsp_definition"
             ? "read-only sandboxed language-server definition lookup"
-            : "read-only sandboxed language-server reference lookup",
+            : toolName === "lsp_references"
+              ? "read-only sandboxed language-server reference lookup"
+              : "read-only sandboxed language-server rename preview",
     };
   }
 

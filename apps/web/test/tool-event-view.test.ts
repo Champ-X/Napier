@@ -323,6 +323,61 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes complete LSP rename evidence without edit previews", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_rename",
+      status: "completed",
+      effect: "read",
+      output: "TOP_SECRET_RENAME_EDIT",
+      details: {
+        kind: "napier.lsp-rename",
+        schemaVersion: 1,
+        status: "found",
+        complete: true,
+        language: "typescript",
+        fileCount: 3,
+        editCount: 6,
+        previewBytes: 128,
+        durationMs: 910,
+        protocolBytes: 3600,
+        sourcePath: "TOP_SECRET_PATH",
+        sourcePathSha256: "1".repeat(64),
+        sourceFileSha256: "2".repeat(64),
+        newName: "TOP_SECRET_NEW_NAME",
+        newNameSha256: "3".repeat(64),
+        prepareResultSha256: "4".repeat(64),
+        editSetSha256: "5".repeat(64),
+        targetFileSetSha256: "6".repeat(64),
+        resultSha256: "7".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "lsp_rename",
+      status: "completed",
+      effect: "read",
+      lspRenameStatus: "found",
+      lspRenameLanguage: "typescript",
+      lspRenameComplete: true,
+      lspRenameFileCount: 3,
+      lspRenameEditCount: 6,
+      lspRenamePreviewBytes: 128,
+      lspRenameDurationMs: 910,
+      lspRenameProtocolBytes: 3600,
+      lspRenameSourcePathSha256: "1".repeat(64),
+      lspRenameSourceFileSha256: "2".repeat(64),
+      lspRenameNewNameSha256: "3".repeat(64),
+      lspRenamePrepareResultSha256: "4".repeat(64),
+      lspRenameEditSetSha256: "5".repeat(64),
+      lspRenameTargetFileSetSha256: "6".repeat(64),
+      lspRenameResultSha256: "7".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / lsp_rename / completed / effect read / rename found / rename-language typescript / rename-complete / rename-files 3 / rename-edits 6 / rename-preview-bytes 128 / rename-ms 910 / rename-protocol 3600 / rename-source-path ${"1".repeat(12)} / rename-source-file ${"2".repeat(12)} / rename-name ${"3".repeat(12)} / rename-prepare ${"4".repeat(12)} / rename-edit-set ${"5".repeat(12)} / rename-target-files ${"6".repeat(12)} / rename-result ${"7".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes search_files hash evidence without match text", () => {
     const event = toolEvent("tool.completed", {
       toolName: "search_files",

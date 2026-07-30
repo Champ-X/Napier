@@ -6,6 +6,22 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added workspace-confined TypeScript/JavaScript rename previews. The opt-in
+  `lsp_rename` Agent tool drives real `textDocument/prepareRename` and
+  `textDocument/rename` requests through the existing exact-version,
+  read-only, offline LSP Sandbox. It returns a complete bounded WorkspaceEdit
+  with live-only paths, file hashes, exact ranges, old text, and replacements,
+  capped at 32 KiB aggregate preview text and 64 KiB formatted output, while
+  durable Agent, Ledger, Replay, Server SSE, and Web Trace projections retain
+  only completeness, counts, preview bytes, versions, latency, and hashes. Any
+  resource operation, annotation, mixed edit shape, overlap, truncation,
+  external/protected/symlinked target, malformed range, source/runtime drift,
+  timeout, or cancellation fails closed. The tool never writes; Agents apply
+  reviewed edits through existing hash-bound `apply_patch`. Real dogfood
+  previewed six edits across three files, applied all three production patches,
+  removed every old symbol use, and passed `tsc --noEmit`. The opt-in macOS
+  Sandbox smoke remains unavailable from this nested IDE host alongside all
+  four pre-existing LSP smoke cases, with no host fallback.
 - Added sequence-accurate CLI Thread branching. `napier branch` accepts an
   exact existing source Ledger sequence, optional title, and human or complete
   ordered-JSONL output; its new Thread can immediately continue through

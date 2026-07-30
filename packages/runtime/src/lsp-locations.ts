@@ -36,6 +36,7 @@ export interface LspWorkspaceLocation {
   rangeSha256: string;
   preview: string;
   previewSha256: string;
+  previewTruncated?: true;
 }
 
 export interface LspLocationReceipt {
@@ -177,7 +178,7 @@ export async function workspaceLspLocation(
     return undefined;
   }
   const preview = rangePreview(source, candidate.range);
-  if (preview === undefined) {
+  if (!preview) {
     throw new Error(`${label} returned an out-of-range workspace target`);
   }
   const range = {
@@ -192,8 +193,9 @@ export async function workspaceLspLocation(
     fileSha256: sha256(buffer),
     ...range,
     rangeSha256: sha256(canonicalJson(range)),
-    preview,
-    previewSha256: sha256(preview),
+    preview: preview.text,
+    previewSha256: sha256(preview.text),
+    ...(preview.truncated ? { previewTruncated: true as const } : {}),
   };
 }
 
@@ -243,7 +245,7 @@ export function lspTargetFileReceipts(
   );
 }
 
-function parseLspRange(value: unknown): LspRange | undefined {
+export function parseLspRange(value: unknown): LspRange | undefined {
   if (!record(value)) return undefined;
   const start = record(value["start"]) ? value["start"] : undefined;
   const end = record(value["end"]) ? value["end"] : undefined;
@@ -272,7 +274,10 @@ function parseLspRange(value: unknown): LspRange | undefined {
   };
 }
 
-function rangePreview(source: string, range: LspRange): string | undefined {
+function rangePreview(
+  source: string,
+  range: LspRange,
+): { text: string; truncated: boolean } | undefined {
   const lines = source.split("\n");
   const startLine = lines[range.start.line];
   const endLine = lines[range.end.line];
@@ -292,7 +297,10 @@ function rangePreview(source: string, range: LspRange): string | undefined {
           ...lines.slice(range.start.line + 1, range.end.line),
           endLine.slice(0, range.end.character),
         ].join("\n");
-  return selected.slice(0, MAX_LSP_LOCATION_PREVIEW_CHARS);
+  return {
+    text: selected.slice(0, MAX_LSP_LOCATION_PREVIEW_CHARS),
+    truncated: selected.length > MAX_LSP_LOCATION_PREVIEW_CHARS,
+  };
 }
 
 function isPathInside(candidate: string, root: string): boolean {

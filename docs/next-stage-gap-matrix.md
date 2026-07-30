@@ -17,19 +17,19 @@ Audit date: 2026-07-30
 
 ## Priority Matrix
 
-| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                  |
-| --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                  |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain. |
-| P2 coding intelligence            | Partial        | Hashline, bounded symbols, TypeScript LSP diagnostics/definitions/references, and write-linked diagnostic deltas exist; persistent LSP/rename/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain.                 |
-| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                       |
-| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                           |
-| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                 |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                     |
-| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
-| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
-| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.    |
-| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                             |
+| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                |
+| --------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain.               |
+| P2 coding intelligence            | Partial        | Hashline, bounded symbols, TypeScript LSP diagnostics/definitions/references/rename previews, and write-linked diagnostic deltas exist; persistent LSP, direct rename apply/Code Actions, DAP, AST edits, test/symbol association, and isolated subagent worktrees remain. |
+| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                     |
+| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                         |
+| P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                               |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                                   |
+| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                            |
+| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                  |
+| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                  |
+| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                           |
 
 ## Completed Slice: Read-Only Sandboxed Commands
 
@@ -1167,3 +1167,78 @@ Observed result:
   gate passed 969 tests with 12 opt-in live tests skipped by default, verified
   244/244 OpenAPI operations, and kept the Web main entry at 129.13 KiB
   against the 150 KiB budget.
+
+## Completed Slice: Workspace-Confined LSP Rename Preview
+
+User scenario: a coding Agent can ask the real language server for every edit
+needed to rename a TypeScript or JavaScript symbol, inspect one complete
+multi-file plan, then apply and verify it through Napier's existing write
+boundary instead of guessing call sites or granting the language server writes.
+
+Acceptance:
+
+- add opt-in `lsp_rename` with a workspace-relative source, 1-based UTF-16
+  position, proposed new name, and bounded timeout;
+- drive standard `textDocument/prepareRename` and `textDocument/rename`
+  through the existing exact-version, read-only, offline LSP lifecycle;
+- accept at most 32 files and 256 non-overlapping text edits as one complete
+  WorkspaceEdit, 32 KiB aggregate preview text, and 64 KiB final tool output;
+  over-limit responses fail rather than truncate;
+- support standard `changes` and text-only `documentChanges`, while rejecting
+  mixed representations, create/rename/delete operations, annotations, empty
+  ranges, overlap, and malformed versions;
+- canonicalize every target and reject the whole preview for external,
+  virtual, protected, symlinked, missing, oversized, invalid UTF-8,
+  out-of-range, or hash-inconsistent files;
+- return paths, current file hashes, exact ranges, old text, and replacement
+  text only to the live Agent;
+- retain only completeness, counts, preview bytes, versions, latency, and
+  source/name/prepare/edit/target-file/result hashes in model-call, Ledger,
+  Replay, Server SSE, and Web Trace evidence;
+- apply real edits only through existing hash-bound `apply_patch`, preserving
+  per-file CAS, locks, diagnostics, cancellation-before-commit, and evidence;
+- cover protocol shapes, limits, not-found, confinement, overlap, source and
+  runtime drift, timeout, cancellation, concurrency, Agent apply, Server SSE,
+  Web projection, real language server behavior, and an optional OS-Sandbox
+  smoke.
+
+Threat boundary:
+
+- Workspace source and all language-server edits are untrusted live evidence,
+  not instructions. Prompt injection in a comment cannot bypass policy or
+  directly reach a write primitive.
+- `workspace/applyEdit` remains denied. `lsp_rename` is classified as a
+  sandboxed read and never mutates files, even when every edit is valid.
+- Returning a complete preview does not claim a portable atomic transaction
+  across files. Each later `apply_patch` re-reads its full-file SHA and may
+  fail stale after an earlier file committed; the Agent must re-inspect and
+  recover rather than assume all-or-nothing behavior.
+- Target file hashes bind the bytes observed after the language-server request.
+  A later external edit invalidates the patch precondition. Napier does not
+  claim the preview remains fresh indefinitely.
+- This slice does not provide persistent LSP synchronization, direct rename
+  application, Code Actions, external dependency editing, DAP, AST rewrite,
+  or automatic test selection.
+
+Observed result:
+
+- the real TypeScript 5.9.3 / typescript-language-server 5.3.0 runner returned
+  one complete six-edit plan across three source files without changing any
+  workspace bytes;
+- a deterministic Agent Run consumed a multi-file preview, committed both
+  files through real `apply_patch` calls, preserved read/write/write effects,
+  and produced a portable Replay with no path, symbol name, source, or
+  replacement leakage;
+- the public HTTP/SSE path ran the real language server and returned the same
+  3-file/6-edit projection with hash-only durable evidence and zero writes;
+- independent dogfood copied the fixed workspace, generated the real preview,
+  applied all three files through production `applyWorkspacePatch`, removed
+  all old-name occurrences, produced six new-name occurrences, and passed
+  real `tsc --noEmit`;
+- the opt-in macOS Sandbox suite remains unavailable from this IDE-launched
+  sandbox: all five LSP cases close during nested Sandbox startup in about
+  150 ms. No direct-process or host fallback is used in production;
+- the complete repository gate passed 986 tests with 13 opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget. Rename Trace parsing
+  added only to the lazy trace chunk.

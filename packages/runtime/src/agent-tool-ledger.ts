@@ -16,6 +16,11 @@ import {
   lspReferencesToolOutputLedgerProjection,
 } from "./lsp-references-tool.js";
 import {
+  lspRenameToolCallArgumentsLedgerProjection,
+  lspRenameToolInputLedgerProjection,
+  lspRenameToolOutputLedgerProjection,
+} from "./lsp-rename-tool.js";
+import {
   commandToolCallArgumentsLedgerProjection,
   commandToolInputLedgerProjection,
   commandToolOutputLedgerProjection,
@@ -52,6 +57,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "lsp_references") {
     return lspReferencesToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "lsp_rename") {
+    return lspRenameToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "apply_patch") {
     return workspacePatchToolCallArgumentsLedgerProjection(args);
   }
@@ -82,6 +90,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "lsp_references") {
     return lspReferencesToolInputLedgerProjection(args);
+  }
+  if (toolName === "lsp_rename") {
+    return lspRenameToolInputLedgerProjection(args);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolInputLedgerProjection(args);
@@ -114,6 +125,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "lsp_references") {
     return lspReferencesToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "lsp_rename") {
+    return lspRenameToolOutputLedgerProjection(output, result);
   }
   if (toolName === "apply_patch") {
     return workspacePatchToolOutputLedgerProjection(output, result);

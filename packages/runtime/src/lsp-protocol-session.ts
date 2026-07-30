@@ -133,6 +133,7 @@ export async function runLspProtocolSession<T>(
           textDocument: {
             definition: { linkSupport: true },
             references: {},
+            rename: { prepareSupport: true },
             publishDiagnostics: {
               relatedInformation: false,
               tagSupport: { valueSet: [1, 2] },

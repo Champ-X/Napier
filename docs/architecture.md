@@ -1851,8 +1851,9 @@ Agent selects lsp_diagnostics + workspace-relative source path
   -> accept only diagnostics for the target URI
   -> cap 64 diagnostics, 1,000 chars/message, 2 MiB protocol, 16,000 stderr
      chars, and 1-30 seconds total wall time
-  -> reject workspace edits and terminate on timeout, cancellation, malformed
-     protocol, output overflow, early exit, or failed shutdown
+  -> reject server-initiated workspace/applyEdit and terminate on timeout,
+     cancellation, malformed protocol, output overflow, early exit, or failed
+     shutdown
   -> rehash runtime assets after settlement
   -> return diagnostic locations/codes/messages to the current Agent only
   -> retain counts, versions, latency, and hashes in tool.completed and Trace
@@ -1894,10 +1895,37 @@ Agent selects lsp_references + source path + position + declaration mode
   -> label any omitted or truncated result as an incomplete impact set
 ```
 
+Rename preview reuses the process lifecycle but treats completeness as a
+write-safety requirement:
+
+```text
+Agent selects lsp_rename + source path + position + proposed new name
+  -> apply the same policy, source, runtime, Sandbox, readiness, and timeout
+     gates as definition/references
+  -> issue textDocument/prepareRename, then textDocument/rename
+  -> accept either changes or text-only documentChanges, never both
+  -> reject create/rename/delete resource operations, annotated edits,
+     empty/overlapping ranges, mixed shapes, or malformed versions
+  -> cap the complete result at 32 files, 256 edits, 1,000 replacement
+     characters per edit, 32 KiB aggregate old/replacement text, and 64 KiB
+     final tool output; exceeding any limit fails rather than truncates
+  -> canonicalize every URI and reject the entire preview if any target is
+     external, virtual, protected, symlinked, missing, oversized, invalid
+     UTF-8, out of range, or observed with inconsistent file hashes
+  -> rehash the source and bound runtime assets after protocol settlement
+  -> return paths, current file hashes, exact old text, and replacement text
+     only to the current Agent
+  -> persist complete/count/preview-byte/version/latency plus
+     source/name/prepare/edit/target-file/result hashes
+  -> perform no write; the Agent re-reads each file and uses apply_patch,
+     preserving the existing per-file lock, CAS, diagnostics, and evidence
+```
+
 The Web projection follows the same module boundary: `lsp-tool-event-view.ts`
 validates and summarizes all LSP receipts, while generic
-`tool-event-view.ts` only dispatches by tool name. Adding references therefore
-reduced the generic module from 1,516 to 1,249 lines.
+`tool-event-view.ts` only dispatches by tool name. Rename protocol parsing and
+canonicalization live in `lsp-rename-workspace-edit.ts`, separate from Sandbox
+lifecycle and Agent projection code.
 
 The Sandbox launch contract supports at most eight explicit absolute
 non-root `runtimeReadPaths`. macOS adds read-only profile rules, Bubblewrap
@@ -4289,13 +4317,17 @@ The current boundary has thirty-two parts:
 32. write-linked TypeScript/JavaScript diagnostics with CAS-bound preflight,
     post-commit delta classification, target-drift detection, path-free patch
     evidence, public SSE/Trace integration, and explicit unavailable semantics.
+33. workspace-confined LSP definitions, references, and complete rename
+    previews with canonical target files, bounded live-only source edits,
+    strict rejection of unsupported WorkspaceEdit operations, Agent/Server/
+    Context/Trace integration, and hash-only durable evidence.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
-verification, read-only/offline TypeScript LSP diagnostics, explicit-argv
-command execution, and bounded background Process Session lifecycle control.
-`unrestricted` is reserved for future sandboxed shell execution, but known
-destructive command patterns are still denied.
+verification, read-only/offline TypeScript LSP diagnostics/navigation/rename
+previews, explicit-argv command execution, and bounded background Process
+Session lifecycle control. `unrestricted` is reserved for future sandboxed
+shell execution, but known destructive command patterns are still denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and
@@ -4320,9 +4352,8 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- persistent LSP sessions with definitions/references/rename/Code Actions,
-  DAP, AST edits, write-linked test/symbol association, and isolated subagent
-  worktrees;
+- persistent LSP sessions with rename application and Code Actions, DAP, AST
+  edits, write-linked test/symbol association, and isolated subagent worktrees;
 - typed executable Workflow nodes, checkpoint recovery, single-node tests,
   JSONL events, and a TypeScript SDK;
 - controlled re-execution from model, tool, and Workflow checkpoints.

@@ -124,6 +124,7 @@ export const contextCopy = {
     lsp_diagnostics: "LSP diagnostics",
     lsp_definition: "LSP definition",
     lsp_references: "LSP references",
+    lsp_rename: "LSP rename preview",
     apply_patch: "Atomic patch",
     workspace_file_preview: "File lifecycle preview",
     workspace_file_apply: "File lifecycle apply",

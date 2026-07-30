@@ -300,6 +300,114 @@ describeLive("live LSP diagnostics smoke", () => {
     store.close();
   }, 30_000);
 
+  it("previews a fixed multi-file rename through the Agent sandbox", async () => {
+    const workspaceRoot = await realpath(
+      fileURLToPath(
+        new URL("../../../examples/lsp-references/", import.meta.url),
+      ),
+    );
+    const stateRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-rename-"),
+    );
+    temporaryRoots.push(stateRoot);
+    const sourcePath = "definition.ts";
+    const firstPath = "first.ts";
+    const secondPath = "second.ts";
+    const oldName = "normalizeTitle";
+    const newName = "canonicalizeTitle";
+    const before = await Promise.all(
+      [sourcePath, firstPath, secondPath].map((file) =>
+        readFile(path.join(workspaceRoot, file), "utf8"),
+      ),
+    );
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(stateRoot, "data"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_rename"],
+    });
+    const thread = await store.createThread({
+      title: "Live LSP rename smoke",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "live-lsp-rename-smoke" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_rename", {
+          path: sourcePath,
+          line: 1,
+          character: 17,
+          newName,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain(firstPath);
+        expect(messages).toContain(secondPath);
+        expect(messages).toContain(oldName);
+        expect(messages).toContain(newName);
+        return fauxAssistantMessage(
+          "The real language server returned the complete rename preview.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Preview the TypeScript rename through standard LSP.",
+      model: { provider: "live-lsp-rename-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const events = await store.listEvents(thread.id);
+    const completed = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        event.payload["toolName"] === "lsp_rename",
+    );
+    expect(completed?.payload["details"]).toEqual(
+      expect.objectContaining({
+        status: "found",
+        complete: true,
+        fileCount: 3,
+        editCount: 6,
+        sandbox: "macos-sandbox-exec",
+        languageServerVersion: "5.3.0",
+        typescriptVersion: "5.9.3",
+      }),
+    );
+    const durable = JSON.stringify(events);
+    expect(durable).not.toContain(sourcePath);
+    expect(durable).not.toContain(firstPath);
+    expect(durable).not.toContain(secondPath);
+    expect(durable).not.toContain(oldName);
+    expect(durable).not.toContain(newName);
+    expect(
+      await Promise.all(
+        [sourcePath, firstPath, secondPath].map((file) =>
+          readFile(path.join(workspaceRoot, file), "utf8"),
+        ),
+      ),
+    ).toEqual(before);
+    store.close();
+  }, 30_000);
+
   it("fixes TS2322 with automatic before and after diagnostics", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-lsp-patch-workspace-"),

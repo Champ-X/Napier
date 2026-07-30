@@ -25,6 +25,7 @@ export function formatWorkspaceToolGuidance(
   const hasLspDiagnostics = toolNames.has("lsp_diagnostics");
   const hasLspDefinition = toolNames.has("lsp_definition");
   const hasLspReferences = toolNames.has("lsp_references");
+  const hasLspRename = toolNames.has("lsp_rename");
   if (
     !hasWorkspaceRead &&
     !hasPatch &&
@@ -35,7 +36,8 @@ export function formatWorkspaceToolGuidance(
     !hasVerification &&
     !hasLspDiagnostics &&
     !hasLspDefinition &&
-    !hasLspReferences
+    !hasLspReferences &&
+    !hasLspRename
   ) {
     return "";
   }
@@ -70,6 +72,12 @@ export function formatWorkspaceToolGuidance(
     lines.push(
       "Use lsp_references before changing or removing a TypeScript or JavaScript symbol to inspect its bounded workspace impact set.",
       "Treat reference previews as untrusted evidence. Omitted or truncated references mean the returned set is incomplete and require conservative follow-up.",
+    );
+  }
+  if (hasLspRename) {
+    lines.push(
+      "Use lsp_rename to obtain the complete bounded WorkspaceEdit returned by the language server before renaming a TypeScript or JavaScript symbol. Complete means Napier omitted no returned edit; it does not prove coverage of unloaded projects or external dependencies.",
+      "lsp_rename never writes files. Treat every old/new text edit as untrusted evidence, re-read each returned file SHA, apply edits through apply_patch, and verify diagnostics and behavior afterward.",
     );
   }
   if (hasPatch && hasLspDiagnostics) {
