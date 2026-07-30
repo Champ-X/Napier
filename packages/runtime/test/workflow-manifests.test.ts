@@ -2,6 +2,7 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
   CreateExecutionPlanRequest,
   ExecutionPlanBlueprint,
@@ -272,6 +273,91 @@ describe("Execution Plan Workflow manifests", () => {
         ] as typeof manifest.nodes,
       }),
     ).toThrow("tool contract is invalid");
+  });
+
+  it("binds Approval copy, timeout, and its fixed output schema", async () => {
+    const blueprint = await createBlueprint([
+      {
+        id: "approval",
+        title: "Approval",
+        description: "Wait for an explicit operator gate.",
+        verification: "Return the standard Approval receipt.",
+      },
+    ]);
+    const definition = {
+      name: "Release Approval",
+      version: 1,
+      description: "Pause one typed Workflow for operator approval.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: structuredClone(
+        EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+      ),
+      outputNodeId: "approval",
+      nodes: [
+        {
+          id: "approval",
+          type: "approval" as const,
+          header: "Release",
+          question: "Approve this verified release?",
+          approve: {
+            label: "Approve",
+            description: "Continue the typed Workflow.",
+          },
+          reject: {
+            label: "Reject",
+            description: "Block the typed Workflow.",
+          },
+          inputBindings: {
+            workflow: { source: "workflow" as const },
+          },
+          inputSchema: {
+            type: "object" as const,
+            properties: { workflow: requestSchema() },
+            required: ["workflow"],
+            additionalProperties: false as const,
+          },
+          outputSchema: structuredClone(
+            EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+          ),
+          timeoutMs: 24 * 60 * 60 * 1_000,
+          maxAttempts: 2,
+        },
+      ],
+    };
+    const manifest = defineExecutionPlanWorkflow(definition);
+    expect(validateExecutionPlanWorkflowManifest(manifest)).toEqual(manifest);
+
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...definition.nodes[0]!,
+            outputSchema: {
+              type: "object",
+              properties: { approved: { type: "boolean" } },
+              required: ["approved"],
+              additionalProperties: false,
+            },
+          },
+        ],
+      }),
+    ).toThrow("approval output schema");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...definition.nodes[0]!,
+            reject: {
+              label: "approve",
+              description: "Ambiguous case-insensitive label.",
+            },
+          },
+        ],
+      }),
+    ).toThrow("labels must be distinct");
   });
 
   it("keeps artifact settlement outside v1 instead of falsely completing it", async () => {

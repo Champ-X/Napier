@@ -1,6 +1,8 @@
 import {
+  EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
   EXECUTION_PLAN_WORKFLOW_TOOL_NAMES,
   NAPIER_API_VERSION,
+  type ExecutionPlanWorkflowApprovalChoice,
   type ExecutionPlanWorkflowInputBinding,
   type ExecutionPlanWorkflowManifest,
   type ExecutionPlanWorkflowManifestVerification,
@@ -38,6 +40,8 @@ export {
 export const MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES = 1024 * 1024;
 export const MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS = 1_000;
 export const MAX_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS = 30 * 60 * 1_000;
+export const MAX_EXECUTION_PLAN_WORKFLOW_APPROVAL_TIMEOUT_MS =
+  7 * 24 * 60 * 60 * 1_000;
 
 const MAX_WORKFLOW_ATTEMPTS = 3;
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
@@ -335,6 +339,24 @@ function validateWorkflowNode(
       ],
       label,
     );
+  } else if (type === "approval") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "header",
+        "question",
+        "approve",
+        "reject",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+    );
   } else {
     throw new Error(`${label} type is unsupported`);
   }
@@ -421,7 +443,9 @@ function validateWorkflowNode(
   const timeoutMs = boundedInteger(
     node["timeoutMs"],
     MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
-    MAX_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
+    type === "approval"
+      ? MAX_EXECUTION_PLAN_WORKFLOW_APPROVAL_TIMEOUT_MS
+      : MAX_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
     `${label} timeoutMs`,
   );
   const maxAttempts = boundedInteger(
@@ -462,6 +486,46 @@ function validateWorkflowNode(
       maxAttempts,
     };
   }
+  if (type === "approval") {
+    const header = normalizeText(node["header"], 12, `${label} header`);
+    const question = normalizeUtf8Text(
+      node["question"],
+      4 * 1_024,
+      `${label} question`,
+    );
+    const approve = validateApprovalChoice(
+      node["approve"],
+      `${label} approve choice`,
+    );
+    const reject = validateApprovalChoice(
+      node["reject"],
+      `${label} reject choice`,
+    );
+    if (approve.label.toLowerCase() === reject.label.toLowerCase()) {
+      throw new Error(`${label} approval choice labels must be distinct`);
+    }
+    if (
+      workflowSchemaSha256(outputSchema) !==
+      workflowSchemaSha256(EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA)
+    ) {
+      throw new Error(`${label} approval output schema is invalid`);
+    }
+    return {
+      id,
+      type,
+      header,
+      question,
+      approve,
+      reject,
+      inputBindings,
+      inputSchema: inputSchema as WorkflowObjectSchema,
+      outputSchema: structuredClone(
+        EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+      ),
+      timeoutMs,
+      maxAttempts,
+    };
+  }
   const model =
     node["model"] === undefined
       ? undefined
@@ -475,6 +539,28 @@ function validateWorkflowNode(
     ...(model ? { model } : {}),
     timeoutMs,
     maxAttempts,
+  };
+}
+
+function validateApprovalChoice(
+  input: unknown,
+  label: string,
+): ExecutionPlanWorkflowApprovalChoice {
+  const choice = record(input, label);
+  assertExactKeys(choice, ["label", "description"], label);
+  return {
+    label: normalizeOperatorDecisionText(
+      choice["label"],
+      80,
+      256,
+      `${label} label`,
+    ),
+    description: normalizeOperatorDecisionText(
+      choice["description"],
+      400,
+      1_024,
+      `${label} description`,
+    ),
   };
 }
 
@@ -554,6 +640,39 @@ function normalizeText(input: unknown, maximum: number, label: string): string {
   if (typeof input !== "string") throw new Error(`${label} is invalid`);
   const value = input.replace(/\s+/gu, " ").trim();
   if (!value || value.length > maximum) throw new Error(`${label} is invalid`);
+  return value;
+}
+
+function normalizeUtf8Text(
+  input: unknown,
+  maximumBytes: number,
+  label: string,
+): string {
+  if (typeof input !== "string") throw new Error(`${label} is invalid`);
+  const value = input.trim();
+  if (
+    !value ||
+    value.includes("\u0000") ||
+    Buffer.byteLength(value, "utf8") > maximumBytes
+  ) {
+    throw new Error(`${label} is invalid`);
+  }
+  return value;
+}
+
+function normalizeOperatorDecisionText(
+  input: unknown,
+  maximumCharacters: number,
+  maximumBytes: number,
+  label: string,
+): string {
+  const value = normalizeUtf8Text(input, maximumBytes, label).replace(
+    /\s+/gu,
+    " ",
+  );
+  if ([...value].length > maximumCharacters) {
+    throw new Error(`${label} is invalid`);
+  }
   return value;
 }
 

@@ -8,6 +8,7 @@ import type {
   JsonValue,
   WorkflowObjectSchema,
 } from "@napier/contracts";
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
@@ -318,6 +319,89 @@ describe("Execution Plan Workflow recovery", () => {
     expect(reopened.store.listRuns(fixture.threadId)).toHaveLength(1);
     reopened.store.close();
   });
+
+  it("resumes a durable Approval answer after restart", async () => {
+    const fixture = await createApprovalFixture();
+    const runtime = new ExecutionPlanWorkflowRuntime(
+      fixture.store,
+      new AgentRuntime(fixture.store, new ModelRegistry()),
+    );
+    const waiting = await runtime.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        input: { request: "Approve after restart." },
+      },
+    });
+    const decision = (
+      await fixture.store.listOperatorDecisions(fixture.threadId)
+    )[0]!;
+    fixture.store.close();
+
+    const reopened = await reopen(fixture);
+    await reopened.store.answerOperatorDecision(fixture.threadId, decision.id, {
+      selectedOptionIds: ["option_1"],
+      customText: "Recovered approval.",
+    });
+    const completed = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: waiting.planId,
+      },
+    });
+
+    expect(completed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: expect.objectContaining({
+          approved: true,
+          decisionId: decision.id,
+          customText: "Recovered approval.",
+        }),
+      }),
+    );
+    expect(reopened.store.listRuns(fixture.threadId)).toHaveLength(2);
+    reopened.store.close();
+  });
+
+  it("fails closed on duplicate Approval request bindings", async () => {
+    const fixture = await createApprovalFixture();
+    const runtime = new ExecutionPlanWorkflowRuntime(
+      fixture.store,
+      new AgentRuntime(fixture.store, new ModelRegistry()),
+    );
+    const waiting = await runtime.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        input: { request: "Reject duplicate Approval evidence." },
+      },
+    });
+    const binding = (await fixture.store.listEvents(fixture.threadId)).find(
+      (event) => event.type === "workflow.approval.requested",
+    )!;
+    await fixture.store.appendEvent({
+      threadId: fixture.threadId,
+      runId: binding.runId,
+      type: binding.type,
+      category: binding.category,
+      visibility: binding.visibility,
+      payload: structuredClone(binding.payload),
+    });
+
+    await expect(
+      runtime.run({
+        threadId: fixture.threadId,
+        request: {
+          manifest: fixture.manifest,
+          planId: waiting.planId,
+        },
+      }),
+    ).rejects.toThrow("request evidence is unavailable");
+    expect(fixture.store.listRuns(fixture.threadId)).toHaveLength(1);
+    fixture.store.close();
+  });
 });
 
 interface RecoveryFixture {
@@ -421,6 +505,51 @@ async function createToolFixture(): Promise<RecoveryFixture> {
         },
         outputSchema: listFilesReceiptSchema(),
         timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  return fixture;
+}
+
+async function createApprovalFixture(): Promise<RecoveryFixture> {
+  const fixture = await createFixture();
+  const outputSchema = structuredClone(
+    EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+  );
+  fixture.manifest = defineExecutionPlanWorkflow({
+    name: "Recovery Approval",
+    version: 1,
+    description: "Recover one durable Approval node.",
+    blueprint: fixture.manifest.blueprint,
+    inputSchema: requestSchema(),
+    outputSchema,
+    outputNodeId: "inspect",
+    nodes: [
+      {
+        id: "inspect",
+        type: "approval",
+        header: "Release",
+        question: "Approve this recovered Workflow?",
+        approve: {
+          label: "Approve",
+          description: "Complete the recovered Workflow.",
+        },
+        reject: {
+          label: "Reject",
+          description: "Block the recovered Workflow.",
+        },
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema,
+        timeoutMs: 60_000,
         maxAttempts: 2,
       },
     ],

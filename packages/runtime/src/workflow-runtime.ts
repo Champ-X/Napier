@@ -34,6 +34,8 @@ import {
   WORKFLOW_NODE_FAILED_EVENT,
   WORKFLOW_NODE_STARTED_EVENT,
   WORKFLOW_STARTED_EVENT,
+  WORKFLOW_WAITING_EVENT,
+  workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
 import { ExecutionPlanWorkflowRecovery } from "./workflow-recovery.js";
 import {
@@ -52,6 +54,7 @@ import {
 } from "./workflow-runtime-model.js";
 import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
+import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowToolNodeExecutor } from "./workflow-tool-node.js";
 
 export interface RunExecutionPlanWorkflowOptions {
@@ -72,6 +75,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly ledger: ExecutionPlanWorkflowLedger;
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
+  private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
   private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
   constructor(
@@ -79,6 +83,16 @@ export class ExecutionPlanWorkflowRuntime {
     private readonly agentRuntime: AgentRuntime,
   ) {
     this.ledger = new ExecutionPlanWorkflowLedger(store);
+    this.approvalNodeExecutor = new ExecutionPlanWorkflowApprovalNodeExecutor(
+      store,
+      this.ledger,
+      {
+        blockNode: (context, node, failure) =>
+          this.blockNode(context, node, failure),
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      },
+    );
     this.toolNodeExecutor = new ExecutionPlanWorkflowToolNodeExecutor(
       store,
       agentRuntime,
@@ -281,6 +295,7 @@ export class ExecutionPlanWorkflowRuntime {
     context: WorkflowExecutionContext,
   ): Promise<ExecutionPlanWorkflowResult> {
     await this.recovery.recoverCompletedAndInterruptedNodes(context);
+    await this.approvalNodeExecutor.recoverRunning(context);
     await this.recovery.recoverBlockedNodeResults(context);
     if (context.reusedNodes.length > 0) {
       await this.reuseMaterializer.reopenInterrupted(
@@ -328,6 +343,13 @@ export class ExecutionPlanWorkflowRuntime {
     ) {
       return this.finish(context, "completed");
     }
+    if (
+      [...context.nodeResults.values()].some(
+        (result) => result.status === "waiting",
+      )
+    ) {
+      return this.finish(context, "waiting");
+    }
     return this.finish(context, "blocked");
   }
 
@@ -374,6 +396,15 @@ export class ExecutionPlanWorkflowRuntime {
         }),
         cancelled: false,
       };
+    }
+    if (node.type === "approval") {
+      return this.approvalNodeExecutor.execute(
+        context,
+        node,
+        input,
+        inputSha256,
+        attempt,
+      );
     }
     if (node.type === "tool") {
       return this.toolNodeExecutor.execute(
@@ -431,7 +462,7 @@ export class ExecutionPlanWorkflowRuntime {
                 schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
                 planId: started.id,
                 nodeId: node.id,
-                nodeType: node.type,
+                ...workflowNodeEventMetadata(node),
                 attempt,
                 manifestSha256: context.manifest.contentSha256,
                 inputSha256,
@@ -539,7 +570,7 @@ export class ExecutionPlanWorkflowRuntime {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
-          nodeType: node.type,
+          ...workflowNodeEventMetadata(node),
           attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,
@@ -624,10 +655,7 @@ export class ExecutionPlanWorkflowRuntime {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: plan.id,
           nodeId: node.id,
-          nodeType: node.type,
-          ...(node.type === "tool"
-            ? { toolName: node.tool, effect: node.effect }
-            : {}),
+          ...workflowNodeEventMetadata(node),
           attempt: input.attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256: input.inputSha256,
@@ -698,9 +726,11 @@ export class ExecutionPlanWorkflowRuntime {
     const eventType =
       status === "completed"
         ? WORKFLOW_COMPLETED_EVENT
-        : status === "cancelled"
-          ? WORKFLOW_CANCELLED_EVENT
-          : WORKFLOW_BLOCKED_EVENT;
+        : status === "waiting"
+          ? WORKFLOW_WAITING_EVENT
+          : status === "cancelled"
+            ? WORKFLOW_CANCELLED_EVENT
+            : WORKFLOW_BLOCKED_EVENT;
     const completedNodeCount = nodeResults.filter(
       (node) => node.status === "completed",
     ).length;

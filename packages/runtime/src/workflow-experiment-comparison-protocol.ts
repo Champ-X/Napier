@@ -109,6 +109,7 @@ export function validateExecutionPlanWorkflowExperimentComparison(
     comparison["sourcePlanId"] === comparison["targetPlanId"] ||
     !PLAN_STATUSES.has(comparison["sourceStatus"] as ExecutionPlanStatus) ||
     (comparison["targetStatus"] !== "completed" &&
+      comparison["targetStatus"] !== "waiting" &&
       comparison["targetStatus"] !== "blocked" &&
       comparison["targetStatus"] !== "cancelled") ||
     !hash(comparison["sourceInputSha256"]) ||

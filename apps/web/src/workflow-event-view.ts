@@ -6,10 +6,12 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.completed",
   "workflow.node.failed",
   "workflow.node.reused",
+  "workflow.approval.requested",
   "workflow.experiment.started",
   "workflow.experiment.compared",
   "workflow.experiment.failed",
   "workflow.completed",
+  "workflow.waiting",
   "workflow.blocked",
   "workflow.cancelled",
 ]);
@@ -140,6 +142,32 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `input-schema ${inputSchemaSha256.slice(0, 12)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,
     );
+  } else if (event.type === "workflow.approval.requested") {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const decisionId = safeDecisionId(payload["decisionId"]);
+    const questionSha256 = hash(payload["questionSha256"]);
+    const requestSha256 = hash(payload["decisionRequestSha256"]);
+    const expiresAt =
+      typeof payload["expiresAt"] === "string" &&
+      Number.isFinite(Date.parse(payload["expiresAt"]))
+        ? payload["expiresAt"]
+        : undefined;
+    if (
+      !nodeIdValue ||
+      !decisionId ||
+      !questionSha256 ||
+      !requestSha256 ||
+      !expiresAt
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `decision ${decisionId.slice(-10)}`,
+      `question ${questionSha256.slice(0, 12)}`,
+      `request ${requestSha256.slice(0, 12)}`,
+      `expires ${expiresAt}`,
+    );
   } else if (event.type.startsWith("workflow.node.")) {
     const nodeIdValue = nodeId(payload["nodeId"]);
     const attempt = boundedInteger(payload["attempt"], 1, 3);
@@ -167,6 +195,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
           : undefined;
       if (!toolName || !effect) return undefined;
       parts.push(`tool ${toolName} (${effect})`);
+    } else if (payload["nodeType"] === "approval") {
+      const questionSha256 = hash(payload["questionSha256"]);
+      if (!questionSha256) return undefined;
+      parts.push(`approval ${questionSha256.slice(0, 12)}`);
     } else if (
       payload["nodeType"] !== undefined &&
       payload["nodeType"] !== "agent"
@@ -219,8 +251,17 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
   return parts.join(" / ");
 }
 
+function safeDecisionId(value: unknown): string | undefined {
+  return typeof value === "string" && /^decision_[a-z0-9]{8,80}$/u.test(value)
+    ? value
+    : undefined;
+}
+
 function workflowStatus(value: unknown): string | undefined {
-  return value === "completed" || value === "blocked" || value === "cancelled"
+  return value === "completed" ||
+    value === "waiting" ||
+    value === "blocked" ||
+    value === "cancelled"
     ? value
     : undefined;
 }

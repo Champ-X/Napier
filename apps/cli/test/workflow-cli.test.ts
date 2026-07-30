@@ -4,6 +4,7 @@ import path from "node:path";
 import { Writable } from "node:stream";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
   ExecutionPlanWorkflowExperimentResultFrame,
   ExecutionPlanWorkflowResultFrame,
@@ -87,6 +88,50 @@ describe("Napier Workflow CLI", () => {
         retryBlocked: true,
       },
     });
+    expect(
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--approve",
+        "--decision-note",
+        "Ship the verified result.",
+      ]),
+    ).toEqual({
+      kind: "workflow",
+      options: {
+        workspace: ".",
+        manifestPath: "workflow.json",
+        threadId: "thread_abcdefghijklmnopqrst",
+        planId: "plan_abcdefghijklmnopqrst",
+        approval: "approve",
+        decisionNote: "Ship the verified result.",
+        timeoutMs: 600_000,
+        jsonl: false,
+        retryBlocked: false,
+      },
+    });
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--approve",
+        "--reject",
+      ]),
+    ).toThrow("mutually exclusive");
     expect(() =>
       parseCliArgs([
         "workflow",
@@ -285,6 +330,94 @@ describe("Napier Workflow CLI", () => {
       ),
     ).toHaveLength(2);
     expect(frames.at(-2)?.type).toBe("snapshot");
+  });
+
+  it("answers and resumes a model-free Approval Workflow through JSONL", async () => {
+    const fixture = await createApprovalFixture();
+    const dependencies: RunCliDependencies = {
+      createRuntime: (options) =>
+        createLocalAgentRuntime({
+          ...options,
+          sandbox: new UnsupportedSandboxAdapter("workflow-approval-cli-test"),
+        }),
+    };
+    const waitingStdout = new CaptureWritable();
+    const waitingCode = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        '{"request":"Require a CLI approval."}',
+        "--jsonl",
+      ],
+      cliIo(fixture.root, waitingStdout),
+      dependencies,
+    );
+    expect(waitingCode).toBe(0);
+    const waiting = validateExecutionPlanWorkflowResultFrame(
+      parseFrames(waitingStdout.text()).at(-1),
+    );
+    expect(waiting).toEqual(
+      expect.objectContaining({
+        status: "waiting",
+        result: expect.objectContaining({
+          nodeResults: [
+            expect.objectContaining({
+              status: "waiting",
+              decisionId: expect.stringMatching(/^decision_[a-z0-9]{20}$/u),
+            }),
+          ],
+        }),
+      }),
+    );
+
+    const approvedStdout = new CaptureWritable();
+    const approvedCode = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        waiting.threadId,
+        "--plan",
+        waiting.planId,
+        "--approve",
+        "--decision-note",
+        "Approved from the CLI.",
+        "--jsonl",
+      ],
+      cliIo(fixture.root, approvedStdout),
+      dependencies,
+    );
+    expect(approvedCode).toBe(0);
+    const frames = parseFrames(approvedStdout.text());
+    const approved = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(approved).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: expect.objectContaining({
+            approved: true,
+            selectedOptionId: "option_1",
+            customText: "Approved from the CLI.",
+          }),
+        }),
+      }),
+    );
+    expect(
+      frames
+        .flatMap((frame) => (frame.type === "event" ? [frame.event] : []))
+        .some((event) => event.type === "operator.decision.answered"),
+    ).toBe(true);
   });
 
   it("previews and executes a checkpoint experiment through ordered JSONL", async () => {
@@ -718,6 +851,88 @@ async function createToolFixture(): Promise<{
         },
         outputSchema,
         timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
+async function createApprovalFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-approval-workflow-cli-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-approval-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Approve one CLI delivery.",
+    steps: [
+      {
+        id: "approval",
+        title: "Approval",
+        description: "Wait for an explicit operator approval.",
+        verification: "Return the bound approval receipt.",
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const outputSchema = structuredClone(
+    EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+  );
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI Approval",
+    version: 1,
+    description: "Pause and resume one model-free Approval node.",
+    blueprint,
+    inputSchema: requestSchema(),
+    outputSchema,
+    outputNodeId: "approval",
+    nodes: [
+      {
+        id: "approval",
+        type: "approval",
+        header: "Release",
+        question: "Approve this CLI Workflow delivery?",
+        approve: {
+          label: "Approve",
+          description: "Complete the typed Workflow.",
+        },
+        reject: {
+          label: "Reject",
+          description: "Block the typed Workflow.",
+        },
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema,
+        timeoutMs: 60_000,
         maxAttempts: 2,
       },
     ],

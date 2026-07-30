@@ -12,6 +12,7 @@ import {
   WORKFLOW_EVENT_SCHEMA_VERSION,
   WORKFLOW_NODE_COMPLETED_EVENT,
   WORKFLOW_NODE_STARTED_EVENT,
+  workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
 import { completedWorkflowNodeResult } from "./workflow-runtime-model.js";
 import {
@@ -173,10 +174,7 @@ export class ExecutionPlanWorkflowReuseMaterializer {
               schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
               planId: context.plan.id,
               nodeId: node.id,
-              nodeType: node.type,
-              ...(node.type === "tool"
-                ? { toolName: node.tool, effect: node.effect }
-                : {}),
+              ...workflowNodeEventMetadata(node),
               attempt: 1,
               manifestSha256: context.manifest.contentSha256,
               inputSha256,
@@ -265,10 +263,7 @@ export class ExecutionPlanWorkflowReuseMaterializer {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
-          nodeType: node.type,
-          ...(node.type === "tool"
-            ? { toolName: node.tool, effect: node.effect }
-            : {}),
+          ...workflowNodeEventMetadata(node),
           attempt: 1,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,

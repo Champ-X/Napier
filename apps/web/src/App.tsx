@@ -227,6 +227,7 @@ export function App() {
           <Suspense fallback={null}>
             <LazyOperatorDecisionPanel
               decision={vm.openOperatorDecision}
+              workflowOwned={vm.openOperatorDecisionWorkflowOwned}
               busy={vm.operatorDecisionBusy}
               onAnswer={vm.answerOperatorDecision}
               onContinue={vm.continueOperatorDecision}

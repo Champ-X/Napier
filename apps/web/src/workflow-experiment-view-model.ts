@@ -1,4 +1,5 @@
 import {
+  EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
   EXECUTION_PLAN_WORKFLOW_TOOL_NAMES,
   type ExecutionPlanWorkflowInputBinding,
   type ExecutionPlanWorkflowExperimentComparison,
@@ -109,7 +110,9 @@ export async function validateWorkflowManifest(
       typeof nodeInput["id"] !== "string" ||
       !NODE_ID.test(nodeInput["id"]) ||
       nodeIds.has(nodeInput["id"]) ||
-      (nodeInput["type"] !== "agent" && nodeInput["type"] !== "tool") ||
+      (nodeInput["type"] !== "agent" &&
+        nodeInput["type"] !== "tool" &&
+        nodeInput["type"] !== "approval") ||
       !record(nodeInput["inputBindings"]) ||
       !record(nodeInput["inputSchema"]) ||
       !record(nodeInput["outputSchema"]) ||
@@ -125,6 +128,20 @@ export async function validateWorkflowManifest(
         (nodeInput["effect"] !== "read" && nodeInput["effect"] !== "write"))
     ) {
       throw new Error("Workflow manifest Tool node is invalid");
+    }
+    if (
+      nodeInput["type"] === "approval" &&
+      (typeof nodeInput["header"] !== "string" ||
+        nodeInput["header"].trim().length < 1 ||
+        nodeInput["header"].trim().length > 12 ||
+        typeof nodeInput["question"] !== "string" ||
+        nodeInput["question"].trim().length < 1 ||
+        !workflowApprovalChoice(nodeInput["approve"]) ||
+        !workflowApprovalChoice(nodeInput["reject"]) ||
+        canonicalJson(nodeInput["outputSchema"]) !==
+          canonicalJson(EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA))
+    ) {
+      throw new Error("Workflow manifest Approval node is invalid");
     }
     for (const [name, binding] of Object.entries(nodeInput["inputBindings"])) {
       if (!BINDING_NAME.test(name)) {
@@ -155,6 +172,19 @@ export async function validateWorkflowManifest(
     throw new Error("Workflow manifest content hash is invalid");
   }
   return structuredClone(input) as unknown as ExecutionPlanWorkflowManifest;
+}
+
+function workflowApprovalChoice(input: unknown): boolean {
+  return (
+    record(input) &&
+    exactKeys(input, ["label", "description"]) &&
+    typeof input["label"] === "string" &&
+    input["label"].trim().length >= 1 &&
+    input["label"].trim().length <= 80 &&
+    typeof input["description"] === "string" &&
+    input["description"].trim().length >= 1 &&
+    input["description"].trim().length <= 400
+  );
 }
 
 function validateWorkflowBinding(

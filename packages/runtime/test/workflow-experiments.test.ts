@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
   ExecutionPlanWorkflowExperimentComparison,
   ExecutionPlanWorkflowManifest,
@@ -778,7 +779,7 @@ describe("Execution Plan Workflow experiments", () => {
           inspect: { provider: "faux-workflow-alternate", id: "faux-1" },
         },
       }),
-    ).rejects.toThrow("Tool node model");
+    ).rejects.toThrow("non-Agent node model");
 
     fixture.alternate.setResponses([
       fauxAssistantMessage(
@@ -805,6 +806,85 @@ describe("Execution Plan Workflow experiments", () => {
     ).toEqual(["workflow_reuse", "workflow"]);
     fixture.store.close();
   });
+
+  it("reuses a verified Approval and reruns it as an isolated waiting checkpoint", async () => {
+    const fixture = await createFixture({ approvalInspect: true });
+    fixture.alternate.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Approval checkpoint reused","approved":true}',
+      ),
+    ]);
+    const reused = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: experimentRequest(fixture, {
+        modelOverrides: {
+          report: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      }),
+    });
+    expect(reused.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Approval checkpoint reused",
+          approved: true,
+        },
+      }),
+    );
+    expect(reused.result.nodeResults[0]?.output).toEqual(
+      fixture.sourceResult.nodeResults[0]?.output,
+    );
+    expect(
+      await fixture.store.listOperatorDecisions(reused.targetThreadId),
+    ).toEqual([]);
+
+    await expect(
+      fixture.experiments.preview(fixture.sourceThreadId, {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+        modelOverrides: {
+          inspect: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      }),
+    ).rejects.toThrow("non-Agent node model");
+
+    const rerun = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+      },
+    });
+    expect(rerun.result).toEqual(
+      expect.objectContaining({
+        status: "waiting",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "waiting",
+            decisionId: expect.stringMatching(/^decision_[a-z0-9]{20}$/u),
+          }),
+        ],
+      }),
+    );
+    expect(
+      await fixture.store.listOperatorDecisions(rerun.targetThreadId),
+    ).toEqual([
+      expect.objectContaining({
+        status: "pending",
+        question: "Approve this experiment checkpoint?",
+      }),
+    ]);
+    expect(rerun.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "rerun",
+        modelChanged: false,
+        target: expect.objectContaining({ status: "running" }),
+      }),
+    );
+    fixture.store.close();
+  });
 });
 
 interface Fixture {
@@ -819,7 +899,7 @@ interface Fixture {
 }
 
 async function createFixture(
-  options: { toolInspect?: boolean } = {},
+  options: { toolInspect?: boolean; approvalInspect?: boolean } = {},
 ): Promise<Fixture> {
   const root = await mkdtemp(
     path.join(tmpdir(), "napier-workflow-experiment-"),
@@ -878,38 +958,19 @@ async function createFixture(
     nodes: [
       {
         id: "inspect",
-        ...(options.toolInspect
+        ...(options.approvalInspect
           ? {
-              type: "tool" as const,
-              tool: "list_files" as const,
-              effect: "read" as const,
-              inputBindings: {
-                path: { source: "literal" as const, value: "." },
-                depth: { source: "literal" as const, value: 1 },
+              type: "approval" as const,
+              header: "Release",
+              question: "Approve this experiment checkpoint?",
+              approve: {
+                label: "Approve",
+                description: "Continue to the report Agent.",
               },
-              inputSchema: {
-                type: "object" as const,
-                properties: {
-                  path: {
-                    type: "string" as const,
-                    minLength: 1,
-                    maxLength: 20,
-                  },
-                  depth: {
-                    type: "integer" as const,
-                    minimum: 0,
-                    maximum: 4,
-                  },
-                },
-                required: ["path", "depth"],
-                additionalProperties: false as const,
+              reject: {
+                label: "Reject",
+                description: "Block the experiment Workflow.",
               },
-              outputSchema: listFilesReceiptSchema(),
-              timeoutMs: 5_000,
-              maxAttempts: 2,
-            }
-          : {
-              type: "agent" as const,
               inputBindings: {
                 workflow: { source: "workflow" as const },
               },
@@ -919,21 +980,72 @@ async function createFixture(
                 required: ["workflow"],
                 additionalProperties: false as const,
               },
-              outputSchema: inspectionSchema(),
-              model: {
-                provider: "faux-workflow-primary",
-                id: "faux-1",
-              },
-              timeoutMs: 5_000,
+              outputSchema: structuredClone(
+                EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+              ),
+              timeoutMs: 60_000,
               maxAttempts: 2,
-            }),
+            }
+          : options.toolInspect
+            ? {
+                type: "tool" as const,
+                tool: "list_files" as const,
+                effect: "read" as const,
+                inputBindings: {
+                  path: { source: "literal" as const, value: "." },
+                  depth: { source: "literal" as const, value: 1 },
+                },
+                inputSchema: {
+                  type: "object" as const,
+                  properties: {
+                    path: {
+                      type: "string" as const,
+                      minLength: 1,
+                      maxLength: 20,
+                    },
+                    depth: {
+                      type: "integer" as const,
+                      minimum: 0,
+                      maximum: 4,
+                    },
+                  },
+                  required: ["path", "depth"],
+                  additionalProperties: false as const,
+                },
+                outputSchema: listFilesReceiptSchema(),
+                timeoutMs: 5_000,
+                maxAttempts: 2,
+              }
+            : {
+                type: "agent" as const,
+                inputBindings: {
+                  workflow: { source: "workflow" as const },
+                },
+                inputSchema: {
+                  type: "object" as const,
+                  properties: { workflow: requestSchema() },
+                  required: ["workflow"],
+                  additionalProperties: false as const,
+                },
+                outputSchema: inspectionSchema(),
+                model: {
+                  provider: "faux-workflow-primary",
+                  id: "faux-1",
+                },
+                timeoutMs: 5_000,
+                maxAttempts: 2,
+              }),
       },
       {
         id: "report",
         type: "agent",
         inputBindings: {
           workflow: { source: "workflow" },
-          [options.toolInspect ? "inventory" : "inspection"]: {
+          [options.approvalInspect
+            ? "approval"
+            : options.toolInspect
+              ? "inventory"
+              : "inspection"]: {
             source: "node",
             nodeId: "inspect",
           },
@@ -942,14 +1054,23 @@ async function createFixture(
           type: "object",
           properties: {
             workflow: requestSchema(),
-            [options.toolInspect ? "inventory" : "inspection"]:
-              options.toolInspect
+            [options.approvalInspect
+              ? "approval"
+              : options.toolInspect
+                ? "inventory"
+                : "inspection"]: options.approvalInspect
+              ? structuredClone(EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA)
+              : options.toolInspect
                 ? listFilesReceiptSchema()
                 : inspectionSchema(),
           },
           required: [
             "workflow",
-            options.toolInspect ? "inventory" : "inspection",
+            options.approvalInspect
+              ? "approval"
+              : options.toolInspect
+                ? "inventory"
+                : "inspection",
           ],
           additionalProperties: false,
         },
@@ -961,20 +1082,34 @@ async function createFixture(
     ],
   });
   primary.setResponses(
-    options.toolInspect
+    options.toolInspect || options.approvalInspect
       ? [fauxAssistantMessage('{"report":"Source report","approved":true}')]
       : [
           fauxAssistantMessage('{"summary":"Source inspection","count":1}'),
           fauxAssistantMessage('{"report":"Source report","approved":true}'),
         ],
   );
-  const sourceResult = await workflows.run({
+  let sourceResult = await workflows.run({
     threadId: sourceThread.id,
     request: {
       manifest,
       input: { request: "Produce the source report." },
     },
   });
+  if (options.approvalInspect) {
+    const decision = (await store.listOperatorDecisions(sourceThread.id))[0]!;
+    await store.answerOperatorDecision(sourceThread.id, decision.id, {
+      selectedOptionIds: ["option_1"],
+      customText: "Approve the experiment source.",
+    });
+    sourceResult = await workflows.run({
+      threadId: sourceThread.id,
+      request: {
+        manifest,
+        planId: sourceResult.planId,
+      },
+    });
+  }
   return {
     store,
     sourceThreadId: sourceThread.id,

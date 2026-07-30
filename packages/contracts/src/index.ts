@@ -879,9 +879,53 @@ export interface ExecutionPlanWorkflowToolNode {
   maxAttempts: number;
 }
 
+export interface ExecutionPlanWorkflowApprovalChoice {
+  label: string;
+  description: string;
+}
+
+export interface ExecutionPlanWorkflowApprovalNode {
+  id: string;
+  type: "approval";
+  header: string;
+  question: string;
+  approve: ExecutionPlanWorkflowApprovalChoice;
+  reject: ExecutionPlanWorkflowApprovalChoice;
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowObjectSchema;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
+export const EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA = {
+  type: "object",
+  properties: {
+    approved: { type: "boolean" },
+    decisionId: { type: "string", minLength: 17, maxLength: 89 },
+    selectedOptionId: {
+      type: "string",
+      enum: ["option_1"],
+      minLength: 8,
+      maxLength: 8,
+    },
+    answerSha256: { type: "string", minLength: 64, maxLength: 64 },
+    customText: { type: "string", minLength: 0, maxLength: 4_096 },
+  },
+  required: [
+    "approved",
+    "decisionId",
+    "selectedOptionId",
+    "answerSha256",
+    "customText",
+  ],
+  additionalProperties: false,
+} as const satisfies WorkflowObjectSchema;
+
 export type ExecutionPlanWorkflowNode =
   | ExecutionPlanWorkflowAgentNode
-  | ExecutionPlanWorkflowToolNode;
+  | ExecutionPlanWorkflowToolNode
+  | ExecutionPlanWorkflowApprovalNode;
 
 export interface ExecutionPlanWorkflowManifest {
   kind: "napier.execution-plan-workflow";
@@ -912,6 +956,7 @@ export interface ExecutionPlanWorkflowManifestVerification {
 
 export type ExecutionPlanWorkflowNodeStatus =
   | "completed"
+  | "waiting"
   | "blocked"
   | "cancelled";
 
@@ -923,13 +968,18 @@ export interface ExecutionPlanWorkflowNodeResult {
   inputSchemaSha256: string;
   outputSchemaSha256: string;
   runId?: string;
+  decisionId?: string;
   output?: JsonValue;
   outputSha256?: string;
   errorCode?: string;
   diagnosticSha256?: string;
 }
 
-export type ExecutionPlanWorkflowStatus = "completed" | "blocked" | "cancelled";
+export type ExecutionPlanWorkflowStatus =
+  | "completed"
+  | "waiting"
+  | "blocked"
+  | "cancelled";
 
 export interface ExecutionPlanWorkflowResult {
   kind: "napier.execution-plan-workflow-result";
@@ -3796,6 +3846,7 @@ export type OperatorDecisionStatus =
 
 export type OperatorDecisionCancellationReason =
   | "operator_cancelled"
+  | "workflow_timed_out"
   | "run_completed_without_wait"
   | "run_failed"
   | "run_cancelled";

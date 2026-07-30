@@ -24,6 +24,7 @@ const RUN_ID = /^run_[a-z0-9]{8,80}$/;
 const OPTION_ID = /^option_[1-4]$/;
 const CANCELLATION_REASONS = new Set<OperatorDecisionCancellationReason>([
   "operator_cancelled",
+  "workflow_timed_out",
   "run_completed_without_wait",
   "run_failed",
   "run_cancelled",

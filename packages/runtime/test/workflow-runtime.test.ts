@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
+  ExecutionPlanBlueprint,
   ExecutionPlanWorkflowManifest,
   RunEvent,
   WorkflowObjectSchema,
@@ -362,6 +364,344 @@ describe("Execution Plan Workflow runtime", () => {
     expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
     fixture.store.close();
   }, 20_000);
+
+  it("waits for one durable Approval and resumes the typed graph after approval", async () => {
+    const fixture = await createFixture();
+    const manifest = approvalWorkflowManifest(fixture.manifest.blueprint);
+
+    const waiting = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Require an explicit release approval." },
+      },
+    });
+
+    expect(validateExecutionPlanWorkflowResult(waiting)).toEqual(waiting);
+    expect(waiting).toEqual(
+      expect.objectContaining({
+        status: "waiting",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "waiting",
+            decisionId: expect.stringMatching(/^decision_[a-z0-9]{20}$/u),
+          }),
+        ],
+      }),
+    );
+    expect(fixture.store.getThread(fixture.targetThreadId).status).toBe(
+      "waiting",
+    );
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).some(
+        (event) => event.type === "model.response",
+      ),
+    ).toBe(false);
+    const decision = (
+      await fixture.store.listOperatorDecisions(fixture.targetThreadId)
+    )[0]!;
+    expect(decision).toEqual(
+      expect.objectContaining({
+        status: "pending",
+        runId: waiting.nodeResults[0]?.runId,
+        question: "Approve the verified input for final reporting?",
+      }),
+    );
+
+    await fixture.store.answerOperatorDecision(
+      fixture.targetThreadId,
+      decision.id,
+      {
+        selectedOptionIds: ["option_1"],
+        customText: "Proceed with the bounded report.",
+      },
+    );
+    await expect(
+      fixture.agentRuntime.continueOperatorDecision({
+        threadId: fixture.targetThreadId,
+        decisionId: decision.id,
+      }),
+    ).rejects.toThrow("through their Workflow Plan");
+    fixture.provider.setResponses([
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          '\\"approved\\":true',
+        );
+        return fauxAssistantMessage(
+          '{"report":"Approval applied","approved":true}',
+        );
+      },
+    ]);
+    const completed = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: waiting.planId },
+    });
+
+    expect(completed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { report: "Approval applied", approved: true },
+      }),
+    );
+    expect(completed.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        status: "completed",
+        runId: waiting.nodeResults[0]?.runId,
+        output: expect.objectContaining({
+          approved: true,
+          decisionId: decision.id,
+          selectedOptionId: "option_1",
+          answerSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          customText: "Proceed with the bounded report.",
+        }),
+      }),
+    );
+    expect(
+      await fixture.store.listOperatorDecisions(fixture.targetThreadId),
+    ).toEqual([
+      expect.objectContaining({
+        id: decision.id,
+        status: "continued",
+        continuationRunId: expect.stringMatching(/^run_[a-z0-9]{20}$/u),
+      }),
+    ]);
+    expect(
+      fixture.store.listRuns(fixture.targetThreadId).map((run) => run.source),
+    ).toEqual(["workflow", "workflow", "workflow"]);
+
+    const observed = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: waiting.planId },
+    });
+    expect(observed.output).toEqual(completed.output);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(3);
+    fixture.store.close();
+  });
+
+  it("fails closed when the operator rejects a Workflow Approval", async () => {
+    const fixture = await createFixture();
+    const manifest = approvalWorkflowManifest(fixture.manifest.blueprint);
+    const waiting = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Do not proceed without approval." },
+      },
+    });
+    const decision = (
+      await fixture.store.listOperatorDecisions(fixture.targetThreadId)
+    )[0]!;
+    await fixture.store.answerOperatorDecision(
+      fixture.targetThreadId,
+      decision.id,
+      {
+        selectedOptionIds: ["option_2"],
+        customText: "The evidence is incomplete.",
+      },
+    );
+
+    const rejected = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: waiting.planId },
+    });
+
+    expect(rejected).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "blocked",
+            errorCode: "approval_rejected",
+          }),
+        ],
+      }),
+    );
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).some(
+        (event) => event.type === "model.response",
+      ),
+    ).toBe(false);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    const retried = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        planId: waiting.planId,
+        retryBlocked: true,
+      },
+    });
+    expect(retried).toEqual(
+      expect.objectContaining({
+        status: "waiting",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "waiting",
+            attempt: 2,
+          }),
+        ],
+      }),
+    );
+    expect(
+      (await fixture.store.listOperatorDecisions(fixture.targetThreadId)).map(
+        (candidate) => candidate.status,
+      ),
+    ).toEqual(["continued", "pending"]);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(3);
+    fixture.store.close();
+  });
+
+  it("blocks cancelled and expired Workflow Approvals without downstream work", async () => {
+    const cancelledFixture = await createFixture();
+    const cancelledManifest = approvalWorkflowManifest(
+      cancelledFixture.manifest.blueprint,
+    );
+    const cancelledWaiting = await cancelledFixture.workflows.run({
+      threadId: cancelledFixture.targetThreadId,
+      request: {
+        manifest: cancelledManifest,
+        input: { request: "Cancel this approval." },
+      },
+    });
+    const cancelledDecision = (
+      await cancelledFixture.store.listOperatorDecisions(
+        cancelledFixture.targetThreadId,
+      )
+    )[0]!;
+    await cancelledFixture.store.cancelOperatorDecision(
+      cancelledFixture.targetThreadId,
+      cancelledDecision.id,
+    );
+    const cancelled = await cancelledFixture.workflows.run({
+      threadId: cancelledFixture.targetThreadId,
+      request: {
+        manifest: cancelledManifest,
+        planId: cancelledWaiting.planId,
+      },
+    });
+    expect(cancelled.nodeResults).toEqual([
+      expect.objectContaining({
+        status: "blocked",
+        errorCode: "approval_cancelled",
+      }),
+    ]);
+    cancelledFixture.store.close();
+
+    const timeoutFixture = await createFixture();
+    const timeoutManifest = approvalWorkflowManifest(
+      timeoutFixture.manifest.blueprint,
+      1_000,
+    );
+    const timeoutWaiting = await timeoutFixture.workflows.run({
+      threadId: timeoutFixture.targetThreadId,
+      request: {
+        manifest: timeoutManifest,
+        input: { request: "Expire this approval." },
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    const timedOut = await timeoutFixture.workflows.run({
+      threadId: timeoutFixture.targetThreadId,
+      request: {
+        manifest: timeoutManifest,
+        planId: timeoutWaiting.planId,
+      },
+    });
+    expect(timedOut.nodeResults).toEqual([
+      expect.objectContaining({
+        status: "blocked",
+        errorCode: "approval_timeout",
+      }),
+    ]);
+    expect(
+      await timeoutFixture.store.listOperatorDecisions(
+        timeoutFixture.targetThreadId,
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        status: "cancelled",
+        cancellationReason: "workflow_timed_out",
+      }),
+    ]);
+    timeoutFixture.store.close();
+
+    const lateFixture = await createFixture();
+    const lateManifest = approvalWorkflowManifest(
+      lateFixture.manifest.blueprint,
+      1_000,
+    );
+    const lateWaiting = await lateFixture.workflows.run({
+      threadId: lateFixture.targetThreadId,
+      request: {
+        manifest: lateManifest,
+        input: { request: "Reject a late low-level continuation." },
+      },
+    });
+    const lateDecision = (
+      await lateFixture.store.listOperatorDecisions(lateFixture.targetThreadId)
+    )[0]!;
+    const originRun = lateFixture.store.listRuns(
+      lateFixture.targetThreadId,
+    )[0]!;
+    await new Promise((resolve) => setTimeout(resolve, 1_100));
+    await lateFixture.store.answerOperatorDecision(
+      lateFixture.targetThreadId,
+      lateDecision.id,
+      { selectedOptionIds: ["option_1"] },
+    );
+    const continuationRun = await lateFixture.store.createRun({
+      threadId: lateFixture.targetThreadId,
+      agentId: originRun.agentId,
+      agentRevision: originRun.agentRevision,
+      model: originRun.configuration!.model,
+      source: "workflow",
+      parentRunId: originRun.id,
+      operatorDecisionId: lateDecision.id,
+    });
+    await lateFixture.store.continueOperatorDecision(
+      lateFixture.targetThreadId,
+      lateDecision.id,
+      continuationRun.id,
+    );
+    await lateFixture.store.finishRun(continuationRun.id, "completed");
+    const late = await lateFixture.workflows.run({
+      threadId: lateFixture.targetThreadId,
+      request: { manifest: lateManifest, planId: lateWaiting.planId },
+    });
+    expect(late.nodeResults).toEqual([
+      expect.objectContaining({
+        status: "blocked",
+        errorCode: "approval_timeout",
+      }),
+    ]);
+    lateFixture.store.close();
+  });
+
+  it("cancels a pre-aborted Approval without creating a Run or decision", async () => {
+    const fixture = await createFixture();
+    const manifest = approvalWorkflowManifest(fixture.manifest.blueprint);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      fixture.workflows.run({
+        threadId: fixture.targetThreadId,
+        request: {
+          manifest,
+          input: { request: "Do not create an Approval Run." },
+        },
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow();
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toEqual([]);
+    expect(
+      await fixture.store.listOperatorDecisions(fixture.targetThreadId),
+    ).toEqual([]);
+    fixture.store.close();
+  });
 
   it("recovers a completed Tool Run after Plan completion fails", async () => {
     const fixture = await createFixture();
@@ -1362,6 +1702,62 @@ function reportSchema(): WorkflowObjectSchema {
     required: ["report", "approved"],
     additionalProperties: false,
   };
+}
+
+function approvalWorkflowManifest(
+  blueprint: ExecutionPlanBlueprint,
+  timeoutMs = 60_000,
+): ExecutionPlanWorkflowManifest {
+  const definition = workflowDefinition(blueprint);
+  return defineExecutionPlanWorkflow({
+    ...definition,
+    nodes: [
+      {
+        id: "inspect",
+        type: "approval",
+        header: "Release",
+        question: "Approve the verified input for final reporting?",
+        approve: {
+          label: "Approve",
+          description: "Continue to the final typed report.",
+        },
+        reject: {
+          label: "Reject",
+          description: "Block the Workflow without running the report Agent.",
+        },
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: requestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: structuredClone(
+          EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+        ),
+        timeoutMs,
+        maxAttempts: 2,
+      },
+      {
+        ...definition.nodes[1]!,
+        inputBindings: {
+          approval: { source: "node", nodeId: "inspect" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            approval: structuredClone(
+              EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+            ),
+          },
+          required: ["approval"],
+          additionalProperties: false,
+        },
+      },
+    ],
+  });
 }
 
 function listToolWorkflowManifest(

@@ -10,12 +10,14 @@ import { operatorDecisionCopy as copy } from "./operator-decision-copy";
 
 export default function OperatorDecisionPanel({
   decision,
+  workflowOwned,
   busy,
   onAnswer,
   onContinue,
   onCancel,
 }: {
   decision: OperatorDecision;
+  workflowOwned: boolean;
   busy: boolean;
   onAnswer: (
     decisionId: string,
@@ -139,7 +141,7 @@ export default function OperatorDecisionPanel({
               <X size={12} aria-hidden="true" />
               {copy.cancel}
             </button>
-            {answered ? (
+            {answered && !workflowOwned ? (
               <button
                 className="operator-decision-primary"
                 type="button"
@@ -149,6 +151,10 @@ export default function OperatorDecisionPanel({
                 {copy.continue}
                 <ArrowRight size={13} aria-hidden="true" />
               </button>
+            ) : answered ? (
+              <small className="operator-decision-workflow-resume">
+                {copy.workflowResume}
+              </small>
             ) : (
               <button
                 className="operator-decision-primary"

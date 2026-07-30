@@ -380,7 +380,10 @@ async function executeWorkflow(
           );
         }
       }
-      return experiment.result.status === "completed" ? 0 : 1;
+      return experiment.result.status === "completed" ||
+        experiment.result.status === "waiting"
+        ? 0
+        : 1;
     }
     const thread = options.threadId
       ? services.store.getThread(options.threadId)
@@ -392,6 +395,18 @@ async function executeWorkflow(
     const eventWriter = options.jsonl
       ? new OrderedEventFrameWriter(io.stdout, thread.id, thread.eventCount + 1)
       : undefined;
+    if (options.approval) {
+      const mutation = await answerWorkflowApproval(
+        services,
+        request!,
+        options,
+      );
+      if (eventWriter) {
+        for (const event of mutation.events) {
+          await eventWriter.write(event);
+        }
+      }
+    }
     const result = await services.workflows.run({
       threadId,
       request: request!,
@@ -430,7 +445,7 @@ async function executeWorkflow(
         `Napier workflow ${result.planId} ${result.status} (thread ${threadId})`,
       );
     }
-    return result.status === "completed" ? 0 : 1;
+    return result.status === "completed" || result.status === "waiting" ? 0 : 1;
   } catch (error) {
     const frame = streamRunErrorFrame(threadId, error);
     if (options.jsonl) {
@@ -447,6 +462,45 @@ async function executeWorkflow(
     parentSignal?.removeEventListener("abort", forwardAbort);
     await services?.shutdown().catch(() => undefined);
   }
+}
+
+async function answerWorkflowApproval(
+  services: LocalAgentRuntimeServices,
+  request: ReturnType<typeof validateExecuteExecutionPlanWorkflowRequest>,
+  options: CliWorkflowOptions,
+) {
+  if (!options.planId || !options.approval || !("planId" in request)) {
+    throw new Error("Workflow Approval answer requires a resume request");
+  }
+  const plan = services.store.getPlan(options.planId);
+  if (plan.threadId !== options.threadId) {
+    throw new Error("Workflow Plan does not belong to --thread");
+  }
+  const approvalSteps = plan.steps.filter((step) => {
+    const node = request.manifest.nodes.find(
+      (candidate) => candidate.id === step.id,
+    );
+    return node?.type === "approval" && step.status === "running" && step.runId;
+  });
+  if (approvalSteps.length !== 1 || !approvalSteps[0]?.runId) {
+    throw new Error("Workflow Plan has no single waiting Approval node");
+  }
+  const decision = (
+    await services.store.listOperatorDecisions(plan.threadId)
+  ).find(
+    (candidate) =>
+      candidate.runId === approvalSteps[0]!.runId &&
+      candidate.status === "pending",
+  );
+  if (!decision) {
+    throw new Error("Workflow Approval decision is not pending");
+  }
+  return services.store.answerOperatorDecision(plan.threadId, decision.id, {
+    selectedOptionIds: [
+      options.approval === "approve" ? "option_1" : "option_2",
+    ],
+    ...(options.decisionNote ? { customText: options.decisionNote } : {}),
+  });
 }
 
 async function createWorkflowThread(

@@ -841,6 +841,11 @@ export class AgentRuntime {
         `Operator decision origin Run not found: ${decision.runId}`,
       );
     }
+    if (isWorkflowRunSource(originRun.source)) {
+      throw new Error(
+        "Workflow operator decisions must continue through their Workflow Plan",
+      );
+    }
     return this.runPrompt({
       threadId: options.threadId,
       text: formatOperatorDecisionContinuation(decision),

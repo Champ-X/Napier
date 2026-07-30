@@ -1174,6 +1174,14 @@ button:disabled {
   color: var(--ledger);
 }
 
+.operator-decision-workflow-resume {
+  max-width: 260px;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
 .operator-decision-primary,
 .operator-decision-cancel {
   display: inline-flex;

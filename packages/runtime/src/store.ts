@@ -8675,6 +8675,7 @@ export class LocalStore {
           throw new Error("Operator decision requires the active Thread Run");
         }
         if (
+          run.source !== "workflow" &&
           run.configuration?.model.provider === "napier" &&
           run.configuration.model.id === "demo"
         ) {

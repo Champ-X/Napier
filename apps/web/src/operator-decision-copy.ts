@@ -6,6 +6,8 @@ export const operatorDecisionCopy = {
   customPlaceholder: "Add a precise answer or constraint...",
   submit: "Record answer",
   continue: "Continue run",
+  workflowResume:
+    "Answer recorded. Resume this Workflow with its original Manifest.",
   cancel: "Cancel decision",
   multiSelect: "Select one or more",
   singleSelect: "Select one",

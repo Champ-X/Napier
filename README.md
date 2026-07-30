@@ -35,9 +35,9 @@ Version `0.1.0` includes:
   and domain services as the HTTP/Web path;
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
-  and model-free Tool nodes, strict JSON output, declared tool effects,
-  policy/schema preflight, explicit retry, restart reconstruction, and shared
-  CLI/HTTP/Trace evidence;
+  nodes, model-free Tool nodes, and durable human Approval gates, strict JSON
+  output, declared tool effects, policy/schema preflight, explicit retry,
+  restart reconstruction, and shared CLI/HTTP/Web/Trace evidence;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -421,10 +421,11 @@ npm run --silent napier -- workflow \
 Generate manifests from an existing `ExecutionPlanBlueprint` with the exported
 TypeScript `defineExecutionPlanWorkflow()` helper. It binds the Blueprint DAG,
 runtime input/output schemas, literal or field-path node input bindings,
-Agent-node models, Tool-node names/effects, timeouts, and attempt limits into
-one stable content hash. JSONL emits ordered Ledger event frames, one
-authoritative snapshot, and one hash-bound `workflow_result` frame. Resume or
-explicitly retry a blocked node without supplying the input again:
+Agent-node models, Tool-node names/effects, Approval questions/choices,
+timeouts, and attempt limits into one stable content hash. JSONL emits ordered
+Ledger event frames, one authoritative snapshot, and one hash-bound
+`workflow_result` frame. Resume or explicitly retry a blocked node without
+supplying the input again:
 
 ```bash
 npm run --silent napier -- workflow \
@@ -439,6 +440,25 @@ npm run --silent napier -- workflow \
 
 The original input is recovered and hash-checked from the Work Ledger. A retry
 never reuses an unknown side effect automatically.
+
+An Approval node returns a successful `waiting` result without holding a
+process open. Answer and resume the exact Plan atomically from CLI:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_example \
+  --plan plan_example \
+  --approve \
+  --decision-note "Reviewed the verification evidence." \
+  --jsonl
+```
+
+Use `--reject` to record an explicit rejection and block the node. HTTP clients
+answer through the existing operator-decision route, then resume the Workflow
+route with the original Manifest and Plan ID.
 
 Preview a controlled experiment from one Workflow checkpoint without creating
 a target Thread:
@@ -2326,15 +2346,25 @@ background Process Sessions, and preview-bound workspace file mutations remain
 Run-owned Agent tools rather than pretending to persist across one-shot Tool
 nodes.
 
+Approval nodes create a leased model-free request Run, bind a fixed
+approve/reject question and the upstream input hash, record the existing
+operator-decision receipt, and settle the Run with the Thread in `waiting`.
+Approval creates a same-revision continuation Run and the standard typed
+approval output; rejection, cancellation, invalid selection, or durable
+deadline expiry blocks the Plan. The question and choices are Manifest code,
+not an evaluated template. The generic Agent continuation path rejects
+Workflow-owned decisions.
+
 Resume reconstructs Agent output from bound assistant evidence and Tool output
 from the exact terminal tool event, then verifies node identity, effect,
-input/output/schema hashes, and Run ownership. A restart with only
-`tool.started` becomes one `run_interrupted` blocked attempt and is never
-rerun automatically. If `tool.completed` committed before Run settlement was
-interrupted, the same terminal Run can recover the Plan step without executing
-the tool again. Generic manual and automatic Run recovery reject
-Workflow-owned Runs; only Workflow resume and explicit bounded
-`--retry-blocked` can continue the graph.
+input/output/schema hashes, and Run ownership. Approval recovery additionally
+binds the unique decision request, request digest, attempt, expiry, answer, and
+continuation Run. A restart with only `tool.started` becomes one
+`run_interrupted` blocked attempt and is never rerun automatically. If
+`tool.completed` committed before Run settlement was interrupted, the same
+terminal Run can recover the Plan step without executing the tool again.
+Generic manual and automatic Run recovery reject Workflow-owned Runs; only
+Workflow resume and explicit bounded `--retry-blocked` can continue the graph.
 
 `POST /api/threads/:threadId/workflows` exposes the same execution as SSE.
 Both HTTP and CLI finish with `ExecutionPlanWorkflowResultFrame`, binding the
@@ -2379,8 +2409,14 @@ execution responses must be `no-store`, and the browser enforces 2 MiB preview,
 6 MiB frame, and 12 MiB stream bounds sized above the Runtime's legal frame
 maximum.
 
-Version 1 intentionally supports Agent and stateless built-in Tool nodes with
-sequential dependency-ready DAG scheduling. Deterministic and human approval
+The existing Web operator docket can answer or cancel a Workflow-owned
+Approval. It deliberately does not launch a detached Agent continuation;
+answered gates instruct the user to resume through the original Workflow
+Manifest. Approval checkpoints can be reused after verification or rerun into
+an isolated `waiting` experiment target, and never accept a model override.
+
+Version 1 intentionally supports Agent, stateless built-in Tool, and durable
+Approval nodes with sequential dependency-ready DAG scheduling. Deterministic
 nodes, stateful session Tool nodes, parallel execution, Map/Reduce, conditions,
 loops, compensation, per-node breakpoints, adapter runtimes, artifact
 settlement, and a visual builder remain open. Checkpoint experiments do not yet

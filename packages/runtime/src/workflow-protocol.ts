@@ -134,6 +134,7 @@ export function validateExecutionPlanWorkflowResult(
     !hash(result["manifestSha256"]) ||
     !hash(result["blueprintSha256"]) ||
     (result["status"] !== "completed" &&
+      result["status"] !== "waiting" &&
       result["status"] !== "blocked" &&
       result["status"] !== "cancelled") ||
     typeof result["resumed"] !== "boolean" ||
@@ -156,6 +157,7 @@ export function validateExecutionPlanWorkflowResult(
         "inputSchemaSha256",
         "outputSchemaSha256",
         "runId",
+        "decisionId",
         "output",
         "outputSha256",
         "errorCode",
@@ -163,6 +165,7 @@ export function validateExecutionPlanWorkflowResult(
       ],
       new Set([
         "runId",
+        "decisionId",
         "output",
         "outputSha256",
         "errorCode",
@@ -177,13 +180,17 @@ export function validateExecutionPlanWorkflowResult(
       Number(node["attempt"]) < 1 ||
       Number(node["attempt"]) > 3 ||
       (node["status"] !== "completed" &&
+        node["status"] !== "waiting" &&
         node["status"] !== "blocked" &&
         node["status"] !== "cancelled") ||
       !hash(node["inputSha256"]) ||
       !hash(node["inputSchemaSha256"]) ||
       !hash(node["outputSchemaSha256"]) ||
       (node["runId"] !== undefined &&
-        (typeof node["runId"] !== "string" || !RUN_ID.test(node["runId"])))
+        (typeof node["runId"] !== "string" || !RUN_ID.test(node["runId"]))) ||
+      (node["decisionId"] !== undefined &&
+        (typeof node["decisionId"] !== "string" ||
+          !/^decision_[a-z0-9]{8,80}$/u.test(node["decisionId"])))
     ) {
       throw new Error("Workflow node result is invalid");
     }
@@ -199,9 +206,21 @@ export function validateExecutionPlanWorkflowResult(
       ) {
         throw new Error("Completed Workflow node result is invalid");
       }
+    } else if (node["status"] === "waiting") {
+      if (
+        node["runId"] === undefined ||
+        node["decisionId"] === undefined ||
+        node["output"] !== undefined ||
+        node["outputSha256"] !== undefined ||
+        node["errorCode"] !== undefined ||
+        node["diagnosticSha256"] !== undefined
+      ) {
+        throw new Error("Waiting Workflow node result is invalid");
+      }
     } else if (
       node["output"] !== undefined ||
       node["outputSha256"] !== undefined ||
+      node["decisionId"] !== undefined ||
       typeof node["errorCode"] !== "string" ||
       !SAFE_TOKEN.test(node["errorCode"]) ||
       !hash(node["diagnosticSha256"])
@@ -255,6 +274,7 @@ export function validateExecutionPlanWorkflowResultFrame(
     typeof frame["planId"] !== "string" ||
     !PLAN_ID.test(frame["planId"]) ||
     (frame["status"] !== "completed" &&
+      frame["status"] !== "waiting" &&
       frame["status"] !== "blocked" &&
       frame["status"] !== "cancelled") ||
     !hash(frame["manifestSha256"]) ||

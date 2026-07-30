@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
   ExecutionPlanWorkflowResultFrame,
   WorkflowObjectSchema,
@@ -309,6 +310,146 @@ describe("Workflow HTTP path", () => {
     expect(
       services.store.listRuns(targetThread.id).map((run) => run.source),
     ).toEqual(["workflow"]);
+  });
+
+  it("answers and resumes a model-free Approval through public HTTP routes", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-approval-workflow-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: new UnsupportedSandboxAdapter("server-approval-workflow-test"),
+    });
+    openServices.push(services);
+    const sourceThread = services.store.listThreads()[0]!;
+    const sourcePlan = await services.store.createPlan(sourceThread.id, {
+      objective: "Approve one HTTP delivery.",
+      steps: [
+        {
+          id: "approval",
+          title: "Approval",
+          description: "Wait for the operator.",
+          verification: "Return the typed approval receipt.",
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      sourceThread.id,
+      sourcePlan.id,
+    );
+    const outputSchema = structuredClone(
+      EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+    );
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP Approval",
+      version: 1,
+      description: "Pause and resume one Approval node.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema,
+      outputNodeId: "approval",
+      nodes: [
+        {
+          id: "approval",
+          type: "approval",
+          header: "Release",
+          question: "Approve this HTTP Workflow delivery?",
+          approve: {
+            label: "Approve",
+            description: "Complete the Workflow.",
+          },
+          reject: {
+            label: "Reject",
+            description: "Block the Workflow.",
+          },
+          inputBindings: {
+            workflow: { source: "workflow" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: { workflow: requestSchema() },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema,
+          timeoutMs: 60_000,
+          maxAttempts: 2,
+        },
+      ],
+    });
+    const targetThread = await services.store.createThread({
+      title: "HTTP Approval target",
+      agentId: sourceThread.agentId,
+    });
+    const app = createApp(services);
+    const waitingResponse = await app.request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { request: "Require HTTP approval." },
+        }),
+      },
+    );
+    const waiting = validateExecutionPlanWorkflowResultFrame(
+      parseSseFrames(await waitingResponse.text()).at(-1),
+    );
+    expect(waiting.status).toBe("waiting");
+    const decision = (
+      await services.store.listOperatorDecisions(targetThread.id)
+    )[0]!;
+
+    const answerResponse = await app.request(
+      `/api/threads/${targetThread.id}/operator-decisions/${decision.id}/answer`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectedOptionIds: ["option_1"],
+          customText: "Approved through HTTP.",
+        }),
+      },
+    );
+    expect(answerResponse.status).toBe(202);
+
+    const completedResponse = await app.request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          planId: waiting.planId,
+        }),
+      },
+    );
+    const completed = validateExecutionPlanWorkflowResultFrame(
+      parseSseFrames(await completedResponse.text()).at(-1),
+    );
+    expect(completed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: expect.objectContaining({
+            approved: true,
+            selectedOptionId: "option_1",
+            customText: "Approved through HTTP.",
+          }),
+        }),
+      }),
+    );
+    expect(
+      (await services.store.listEvents(targetThread.id)).some(
+        (event) => event.type === "model.response",
+      ),
+    ).toBe(false);
   });
 
   it("rejects malformed requests before starting an SSE execution", async () => {

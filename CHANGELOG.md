@@ -6,6 +6,22 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added durable human Approval nodes to typed Plan Workflows. A Manifest now
+  binds one fixed approve/reject question, typed input context, standard output
+  schema, deadline, and retry limit. Execution creates a leased model-free
+  `source=workflow` request Run, reuses the existing operator-decision Ledger,
+  and returns a hash-bound `waiting` result without holding a process open.
+  Approval continues only through a same-Agent-revision child Workflow Run;
+  rejection, custom-only answers, cancellation, expiry, and evidence drift
+  block the Plan. Generic Agent continuation rejects Workflow-owned decisions.
+  CLI `--approve`/`--reject` can atomically answer and resume the exact
+  Thread/Plan, HTTP reuses the existing answer route plus Workflow SSE, and Web
+  answers or cancels while preventing detached continuation. Restart recovery
+  binds the unique decision request, request digest, attempt, recomputed
+  deadline, answer, and continuation Run. Controlled experiments can reuse a
+  verified Approval or rerun it into an isolated waiting target. Runtime,
+  retry, reject, cancel, timeout, restart, duplicate-evidence, experiment, Web
+  privacy, real CLI JSONL, and real HTTP SSE tests cover the complete path.
 - Added model-free Tool nodes to typed Plan Workflows. Schema-v1 Manifests can
   now mix Agent nodes with 18 allowlisted stateless built-ins, declare the
   expected `read`/`write` effect, and bind literal or field-path values from

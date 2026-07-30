@@ -332,7 +332,7 @@ function normalizedModelOverrides(
     }
     if (node.type !== "agent") {
       throw new Error(
-        `Workflow experiment cannot override a Tool node model: ${node.id}`,
+        `Workflow experiment cannot override a non-Agent node model: ${node.id}`,
       );
     }
     output[node.id] = structuredClone(model);
@@ -504,6 +504,12 @@ function sourceNodeMetadataMatches(
       payload["nodeType"] === "tool" &&
       payload["toolName"] === node.tool &&
       payload["effect"] === node.effect
+    );
+  }
+  if (node.type === "approval") {
+    return (
+      payload["nodeType"] === "approval" &&
+      payload["questionSha256"] === sha256(node.question)
     );
   }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";

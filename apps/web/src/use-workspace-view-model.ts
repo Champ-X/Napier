@@ -399,6 +399,13 @@ export function useWorkspaceViewModel() {
       ),
     [detail?.operatorDecisions],
   );
+  const openOperatorDecisionWorkflowOwned = useMemo(
+    () =>
+      openOperatorDecision !== undefined &&
+      detail?.runs.find((run) => run.id === openOperatorDecision.runId)
+        ?.source === "workflow",
+    [detail?.runs, openOperatorDecision],
+  );
   const terminalRuns = useMemo(
     () =>
       (detail?.runs ?? []).filter(
@@ -2135,6 +2142,7 @@ export function useWorkspaceViewModel() {
     error,
     activeGoal: detail?.thread.goal as GoalState | undefined,
     openOperatorDecision,
+    openOperatorDecisionWorkflowOwned,
     resumableRun,
     terminalRuns,
     contextCheckpoint,

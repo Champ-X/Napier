@@ -1,14 +1,20 @@
 import type {
   ExecutionPlan,
+  ExecutionPlanWorkflowApprovalNode,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowNode,
   JsonValue,
+  OperatorDecision,
   RunEvent,
 } from "@napier/contracts";
 
 import type { EventSink } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
+import {
+  resolveWorkflowApproval,
+  workflowApprovalDecisionContractMatches,
+} from "./workflow-approval-model.js";
 import { workflowPlanStepPayload } from "./workflow-runtime-model.js";
 import {
   assertWorkflowValue,
@@ -21,7 +27,9 @@ export const WORKFLOW_STARTED_EVENT = "workflow.started";
 export const WORKFLOW_NODE_STARTED_EVENT = "workflow.node.started";
 export const WORKFLOW_NODE_COMPLETED_EVENT = "workflow.node.completed";
 export const WORKFLOW_NODE_FAILED_EVENT = "workflow.node.failed";
+export const WORKFLOW_APPROVAL_REQUESTED_EVENT = "workflow.approval.requested";
 export const WORKFLOW_COMPLETED_EVENT = "workflow.completed";
+export const WORKFLOW_WAITING_EVENT = "workflow.waiting";
 export const WORKFLOW_BLOCKED_EVENT = "workflow.blocked";
 export const WORKFLOW_CANCELLED_EVENT = "workflow.cancelled";
 
@@ -103,11 +111,35 @@ export class ExecutionPlanWorkflowLedger {
       .listRuns(context.threadId)
       .find((candidate) => candidate.id === runId);
     if (!run) throw new Error("Workflow node Run is missing");
-    if (node.type === "agent" || run.source === "workflow_reuse") {
+    if (run.source !== "workflow" && run.source !== "workflow_reuse") {
+      throw new Error("Workflow node Run source is invalid");
+    }
+    if (run.source === "workflow_reuse" || node.type === "agent") {
       return parseExecutionPlanWorkflowNodeOutput(
         await this.nodeAssistantOutput(context.threadId, runId),
         node.outputSchema,
       );
+    }
+    if (node.type === "approval") {
+      const { decision } = await this.approvalDecision(
+        context,
+        node,
+        runId,
+        inputSha256,
+      );
+      if (decision.status !== "continued") {
+        throw new Error("Workflow approval decision is not continued");
+      }
+      const resolution = resolveWorkflowApproval(node, decision);
+      if (resolution.status !== "approved") {
+        throw new Error("Workflow approval output is unavailable");
+      }
+      assertWorkflowValue(
+        node.outputSchema,
+        resolution.output,
+        `Workflow approval output ${node.id}`,
+      );
+      return resolution.output;
     }
     const completions = (await this.store.listEvents(context.threadId)).filter(
       (event) =>
@@ -144,6 +176,79 @@ export class ExecutionPlanWorkflowLedger {
       throw new Error("Workflow tool output evidence hash mismatch");
     }
     return output;
+  }
+
+  async approvalDecision(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowApprovalNode,
+    runId: string,
+    inputSha256: string,
+  ): Promise<{ decision: OperatorDecision; expiresAt: string }> {
+    const events = await this.store.listEvents(context.threadId);
+    const bindings = events.filter(
+      (event) =>
+        event.runId === runId &&
+        event.type === WORKFLOW_APPROVAL_REQUESTED_EVENT &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["planId"] === context.plan.id &&
+        event.payload["nodeId"] === node.id,
+    );
+    const binding = bindings.length === 1 ? bindings[0] : undefined;
+    if (!binding || !isWorkflowRecord(binding.payload)) {
+      throw new Error("Workflow approval request evidence is unavailable");
+    }
+    const attempt = await this.attemptForRun(
+      context.threadId,
+      context.plan.id,
+      node.id,
+      runId,
+    );
+    const decisionId = binding.payload["decisionId"];
+    const requestedEventSeq = binding.payload["requestedEventSeq"];
+    const decisionRequestSha256 = binding.payload["decisionRequestSha256"];
+    const expiresAt = binding.payload["expiresAt"];
+    const decision = (
+      await this.store.listOperatorDecisions(context.threadId, runId)
+    ).find((candidate) => candidate.id === decisionId);
+    const requested = events.find(
+      (event) =>
+        event.seq === requestedEventSeq &&
+        event.runId === runId &&
+        event.type === "operator.decision.requested",
+    );
+    if (
+      binding.payload["schemaVersion"] !== WORKFLOW_EVENT_SCHEMA_VERSION ||
+      binding.payload["manifestSha256"] !== context.manifest.contentSha256 ||
+      binding.payload["attempt"] !== attempt ||
+      binding.payload["inputSha256"] !== inputSha256 ||
+      binding.payload["inputSchemaSha256"] !==
+        workflowSchemaSha256(node.inputSchema) ||
+      binding.payload["outputSchemaSha256"] !==
+        workflowSchemaSha256(node.outputSchema) ||
+      !workflowNodeEventMetadataMatches(node, binding.payload) ||
+      typeof decisionId !== "string" ||
+      !/^decision_[a-z0-9]{8,80}$/u.test(decisionId) ||
+      !positiveInteger(requestedEventSeq) ||
+      !hash(decisionRequestSha256) ||
+      typeof expiresAt !== "string" ||
+      !Number.isFinite(Date.parse(expiresAt)) ||
+      new Date(expiresAt).toISOString() !== expiresAt ||
+      !decision ||
+      expiresAt !==
+        new Date(
+          Date.parse(decision.requestedAt) + node.timeoutMs,
+        ).toISOString() ||
+      decision.runId !== runId ||
+      decision.requestedEventSeq !== requestedEventSeq ||
+      !workflowApprovalDecisionContractMatches(node, decision) ||
+      !requested ||
+      !isWorkflowRecord(requested.payload) ||
+      requested.payload["decisionId"] !== decisionId ||
+      requested.payload["requestSha256"] !== decisionRequestSha256
+    ) {
+      throw new Error("Workflow approval request evidence mismatch");
+    }
+    return { decision, expiresAt };
   }
 
   async hasNodeToolCompletionEvent(
@@ -215,10 +320,7 @@ export class ExecutionPlanWorkflowLedger {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
-          nodeType: node.type,
-          ...(node.type === "tool"
-            ? { toolName: node.tool, effect: node.effect }
-            : {}),
+          ...workflowNodeEventMetadata(node),
           attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,
@@ -286,10 +388,7 @@ export class ExecutionPlanWorkflowLedger {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
-          nodeType: node.type,
-          ...(node.type === "tool"
-            ? { toolName: node.tool, effect: node.effect }
-            : {}),
+          ...workflowNodeEventMetadata(node),
           attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,
@@ -514,5 +613,30 @@ export function workflowNodeEventMetadataMatches(
       payload["effect"] === node.effect
     );
   }
+  if (node.type === "approval") {
+    return (
+      payload["nodeType"] === "approval" &&
+      payload["questionSha256"] === sha256(node.question)
+    );
+  }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
+}
+
+export function workflowNodeEventMetadata(
+  node: ExecutionPlanWorkflowNode,
+): Record<string, JsonValue> {
+  if (node.type === "tool") {
+    return {
+      nodeType: "tool",
+      toolName: node.tool,
+      effect: node.effect,
+    };
+  }
+  if (node.type === "approval") {
+    return {
+      nodeType: "approval",
+      questionSha256: sha256(node.question),
+    };
+  }
+  return { nodeType: "agent" };
 }

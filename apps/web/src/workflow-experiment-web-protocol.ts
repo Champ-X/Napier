@@ -356,8 +356,13 @@ function stringArray(input: unknown, maximum: number): input is string[] {
 
 function workflowStatus(
   input: unknown,
-): input is "completed" | "blocked" | "cancelled" {
-  return input === "completed" || input === "blocked" || input === "cancelled";
+): input is "completed" | "waiting" | "blocked" | "cancelled" {
+  return (
+    input === "completed" ||
+    input === "waiting" ||
+    input === "blocked" ||
+    input === "cancelled"
+  );
 }
 
 function workflowStatusOrActive(input: unknown): boolean {

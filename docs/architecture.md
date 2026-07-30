@@ -232,7 +232,7 @@ ExecutionPlanBlueprint
   -> defineExecutionPlanWorkflow()
   -> hash-bound napier.execution-plan-workflow manifest
   -> existing ExecutionPlan projection
-  -> source=workflow Run per ready Agent or Tool node
+  -> source=workflow Run per ready Agent, Tool, or Approval node
   -> strict typed node result
   -> existing Plan transition and Work Ledger
 ```
@@ -243,6 +243,9 @@ value validation. `workflow-runtime.ts` owns scheduling and node state
 transitions. `workflow-tool-node.ts` coordinates Tool-node Plan state and
 timeouts; `workflow-tool-runtime.ts` owns leased direct execution; and
 `stateless-agent-tools.ts` is the shared Agent/Workflow built-in catalog.
+`workflow-approval-node.ts` owns Approval Plan/recovery state,
+`workflow-approval-runtime.ts` owns leased request/continuation Runs, and
+`workflow-approval-model.ts` is the pure answer-to-output contract.
 `workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
 reconstruction. `workflow-protocol.ts` validates HTTP/CLI requests, typed
 results, and final snapshot/event-stream-bound result frames. This keeps
@@ -263,6 +266,15 @@ Process Sessions and preview-bound workspace file mutations stay Run-owned
 Agent tools because a one-shot Tool node cannot honestly provide their
 persistent session lifecycle.
 
+Approval nodes reuse the existing operator-decision state machine rather than
+adding approval storage. The first leased `source=workflow` Run transitions the
+Plan step to running, records a Manifest/input/attempt/deadline-bound decision,
+and settles with the Thread in `waiting`. An answered decision can continue
+only through a same-Agent-revision child Workflow Run; the generic Agent
+continuation path rejects it. Approval emits the fixed typed output and
+unblocks descendants. Rejection, cancellation, invalid selection, or durable
+deadline expiry blocks the Plan.
+
 The Agent-node prompt labels Workflow input as untrusted data and requires
 exactly one JSON value. Tool-node output is its structured `details`, never the
 tool's model-facing text body. Runtime schema validation occurs before the Plan
@@ -280,7 +292,11 @@ windows between tool completion, Run settlement, Plan transition, and Workflow
 event commits. `tool.started` without terminal evidence becomes
 `run_interrupted` and is never rerun silently. A valid `tool.completed` can
 settle the same interrupted Run through the internal blocked-step recovery
-transition without manufacturing a second Run or tool call.
+transition without manufacturing a second Run or tool call. Approval recovery
+recomputes expiry from the decision timestamp plus Manifest timeout, validates
+unique request and continuation evidence, and reconstructs output from the
+authoritative operator-decision projection. Duplicate or mismatched bindings
+fail closed.
 
 Workflow-owned Runs are excluded from generic manual and automatic Run
 recovery. Only Workflow resume may inspect them, and only explicit
@@ -305,7 +321,7 @@ source Thread + Plan + source Manifest
   -> require exact preview confirmation for write/unknown effects
   -> create independent target Thread and normal ExecutionPlan
   -> materialize verified ancestors as source=workflow_reuse control Runs
-  -> execute selected Agent/Tool node and descendants through Workflow Runtime
+  -> execute selected Agent/Tool/Approval node and descendants through Workflow Runtime
   -> align source/target node evidence and derive target-minus-source metrics
   -> append privacy-bounded workflow.experiment.compared evidence
   -> emit target snapshot + workflow_experiment_result
@@ -372,11 +388,12 @@ target Thread Snapshot. Experiment SSE responses override the streaming
 helper's default cache policy with `Cache-Control: no-store`.
 
 Schema version 1 is intentionally narrow: Agent nodes, stateless built-in Tool
-nodes, literal/field-path typed bindings, sequential dependency-ready DAG
-scheduling, cancellation, timeout, explicit retry, and restart recovery. It
-does not yet implement deterministic or approval nodes, stateful session Tool
-nodes, parallel execution, conditions, loops, Map/Reduce, compensation,
-per-node breakpoints, external Agent adapters, or artifact settlement.
+nodes, durable binary Approval gates, literal/field-path typed bindings,
+sequential dependency-ready DAG scheduling, cancellation, timeout, explicit
+retry, and restart recovery. It does not yet implement deterministic nodes,
+general multi-option decision nodes, stateful session Tool nodes, parallel
+execution, conditions, loops, Map/Reduce, compensation, per-node breakpoints,
+external Agent adapters, or artifact settlement.
 
 ### Coding Outcome Benchmark
 
@@ -4904,7 +4921,7 @@ deferred until the local P0-P9 product loop is stable.
   policy, Node attach/source-map/multi-thread DAP and debugger UX, broader
   multi-node AST transforms, write-linked test/symbol association, and isolated
   subagent worktrees;
-- extend typed Agent/Tool DAG execution with deterministic/approval nodes,
+- extend typed Agent/Tool/Approval DAG execution with deterministic and
   stateful session nodes, parallelism, control flow, compensation, single-node
   tests and breakpoints, external Agent adapters, artifact settlement, and a
   visual builder;

@@ -67,6 +67,9 @@ export class ExecutionPlanWorkflowRecovery {
         if (step.status === "skipped") {
           throw new Error("Workflow Plan contains an unsupported skipped node");
         }
+        if (node.type === "approval" && step.status === "running") {
+          continue;
+        }
         if (
           step.status !== "completed" &&
           step.status !== "running" &&
@@ -155,7 +158,11 @@ export class ExecutionPlanWorkflowRecovery {
             }
           }
         }
-        if (run.status !== "completed" && knownToolOutput === undefined) {
+        if (
+          run.status !== "completed" &&
+          !(node.type === "approval" && run.status === "interrupted") &&
+          knownToolOutput === undefined
+        ) {
           throw new Error("Completed Workflow step has a non-completed Run");
         }
         let output;

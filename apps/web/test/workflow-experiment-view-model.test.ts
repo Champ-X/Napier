@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
   ExecutionPlanWorkflowExperimentComparison,
   ExecutionPlanWorkflowExperimentResultFrame,
@@ -43,6 +44,24 @@ describe("Workflow experiment Workbench view model", () => {
     await expect(
       parseWorkflowManifestText(JSON.stringify(unsafe)),
     ).rejects.toThrow("path segment");
+  });
+
+  it("accepts content-bound Approval nodes and rejects output drift", async () => {
+    const manifest = workflowApprovalManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const unsafe = structuredClone(manifest);
+    (unsafe.nodes[0] as { outputSchema: unknown }).outputSchema = {
+      type: "object",
+      properties: { approved: { type: "boolean" } },
+      required: ["approved"],
+      additionalProperties: false,
+    };
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafe)),
+    ).rejects.toThrow("Approval node");
   });
 
   it("projects bounded comparison data without output bodies", () => {
@@ -221,6 +240,53 @@ function workflowToolManifest() {
         },
         outputSchema,
         timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowApprovalManifest() {
+  const base = workflowManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const outputSchema = structuredClone(
+    EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+  );
+  const content = {
+    ...baseContent,
+    outputSchema,
+    nodes: [
+      {
+        id: "report",
+        type: "approval" as const,
+        header: "Release",
+        question: "Approve this Workbench experiment?",
+        approve: {
+          label: "Approve",
+          description: "Complete the typed Workflow.",
+        },
+        reject: {
+          label: "Reject",
+          description: "Block the typed Workflow.",
+        },
+        inputBindings: {
+          workflow: { source: "workflow" as const },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            workflow: base.inputSchema,
+          },
+          required: ["workflow"],
+          additionalProperties: false as const,
+        },
+        outputSchema,
+        timeoutMs: 60_000,
         maxAttempts: 2,
       },
     ],

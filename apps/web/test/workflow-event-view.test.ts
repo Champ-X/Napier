@@ -107,6 +107,49 @@ describe("Workflow event Trace projection", () => {
       "tool list_files (read)",
     );
     expect(workflowEventTraceSummary(toolCompleted)).not.toContain("PRIVATE");
+
+    const approvalStarted = workflowEvent("workflow.node.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "approval",
+      nodeType: "approval",
+      questionSha256: "7".repeat(64),
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      planRevisionBefore: 1,
+      planRevisionAfter: 2,
+      recovered: false,
+      question: "PRIVATE_APPROVAL_QUESTION",
+    });
+    const approvalRequested = workflowEvent("workflow.approval.requested", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "approval",
+      nodeType: "approval",
+      questionSha256: "7".repeat(64),
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      decisionId: "decision_abcdefghijklmnopqrst",
+      requestedEventSeq: 8,
+      decisionRequestSha256: "8".repeat(64),
+      expiresAt: "2026-08-01T00:00:00.000Z",
+      answer: "PRIVATE_APPROVAL_ANSWER",
+    });
+    expect(workflowEventTraceSummary(approvalStarted)).toContain(
+      `approval ${"7".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(approvalRequested)).toContain(
+      "decision klmnopqrst",
+    );
+    expect(
+      `${workflowEventTraceSummary(approvalStarted)} ${workflowEventTraceSummary(approvalRequested)}`,
+    ).not.toContain("PRIVATE_APPROVAL");
   });
 
   it("summarizes experiment lineage and reused outputs without source bodies", () => {

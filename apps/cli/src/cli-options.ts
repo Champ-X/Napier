@@ -52,6 +52,8 @@ export interface CliWorkflowOptions extends CliExecutionOptions {
   expectedPreviewSha256?: string;
   previewExperiment?: boolean;
   confirmSideEffects?: boolean;
+  approval?: "approve" | "reject";
+  decisionNote?: string;
 }
 
 export type CliAction =
@@ -100,11 +102,14 @@ const WORKFLOW_VALUE_OPTIONS = new Set([
   "--from-node",
   "--model-overrides-json",
   "--expected-preview",
+  "--decision-note",
 ]);
 const WORKFLOW_FLAG_OPTIONS = new Set([
   "--retry-blocked",
   "--preview-experiment",
   "--confirm-side-effects",
+  "--approve",
+  "--reject",
 ]);
 
 export function parseCliArgs(argv: string[]): CliAction {
@@ -248,6 +253,7 @@ function parseWorkflowOptions(
   const inputJson = values.get("--input-json");
   const modelOverridesJson = values.get("--model-overrides-json");
   const expectedPreviewSha256 = values.get("--expected-preview")?.trim();
+  const decisionNote = values.get("--decision-note")?.trim();
   const rawTitle = values.get("--title");
   const title = rawTitle?.replace(/\s+/gu, " ").trim();
   if (rawTitle !== undefined && (!title || title.length > MAX_TITLE_CHARS)) {
@@ -266,6 +272,23 @@ function parseWorkflowOptions(
     throw new Error(
       `--model-overrides-json exceeds ${MAX_WORKFLOW_INPUT_BYTES} UTF-8 bytes`,
     );
+  }
+  if (flags.has("--approve") && flags.has("--reject")) {
+    throw new Error("--approve and --reject are mutually exclusive");
+  }
+  const approval = flags.has("--approve")
+    ? "approve"
+    : flags.has("--reject")
+      ? "reject"
+      : undefined;
+  if (decisionNote !== undefined && !approval) {
+    throw new Error("--decision-note requires --approve or --reject");
+  }
+  if (
+    decisionNote !== undefined &&
+    Buffer.byteLength(decisionNote, "utf8") > 4 * 1_024
+  ) {
+    throw new Error("--decision-note exceeds 4096 UTF-8 bytes");
   }
   if (fromNodeId) {
     if (!planId || !threadId) {
@@ -290,6 +313,9 @@ function parseWorkflowOptions(
         "--preview-experiment cannot include execution confirmation",
       );
     }
+    if (approval) {
+      throw new Error("--approve and --reject cannot be used with experiments");
+    }
   } else if (planId) {
     if (!threadId) throw new Error("--thread is required with --plan");
     if (
@@ -307,6 +333,9 @@ function parseWorkflowOptions(
     }
   } else if (inputJson === undefined) {
     throw new Error("--input-json is required for a new Workflow");
+  }
+  if (approval && !planId) {
+    throw new Error("--approve and --reject require --plan");
   }
   if (
     inputJson !== undefined &&
@@ -354,6 +383,8 @@ function parseWorkflowOptions(
       ...(flags.has("--confirm-side-effects")
         ? { confirmSideEffects: true }
         : {}),
+      ...(approval ? { approval } : {}),
+      ...(decisionNote ? { decisionNote } : {}),
     },
   };
 }
@@ -502,6 +533,9 @@ Workflow options:
   --title <text>         Title for a new target Thread
   --plan <plan-id>       Resume an existing Workflow Plan
   --retry-blocked        Explicitly reopen retryable blocked nodes
+  --approve              Approve the open Workflow Approval node, then resume
+  --reject               Reject the open Workflow Approval node, then resume
+  --decision-note <text> Optional answer note used with --approve/--reject
   --from-node <node-id>  Fork an experiment from this Workflow node
   --model-overrides-json Per-node ModelRef overrides for rerun nodes
   --preview-experiment   Preview a checkpoint experiment without mutation
