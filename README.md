@@ -2326,16 +2326,66 @@ current outcome evidence, and renders the selected policy template, policy
 hash, recommendation score, policy-set hash, override-set hash, policy source,
 and divergence count as part of the selection/backtest/override receipts.
 
+## TypeScript SDK
+
+`@napier/sdk` is the first supported local embedding entry point for Node
+applications. It owns one `LocalAgentRuntime` lifecycle but exposes no Store,
+credential registry, scheduler internals, or experiment-reuse capability.
+TypeScript code can define a Workflow from a Plan shape plus typed nodes,
+serialize the resulting stable Manifest as JSON, load it again with full hash
+validation, execute it in a new or selected Thread, and resume the exact Plan:
+
+```ts
+import { createNapierClient, loadNapierWorkflow } from "@napier/sdk";
+
+const client = await createNapierClient({
+  workspaceRoot: process.cwd(),
+  dataRoot: ".napier",
+});
+try {
+  const defined = await client.defineWorkflow<Request, Report>(definition);
+  const workflow = loadNapierWorkflow<Request, Report>(
+    JSON.parse(JSON.stringify(defined.manifest)),
+  );
+  const execution = await client.runWorkflow({
+    workflow,
+    input: { text: "Produce the report", publish: true },
+    signal: abortController.signal,
+    onEvent,
+  });
+  await client.resumeWorkflow({
+    workflow,
+    threadId: execution.threadId,
+    planId: execution.planId,
+  });
+} finally {
+  await client.close();
+}
+```
+
+`defineWorkflow()` performs pure Plan/Manifest/Schema preflight before
+persisting a definition Thread and source Plan, then derives the normal
+evidence-bound Blueprint. `runWorkflow()` validates Manifest and input before
+creating an execution Thread. Agent, Deterministic, Tool, Approval, condition,
+parallelism, retry, cancellation, recovery, policy, Sandbox, and Ledger
+behavior remain the existing Workflow Runtime behavior. The complete runnable
+model-free example is
+[`packages/sdk/examples/typed-workflow.mjs`](packages/sdk/examples/typed-workflow.mjs).
+`close()` rejects new calls, aborts and waits for active Workflow calls to
+settle their terminal evidence, then shuts down shared services idempotently.
+This SDK does not yet claim remote RPC, ACP, Desktop, or a browser-safe client.
+
 ## Executable Plan Workflows
 
-`defineExecutionPlanWorkflow()` is the first executable TypeScript Workflow
-SDK surface. Schema-version 1 evolves an `ExecutionPlanBlueprint` rather than
-creating a parallel state machine: the manifest node list must match the
-Blueprint step order and DAG, every node input binding must match a required
-object-schema property, node references must name direct dependencies, and the
-declared final schema must equal a terminal output node schema. The restricted
-JSON Schema subset is bounded by depth, node count, object properties, array
-items, strings, enums, and encoded bytes before execution.
+`defineExecutionPlanWorkflow()` is the low-level executable Manifest compiler
+used by the TypeScript SDK and Runtime. Schema-version 1 evolves an
+`ExecutionPlanBlueprint` rather than creating a parallel state machine: the
+manifest node list must match the Blueprint step order and DAG, every node
+input binding must match a required object-schema property, node references
+must name direct dependencies, and the declared final schema must equal a
+terminal output node schema. The restricted JSON Schema subset is bounded by
+depth, node count, object properties, array items, strings, enums, and encoded
+bytes before execution.
 
 `ExecutionPlanWorkflowRuntime` creates the normal durable `ExecutionPlan` and a
 real `source=workflow` Run for every ready node. The Workflow freezes the target
@@ -3198,6 +3248,7 @@ apps/web             Paper Ledger workbench; consumes contracts only
 apps/server          Hono HTTP/SSE adapter and static production host
 packages/contracts   Stable domain and stream contracts
 packages/runtime     Agent loop, policy, goals, memory, subagents, MCP, store
+packages/sdk         Store-free local TypeScript embedding facade
 skills/              Bundled Agent Skills packages
 .napier/             SQLite ledger and compatibility projections; ignored by Git
 ```

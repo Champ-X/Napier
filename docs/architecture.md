@@ -264,6 +264,26 @@ and HTTP SSE one sequence-accurate concurrent event projection. This keeps
 Workflow logic outside the oversized Store and Server modules and removes the
 former tool-construction block from `agent-runtime.ts`.
 
+`embedded-workflows.ts` is the local Experience-to-Capability adapter. It
+performs pure Plan, Manifest, Schema, and typed-input preflight before creating
+durable state; creates the definition Thread and source Plan needed for a real
+Blueprint; then delegates execution and resume to
+`ExecutionPlanWorkflowRuntime`. `packages/sdk` owns the external client
+lifecycle and generic TypeScript handles, but receives only this embedded
+service from `LocalAgentRuntime`. It does not receive or expose Store,
+credentials, model registries, internal experiment injection, or a second
+scheduler.
+
+The SDK's stable serialization boundary is the existing
+`ExecutionPlanWorkflowManifest`. Loading JSON revalidates its Blueprint,
+Schemas, nodes, and content hash before a typed handle is returned. New runs
+may create an isolated Thread or use an explicit existing Thread; resume
+requires the exact Thread, Plan, and Manifest. AbortSignal and event callbacks
+pass through unchanged. Closing the SDK first rejects new operations, aborts
+and waits for every active SDK Workflow to settle terminal evidence, then
+settles Process Sessions and MCP transports before SQLite just like CLI and
+Server shutdown.
+
 A new execution validates the complete manifest and typed input before
 creating state, creates the normal `ExecutionPlan`, freezes the target Agent
 revision in `workflow.started`, and executes dependency-ready nodes with
@@ -5002,7 +5022,7 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- interactive TUI, SDK/RPC, ACP, Desktop, persistent browser, and
+- interactive TUI, RPC, ACP, Desktop, persistent browser, and
   data/research capability slices over the same Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;

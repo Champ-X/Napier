@@ -13,7 +13,7 @@
   "scripts": {
     "bench:coding": "npm run build:core && npm run build -w @napier/cli && node scripts/run-coding-benchmark.mjs",
     "bench:store-scale": "npm run build:core && node scripts/benchmark-store-scale.mjs",
-    "build": "npm run build:core && npm run build -w @napier/cli && npm run build -w @napier/server && npm run build -w @napier/web",
+    "build": "npm run build:core && npm run build -w @napier/sdk && npm run build -w @napier/cli && npm run build -w @napier/server && npm run build -w @napier/web",
     "build:core": "npm run build -w @napier/contracts && npm run build -w @napier/runtime",
     "check": "npm run check:runtime-environment && npm run check:runtime-environment-receipt && npm run check:package-lock && npm run check:package-lock-receipt && npm run check:management-openapi && npm run check:management-openapi-compatibility && npm run build && npm run check:web-dist-manifest && npm run check:web-dist && npm run check:web-dist-receipt && npm run check:release-artifacts && npm test",
     "check:management-openapi": "node scripts/generate-management-openapi.mjs --check",
@@ -38,7 +38,7 @@
     "test:live-process": "npm run test:live-process -w @napier/runtime",
     "test:live-deepseek": "npm run test:live-deepseek -w @napier/runtime",
     "test:root": "vitest run scripts/*.test.mjs --testTimeout=30000",
-    "typecheck": "npm run build:core && npm run typecheck -w @napier/cli && npm run typecheck -w @napier/server && npm run typecheck -w @napier/web",
+    "typecheck": "npm run build:core && npm run typecheck -w @napier/sdk && npm run typecheck -w @napier/cli && npm run typecheck -w @napier/server && npm run typecheck -w @napier/web",
     "update:web-dist-manifest": "node scripts/update-web-dist-manifest.mjs",
     "verify:package-lock-receipt": "npm run check:package-lock-receipt",
     "verify:release-artifacts": "npm run check:release-artifacts",

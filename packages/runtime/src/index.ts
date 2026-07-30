@@ -14,6 +14,7 @@ export * from "./credential-references.js";
 export * from "./credentials.js";
 export * from "./delegation-ledger.js";
 export * from "./dap-protocol.js";
+export * from "./embedded-workflows.js";
 export * from "./evaluation.js";
 export * from "./evaluation-calibration.js";
 export * from "./evaluation-casebook-qualification.js";

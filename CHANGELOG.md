@@ -6,6 +6,19 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added `@napier/sdk` as a Store-free local TypeScript embedding entry point.
+  `createNapierClient()` owns the existing local Runtime lifecycle;
+  `defineWorkflow()` preflights a typed Plan and node graph before deriving a
+  real source Plan, Blueprint, and stable Manifest; `loadNapierWorkflow()`
+  rejects modified serialized Manifests; and `runWorkflow()` /
+  `resumeWorkflow()` delegate to the existing Workflow Runtime with unchanged
+  AbortSignal, event, policy, Sandbox, retry, recovery, and Ledger behavior.
+  Invalid definitions, inputs, titles, or pre-aborted requests fail before
+  creating definition or execution Threads. Package tests cover typed
+  conditional execution, serialization, portable Replay, idempotent resume,
+  closed-client behavior, preflight non-mutation, concurrent Thread isolation,
+  blocked-node retry, active-run cancellation before shared-service shutdown,
+  and a real external Node application using the built SDK.
 - Added typed conditional control to executable Plan Workflows. Any node may
   pair a Manifest-bound `when.path + equals` guard with a schema-valid
   `skipOutput`. The path resolves only inside the node's already constructed
