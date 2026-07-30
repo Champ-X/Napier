@@ -177,9 +177,11 @@ export function validateExecutionPlanWorkflowResult(
       !NODE_ID.test(node["nodeId"]) ||
       nodeIds.has(node["nodeId"]) ||
       !Number.isSafeInteger(node["attempt"]) ||
-      Number(node["attempt"]) < 1 ||
-      Number(node["attempt"]) > 3 ||
+      (node["status"] === "skipped"
+        ? node["attempt"] !== 0
+        : Number(node["attempt"]) < 1 || Number(node["attempt"]) > 3) ||
       (node["status"] !== "completed" &&
+        node["status"] !== "skipped" &&
         node["status"] !== "waiting" &&
         node["status"] !== "blocked" &&
         node["status"] !== "cancelled") ||
@@ -195,12 +197,14 @@ export function validateExecutionPlanWorkflowResult(
       throw new Error("Workflow node result is invalid");
     }
     nodeIds.add(node["nodeId"]);
-    if (node["status"] === "completed") {
+    if (node["status"] === "completed" || node["status"] === "skipped") {
       if (
         node["output"] === undefined ||
         !hash(node["outputSha256"]) ||
         sha256(canonicalJson(node["output"] as JsonValue)) !==
           node["outputSha256"] ||
+        (node["status"] === "skipped" && node["runId"] !== undefined) ||
+        node["decisionId"] !== undefined ||
         node["errorCode"] !== undefined ||
         node["diagnosticSha256"] !== undefined
       ) {

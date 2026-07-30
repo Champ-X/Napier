@@ -4,6 +4,7 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.started",
   "workflow.node.started",
   "workflow.node.completed",
+  "workflow.node.skipped",
   "workflow.node.failed",
   "workflow.node.reused",
   "workflow.approval.requested",
@@ -56,7 +57,12 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const nodeIdValue = nodeId(payload["nodeId"]);
     const inputSha256 = hash(payload["inputSha256"]);
     const outputSha256 = hash(payload["outputSha256"]);
-    const sourceAttempt = boundedInteger(payload["sourceAttempt"], 1, 3);
+    const skippedSource = payload["sourceStatus"] === "skipped";
+    const sourceAttempt = boundedInteger(
+      payload["sourceAttempt"],
+      skippedSource ? 0 : 1,
+      skippedSource ? 0 : 3,
+    );
     if (
       !nodeIdValue ||
       !inputSha256 ||
@@ -67,6 +73,7 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     }
     parts.push(
       `node ${nodeIdValue}`,
+      ...(skippedSource ? ["source-status skipped"] : []),
       `source-attempt ${String(sourceAttempt)}`,
       `input ${inputSha256.slice(0, 12)}`,
       `output ${outputSha256.slice(0, 12)}`,
@@ -205,7 +212,11 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     );
   } else if (event.type.startsWith("workflow.node.")) {
     const nodeIdValue = nodeId(payload["nodeId"]);
-    const attempt = boundedInteger(payload["attempt"], 1, 3);
+    const attempt = boundedInteger(
+      payload["attempt"],
+      event.type === "workflow.node.skipped" ? 0 : 1,
+      event.type === "workflow.node.skipped" ? 0 : 3,
+    );
     const inputSha256 = hash(payload["inputSha256"]);
     const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
     if (
@@ -244,6 +255,15 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     ) {
       return undefined;
     }
+    const conditionSha256 = hash(payload["conditionSha256"]);
+    const skipOutputSha256 = hash(payload["skipOutputSha256"]);
+    if (conditionSha256 || skipOutputSha256) {
+      if (!conditionSha256 || !skipOutputSha256) return undefined;
+      parts.push(
+        `condition ${conditionSha256.slice(0, 12)}`,
+        `skip-output ${skipOutputSha256.slice(0, 12)}`,
+      );
+    }
     if (event.type === "workflow.node.completed") {
       const outputSha256 = hash(payload["outputSha256"]);
       if (!outputSha256 || typeof payload["recovered"] !== "boolean") {
@@ -251,6 +271,27 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       }
       parts.push(`output ${outputSha256.slice(0, 12)}`);
       if (payload["recovered"]) parts.push("recovered");
+    }
+    if (event.type === "workflow.node.skipped") {
+      const outputSha256 = hash(payload["outputSha256"]);
+      const subjectSha256 = hash(payload["conditionSubjectSha256"]);
+      if (
+        !conditionSha256 ||
+        !skipOutputSha256 ||
+        !outputSha256 ||
+        !subjectSha256 ||
+        payload["matched"] !== false ||
+        typeof payload["recovered"] !== "boolean" ||
+        typeof payload["reused"] !== "boolean"
+      ) {
+        return undefined;
+      }
+      parts.push(
+        `subject ${subjectSha256.slice(0, 12)}`,
+        `output ${outputSha256.slice(0, 12)}`,
+        ...(payload["recovered"] ? ["recovered"] : []),
+        ...(payload["reused"] ? ["reused"] : []),
+      );
     }
     if (event.type === "workflow.node.failed") {
       const errorCode = safeToken(payload["errorCode"]);
@@ -270,17 +311,24 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       0,
       30,
     );
+    const skippedNodeCount =
+      payload["skippedNodeCount"] === undefined
+        ? 0
+        : boundedInteger(payload["skippedNodeCount"], 0, 30);
     if (
       !status ||
       !resultSha256 ||
       nodeResultCount === undefined ||
-      completedNodeCount === undefined
+      completedNodeCount === undefined ||
+      skippedNodeCount === undefined ||
+      completedNodeCount + skippedNodeCount > nodeResultCount
     ) {
       return undefined;
     }
     parts.push(
       `status ${status}`,
       `completed ${String(completedNodeCount)}/${String(nodeResultCount)}`,
+      ...(skippedNodeCount > 0 ? [`skipped ${String(skippedNodeCount)}`] : []),
       `result ${resultSha256.slice(0, 12)}`,
     );
     const outputSha256 = hash(payload["outputSha256"]);

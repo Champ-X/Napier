@@ -178,6 +178,60 @@ describe("Workflow experiment Web API", () => {
     await expect(
       validateWorkflowExperimentResultFrame(tampered),
     ).rejects.toThrow("comparison hash");
+
+    const forgedSkipped = structuredClone(fixture.resultFrame);
+    const skippedTarget = forgedSkipped.experiment.comparison!.nodes[0]!.target;
+    skippedTarget.status = "skipped";
+    skippedTarget.outputSha256 = "5".repeat(64);
+    skippedTarget.metrics.attemptCount = 1;
+    const { contentSha256: _comparisonSha256, ...comparisonContent } =
+      forgedSkipped.experiment.comparison!;
+    forgedSkipped.experiment.comparison!.contentSha256 = sha256(
+      canonicalJson(comparisonContent),
+    );
+    const { contentSha256: _frameSha256, ...frameContent } = forgedSkipped;
+    forgedSkipped.contentSha256 = sha256(canonicalJson(frameContent));
+    await expect(
+      validateWorkflowExperimentResultFrame(forgedSkipped),
+    ).rejects.toThrow("comparison is invalid");
+
+    const forgedStatus = structuredClone(fixture.resultFrame);
+    const output = { report: "Forged status", approved: true };
+    const outputSha256 = sha256(canonicalJson(output));
+    forgedStatus.experiment.result.nodeResults = [
+      {
+        nodeId: "report",
+        attempt: 0,
+        status: "skipped",
+        inputSha256: "4".repeat(64),
+        inputSchemaSha256: "5".repeat(64),
+        outputSchemaSha256: "6".repeat(64),
+        output,
+        outputSha256,
+      },
+    ];
+    const forgedTarget = forgedStatus.experiment.comparison!.nodes[0]!.target;
+    forgedTarget.status = "completed";
+    forgedTarget.outputSha256 = outputSha256;
+    forgedStatus.experiment.comparison!.nodes[0]!.statusChanged = true;
+    forgedStatus.experiment.comparison!.nodes[0]!.outputChange =
+      "became_available";
+    forgedStatus.experiment.comparison!.changedNodeIds = ["report"];
+    const { contentSha256: _statusComparisonSha256, ...statusComparison } =
+      forgedStatus.experiment.comparison!;
+    forgedStatus.experiment.comparison!.contentSha256 = sha256(
+      canonicalJson(statusComparison),
+    );
+    const { resultSha256: _statusResultSha256, ...statusResult } =
+      forgedStatus.experiment.result;
+    forgedStatus.experiment.result.resultSha256 = sha256(
+      canonicalJson(statusResult),
+    );
+    const { contentSha256: _statusFrameSha256, ...statusFrame } = forgedStatus;
+    forgedStatus.contentSha256 = sha256(canonicalJson(statusFrame));
+    await expect(
+      validateWorkflowExperimentResultFrame(forgedStatus),
+    ).rejects.toThrow("result binding is invalid");
   });
 
   it("rejects duplicate terminal snapshots", async () => {

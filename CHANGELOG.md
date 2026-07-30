@@ -6,6 +6,28 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added typed conditional control to executable Plan Workflows. Any node may
+  pair a Manifest-bound `when.path + equals` guard with a schema-valid
+  `skipOutput`. The path resolves only inside the node's already constructed
+  and validated input, and canonical JSON equality provides no coercion,
+  truthiness, interpolation, JSONPath, or executable expression surface. A
+  false guard creates no Run and consumes no attempt; the existing Plan step
+  becomes skipped and its typed fallback remains available to downstream
+  joins. A true guard uses the unchanged Agent, Deterministic, Tool, or
+  Approval execution path. Resume rebuilds dependencies and input, recomputes
+  the guard, repairs a missing hash-only `workflow.node.skipped` event, and
+  rejects unconditional, now-true, duplicate, or drifted skip evidence.
+  Checkpoint experiments rerun and reuse skipped nodes without manufacturing
+  `workflow_reuse` Runs, preserve explicit lineage across commit gaps, and
+  report zero Run/model/tool/token/cost metrics. Runtime and browser comparison
+  validators reject forged non-zero skipped observations and result/comparison
+  status mismatches. Real CLI JSONL and HTTP SSE execute a missing-provider
+  node through its fallback with zero Runs; Workbench Manifest validation and
+  Trace enforce safe paths and expose only condition, subject, fallback,
+  output, and schema hashes. Tests cover false and true branches, parallel
+  join, unavailable runtime paths, commit-gap recovery, duplicate evidence,
+  portable Replay, experiment rerun/reuse and recovery, protocol tampering,
+  CLI, Server, and Web privacy.
 - Added bounded parallel waves to typed Plan Workflows. Manifests can opt into
   `maxConcurrency` from 1 to 4 while omission preserves legacy sequential
   execution. The scheduler selects dependency-ready non-Approval nodes, gives

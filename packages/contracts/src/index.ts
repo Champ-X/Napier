@@ -832,6 +832,11 @@ export type ExecutionPlanWorkflowInputBinding =
       path?: ExecutionPlanWorkflowValuePathSegment[];
     };
 
+export interface ExecutionPlanWorkflowCondition {
+  path: ExecutionPlanWorkflowValuePathSegment[];
+  equals: JsonValue;
+}
+
 export type ExecutionPlanWorkflowDeterministicTemplate =
   | {
       kind: "literal";
@@ -856,6 +861,8 @@ export interface ExecutionPlanWorkflowAgentNode {
   inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
   inputSchema: WorkflowObjectSchema;
   outputSchema: WorkflowValueSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
   model?: ModelRef;
   timeoutMs: number;
   maxAttempts: number;
@@ -867,6 +874,8 @@ export interface ExecutionPlanWorkflowDeterministicNode {
   inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
   inputSchema: WorkflowObjectSchema;
   outputSchema: WorkflowValueSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
   template: ExecutionPlanWorkflowDeterministicTemplate;
   timeoutMs: number;
   maxAttempts: number;
@@ -904,6 +913,8 @@ export interface ExecutionPlanWorkflowToolNode {
   inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
   inputSchema: WorkflowObjectSchema;
   outputSchema: WorkflowValueSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
   timeoutMs: number;
   maxAttempts: number;
 }
@@ -923,6 +934,8 @@ export interface ExecutionPlanWorkflowApprovalNode {
   inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
   inputSchema: WorkflowObjectSchema;
   outputSchema: WorkflowObjectSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
   timeoutMs: number;
   maxAttempts: number;
 }
@@ -987,6 +1000,7 @@ export interface ExecutionPlanWorkflowManifestVerification {
 
 export type ExecutionPlanWorkflowNodeStatus =
   | "completed"
+  | "skipped"
   | "waiting"
   | "blocked"
   | "cancelled";

@@ -52,6 +52,23 @@ export function completedWorkflowNodeResult(
   };
 }
 
+export function skippedWorkflowNodeResult(
+  node: ExecutionPlanWorkflowNode,
+  inputSha256: string,
+  output: JsonValue,
+): ExecutionPlanWorkflowNodeResult {
+  return {
+    nodeId: node.id,
+    attempt: 0,
+    status: "skipped",
+    inputSha256,
+    inputSchemaSha256: workflowSchemaSha256(node.inputSchema),
+    outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
+    output: structuredClone(output),
+    outputSha256: sha256(canonicalJson(output)),
+  };
+}
+
 export function workflowPlanCreatedPayload(
   plan: ExecutionPlan,
   workflowManifestSha256: string,

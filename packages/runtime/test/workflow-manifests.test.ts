@@ -93,6 +93,95 @@ describe("Execution Plan Workflow manifests", () => {
     ).toEqual({ report: "Ready", approved: true });
   });
 
+  it("binds typed conditional paths and fallback output without expressions", async () => {
+    const blueprint = await createBlueprint();
+    const nodes = workflowNodes();
+    nodes[0] = {
+      ...nodes[0]!,
+      when: {
+        path: ["workflow", "request"],
+        equals: "skip",
+      },
+      skipOutput: { summary: "Skipped inspection", count: 0 },
+    };
+    const definition = {
+      name: "Conditional report",
+      version: 1,
+      description: "Skip one typed node from its validated input.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: reportSchema(),
+      outputNodeId: "report",
+      nodes,
+    };
+    const manifest = defineExecutionPlanWorkflow(definition);
+    expect(validateExecutionPlanWorkflowManifest(manifest)).toEqual(manifest);
+
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...nodes[0]!,
+            skipOutput: undefined,
+          },
+          nodes[1]!,
+        ],
+      }),
+    ).toThrow("requires skipOutput");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...nodes[0]!,
+            when: { path: ["workflow", "missing"], equals: "skip" },
+          },
+          nodes[1]!,
+        ],
+      }),
+    ).toThrow("does not match the input schema");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...nodes[0]!,
+            when: { path: ["workflow", "request"], equals: false },
+          },
+          nodes[1]!,
+        ],
+      }),
+    ).toThrow("does not match its schema");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...nodes[0]!,
+            when: {
+              path: ["workflow", "constructor"],
+              equals: "skip",
+            },
+          },
+          nodes[1]!,
+        ],
+      }),
+    ).toThrow("path segment is invalid");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...nodes[0]!,
+            skipOutput: { summary: "Invalid count", count: "zero" },
+          },
+          nodes[1]!,
+        ] as typeof nodes,
+      }),
+    ).toThrow("does not match its schema");
+  });
+
   it("rejects drift, unsupported schemas, invalid bindings, and untyped output", async () => {
     const blueprint = await createBlueprint();
     const valid = defineExecutionPlanWorkflow({

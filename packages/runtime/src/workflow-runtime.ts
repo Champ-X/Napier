@@ -19,6 +19,8 @@ import type {
   WorkflowExecutionContext,
   WorkflowNodeFailure,
 } from "./workflow-context.js";
+import { evaluateExecutionPlanWorkflowCondition } from "./workflow-condition-model.js";
+import { ExecutionPlanWorkflowConditionNodeExecutor } from "./workflow-condition-node.js";
 import {
   WORKFLOW_EXPERIMENT_EXECUTION,
   type WorkflowExperimentExecution,
@@ -82,6 +84,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
   private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
+  private readonly conditionNodeExecutor: ExecutionPlanWorkflowConditionNodeExecutor;
   private readonly deterministicNodeExecutor: ExecutionPlanWorkflowDeterministicNodeExecutor;
   private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
@@ -90,6 +93,10 @@ export class ExecutionPlanWorkflowRuntime {
     private readonly agentRuntime: AgentRuntime,
   ) {
     this.ledger = new ExecutionPlanWorkflowLedger(store);
+    this.conditionNodeExecutor = new ExecutionPlanWorkflowConditionNodeExecutor(
+      store,
+      this.ledger,
+    );
     this.approvalNodeExecutor = new ExecutionPlanWorkflowApprovalNodeExecutor(
       store,
       this.ledger,
@@ -356,7 +363,9 @@ export class ExecutionPlanWorkflowRuntime {
 
     context.plan = this.store.getPlan(context.plan.id);
     if (
-      context.plan.steps.every((step) => step.status === "completed") &&
+      context.plan.steps.every(
+        (step) => step.status === "completed" || step.status === "skipped",
+      ) &&
       context.plan.status === "completed"
     ) {
       return this.finish(context, "completed");
@@ -404,6 +413,40 @@ export class ExecutionPlanWorkflowRuntime {
       };
     }
     const inputSha256 = sha256(canonicalJson(input));
+    if (node.when) {
+      let evaluation;
+      try {
+        evaluation = evaluateExecutionPlanWorkflowCondition(
+          node.when,
+          input,
+          node.id,
+        );
+      } catch (error) {
+        return {
+          result: await this.blockNode(context, node, {
+            inputSha256,
+            attempt: Math.min(attempt, node.maxAttempts),
+            errorCode:
+              attempt > node.maxAttempts
+                ? "attempt_limit"
+                : "condition_invalid",
+            diagnosticSha256: sha256(errorMessage(error)),
+          }),
+          cancelled: false,
+        };
+      }
+      if (!evaluation.matched) {
+        return {
+          result: await this.conditionNodeExecutor.skip(
+            context,
+            node,
+            inputSha256,
+            evaluation,
+          ),
+          cancelled: false,
+        };
+      }
+    }
     if (attempt > node.maxAttempts) {
       return {
         result: await this.blockNode(context, node, {
@@ -762,6 +805,9 @@ export class ExecutionPlanWorkflowRuntime {
     const completedNodeCount = nodeResults.filter(
       (node) => node.status === "completed",
     ).length;
+    const skippedNodeCount = nodeResults.filter(
+      (node) => node.status === "skipped",
+    ).length;
     if (
       !(await this.ledger.hasTerminalEvent({
         threadId: context.threadId,
@@ -773,6 +819,7 @@ export class ExecutionPlanWorkflowRuntime {
         planRevision: context.plan.revision,
         nodeResultCount: nodeResults.length,
         completedNodeCount,
+        skippedNodeCount,
         ...(result.outputSha256 ? { outputSha256: result.outputSha256 } : {}),
       }))
     ) {
@@ -792,6 +839,7 @@ export class ExecutionPlanWorkflowRuntime {
             planRevision: context.plan.revision,
             nodeResultCount: nodeResults.length,
             completedNodeCount,
+            skippedNodeCount,
             ...(result.outputSha256
               ? { outputSha256: result.outputSha256 }
               : {}),

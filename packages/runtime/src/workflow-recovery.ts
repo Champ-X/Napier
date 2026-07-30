@@ -10,6 +10,7 @@ import type {
   WorkflowExecutionContext,
   WorkflowNodeFailure,
 } from "./workflow-context.js";
+import { evaluateExecutionPlanWorkflowCondition } from "./workflow-condition-model.js";
 import {
   ExecutionPlanWorkflowLedger,
   isWorkflowRecord,
@@ -17,7 +18,10 @@ import {
   WORKFLOW_EVENT_SCHEMA_VERSION,
   WORKFLOW_NODE_FAILED_EVENT,
 } from "./workflow-ledger.js";
-import { completedWorkflowNodeResult } from "./workflow-runtime-model.js";
+import {
+  completedWorkflowNodeResult,
+  skippedWorkflowNodeResult,
+} from "./workflow-runtime-model.js";
 import {
   buildExecutionPlanWorkflowNodeInput,
   workflowNodeBindingContextSha256,
@@ -65,7 +69,58 @@ export class ExecutionPlanWorkflowRecovery {
           (candidate) => candidate.id === nodeId,
         )!;
         if (step.status === "skipped") {
-          throw new Error("Workflow Plan contains an unsupported skipped node");
+          if (
+            Object.values(node.inputBindings).some(
+              (binding) =>
+                binding.source === "node" &&
+                !context.outputs.has(binding.nodeId),
+            )
+          ) {
+            continue;
+          }
+          if (!node.when || node.skipOutput === undefined) {
+            throw new Error(
+              "Workflow Plan contains an unauthorized skipped node",
+            );
+          }
+          const input = buildExecutionPlanWorkflowNodeInput(
+            node,
+            context.input,
+            context.outputs,
+          );
+          const inputSha256 = sha256(canonicalJson(input));
+          const evaluation = evaluateExecutionPlanWorkflowCondition(
+            node.when,
+            input,
+            node.id,
+          );
+          if (evaluation.matched) {
+            throw new Error("Workflow skipped condition no longer matches");
+          }
+          await this.ledger.verifyOrRecoverNodeSkippedEvent(
+            context,
+            node,
+            inputSha256,
+            evaluation.subjectSha256,
+            context.reusedNodes.some(
+              (reused) =>
+                reused.nodeId === node.id && reused.sourceStatus === "skipped",
+            ),
+          );
+          await this.ledger.ensurePlanStepEvent(
+            context,
+            context.plan,
+            node.id,
+            "skipped",
+            createId("runctl"),
+          );
+          context.outputs.set(node.id, structuredClone(node.skipOutput));
+          context.nodeResults.set(
+            node.id,
+            skippedWorkflowNodeResult(node, inputSha256, node.skipOutput),
+          );
+          madeProgress = true;
+          continue;
         }
         if (node.type === "approval" && step.status === "running") {
           continue;
@@ -95,6 +150,13 @@ export class ExecutionPlanWorkflowRecovery {
           context.outputs,
         );
         const inputSha256 = sha256(canonicalJson(input));
+        if (
+          node.when &&
+          !evaluateExecutionPlanWorkflowCondition(node.when, input, node.id)
+            .matched
+        ) {
+          throw new Error("Executed Workflow node condition no longer matches");
+        }
         if (!step.runId) {
           throw new Error("Workflow Plan step is missing its Run binding");
         }

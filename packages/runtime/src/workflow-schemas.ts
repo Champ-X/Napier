@@ -42,6 +42,15 @@ export function assertWorkflowValue(
   validateValueAgainstSchema(schema, value, label, 0);
 }
 
+export function assertWorkflowJsonValue(
+  value: unknown,
+  label: string,
+  maximumBytes = MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
+): asserts value is JsonValue {
+  assertJsonValue(value, label);
+  assertWorkflowEncodedBytes(value, maximumBytes, label);
+}
+
 export function buildExecutionPlanWorkflowNodeInput(
   node: ExecutionPlanWorkflowNode,
   workflowInput: JsonValue,

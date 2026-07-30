@@ -7,14 +7,19 @@ import type {
   WorkflowExecutionContext,
   WorkflowReusedNode,
 } from "./workflow-context.js";
+import { evaluateExecutionPlanWorkflowCondition } from "./workflow-condition-model.js";
 import {
   ExecutionPlanWorkflowLedger,
+  isWorkflowRecord,
   WORKFLOW_EVENT_SCHEMA_VERSION,
   WORKFLOW_NODE_COMPLETED_EVENT,
   WORKFLOW_NODE_STARTED_EVENT,
   workflowNodeEventMetadata,
 } from "./workflow-ledger.js";
-import { completedWorkflowNodeResult } from "./workflow-runtime-model.js";
+import {
+  completedWorkflowNodeResult,
+  skippedWorkflowNodeResult,
+} from "./workflow-runtime-model.js";
 import {
   assertWorkflowValue,
   buildExecutionPlanWorkflowNodeInput,
@@ -46,6 +51,12 @@ export class ExecutionPlanWorkflowReuseMaterializer {
       const step = context.plan.steps.find(
         (candidate) => candidate.id === reused.nodeId,
       );
+      if (reused.sourceStatus === "skipped") {
+        if (step?.status === "blocked") {
+          throw new Error("Workflow skipped reuse cannot reopen a blocked Run");
+        }
+        continue;
+      }
       if (!step || step.status !== "blocked") continue;
       const run = step.runId
         ? this.store
@@ -106,6 +117,9 @@ export class ExecutionPlanWorkflowReuseMaterializer {
         (candidate) => candidate.id === nodeId,
       )!;
       if (step.status === "completed") continue;
+      if (step.status === "skipped" && reused.sourceStatus !== "skipped") {
+        throw new Error("Workflow completed reuse was unexpectedly skipped");
+      }
       const node = context.manifest.nodes.find(
         (candidate) => candidate.id === nodeId,
       )!;
@@ -127,6 +141,82 @@ export class ExecutionPlanWorkflowReuseMaterializer {
       const inputSha256 = sha256(canonicalJson(input));
       if (inputSha256 !== reused.sourceInputSha256) {
         throw new Error("Workflow reused input hash mismatch");
+      }
+      if (reused.sourceStatus === "skipped") {
+        if (
+          !node.when ||
+          node.skipOutput === undefined ||
+          canonicalJson(output) !== canonicalJson(node.skipOutput)
+        ) {
+          throw new Error("Workflow skipped reuse output is invalid");
+        }
+        const evaluation = evaluateExecutionPlanWorkflowCondition(
+          node.when,
+          input,
+          node.id,
+        );
+        if (evaluation.matched) {
+          throw new Error("Workflow skipped reuse condition changed");
+        }
+        if (step.status === "skipped") {
+          await this.ledger.verifyNodeSkippedEvent(
+            context,
+            node,
+            inputSha256,
+            evaluation.subjectSha256,
+            true,
+          );
+          await this.ensureSkippedReuseEvent(
+            context,
+            reused,
+            inputSha256,
+            outputSha256,
+          );
+          context.outputs.set(node.id, output);
+          context.nodeResults.set(
+            node.id,
+            skippedWorkflowNodeResult(node, inputSha256, output),
+          );
+          continue;
+        }
+        if (step.status !== "ready") {
+          throw new Error("Workflow reused node is not dependency-ready");
+        }
+        context.plan = await this.store.transitionPlanStep(
+          context.plan.id,
+          node.id,
+          {
+            action: "skip",
+            evidence: `Reused skipped Workflow output ${outputSha256} from source Plan ${reused.sourcePlanId}.`,
+          },
+        );
+        await this.ledger.appendPlanStepEvent(
+          context,
+          context.plan,
+          node.id,
+          "skipped",
+          createId("runctl"),
+        );
+        await this.ledger.appendNodeSkippedEvent(
+          context,
+          node,
+          inputSha256,
+          evaluation.subjectSha256,
+          false,
+          true,
+        );
+        await this.recordSkippedReuse(
+          context,
+          reused,
+          inputSha256,
+          outputSha256,
+        );
+        context.outputs.set(node.id, output);
+        context.nodeResults.set(
+          node.id,
+          skippedWorkflowNodeResult(node, inputSha256, output),
+        );
+        continue;
       }
       if (step.status !== "ready") {
         throw new Error("Workflow reused node is not dependency-ready");
@@ -219,6 +309,9 @@ export class ExecutionPlanWorkflowReuseMaterializer {
     output: WorkflowReusedNode["output"],
     outputSha256: string,
   ): Promise<void> {
+    if (reused.sourceStatus !== "completed" || !reused.sourceRunId) {
+      throw new Error("Workflow completed reuse source is invalid");
+    }
     const run = this.store
       .listRuns(context.threadId)
       .find((candidate) => candidate.id === runId)!;
@@ -327,5 +420,74 @@ export class ExecutionPlanWorkflowReuseMaterializer {
       },
       context.onEvent,
     );
+  }
+
+  private async recordSkippedReuse(
+    context: WorkflowExecutionContext,
+    reused: WorkflowReusedNode,
+    inputSha256: string,
+    outputSha256: string,
+  ): Promise<void> {
+    await this.ledger.append(
+      {
+        threadId: context.threadId,
+        runId: createId("runctl"),
+        type: "workflow.node.reused",
+        category: "plan",
+        visibility: "user",
+        payload: {
+          schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
+          planId: context.plan.id,
+          nodeId: reused.nodeId,
+          manifestSha256: context.manifest.contentSha256,
+          inputSha256,
+          outputSha256,
+          sourceThreadId: reused.sourceThreadId,
+          sourcePlanId: reused.sourcePlanId,
+          sourceStatus: "skipped",
+          sourceAttempt: 0,
+          sourceInputSha256: reused.sourceInputSha256,
+        },
+      },
+      context.onEvent,
+    );
+  }
+
+  private async ensureSkippedReuseEvent(
+    context: WorkflowExecutionContext,
+    reused: WorkflowReusedNode,
+    inputSha256: string,
+    outputSha256: string,
+  ): Promise<void> {
+    const matches = (await this.store.listEvents(context.threadId)).filter(
+      (event) =>
+        event.type === "workflow.node.reused" &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["planId"] === context.plan.id &&
+        event.payload["nodeId"] === reused.nodeId,
+    );
+    if (matches.length === 0) {
+      await this.recordSkippedReuse(context, reused, inputSha256, outputSha256);
+      return;
+    }
+    const payload =
+      matches.length === 1 && isWorkflowRecord(matches[0]!.payload)
+        ? matches[0]!.payload
+        : undefined;
+    if (
+      !payload ||
+      payload["schemaVersion"] !== WORKFLOW_EVENT_SCHEMA_VERSION ||
+      payload["manifestSha256"] !== context.manifest.contentSha256 ||
+      payload["inputSha256"] !== inputSha256 ||
+      payload["outputSha256"] !== outputSha256 ||
+      payload["sourceThreadId"] !== reused.sourceThreadId ||
+      payload["sourcePlanId"] !== reused.sourcePlanId ||
+      payload["sourceStatus"] !== "skipped" ||
+      payload["sourceAttempt"] !== 0 ||
+      payload["sourceRunId"] !== undefined ||
+      payload["sourceInputSha256"] !== reused.sourceInputSha256
+    ) {
+      throw new Error("Workflow skipped reuse evidence mismatch");
+    }
   }
 }

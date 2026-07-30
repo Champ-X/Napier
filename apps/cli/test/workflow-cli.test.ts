@@ -390,6 +390,63 @@ describe("Napier Workflow CLI", () => {
     expect(frames.at(-2)?.type).toBe("snapshot");
   });
 
+  it("streams a conditional fallback without creating a node Run", async () => {
+    const fixture = await createConditionalFixture();
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        '{"execute":false}',
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout),
+      {
+        createRuntime: (options) =>
+          createLocalAgentRuntime({
+            ...options,
+            sandbox: new UnsupportedSandboxAdapter(
+              "workflow-conditional-cli-test",
+            ),
+          }),
+      },
+    );
+
+    expect(code).toBe(0);
+    const frames = parseFrames(stdout.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { report: "CLI conditional fallback", approved: true },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "fallback",
+            attempt: 0,
+            status: "skipped",
+          }),
+        ],
+      }),
+    );
+    const snapshot = frames.find((frame) => frame.type === "snapshot");
+    expect(
+      snapshot?.type === "snapshot" ? snapshot.detail.runs : undefined,
+    ).toHaveLength(0);
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    expect(
+      events.filter((event) => event.type === "workflow.node.skipped"),
+    ).toHaveLength(1);
+    expect(events.some((event) => event.type === "run.started")).toBe(false);
+  });
+
   it("streams parallel Agent nodes and their typed join through ordered JSONL", async () => {
     const fixture = await createParallelFixture();
     const provider = fauxProvider({
@@ -910,6 +967,80 @@ async function createFixture(): Promise<{
   return { root, workspaceRoot, dataRoot };
 }
 
+async function createConditionalFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-conditional-workflow-cli-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-conditional-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Return one conditional CLI fallback.",
+    steps: [
+      {
+        id: "fallback",
+        title: "Conditional fallback",
+        description: "Execute only when requested.",
+        verification: "Return a typed report in both branches.",
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const inputSchema = conditionalInputSchema();
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI conditional fallback",
+    version: 1,
+    description: "Exercise model-free conditional control through JSONL.",
+    blueprint,
+    inputSchema,
+    outputSchema: reportSchema(),
+    outputNodeId: "fallback",
+    nodes: [
+      {
+        id: "fallback",
+        type: "agent",
+        inputBindings: { workflow: { source: "workflow" } },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: inputSchema },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: reportSchema(),
+        when: { path: ["workflow", "execute"], equals: true },
+        skipOutput: {
+          report: "CLI conditional fallback",
+          approved: true,
+        },
+        model: { provider: "missing-conditional", id: "missing-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
 async function createToolFixture(): Promise<{
   root: string;
   workspaceRoot: string;
@@ -1272,6 +1403,17 @@ function requestSchema(): WorkflowObjectSchema {
       request: { type: "string", minLength: 1, maxLength: 500 },
     },
     required: ["request"],
+    additionalProperties: false,
+  };
+}
+
+function conditionalInputSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      execute: { type: "boolean" },
+    },
+    required: ["execute"],
     additionalProperties: false,
   };
 }

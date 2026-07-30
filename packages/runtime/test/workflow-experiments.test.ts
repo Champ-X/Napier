@@ -712,6 +712,225 @@ describe("Execution Plan Workflow experiments", () => {
     fixture.store.close();
   });
 
+  it("reuses a skipped conditional ancestor without manufacturing a Run", async () => {
+    const fixture = await createFixture({ conditionalInspect: true });
+    expect(fixture.sourceResult.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        attempt: 0,
+        status: "skipped",
+        output: { summary: "Source inspection skipped", count: 0 },
+      }),
+    );
+    fixture.alternate.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Conditional experiment report","approved":true}',
+      ),
+    ]);
+    const experiment = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: experimentRequest(fixture, {
+        modelOverrides: {
+          report: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      }),
+    });
+
+    expect(experiment.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Conditional experiment report",
+          approved: true,
+        },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            attempt: 0,
+            status: "skipped",
+          }),
+          expect.objectContaining({
+            nodeId: "report",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    const targetPlan = fixture.store.getPlan(experiment.result.planId);
+    expect(targetPlan.steps[0]?.status).toBe("skipped");
+    expect(fixture.store.listRuns(experiment.targetThreadId)).toHaveLength(1);
+    const events = await fixture.store.listEvents(experiment.targetThreadId);
+    expect(
+      events.find((event) => event.type === "workflow.node.reused")?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        sourceStatus: "skipped",
+        sourceAttempt: 0,
+      }),
+    );
+    expect(
+      events.find((event) => event.type === "workflow.node.skipped")?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        reused: true,
+        attempt: 0,
+      }),
+    );
+    expect(experiment.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "reused",
+        statusChanged: false,
+        source: expect.objectContaining({
+          status: "skipped",
+          runIds: [],
+          metrics: expect.objectContaining({
+            runCount: 0,
+            attemptCount: 0,
+          }),
+        }),
+        target: expect.objectContaining({
+          status: "skipped",
+          runIds: [],
+          metrics: expect.objectContaining({
+            runCount: 0,
+            attemptCount: 0,
+          }),
+        }),
+      }),
+    );
+    const forgedSkippedMetrics = structuredClone(experiment.comparison!);
+    forgedSkippedMetrics.nodes[0]!.target.metrics.attemptCount = 1;
+    expect(() =>
+      validateExecutionPlanWorkflowExperimentComparison(
+        rehashComparison(forgedSkippedMetrics),
+      ),
+    ).toThrow("skipped node observation");
+    const forgedSkippedStatus = structuredClone(experiment);
+    forgedSkippedStatus.comparison!.nodes[0]!.target.status = "completed";
+    forgedSkippedStatus.comparison!.nodes[0]!.statusChanged = true;
+    forgedSkippedStatus.comparison!.changedNodeIds = [
+      "inspect",
+      ...forgedSkippedStatus.comparison!.changedNodeIds,
+    ];
+    forgedSkippedStatus.comparison = rehashComparison(
+      forgedSkippedStatus.comparison!,
+    );
+    expect(() =>
+      validateExecutionPlanWorkflowExperimentResult(forgedSkippedStatus),
+    ).toThrow("comparison node binding");
+    expect(validateExecutionPlanWorkflowExperimentResult(experiment)).toEqual(
+      experiment,
+    );
+
+    fixture.alternate.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Conditional checkpoint rerun","approved":true}',
+      ),
+    ]);
+    const rerun = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: fixture.sourceResult.planId,
+        fromNodeId: "inspect",
+        modelOverrides: {
+          report: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      },
+    });
+    expect(rerun.result.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        attempt: 0,
+        status: "skipped",
+      }),
+    );
+    expect(fixture.store.listRuns(rerun.targetThreadId)).toHaveLength(1);
+    expect(rerun.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "rerun",
+        statusChanged: false,
+        target: expect.objectContaining({
+          status: "skipped",
+          runIds: [],
+        }),
+      }),
+    );
+    fixture.store.close();
+  });
+
+  it("repairs skipped reuse lineage after a target commit gap", async () => {
+    const fixture = await createFixture({ conditionalInspect: true });
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Recovered skipped reuse","approved":true}',
+      ),
+    ]);
+    const appendEvent = fixture.store.appendEvent.bind(fixture.store);
+    let failReuse = true;
+    fixture.store.appendEvent = async (input) => {
+      if (
+        input.type === "workflow.node.reused" &&
+        record(input.payload)?.["sourceStatus"] === "skipped" &&
+        failReuse
+      ) {
+        failReuse = false;
+        throw new Error("Injected skipped reuse lineage failure");
+      }
+      return appendEvent(input);
+    };
+    let targetThreadId = "";
+    await expect(
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request: experimentRequest(fixture),
+        onTargetCreated: (thread) => {
+          targetThreadId = thread.id;
+        },
+      }),
+    ).rejects.toThrow("skipped reuse lineage");
+    const targetPlan = fixture.store.listPlans(targetThreadId)[0]!;
+    expect(targetPlan.steps[0]?.status).toBe("skipped");
+    expect(
+      (await fixture.store.listEvents(targetThreadId)).filter(
+        (event) => event.type === "workflow.node.reused",
+      ),
+    ).toHaveLength(0);
+
+    fixture.store.appendEvent = appendEvent;
+    const recovered = await fixture.workflows.run({
+      threadId: targetThreadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: targetPlan.id,
+      },
+    });
+    expect(recovered).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Recovered skipped reuse",
+          approved: true,
+        },
+      }),
+    );
+    const events = await fixture.store.listEvents(targetThreadId);
+    expect(
+      events.filter((event) => event.type === "workflow.node.skipped"),
+    ).toHaveLength(1);
+    expect(
+      events.filter((event) => event.type === "workflow.node.reused"),
+    ).toHaveLength(1);
+    expect(
+      events.find((event) => event.type === "workflow.node.skipped")?.payload,
+    ).toEqual(expect.objectContaining({ reused: true }));
+    fixture.store.close();
+  });
+
   it("reruns and reuses a Tool checkpoint without allowing a model override", async () => {
     const fixture = await createFixture({ toolInspect: true });
     fixture.primary.setResponses([
@@ -1009,6 +1228,7 @@ async function createFixture(
     toolInspect?: boolean;
     approvalInspect?: boolean;
     deterministicInspect?: boolean;
+    conditionalInspect?: boolean;
   } = {},
 ): Promise<Fixture> {
   const root = await mkdtemp(
@@ -1057,12 +1277,15 @@ async function createFixture(
   models.registerProvider(alternate.provider);
   const runtime = new AgentRuntime(store, models);
   const workflows = new ExecutionPlanWorkflowRuntime(store, runtime);
+  const workflowInputSchema = options.conditionalInspect
+    ? conditionalRequestSchema()
+    : requestSchema();
   const manifest = defineExecutionPlanWorkflow({
     name: "Experiment report",
     version: 1,
     description: "Exercise controlled Workflow checkpoint reruns.",
     blueprint,
-    inputSchema: requestSchema(),
+    inputSchema: workflowInputSchema,
     outputSchema: reportSchema(),
     outputNodeId: "report",
     maxConcurrency: 2,
@@ -1160,11 +1383,23 @@ async function createFixture(
                   },
                   inputSchema: {
                     type: "object" as const,
-                    properties: { workflow: requestSchema() },
+                    properties: { workflow: workflowInputSchema },
                     required: ["workflow"],
                     additionalProperties: false as const,
                   },
                   outputSchema: inspectionSchema(),
+                  ...(options.conditionalInspect
+                    ? {
+                        when: {
+                          path: ["workflow", "executeInspect"],
+                          equals: true,
+                        },
+                        skipOutput: {
+                          summary: "Source inspection skipped",
+                          count: 0,
+                        },
+                      }
+                    : {}),
                   model: {
                     provider: "faux-workflow-primary",
                     id: "faux-1",
@@ -1190,7 +1425,7 @@ async function createFixture(
         inputSchema: {
           type: "object",
           properties: {
-            workflow: requestSchema(),
+            workflow: workflowInputSchema,
             [options.approvalInspect
               ? "approval"
               : options.toolInspect
@@ -1221,7 +1456,8 @@ async function createFixture(
   primary.setResponses(
     options.toolInspect ||
       options.approvalInspect ||
-      options.deterministicInspect
+      options.deterministicInspect ||
+      options.conditionalInspect
       ? [fauxAssistantMessage('{"report":"Source report","approved":true}')]
       : [
           fauxAssistantMessage('{"summary":"Source inspection","count":1}'),
@@ -1232,7 +1468,10 @@ async function createFixture(
     threadId: sourceThread.id,
     request: {
       manifest,
-      input: { request: "Produce the source report." },
+      input: {
+        request: "Produce the source report.",
+        ...(options.conditionalInspect ? { executeInspect: false } : {}),
+      },
     },
   });
   if (options.approvalInspect) {
@@ -1332,6 +1571,18 @@ function requestSchema(): WorkflowObjectSchema {
       request: { type: "string", minLength: 1, maxLength: 500 },
     },
     required: ["request"],
+    additionalProperties: false,
+  };
+}
+
+function conditionalRequestSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      request: { type: "string", minLength: 1, maxLength: 500 },
+      executeInspect: { type: "boolean" },
+    },
+    required: ["request", "executeInspect"],
     additionalProperties: false,
   };
 }

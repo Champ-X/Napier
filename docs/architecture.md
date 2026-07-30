@@ -251,6 +251,8 @@ timeouts; `workflow-tool-runtime.ts` owns leased direct execution; and
 `workflow-deterministic-node.ts` coordinates Plan transitions, and
 `workflow-deterministic-evidence.ts` verifies terminal evidence without
 growing the central Ledger coordinator.
+`workflow-condition-model.ts` validates and evaluates typed equality guards,
+while `workflow-condition-node.ts` owns the no-Run Plan skip transition.
 `workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
 reconstruction. `workflow-protocol.ts` validates HTTP/CLI requests, typed
 results, and final snapshot/event-stream-bound result frames.
@@ -297,6 +299,17 @@ backward-compatible pointer to the oldest representative active Run and moves
 to the next sibling on settlement. The complete active set is derived from Run
 status and Plan step bindings.
 
+Conditional control remains inside the same scheduler. A node can bind one
+`when.path` into its already constructed and schema-validated input, one
+canonical JSON `equals` value that must match the path's schema, and one
+`skipOutput` that must match the node output schema. Runtime resolves no global
+path and evaluates no script, interpolation, coercion, or expression. A false
+condition transitions the existing Plan step directly from ready to skipped,
+creates an `attempt: 0` typed result, and exposes the Manifest fallback to
+downstream bindings without creating a Run. This preserves Plan's existing
+completed-or-skipped dependency semantics while keeping every executed attempt
+Run-backed.
+
 Approval nodes reuse the existing operator-decision state machine rather than
 adding approval storage. The first leased `source=workflow` Run transitions the
 Plan step to running, records a Manifest/input/attempt/deadline-bound decision,
@@ -316,6 +329,8 @@ arguments and text are reduced to bytes/hash in Tool-node Ledger evidence,
 while typed structured output remains bound for recovery and delivery.
 Workflow-specific Trace summaries retain only safe identifiers, declared
 effect, status, byte counts, error codes, and hash prefixes.
+Conditional terminal evidence contains condition, subject, input, fallback,
+output, and schema hashes but no compared value or fallback body.
 
 Resume accepts the original Manifest plus Plan ID, recovers the original input
 and frozen Agent revision from `workflow.started`, and revalidates both against
@@ -344,6 +359,11 @@ effects are never silently rerun. Restart reconciliation interrupts every
 in-flight sibling and binds each affected Plan step to its own
 `run_interrupted` evidence. A second Workflow or an ordinary Run on the same
 Thread remains rejected.
+Skipped recovery rebuilds the typed node input in dependency order, recomputes
+the guard, validates the Manifest fallback, and requires one matching
+`workflow.node.skipped`. A missing event after the durable Plan skip can be
+reconstructed because the decision is pure; duplicate evidence, a true guard,
+an unconditional skipped step, or hash/schema drift fails closed.
 
 CLI JSONL and HTTP SSE emit normal event frames followed by one snapshot and a
 `workflow_result` frame. The frame independently validates every node/output
@@ -364,7 +384,8 @@ source Thread + Plan + source Manifest
   -> bind candidate model replacements and preview hash
   -> require exact preview confirmation for write/unknown effects
   -> create independent target Thread and normal ExecutionPlan
-  -> materialize verified ancestors as source=workflow_reuse control Runs
+  -> materialize verified completed ancestors as source=workflow_reuse Runs
+     and preserve verified skipped ancestors as zero-Run skipped outputs
   -> execute selected Agent/Deterministic/Tool/Approval node and descendants through Workflow Runtime
   -> align source/target node evidence and derive target-minus-source metrics
   -> append privacy-bounded workflow.experiment.compared evidence
@@ -381,6 +402,11 @@ policy or submit synthetic reused outputs.
 
 The target stores experiment lineage in the same Work Ledger. On resume, a
 completed synthetic reuse is reconstructed like any completed Workflow node.
+Skipped reuse remains skipped with zero Run, attempt, tool, model, cost, and
+Evaluation metrics; its explicit lineage event is repaired idempotently if a
+process exits after the target Plan skip. Runtime and browser protocol
+validation also bind each returned node status to its observed target Plan
+status, so a zero-Run skip cannot be relabeled as completed.
 If cancellation or restart happened before all reuse nodes were materialized,
 the Runtime reprojects only the declared reused subgraph from the exact source
 Plan revision and input; source drift fails closed. An interrupted
@@ -433,11 +459,12 @@ helper's default cache policy with `Cache-Control: no-store`.
 
 Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
 nodes, stateless built-in Tool nodes, durable binary Approval gates,
-literal/field-path typed bindings, sequential dependency-ready DAG scheduling,
-cancellation, timeout, explicit retry, and restart recovery. It does not yet
-implement general multi-option decision nodes, stateful session Tool nodes,
-parallel execution, conditions, loops, Map/Reduce, compensation, per-node
-breakpoints, external Agent adapters, or artifact settlement.
+literal/field-path typed bindings, bounded parallel dependency-ready DAG
+scheduling, typed equality guards with schema-valid fallback, cancellation,
+timeout, explicit retry, and restart recovery. It does not yet implement
+general multi-option decision nodes, stateful session Tool nodes, multi-way
+switch, loops, Map/Reduce, compensation, per-node breakpoints, external Agent
+adapters, or artifact settlement.
 
 ### Coding Outcome Benchmark
 
@@ -4966,9 +4993,9 @@ deferred until the local P0-P9 product loop is stable.
   multi-node AST transforms, write-linked test/symbol association, and isolated
   subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
-  session nodes, parallelism, control flow, compensation, single-node tests and
-  breakpoints, external Agent adapters, artifact settlement, and a visual
-  builder;
+  session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node
+  tests and breakpoints, external Agent adapters, artifact settlement, and a
+  visual builder;
 - extend controlled Workflow checkpoint re-execution with model-call/tool-call
   checkpoints, side-effect simulation, dependency replacement, batch
   experiments, interactive root-cause views, and evaluation promotion.

@@ -17,19 +17,19 @@ Audit date: 2026-07-31
 
 ## Priority Matrix
 
-| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| --------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                       |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, write-linked diagnostic deltas, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                      |
-| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, true parallelism, control flow, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
-| P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.        |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch/Workflow execution exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, generic SDK/RPC, ACP, Desktop, new Workflow execution/composition, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                      |
-| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                   |
-| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                         |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, write-linked diagnostic deltas, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                        |
+| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, bounded parallel waves, typed equality guards with fallback, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
+| P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                          |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch/Workflow execution exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, generic SDK/RPC, ACP, Desktop, new Workflow execution/composition, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                        |
+| P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ## Completed Slice: Read-Only Sandboxed Commands
 
@@ -2384,3 +2384,80 @@ Observed result:
   compatibility baseline, and kept the Web main entry at 130.08 KiB against
   the 150 KiB budget. The 69-file Web dist is bound to `41ac89f7ab9a2a00`;
   the six-artifact release set is bound to `681bddee8e310656`.
+
+## Completed Slice: Typed Conditional Workflow Nodes
+
+User scenario: a Workflow author can conditionally avoid an expensive Agent,
+Tool, Deterministic, or Approval node, provide a schema-valid fallback to later
+typed joins, recover the decision after interruption, and checkpoint-rerun or
+reuse the same branch through every product entry point.
+
+Acceptance:
+
+- add optional paired `when` and `skipOutput` fields to every Workflow node
+  without invalidating existing schema-v1 Manifests;
+- resolve `when.path` only inside the node's constructed, schema-validated
+  input, validate `equals` against the selected input schema, and compare by
+  canonical JSON equality;
+- validate `skipOutput` against the normal node output schema before execution;
+- on false, create no node Run, consume no attempt, transition the existing
+  Plan step to skipped, and expose the fallback as typed downstream output;
+- on true, execute the original node through its unchanged Run, policy,
+  Sandbox, timeout, retry, and Ledger path;
+- reconstruct skipped output in dependency order, repair a missing terminal
+  skip event, and reject manual, duplicate, true-condition, or drifted skips;
+- preserve skipped state across checkpoint reuse and rerun without
+  manufacturing a `workflow_reuse` Run;
+- report skipped experiment observations as zero Run/model/tool/token/cost
+  metrics and validate that invariant in both Runtime and browser protocols;
+- expose model-free CLI JSONL, HTTP SSE, browser Manifest validation, and
+  privacy-bounded Trace behavior through the existing shared Runtime.
+
+Threat boundary:
+
+- the condition is not JavaScript, JSONPath, interpolation, truthiness,
+  coercion, or a general expression. It is one bounded safe path and one exact
+  JSON value;
+- the path cannot escape the node input or use prototype-sensitive segments.
+  It therefore cannot read unbound node output, Thread history, environment,
+  files, network, credentials, or model context;
+- false branches cannot bypass output typing: the fallback is Manifest-bound,
+  size-bounded, and checked against the same output schema as execution;
+- a skipped result has `attempt: 0`, no `runId`, and one hash-only
+  `workflow.node.skipped` event. Compared values and fallback bodies are absent
+  from Trace;
+- Workflow resume accepts a skip only when the rebuilt input still evaluates
+  false and condition, subject, input, fallback, output, schema, Manifest, and
+  Plan evidence agree;
+- skipped experiment reuse stays zero-Run. Missing lineage after a commit gap
+  is repaired once; duplicate or forged lineage and non-zero skipped metrics
+  fail closed.
+
+Observed result:
+
+- a false Agent branch creates no Run while a parallel Deterministic sibling
+  completes; the downstream Agent receives both the typed fallback and real
+  sibling output and completes the join;
+- a true branch creates and executes its normal Agent Run, while an unavailable
+  runtime array path blocks with `condition_invalid` rather than silently
+  skipping;
+- injected failure after the Plan skip is repaired on resume without executing
+  the branch; duplicate skip evidence is rejected and the completed Thread
+  remains a valid portable Replay;
+- checkpoint experiments reuse a skipped ancestor and rerun a skipped
+  checkpoint with zero node Runs, zero attempts, unchanged skipped status, and
+  explicit source lineage;
+- an injected crash between target skip and reuse-lineage commitment is
+  repaired idempotently before downstream execution;
+- real CLI JSONL and Hono HTTP SSE execute a one-node missing-provider
+  Manifest through its fallback, return a completed typed result, emit ordered
+  skip evidence, and create zero Runs;
+- browser validation rejects unpaired or unsafe conditions, Web Trace renders
+  only condition/subject/fallback/output hashes, and both browser and Runtime
+  comparison validators reject non-zero skipped metrics or a skipped result
+  relabeled as completed;
+- the complete repository gate passed 1208 tests with 19 opt-in live tests
+  skipped by default, verified 247 current OpenAPI routes against the 244/244
+  compatibility baseline, and kept the Web main entry at 130.08 KiB against
+  the 150 KiB budget. The 69-file Web dist is bound to `de3b8577b2455f9a`;
+  the six-artifact release set is bound to `17bbc262010e0c4e`.

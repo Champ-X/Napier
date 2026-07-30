@@ -36,7 +36,8 @@ export interface WorkflowReusedNode {
   output: JsonValue;
   sourceThreadId: string;
   sourcePlanId: string;
-  sourceRunId: string;
+  sourceStatus: "completed" | "skipped";
+  sourceRunId?: string;
   sourceAttempt: number;
   sourceInputSha256: string;
   sourceOutputSha256: string;

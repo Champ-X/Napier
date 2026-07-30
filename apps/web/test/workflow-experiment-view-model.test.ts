@@ -68,6 +68,39 @@ describe("Workflow experiment Workbench view model", () => {
     ).rejects.toThrow("shape");
   });
 
+  it("accepts conditional fallback nodes and rejects unsafe condition paths", async () => {
+    const manifest = workflowConditionalManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const unsafe = structuredClone(manifest);
+    unsafe.nodes[0]!.when.path = ["workflow", "constructor"];
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafe)),
+    ).rejects.toThrow("path segment");
+
+    const unpaired = structuredClone(manifest) as unknown as {
+      nodes: Array<{ skipOutput?: unknown }>;
+    };
+    delete unpaired.nodes[0]!.skipOutput;
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unpaired)),
+    ).rejects.toThrow("requires skipOutput");
+
+    const unbounded = structuredClone(manifest);
+    (unbounded.nodes[0]!.when as { equals: unknown }).equals =
+      Object.fromEntries(
+        Array.from({ length: 33 }, (_, index) => [
+          `key${String(index)}`,
+          index,
+        ]),
+      );
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unbounded)),
+    ).rejects.toThrow("condition is invalid");
+  });
+
   it("accepts content-bound Approval nodes and rejects output drift", async () => {
     const manifest = workflowApprovalManifest();
     await expect(
@@ -353,6 +386,29 @@ function workflowDeterministicManifest() {
         },
         timeoutMs: 5_000,
         maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowConditionalManifest() {
+  const base = workflowManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const content = {
+    ...baseContent,
+    nodes: [
+      {
+        ...base.nodes[0]!,
+        when: {
+          path: ["workflow", "request"],
+          equals: "execute",
+        },
+        skipOutput: { report: "Conditional fallback" },
       },
     ],
   };

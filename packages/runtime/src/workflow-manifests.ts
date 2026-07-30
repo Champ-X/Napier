@@ -14,6 +14,10 @@ import {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  executionPlanWorkflowConditionSchema,
+  validateExecutionPlanWorkflowCondition,
+} from "./workflow-condition-model.js";
 import { validateExecutionPlanWorkflowDeterministicTemplate } from "./workflow-deterministic-model.js";
 import { validateExecutionPlanBlueprint } from "./workflow-blueprints.js";
 import {
@@ -330,12 +334,14 @@ function validateWorkflowNode(
         "inputBindings",
         "inputSchema",
         "outputSchema",
+        "when",
+        "skipOutput",
         "model",
         "timeoutMs",
         "maxAttempts",
       ],
       label,
-      new Set(["model"]),
+      new Set(["model", "when", "skipOutput"]),
     );
   } else if (type === "deterministic") {
     assertExactKeys(
@@ -346,11 +352,14 @@ function validateWorkflowNode(
         "inputBindings",
         "inputSchema",
         "outputSchema",
+        "when",
+        "skipOutput",
         "template",
         "timeoutMs",
         "maxAttempts",
       ],
       label,
+      new Set(["when", "skipOutput"]),
     );
   } else if (type === "tool") {
     assertExactKeys(
@@ -363,10 +372,13 @@ function validateWorkflowNode(
         "inputBindings",
         "inputSchema",
         "outputSchema",
+        "when",
+        "skipOutput",
         "timeoutMs",
         "maxAttempts",
       ],
       label,
+      new Set(["when", "skipOutput"]),
     );
   } else if (type === "approval") {
     assertExactKeys(
@@ -381,10 +393,13 @@ function validateWorkflowNode(
         "inputBindings",
         "inputSchema",
         "outputSchema",
+        "when",
+        "skipOutput",
         "timeoutMs",
         "maxAttempts",
       ],
       label,
+      new Set(["when", "skipOutput"]),
     );
   } else {
     throw new Error(`${label} type is unsupported`);
@@ -475,6 +490,40 @@ function validateWorkflowNode(
     0,
     schemaBudget,
   );
+  const conditional =
+    node["when"] === undefined && node["skipOutput"] === undefined
+      ? undefined
+      : node["when"] !== undefined && node["skipOutput"] !== undefined
+        ? {
+            when: validateExecutionPlanWorkflowCondition(
+              node["when"],
+              `${label} condition`,
+            ),
+            skipOutput: structuredClone(node["skipOutput"]) as JsonValue,
+          }
+        : undefined;
+  if (
+    (node["when"] === undefined) !== (node["skipOutput"] === undefined) ||
+    (node["when"] !== undefined && !conditional)
+  ) {
+    throw new Error(`${label} condition requires skipOutput`);
+  }
+  if (conditional) {
+    assertWorkflowValue(
+      outputSchema,
+      conditional.skipOutput,
+      `${label} skipOutput`,
+    );
+    assertWorkflowValue(
+      executionPlanWorkflowConditionSchema(
+        inputSchema,
+        conditional.when,
+        `${label} condition`,
+      ),
+      conditional.when.equals,
+      `${label} condition equals`,
+    );
+  }
   const timeoutMs = boundedInteger(
     node["timeoutMs"],
     MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
@@ -508,6 +557,7 @@ function validateWorkflowNode(
       inputBindings,
       inputSchema: inputSchema as WorkflowObjectSchema,
       outputSchema,
+      ...(conditional ? conditional : {}),
       template: validateExecutionPlanWorkflowDeterministicTemplate(
         node["template"],
         `${label} template`,
@@ -532,6 +582,7 @@ function validateWorkflowNode(
       inputBindings,
       inputSchema: inputSchema as WorkflowObjectSchema,
       outputSchema,
+      ...(conditional ? conditional : {}),
       timeoutMs,
       maxAttempts,
     };
@@ -572,6 +623,7 @@ function validateWorkflowNode(
       outputSchema: structuredClone(
         EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
       ),
+      ...(conditional ? conditional : {}),
       timeoutMs,
       maxAttempts,
     };
@@ -586,6 +638,7 @@ function validateWorkflowNode(
     inputBindings,
     inputSchema: inputSchema as WorkflowObjectSchema,
     outputSchema,
+    ...(conditional ? conditional : {}),
     ...(model ? { model } : {}),
     timeoutMs,
     maxAttempts,

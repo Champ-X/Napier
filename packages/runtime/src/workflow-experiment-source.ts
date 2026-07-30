@@ -12,6 +12,10 @@ import { collectRunToolEffectObservations } from "./automatic-recovery.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import type { WorkflowReusedNode } from "./workflow-context.js";
+import {
+  evaluateExecutionPlanWorkflowCondition,
+  executionPlanWorkflowConditionSha256,
+} from "./workflow-condition-model.js";
 import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-deterministic-model.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import {
@@ -183,7 +187,7 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
   for (const nodeId of orderedNodeIds) {
     if (projectNodeIds && !projectNodeIds.has(nodeId)) continue;
     const step = sourcePlan.steps.find((candidate) => candidate.id === nodeId)!;
-    if (step.status !== "completed") continue;
+    if (step.status !== "completed" && step.status !== "skipped") continue;
     const node = nodeById.get(nodeId)!;
     const input = buildExecutionPlanWorkflowNodeInput(
       node,
@@ -191,6 +195,57 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
       outputs,
     );
     const inputSha256 = sha256(canonicalJson(input));
+    if (step.status === "skipped") {
+      if (!node.when || node.skipOutput === undefined || step.runId) {
+        throw new Error(
+          "Workflow experiment source skipped node binding is invalid",
+        );
+      }
+      const evaluation = evaluateExecutionPlanWorkflowCondition(
+        node.when,
+        input,
+        node.id,
+      );
+      if (evaluation.matched) {
+        throw new Error(
+          "Workflow experiment source skipped condition is invalid",
+        );
+      }
+      const skipEvidence = await ledger.verifyNodeSkippedEvent(
+        {
+          threadId: sourceThreadId,
+          manifest,
+          plan: sourcePlan,
+        },
+        node,
+        inputSha256,
+        evaluation.subjectSha256,
+      );
+      const output = structuredClone(node.skipOutput);
+      const outputSha256 = sha256(canonicalJson(output));
+      if (skipEvidence.reused) {
+        validateSourceSkippedReuseEvent(
+          events,
+          sourcePlan.id,
+          node.id,
+          sourceManifestSha256,
+          inputSha256,
+          outputSha256,
+        );
+      }
+      outputs.set(node.id, output);
+      completedNodes.set(node.id, {
+        nodeId: node.id,
+        output: structuredClone(output),
+        sourceThreadId,
+        sourcePlanId: sourcePlan.id,
+        sourceStatus: "skipped",
+        sourceAttempt: 0,
+        sourceInputSha256: inputSha256,
+        sourceOutputSha256: outputSha256,
+      });
+      continue;
+    }
     if (!step.runId) {
       throw new Error("Workflow experiment source node has no Run binding");
     }
@@ -280,6 +335,7 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
       output: structuredClone(output),
       sourceThreadId,
       sourcePlanId: sourcePlan.id,
+      sourceStatus: "completed",
       sourceRunId: run.id,
       sourceAttempt: attempt,
       sourceInputSha256: inputSha256,
@@ -494,6 +550,38 @@ function validateSourceReuseEvent(
   }
 }
 
+function validateSourceSkippedReuseEvent(
+  events: RunEvent[],
+  planId: string,
+  nodeId: string,
+  sourceManifestSha256: string,
+  inputSha256: string,
+  outputSha256: string,
+): void {
+  const matches = events.filter(
+    (event) =>
+      event.type === "workflow.node.reused" &&
+      record(event.payload)?.["planId"] === planId &&
+      record(event.payload)?.["nodeId"] === nodeId,
+  );
+  const payload =
+    matches.length === 1 ? record(matches[0]!.payload) : undefined;
+  if (
+    payload?.["schemaVersion"] !== 1 ||
+    payload["manifestSha256"] !== sourceManifestSha256 ||
+    payload["inputSha256"] !== inputSha256 ||
+    payload["outputSha256"] !== outputSha256 ||
+    payload["sourceInputSha256"] !== inputSha256 ||
+    payload["sourceStatus"] !== "skipped" ||
+    payload["sourceAttempt"] !== 0 ||
+    payload["sourceRunId"] !== undefined ||
+    typeof payload["sourceThreadId"] !== "string" ||
+    typeof payload["sourcePlanId"] !== "string"
+  ) {
+    throw new Error("Workflow experiment source skipped reuse mismatch");
+  }
+}
+
 function record(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -504,6 +592,16 @@ function sourceNodeMetadataMatches(
   node: ExecutionPlanWorkflowManifest["nodes"][number],
   payload: Record<string, unknown>,
 ): boolean {
+  if (
+    node.when
+      ? payload["conditionSha256"] !==
+          executionPlanWorkflowConditionSha256(node.when) ||
+        payload["skipOutputSha256"] !== sha256(canonicalJson(node.skipOutput!))
+      : payload["conditionSha256"] !== undefined ||
+        payload["skipOutputSha256"] !== undefined
+  ) {
+    return false;
+  }
   if (node.type === "tool") {
     return (
       payload["nodeType"] === "tool" &&

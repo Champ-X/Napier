@@ -249,19 +249,21 @@ async function observeNode(
       .filter(
         (event) =>
           event.type === "workflow.node.started" ||
+          event.type === "workflow.node.skipped" ||
           event.type === "workflow.node.failed",
       )
       .map((event) => record(event.payload)?.["inputSha256"]),
     "node input",
   );
   const outputSha256 =
-    step.status === "completed"
+    step.status === "completed" || step.status === "skipped"
       ? uniqueHash(
           nodeEvents
-            .filter(
-              (event) =>
-                event.type === "workflow.node.completed" &&
-                event.runId === step.runId,
+            .filter((event) =>
+              step.status === "completed"
+                ? event.type === "workflow.node.completed" &&
+                  event.runId === step.runId
+                : event.type === "workflow.node.skipped",
             )
             .map((event) => record(event.payload)?.["outputSha256"]),
           "node output",
@@ -270,6 +272,11 @@ async function observeNode(
   if (step.status === "completed" && (!step.runId || !outputSha256)) {
     throw new Error(
       "Workflow experiment comparison completed output is unavailable",
+    );
+  }
+  if (step.status === "skipped" && (step.runId || !outputSha256)) {
+    throw new Error(
+      "Workflow experiment comparison skipped output is unavailable",
     );
   }
   const startedRunIds = new Set(started.map((event) => event.runId));

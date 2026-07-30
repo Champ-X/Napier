@@ -168,7 +168,11 @@ export async function validateWorkflowExperimentResultFrame(
     comparison.sourcePlanId !== input["sourcePlanId"] ||
     comparison.targetThreadId !== input["targetThreadId"] ||
     comparison.targetPlanId !== input["targetPlanId"] ||
-    comparison.targetStatus !== input["status"]
+    comparison.targetStatus !== input["status"] ||
+    !workflowResultComparisonNodesMatch(
+      result["nodeResults"],
+      comparison["nodes"],
+    )
   ) {
     throw new Error("Workflow experiment result binding is invalid");
   }
@@ -235,15 +239,29 @@ function validComparisonNode(input: unknown): boolean {
 }
 
 function validObservation(input: Record<string, unknown>): boolean {
-  return (
-    typeof input["status"] === "string" &&
+  const valid =
+    planStepStatus(input["status"]) &&
     stringArray(input["runIds"], 10) &&
     stringArray(input["runSources"], 10) &&
     modelArray(input["models"], 10) &&
     stringArray(input["configurationSha256s"], 10) &&
     stringArray(input["toolNames"], 128) &&
     validMetricSet(input["metrics"], false) &&
-    validEvaluationSummary(input["evaluations"])
+    validEvaluationSummary(input["evaluations"]);
+  if (!valid) return false;
+  if (input["status"] !== "skipped") return true;
+  return (
+    (input["runIds"] as unknown[]).length === 0 &&
+    (input["runSources"] as unknown[]).length === 0 &&
+    (input["models"] as unknown[]).length === 0 &&
+    (input["configurationSha256s"] as unknown[]).length === 0 &&
+    (input["toolNames"] as unknown[]).length === 0 &&
+    hash(input["inputSha256"]) &&
+    hash(input["outputSha256"]) &&
+    record(input["metrics"]) &&
+    Object.values(input["metrics"]).every((value) => value === 0) &&
+    record(input["evaluations"]) &&
+    Object.values(input["evaluations"]).every((value) => value === 0)
   );
 }
 
@@ -367,6 +385,66 @@ function workflowStatus(
 
 function workflowStatusOrActive(input: unknown): boolean {
   return input === "active" || workflowStatus(input);
+}
+
+function workflowResultComparisonNodesMatch(
+  nodeResults: unknown,
+  comparisonNodes: unknown,
+): boolean {
+  if (!Array.isArray(nodeResults) || !Array.isArray(comparisonNodes)) {
+    return false;
+  }
+  return nodeResults.every((result) => {
+    if (
+      !record(result) ||
+      typeof result["nodeId"] !== "string" ||
+      !workflowNodeStatus(result["status"]) ||
+      (result["runId"] !== undefined && typeof result["runId"] !== "string") ||
+      (result["outputSha256"] !== undefined && !hash(result["outputSha256"]))
+    ) {
+      return false;
+    }
+    const comparison = comparisonNodes.find(
+      (candidate) =>
+        record(candidate) && candidate["nodeId"] === result["nodeId"],
+    );
+    if (!record(comparison) || !record(comparison["target"])) return false;
+    const target = comparison["target"];
+    return (
+      target["status"] === workflowNodeResultPlanStepStatus(result["status"]) &&
+      target["outputSha256"] === result["outputSha256"] &&
+      (result["runId"] === undefined ||
+        (Array.isArray(target["runIds"]) &&
+          target["runIds"].includes(result["runId"])))
+    );
+  });
+}
+
+function workflowNodeResultPlanStepStatus(input: unknown): unknown {
+  if (input === "waiting") return "running";
+  if (input === "cancelled") return "blocked";
+  return input;
+}
+
+function workflowNodeStatus(input: unknown): boolean {
+  return (
+    input === "completed" ||
+    input === "skipped" ||
+    input === "waiting" ||
+    input === "blocked" ||
+    input === "cancelled"
+  );
+}
+
+function planStepStatus(input: unknown): boolean {
+  return (
+    input === "pending" ||
+    input === "ready" ||
+    input === "running" ||
+    input === "completed" ||
+    input === "blocked" ||
+    input === "skipped"
+  );
 }
 
 function valueChange(input: unknown): boolean {

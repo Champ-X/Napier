@@ -421,6 +421,126 @@ describe("Workflow HTTP path", () => {
     ).toEqual(["workflow"]);
   });
 
+  it("streams a conditional fallback without creating a node Run", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-conditional-workflow-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: new UnsupportedSandboxAdapter(
+        "server-conditional-workflow-test",
+      ),
+    });
+    openServices.push(services);
+    const blueprintThread = services.store.listThreads()[0]!;
+    const blueprintPlan = await services.store.createPlan(blueprintThread.id, {
+      objective: "Return one conditional HTTP fallback.",
+      steps: [
+        {
+          id: "fallback",
+          title: "Conditional fallback",
+          description: "Execute only when requested.",
+          verification: "Return a typed report in both branches.",
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      blueprintThread.id,
+      blueprintPlan.id,
+    );
+    const inputSchema = conditionalInputSchema();
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP conditional fallback",
+      version: 1,
+      description: "Exercise model-free conditional control through SSE.",
+      blueprint,
+      inputSchema,
+      outputSchema: reportSchema(),
+      outputNodeId: "fallback",
+      nodes: [
+        {
+          id: "fallback",
+          type: "agent",
+          inputBindings: { workflow: { source: "workflow" } },
+          inputSchema: {
+            type: "object",
+            properties: { workflow: inputSchema },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema: reportSchema(),
+          when: { path: ["workflow", "execute"], equals: true },
+          skipOutput: {
+            report: "PRIVATE_HTTP_CONDITIONAL_FALLBACK",
+            approved: true,
+          },
+          model: { provider: "missing-conditional", id: "missing-1" },
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+    });
+    const targetThread = await services.store.createThread({
+      title: "HTTP conditional Workflow target",
+      agentId: blueprintThread.agentId,
+    });
+    const response = await createApp(services).request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { execute: false },
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const frames = parseSseFrames(await response.text());
+    const frame = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(frame.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "PRIVATE_HTTP_CONDITIONAL_FALLBACK",
+          approved: true,
+        },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "fallback",
+            attempt: 0,
+            status: "skipped",
+          }),
+        ],
+      }),
+    );
+    expect(services.store.listRuns(targetThread.id)).toHaveLength(0);
+    const events = await services.store.listEvents(targetThread.id);
+    expect(
+      events.filter((event) => event.type === "workflow.node.skipped"),
+    ).toHaveLength(1);
+    expect(
+      JSON.stringify(
+        events.filter((event) => event.type.startsWith("workflow.")),
+      ),
+    ).not.toContain("PRIVATE_HTTP_CONDITIONAL_FALLBACK");
+    const streamedEvents = frames.flatMap((value) => {
+      const frameValue = record(value);
+      return frameValue?.["type"] === "event" && record(frameValue["event"])
+        ? [frameValue["event"] as unknown as { seq: number }]
+        : [];
+    });
+    expect(streamedEvents.map((event) => event.seq)).toEqual(
+      streamedEvents.map((_, index) => index + 1),
+    );
+  });
+
   it("streams parallel Agent nodes before their typed join through public SSE", async () => {
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-server-parallel-workflow-"),
@@ -757,6 +877,17 @@ function requestSchema(): WorkflowObjectSchema {
       request: { type: "string", minLength: 1, maxLength: 500 },
     },
     required: ["request"],
+    additionalProperties: false,
+  };
+}
+
+function conditionalInputSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      execute: { type: "boolean" },
+    },
+    required: ["execute"],
     additionalProperties: false,
   };
 }

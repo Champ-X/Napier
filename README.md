@@ -2363,6 +2363,15 @@ Runs for the same active Plan can coexist. `Thread.currentRunId` remains a
 compatibility pointer to one active Run; the Run list and Plan steps are the
 complete projection.
 
+Any node may declare `when: { path, equals }` plus a required `skipOutput`.
+The path is resolved only against that node's already constructed and
+schema-validated input; the comparison is canonical JSON equality with no
+coercion or expression evaluation. When it is false, Napier creates no node
+Run and consumes no attempt. The existing Plan step becomes `skipped`, the
+Manifest fallback passes the normal output Schema, and downstream bindings can
+join it exactly like a completed output. `workflow.node.skipped` stores only
+condition, subject, input, fallback, output, and schema hashes.
+
 Approval nodes create a leased model-free request Run, bind a fixed
 approve/reject question and the upstream input hash, record the existing
 operator-decision receipt, and settle the Run with the Thread in `waiting`.
@@ -2387,6 +2396,12 @@ manual and automatic Run recovery still reject Workflow-owned Runs.
 On restart, every in-flight parallel Run is interrupted and every bound Plan
 step is reconstructed independently; explicit retry can then reopen the
 eligible batch without losing completed siblings.
+Skipped-node recovery recomputes the same typed condition and accepts only a
+false result with unique matching skip evidence. A Plan skip on an
+unconditional node, a now-true condition, a changed fallback, duplicate
+evidence, or a non-zero skipped attempt fails closed. A missing terminal skip
+event after the Plan transition is repaired without creating or rerunning a
+node Run.
 
 `POST /api/threads/:threadId/workflows` exposes the same execution as SSE.
 Both HTTP and CLI finish with `ExecutionPlanWorkflowResultFrame`, binding the
@@ -2403,13 +2418,14 @@ re-execution path. `POST
 read-only rerun subgraph, candidate Manifest, historical tool-effect summary,
 and stable preview hash. `POST
 /api/threads/:threadId/workflows/:planId/experiments` creates an independent
-target only after preview and confirmation checks pass. Reused nodes bind both
-their original input and output hashes and use synthetic `workflow_reuse` Runs;
-revision pinning and reuse materialization are internal Runtime capabilities,
-not fields accepted by ordinary Workflow execution requests. Cancellation or
-restart before reuse completes reconstructs remaining reused nodes from source
-Ledger evidence instead of executing them as Agent nodes. Source drift fails
-closed.
+target only after preview and confirmation checks pass. Reused completed nodes
+bind both their original input and output hashes and use synthetic
+`workflow_reuse` Runs. Reused skipped nodes preserve `skipped`, use zero Runs
+and attempts, and bind their fallback plus source lineage. Revision pinning and
+reuse materialization are internal Runtime capabilities, not fields accepted
+by ordinary Workflow execution requests. Cancellation or restart before reuse
+completes reconstructs remaining reused nodes from source Ledger evidence
+instead of executing them as Agent nodes. Source drift fails closed.
 
 After target settlement, the Runtime aligns every source and target node by
 Manifest order and derives a hash-bound comparison from actual Plan, Run,
@@ -2440,11 +2456,11 @@ Manifest. Approval checkpoints can be reused after verification or rerun into
 an isolated `waiting` experiment target, and never accept a model override.
 
 Version 1 intentionally supports Agent, bounded Deterministic, stateless
-built-in Tool, and durable Approval nodes with sequential dependency-ready DAG
-scheduling. Stateful session Tool nodes, parallel execution, Map/Reduce,
-conditions, loops, compensation, per-node breakpoints, adapter runtimes,
-artifact settlement, and a visual builder remain open. Checkpoint experiments
-do not yet provide model-call/tool-call
+built-in Tool, and durable Approval nodes with bounded parallel
+dependency-ready DAG scheduling and typed equality guards. Stateful session
+Tool nodes, multi-way switch, Map/Reduce, loops, compensation, per-node
+breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
+open. Checkpoint experiments do not yet provide model-call/tool-call
 single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
 batch experiments, an interactive root-cause timeline, or Evaluation
 promotion. The opt-in DeepSeek CLI smoke executes and checkpoint-reruns one

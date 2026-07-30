@@ -10,7 +10,9 @@ import type {
 
 import type { EventSink } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
+import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
+import { executionPlanWorkflowConditionSha256 } from "./workflow-condition-model.js";
 import {
   resolveWorkflowApproval,
   workflowApprovalDecisionContractMatches,
@@ -32,6 +34,7 @@ export const WORKFLOW_EVENT_SCHEMA_VERSION = 1;
 export const WORKFLOW_STARTED_EVENT = "workflow.started";
 export const WORKFLOW_NODE_STARTED_EVENT = "workflow.node.started";
 export const WORKFLOW_NODE_COMPLETED_EVENT = "workflow.node.completed";
+export const WORKFLOW_NODE_SKIPPED_EVENT = "workflow.node.skipped";
 export const WORKFLOW_NODE_FAILED_EVENT = "workflow.node.failed";
 export const WORKFLOW_APPROVAL_REQUESTED_EVENT = "workflow.approval.requested";
 export const WORKFLOW_COMPLETED_EVENT = "workflow.completed";
@@ -377,6 +380,124 @@ export class ExecutionPlanWorkflowLedger {
     );
   }
 
+  async appendNodeSkippedEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    inputSha256: string,
+    conditionSubjectSha256: string,
+    recovered: boolean,
+    reused = false,
+  ): Promise<void> {
+    if (!node.when || node.skipOutput === undefined) {
+      throw new Error("Workflow skipped node has no condition");
+    }
+    await this.append(
+      {
+        threadId: context.threadId,
+        runId: createId("runctl"),
+        type: WORKFLOW_NODE_SKIPPED_EVENT,
+        category: "plan",
+        visibility: "user",
+        payload: {
+          schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
+          planId: context.plan.id,
+          nodeId: node.id,
+          ...workflowNodeEventMetadata(node),
+          attempt: 0,
+          manifestSha256: context.manifest.contentSha256,
+          inputSha256,
+          outputSha256: sha256(canonicalJson(node.skipOutput)),
+          conditionSubjectSha256,
+          inputSchemaSha256: workflowSchemaSha256(node.inputSchema),
+          outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
+          planRevision: context.plan.revision,
+          matched: false,
+          recovered,
+          reused,
+        },
+      },
+      context.onEvent,
+    );
+  }
+
+  async verifyOrRecoverNodeSkippedEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    inputSha256: string,
+    conditionSubjectSha256: string,
+    reused = false,
+  ): Promise<void> {
+    if (!node.when || node.skipOutput === undefined) {
+      throw new Error("Workflow skipped node has no condition");
+    }
+    const events = (await this.store.listEvents(context.threadId)).filter(
+      (event) =>
+        event.type === WORKFLOW_NODE_SKIPPED_EVENT &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["planId"] === context.plan.id &&
+        event.payload["nodeId"] === node.id,
+    );
+    if (events.length > 1) {
+      throw new Error("Workflow node skip evidence is ambiguous");
+    }
+    const event = events[0];
+    if (event && isWorkflowRecord(event.payload)) {
+      await this.verifyNodeSkippedEvent(
+        context,
+        node,
+        inputSha256,
+        conditionSubjectSha256,
+        reused,
+      );
+      return;
+    }
+    await this.appendNodeSkippedEvent(
+      context,
+      node,
+      inputSha256,
+      conditionSubjectSha256,
+      true,
+      reused,
+    );
+  }
+
+  async verifyNodeSkippedEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    inputSha256: string,
+    conditionSubjectSha256: string,
+    expectedReused?: boolean,
+  ): Promise<{ reused: boolean }> {
+    const events = (await this.store.listEvents(context.threadId)).filter(
+      (event) =>
+        event.type === WORKFLOW_NODE_SKIPPED_EVENT &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["planId"] === context.plan.id &&
+        event.payload["nodeId"] === node.id,
+    );
+    const event = events.length === 1 ? events[0] : undefined;
+    if (
+      !event ||
+      !isWorkflowRecord(event.payload) ||
+      !workflowNodeSkippedEventMatches(
+        context,
+        node,
+        event.payload,
+        inputSha256,
+        conditionSubjectSha256,
+      ) ||
+      (expectedReused !== undefined &&
+        event.payload["reused"] !== expectedReused)
+    ) {
+      throw new Error(
+        events.length > 1
+          ? "Workflow node skip evidence is ambiguous"
+          : "Workflow node skip evidence mismatch",
+      );
+    }
+    return { reused: event.payload["reused"] === true };
+  }
+
   async ensureNodeStartedEvent(
     context: WorkflowLedgerContext,
     node: ExecutionPlanWorkflowNode,
@@ -502,6 +623,7 @@ export class ExecutionPlanWorkflowLedger {
     planRevision: number;
     nodeResultCount: number;
     completedNodeCount: number;
+    skippedNodeCount: number;
     outputSha256?: string;
   }): Promise<boolean> {
     const terminals = (await this.store.listEvents(input.threadId)).filter(
@@ -541,7 +663,7 @@ export class ExecutionPlanWorkflowLedger {
     context: WorkflowLedgerContext,
     plan: ExecutionPlan,
     nodeId: string,
-    suffix: "started" | "completed" | "blocked" | "reopened",
+    suffix: "started" | "completed" | "blocked" | "skipped" | "reopened",
     runId: string,
   ): Promise<void> {
     const step = plan.steps.find((candidate) => candidate.id === nodeId)!;
@@ -562,7 +684,7 @@ export class ExecutionPlanWorkflowLedger {
     context: WorkflowLedgerContext,
     plan: ExecutionPlan,
     nodeId: string,
-    suffix: "completed" | "blocked",
+    suffix: "completed" | "blocked" | "skipped",
     runId: string,
   ): Promise<void> {
     const events = await this.store.listEvents(context.threadId);
@@ -605,6 +727,7 @@ function workflowTerminalEventMatches(
     planRevision: number;
     nodeResultCount: number;
     completedNodeCount: number;
+    skippedNodeCount: number;
     outputSha256?: string;
   },
   requirePlanRevision: boolean,
@@ -617,12 +740,41 @@ function workflowTerminalEventMatches(
     (requirePlanRevision && payload["planRevision"] !== input.planRevision) ||
     payload["nodeResultCount"] !== input.nodeResultCount ||
     payload["completedNodeCount"] !== input.completedNodeCount ||
+    (payload["skippedNodeCount"] ?? 0) !== input.skippedNodeCount ||
     payload["outputSha256"] !== input.outputSha256 ||
     !hash(payload["resultSha256"])
   ) {
     return false;
   }
   return true;
+}
+
+function workflowNodeSkippedEventMatches(
+  context: WorkflowLedgerContext,
+  node: ExecutionPlanWorkflowNode,
+  payload: Record<string, JsonValue>,
+  inputSha256: string,
+  conditionSubjectSha256: string,
+): boolean {
+  return (
+    node.when !== undefined &&
+    node.skipOutput !== undefined &&
+    payload["schemaVersion"] === WORKFLOW_EVENT_SCHEMA_VERSION &&
+    payload["planId"] === context.plan.id &&
+    payload["nodeId"] === node.id &&
+    payload["attempt"] === 0 &&
+    payload["manifestSha256"] === context.manifest.contentSha256 &&
+    payload["inputSha256"] === inputSha256 &&
+    payload["outputSha256"] === sha256(canonicalJson(node.skipOutput)) &&
+    payload["conditionSubjectSha256"] === conditionSubjectSha256 &&
+    payload["inputSchemaSha256"] === workflowSchemaSha256(node.inputSchema) &&
+    payload["outputSchemaSha256"] === workflowSchemaSha256(node.outputSchema) &&
+    workflowNodeEventMetadataMatches(node, payload) &&
+    positiveInteger(payload["planRevision"]) &&
+    payload["matched"] === false &&
+    typeof payload["recovered"] === "boolean" &&
+    typeof payload["reused"] === "boolean"
+  );
 }
 
 export function isWorkflowRecord(
@@ -649,6 +801,7 @@ export function workflowNodeEventMetadataMatches(
   node: ExecutionPlanWorkflowNode,
   payload: Record<string, JsonValue>,
 ): boolean {
+  if (!workflowNodeConditionMetadataMatches(node, payload)) return false;
   if (node.type === "tool") {
     return (
       payload["nodeType"] === "tool" &&
@@ -671,21 +824,51 @@ export function workflowNodeEventMetadataMatches(
 export function workflowNodeEventMetadata(
   node: ExecutionPlanWorkflowNode,
 ): Record<string, JsonValue> {
+  const condition = workflowNodeConditionMetadata(node);
   if (node.type === "tool") {
     return {
       nodeType: "tool",
       toolName: node.tool,
       effect: node.effect,
+      ...condition,
     };
   }
   if (node.type === "approval") {
     return {
       nodeType: "approval",
       questionSha256: sha256(node.question),
+      ...condition,
     };
   }
   if (node.type === "deterministic") {
-    return workflowDeterministicNodeMetadata(node);
+    return { ...workflowDeterministicNodeMetadata(node), ...condition };
   }
-  return { nodeType: "agent" };
+  return { nodeType: "agent", ...condition };
+}
+
+function workflowNodeConditionMetadataMatches(
+  node: ExecutionPlanWorkflowNode,
+  payload: Record<string, JsonValue>,
+): boolean {
+  if (!node.when || node.skipOutput === undefined) {
+    return (
+      payload["conditionSha256"] === undefined &&
+      payload["skipOutputSha256"] === undefined
+    );
+  }
+  return (
+    payload["conditionSha256"] ===
+      executionPlanWorkflowConditionSha256(node.when) &&
+    payload["skipOutputSha256"] === sha256(canonicalJson(node.skipOutput))
+  );
+}
+
+function workflowNodeConditionMetadata(
+  node: ExecutionPlanWorkflowNode,
+): Record<string, JsonValue> {
+  if (!node.when || node.skipOutput === undefined) return {};
+  return {
+    conditionSha256: executionPlanWorkflowConditionSha256(node.when),
+    skipOutputSha256: sha256(canonicalJson(node.skipOutput)),
+  };
 }

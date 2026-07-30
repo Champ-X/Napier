@@ -1989,6 +1989,280 @@ describe("Execution Plan Workflow runtime", () => {
     fixture.store.close();
   }, 20_000);
 
+  it("skips a false conditional branch and joins its typed fallback", async () => {
+    const fixture = await createParallelFixture();
+    const manifest = conditionalWorkflowManifest(fixture.manifest.blueprint, 2);
+    fixture.provider.setResponses([
+      (context) => {
+        const prompt = JSON.stringify(context.messages);
+        expect(prompt).toContain('\\"summary\\":\\"Left skipped\\"');
+        expect(prompt).toContain('\\"summary\\":\\"Right deterministic\\"');
+        return fauxAssistantMessage(
+          '{"report":"Conditional join complete","approved":true}',
+        );
+      },
+    ]);
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: {
+          request: "Skip the left branch.",
+          executeLeft: false,
+        },
+      },
+    });
+
+    expect(validateExecutionPlanWorkflowResult(result)).toEqual(result);
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Conditional join complete",
+          approved: true,
+        },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "analyze_a",
+            attempt: 0,
+            status: "skipped",
+            output: { summary: "Left skipped", count: 0 },
+          }),
+          expect.objectContaining({
+            nodeId: "analyze_b",
+            status: "completed",
+          }),
+          expect.objectContaining({
+            nodeId: "report",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    expect(
+      fixture.store
+        .getPlan(result.planId)
+        .steps.map((step) => [step.id, step.status]),
+    ).toEqual([
+      ["analyze_a", "skipped"],
+      ["analyze_b", "completed"],
+      ["report", "completed"],
+    ]);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    const skipped = (
+      await fixture.store.listEvents(fixture.targetThreadId)
+    ).filter((event) => event.type === "workflow.node.skipped");
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]?.payload).toEqual(
+      expect.objectContaining({
+        attempt: 0,
+        matched: false,
+        recovered: false,
+        reused: false,
+        conditionSubjectSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(JSON.stringify(skipped[0]?.payload)).not.toContain("Left skipped");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, fixture.targetThreadId),
+      ).status,
+    ).toBe("valid");
+    fixture.store.close();
+  });
+
+  it("executes a true conditional branch as a normal Agent Run", async () => {
+    const fixture = await createParallelFixture();
+    const manifest = conditionalWorkflowManifest(fixture.manifest.blueprint, 2);
+    fixture.provider.setResponses([
+      fauxAssistantMessage('{"summary":"Left executed","count":1}'),
+      fauxAssistantMessage(
+        '{"report":"True conditional complete","approved":true}',
+      ),
+    ]);
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: {
+          request: "Execute the left branch.",
+          executeLeft: true,
+        },
+      },
+    });
+
+    expect(result.status).toBe("completed");
+    expect(result.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        attempt: 1,
+        status: "completed",
+        output: { summary: "Left executed", count: 1 },
+      }),
+    );
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(3);
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).filter(
+        (event) => event.type === "workflow.node.skipped",
+      ),
+    ).toHaveLength(0);
+    fixture.store.close();
+  });
+
+  it("blocks a conditional node when its typed runtime path is unavailable", async () => {
+    const fixture = await createParallelFixture();
+    const manifest = conditionalArrayWorkflowManifest(
+      fixture.manifest.blueprint,
+    );
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: {
+          request: "Reject an empty route list.",
+          routes: [],
+        },
+      },
+    });
+
+    expect(result.status).toBe("blocked");
+    expect(result.nodeResults).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          nodeId: "analyze_a",
+          status: "blocked",
+          errorCode: "condition_invalid",
+        }),
+      ]),
+    );
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).filter(
+        (event) => event.type === "workflow.node.skipped",
+      ),
+    ).toHaveLength(0);
+    const second = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        planId: result.planId,
+        retryBlocked: true,
+      },
+    });
+    expect(second.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        attempt: 2,
+        errorCode: "condition_invalid",
+      }),
+    );
+    const exhausted = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        planId: result.planId,
+        retryBlocked: true,
+      },
+    });
+    expect(exhausted.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        attempt: 2,
+        errorCode: "condition_invalid",
+      }),
+    );
+
+    await fixture.store.transitionPlanStep(result.planId, "analyze_a", {
+      action: "reopen",
+    });
+    const manuallyReopened = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        planId: result.planId,
+      },
+    });
+    expect(manuallyReopened.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        attempt: 2,
+        errorCode: "attempt_limit",
+      }),
+    );
+    fixture.store.close();
+  });
+
+  it("repairs a conditional skip commit gap without executing the branch", async () => {
+    const fixture = await createParallelFixture();
+    const manifest = conditionalWorkflowManifest(fixture.manifest.blueprint, 1);
+    const appendEvent = fixture.store.appendEvent.bind(fixture.store);
+    let failSkipEvent = true;
+    fixture.store.appendEvent = async (input) => {
+      if (input.type === "workflow.node.skipped" && failSkipEvent) {
+        failSkipEvent = false;
+        throw new Error("Injected conditional skip evidence failure");
+      }
+      return appendEvent(input);
+    };
+    await expect(
+      fixture.workflows.run({
+        threadId: fixture.targetThreadId,
+        request: {
+          manifest,
+          input: {
+            request: "Recover the skipped branch.",
+            executeLeft: false,
+          },
+        },
+      }),
+    ).rejects.toThrow("conditional skip evidence");
+    const plan = fixture.store.listPlans(fixture.targetThreadId)[0]!;
+    expect(plan.steps[0]?.status).toBe("skipped");
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(0);
+
+    fixture.store.appendEvent = appendEvent;
+    fixture.provider.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Recovered conditional join","approved":true}',
+      ),
+    ]);
+    const recovered = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: plan.id },
+    });
+    expect(recovered.status).toBe("completed");
+    expect(recovered.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "analyze_a",
+        attempt: 0,
+        status: "skipped",
+      }),
+    );
+    const skipped = (
+      await fixture.store.listEvents(fixture.targetThreadId)
+    ).filter((event) => event.type === "workflow.node.skipped");
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]?.payload).toEqual(
+      expect.objectContaining({ recovered: true }),
+    );
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    await fixture.store.appendEvent({
+      threadId: fixture.targetThreadId,
+      runId: "runctl_duplicate_skip",
+      type: "workflow.node.skipped",
+      category: "plan",
+      visibility: "user",
+      payload: structuredClone(skipped[0]!.payload),
+    });
+    await expect(
+      fixture.workflows.run({
+        threadId: fixture.targetThreadId,
+        request: { manifest, planId: plan.id },
+      }),
+    ).rejects.toThrow("skip evidence is ambiguous");
+    fixture.store.close();
+  });
+
   it("preserves a successful parallel sibling when another Agent node fails", async () => {
     const fixture = await createParallelFixture();
     const manifest = defineExecutionPlanWorkflow({
@@ -2452,6 +2726,143 @@ function parallelWorkflowDefinition(blueprint: ExecutionPlanBlueprint) {
   };
 }
 
+function conditionalWorkflowManifest(
+  blueprint: ExecutionPlanBlueprint,
+  maxConcurrency: number,
+): ExecutionPlanWorkflowManifest {
+  return defineExecutionPlanWorkflow({
+    name: "Conditional typed report",
+    version: 1,
+    description: "Skip or execute one typed branch before a shared join.",
+    blueprint,
+    inputSchema: conditionalRequestSchema(),
+    outputSchema: reportSchema(),
+    outputNodeId: "report",
+    maxConcurrency,
+    nodes: [
+      {
+        id: "analyze_a",
+        type: "agent",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: conditionalRequestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: inspectionSchema(),
+        when: {
+          path: ["workflow", "executeLeft"],
+          equals: true,
+        },
+        skipOutput: { summary: "Left skipped", count: 0 },
+        model: { provider: "faux-workflow", id: "faux-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+      {
+        id: "analyze_b",
+        type: "deterministic",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: conditionalRequestSchema() },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: inspectionSchema(),
+        template: {
+          kind: "literal",
+          value: { summary: "Right deterministic", count: 1 },
+        },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+      {
+        id: "report",
+        type: "agent",
+        inputBindings: {
+          left: { source: "node", nodeId: "analyze_a" },
+          right: { source: "node", nodeId: "analyze_b" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            left: inspectionSchema(),
+            right: inspectionSchema(),
+          },
+          required: ["left", "right"],
+          additionalProperties: false,
+        },
+        outputSchema: reportSchema(),
+        model: { provider: "faux-workflow", id: "faux-1" },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+}
+
+function conditionalArrayWorkflowManifest(
+  blueprint: ExecutionPlanBlueprint,
+): ExecutionPlanWorkflowManifest {
+  const base = conditionalWorkflowManifest(blueprint, 1);
+  const inputSchema: WorkflowObjectSchema = {
+    type: "object",
+    properties: {
+      request: { type: "string", minLength: 1, maxLength: 500 },
+      routes: {
+        type: "array",
+        items: { type: "string", minLength: 1, maxLength: 20 },
+        maxItems: 4,
+      },
+    },
+    required: ["request", "routes"],
+    additionalProperties: false,
+  };
+  return defineExecutionPlanWorkflow({
+    name: "Conditional array report",
+    version: 1,
+    description: "Exercise a bounded runtime condition path failure.",
+    blueprint,
+    inputSchema,
+    outputSchema: base.outputSchema,
+    outputNodeId: base.outputNodeId,
+    maxConcurrency: 1,
+    nodes: base.nodes.map((node) =>
+      node.id === "analyze_a"
+        ? {
+            ...node,
+            inputSchema: {
+              type: "object" as const,
+              properties: { workflow: inputSchema },
+              required: ["workflow"],
+              additionalProperties: false as const,
+            },
+            when: {
+              path: ["workflow", "routes", 0],
+              equals: "execute",
+            },
+          }
+        : node.id === "analyze_b"
+          ? {
+              ...node,
+              inputSchema: {
+                type: "object" as const,
+                properties: { workflow: inputSchema },
+                required: ["workflow"],
+                additionalProperties: false as const,
+              },
+            }
+          : node,
+    ),
+  });
+}
+
 function parallelApprovalWorkflowManifest(
   blueprint: ExecutionPlanBlueprint,
 ): ExecutionPlanWorkflowManifest {
@@ -2569,6 +2980,18 @@ function requestSchema(): WorkflowObjectSchema {
       request: { type: "string", minLength: 1, maxLength: 500 },
     },
     required: ["request"],
+    additionalProperties: false,
+  };
+}
+
+function conditionalRequestSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      request: { type: "string", minLength: 1, maxLength: 500 },
+      executeLeft: { type: "boolean" },
+    },
+    required: ["request", "executeLeft"],
     additionalProperties: false,
   };
 }

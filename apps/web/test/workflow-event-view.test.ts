@@ -1,4 +1,4 @@
-import type { RunEvent } from "@napier/contracts";
+import type { JsonValue, RunEvent } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import { traceEventSummaryView } from "../src/trace-event-summary-view";
@@ -38,6 +38,15 @@ describe("Workflow event Trace projection", () => {
     );
     expect(workflowEventTraceSummary(completed)).toBe(
       `workflow completed / status completed / completed 2/2 / result ${"7".repeat(12)} / output ${"6".repeat(12)} / manifest ${"1".repeat(12)}`,
+    );
+    const skippedCompleted = workflowEvent("workflow.completed", {
+      ...(completed.payload as Record<string, JsonValue>),
+      nodeResultCount: 1,
+      completedNodeCount: 0,
+      skippedNodeCount: 1,
+    });
+    expect(workflowEventTraceSummary(skippedCompleted)).toBe(
+      `workflow completed / status completed / completed 0/1 / skipped 1 / result ${"7".repeat(12)} / output ${"6".repeat(12)} / manifest ${"1".repeat(12)}`,
     );
     expect(traceEventSummaryView(started)).toEqual({
       text: workflowEventTraceSummary(started),
@@ -83,6 +92,32 @@ describe("Workflow event Trace projection", () => {
     );
     expect(workflowEventTraceSummary(failed)).not.toContain(
       "PRIVATE_MODEL_ERROR",
+    );
+
+    const skipped = workflowEvent("workflow.node.skipped", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "inspect",
+      nodeType: "agent",
+      attempt: 0,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      outputSha256: "5".repeat(64),
+      conditionSha256: "6".repeat(64),
+      skipOutputSha256: "5".repeat(64),
+      conditionSubjectSha256: "7".repeat(64),
+      matched: false,
+      recovered: true,
+      reused: false,
+      skipOutput: "PRIVATE_SKIP_OUTPUT",
+    });
+    expect(workflowEventTraceSummary(skipped)).toContain(
+      `node inspect / attempt 0 / input ${"2".repeat(12)} / output-schema ${"4".repeat(12)} / condition ${"6".repeat(12)} / skip-output ${"5".repeat(12)} / subject ${"7".repeat(12)} / output ${"5".repeat(12)} / recovered`,
+    );
+    expect(workflowEventTraceSummary(skipped)).not.toContain(
+      "PRIVATE_SKIP_OUTPUT",
     );
 
     const toolCompleted = workflowEvent("workflow.node.completed", {

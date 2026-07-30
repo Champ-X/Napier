@@ -158,6 +158,30 @@ export async function validateWorkflowManifest(
       }
       validateWorkflowBinding(binding);
     }
+    if (
+      (nodeInput["when"] === undefined) !==
+      (nodeInput["skipOutput"] === undefined)
+    ) {
+      throw new Error("Workflow manifest condition requires skipOutput");
+    }
+    if (nodeInput["when"] !== undefined) {
+      if (
+        !record(nodeInput["when"]) ||
+        !exactKeys(nodeInput["when"], ["path", "equals"]) ||
+        !jsonValue(nodeInput["when"]["equals"], 0) ||
+        !jsonValue(nodeInput["skipOutput"], 0)
+      ) {
+        throw new Error("Workflow manifest condition is invalid");
+      }
+      const path = validateWorkflowBindingPath(nodeInput["when"]["path"]);
+      if (
+        !path ||
+        typeof path[0] !== "string" ||
+        !Object.hasOwn(nodeInput["inputBindings"], path[0])
+      ) {
+        throw new Error("Workflow manifest condition path is invalid");
+      }
+    }
     nodeIds.add(nodeInput["id"]);
   }
   if (!nodeIds.has(input["outputNodeId"])) {
@@ -275,7 +299,7 @@ function exactKeys(
 }
 
 function jsonValue(input: unknown, depth: number): input is JsonValue {
-  if (depth > 16) return false;
+  if (depth > 8) return false;
   if (
     input === null ||
     typeof input === "string" ||
@@ -289,7 +313,7 @@ function jsonValue(input: unknown, depth: number): input is JsonValue {
       input.length <= 256 && input.every((item) => jsonValue(item, depth + 1))
     );
   }
-  if (!record(input) || Object.keys(input).length > 64) return false;
+  if (!record(input) || Object.keys(input).length > 32) return false;
   return Object.values(input).every((value) => jsonValue(value, depth + 1));
 }
 

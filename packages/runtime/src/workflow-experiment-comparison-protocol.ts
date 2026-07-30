@@ -272,6 +272,7 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
     )?.target;
     if (
       !observed ||
+      observed.status !== workflowNodeResultPlanStepStatus(nodeResult.status) ||
       observed.outputSha256 !== nodeResult.outputSha256 ||
       (nodeResult.runId !== undefined &&
         !observed.runIds.includes(nodeResult.runId))
@@ -303,6 +304,14 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
       );
     }
   }
+}
+
+function workflowNodeResultPlanStepStatus(
+  status: ExecutionPlanWorkflowResult["nodeResults"][number]["status"],
+): PlanStepStatus {
+  if (status === "waiting") return "running";
+  if (status === "cancelled") return "blocked";
+  return status;
 }
 
 function validateNodeComparison(
@@ -445,6 +454,17 @@ function validateObservation(
     configurationSha256s.length !== runIds.length
   ) {
     throw new Error("Workflow experiment node observation binding is invalid");
+  }
+  if (
+    observation["status"] === "skipped" &&
+    (runIds.length > 0 ||
+      toolNames.length > 0 ||
+      observation["inputSha256"] === undefined ||
+      observation["outputSha256"] === undefined ||
+      Object.values(metrics).some((value) => value !== 0) ||
+      Object.values(evaluations).some((value) => value !== 0))
+  ) {
+    throw new Error("Workflow experiment skipped node observation is invalid");
   }
   return {
     status: observation["status"] as PlanStepStatus,
