@@ -10920,6 +10920,56 @@
         "x-napier-source-route": "POST /api/threads/:threadId/trace/otlp/verify"
       }
     },
+    "/api/threads/{threadId}/workflows": {
+      "post": {
+        "operationId": "post-threads-by-threadId-workflows",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/workflows",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/workflows"
+      }
+    },
     "/api/threads/{threadId}/workspace-trash": {
       "get": {
         "operationId": "get-threads-by-threadId-workspace-trash",
@@ -13958,7 +14008,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "b5dc126fefd686ca5792cc1a7ac7c31ef6683718386564f64ef3b8fafbb5ba56",
-  "x-napier-route-count": 244,
-  "x-napier-route-set-sha256": "edb22718413138107deb0275890962d56d2b1344a58d103f90f6a8aa19273932"
+  "x-napier-source-sha256": "7cc2542633a4534ca290771271e8178b33b78a3bf50f7fef8cf1105aeb5a60db",
+  "x-napier-route-count": 245,
+  "x-napier-route-set-sha256": "6a5c16f727515f9a542c1bab1aec0152e55d0b5705d76c11d46256e34dc83580"
 }

@@ -60,6 +60,7 @@ const BLOCK_REASON_ORDER: readonly AutomaticRecoveryBlockReason[] = [
   "legacy_configuration",
   "policy_manual",
   "run_not_interrupted",
+  "workflow_managed",
   "demo_model",
   "event_limit_exceeded",
   "unresolved_tool_call",
@@ -139,6 +140,9 @@ export function assessAutomaticRecovery(
   }
   if (options.run.status !== "interrupted") {
     blockReasons.add("run_not_interrupted");
+  }
+  if (options.run.source === "workflow") {
+    blockReasons.add("workflow_managed");
   }
   if (
     options.run.configuration?.model.provider === "napier" &&

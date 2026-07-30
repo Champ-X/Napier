@@ -1,7 +1,4 @@
-import {
-  traceSummaryBoundarySource,
-  type RunEvent,
-} from "@napier/contracts";
+import { traceSummaryBoundarySource, type RunEvent } from "@napier/contracts";
 
 import { agentEventTraceSummary } from "./agent-event-view";
 import { artifactEventTraceSummary } from "./artifact-event-view";
@@ -33,6 +30,7 @@ import { sha256Canonical } from "./stable-digest";
 import { subagentEventTraceSummary } from "./subagent-event-view";
 import { threadImportedSummary } from "./thread-imported-view";
 import { toolEventTraceSummary } from "./tool-event-view";
+import { workflowEventTraceSummary } from "./workflow-event-view";
 import { workspaceFileEventTraceSummary } from "./workspace-file-event-view";
 import { workspaceProcessEventTraceSummary } from "./workspace-process-event-view";
 
@@ -89,8 +87,14 @@ export interface TraceSummaryCoverageDeltaReceipt {
   kind: "napier.trace-summary-coverage-delta";
   schemaVersion: 1;
   status: TraceSummaryCoverageDeltaStatus;
-  left: Omit<TraceSummaryCoverageReceipt, "kind" | "schemaVersion" | "contentSha256">;
-  right: Omit<TraceSummaryCoverageReceipt, "kind" | "schemaVersion" | "contentSha256">;
+  left: Omit<
+    TraceSummaryCoverageReceipt,
+    "kind" | "schemaVersion" | "contentSha256"
+  >;
+  right: Omit<
+    TraceSummaryCoverageReceipt,
+    "kind" | "schemaVersion" | "contentSha256"
+  >;
   boundedDelta: number;
   fixedDelta: number;
   categoryDelta: number;
@@ -134,7 +138,11 @@ export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
     return classifiedSummary(event, channelEventTraceSummary(event), "fixed");
   }
   if (event.type.startsWith("credential.")) {
-    return classifiedSummary(event, credentialEventTraceSummary(event), "fixed");
+    return classifiedSummary(
+      event,
+      credentialEventTraceSummary(event),
+      "fixed",
+    );
   }
   if (event.type.startsWith("extension.")) {
     return classifiedSummary(event, extensionEventTraceSummary(event), "fixed");
@@ -160,10 +168,17 @@ export function traceEventSummaryView(event: RunEvent): TraceEventSummaryView {
     return classifiedSummary(event, contextEventTraceSummary(event), "fixed");
   }
   if (event.type.startsWith("evaluation.")) {
-    return classifiedSummary(event, evaluationEventTraceSummary(event), "fixed");
+    return classifiedSummary(
+      event,
+      evaluationEventTraceSummary(event),
+      "fixed",
+    );
   }
   if (event.type.startsWith("plan.")) {
     return classifiedSummary(event, planEventTraceSummary(event), "fixed");
+  }
+  if (event.type.startsWith("workflow.")) {
+    return classifiedSummary(event, workflowEventTraceSummary(event), "fixed");
   }
   if (event.type.startsWith("artifact.")) {
     return classifiedSummary(event, artifactEventTraceSummary(event), "fixed");
@@ -257,11 +272,17 @@ export function traceSummaryCoverageDeltaView(
     ...(genericDelta > 0
       ? ["candidate_generic_summary_fallback_increased"]
       : []),
-    ...(right.generic > 0 ? ["candidate_generic_summary_fallback_present"] : []),
+    ...(right.generic > 0
+      ? ["candidate_generic_summary_fallback_present"]
+      : []),
   ];
   return {
     status:
-      genericDelta > 0 ? "regressed" : right.generic > 0 ? "generic_present" : "clean",
+      genericDelta > 0
+        ? "regressed"
+        : right.generic > 0
+          ? "generic_present"
+          : "clean",
     left,
     right,
     boundedDelta: right.bounded - left.bounded,
@@ -380,7 +401,10 @@ function traceSummaryCoverageDeltaReceiptContent(
 
 function traceSummaryCoverageReceiptPayload(
   coverage: TraceSummaryCoverageView,
-): Omit<TraceSummaryCoverageReceipt, "kind" | "schemaVersion" | "contentSha256"> {
+): Omit<
+  TraceSummaryCoverageReceipt,
+  "kind" | "schemaVersion" | "contentSha256"
+> {
   return {
     total: coverage.total,
     bounded: coverage.bounded,
@@ -450,7 +474,9 @@ function parseTraceSummaryCoverageDeltaReceipt(
       ? expectedTraceSummaryCoverageStatus(left.value, right.value)
       : undefined;
   const expectedGenericDelta =
-    left.value && right.value ? right.value.generic - left.value.generic : undefined;
+    left.value && right.value
+      ? right.value.generic - left.value.generic
+      : undefined;
   const diagnostics = [
     ...(input["kind"] !== "napier.trace-summary-coverage-delta"
       ? ["kind_invalid"]
@@ -466,10 +492,14 @@ function parseTraceSummaryCoverageDeltaReceipt(
     ...(diagnosticsField ? [] : ["diagnostics_invalid"]),
     ...(genericEventTypes ? [] : ["generic_event_types_invalid"]),
     ...(contentSha256 ? [] : ["content_sha256_invalid"]),
-    ...(left.value && right.value && boundedDelta !== right.value.bounded - left.value.bounded
+    ...(left.value &&
+    right.value &&
+    boundedDelta !== right.value.bounded - left.value.bounded
       ? ["bounded_delta_mismatch"]
       : []),
-    ...(left.value && right.value && fixedDelta !== right.value.fixed - left.value.fixed
+    ...(left.value &&
+    right.value &&
+    fixedDelta !== right.value.fixed - left.value.fixed
       ? ["fixed_delta_mismatch"]
       : []),
     ...(left.value &&
@@ -477,7 +507,8 @@ function parseTraceSummaryCoverageDeltaReceipt(
     categoryDelta !== right.value.category - left.value.category
       ? ["category_delta_mismatch"]
       : []),
-    ...(expectedGenericDelta !== undefined && genericDelta !== expectedGenericDelta
+    ...(expectedGenericDelta !== undefined &&
+    genericDelta !== expectedGenericDelta
       ? ["generic_delta_mismatch"]
       : []),
     ...(status && expectedStatus && status !== expectedStatus
@@ -528,10 +559,11 @@ function parseTraceSummaryCoverageDeltaReceipt(
   };
 }
 
-function parseCoveragePayload(
-  input: unknown,
-): {
-  value?: Omit<TraceSummaryCoverageReceipt, "kind" | "schemaVersion" | "contentSha256">;
+function parseCoveragePayload(input: unknown): {
+  value?: Omit<
+    TraceSummaryCoverageReceipt,
+    "kind" | "schemaVersion" | "contentSha256"
+  >;
   diagnostics: string[];
 } {
   if (!record(input)) return { diagnostics: ["coverage_not_object"] };
@@ -590,7 +622,9 @@ function expectedTraceSummaryCoverageDiagnostics(
     ...(genericDelta > 0
       ? ["candidate_generic_summary_fallback_increased"]
       : []),
-    ...(right.generic > 0 ? ["candidate_generic_summary_fallback_present"] : []),
+    ...(right.generic > 0
+      ? ["candidate_generic_summary_fallback_present"]
+      : []),
   ];
 }
 
@@ -621,14 +655,18 @@ function nonNegativeOrNegativeInteger(value: unknown): number | undefined {
 function safeDeltaStatus(
   value: unknown,
 ): TraceSummaryCoverageDeltaStatus | undefined {
-  return value === "clean" || value === "generic_present" || value === "regressed"
+  return value === "clean" ||
+    value === "generic_present" ||
+    value === "regressed"
     ? value
     : undefined;
 }
 
 function safeStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
-  const strings = value.filter((item): item is string => typeof item === "string");
+  const strings = value.filter(
+    (item): item is string => typeof item === "string",
+  );
   return strings.length === value.length &&
     strings.every((item) => /^[A-Za-z0-9_.:-]{1,180}$/u.test(item)) &&
     sameStringArray(strings, [...strings].sort())
@@ -642,9 +680,9 @@ function sha256String(value: unknown): string | undefined {
     : undefined;
 }
 
-function declaredContentSha256(
-  input: unknown,
-): { declaredContentSha256?: string } {
+function declaredContentSha256(input: unknown): {
+  declaredContentSha256?: string;
+} {
   if (!record(input)) return {};
   const value = input["contentSha256"];
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
@@ -652,8 +690,14 @@ function declaredContentSha256(
     : {};
 }
 
-function sameStringArray(left: readonly string[], right: readonly string[]): boolean {
-  return left.length === right.length && left.every((item, index) => item === right[index]);
+function sameStringArray(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((item, index) => item === right[index])
+  );
 }
 
 function record(value: unknown): value is Record<string, unknown> {

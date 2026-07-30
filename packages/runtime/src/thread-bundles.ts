@@ -111,7 +111,13 @@ const RUN_STATUSES = new Set([
   "cancelled",
   "interrupted",
 ]);
-const RUN_SOURCES = new Set(["user", "recovery", "schedule", "channel"]);
+const RUN_SOURCES = new Set([
+  "user",
+  "recovery",
+  "schedule",
+  "channel",
+  "workflow",
+]);
 const EVENT_CATEGORIES = new Set([
   "lifecycle",
   "message",

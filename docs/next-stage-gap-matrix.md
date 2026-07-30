@@ -23,9 +23,9 @@ Audit date: 2026-07-30
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                  |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, write-linked diagnostic deltas, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain. |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P4 executable Workflows           | Partial        | Versioned typed Agent DAG manifests, runtime schemas, explicit bindings, real Run-backed nodes, explicit retry, restart recovery, CLI JSONL, HTTP SSE, and privacy-bounded Trace now exist. Deterministic/Tool/approval nodes, true parallelism, control flow, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain.                                                                                                                                                                |
 | P5 controlled re-execution        | Early          | Evidence replay and comparison exist; checkpoint forks, frozen/replaced dependencies, side-effect simulation, and single-step reruns do not.                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch exist; interactive TUI, SDK/RPC, ACP, and Desktop remain.                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch/Workflow execution exist over one Runtime; interactive TUI, generic SDK/RPC, ACP, Desktop, and a visual Workflow entry remain.                                                                                                                                                                                                                                                                                                                                                                          |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                              |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                              |
@@ -1819,3 +1819,78 @@ Observed result:
 - the complete repository gate passed 1098 tests with 18 opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: Typed Executable Plan Workflows
+
+User scenario: a developer can turn an existing durable Blueprint into a
+versioned typed Agent DAG, execute it through CLI JSONL or HTTP SSE, inspect
+the same Plan/Run/Ledger evidence, resume after restart, and explicitly retry a
+failed node without silently replaying unknown side effects.
+
+Acceptance:
+
+- export a TypeScript `defineExecutionPlanWorkflow()` SDK helper and stable
+  `napier.execution-plan-workflow` manifest;
+- validate one bounded JSON Schema subset for Workflow input/output and every
+  node boundary;
+- require manifest nodes to match the existing Blueprint DAG and use the
+  existing `ExecutionPlan` as the only durable scheduler state;
+- execute each node through a real `AgentRuntime` Run with explicit model,
+  timeout, attempt limit, typed bindings, and strict JSON output;
+- freeze the target Agent revision at Workflow start and persist every node Run
+  as `source=workflow`;
+- exclude Thread message history, prior node delegation/milestone projections,
+  Goal evaluation, automatic Memory proposal, Plan mutation tools, milestone
+  tools, and operator-decision tools from Workflow node execution;
+- block generic manual and automatic recovery of Workflow-owned Runs;
+- reconstruct completed, failed, interrupted, and commit-gap node state from
+  Plan, Run, assistant output, and Work Ledger evidence;
+- require explicit bounded retry for blocked nodes and keep terminal
+  observation Ledger-idempotent;
+- expose one shared CLI command and HTTP route with ordered event frames,
+  authoritative snapshot, and hash-bound `workflow_result`;
+- project Workflow Trace summaries without input, output, diagnostics, prompt,
+  or path bodies;
+- keep Workflow implementation split across manifest, schema, protocol,
+  context, model, Ledger, recovery, and scheduler modules rather than growing
+  Store or Server.
+
+Threat boundary:
+
+- Workflow input and node output are untrusted JSON data. Runtime schemas bound
+  size and shape; prompt labeling is defense in depth, not a replacement for
+  tool policy or Sandbox enforcement.
+- Agent nodes retain ordinary policy-approved tools, current reviewed Memory,
+  Skills, model credentials, and Sandbox behavior. Every side effect remains a
+  normal Agent tool effect in the same Work Ledger.
+- Typed bindings enforce the node prompt data path. Workflow Runs load no
+  Thread message history, and a regression proves an unbound earlier-node
+  output is absent from the later model request.
+- A process exit after Run settlement, Plan transition, or Plan event may leave
+  a commit-order gap. Resume repairs known evidence, blocks unknown outcomes,
+  preserves the original attempt, and never executes during reconstruction.
+- Generic `napier resume` and safe automatic recovery reject Workflow Runs;
+  only manifest/Plan-bound Workflow resume can reopen them.
+- Manifest v1 executes dependency-ready Agent nodes sequentially. It does not
+  claim parallel nodes, conditions, loops, Map/Reduce, compensation,
+  approvals, deterministic/Tool nodes, external adapters, or artifact
+  settlement.
+
+Observed result:
+
+- deterministic Runtime dogfood executes a two-node typed report, proves
+  unbound prior output isolation, freezes Agent revision across an in-flight
+  profile update, and verifies a portable Replay;
+- persistent Store reopen tests cover active-Run interruption, terminal Run
+  failure, invalid completed output, missing failure-event reconstruction,
+  semantic evidence mismatch, and duplicate-free recovery;
+- CLI dogfood covers new execution, blocked observation, explicit retry,
+  result-frame tampering, invalid-input no-mutation, and workspace path escape;
+- HTTP dogfood covers the same shared Runtime through SSE, and Web tests prove
+  Trace summaries omit raw bodies;
+- an opt-in DeepSeek CLI smoke is compiled for a real typed node and remains
+  skipped in this environment because `DEEPSEEK_API_KEY` is unavailable.
+- the complete repository gate passed 1122 tests with 19 opt-in live tests
+  skipped by default, generated 245 OpenAPI routes while preserving the
+  244/244 compatibility baseline, and kept the Web main entry at 129.13 KiB
+  against the 150 KiB budget.

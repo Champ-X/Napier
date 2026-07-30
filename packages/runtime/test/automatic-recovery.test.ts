@@ -108,6 +108,13 @@ describe("safe automatic recovery", () => {
     expect(JSON.stringify(assessment)).not.toContain("sensitive contents");
     expect(validateAutomaticRecoveryAssessment(assessment)).toEqual(assessment);
 
+    const workflowManaged = assessAutomaticRecovery({
+      run: { ...run, source: "workflow" },
+      events: completedRead,
+    });
+    expect(workflowManaged.eligible).toBe(false);
+    expect(workflowManaged.blockReasons).toContain("workflow_managed");
+
     const unresolved = assessAutomaticRecovery({
       run,
       events: completedRead.slice(0, 1),

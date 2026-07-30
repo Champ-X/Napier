@@ -1,0 +1,159 @@
+import type { RunEvent } from "@napier/contracts";
+
+const WORKFLOW_EVENTS = new Set([
+  "workflow.started",
+  "workflow.node.started",
+  "workflow.node.completed",
+  "workflow.node.failed",
+  "workflow.completed",
+  "workflow.blocked",
+  "workflow.cancelled",
+]);
+
+export function workflowEventTraceSummary(event: RunEvent): string | undefined {
+  if (!WORKFLOW_EVENTS.has(event.type) || !record(event.payload)) {
+    return undefined;
+  }
+  const payload = event.payload;
+  const manifestSha256 = hash(payload["manifestSha256"]);
+  if (
+    payload["schemaVersion"] !== 1 ||
+    !planId(payload["planId"]) ||
+    !manifestSha256
+  ) {
+    return undefined;
+  }
+  const parts = [event.type.replaceAll(".", " ")];
+  if (event.type === "workflow.started") {
+    const version = boundedInteger(payload["workflowVersion"], 1, 1_000_000);
+    const nodeCount = boundedInteger(payload["nodeCount"], 1, 30);
+    const inputSha256 = hash(payload["inputSha256"]);
+    const inputSchemaSha256 = hash(payload["inputSchemaSha256"]);
+    const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
+    if (
+      version === undefined ||
+      nodeCount === undefined ||
+      !inputSha256 ||
+      !inputSchemaSha256 ||
+      !outputSchemaSha256 ||
+      !nodeId(payload["outputNodeId"])
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `version ${String(version)}`,
+      `nodes ${String(nodeCount)}`,
+      `input ${inputSha256.slice(0, 12)}`,
+      `input-schema ${inputSchemaSha256.slice(0, 12)}`,
+      `output-schema ${outputSchemaSha256.slice(0, 12)}`,
+    );
+  } else if (event.type.startsWith("workflow.node.")) {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const attempt = boundedInteger(payload["attempt"], 1, 3);
+    const inputSha256 = hash(payload["inputSha256"]);
+    const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
+    if (
+      !nodeIdValue ||
+      attempt === undefined ||
+      !inputSha256 ||
+      !outputSchemaSha256
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `attempt ${String(attempt)}`,
+      `input ${inputSha256.slice(0, 12)}`,
+      `output-schema ${outputSchemaSha256.slice(0, 12)}`,
+    );
+    if (event.type === "workflow.node.completed") {
+      const outputSha256 = hash(payload["outputSha256"]);
+      if (!outputSha256 || typeof payload["recovered"] !== "boolean") {
+        return undefined;
+      }
+      parts.push(`output ${outputSha256.slice(0, 12)}`);
+      if (payload["recovered"]) parts.push("recovered");
+    }
+    if (event.type === "workflow.node.failed") {
+      const errorCode = safeToken(payload["errorCode"]);
+      const diagnosticSha256 = hash(payload["diagnosticSha256"]);
+      if (!errorCode || !diagnosticSha256) return undefined;
+      parts.push(
+        `error ${errorCode}`,
+        `diagnostic ${diagnosticSha256.slice(0, 12)}`,
+      );
+    }
+  } else {
+    const status = workflowStatus(payload["status"]);
+    const resultSha256 = hash(payload["resultSha256"]);
+    const nodeResultCount = boundedInteger(payload["nodeResultCount"], 0, 30);
+    const completedNodeCount = boundedInteger(
+      payload["completedNodeCount"],
+      0,
+      30,
+    );
+    if (
+      !status ||
+      !resultSha256 ||
+      nodeResultCount === undefined ||
+      completedNodeCount === undefined
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `status ${status}`,
+      `completed ${String(completedNodeCount)}/${String(nodeResultCount)}`,
+      `result ${resultSha256.slice(0, 12)}`,
+    );
+    const outputSha256 = hash(payload["outputSha256"]);
+    if (outputSha256) parts.push(`output ${outputSha256.slice(0, 12)}`);
+  }
+  parts.push(`manifest ${manifestSha256.slice(0, 12)}`);
+  return parts.join(" / ");
+}
+
+function workflowStatus(value: unknown): string | undefined {
+  return value === "completed" || value === "blocked" || value === "cancelled"
+    ? value
+    : undefined;
+}
+
+function planId(value: unknown): string | undefined {
+  return typeof value === "string" && /^plan_[a-z0-9]{8,80}$/u.test(value)
+    ? value
+    : undefined;
+}
+
+function nodeId(value: unknown): string | undefined {
+  return typeof value === "string" && /^[a-z][a-z0-9_-]{0,63}$/u.test(value)
+    ? value
+    : undefined;
+}
+
+function safeToken(value: unknown): string | undefined {
+  return typeof value === "string" && /^[a-z][a-z0-9_]{0,63}$/u.test(value)
+    ? value
+    : undefined;
+}
+
+function boundedInteger(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+): number | undefined {
+  return Number.isSafeInteger(value) &&
+    Number(value) >= minimum &&
+    Number(value) <= maximum
+    ? Number(value)
+    : undefined;
+}
+
+function hash(value: unknown): string | undefined {
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
+    ? value
+    : undefined;
+}
+
+function record(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}

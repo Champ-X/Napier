@@ -6,6 +6,32 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added typed executable Plan Workflows. The exported
+  `defineExecutionPlanWorkflow()` helper turns an existing
+  `ExecutionPlanBlueprint` into a versioned, hash-bound Agent DAG manifest with
+  bounded runtime input/output schemas, explicit direct-dependency bindings,
+  per-node model, timeout, and attempt limits. Execution reuses the normal
+  `ExecutionPlan`, `AgentRuntime`, Run lease, model/tool policy, Sandbox, and
+  Work Ledger rather than adding a second scheduler or state database. Each
+  node Run freezes the Workflow's starting Agent revision, records
+  `source=workflow`, excludes Thread message history and prior-node
+  delegation/milestone context, and cannot invoke Plan mutation, milestone, or
+  operator-decision tools. Strict JSON output must pass its node schema before
+  the Plan step completes. Invalid output, model failure, timeout, cancellation,
+  and exhausted attempts become explicit blocked evidence. Resume verifies
+  input, schema, Run, output, attempt, and terminal evidence; repairs
+  process-exit gaps between Run/Plan/Ledger commits; and requires explicit
+  bounded retry for unknown side effects. Generic manual and automatic Run
+  recovery reject Workflow-owned Runs. `napier workflow` emits ordered JSONL,
+  while `POST /api/threads/:threadId/workflows` emits the same HTTP SSE events;
+  both finish with a typed result frame bound to the authoritative snapshot and
+  event stream. Web Trace retains only bounded status, counts, safe IDs, error
+  codes, and hashes. Runtime, restart, CLI, Server, Web, Replay, tamper,
+  concurrency, cancellation, timeout, path, context-isolation, and
+  no-mutation regressions cover the vertical path, with an opt-in real
+  DeepSeek Workflow smoke. Manifest v1 is sequential Agent DAG execution;
+  deterministic/Tool/approval nodes, parallel/control-flow constructs,
+  external adapters, artifact settlement, and visual editing remain.
 - Added Run-owned Node DAP launch debugging. The opt-in `node_debugger` Agent
   tool launches one canonical workspace JavaScript or Node-executable
   TypeScript target through the existing private `WorkspaceProcessManager`

@@ -32,6 +32,8 @@ export const automationCopy = {
     legacy_configuration: "Legacy schema has no bound recovery policy.",
     policy_manual: "The frozen Agent policy requires manual Resume.",
     run_not_interrupted: "The source Run is not interrupted.",
+    workflow_managed:
+      "The source Run is resumed only by its typed Workflow Plan.",
     demo_model: "The demo model cannot verify current state.",
     event_limit_exceeded: "The evidence range exceeds the safety limit.",
     unresolved_tool_call: "A tool start has no unique terminal outcome.",

@@ -222,6 +222,78 @@ provide an interactive TUI, RPC, ACP, or Desktop packaging. Thread branching
 is durable message-history materialization; it is not controlled model/tool
 re-execution, dependency substitution, or side-effect simulation.
 
+### Executable Plan Workflows
+
+The first Workflow vertical slice evolves the existing Blueprint and Plan
+domains instead of adding a second scheduler or state database:
+
+```text
+ExecutionPlanBlueprint
+  -> defineExecutionPlanWorkflow()
+  -> hash-bound napier.execution-plan-workflow manifest
+  -> existing ExecutionPlan projection
+  -> source=workflow Agent Run per ready node
+  -> strict typed node result
+  -> existing Plan transition and Work Ledger
+```
+
+`workflow-manifests.ts` validates the stable manifest and its Blueprint
+binding. `workflow-schemas.ts` owns the bounded JSON Schema subset and runtime
+value validation. `workflow-runtime.ts` owns scheduling and node state
+transitions, while `workflow-ledger.ts` and `workflow-recovery.ts` own durable
+evidence reconstruction. `workflow-protocol.ts` validates HTTP/CLI requests,
+typed results, and final snapshot/event-stream-bound result frames. This keeps
+Workflow logic outside the oversized Store and Server modules.
+
+A new execution validates the complete manifest and typed input before
+creating state, creates the normal `ExecutionPlan`, freezes the target Agent
+revision in `workflow.started`, and executes one dependency-ready node at a
+time. Each node is a normal `AgentRuntime.runPrompt()` invocation with its
+manifest model override, timeout, AbortSignal, Run lease, policy, Sandbox,
+tools, and Ledger. `source=workflow` is a durable context boundary: Thread
+message history, prior-node delegation/milestone projections, Goal evaluation,
+automatic Memory proposal, Plan mutation tools, milestone tools, and operator
+decision tools are excluded. Explicit node bindings remain the data path
+between node outputs. Reviewed Agent Memory and ordinary policy-approved
+execution tools remain available and are bound by the Run configuration and
+context evidence.
+
+The node prompt labels Workflow input as untrusted data and requires exactly
+one JSON value. Runtime schema validation occurs after the Agent Run completes
+and before the Plan step completes. Output bodies remain in the normal local
+message evidence and typed result for recovery and delivery; Workflow-specific
+events and Web Trace summaries retain only safe identifiers, counts, status,
+error codes, and hashes.
+
+Resume accepts the original Manifest plus Plan ID, recovers the original input
+and frozen Agent revision from `workflow.started`, and revalidates both against
+the target Thread. Completed node output is reconstructed from its bound Run,
+strictly parsed again, and compared with node completion evidence. Recovery
+also handles process-exit windows between Run settlement, Plan transition,
+Plan event, and Workflow event commits. An interrupted Run becomes a blocked
+`run_interrupted` node at its original attempt. A missing failure event is
+reconstructed from durable Plan/Run state without executing the node. Existing
+started, completed, failed, and terminal evidence is semantically checked;
+observation is idempotent.
+
+Workflow-owned Runs are excluded from generic manual and automatic Run
+recovery. Only Workflow resume may inspect them, and only explicit
+`retryBlocked=true` reopens a node whose attempt limit is not exhausted.
+Unknown side effects are never silently rerun. Concurrent execution of two
+Workflows on one Thread is rejected by the shared Runtime instance.
+
+CLI JSONL and HTTP SSE emit normal event frames followed by one snapshot and a
+`workflow_result` frame. The frame independently validates every node/output
+hash, final result hash, Thread/Plan/Manifest binding, snapshot size/hash,
+event counts/bytes, and event-stream hash.
+
+Schema version 1 is intentionally narrow: Agent nodes, direct typed bindings,
+sequential dependency-ready DAG scheduling, cancellation, timeout, explicit
+retry, and restart recovery. It does not yet implement deterministic or Tool
+nodes, approvals, parallel execution, conditions, loops, Map/Reduce,
+compensation, per-node breakpoints, external Agent adapters, or artifact
+settlement.
+
 ### Coding Outcome Benchmark
 
 `npm run bench:coding` drives the real one-shot CLI against a versioned case
@@ -4745,8 +4817,9 @@ deferred until the local P0-P9 product loop is stable.
   policy, Node attach/source-map/multi-thread DAP and debugger UX, broader
   multi-node AST transforms, write-linked test/symbol association, and isolated
   subagent worktrees;
-- typed executable Workflow nodes, checkpoint recovery, single-node tests,
-  JSONL events, and a TypeScript SDK;
+- extend typed Agent DAG execution with deterministic/Tool/approval nodes,
+  parallelism, control flow, compensation, single-node tests and breakpoints,
+  external Agent adapters, artifact settlement, and a visual builder;
 - controlled re-execution from model, tool, and Workflow checkpoints.
 
 ### Layer 3: Product and outcome proof

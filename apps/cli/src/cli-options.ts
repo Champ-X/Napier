@@ -5,6 +5,7 @@ const DEFAULT_TIMEOUT_MS = 10 * 60 * 1_000;
 const MIN_TIMEOUT_MS = 1_000;
 const MAX_TIMEOUT_MS = 30 * 60 * 1_000;
 const MAX_PROMPT_BYTES = 64 * 1_024;
+const MAX_WORKFLOW_INPUT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
 const MAX_BRANCH_TITLE_CHARS = 100;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
@@ -38,12 +39,23 @@ export interface CliBranchOptions extends CliWorkspaceOptions {
   title?: string;
 }
 
+export interface CliWorkflowOptions extends CliExecutionOptions {
+  manifestPath: string;
+  inputJson?: string;
+  agentId?: string;
+  threadId?: string;
+  planId?: string;
+  title?: string;
+  retryBlocked: boolean;
+}
+
 export type CliAction =
   | { kind: "help" }
   | { kind: "version" }
   | { kind: "run"; options: CliRunOptions }
   | { kind: "resume"; options: CliResumeOptions }
-  | { kind: "branch"; options: CliBranchOptions };
+  | { kind: "branch"; options: CliBranchOptions }
+  | { kind: "workflow"; options: CliWorkflowOptions };
 
 const RUN_VALUE_OPTIONS = new Set([
   "--workspace",
@@ -70,6 +82,18 @@ const BRANCH_VALUE_OPTIONS = new Set([
   "--from-seq",
   "--title",
 ]);
+const WORKFLOW_VALUE_OPTIONS = new Set([
+  "--workspace",
+  "--data-root",
+  "--manifest",
+  "--input-json",
+  "--agent",
+  "--thread",
+  "--plan",
+  "--title",
+  "--timeout-ms",
+]);
+const WORKFLOW_FLAG_OPTIONS = new Set(["--retry-blocked"]);
 
 export function parseCliArgs(argv: string[]): CliAction {
   if (argv.length === 0 || argv[0] === "--help" || argv[0] === "-h") {
@@ -80,23 +104,32 @@ export function parseCliArgs(argv: string[]): CliAction {
     return { kind: "version" };
   }
   const command = argv[0];
-  if (command !== "run" && command !== "resume" && command !== "branch") {
+  if (
+    command !== "run" &&
+    command !== "resume" &&
+    command !== "branch" &&
+    command !== "workflow"
+  ) {
     throw new Error("Unknown command");
   }
   if (argv.length === 2 && (argv[1] === "--help" || argv[1] === "-h")) {
     return { kind: "help" };
   }
-  const { values, jsonl } = parseOptions(
+  const { values, flags, jsonl } = parseOptions(
     argv.slice(1),
     command === "run"
       ? RUN_VALUE_OPTIONS
       : command === "resume"
         ? RESUME_VALUE_OPTIONS
-        : BRANCH_VALUE_OPTIONS,
+        : command === "branch"
+          ? BRANCH_VALUE_OPTIONS
+          : WORKFLOW_VALUE_OPTIONS,
+    command === "workflow" ? WORKFLOW_FLAG_OPTIONS : new Set(),
   );
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "resume") return parseResumeOptions(values, jsonl);
-  return parseBranchOptions(values, jsonl);
+  if (command === "branch") return parseBranchOptions(values, jsonl);
+  return parseWorkflowOptions(values, flags, jsonl);
 }
 
 function parseRunOptions(
@@ -189,17 +222,88 @@ function parseBranchOptions(
   };
 }
 
+function parseWorkflowOptions(
+  values: Map<string, string>,
+  flags: ReadonlySet<string>,
+  jsonl: boolean,
+): Extract<CliAction, { kind: "workflow" }> {
+  const workspace = requiredValue(values, "--workspace");
+  const manifestPath = requiredValue(values, "--manifest");
+  const planId = optionalResourceId(values, "--plan");
+  const threadId = optionalResourceId(values, "--thread");
+  const agentId = optionalResourceId(values, "--agent");
+  const inputJson = values.get("--input-json");
+  const rawTitle = values.get("--title");
+  const title = rawTitle?.replace(/\s+/gu, " ").trim();
+  if (rawTitle !== undefined && (!title || title.length > MAX_TITLE_CHARS)) {
+    throw new Error(`--title must be 1-${MAX_TITLE_CHARS} characters`);
+  }
+  if (planId) {
+    if (!threadId) throw new Error("--thread is required with --plan");
+    if (inputJson !== undefined || agentId || title) {
+      throw new Error(
+        "--input-json, --agent, and --title cannot be used with --plan",
+      );
+    }
+  } else if (inputJson === undefined) {
+    throw new Error("--input-json is required for a new Workflow");
+  }
+  if (
+    inputJson !== undefined &&
+    Buffer.byteLength(inputJson, "utf8") > MAX_WORKFLOW_INPUT_BYTES
+  ) {
+    throw new Error(
+      `--input-json exceeds ${MAX_WORKFLOW_INPUT_BYTES} UTF-8 bytes`,
+    );
+  }
+  if (flags.has("--retry-blocked") && !planId) {
+    throw new Error("--retry-blocked requires --plan");
+  }
+  if (threadId && title) {
+    throw new Error("--title cannot be used with an existing --thread");
+  }
+  return {
+    kind: "workflow",
+    options: {
+      workspace,
+      manifestPath,
+      timeoutMs: parseTimeout(values.get("--timeout-ms")),
+      jsonl,
+      retryBlocked: flags.has("--retry-blocked"),
+      ...(values.has("--data-root")
+        ? { dataRoot: requiredValue(values, "--data-root") }
+        : {}),
+      ...(inputJson !== undefined ? { inputJson } : {}),
+      ...(agentId ? { agentId } : {}),
+      ...(threadId ? { threadId } : {}),
+      ...(planId ? { planId } : {}),
+      ...(title ? { title } : {}),
+    },
+  };
+}
+
 function parseOptions(
   argv: string[],
   allowedValues: ReadonlySet<string>,
-): { values: Map<string, string>; jsonl: boolean } {
+  allowedFlags: ReadonlySet<string> = new Set(),
+): {
+  values: Map<string, string>;
+  flags: Set<string>;
+  jsonl: boolean;
+} {
   const values = new Map<string, string>();
+  const flags = new Set<string>();
   let jsonl = false;
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index]!;
     if (flag === "--jsonl") {
       if (jsonl) throw new Error("Duplicate option: --jsonl");
       jsonl = true;
+      continue;
+    }
+    if (allowedFlags.has(flag)) {
+      if (flags.has(flag)) throw new Error(`Duplicate option: ${flag}`);
+      flags.add(flag);
       continue;
     }
     if (!allowedValues.has(flag)) throw new Error("Unknown option");
@@ -211,7 +315,7 @@ function parseOptions(
     values.set(flag, value);
     index += 1;
   }
-  return { values, jsonl };
+  return { values, flags, jsonl };
 }
 
 function requiredValue(values: Map<string, string>, flag: string): string {
@@ -283,11 +387,13 @@ Usage:
   napier run --workspace <path> --prompt <text> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
+  napier workflow --workspace <path> --manifest <path> [options]
 
 Commands:
   run                    Start a new Run on a new or existing Thread
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
+  workflow               Execute or resume a typed Plan/Blueprint Workflow
 
 Workspace options:
   --data-root <path>     Napier state directory (default: <workspace>/.napier)
@@ -311,6 +417,15 @@ Branch options:
   --thread <thread-id>   Source Thread
   --from-seq <n>         Existing source Ledger sequence
   --title <text>         Optional branch title
+
+Workflow options:
+  --manifest <path>      Workspace-relative Workflow manifest JSON
+  --input-json <json>    Typed input for a new Workflow
+  --thread <thread-id>   Existing target Thread
+  --agent <agent-id>     Agent for a new target Thread
+  --title <text>         Title for a new target Thread
+  --plan <plan-id>       Resume an existing Workflow Plan
+  --retry-blocked        Explicitly reopen retryable blocked nodes
 
 Other:
   -h, --help             Show help

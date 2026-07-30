@@ -15,7 +15,12 @@ export type RunStatus =
   | "cancelled"
   | "interrupted";
 export type TerminalRunStatus = Exclude<RunStatus, "queued" | "running">;
-export type RunInvocationSource = "user" | "recovery" | "schedule" | "channel";
+export type RunInvocationSource =
+  | "user"
+  | "recovery"
+  | "schedule"
+  | "channel"
+  | "workflow";
 export type GoalStatus = "active" | "completed" | "blocked";
 export type GoalBlocker =
   | "none"
@@ -765,6 +770,141 @@ export interface CreateExecutionPlanFromBlueprintRequest {
   blueprint: ExecutionPlanBlueprint;
   objective?: string;
 }
+
+export interface WorkflowNullSchema {
+  type: "null";
+}
+
+export interface WorkflowBooleanSchema {
+  type: "boolean";
+}
+
+export interface WorkflowNumberSchema {
+  type: "number" | "integer";
+  minimum?: number;
+  maximum?: number;
+}
+
+export interface WorkflowStringSchema {
+  type: "string";
+  minLength?: number;
+  maxLength?: number;
+  enum?: string[];
+}
+
+export interface WorkflowArraySchema {
+  type: "array";
+  items: WorkflowValueSchema;
+  minItems?: number;
+  maxItems?: number;
+}
+
+export interface WorkflowObjectSchema {
+  type: "object";
+  properties: Record<string, WorkflowValueSchema>;
+  required: string[];
+  additionalProperties: false;
+}
+
+export type WorkflowValueSchema =
+  | WorkflowNullSchema
+  | WorkflowBooleanSchema
+  | WorkflowNumberSchema
+  | WorkflowStringSchema
+  | WorkflowArraySchema
+  | WorkflowObjectSchema;
+
+export type ExecutionPlanWorkflowInputBinding =
+  | { source: "workflow" }
+  | { source: "node"; nodeId: string };
+
+export interface ExecutionPlanWorkflowAgentNode {
+  id: string;
+  type: "agent";
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowValueSchema;
+  model?: ModelRef;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
+export interface ExecutionPlanWorkflowManifest {
+  kind: "napier.execution-plan-workflow";
+  schemaVersion: 1;
+  apiVersion: string;
+  generatedAt: string;
+  name: string;
+  version: number;
+  description: string;
+  blueprint: ExecutionPlanBlueprint;
+  inputSchema: WorkflowValueSchema;
+  outputSchema: WorkflowValueSchema;
+  outputNodeId: string;
+  nodes: ExecutionPlanWorkflowAgentNode[];
+  nodeCount: number;
+  contentSha256: string;
+}
+
+export interface ExecutionPlanWorkflowManifestVerification {
+  status: "valid" | "invalid";
+  diagnostics: string[];
+  nodeCount: number;
+  contentSha256?: string;
+  blueprintSha256?: string;
+  inputSchemaSha256?: string;
+  outputSchemaSha256?: string;
+}
+
+export type ExecutionPlanWorkflowNodeStatus =
+  | "completed"
+  | "blocked"
+  | "cancelled";
+
+export interface ExecutionPlanWorkflowNodeResult {
+  nodeId: string;
+  attempt: number;
+  status: ExecutionPlanWorkflowNodeStatus;
+  inputSha256: string;
+  inputSchemaSha256: string;
+  outputSchemaSha256: string;
+  runId?: string;
+  output?: JsonValue;
+  outputSha256?: string;
+  errorCode?: string;
+  diagnosticSha256?: string;
+}
+
+export type ExecutionPlanWorkflowStatus = "completed" | "blocked" | "cancelled";
+
+export interface ExecutionPlanWorkflowResult {
+  kind: "napier.execution-plan-workflow-result";
+  schemaVersion: 1;
+  threadId: string;
+  planId: string;
+  manifestSha256: string;
+  blueprintSha256: string;
+  status: ExecutionPlanWorkflowStatus;
+  resumed: boolean;
+  nodeResults: ExecutionPlanWorkflowNodeResult[];
+  output?: JsonValue;
+  outputSha256?: string;
+  resultSha256: string;
+}
+
+export type ExecuteExecutionPlanWorkflowRequest =
+  | {
+      manifest: ExecutionPlanWorkflowManifest;
+      input: JsonValue;
+      planId?: never;
+      retryBlocked?: never;
+    }
+  | {
+      manifest: ExecutionPlanWorkflowManifest;
+      planId: string;
+      retryBlocked?: boolean;
+      input?: never;
+    };
 
 export type ExecutionPlanBlueprintRecordStatus = "active" | "archived";
 
@@ -2853,6 +2993,7 @@ export type AutomaticRecoveryBlockReason =
   | "legacy_configuration"
   | "policy_manual"
   | "run_not_interrupted"
+  | "workflow_managed"
   | "demo_model"
   | "event_limit_exceeded"
   | "unresolved_tool_call"
@@ -4354,6 +4495,7 @@ const TRACE_SUMMARY_BOUNDARY_EVENT_PREFIXES = [
   "context.",
   "evaluation.",
   "plan.",
+  "workflow.",
   "tool.",
   "goal.",
   "memory.",
@@ -7294,6 +7436,21 @@ export type StreamFrame =
       eventBytes: number;
       eventStreamSha256: string;
     };
+
+export interface ExecutionPlanWorkflowResultFrame {
+  type: "workflow_result";
+  threadId: string;
+  planId: string;
+  status: ExecutionPlanWorkflowStatus;
+  manifestSha256: string;
+  result: ExecutionPlanWorkflowResult;
+  snapshotSha256: string;
+  snapshotBytes: number;
+  eventCount: number;
+  eventBytes: number;
+  eventStreamSha256: string;
+  contentSha256: string;
+}
 
 export function emptyUsage(): Usage {
   return {

@@ -29,10 +29,14 @@ Version `0.1.0` includes:
 - a Pi-powered multi-provider runtime for OpenAI, Anthropic, Google, and
   OpenRouter;
 - a deterministic zero-key demo model for onboarding and CI;
-- `napier run`, `napier resume`, and sequence-accurate `napier branch` CLI
-  commands with human output or hash-bound `StreamFrame` JSONL, backed by the
-  same Agent Runtime, model registry, policy, Sandbox, SQLite Ledger, and
-  domain services as the HTTP/Web path;
+- `napier run`, `napier resume`, sequence-accurate `napier branch`, and typed
+  `napier workflow` CLI commands with human output or hash-bound JSONL, backed
+  by the same Agent Runtime, model registry, policy, Sandbox, SQLite Ledger,
+  and domain services as the HTTP/Web path;
+- versioned executable Plan Workflow manifests with bounded runtime schemas,
+  explicit typed node bindings, frozen Agent revision, real Run-backed Agent
+  nodes, strict JSON output, explicit retry, restart reconstruction, and shared
+  CLI/HTTP/Trace evidence;
 - an authoritative SQLite WAL that commits workspace projections and ordered
   events atomically, uses revision CAS for concurrent local writers, and
   migrates legacy `workspace.json`/JSONL state without evidence loss;
@@ -396,6 +400,39 @@ the normal Agent Runtime. This is message-history branching, not model/tool
 checkpoint re-execution or side-effect replay. The CLI still does not claim an
 interactive TUI, RPC, ACP, or Desktop packaging.
 
+Execute a versioned typed Workflow manifest through the same Runtime:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --input-json '{"request":"Produce the verified report."}' \
+  --jsonl
+```
+
+Generate manifests from an existing `ExecutionPlanBlueprint` with the exported
+TypeScript `defineExecutionPlanWorkflow()` helper. It binds the Blueprint DAG,
+runtime input/output schemas, explicit node input bindings, per-node model,
+timeout, and attempt limit into one stable content hash. JSONL emits ordered
+Ledger event frames, one authoritative snapshot, and one hash-bound
+`workflow_result` frame. Resume or explicitly retry a blocked node without
+supplying the input again:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_example \
+  --plan plan_example \
+  --retry-blocked \
+  --jsonl
+```
+
+The original input is recovered and hash-checked from the Work Ledger. A retry
+never reuses an unknown side effect automatically.
+
 ## Store Scale Baseline
 
 Run the opt-in store benchmark after changes to persistence or Thread
@@ -572,8 +609,8 @@ Both smokes use a temporary local store and workspace, store only the
 check that the raw key never appears in recorded output. The Runtime smoke
 asserts `model.response`, `context.model_envelope`, assistant message, and
 `run.completed` Ledger evidence. The CLI smoke drives the JSONL entry point and
-verifies a terminal completed frame. They are skipped by default and are not
-part of `npm run check`.
+verifies one-shot, interrupted-resume, and typed Workflow terminal frames. They
+are skipped by default and are not part of `npm run check`.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source
@@ -2214,6 +2251,51 @@ objective, step, or artifact prose, backtest recommendation policies over
 current outcome evidence, and renders the selected policy template, policy
 hash, recommendation score, policy-set hash, override-set hash, policy source,
 and divergence count as part of the selection/backtest/override receipts.
+
+## Executable Plan Workflows
+
+`defineExecutionPlanWorkflow()` is the first executable TypeScript Workflow
+SDK surface. Schema-version 1 evolves an `ExecutionPlanBlueprint` rather than
+creating a parallel state machine: the manifest node list must match the
+Blueprint step order and DAG, every node input binding must match a required
+object-schema property, node references must name direct dependencies, and the
+declared final schema must equal a terminal output node schema. The restricted
+JSON Schema subset is bounded by depth, node count, object properties, array
+items, strings, enums, and encoded bytes before execution.
+
+`ExecutionPlanWorkflowRuntime` creates the normal durable `ExecutionPlan` and
+uses a real `AgentRuntime` Run for every ready node. The Workflow freezes the
+target Thread's Agent revision at start. Each node Run is persisted as
+`source=workflow`, excludes Thread message history and prior-node delegation or
+milestone projections, and cannot access Plan mutation, Agent milestone, or
+operator-decision tools. Current Agent policy, model override, Skills, reviewed
+Memory, ordinary execution tools, Sandbox checks, and Ledger recording still
+apply. Strict JSON output is validated before the Plan step completes; an
+invalid output, unavailable model, timeout, cancellation, or failed Run blocks
+the node with a path-free diagnostic hash.
+
+Resume reconstructs completed outputs from their bound assistant Run evidence,
+verifies node input/output/schema hashes, and repairs commit-order gaps where a
+Run or Plan transition persisted immediately before process exit. Startup
+interruption becomes one `run_interrupted` blocked attempt. Generic manual and
+automatic Run recovery reject Workflow-owned Runs, so only Workflow resume and
+explicit bounded `--retry-blocked` can continue the graph. Merely observing an
+already terminal Workflow is Ledger-idempotent.
+
+`POST /api/threads/:threadId/workflows` exposes the same execution as SSE.
+Both HTTP and CLI finish with `ExecutionPlanWorkflowResultFrame`, binding the
+typed result to the Thread snapshot and complete event-stream hash. Web Trace
+renders only status, counts, safe IDs, error codes, and hash prefixes; raw
+Workflow input, node output, and diagnostics are not copied into Trace
+summaries.
+
+Version 1 intentionally supports Agent nodes and sequential dependency-ready
+DAG scheduling only. Deterministic and Tool nodes, human approval nodes,
+parallel execution, Map/Reduce, conditions, loops, compensation, per-node
+breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
+open. The opt-in DeepSeek CLI smoke executes one real typed node when
+`DEEPSEEK_API_KEY` is available; default tests use deterministic providers and
+perform no network call.
 
 ## Portable Replay Fixtures
 

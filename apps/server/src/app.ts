@@ -425,6 +425,7 @@ import {
   verifyUsagePriceTableCatalog,
   type WorkspaceFileMutationManager,
   type WorkspaceProcessManager,
+  type ExecutionPlanWorkflowRuntime,
   executionPlanRequestFromBlueprint,
 } from "@napier/runtime";
 import { Hono, type Context } from "hono";
@@ -455,12 +456,14 @@ import {
   ReceiptTrustAnchorDirectorySubscriptionService,
   type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
 } from "./receipt-trust-directory-subscriptions.js";
+import { executeWorkflowHttp } from "./workflow-http.js";
 
 export interface NapierServices {
   store: LocalStore;
   models: ModelRegistry;
   extensions: McpExtensionManager;
   runtime: AgentRuntime;
+  workflows: ExecutionPlanWorkflowRuntime;
   evaluations: RunEvaluationService;
   evaluationCasebookQualifications: EvaluationCasebookQualificationService;
   evaluationSuites: EvaluationSuiteService;
@@ -686,6 +689,7 @@ export async function createServices(options?: {
     workspaceProcesses,
     workspaceFileMutations,
     runtime,
+    workflows,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
@@ -715,6 +719,7 @@ export async function createServices(options?: {
     models,
     extensions,
     runtime,
+    workflows,
     evaluations,
     evaluationCasebookQualifications,
     evaluationSuites,
@@ -10984,6 +10989,15 @@ export function createApp(services: NapierServices): Hono {
       }
     });
   });
+
+  app.post("/api/threads/:threadId/workflows", (context) =>
+    executeWorkflowHttp(context, services, {
+      readJson: readLimitedJson,
+      jsonError: (target, message, status) =>
+        jsonError(target, message, status),
+      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    }),
+  );
 
   app.notFound((context) => {
     const pathname = new URL(context.req.url).pathname;

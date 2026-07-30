@@ -258,6 +258,7 @@ export class AgentRuntime {
             .profile;
     const modelRef = options.model ?? agentSnapshot.model;
     const invocationSource = options.source ?? "user";
+    const workflowInvocation = invocationSource === "workflow";
     const skillCatalog = await loadWorkspaceSkills(
       this.store.workspaceRoot,
       agentSnapshot.enabledSkills,
@@ -566,16 +567,18 @@ export class AgentRuntime {
 
       let assistantText = await runTurn(prompt, invocationSource);
       budget.throwIfExhausted();
-      let goal = await this.evaluateActiveGoal(
-        thread.id,
-        run.id,
-        assistantText,
-        model,
-        abortController.signal,
-        budget,
-        nextModelContextEnvelopeTurnIndex,
-        options.onEvent,
-      );
+      let goal = workflowInvocation
+        ? undefined
+        : await this.evaluateActiveGoal(
+            thread.id,
+            run.id,
+            assistantText,
+            model,
+            abortController.signal,
+            budget,
+            nextModelContextEnvelopeTurnIndex,
+            options.onEvent,
+          );
       while (
         goal &&
         shouldContinueGoal(goal) &&
@@ -613,7 +616,12 @@ export class AgentRuntime {
           options.onEvent,
         );
       }
-      if (model && !safeReadOnlyRecovery && !abortController.signal.aborted) {
+      if (
+        model &&
+        !safeReadOnlyRecovery &&
+        !workflowInvocation &&
+        !abortController.signal.aborted
+      ) {
         await this.proposeMemoriesFromRun(
           thread.id,
           run.id,
@@ -723,7 +731,7 @@ export class AgentRuntime {
           options.onEvent,
         );
       }
-      if (!cancelled) {
+      if (!cancelled && !workflowInvocation) {
         await this.blockGoalForRunFailure(
           thread.id,
           run.id,
@@ -792,6 +800,11 @@ export class AgentRuntime {
       .filter((run) => run.status === "interrupted")
       .findLast((run) => !options.runId || run.id === options.runId);
     if (!interrupted) throw new Error("Interrupted run not found");
+    if (interrupted.source === "workflow") {
+      throw new Error(
+        "Workflow node Runs must be resumed through their Workflow Plan",
+      );
+    }
     const events = (await this.store.listEvents(thread.id)).filter(
       (event) => event.runId === interrupted.id,
     );
@@ -882,6 +895,7 @@ export class AgentRuntime {
     if (
       !interrupted ||
       interrupted.status !== "interrupted" ||
+      interrupted.source === "workflow" ||
       !interrupted.configuration ||
       !modernRunConfiguration(interrupted.configuration) ||
       interrupted.configuration.automaticRecovery.mode !== "safe_read_only" ||
@@ -981,9 +995,12 @@ export class AgentRuntime {
         category: "model",
         visibility: "debug",
         payload: {
-          messageCount: (await this.store.listEvents(run.threadId)).filter(
-            (event) => event.category === "message",
-          ).length,
+          messageCount:
+            source === "workflow"
+              ? 0
+              : (await this.store.listEvents(run.threadId)).filter(
+                  (event) => event.category === "message",
+                ).length,
           skills: profile.enabledSkills,
           policy: profile.toolPolicy,
         },
@@ -1091,6 +1108,7 @@ export class AgentRuntime {
     nextModelContextEnvelopeTurnIndex: () => number,
     onEvent?: EventSink,
   ): Promise<string> {
+    const workflowInvocation = run.source === "workflow";
     const history = await this.buildModelHistory(
       run,
       model,
@@ -1340,7 +1358,7 @@ export class AgentRuntime {
         }),
       );
     }
-    if (!safeReadOnlyRecovery && !advisorCorrection) {
+    if (!safeReadOnlyRecovery && !advisorCorrection && !workflowInvocation) {
       tools.push(...createPlanTools(this.store, run));
       tools.push(
         createAgentMilestoneTool({
@@ -1398,12 +1416,17 @@ export class AgentRuntime {
     );
     let milestoneContextProjection = createAgentMilestoneContextProjection(
       run.threadId,
-      await this.store.listAgentMilestones(run.threadId),
+      workflowInvocation
+        ? []
+        : await this.store.listAgentMilestones(run.threadId),
       { redactThroughEventSeq: milestoneRedactThroughEventSeq },
     );
     let delegationLedgerProjection = createDelegationLedgerProjection(
       run.threadId,
-      this.store.listSubagentTasks(run.threadId),
+      this.store.listSubagentTasks(
+        run.threadId,
+        workflowInvocation ? run.id : undefined,
+      ),
     );
     const buildSystemPrompt = (
       delegationProjection: typeof delegationLedgerProjection,
@@ -1748,20 +1771,25 @@ export class AgentRuntime {
           try {
             nextDelegationLedgerProjection = createDelegationLedgerProjection(
               run.threadId,
-              this.store.listSubagentTasks(run.threadId),
+              this.store.listSubagentTasks(
+                run.threadId,
+                workflowInvocation ? run.id : undefined,
+              ),
             );
           } catch {
             // Retain the last verified delegation projection.
           }
-          try {
-            nextMilestoneContextProjection =
-              createAgentMilestoneContextProjection(
-                run.threadId,
-                await this.store.listAgentMilestones(run.threadId),
-                { redactThroughEventSeq: milestoneRedactThroughEventSeq },
-              );
-          } catch {
-            // Retain the last verified milestone projection.
+          if (!workflowInvocation) {
+            try {
+              nextMilestoneContextProjection =
+                createAgentMilestoneContextProjection(
+                  run.threadId,
+                  await this.store.listAgentMilestones(run.threadId),
+                  { redactThroughEventSeq: milestoneRedactThroughEventSeq },
+                );
+            } catch {
+              // Retain the last verified milestone projection.
+            }
           }
           try {
             let runEvents = await this.store.listEvents(run.threadId);
@@ -2331,6 +2359,13 @@ export class AgentRuntime {
     rawMessageCount: number;
     compacted: boolean;
   }> {
+    if (run.source === "workflow") {
+      return {
+        messages: [],
+        rawMessageCount: 0,
+        compacted: false,
+      };
+    }
     const events = await this.store.listEvents(run.threadId);
     const importedEventCount = localImportedThroughSeq(
       this.store.getThread(run.threadId).importProvenance,
@@ -3322,6 +3357,13 @@ function turnPromptEvent(source: TurnSource) {
       type: "message.user",
       category: "message",
       visibility: "user",
+    } as const;
+  }
+  if (source === "workflow") {
+    return {
+      type: "workflow.node.prompt",
+      category: "plan",
+      visibility: "hidden",
     } as const;
   }
   if (source === "goal_continuation") {
