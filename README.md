@@ -37,6 +37,11 @@ Version `0.1.0` includes:
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, strict JSON output, explicit retry, restart reconstruction, and shared
   CLI/HTTP/Trace evidence;
+- controlled Workflow checkpoint experiments with verified ancestor reuse,
+  isolated descendant reruns, per-node model replacement, preview-bound
+  side-effect confirmation, and source-versus-target status, Run, model,
+  retry, latency, usage, cost, tool, output, Evaluation, and Artifact
+  comparison;
 - an authoritative SQLite WAL that commits workspace projections and ordered
   events atomically, uses revision CAS for concurrent local writers, and
   migrates legacy `workspace.json`/JSONL state without evidence loss;
@@ -458,7 +463,11 @@ attempts in the rerun subgraph contain write, unknown, or unresolved tool
 effects, execution requires both `--confirm-side-effects` and the exact
 `--expected-preview <sha256>` returned by the current preview. A stale preview
 fails before target creation. JSONL ends with a hash-bound
-`workflow_experiment_result` frame.
+`workflow_experiment_result` frame. That frame includes a privacy-bounded
+source-versus-target comparison with per-node execution classification and
+target-minus-source metrics. Human mode prints the aggregate duration, token,
+tool-call, and cost delta; output bodies, prompts, tool arguments, Evaluation
+prose, and Artifact paths remain outside the comparison.
 
 ## Store Scale Baseline
 
@@ -2330,16 +2339,28 @@ restart before reuse completes reconstructs remaining reused nodes from source
 Ledger evidence instead of executing them as Agent nodes. Source drift fails
 closed.
 
+After target settlement, the Runtime aligns every source and target node by
+Manifest order and derives a hash-bound comparison from actual Plan, Run,
+Ledger, Evaluation, and Artifact evidence. It distinguishes reused from rerun
+nodes; reports current status, model/configuration changes, retry and Run
+counts, duration, token/cost usage, added or removed tools, and output
+availability/hash changes; and uses `target - source` for every numeric delta.
+Only the current completed Plan-step Run can supply a current output hash, so a
+reopened or newly failed node cannot inherit a historical successful output.
+The complete comparison is delivered in the existing JSONL/SSE terminal frame;
+`workflow.experiment.compared` records only bounded counts, deltas, statuses,
+and hashes for Ledger and Web Trace.
+
 Version 1 intentionally supports Agent nodes and sequential dependency-ready
 DAG scheduling only. Deterministic and Tool nodes, human approval nodes,
 parallel execution, Map/Reduce, conditions, loops, compensation, per-node
 breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
 open. Checkpoint experiments do not yet provide model-call/tool-call
 single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
-batch experiments, or diff/evaluation promotion. The opt-in DeepSeek CLI smoke
-executes and checkpoint-reruns one real typed node when `DEEPSEEK_API_KEY` is
-available; default tests use deterministic providers and perform no network
-call.
+batch experiments, an interactive root-cause timeline, or Evaluation
+promotion. The opt-in DeepSeek CLI smoke executes and checkpoint-reruns one
+real typed node when `DEEPSEEK_API_KEY` is available; default tests use
+deterministic providers and perform no network call.
 
 ## Portable Replay Fixtures
 

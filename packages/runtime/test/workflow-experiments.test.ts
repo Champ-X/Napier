@@ -4,18 +4,25 @@ import path from "node:path";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import type {
+  ExecutionPlanWorkflowExperimentComparison,
   ExecutionPlanWorkflowManifest,
   WorkflowObjectSchema,
 } from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
+import { canonicalJson, sha256 } from "../src/ed25519.js";
 import { ModelRegistry } from "../src/models.js";
-import { exportThreadReplayBundle, hashEventStream } from "../src/replay.js";
+import {
+  createRunReplaySnapshot,
+  exportThreadReplayBundle,
+  hashEventStream,
+} from "../src/replay.js";
 import { streamSnapshotFrame } from "../src/run-stream.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
+import { validateExecutionPlanWorkflowExperimentComparison } from "../src/workflow-experiment-comparison-protocol.js";
 import {
   createExecutionPlanWorkflowExperimentResultFrame,
   validateExecutionPlanWorkflowExperimentResult,
@@ -38,6 +45,7 @@ afterEach(async () => {
 describe("Execution Plan Workflow experiments", () => {
   it("reuses verified ancestors and reruns one checkpoint with a replacement model", async () => {
     const fixture = await createFixture();
+    await seedSourceEvaluation(fixture);
     const sourcePlanBefore = fixture.store.getPlan(fixture.sourceResult.planId);
     fixture.alternate.setResponses([
       fauxAssistantMessage('{"report":"Experimental report","approved":true}'),
@@ -83,6 +91,63 @@ describe("Execution Plan Workflow experiments", () => {
     expect(validateExecutionPlanWorkflowExperimentResult(experiment)).toEqual(
       experiment,
     );
+    const legacyResult = structuredClone(experiment);
+    delete legacyResult.comparison;
+    expect(validateExecutionPlanWorkflowExperimentResult(legacyResult)).toEqual(
+      legacyResult,
+    );
+    expect(experiment.comparison).toEqual(
+      expect.objectContaining({
+        sourceThreadId: fixture.sourceThreadId,
+        targetThreadId,
+        sourceStatus: "completed",
+        targetStatus: "completed",
+        inputChange: "unchanged",
+        outputChange: "changed",
+        reusedNodeCount: 1,
+        rerunNodeCount: 1,
+        sourceEvaluations: expect.objectContaining({
+          total: 1,
+          rightBetter: 1,
+        }),
+        targetEvaluations: expect.objectContaining({ total: 0 }),
+        changedNodeIds: ["report"],
+      }),
+    );
+    expect(experiment.comparison?.nodes).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "reused",
+        modelChanged: false,
+        configurationChanged: false,
+        inputChange: "unchanged",
+        outputChange: "unchanged",
+        target: expect.objectContaining({
+          models: [{ provider: "napier", id: "workflow-reuse" }],
+          metrics: expect.objectContaining({
+            runCount: 1,
+            modelResponseCount: 0,
+          }),
+        }),
+      }),
+      expect.objectContaining({
+        nodeId: "report",
+        execution: "rerun",
+        modelChanged: true,
+        configurationChanged: true,
+        inputChange: "unchanged",
+        outputChange: "changed",
+        target: expect.objectContaining({
+          models: [{ provider: "faux-workflow-alternate", id: "faux-1" }],
+        }),
+      }),
+    ]);
+    expect(JSON.stringify(experiment.comparison)).not.toContain(
+      "Source report",
+    );
+    expect(JSON.stringify(experiment.comparison)).not.toContain(
+      "Experimental report",
+    );
     expect(fixture.store.getPlan(fixture.sourceResult.planId)).toEqual(
       sourcePlanBefore,
     );
@@ -111,6 +176,19 @@ describe("Execution Plan Workflow experiments", () => {
       ),
     ).toHaveLength(1);
     expect(
+      targetEvents.filter(
+        (event) => event.type === "workflow.experiment.compared",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          comparisonSha256: experiment.comparison?.contentSha256,
+          changedNodeCount: 1,
+          outputChange: "changed",
+        }),
+      }),
+    ]);
+    expect(
       verifyThreadReplayBundle(
         await exportThreadReplayBundle(fixture.store, targetThreadId),
       ).status,
@@ -134,6 +212,56 @@ describe("Execution Plan Workflow experiments", () => {
     expect(() =>
       validateExecutionPlanWorkflowExperimentResultFrame(tampered),
     ).toThrow();
+    const tamperedComparison = structuredClone(frame);
+    tamperedComparison.experiment.comparison!.metricDelta.costUsd += 1;
+    expect(() =>
+      validateExecutionPlanWorkflowExperimentResultFrame(tamperedComparison),
+    ).toThrow();
+    const forgedRunSource = structuredClone(frame);
+    forgedRunSource.experiment.comparison!.nodes[1]!.target.runSources = [
+      "user",
+    ];
+    expect(() =>
+      validateExecutionPlanWorkflowExperimentResultFrame(forgedRunSource),
+    ).toThrow("run sources");
+    for (const field of [
+      "runSources",
+      "models",
+      "configurationSha256s",
+    ] as const) {
+      const incompleteObservation = structuredClone(experiment.comparison!);
+      incompleteObservation.nodes[1]!.target[field] = [];
+      expect(() =>
+        validateExecutionPlanWorkflowExperimentComparison(
+          rehashComparison(incompleteObservation),
+        ),
+      ).toThrow();
+    }
+    const duplicatedSourceRun = structuredClone(experiment.comparison!);
+    duplicatedSourceRun.nodes[1]!.source.runIds = [
+      ...duplicatedSourceRun.nodes[0]!.source.runIds,
+    ];
+    duplicatedSourceRun.nodes[1]!.source.runSources = [
+      ...duplicatedSourceRun.nodes[0]!.source.runSources,
+    ];
+    duplicatedSourceRun.nodes[1]!.source.models = structuredClone(
+      duplicatedSourceRun.nodes[0]!.source.models,
+    );
+    duplicatedSourceRun.nodes[1]!.source.configurationSha256s = [
+      ...duplicatedSourceRun.nodes[0]!.source.configurationSha256s,
+    ];
+    expect(() =>
+      validateExecutionPlanWorkflowExperimentComparison(
+        rehashComparison(duplicatedSourceRun),
+      ),
+    ).toThrow("comparison binding");
+    const nonIsolatedComparison = structuredClone(experiment.comparison!);
+    nonIsolatedComparison.targetThreadId = nonIsolatedComparison.sourceThreadId;
+    expect(() =>
+      validateExecutionPlanWorkflowExperimentComparison(
+        rehashComparison(nonIsolatedComparison),
+      ),
+    ).toThrow("comparison is invalid");
     fixture.alternate.setResponses([
       fauxAssistantMessage('{"report":"Nested experiment","approved":true}'),
     ]);
@@ -149,6 +277,13 @@ describe("Execution Plan Workflow experiments", () => {
       report: "Nested experiment",
       approved: true,
     });
+    expect(nested.comparison).toEqual(
+      expect.objectContaining({
+        inputChange: "unchanged",
+        outputChange: "changed",
+        changedNodeIds: ["report"],
+      }),
+    );
     expect(
       fixture.store.listRuns(nested.targetThreadId).map((run) => run.source),
     ).toEqual(["workflow_reuse", "workflow"]);
@@ -296,6 +431,12 @@ describe("Execution Plan Workflow experiments", () => {
       report: "Confirmed rerun",
       approved: true,
     });
+    expect(confirmed.comparison?.nodes[1]).toEqual(
+      expect.objectContaining({
+        removedToolNames: ["apply_patch", "read_file", "third_party_action"],
+        metricDelta: expect.objectContaining({ toolCallCount: -3 }),
+      }),
+    );
     fixture.store.close();
   }, 20_000);
 
@@ -307,6 +448,13 @@ describe("Execution Plan Workflow experiments", () => {
       request: experimentRequest(fixture),
     });
     expect(blocked.result.status).toBe("blocked");
+    expect(blocked.comparison).toEqual(
+      expect.objectContaining({
+        targetStatus: "blocked",
+        outputChange: "became_unavailable",
+      }),
+    );
+    expect(blocked.comparison?.nodes[1]?.target.status).toBe("blocked");
     fixture.primary.setResponses([
       fauxAssistantMessage('{"report":"Recovered fork","approved":true}'),
     ]);
@@ -345,6 +493,49 @@ describe("Execution Plan Workflow experiments", () => {
     fixture.store.close();
   }, 20_000);
 
+  it("distinguishes a repaired blocked source from a lost target output", async () => {
+    const fixture = await createFixture();
+    await fixture.store.transitionPlanStep(
+      fixture.sourceResult.planId,
+      "report",
+      { action: "reopen" },
+    );
+    await fixture.store.transitionPlanStep(
+      fixture.sourceResult.planId,
+      "report",
+      {
+        action: "block",
+        blocker: "Source report requires a new experiment.",
+        evidence: "The prior completed output was explicitly reopened.",
+      },
+    );
+    fixture.primary.setResponses([
+      fauxAssistantMessage('{"report":"Repaired source","approved":true}'),
+    ]);
+    const repaired = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: experimentRequest(fixture),
+    });
+    expect(repaired.comparison).toEqual(
+      expect.objectContaining({
+        sourceStatus: "blocked",
+        targetStatus: "completed",
+        outputChange: "became_available",
+      }),
+    );
+    expect(repaired.comparison?.nodes[1]).toEqual(
+      expect.objectContaining({
+        source: expect.objectContaining({
+          status: "blocked",
+        }),
+        target: expect.objectContaining({ status: "completed" }),
+        outputChange: "became_available",
+      }),
+    );
+    expect(repaired.comparison?.nodes[1]?.source.outputSha256).toBeUndefined();
+    fixture.store.close();
+  }, 20_000);
+
   it("settles cancellation in the experiment Thread without changing the source", async () => {
     const fixture = await createFixture();
     const sourcePlan = fixture.store.getPlan(fixture.sourceResult.planId);
@@ -366,6 +557,12 @@ describe("Execution Plan Workflow experiments", () => {
       },
     });
     expect(cancelled.result.status).toBe("cancelled");
+    expect(cancelled.comparison).toEqual(
+      expect.objectContaining({
+        targetStatus: "cancelled",
+        outputChange: "became_unavailable",
+      }),
+    );
     expect(fixture.store.getPlan(fixture.sourceResult.planId)).toEqual(
       sourcePlan,
     );
@@ -395,6 +592,8 @@ describe("Execution Plan Workflow experiments", () => {
       },
     });
     expect(cancelled.result.status).toBe("cancelled");
+    expect(cancelled.comparison?.targetMetrics.runCount).toBe(0);
+    expect(cancelled.comparison?.nodes[0]?.target.status).toBe("ready");
     expect(fixture.store.listRuns(cancelled.targetThreadId)).toEqual([]);
 
     fixture.alternate.setResponses([
@@ -421,6 +620,46 @@ describe("Execution Plan Workflow experiments", () => {
         (event) => event.type === "workflow.node.reused",
       ),
     ).toHaveLength(1);
+    fixture.store.close();
+  }, 20_000);
+
+  it("fails comparison closed when the source Plan changes during the target run", async () => {
+    const fixture = await createFixture();
+    fixture.primary.setResponses([
+      fauxAssistantMessage('{"report":"Stale comparison","approved":true}'),
+    ]);
+    let targetThreadId = "";
+    let sourceReopened = false;
+    await expect(
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request: experimentRequest(fixture),
+        onTargetCreated: (thread) => {
+          targetThreadId = thread.id;
+        },
+        onEvent: async (event) => {
+          if (
+            !sourceReopened &&
+            event.type === "workflow.node.started" &&
+            record(event.payload)?.["nodeId"] === "report"
+          ) {
+            sourceReopened = true;
+            await fixture.store.transitionPlanStep(
+              fixture.sourceResult.planId,
+              "report",
+              { action: "reopen" },
+            );
+          }
+        },
+      }),
+    ).rejects.toThrow("Plan binding");
+    expect(sourceReopened).toBe(true);
+    expect(targetThreadId).not.toBe("");
+    expect(
+      (await fixture.store.listEvents(targetThreadId)).some(
+        (event) => event.type === "workflow.experiment.failed",
+      ),
+    ).toBe(true);
     fixture.store.close();
   }, 20_000);
 
@@ -611,6 +850,56 @@ function experimentRequest(
     fromNodeId: "report",
     ...overrides,
   };
+}
+
+function rehashComparison(
+  comparison: ExecutionPlanWorkflowExperimentComparison,
+): ExecutionPlanWorkflowExperimentComparison {
+  const { contentSha256: _contentSha256, ...content } = comparison;
+  return {
+    ...content,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+async function seedSourceEvaluation(fixture: Fixture): Promise<void> {
+  const leftRunId = fixture.sourceResult.nodeResults[0]!.runId!;
+  const rightRunId = fixture.sourceResult.nodeResults[1]!.runId!;
+  const [left, right] = await Promise.all([
+    createRunReplaySnapshot(fixture.store, fixture.sourceThreadId, leftRunId),
+    createRunReplaySnapshot(fixture.store, fixture.sourceThreadId, rightRunId),
+  ]);
+  await fixture.store.saveRunEvaluation({
+    id: "evaluation_workflow_compare_12345678",
+    threadId: fixture.sourceThreadId,
+    leftRunId,
+    rightRunId,
+    leftSnapshotSha256: left.eventStreamSha256,
+    rightSnapshotSha256: right.eventStreamSha256,
+    rubric: {
+      name: "Workflow experiment fixture",
+      criteria: [
+        {
+          id: "quality",
+          name: "Quality",
+          description: "Compare the source Workflow node outcomes.",
+        },
+      ],
+    },
+    scores: [
+      {
+        criterionId: "quality",
+        leftScore: 3,
+        rightScore: 4,
+        reason: "The report node completes the fixture.",
+      },
+    ],
+    verdict: "right_better",
+    reason: "The report node is the completed source outcome.",
+    evidence: "",
+    evaluatorModel: { provider: "faux-workflow-primary", id: "faux-1" },
+    createdAt: "2026-07-31T00:00:00.000Z",
+  });
 }
 
 function requestSchema(): WorkflowObjectSchema {

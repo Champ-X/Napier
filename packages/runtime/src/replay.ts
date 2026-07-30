@@ -96,7 +96,7 @@ export async function createRunReplaySnapshot(
     schemaVersion: 1,
     threadId,
     run,
-    metrics: buildRunMetrics(run.startedAt, run.finishedAt, events, subagents),
+    metrics: deriveRunMetrics(run.startedAt, run.finishedAt, events, subagents),
     events,
     subagents,
     eventStreamSha256: hashEventStream(events),
@@ -363,7 +363,7 @@ function validateRunReplaySnapshot(input: unknown): RunReplaySnapshot {
     throw new Error("Run replay snapshot configuration hash is invalid");
   }
   const metrics = recordField(record, "metrics") as unknown as RunMetrics;
-  const expectedMetrics = buildRunMetrics(
+  const expectedMetrics = deriveRunMetrics(
     startedAt,
     typeof finishedAt === "string" ? finishedAt : undefined,
     events,
@@ -518,7 +518,7 @@ function stringField(record: Record<string, unknown>, field: string): string {
   return value;
 }
 
-function buildRunMetrics(
+export function deriveRunMetrics(
   startedAt: string,
   finishedAt: string | undefined,
   events: RunEvent[],

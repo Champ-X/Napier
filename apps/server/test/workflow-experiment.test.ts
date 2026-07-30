@@ -95,6 +95,11 @@ describe("Workflow experiment HTTP path", () => {
         sourcePlanId: fixture.sourcePlanId,
         status: "completed",
         experiment: expect.objectContaining({
+          comparison: expect.objectContaining({
+            inputChange: "unchanged",
+            outputChange: "changed",
+            changedNodeIds: ["report"],
+          }),
           result: expect.objectContaining({
             output: { report: "HTTP experiment", approved: true },
           }),

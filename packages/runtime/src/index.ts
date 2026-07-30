@@ -116,6 +116,8 @@ export * from "./workspace-snapshot.js";
 export * from "./workspace-source.js";
 export * from "./workspace-write-lock.js";
 export * from "./workflow-blueprints.js";
+export * from "./workflow-experiment-comparison.js";
+export * from "./workflow-experiment-comparison-protocol.js";
 export * from "./workflow-experiment-protocol.js";
 export * from "./workflow-experiments.js";
 export * from "./workflow-manifests.js";

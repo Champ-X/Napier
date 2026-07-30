@@ -113,6 +113,27 @@ describe("Workflow event Trace projection", () => {
       sourceAttempt: 2,
       output: "PRIVATE_REUSED_OUTPUT",
     });
+    const compared = workflowEvent("workflow.experiment.compared", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      comparisonSha256: "6".repeat(64),
+      sourceStatus: "completed",
+      targetStatus: "completed",
+      reusedNodeCount: 1,
+      rerunNodeCount: 1,
+      changedNodeCount: 1,
+      inputChange: "unchanged",
+      outputChange: "changed",
+      durationMsDelta: -42,
+      inputTokensDelta: -10,
+      outputTokensDelta: 4,
+      costUsdDelta: -0.001,
+      toolCallCountDelta: -2,
+      evaluationCountDelta: -1,
+      artifactCountDelta: 0,
+      sourceOutput: "PRIVATE_COMPARISON_OUTPUT",
+    });
 
     expect(workflowEventTraceSummary(started)).toContain(
       `from report / reused 1 / rerun 1 / preview ${"3".repeat(12)} / side-effects confirmed`,
@@ -120,8 +141,11 @@ describe("Workflow event Trace projection", () => {
     expect(workflowEventTraceSummary(reused)).toContain(
       `node inspect / source-attempt 2 / input ${"4".repeat(12)} / output ${"5".repeat(12)}`,
     );
+    expect(workflowEventTraceSummary(compared)).toContain(
+      `completed -> completed / changed-nodes 1 / output changed / duration -42ms / tokens -6 / tools -2 / cost -0.001000 USD / evaluations -1 / artifacts 0 / comparison ${"6".repeat(12)}`,
+    );
     expect(
-      `${workflowEventTraceSummary(started)} ${workflowEventTraceSummary(reused)}`,
+      `${workflowEventTraceSummary(started)} ${workflowEventTraceSummary(reused)} ${workflowEventTraceSummary(compared)}`,
     ).not.toContain("PRIVATE");
   });
 

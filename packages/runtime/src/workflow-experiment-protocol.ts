@@ -11,6 +11,11 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import {
+  assertExecutionPlanWorkflowExperimentComparisonBinding,
+  MAX_EXECUTION_PLAN_WORKFLOW_EXPERIMENT_COMPARISON_BYTES,
+  validateExecutionPlanWorkflowExperimentComparison,
+} from "./workflow-experiment-comparison-protocol.js";
+import {
   MAX_EXECUTION_PLAN_WORKFLOW_REQUEST_BYTES,
   validateExecutionPlanWorkflowResult,
 } from "./workflow-protocol.js";
@@ -29,6 +34,7 @@ const TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/u;
 const MAX_WORKFLOW_EXPERIMENT_RESULT_BYTES =
   MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES * 2 +
   MAX_EXECUTION_PLAN_WORKFLOW_REQUEST_BYTES +
+  MAX_EXECUTION_PLAN_WORKFLOW_EXPERIMENT_COMPARISON_BYTES +
   256 * 1024;
 const MAX_WORKFLOW_EXPERIMENT_FRAME_BYTES =
   MAX_WORKFLOW_EXPERIMENT_RESULT_BYTES + 256 * 1024;
@@ -204,15 +210,20 @@ export function validateExecutionPlanWorkflowExperimentResult(
     "Workflow experiment result",
   );
   const experiment = record(input, "Workflow experiment result");
-  assertExactKeys(experiment, [
-    "kind",
-    "schemaVersion",
-    "preview",
-    "sourceManifest",
-    "candidateManifest",
-    "targetThreadId",
-    "result",
-  ]);
+  assertExactKeys(
+    experiment,
+    [
+      "kind",
+      "schemaVersion",
+      "preview",
+      "sourceManifest",
+      "candidateManifest",
+      "targetThreadId",
+      "result",
+      "comparison",
+    ],
+    new Set(["comparison"]),
+  );
   if (
     experiment["kind"] !== "napier.execution-plan-workflow-experiment-result" ||
     experiment["schemaVersion"] !== 1 ||
@@ -231,6 +242,12 @@ export function validateExecutionPlanWorkflowExperimentResult(
     experiment["candidateManifest"],
   );
   const result = validateExecutionPlanWorkflowResult(experiment["result"]);
+  const comparison =
+    experiment["comparison"] === undefined
+      ? undefined
+      : validateExecutionPlanWorkflowExperimentComparison(
+          experiment["comparison"],
+        );
   const manifestNodeIds = candidateManifest.nodes.map((node) => node.id);
   const expectedCandidateManifest = defineExecutionPlanWorkflow({
     name: sourceManifest.name,
@@ -260,6 +277,15 @@ export function validateExecutionPlanWorkflowExperimentResult(
     ) !== canonicalJson([...manifestNodeIds].sort())
   ) {
     throw new Error("Workflow experiment result binding is invalid");
+  }
+  if (comparison) {
+    assertExecutionPlanWorkflowExperimentComparisonBinding(
+      comparison,
+      preview,
+      sourceManifest,
+      candidateManifest,
+      result,
+    );
   }
   return structuredClone(input) as ExecutionPlanWorkflowExperimentResult;
 }

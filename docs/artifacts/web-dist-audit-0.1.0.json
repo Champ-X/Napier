@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 60,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CtANwSiX.js",
+    "path": "apps/web/dist/assets/index-Dfa6Dx_0.js",
     "sizeBytes": 132225,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "54fefccfcf29ba5bd8d7557387bf090b5cf5c44852353a71a4f0abf60f69a599"
+    "sha256": "2963558dabd0baac3cbf60a84fd7d44660e05243fde6bcdcc4df20ca6df4116c"
   },
-  "distContentSha256": "54fefccfcf29ba5bd8d7557387bf090b5cf5c44852353a71a4f0abf60f69a599",
+  "distContentSha256": "2963558dabd0baac3cbf60a84fd7d44660e05243fde6bcdcc4df20ca6df4116c",
   "errors": []
 }

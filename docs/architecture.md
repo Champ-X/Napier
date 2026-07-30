@@ -300,6 +300,8 @@ source Thread + Plan + source Manifest
   -> create independent target Thread and normal ExecutionPlan
   -> materialize verified ancestors as source=workflow_reuse control Runs
   -> execute selected node and descendants through AgentRuntime
+  -> align source/target node evidence and derive target-minus-source metrics
+  -> append privacy-bounded workflow.experiment.compared evidence
   -> emit target snapshot + workflow_experiment_result
 ```
 
@@ -324,6 +326,25 @@ Preview and execution are available through CLI JSONL and dedicated HTTP
 preview/SSE routes. Web Trace projects only node IDs, counts, confirmation
 state, and hash prefixes. Source/output bodies, tool arguments, diagnostics,
 and paths are not copied into experiment-specific Trace summaries.
+
+Terminal experiment comparison reads each Thread event stream once, groups
+events by actual Run, and reuses the same pure Run-metric derivation as
+portable Replay. Manifest order aligns nodes. Historical starts and failures
+produce retry counts, while only the current completed Plan step's `runId` may
+provide the current output hash. This prevents an older successful attempt
+from masking a reopened, blocked, or cancelled node. Actual Run sources,
+models, configuration hashes, tool sets, token/cost usage, existing Evaluation
+coverage, and path-free Artifact state are summarized per side. Numeric deltas
+are always `target - source`; output availability distinguishes repaired
+(`became_available`) from regressed (`became_unavailable`) execution.
+
+The complete hash-bound comparison travels in the existing
+`workflow_experiment_result` JSONL/SSE frame. Durable
+`workflow.experiment.compared` evidence contains only statuses, counts, metric
+deltas, and hashes. Prompts, message/output bodies, tool arguments, Evaluation
+reasons/evidence, Artifact paths, and raw diagnostics are excluded. Comparison
+creation rechecks source and target Plan revisions after observation and fails
+closed on source drift or non-Workflow Run bindings.
 
 Schema version 1 is intentionally narrow: Agent nodes, direct typed bindings,
 sequential dependency-ready DAG scheduling, cancellation, timeout, explicit
@@ -4861,7 +4882,7 @@ deferred until the local P0-P9 product loop is stable.
   external Agent adapters, artifact settlement, and a visual builder;
 - extend controlled Workflow checkpoint re-execution with model-call/tool-call
   checkpoints, side-effect simulation, dependency replacement, batch
-  experiments, diffs, and evaluation promotion.
+  experiments, interactive root-cause views, and evaluation promotion.
 
 ### Layer 3: Product and outcome proof
 

@@ -938,6 +938,102 @@ export interface ExecutionPlanWorkflowExperimentPreview {
   previewSha256: string;
 }
 
+export interface ExecutionPlanWorkflowExperimentMetricSet {
+  runCount: number;
+  attemptCount: number;
+  durationMs: number;
+  modelResponseCount: number;
+  toolCallCount: number;
+  toolCompletedCount: number;
+  toolFailedCount: number;
+  toolBlockedCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  costUsd: number;
+}
+
+export interface ExecutionPlanWorkflowExperimentEvaluationSummary {
+  total: number;
+  leftBetter: number;
+  rightBetter: number;
+  tie: number;
+  inconclusive: number;
+}
+
+export interface ExecutionPlanWorkflowExperimentArtifactSummary {
+  total: number;
+  produced: number;
+  verified: number;
+  missing: number;
+  setSha256: string;
+}
+
+export type ExecutionPlanWorkflowExperimentValueChange =
+  | "unchanged"
+  | "changed"
+  | "became_available"
+  | "became_unavailable"
+  | "unavailable";
+
+export interface ExecutionPlanWorkflowExperimentNodeObservation {
+  status: PlanStepStatus;
+  runIds: string[];
+  runSources: RunInvocationSource[];
+  models: ModelRef[];
+  configurationSha256s: string[];
+  toolNames: string[];
+  inputSha256?: string;
+  outputSha256?: string;
+  metrics: ExecutionPlanWorkflowExperimentMetricSet;
+  evaluations: ExecutionPlanWorkflowExperimentEvaluationSummary;
+}
+
+export interface ExecutionPlanWorkflowExperimentNodeComparison {
+  nodeId: string;
+  execution: "reused" | "rerun";
+  source: ExecutionPlanWorkflowExperimentNodeObservation;
+  target: ExecutionPlanWorkflowExperimentNodeObservation;
+  statusChanged: boolean;
+  modelChanged: boolean;
+  configurationChanged: boolean;
+  inputChange: ExecutionPlanWorkflowExperimentValueChange;
+  outputChange: ExecutionPlanWorkflowExperimentValueChange;
+  metricDelta: ExecutionPlanWorkflowExperimentMetricSet;
+  addedToolNames: string[];
+  removedToolNames: string[];
+}
+
+export interface ExecutionPlanWorkflowExperimentComparison {
+  kind: "napier.execution-plan-workflow-experiment-comparison";
+  schemaVersion: 1;
+  sourceThreadId: string;
+  sourcePlanId: string;
+  targetThreadId: string;
+  targetPlanId: string;
+  sourceStatus: ExecutionPlanStatus;
+  targetStatus: ExecutionPlanWorkflowStatus;
+  sourceInputSha256: string;
+  targetInputSha256: string;
+  inputChange: ExecutionPlanWorkflowExperimentValueChange;
+  sourceOutputSha256?: string;
+  targetOutputSha256?: string;
+  outputChange: ExecutionPlanWorkflowExperimentValueChange;
+  reusedNodeCount: number;
+  rerunNodeCount: number;
+  sourceMetrics: ExecutionPlanWorkflowExperimentMetricSet;
+  targetMetrics: ExecutionPlanWorkflowExperimentMetricSet;
+  metricDelta: ExecutionPlanWorkflowExperimentMetricSet;
+  sourceEvaluations: ExecutionPlanWorkflowExperimentEvaluationSummary;
+  targetEvaluations: ExecutionPlanWorkflowExperimentEvaluationSummary;
+  sourceArtifacts: ExecutionPlanWorkflowExperimentArtifactSummary;
+  targetArtifacts: ExecutionPlanWorkflowExperimentArtifactSummary;
+  changedNodeIds: string[];
+  nodes: ExecutionPlanWorkflowExperimentNodeComparison[];
+  contentSha256: string;
+}
+
 export interface CreateExecutionPlanWorkflowExperimentRequest {
   manifest: ExecutionPlanWorkflowManifest;
   planId: string;
@@ -956,6 +1052,7 @@ export interface ExecutionPlanWorkflowExperimentResult {
   candidateManifest: ExecutionPlanWorkflowManifest;
   targetThreadId: string;
   result: ExecutionPlanWorkflowResult;
+  comparison?: ExecutionPlanWorkflowExperimentComparison;
 }
 
 export type ExecutionPlanBlueprintRecordStatus = "active" | "archived";

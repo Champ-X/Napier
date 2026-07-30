@@ -372,6 +372,13 @@ async function executeWorkflow(
           io.stderr,
           `Napier workflow experiment ${experiment.result.planId} ${experiment.result.status} (thread ${experiment.targetThreadId})`,
         );
+        if (experiment.comparison) {
+          const delta = experiment.comparison.metricDelta;
+          await writeLine(
+            io.stderr,
+            `Delta (target-source): ${signedNumber(delta.durationMs)}ms, ${signedNumber(delta.inputTokens + delta.outputTokens)} tokens, ${signedNumber(delta.toolCallCount)} tools, ${signedNumber(delta.costUsd, 6)} USD`,
+          );
+        }
       }
       return experiment.result.status === "completed" ? 0 : 1;
     }
@@ -605,6 +612,14 @@ async function writeJsonLine(
     | unknown,
 ): Promise<void> {
   await writeLine(stream, JSON.stringify(frame));
+}
+
+function signedNumber(value: number, fractionDigits?: number): string {
+  const text =
+    fractionDigits === undefined
+      ? String(value)
+      : value.toFixed(fractionDigits);
+  return value > 0 ? `+${text}` : text;
 }
 
 async function writeLine(stream: Writable, text: string): Promise<void> {

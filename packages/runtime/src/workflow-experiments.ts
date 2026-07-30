@@ -10,6 +10,7 @@ import type { EventSink } from "./agent-runtime.js";
 import { sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
+import { createExecutionPlanWorkflowExperimentComparison } from "./workflow-experiment-comparison.js";
 import {
   validateCreateExecutionPlanWorkflowExperimentRequest,
   validateExecutionPlanWorkflowExperimentPreview,
@@ -116,6 +117,46 @@ export class ExecutionPlanWorkflowExperimentRuntime {
         ...(options.signal ? { signal: options.signal } : {}),
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       });
+      const comparison = await createExecutionPlanWorkflowExperimentComparison({
+        store: this.store,
+        preview,
+        sourcePlan: source.sourcePlan,
+        targetPlan: this.store.getPlan(result.planId),
+        sourceManifest: request.manifest,
+        candidateManifest: source.candidateManifest,
+        targetResult: result,
+      });
+      const comparedEvent = await this.store.appendEvent({
+        threadId: target.id,
+        runId: createId("runctl"),
+        type: "workflow.experiment.compared",
+        category: "plan",
+        visibility: "user",
+        payload: {
+          schemaVersion: 1,
+          planId: result.planId,
+          manifestSha256: source.candidateManifest.contentSha256,
+          comparisonSha256: comparison.contentSha256,
+          sourceStatus: comparison.sourceStatus,
+          targetStatus: comparison.targetStatus,
+          reusedNodeCount: comparison.reusedNodeCount,
+          rerunNodeCount: comparison.rerunNodeCount,
+          changedNodeCount: comparison.changedNodeIds.length,
+          inputChange: comparison.inputChange,
+          outputChange: comparison.outputChange,
+          durationMsDelta: comparison.metricDelta.durationMs,
+          inputTokensDelta: comparison.metricDelta.inputTokens,
+          outputTokensDelta: comparison.metricDelta.outputTokens,
+          costUsdDelta: comparison.metricDelta.costUsd,
+          toolCallCountDelta: comparison.metricDelta.toolCallCount,
+          evaluationCountDelta:
+            comparison.targetEvaluations.total -
+            comparison.sourceEvaluations.total,
+          artifactCountDelta:
+            comparison.targetArtifacts.total - comparison.sourceArtifacts.total,
+        },
+      });
+      await emit(options.onEvent, comparedEvent);
       return validateExecutionPlanWorkflowExperimentResult({
         kind: "napier.execution-plan-workflow-experiment-result",
         schemaVersion: 1,
@@ -124,6 +165,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
         candidateManifest: source.candidateManifest,
         targetThreadId: target.id,
         result,
+        comparison,
       });
     } catch (error) {
       const targetPlan = this.store.listPlans(target.id).at(-1);

@@ -333,6 +333,11 @@ describe("Napier Workflow CLI", () => {
         sourceThreadId: source.threadId,
         status: "completed",
         experiment: expect.objectContaining({
+          comparison: expect.objectContaining({
+            inputChange: "unchanged",
+            outputChange: "changed",
+            changedNodeIds: ["report"],
+          }),
           result: expect.objectContaining({
             output: { report: "CLI experiment", approved: true },
           }),
@@ -340,6 +345,38 @@ describe("Napier Workflow CLI", () => {
       }),
     );
     expect(experiment.targetThreadId).not.toBe(source.threadId);
+
+    provider.setResponses([
+      fauxAssistantMessage('{"report":"Human experiment","approved":true}'),
+    ]);
+    const humanStdout = new CaptureWritable();
+    const humanStderr = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "report",
+        ],
+        cliIo(fixture.root, humanStdout, humanStderr),
+        dependencies,
+      ),
+    ).toBe(0);
+    expect(JSON.parse(humanStdout.text()) as unknown).toEqual({
+      report: "Human experiment",
+      approved: true,
+    });
+    expect(humanStderr.text()).toContain("Delta (target-source):");
   }, 20_000);
 
   it("returns blocked evidence and requires explicit retry for a failed node", async () => {
@@ -634,12 +671,16 @@ function parseFrames(
     );
 }
 
-function cliIo(root: string, stdout: Writable): CliIo {
+function cliIo(
+  root: string,
+  stdout: Writable,
+  stderr: Writable = new CaptureWritable(),
+): CliIo {
   return {
     cwd: root,
     env: {},
     stdout,
-    stderr: new CaptureWritable(),
+    stderr,
   };
 }
 

@@ -6,6 +6,24 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added source-versus-target comparison for controlled Workflow checkpoint
+  experiments. Newly generated results align nodes by Manifest order, classify
+  verified reuse versus actual rerun, and report current status, Run/source,
+  model/configuration, attempt, duration, token/cost, tool-set, output
+  availability/hash, existing Evaluation, and path-free Artifact evidence.
+  Every numeric delta is `target - source`; repaired and lost outputs are
+  distinguished explicitly. Only the current completed Plan-step Run can
+  supply a current output, preventing a reopened or failed node from inheriting
+  historical success. Comparison creation groups each Thread event stream once,
+  reuses portable Replay metric derivation, rechecks source/target Plan
+  revisions, and rejects missing or non-Workflow Run provenance. The complete
+  hash-bound comparison is carried by existing CLI JSONL and HTTP SSE terminal
+  frames; human CLI prints a concise delta, while
+  `workflow.experiment.compared` and Web Trace retain only bounded statuses,
+  counts, deltas, and hashes. Legacy schema-v1 experiment results without a
+  comparison remain valid. Runtime, cancellation, recovery, nested fork,
+  source-drift, semantic tamper, CLI, HTTP, Web privacy, and opt-in DeepSeek
+  coverage exercise the vertical path.
 - Added controlled typed-Workflow checkpoint experiments. CLI
   `napier workflow --from-node` and HTTP preview/SSE routes derive the selected
   node plus descendants as an isolated rerun subgraph, verify and

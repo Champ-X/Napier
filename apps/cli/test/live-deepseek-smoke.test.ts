@@ -355,11 +355,16 @@ describeLive("live DeepSeek CLI smoke", () => {
             | StreamFrame
             | ExecutionPlanWorkflowExperimentResultFrame,
       );
-    expect(
-      validateExecutionPlanWorkflowExperimentResultFrame(
-        experimentFrames.at(-1),
-      ).experiment.result.output,
-    ).toBe("NAPIER_WORKFLOW_LIVE_OK");
+    const liveExperiment = validateExecutionPlanWorkflowExperimentResultFrame(
+      experimentFrames.at(-1),
+    ).experiment;
+    expect(liveExperiment.result.output).toBe("NAPIER_WORKFLOW_LIVE_OK");
+    expect(liveExperiment.comparison).toEqual(
+      expect.objectContaining({
+        inputChange: "unchanged",
+        outputChange: "unchanged",
+      }),
+    );
     expect(stdout.text()).not.toContain(apiKey);
     expect(experimentStdout.text()).not.toContain(apiKey);
   }, 90_000);

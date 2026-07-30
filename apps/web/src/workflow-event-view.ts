@@ -7,6 +7,7 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.failed",
   "workflow.node.reused",
   "workflow.experiment.started",
+  "workflow.experiment.compared",
   "workflow.experiment.failed",
   "workflow.completed",
   "workflow.blocked",
@@ -66,6 +67,47 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `source-attempt ${String(sourceAttempt)}`,
       `input ${inputSha256.slice(0, 12)}`,
       `output ${outputSha256.slice(0, 12)}`,
+    );
+  } else if (event.type === "workflow.experiment.compared") {
+    const comparisonSha256 = hash(payload["comparisonSha256"]);
+    const sourceStatus = planStatus(payload["sourceStatus"]);
+    const targetStatus = workflowStatus(payload["targetStatus"]);
+    const changedNodeCount = boundedInteger(payload["changedNodeCount"], 0, 30);
+    const outputChange = valueChange(payload["outputChange"]);
+    const durationMsDelta = signedInteger(payload["durationMsDelta"]);
+    const inputTokensDelta = signedInteger(payload["inputTokensDelta"]);
+    const outputTokensDelta = signedInteger(payload["outputTokensDelta"]);
+    const toolCallCountDelta = signedInteger(payload["toolCallCountDelta"]);
+    const costUsdDelta = finiteNumber(payload["costUsdDelta"]);
+    const evaluationCountDelta = signedInteger(payload["evaluationCountDelta"]);
+    const artifactCountDelta = signedInteger(payload["artifactCountDelta"]);
+    if (
+      !comparisonSha256 ||
+      !sourceStatus ||
+      !targetStatus ||
+      changedNodeCount === undefined ||
+      !outputChange ||
+      durationMsDelta === undefined ||
+      inputTokensDelta === undefined ||
+      outputTokensDelta === undefined ||
+      toolCallCountDelta === undefined ||
+      costUsdDelta === undefined ||
+      evaluationCountDelta === undefined ||
+      artifactCountDelta === undefined
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `${sourceStatus} -> ${targetStatus}`,
+      `changed-nodes ${String(changedNodeCount)}`,
+      `output ${outputChange}`,
+      `duration ${signed(durationMsDelta)}ms`,
+      `tokens ${signed(inputTokensDelta + outputTokensDelta)}`,
+      `tools ${signed(toolCallCountDelta)}`,
+      `cost ${signedFixed(costUsdDelta, 6)} USD`,
+      `evaluations ${signed(evaluationCountDelta)}`,
+      `artifacts ${signed(artifactCountDelta)}`,
+      `comparison ${comparisonSha256.slice(0, 12)}`,
     );
   } else if (event.type === "workflow.experiment.failed") {
     const previewSha256 = hash(payload["previewSha256"]);
@@ -169,6 +211,20 @@ function workflowStatus(value: unknown): string | undefined {
     : undefined;
 }
 
+function planStatus(value: unknown): string | undefined {
+  return value === "active" ? value : workflowStatus(value);
+}
+
+function valueChange(value: unknown): string | undefined {
+  return value === "unchanged" ||
+    value === "changed" ||
+    value === "became_available" ||
+    value === "became_unavailable" ||
+    value === "unavailable"
+    ? value
+    : undefined;
+}
+
 function planId(value: unknown): string | undefined {
   return typeof value === "string" && /^plan_[a-z0-9]{8,80}$/u.test(value)
     ? value
@@ -209,6 +265,25 @@ function boundedInteger(
     Number(value) <= maximum
     ? Number(value)
     : undefined;
+}
+
+function signedInteger(value: unknown): number | undefined {
+  return Number.isSafeInteger(value) ? Number(value) : undefined;
+}
+
+function finiteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
+}
+
+function signed(value: number): string {
+  return value > 0 ? `+${String(value)}` : String(value);
+}
+
+function signedFixed(value: number, fractionDigits: number): string {
+  const text = value.toFixed(fractionDigits);
+  return value > 0 ? `+${text}` : text;
 }
 
 function hash(value: unknown): string | undefined {

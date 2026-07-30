@@ -24,7 +24,7 @@ Audit date: 2026-07-31
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, write-linked diagnostic deltas, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain. |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | P4 executable Workflows           | Partial        | Versioned typed Agent DAG manifests, runtime schemas, explicit bindings, real Run-backed nodes, explicit retry, restart recovery, CLI JSONL, HTTP SSE, and privacy-bounded Trace now exist. Deterministic/Tool/approval nodes, true parallelism, control flow, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain.                                                                                                                                                                |
-| P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified ancestor reuse, descendant rerun, per-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, CLI JSONL, HTTP SSE, and Trace evidence. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, diffs, root-cause views, and evaluation promotion remain.                                                                                                |
+| P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified ancestor reuse, descendant rerun, per-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target node and outcome comparison, CLI JSONL, HTTP SSE, and Trace evidence. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, interactive root-cause views, and evaluation promotion remain.                                                |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch/Workflow execution exist over one Runtime; interactive TUI, generic SDK/RPC, ACP, Desktop, and a visual Workflow entry remain.                                                                                                                                                                                                                                                                                                                                                                          |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -1963,3 +1963,65 @@ Observed result:
   against the 150 KiB budget. One first-pass high-parallel Server Python kernel
   timing assertion passed both standalone and in the complete 75/75 Server
   suite; the second complete repository gate passed without failures.
+
+## Completed Slice: Workflow Experiment Comparison
+
+User scenario: after rerunning a Workflow checkpoint, a developer can tell
+whether the experiment improved or regressed the original execution without
+manually correlating two Threads, while retaining the actual source and target
+evidence behind every aggregate.
+
+Acceptance:
+
+- align source and target nodes by the source/candidate Manifest and classify
+  each target node as verified reuse or actual rerun;
+- observe actual Workflow Run IDs, sources, selected models, configuration
+  hashes, attempt and Run counts, duration, token/cost usage, tool outcomes,
+  tool-set additions/removals, current input/output hashes, existing
+  Evaluation coverage, and path-free Artifact state;
+- define every numeric delta as `target - source` and distinguish unchanged,
+  changed, newly available, newly unavailable, and unavailable values;
+- accept an output hash only from the current completed Plan step's Run, not
+  from an older successful attempt after reopen or failure;
+- bind the comparison to source/target Thread, Plan, Manifest, preview,
+  Workflow result, node order, execution classification, and actual
+  `workflow`/`workflow_reuse` Run sources;
+- recheck source and target Plan revisions after evidence observation and fail
+  closed if the source changes while the target executes;
+- preserve schema-v1 compatibility by accepting old experiment results without
+  a comparison while always including one in newly generated results;
+- deliver the complete comparison in the existing CLI JSONL and HTTP SSE
+  terminal frame, print a concise human CLI delta, and append one bounded
+  `workflow.experiment.compared` Ledger event for Web Trace.
+
+Threat boundary:
+
+- the comparison contains no prompt, model output body, tool argument,
+  Evaluation reason/evidence, raw diagnostic, or Artifact path;
+- every observed Run ID has one positionally bound source, model, and
+  configuration hash. Removing any of those fields and recomputing the
+  comparison content hash fails semantic validation;
+- source and target Thread/Plan identities must remain distinct. Non-Workflow
+  Runs, mismatched reused/rerun sources, stale Plan revisions, ambiguous input
+  or output evidence, and changed result bindings fail closed;
+- existing Evaluation records are summarized, not treated as newly executed
+  evaluations. Artifact summaries expose status counts and a set hash, not
+  local paths.
+
+Observed result:
+
+- deterministic Runtime dogfood compares a completed source with a model-
+  replaced target, a blocked regression, a repaired blocked source,
+  cancellation before any target Run, restart recovery, and a nested
+  experiment;
+- tamper regressions recompute content hashes after removing required Run
+  provenance, verify target Run-source classification, and reject source Plan
+  drift during target execution;
+- CLI human and JSONL paths, HTTP SSE, privacy-bounded Web Trace, and the
+  opt-in real DeepSeek checkpoint smoke consume the same Runtime comparison;
+- the focused Runtime, recovery, Replay, CLI, Server, and Web matrix passes
+  with no raw source or target body in comparison or Trace output;
+- the complete repository gate passed 1135 tests with 19 opt-in live tests
+  skipped by default, verified 247 current OpenAPI routes against the 244/244
+  compatibility baseline, and kept the Web main entry at 129.13 KiB against
+  the 150 KiB budget.
