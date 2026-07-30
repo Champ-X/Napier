@@ -319,6 +319,28 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "javascript_kernel",
+        { action: "start" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "javascript_kernel",
+        { action: "start", cwd: "packages/runtime" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "high",
+        reason: "persistent sandboxed JavaScript state lifecycle",
+      }),
+    );
+    expect(
+      assessToolCall(
         "workspace",
         "run_command",
         { runtime: "node", args: ["--version"], cwd: "../outside" },

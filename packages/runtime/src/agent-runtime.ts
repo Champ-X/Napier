@@ -100,6 +100,8 @@ import {
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
 } from "./model-context-envelope.js";
+import { JavascriptKernelManager } from "./javascript-kernel.js";
+import { createJavascriptKernelTool } from "./javascript-kernel-tool.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
   CombinedModelAdvisorBlockedError,
@@ -224,6 +226,7 @@ class OperatorDecisionPendingError extends Error {
 export class AgentRuntime {
   private readonly activeRuns = new Map<string, ActiveRun>();
   private readonly workerId = createId("worker");
+  private readonly javascriptKernels: JavascriptKernelManager | undefined;
 
   constructor(
     readonly store: LocalStore,
@@ -232,7 +235,11 @@ export class AgentRuntime {
     readonly verificationSandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
     readonly workspaceProcesses?: WorkspaceProcessManager,
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
-  ) {}
+  ) {
+    this.javascriptKernels = workspaceProcesses
+      ? new JavascriptKernelManager(workspaceProcesses)
+      : undefined;
+  }
 
   async runPrompt(options: RunPromptOptions): Promise<RunRecord> {
     const prompt = options.text.trim();
@@ -618,6 +625,10 @@ export class AgentRuntime {
         );
       }
       budget.throwIfExhausted();
+      await this.javascriptKernels?.cancelRun({
+        threadId: thread.id,
+        runId: run.id,
+      });
       await this.record(
         {
           threadId: thread.id,
@@ -654,6 +665,12 @@ export class AgentRuntime {
         leaseToken: leasedRun.token,
       });
     } catch (error) {
+      await this.javascriptKernels
+        ?.cancelRun({
+          threadId: thread.id,
+          runId: run.id,
+        })
+        .catch(() => undefined);
       if (error instanceof OperatorDecisionPendingError) {
         await this.record(
           {
@@ -1286,6 +1303,20 @@ export class AgentRuntime {
         createCommandTool({
           workspaceRoot: this.store.workspaceRoot,
           sandbox: this.verificationSandbox,
+        }),
+      );
+    }
+    if (
+      !safeReadOnlyRecovery &&
+      !advisorCorrection &&
+      profile.toolPolicy !== "observe" &&
+      profile.enabledTools.includes("javascript_kernel") &&
+      this.javascriptKernels
+    ) {
+      tools.push(
+        createJavascriptKernelTool(this.javascriptKernels, {
+          threadId: run.threadId,
+          runId: run.id,
         }),
       );
     }
@@ -3426,6 +3457,7 @@ function builtInToolEffect(
   toolName: string,
   args?: unknown,
 ): "read" | "write" | undefined {
+  if (toolName === "javascript_kernel") return "write";
   if (toolName === "workspace_process") {
     return recordValue(args) && args["action"] === "poll" ? "read" : "write";
   }

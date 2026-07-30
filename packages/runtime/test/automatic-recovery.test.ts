@@ -370,6 +370,7 @@ describe("safe automatic recovery", () => {
         "lsp_symbols",
         "lsp_definition",
         "lsp_references",
+        "javascript_kernel",
         "apply_patch",
         "verify_workspace",
       ],

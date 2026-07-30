@@ -2231,7 +2231,100 @@ descendants and cross-restart reattachment. PTY, workspace writes, hard
 CPU/memory/process quotas, Python, and remote sandboxes remain outside this
 slice. Interactive stdin is a pipe protocol and does not imply terminal resize,
 job control, foreground process groups, attach semantics, or a persistent
-language kernel.
+language kernel. The JavaScript kernel below is a separate typed protocol over
+the same Process Session service.
+
+## Persistent JavaScript Kernel Flow
+
+`javascript_kernel` turns one bounded Process Session into a persistent
+synchronous calculation context without adding another durable Session model:
+
+```text
+Agent selects start
+  -> require non-observe policy + enabled javascript_kernel tool
+  -> reuse WorkspaceProcessManager admission, cwd, runtime identity, fixed env,
+     read-only workspace, denied network, wall time, output cap, and cancellation
+  -> launch the fixed hash-bound JavaScript worker through the OS Sandbox
+  -> register its Napier Process ID to the current Thread and Run in memory
+Agent selects evaluate + Process ID + JavaScript
+  -> require the same live Thread/Run registration and running Process Session
+  -> validate 1-16 KiB UTF-8 code and a 1-2,000 ms evaluation budget
+  -> encode code as canonical base64 so JSON escaping cannot exceed stdin limits
+  -> append one hash-only workspace.process.input receipt
+  -> evaluate in node:vm with string/Wasm codegen disabled and after-evaluate
+     microtask draining inside the same timeout
+  -> render value and console output inside that realm under a second 100 ms cap
+  -> encode live strings as canonical UTF-16LE base64 for the private frame
+  -> reserve a structured terminal response inside a 30 KiB protocol budget
+  -> parse one request-ID-bound exact JSONL result
+  -> return bounded value/console text to the live Agent only
+  -> retain code/output hashes and status/count/latency evidence in the Ledger
+Agent selects cancel, or evaluation becomes uncertain
+  -> terminate the complete Process Session and discard the in-memory registration
+Run settles without an explicit cancel
+  -> cancel every remaining kernel owned by that Thread and Run
+  -> settle Process evidence before the terminal Run event
+```
+
+The worker source is split across bounded literal argv items and reconstructed
+by a fixed loader; every argument still passes the shared explicit-argv limits,
+and the complete worker bytes are bound by `workerSha256`. Evaluation code uses
+canonical base64 inside the private JSONL frame, keeping every accepted 16 KiB
+source below the Process input-action budget even under worst-case JSON
+escaping. The worker independently validates canonical encoding, UTF-8, and
+decoded size before evaluation. `JavascriptKernelManager` wraps the existing
+Process Manager and owns only live Thread/Run registrations. It does not
+persist a second session graph. A recreated manager cannot adopt an old
+context, and the underlying process lifecycle remains authoritative through
+`workspace.process.*` Ledger events. `AgentRuntime` cancels Run-owned kernels
+on every success, failure, cancellation, and operator-waiting path, so omitted
+model cleanup cannot consume Process slots after Run settlement.
+
+The active Process entry carries a non-durable private-protocol marker.
+Generic Process list projections report `outputAvailable=false` and
+`stdinOpen=false`; generic output returns no chunks and generic input is
+rejected. `JavascriptKernelManager` uses dedicated protocol start/input/output
+methods that are not reachable from HTTP or Agent parameters. Operator
+cancellation remains available. The marker does not create durable state:
+Ledger lifecycle events remain authoritative, and after restart the existing
+Process reconciliation already records the session as interrupted with no live
+output or stdin.
+
+The VM context receives no host function or object. Its console capture and
+preview formatter are constructed inside the context, so function constructors
+cannot cross realms through `console` or Node's custom-inspection callback.
+Potentially user-defined `toJSON`, proxy, and thenable behavior runs under the
+bounded render script. A Promise/thenable, VM or render timeout, caller abort,
+protocol-budget exhaustion, malformed protocol, exited worker, or unknown
+post-write outcome terminates the kernel. UTF-16LE base64 preserves isolated
+surrogates and prevents control-character JSON escaping from crossing the
+Process output cap; the worker reserves enough of that cap for a terminal
+budget response. Discarded finite Promise microtasks drain before
+`runInContext` returns; an infinite chain is part of the same timeout. A
+returned Promise or thenable remains terminal. Synchronous exceptions remain
+non-terminal and preserve earlier state.
+
+The bootstrap removes delayed built-in schedulers that do not fit this
+synchronous contract: `SharedArrayBuffer`, `Atomics`,
+`FinalizationRegistry`, `WeakRef`, and `WebAssembly` are immutable
+`undefined`. This closes `Atomics.waitAsync`, GC-timed callbacks, and
+asynchronous Wasm work that could settle after an evaluation. Ordinary
+`ArrayBuffer`, TypedArrays, and finite same-evaluation Promise microtasks remain
+available. Before writing stdin, the Manager lazily loads the existing
+TypeScript parser and rejects actual dynamic `import()` call expressions;
+strings and comments remain ordinary data. This avoids the VM module loader's
+asynchronous rejection path without adding compiler cost to Runtime startup
+when the kernel is unused.
+
+`node:vm` is context isolation, not the security boundary. The fixed
+secret-free child environment and OS Sandbox still enforce workspace
+read-only, denied network, and process confinement. Code, values, console
+entries, and cwd paths remain live-only; Agent events, Replay, Trace, and
+exports retain hashes, counts, timing, and lifecycle status. Private protocol
+projection also prevents the generic Processes panel from rendering or
+injecting the reversible transport. The current slice does not provide
+modules, timers, async I/O, tool callbacks, snapshots, cross-restart recovery,
+or Python.
 
 ## Workspace Verification Flow
 
@@ -4413,20 +4506,24 @@ The current boundary has thirty-two parts:
     LSP compatibility, exact server-provided symbol/name ranges, bounded output,
     Agent/Server/Context/Trace integration, hash-only durable evidence, and a
     real symbol-range-to-CAS-patch-to-typecheck path.
+36. persistent synchronous JavaScript calculations within one Agent Run,
+    reusing bounded Process Sessions and the read-only/offline OS Sandbox,
+    with in-realm result rendering, terminal uncertain-state handling,
+    hash-only durable evidence, and Agent/Server/Trace integration.
 
 `observe` permits only in-process read operations. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
 verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
-rename/quick-fix previews, explicit-argv command execution, and bounded
-background Process Session lifecycle control. `unrestricted` is reserved for
-future sandboxed shell execution, but known destructive command patterns are
-still denied.
+rename/quick-fix previews, explicit-argv command execution, persistent
+synchronous JavaScript calculations, and bounded background Process Session
+lifecycle control. `unrestricted` is reserved for future sandboxed shell
+execution, but known destructive command patterns are still denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and
-Workspace Process Sessions use narrow macOS sandbox-exec or Linux Bubblewrap
-adapters; a container or VM remains the recommended outer boundary for
-production third-party code.
+Workspace Process Sessions, including the JavaScript kernel, use narrow macOS
+sandbox-exec or Linux Bubblewrap adapters; a container or VM remains the
+recommended outer boundary for production third-party code.
 
 ## Capability Roadmap
 
@@ -4438,6 +4535,8 @@ deferred until the local P0-P9 product loop is stable.
 
 - extend bounded Workspace Process Sessions with PTY, a managed guardian,
   proved orphan cleanup, and cross-restart reattachment;
+- add a persistent Python kernel and managed tool callbacks without weakening
+  the JavaScript kernel's Run ownership or Sandbox boundary;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;
 - domain extraction from the oversized Server and Store modules;
 - startup, first-token, tool-latency, long-thread, memory, Web bundle, and

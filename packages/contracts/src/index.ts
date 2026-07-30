@@ -2632,6 +2632,7 @@ export const AGENT_TOOL_NAMES = [
   "workspace_file_preview",
   "workspace_file_apply",
   "run_command",
+  "javascript_kernel",
   "workspace_process",
   "verify_workspace",
 ] as const;

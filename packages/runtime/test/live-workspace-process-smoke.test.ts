@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   AgentRuntime,
   createPlatformSandboxAdapter,
+  JavascriptKernelManager,
   LocalStore,
   ModelRegistry,
   WorkspaceProcessManager,
@@ -182,6 +183,73 @@ describeLive("live Workspace Process smoke", () => {
     expect(JSON.stringify(events)).not.toContain(commandSource);
     expect(JSON.stringify(events)).not.toContain("alpha");
     expect(JSON.stringify(events)).not.toContain("beta");
+    await processes.shutdown();
+    store.close();
+  }, 30_000);
+
+  it("keeps JavaScript evaluation state in the real OS sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-kernel-workspace-"),
+    );
+    const dataRoot = await mkdtemp(path.join(tmpdir(), "napier-live-kernel-"));
+    temporaryRoots.push(workspaceRoot, dataRoot);
+    const store = new LocalStore({ workspaceRoot, dataRoot });
+    await store.initialize();
+    const sandbox = createPlatformSandboxAdapter();
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      sandbox,
+    });
+    await processes.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Live JavaScript kernel smoke",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const kernels = new JavascriptKernelManager(processes);
+    const kernel = await kernels.start({
+      threadId: thread.id,
+      runId: run.id,
+      timeoutMs: 10_000,
+    });
+    const seeded = await kernels.evaluate({
+      threadId: thread.id,
+      runId: run.id,
+      processId: kernel.id,
+      code: "const LIVE_PRIVATE_VALUES = [3, 5, 7]; LIVE_PRIVATE_VALUES",
+    });
+    const reduced = await kernels.evaluate({
+      threadId: thread.id,
+      runId: run.id,
+      processId: kernel.id,
+      code: "LIVE_PRIVATE_VALUES.reduce((sum, value) => sum + value, 0)",
+    });
+    const cancelled = await kernels.cancel({
+      threadId: thread.id,
+      runId: run.id,
+      processId: kernel.id,
+    });
+
+    expect(seeded.preview).toBe("[ 3, 5, 7 ]");
+    expect(reduced.preview).toBe("15");
+    expect(cancelled).toEqual(
+      expect.objectContaining({
+        sandbox:
+          process.platform === "darwin"
+            ? "macos-sandbox-exec"
+            : "linux-bubblewrap",
+        status: "cancelled",
+        workspaceDeltaStatus: "unchanged",
+      }),
+    );
+    const durable = JSON.stringify(await store.listEvents(thread.id));
+    expect(durable).not.toContain("LIVE_PRIVATE_VALUES");
+    expect(durable).not.toContain("[ 3, 5, 7 ]");
     await processes.shutdown();
     store.close();
   }, 30_000);

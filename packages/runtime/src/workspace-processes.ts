@@ -76,6 +76,7 @@ interface ActiveWorkspaceProcess {
   session: WorkspaceProcessSession;
   prepared: PreparedCommandExecution;
   child: SandboxedProcess;
+  privateProtocol: boolean;
   beforeSnapshot: WorkspacePathSnapshot;
   workspaceDelta?: WorkspaceSnapshotDelta;
   chunks: WorkspaceProcessOutputChunk[];
@@ -111,6 +112,12 @@ export interface WriteWorkspaceProcessInputRequest extends WorkspaceProcessInput
   threadId: string;
   processId: string;
   runId?: string;
+  signal?: AbortSignal;
+}
+
+export interface WorkspaceProcessOutputOptions {
+  afterCursor?: number;
+  waitMs?: number;
   signal?: AbortSignal;
 }
 
@@ -164,6 +171,19 @@ export class WorkspaceProcessManager {
 
   async start(
     request: StartWorkspaceProcessRequest,
+  ): Promise<WorkspaceProcessSession> {
+    return this.startProcess(request, false);
+  }
+
+  async startPrivateProtocol(
+    request: StartWorkspaceProcessRequest,
+  ): Promise<WorkspaceProcessSession> {
+    return this.startProcess(request, true);
+  }
+
+  private async startProcess(
+    request: StartWorkspaceProcessRequest,
+    privateProtocol: boolean,
   ): Promise<WorkspaceProcessSession> {
     this.assertReady();
     if (this.shuttingDown) {
@@ -277,6 +297,7 @@ export class WorkspaceProcessManager {
       prepared,
       beforeSnapshot,
       child,
+      privateProtocol,
       request.signal,
     );
     this.entries.set(processId, entry);
@@ -327,11 +348,24 @@ export class WorkspaceProcessManager {
   async output(
     threadId: string,
     processId: string,
-    options: {
-      afterCursor?: number;
-      waitMs?: number;
-      signal?: AbortSignal;
-    } = {},
+    options: WorkspaceProcessOutputOptions = {},
+  ): Promise<WorkspaceProcessOutput> {
+    return this.readOutput(threadId, processId, options, false);
+  }
+
+  async outputPrivateProtocol(
+    threadId: string,
+    processId: string,
+    options: WorkspaceProcessOutputOptions = {},
+  ): Promise<WorkspaceProcessOutput> {
+    return this.readOutput(threadId, processId, options, true);
+  }
+
+  private async readOutput(
+    threadId: string,
+    processId: string,
+    options: WorkspaceProcessOutputOptions,
+    privateProtocolAccess: boolean,
   ): Promise<WorkspaceProcessOutput> {
     this.assertReady();
     const afterCursor = options.afterCursor ?? 0;
@@ -348,6 +382,30 @@ export class WorkspaceProcessManager {
     }
     const session = await this.requireSession(threadId, processId);
     const entry = this.entries.get(processId);
+    if (entry && entry.privateProtocol !== privateProtocolAccess) {
+      if (privateProtocolAccess) {
+        throw new Error(
+          "Workspace Process Session is not a private protocol session",
+        );
+      }
+      const current = this.runtimeSession(entry);
+      if (afterCursor > current.nextCursor) {
+        throw new Error(
+          "Workspace Process output cursor is ahead of the session",
+        );
+      }
+      return {
+        kind: "napier.workspace-process-output",
+        schemaVersion: 1,
+        processId,
+        status: current.status,
+        afterCursor,
+        nextCursor: current.nextCursor,
+        hasMore: false,
+        outputAvailable: false,
+        chunks: [],
+      };
+    }
     if (
       entry &&
       entry.session.threadId === threadId &&
@@ -431,6 +489,19 @@ export class WorkspaceProcessManager {
   async writeInput(
     request: WriteWorkspaceProcessInputRequest,
   ): Promise<WorkspaceProcessInputReceipt> {
+    return this.writeInputWithProtocolAccess(request, false);
+  }
+
+  async writePrivateProtocolInput(
+    request: WriteWorkspaceProcessInputRequest,
+  ): Promise<WorkspaceProcessInputReceipt> {
+    return this.writeInputWithProtocolAccess(request, true);
+  }
+
+  private async writeInputWithProtocolAccess(
+    request: WriteWorkspaceProcessInputRequest,
+    privateProtocolAccess: boolean,
+  ): Promise<WorkspaceProcessInputReceipt> {
     this.assertReady();
     if (request.signal?.aborted) {
       throw new Error("workspace process input was aborted");
@@ -445,6 +516,13 @@ export class WorkspaceProcessManager {
     const entry = this.entries.get(request.processId);
     if (!entry || entry.session.threadId !== request.threadId) {
       throw new Error("Workspace Process input is unavailable after restart");
+    }
+    if (entry.privateProtocol !== privateProtocolAccess) {
+      throw new Error(
+        privateProtocolAccess
+          ? "Workspace Process Session is not a private protocol session"
+          : "Workspace Process input is unavailable for a private protocol session",
+      );
     }
     const operation = entry.inputTail.then(async () => {
       if (request.signal?.aborted) {
@@ -514,6 +592,7 @@ export class WorkspaceProcessManager {
     prepared: PreparedCommandExecution,
     beforeSnapshot: WorkspacePathSnapshot,
     child: SandboxedProcess,
+    privateProtocol: boolean,
     parentSignal?: AbortSignal,
   ): ActiveWorkspaceProcess {
     const entry: ActiveWorkspaceProcess = {
@@ -521,6 +600,7 @@ export class WorkspaceProcessManager {
       prepared,
       beforeSnapshot,
       child,
+      privateProtocol,
       chunks: [],
       nextCursor: 0,
       stdout: undefined as unknown as StreamCollector,
@@ -818,8 +898,13 @@ export class WorkspaceProcessManager {
   ): WorkspaceProcessSession {
     return workspaceProcessSessionWithRuntimeState(entry.session, {
       nextCursor: entry.nextCursor,
-      outputAvailable: true,
+      outputAvailable: !entry.privateProtocol,
       workspaceDeltaAvailable: Boolean(entry.workspaceDelta),
+      ...(entry.privateProtocol &&
+      entry.session.schemaVersion === 3 &&
+      entry.session.stdinMode === "interactive"
+        ? { stdinOpen: false }
+        : {}),
     });
   }
 

@@ -20,7 +20,7 @@ Audit date: 2026-07-30
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                            |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                            |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, and bounded interactive stdin now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, and cross-restart reattachment remain.                                                                                                                                           |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, and a persistent synchronous JavaScript kernel now exist. Python kernels, PTY, write sessions, hard CPU/memory quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                               |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, semantic TypeScript/JavaScript LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, plus write-linked diagnostic deltas exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP, AST edits, write-linked test/symbol association, and isolated subagent worktrees remain. |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                 |
 | P4 executable Workflows           | Early          | Plans and Blueprints are durable data; typed executable nodes, checkpoint reruns, SDK manifests, and JSONL workflow events do not.                                                                                                                                                                                                                                                                     |
@@ -322,8 +322,9 @@ Threat boundary:
 - Restarted sessions are marked interrupted; stdin is never reattached from
   exported or replayed evidence.
 - A write-capable Process Session still requires a preflight scope, explicit
-  capability grant, and recovery contract. This slice does not weaken that
-  blocker or claim to provide a persistent JavaScript/Python kernel.
+  capability grant, and recovery contract. This input slice does not weaken
+  that blocker. The later JavaScript kernel reuses this pipe safely but remains
+  synchronous, read-only, and Run-local; Python remains unimplemented.
 
 Observed result:
 
@@ -1412,5 +1413,117 @@ Observed result:
 - the seventh opt-in macOS LSP smoke fails closed during nested Sandbox startup
   in this IDE host, with no direct-process fallback;
 - the complete repository gate passed 1044 tests with 15 opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: Persistent Synchronous JavaScript Kernel
+
+User scenario: an Agent can start one JavaScript calculation context, preserve
+variables across multiple model turns in the same Run, inspect bounded values
+and console output, recover from ordinary synchronous errors, and explicitly
+close the context without receiving host process or shell access.
+
+Acceptance:
+
+- add opt-in `javascript_kernel` start/evaluate/cancel actions through the
+  existing Agent loop, Server SSE path, Agent profile, policy, Context
+  guidance, and Web Trace;
+- reuse `WorkspaceProcessManager` rather than create a second Session or Store,
+  while binding every kernel to its owning Thread and Run;
+- launch the fixed worker in the existing explicit-argv, secret-free,
+  read-only/offline OS Sandbox with a 10-120 second session lifetime and
+  64 MiB V8 old-space limit;
+- accept 1-16 KiB UTF-8 synchronous snippets with independent 1-2,000 ms VM
+  budgets, canonical base64 transport that remains below the 32 KiB Process
+  input limit under worst-case JSON escaping, and serialized concurrent input;
+- preserve state after successful values and synchronous exceptions; terminate
+  the whole kernel after a returned Promise/thenable, VM timeout, render
+  timeout, cancellation, worker exit, malformed protocol, or unknown
+  post-write result;
+- drain discarded Promise microtasks before the evaluation returns and inside
+  the same VM timeout, so finite continuations settle deterministically and
+  infinite chains terminate the kernel;
+- cancel every remaining Run-owned kernel before successful, failed,
+  cancelled, waiting-for-operator, or budget-exhausted Run settlement so
+  omitted model cleanup cannot retain Process slots;
+- cap live previews at 4,096 characters and console output at 12 entries of
+  256 characters; encode private result frames as canonical UTF-16LE base64,
+  reserve a terminal response within a 30 KiB cumulative protocol budget, and
+  cap the complete Agent tool output at 32 KiB;
+- keep code, cwd, values, and console text live-only while retaining
+  input/output, request, worker, result, environment, and lifecycle hashes in
+  the Work Ledger and Replay;
+- mark the active Process entry as a private protocol so generic Process list,
+  output, input, Agent tools, HTTP, and Workbench cannot expose or inject
+  reversible frames; retain operator cancellation and the same lifecycle
+  Ledger;
+- expose only action, status, type, terminal/truncation flags, counts, duration,
+  Process ID, and hashes in Server history and Web Trace;
+- cover persistence, synchronous error reuse, Promise termination, CPU and
+  render timeouts, external cancellation, concurrency, output limits,
+  malformed and oversized input, cross-Run denial, recreated-manager denial,
+  success/failure Run cleanup, policy, recovery exclusion, Replay privacy,
+  Agent dogfood, public SSE, Web projection, and optional real OS-Sandbox
+  smoke.
+
+Threat boundary:
+
+- The context has no `process`, `require`, `fetch`, inherited environment,
+  dynamic string code generation, WebAssembly, shared-memory Atomics, or
+  GC-timed callbacks. It cannot import modules, invoke Napier tools, write the
+  workspace, or access the network. Ordinary `ArrayBuffer` and TypedArrays
+  remain available.
+- Promise is a language intrinsic rather than an async-I/O capability.
+  Microtasks drain within the current evaluation budget; returned thenables
+  remain terminal, and no timer/network/process source is exposed.
+- `SharedArrayBuffer`, `Atomics`, `FinalizationRegistry`, `WeakRef`, and
+  `WebAssembly` are immutable `undefined`, preventing delayed wait, GC, and
+  Wasm work from crossing an evaluation boundary.
+- A lazily loaded TypeScript AST check rejects real dynamic `import()` calls
+  before stdin write, preventing asynchronous VM module rejection from
+  changing later evaluations without charging compiler load to Runtime
+  startup.
+- `node:vm` is not treated as a security sandbox. Production execution remains
+  inside macOS sandbox-exec or Linux Bubblewrap with the same fixed environment
+  and capabilities as other Process Sessions.
+- Console capture and result rendering are created entirely inside the VM
+  realm. No host function or object is injected. Regression tests prove that
+  `console.log.constructor`, nested constructors, `Function`, `eval`, and
+  `globalThis.constructor.constructor` cannot reach the child `process`.
+- Result formatting does not call outer-realm `util.inspect`; a malicious
+  `nodejs.util.inspect.custom` method remains inert. User `toJSON`, Proxy, and
+  thenable work is confined to a 100 ms render script, whose timeout terminates
+  the kernel.
+- State is ephemeral and not a recoverable artifact. Another Run or recreated
+  manager cannot adopt it; restart interruption never replays prior snippets.
+- The private-protocol marker is an in-memory access boundary over the existing
+  Process entry, not a second Session or evidence source. Public projection
+  reports output/stdin unavailable, while restart already removes all live
+  handles.
+- This slice is not a Notebook, async JavaScript runtime, module environment,
+  persistent Python kernel, cross-restart checkpoint, or tool-calling runtime.
+
+Observed result:
+
+- deterministic Agent dogfood started one kernel, preserved an array across
+  separate tool turns, reduced it to a final value, cancelled the process, and
+  produced a valid Replay without code, values, console text, or cwd paths;
+- Runtime tests exercise real child processes and the production Process
+  Manager protocol, including two demonstrated cross-realm escape regressions
+  that previously exposed the child `process` through console and custom
+  inspection, plus a full 16 KiB escape-amplified source frame;
+- control-character-heavy results remain intact below the Process output cap,
+  while the next oversized cumulative result returns a structured terminal
+  output-budget response instead of a truncated JSONL frame;
+- the public HTTP/SSE path streams start/evaluate/cancel through the shared
+  Runtime, persists three hash-only tool results, and Web Trace renders only
+  bounded receipt metadata; the generic Process HTTP projection exposes
+  neither protocol output nor writable stdin;
+- the optional OS-Sandbox smoke shares `npm run test:live-process`; this nested
+  IDE host rejects both the existing Process input smoke and the new kernel
+  smoke. A production `CommandRunner` probe returned exit 71 with
+  `sandbox-exec: sandbox_apply: Operation not permitted`; no direct-process
+  fallback is used;
+- the complete repository gate passed 1057 tests with 16 opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.

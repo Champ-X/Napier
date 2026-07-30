@@ -185,6 +185,7 @@ export function workspaceProcessSessionWithRuntimeState(
     nextCursor: number;
     outputAvailable: boolean;
     workspaceDeltaAvailable: boolean;
+    stdinOpen?: boolean;
   },
 ): WorkspaceProcessSession {
   const { contentSha256: _contentSha256, ...content } = {
@@ -192,6 +193,9 @@ export function workspaceProcessSessionWithRuntimeState(
     nextCursor: runtime.nextCursor,
     outputAvailable: runtime.outputAvailable,
     workspaceDeltaAvailable: runtime.workspaceDeltaAvailable,
+    ...(runtime.stdinOpen !== undefined
+      ? { stdinOpen: runtime.stdinOpen }
+      : {}),
   };
   return {
     ...content,

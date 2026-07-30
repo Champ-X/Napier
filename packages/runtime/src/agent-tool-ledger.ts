@@ -1,6 +1,11 @@
 import type { JsonValue } from "@napier/contracts";
 
 import {
+  javascriptKernelToolCallArgumentsLedgerProjection,
+  javascriptKernelToolInputLedgerProjection,
+  javascriptKernelToolOutputLedgerProjection,
+} from "./javascript-kernel-tool.js";
+import {
   lspCodeActionsToolCallArgumentsLedgerProjection,
   lspCodeActionsToolInputLedgerProjection,
   lspCodeActionsToolOutputLedgerProjection,
@@ -58,6 +63,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "run_command") {
     return commandToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "javascript_kernel") {
+    return javascriptKernelToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolCallArgumentsLedgerProjection(args);
   }
@@ -97,6 +105,9 @@ export function agentToolInputLedgerProjection(
 ): Record<string, JsonValue> {
   if (toolName === "run_command") {
     return commandToolInputLedgerProjection(args);
+  }
+  if (toolName === "javascript_kernel") {
+    return javascriptKernelToolInputLedgerProjection(args);
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolInputLedgerProjection(args);
@@ -138,6 +149,9 @@ export function agentToolOutputLedgerProjection(
 ): Record<string, JsonValue> {
   if (toolName === "run_command") {
     return commandToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "javascript_kernel") {
+    return javascriptKernelToolOutputLedgerProjection(output, result);
   }
   if (toolName === "lsp_diagnostics") {
     return lspDiagnosticsToolOutputLedgerProjection(output, result);

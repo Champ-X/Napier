@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 60,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-vGMdop7M.js",
+    "path": "apps/web/dist/assets/index-f_PUl0Nr.js",
     "sizeBytes": 132225,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "57399a189c43f1edfc6fef19dce859e2bb8e611c279a169fe585a022c55f6fde"
+    "sha256": "ea32572159601d9de438bca8ed5da852bbbe24b92e96730e6dc1aad6e3e7d1ab"
   },
-  "distContentSha256": "57399a189c43f1edfc6fef19dce859e2bb8e611c279a169fe585a022c55f6fde",
+  "distContentSha256": "ea32572159601d9de438bca8ed5da852bbbe24b92e96730e6dc1aad6e3e7d1ab",
   "errors": []
 }

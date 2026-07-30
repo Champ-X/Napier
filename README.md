@@ -96,6 +96,10 @@ Version `0.1.0` includes:
   background Node sessions with cursor-based stdout/stderr observation,
   explicit interactive stdin, cancellation, lifecycle settlement, graceful
   shutdown, and fail-closed restart reconciliation;
+- a `javascript_kernel` tool for persistent synchronous JavaScript calculations
+  within one Agent Run, reusing the same read-only/offline Process Session
+  boundary with bounded evaluations, live-only values, cancellation, and
+  terminal handling for uncertain state;
 - preview-bound `workspace_file_preview` / `workspace_file_apply` tools plus a
   lazy Files recovery panel for directory creation, no-overwrite-intent moves,
   reversible trash, and explicit restore without shell access;
@@ -1374,7 +1378,66 @@ cleanup, cross-restart reattachment, PTY, hard CPU/memory/process quotas, and
 write-capable sessions require a managed guardian or OCI backend and are not
 claimed by this implementation. Interactive stdin is a pipe protocol; it does
 not provide terminal resize, foreground process groups, job control, attach
-semantics, or a persistent JavaScript/Python kernel.
+semantics. The separate JavaScript kernel below builds on this Process Session
+boundary; a persistent Python kernel remains future work.
+
+## Persistent JavaScript Kernel
+
+An Agent with `workspace` or `unrestricted` policy can opt into
+`javascript_kernel`. It starts one synchronous JavaScript context, evaluates
+multiple snippets against the same in-memory state, and explicitly cancels the
+kernel when the calculation is complete. The process is owned by the current
+Thread and Run and reuses `WorkspaceProcessManager`, the fixed secret-free
+environment, canonical workspace cwd, read-only workspace, denied network,
+bounded output, process-group cancellation, and OS Sandbox used by
+`workspace_process`. If the Agent omits `cancel`, successful, failed, waiting,
+and cancelled Run settlement terminates every remaining kernel for that Run
+before the terminal Run event.
+
+Each snippet is limited to 16 KiB and 1-2,000 ms of VM execution. A kernel has
+a 10-120 second total lifetime and a 64 MiB V8 old-space limit. Live results
+contain at most 4,096 preview characters and 12 console entries of 256
+characters each. UTF-16LE base64 keeps control characters and isolated
+surrogates from expanding the private JSONL frame, and a 30 KiB cumulative
+protocol budget reserves room for a structured terminal response before the
+Process output cap. Synchronous errors are visible without discarding valid
+prior state. Promise microtasks are drained before an evaluation returns and
+remain inside its VM timeout; an infinite chain therefore times out instead of
+mutating state after the result. A returned Promise or thenable, VM or
+result-render timeout, output-budget exhaustion, caller cancellation, process
+exit, malformed protocol response, or unknown input outcome terminates the
+complete kernel so uncertain asynchronous state is never reused.
+
+The context has no `process`, `require`, `fetch`, inherited environment,
+dynamic string code generation, WebAssembly, shared-memory Atomics, or
+GC-timed callbacks through `FinalizationRegistry`/`WeakRef`. Ordinary
+`ArrayBuffer` and TypedArrays remain available for pure calculation. Console
+capture and value formatting are created inside the VM realm; no host function
+or object is injected into untrusted code. Regression tests cover
+`console.log.constructor`, `Function`, `eval`,
+`globalThis.constructor.constructor`, delayed microtasks, and malicious
+custom-inspector and `toJSON` paths. `node:vm` is not treated as the security
+boundary: the child still runs inside the read-only/offline OS Sandbox, and
+unsupported or nested Sandbox startup fails closed.
+
+Code, values, console text, and cwd paths are available only to the live tool
+call. The Ledger, Replay, Server SSE history, and Web Trace retain bounded
+status/count/latency metadata plus code, request, worker, result, and output
+hashes. The underlying Process Session is marked as a private protocol while
+live: generic Process APIs and Workbench report output and stdin unavailable,
+so they cannot expose reversible frames or inject evaluations around the typed
+tool. State is intentionally ephemeral: another Run or a recreated Runtime
+manager cannot adopt it, and restart reconciliation records the underlying
+Process Session as interrupted rather than replaying input.
+
+This slice is a synchronous calculation kernel, not a Node module environment
+or Notebook. It does not provide imports, timers, async I/O, package access,
+workspace writes, Napier-tool callbacks, snapshots, cross-restart recovery, or
+Python execution. The opt-in real OS-Sandbox smoke is included in:
+
+```bash
+npm run test:live-process
+```
 
 ## Controlled Workspace Editing
 
@@ -2958,8 +3021,8 @@ channels should accept only intended operational data.
 The default Agent policy is `observe`:
 
 - read/list/search inside the workspace are allowed;
-- `apply_patch`, `verify_workspace`, `run_command`, and `workspace_process`
-  are not exposed;
+- `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`, and
+  `workspace_process` are not exposed;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
@@ -2971,6 +3034,8 @@ anchors, **Sandbox verify** is read-only, offline, and command-closed, and
 **Sandbox command** is an explicit-argv, read-only/offline Node runner with no
 shell or inherited environment. **Background process** adds bounded
 start/input/poll/cancel lifecycle control over the same sandbox boundary.
+**JavaScript kernel** adds persistent synchronous state within one Agent Run,
+with bounded live-only values and fail-closed terminal outcomes.
 **LSP diagnostics** adds one-file TypeScript/JavaScript semantic diagnostics,
 **LSP semantic symbols** adds exact current-document declarations and
 hierarchy, **LSP definition** and **LSP references** add workspace-confined
@@ -2983,8 +3048,8 @@ Authorization is checked again immediately before every call.
 
 This in-process policy is defense in depth, not an operating-system sandbox.
 General shell execution remains disabled. Stdio MCP, structured workspace
-verification, the foreground command runner, and Workspace Process Sessions
-are the narrow process exceptions: macOS uses
+verification, the foreground command runner, Workspace Process Sessions, and
+the JavaScript kernel are the narrow process exceptions: macOS uses
 `/usr/bin/sandbox-exec`; Linux requires `/usr/bin/bwrap` and usable kernel or
 setuid namespace support. Windows or explicitly containerized deployments can
 opt into an OCI adapter by configuring `NAPIER_CONTAINER_SANDBOX_IMAGE`; it

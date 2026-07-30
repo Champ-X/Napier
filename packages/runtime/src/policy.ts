@@ -33,7 +33,11 @@ const LSP_TOOLS = new Set([
   "lsp_rename",
   "lsp_code_actions",
 ]);
-const PROCESS_TOOLS = new Set(["run_command", "workspace_process"]);
+const PROCESS_TOOLS = new Set([
+  "run_command",
+  "javascript_kernel",
+  "workspace_process",
+]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
   "update_plan_step",
@@ -260,11 +264,16 @@ export function assessToolCall(
     }
     return {
       allowed: true,
-      risk: toolName === "workspace_process" ? "high" : "medium",
+      risk:
+        toolName === "workspace_process" || toolName === "javascript_kernel"
+          ? "high"
+          : "medium",
       reason:
         toolName === "workspace_process"
           ? "bounded background Process Session lifecycle"
-          : "read-only sandboxed command execution",
+          : toolName === "javascript_kernel"
+            ? "persistent sandboxed JavaScript state lifecycle"
+            : "read-only sandboxed command execution",
     };
   }
 

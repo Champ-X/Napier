@@ -20,6 +20,7 @@ export function formatWorkspaceToolGuidance(
   const hasFilePreview = toolNames.has("workspace_file_preview");
   const hasFileApply = toolNames.has("workspace_file_apply");
   const hasCommand = toolNames.has("run_command");
+  const hasJavascriptKernel = toolNames.has("javascript_kernel");
   const hasProcess = toolNames.has("workspace_process");
   const hasVerification = toolNames.has("verify_workspace");
   const hasLspDiagnostics = toolNames.has("lsp_diagnostics");
@@ -34,6 +35,7 @@ export function formatWorkspaceToolGuidance(
     !hasFilePreview &&
     !hasFileApply &&
     !hasCommand &&
+    !hasJavascriptKernel &&
     !hasProcess &&
     !hasVerification &&
     !hasLspDiagnostics &&
@@ -130,6 +132,12 @@ export function formatWorkspaceToolGuidance(
     lines.push(
       "Use run_command only for bounded read-only Node work that the structured workspace tools and verify_workspace cannot express; pass literal argv items, never secrets or shell syntax.",
       "Treat failed, timed-out, and output-capped command results as incomplete evidence. run_command cannot modify the workspace or access the network.",
+    );
+  }
+  if (hasJavascriptKernel) {
+    lines.push(
+      "Use javascript_kernel for multi-step synchronous JavaScript calculations that benefit from state across evaluations. Start one kernel, retain its processId, and cancel it when finished.",
+      "Kernel code and live values are untrusted and ephemeral. The context is read-only/offline with no process, require, fetch, WebAssembly, shared-memory Atomics, GC callbacks, or dynamic code generation. Promise microtasks drain inside the evaluation timeout; a returned Promise or thenable, VM timeout, cancellation, or unknown protocol outcome terminates the entire kernel.",
     );
   }
   if (hasProcess) {

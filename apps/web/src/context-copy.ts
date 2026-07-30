@@ -131,6 +131,7 @@ export const contextCopy = {
     workspace_file_preview: "File lifecycle preview",
     workspace_file_apply: "File lifecycle apply",
     run_command: "Sandbox command",
+    javascript_kernel: "JavaScript kernel",
     workspace_process: "Background process",
     verify_workspace: "Sandbox verify",
   },

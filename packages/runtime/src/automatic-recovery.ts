@@ -44,6 +44,7 @@ const UNSAFE_TOOLS = new Set([
   "apply_patch",
   "workspace_file_apply",
   "bash",
+  "javascript_kernel",
   "workspace_process",
   "create_plan",
   "update_plan_step",

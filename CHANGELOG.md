@@ -6,6 +6,40 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a persistent synchronous JavaScript kernel. The opt-in
+  `javascript_kernel` Agent tool starts, evaluates, and cancels a Run-owned
+  context through the existing `WorkspaceProcessManager`, fixed secret-free
+  environment, and read-only/offline OS Sandbox. State survives multiple model
+  turns in one Run; snippets, evaluation time, total session lifetime, V8 old
+  space, value preview, console entries, and formatted tool output are
+  independently bounded. Synchronous exceptions preserve prior state, while a
+  returned Promise/thenable, CPU or result-render timeout, external
+  cancellation, malformed protocol, worker exit, or unknown post-write outcome
+  terminates the complete kernel. Discarded Promise microtasks drain before
+  evaluation return and inside the same VM timeout, preventing post-result
+  state drift. Shared-memory Atomics, GC callbacks, WeakRefs, and WebAssembly
+  are removed from the context so delayed built-in work cannot cross
+  evaluations. A lazily loaded TypeScript AST check rejects actual dynamic
+  `import()` before stdin write, closing delayed VM module rejection without
+  adding compiler cost to Runtime startup. Run settlement also cancels every
+  remaining owned kernel before its terminal event, preventing omitted model
+  cleanup from retaining Process slots. Canonical base64 transport keeps every
+  accepted 16 KiB source below the Process input limit even under worst-case
+  JSON escaping, and the worker independently validates decoded UTF-8 and size.
+  Canonical UTF-16LE base64 similarly prevents control-character expansion in
+  result frames; a 30 KiB cumulative protocol budget reserves room for a
+  structured terminal response before the Process output cap. Console and
+  result formatting are constructed inside the VM realm, dynamic string/Wasm
+  code generation is disabled, and regression tests cover constructor, `eval`,
+  custom-inspector, and `toJSON` escape paths without treating `node:vm` as a
+  replacement for the OS Sandbox. A private-protocol marker makes generic
+  Process list/output/input APIs and Workbench report output/stdin unavailable;
+  only the typed manager can move reversible frames, while operator
+  cancellation and the same Process Ledger remain intact. Code, cwd, values,
+  and console text remain live-only; Ledger, Replay, Server SSE history, and
+  Web Trace retain bounded lifecycle metadata and hashes. Deterministic Agent
+  dogfood preserves state through a real child process, returns the final
+  calculation, explicitly cancels it, and verifies a privacy-safe Replay.
 - Added semantic TypeScript/JavaScript document symbols. The opt-in
   `lsp_symbols` Agent tool issues real `textDocument/documentSymbol` requests
   through the existing exact-version, read-only, offline LSP Sandbox,

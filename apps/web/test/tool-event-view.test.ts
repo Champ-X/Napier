@@ -173,6 +173,55 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes JavaScript kernel evidence without code or values", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "javascript_kernel",
+      status: "completed",
+      effect: "write",
+      output: "PRIVATE_KERNEL_VALUE",
+      details: {
+        kind: "napier.javascript-kernel",
+        schemaVersion: 1,
+        action: "evaluate",
+        processId: "process_12345678901234567890",
+        processStatus: "running",
+        evaluationStatus: "ok",
+        terminal: false,
+        valueType: "number",
+        preview: "PRIVATE_KERNEL_VALUE",
+        previewTruncated: false,
+        console: ["PRIVATE_KERNEL_CONSOLE"],
+        consoleCount: 1,
+        consoleTruncated: false,
+        durationMs: 12,
+        requestSha256: "1".repeat(64),
+        workerSha256: "2".repeat(64),
+        resultSha256: "3".repeat(64),
+      },
+    });
+
+    expect(toolEventTraceView(event)).toEqual({
+      toolName: "javascript_kernel",
+      status: "completed",
+      effect: "write",
+      javascriptKernelAction: "evaluate",
+      javascriptKernelProcessId: "process_12345678901234567890",
+      javascriptKernelProcessStatus: "running",
+      javascriptKernelEvaluationStatus: "ok",
+      javascriptKernelTerminal: false,
+      javascriptKernelValueType: "number",
+      javascriptKernelConsoleCount: 1,
+      javascriptKernelDurationMs: 12,
+      javascriptKernelRequestSha256: "1".repeat(64),
+      javascriptKernelWorkerSha256: "2".repeat(64),
+      javascriptKernelResultSha256: "3".repeat(64),
+    });
+    expect(toolEventTraceSummary(event)).toBe(
+      `tool / javascript_kernel / completed / effect write / javascript-kernel evaluate / kernel-process running / kernel-result ok / kernel-type number / kernel-console 1 / kernel-ms 12 / kernel-request ${"1".repeat(12)} / kernel-worker ${"2".repeat(12)} / kernel-result ${"3".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("PRIVATE_KERNEL");
+  });
+
   it("summarizes LSP diagnostic evidence without paths or messages", () => {
     const event = toolEvent("tool.completed", {
       toolName: "lsp_diagnostics",

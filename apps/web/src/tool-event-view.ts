@@ -1,5 +1,10 @@
 import type { RunEvent } from "@napier/contracts";
 import {
+  javascriptKernelEventEvidence,
+  javascriptKernelSummaryParts,
+  type JavascriptKernelToolEventTraceView,
+} from "./javascript-kernel-event-view";
+import {
   commandToolEventEvidence,
   commandToolEventSummaryParts,
   type CommandToolEventTraceView,
@@ -16,7 +21,10 @@ import {
 } from "./lsp-tool-event-view";
 
 export interface ToolEventTraceView
-  extends CommandToolEventTraceView, LspToolEventTraceView {
+  extends
+    CommandToolEventTraceView,
+    LspToolEventTraceView,
+    JavascriptKernelToolEventTraceView {
   toolName: string;
   status: string;
   effect?: "read" | "write";
@@ -201,6 +209,10 @@ export function toolEventTraceView(
     toolName === "run_command"
       ? commandToolEventEvidence(event.payload["details"])
       : undefined;
+  const javascriptKernelEvidence =
+    toolName === "javascript_kernel"
+      ? javascriptKernelEventEvidence(event.payload["details"])
+      : undefined;
   const patchEvidence =
     toolName === "apply_patch"
       ? applyPatchEvidence(event.payload["details"])
@@ -231,6 +243,7 @@ export function toolEventTraceView(
     ...(lspEvidence ? lspEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
+    ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
     ...(patchEvidence ? patchEvidence : {}),
     ...(fileMutationEvidence ? fileMutationEvidence : {}),
     ...(listEvidence ? listEvidence : {}),
@@ -412,6 +425,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.verificationStdoutTruncated ? ["stdout-truncated"] : []),
     ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
     ...commandToolEventSummaryParts(view),
+    ...javascriptKernelSummaryParts(view),
     ...(view.patchOperation ? [`patch ${view.patchOperation}`] : []),
     ...(view.patchEditCount !== undefined
       ? [`edits ${view.patchEditCount}`]
