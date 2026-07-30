@@ -69,6 +69,8 @@ export default function WorkflowExperimentDesk({
   const [error, setError] = useState<string>();
   const activeRequest = useRef<AbortController | undefined>(undefined);
   const operationGeneration = useRef(0);
+  const selectedNode = manifest?.nodes.find((node) => node.id === fromNodeId);
+  const canReplaceModel = selectedNode?.type === "agent";
 
   const comparison = useMemo(
     () =>
@@ -194,7 +196,7 @@ export default function WorkflowExperimentDesk({
     return {
       manifest,
       fromNodeId,
-      ...(replaceModel
+      ...(replaceModel && canReplaceModel
         ? {
             modelOverrides: {
               [fromNodeId]: parseWorkflowModelKey(selectedModelKey),
@@ -366,12 +368,16 @@ export default function WorkflowExperimentDesk({
             disabled={!manifest || Boolean(busy)}
             onChange={(event) => {
               setFromNodeId(event.target.value);
+              const node = manifest?.nodes.find(
+                (candidate) => candidate.id === event.target.value,
+              );
+              if (node?.type !== "agent") setReplaceModel(false);
               invalidatePreview();
             }}
           >
             {(manifest?.nodes ?? []).map((node) => (
               <option key={node.id} value={node.id}>
-                {node.id}
+                {node.id} / {node.type === "tool" ? node.tool : node.type}
               </option>
             ))}
           </select>
@@ -380,8 +386,13 @@ export default function WorkflowExperimentDesk({
         <label className="workflow-experiment-model">
           <input
             type="checkbox"
-            checked={replaceModel}
-            disabled={!manifest || !selectedModelConfigured || Boolean(busy)}
+            checked={replaceModel && canReplaceModel}
+            disabled={
+              !manifest ||
+              !canReplaceModel ||
+              !selectedModelConfigured ||
+              Boolean(busy)
+            }
             onChange={(event) => {
               setReplaceModel(event.target.checked);
               invalidatePreview();
@@ -393,7 +404,11 @@ export default function WorkflowExperimentDesk({
           </span>
         </label>
         <p className="workflow-experiment-model-hint">
-          {selectedModelConfigured ? copy.overrideHint : copy.unavailableModel}
+          {!canReplaceModel
+            ? copy.toolModelUnavailable
+            : selectedModelConfigured
+              ? copy.overrideHint
+              : copy.unavailableModel}
         </p>
 
         <div className="workflow-experiment-actions">

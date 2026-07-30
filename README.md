@@ -35,7 +35,8 @@ Version `0.1.0` includes:
   and domain services as the HTTP/Web path;
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
-  nodes, strict JSON output, explicit retry, restart reconstruction, and shared
+  and model-free Tool nodes, strict JSON output, declared tool effects,
+  policy/schema preflight, explicit retry, restart reconstruction, and shared
   CLI/HTTP/Trace evidence;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
@@ -419,11 +420,11 @@ npm run --silent napier -- workflow \
 
 Generate manifests from an existing `ExecutionPlanBlueprint` with the exported
 TypeScript `defineExecutionPlanWorkflow()` helper. It binds the Blueprint DAG,
-runtime input/output schemas, explicit node input bindings, per-node model,
-timeout, and attempt limit into one stable content hash. JSONL emits ordered
-Ledger event frames, one authoritative snapshot, and one hash-bound
-`workflow_result` frame. Resume or explicitly retry a blocked node without
-supplying the input again:
+runtime input/output schemas, literal or field-path node input bindings,
+Agent-node models, Tool-node names/effects, timeouts, and attempt limits into
+one stable content hash. JSONL emits ordered Ledger event frames, one
+authoritative snapshot, and one hash-bound `workflow_result` frame. Resume or
+explicitly retry a blocked node without supplying the input again:
 
 ```bash
 npm run --silent napier -- workflow \
@@ -2313,24 +2314,27 @@ declared final schema must equal a terminal output node schema. The restricted
 JSON Schema subset is bounded by depth, node count, object properties, array
 items, strings, enums, and encoded bytes before execution.
 
-`ExecutionPlanWorkflowRuntime` creates the normal durable `ExecutionPlan` and
-uses a real `AgentRuntime` Run for every ready node. The Workflow freezes the
-target Thread's Agent revision at start. Each node Run is persisted as
-`source=workflow`, excludes Thread message history and prior-node delegation or
-milestone projections, and cannot access Plan mutation, Agent milestone, or
-operator-decision tools. Current Agent policy, model override, Skills, reviewed
-Memory, ordinary execution tools, Sandbox checks, and Ledger recording still
-apply. Strict JSON output is validated before the Plan step completes; an
-invalid output, unavailable model, timeout, cancellation, or failed Run blocks
-the node with a path-free diagnostic hash.
+`ExecutionPlanWorkflowRuntime` creates the normal durable `ExecutionPlan` and a
+real `source=workflow` Run for every ready node. The Workflow freezes the target
+Thread's Agent revision at start. Agent nodes invoke `AgentRuntime` with
+isolated message history and strict JSON output. Tool nodes invoke one
+allowlisted stateless built-in directly, with no model call, after enabled-tool,
+TypeBox argument, declared `read`/`write` effect, Agent policy, workspace scope,
+and freshness checks. Their schema-validated structured details become the
+typed node output. Stateful JavaScript/Python kernels, Node debugger,
+background Process Sessions, and preview-bound workspace file mutations remain
+Run-owned Agent tools rather than pretending to persist across one-shot Tool
+nodes.
 
-Resume reconstructs completed outputs from their bound assistant Run evidence,
-verifies node input/output/schema hashes, and repairs commit-order gaps where a
-Run or Plan transition persisted immediately before process exit. Startup
-interruption becomes one `run_interrupted` blocked attempt. Generic manual and
-automatic Run recovery reject Workflow-owned Runs, so only Workflow resume and
-explicit bounded `--retry-blocked` can continue the graph. Merely observing an
-already terminal Workflow is Ledger-idempotent.
+Resume reconstructs Agent output from bound assistant evidence and Tool output
+from the exact terminal tool event, then verifies node identity, effect,
+input/output/schema hashes, and Run ownership. A restart with only
+`tool.started` becomes one `run_interrupted` blocked attempt and is never
+rerun automatically. If `tool.completed` committed before Run settlement was
+interrupted, the same terminal Run can recover the Plan step without executing
+the tool again. Generic manual and automatic Run recovery reject
+Workflow-owned Runs; only Workflow resume and explicit bounded
+`--retry-blocked` can continue the graph.
 
 `POST /api/threads/:threadId/workflows` exposes the same execution as SSE.
 Both HTTP and CLI finish with `ExecutionPlanWorkflowResultFrame`, binding the
@@ -2375,11 +2379,12 @@ execution responses must be `no-store`, and the browser enforces 2 MiB preview,
 6 MiB frame, and 12 MiB stream bounds sized above the Runtime's legal frame
 maximum.
 
-Version 1 intentionally supports Agent nodes and sequential dependency-ready
-DAG scheduling only. Deterministic and Tool nodes, human approval nodes,
-parallel execution, Map/Reduce, conditions, loops, compensation, per-node
-breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
-open. Checkpoint experiments do not yet provide model-call/tool-call
+Version 1 intentionally supports Agent and stateless built-in Tool nodes with
+sequential dependency-ready DAG scheduling. Deterministic and human approval
+nodes, stateful session Tool nodes, parallel execution, Map/Reduce, conditions,
+loops, compensation, per-node breakpoints, adapter runtimes, artifact
+settlement, and a visual builder remain open. Checkpoint experiments do not yet
+provide model-call/tool-call
 single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
 batch experiments, an interactive root-cause timeline, or Evaluation
 promotion. The opt-in DeepSeek CLI smoke executes and checkpoint-reruns one

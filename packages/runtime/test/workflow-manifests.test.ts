@@ -173,6 +173,107 @@ describe("Execution Plan Workflow manifests", () => {
     ).toThrow("does not match");
   });
 
+  it("defines Tool nodes with literal and field-path bindings", async () => {
+    const blueprint = await createBlueprint([
+      {
+        id: "inventory",
+        title: "Inventory",
+        description: "List one selected workspace directory.",
+        verification: "Return a typed list-files receipt.",
+      },
+    ]);
+    const outputSchema = listFilesReceiptSchema();
+    const manifest = defineExecutionPlanWorkflow({
+      name: "Workspace inventory",
+      version: 1,
+      description: "Run one model-free workspace tool node.",
+      blueprint,
+      inputSchema: {
+        type: "object",
+        properties: {
+          request: {
+            type: "object",
+            properties: {
+              directory: { type: "string", minLength: 1, maxLength: 200 },
+            },
+            required: ["directory"],
+            additionalProperties: false,
+          },
+        },
+        required: ["request"],
+        additionalProperties: false,
+      },
+      outputSchema,
+      outputNodeId: "inventory",
+      nodes: [
+        {
+          id: "inventory",
+          type: "tool",
+          tool: "list_files",
+          effect: "read",
+          inputBindings: {
+            path: {
+              source: "workflow",
+              path: ["request", "directory"],
+            },
+            depth: { source: "literal", value: 2 },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: { type: "string", minLength: 1, maxLength: 200 },
+              depth: { type: "integer", minimum: 0, maximum: 4 },
+            },
+            required: ["path", "depth"],
+            additionalProperties: false,
+          },
+          outputSchema,
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+      generatedAt: "2026-07-31T00:00:00.000Z",
+    });
+
+    expect(validateExecutionPlanWorkflowManifest(manifest)).toEqual(manifest);
+    expect(
+      buildExecutionPlanWorkflowNodeInput(
+        manifest.nodes[0]!,
+        { request: { directory: "src" } },
+        new Map(),
+      ),
+    ).toEqual({ path: "src", depth: 2 });
+
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...manifest,
+        nodes: [
+          {
+            ...manifest.nodes[0]!,
+            inputBindings: {
+              path: {
+                source: "workflow",
+                path: ["__proto__"],
+              },
+              depth: { source: "literal", value: 2 },
+            },
+          },
+        ],
+      }),
+    ).toThrow("path segment is invalid");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...manifest,
+        nodes: [
+          {
+            ...manifest.nodes[0]!,
+            tool: "javascript_kernel",
+          },
+        ] as typeof manifest.nodes,
+      }),
+    ).toThrow("tool contract is invalid");
+  });
+
   it("keeps artifact settlement outside v1 instead of falsely completing it", async () => {
     const blueprint = await createBlueprint(
       [
@@ -238,6 +339,20 @@ function reportSchema(): WorkflowObjectSchema {
       approved: { type: "boolean" },
     },
     required: ["report", "approved"],
+    additionalProperties: false,
+  };
+}
+
+function listFilesReceiptSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      count: { type: "integer", minimum: 0 },
+      truncated: { type: "boolean" },
+      pathSha256: { type: "string", minLength: 64, maxLength: 64 },
+      entrySetSha256: { type: "string", minLength: 64, maxLength: 64 },
+    },
+    required: ["count", "truncated", "pathSha256", "entrySetSha256"],
     additionalProperties: false,
   };
 }

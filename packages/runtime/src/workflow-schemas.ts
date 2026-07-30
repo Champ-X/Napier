@@ -1,5 +1,6 @@
 import type {
-  ExecutionPlanWorkflowAgentNode,
+  ExecutionPlanWorkflowNode,
+  ExecutionPlanWorkflowValuePathSegment,
   JsonValue,
   WorkflowValueSchema,
 } from "@napier/contracts";
@@ -36,21 +37,33 @@ export function assertWorkflowValue(
 }
 
 export function buildExecutionPlanWorkflowNodeInput(
-  node: ExecutionPlanWorkflowAgentNode,
+  node: ExecutionPlanWorkflowNode,
   workflowInput: JsonValue,
   nodeOutputs: ReadonlyMap<string, JsonValue>,
 ): JsonValue {
   const input: Record<string, JsonValue> = {};
   for (const [name, binding] of Object.entries(node.inputBindings)) {
+    if (binding.source === "literal") {
+      input[name] = structuredClone(binding.value);
+      continue;
+    }
     if (binding.source === "workflow") {
-      input[name] = structuredClone(workflowInput);
+      input[name] = resolveWorkflowBindingValue(
+        workflowInput,
+        binding.path,
+        `${node.id}.${name}`,
+      );
       continue;
     }
     const output = nodeOutputs.get(binding.nodeId);
     if (output === undefined) {
       throw new Error(`Workflow dependency output is unavailable: ${node.id}`);
     }
-    input[name] = structuredClone(output);
+    input[name] = resolveWorkflowBindingValue(
+      output,
+      binding.path,
+      `${node.id}.${name}`,
+    );
   }
   assertWorkflowValue(
     node.inputSchema,
@@ -58,6 +71,67 @@ export function buildExecutionPlanWorkflowNodeInput(
     `Workflow node input ${node.id}`,
   );
   return input;
+}
+
+export function workflowNodeBindingContextSha256(
+  node: ExecutionPlanWorkflowNode,
+  workflowInput: JsonValue,
+  nodeOutputs: ReadonlyMap<string, JsonValue>,
+): string {
+  const dependencyOutputHashes = [
+    ...new Set(
+      Object.values(node.inputBindings).flatMap((binding) =>
+        binding.source === "node" ? [binding.nodeId] : [],
+      ),
+    ),
+  ]
+    .sort((left, right) => left.localeCompare(right))
+    .map((nodeId) => {
+      const output = nodeOutputs.get(nodeId);
+      return {
+        nodeId,
+        outputSha256: output === undefined ? "" : sha256(canonicalJson(output)),
+      };
+    });
+  return sha256(
+    canonicalJson({
+      workflowInputSha256: sha256(canonicalJson(workflowInput)),
+      dependencyOutputHashes,
+    }),
+  );
+}
+
+function resolveWorkflowBindingValue(
+  source: JsonValue,
+  path: ExecutionPlanWorkflowValuePathSegment[] | undefined,
+  label: string,
+): JsonValue {
+  if (!path || path.length === 0) return structuredClone(source);
+  let value: JsonValue = source;
+  for (const segment of path) {
+    if (typeof segment === "number") {
+      if (
+        !Array.isArray(value) ||
+        !Number.isSafeInteger(segment) ||
+        segment < 0 ||
+        segment >= value.length
+      ) {
+        throw new Error(`Workflow binding path is unavailable: ${label}`);
+      }
+      value = value[segment]!;
+      continue;
+    }
+    if (
+      !value ||
+      Array.isArray(value) ||
+      typeof value !== "object" ||
+      !Object.hasOwn(value, segment)
+    ) {
+      throw new Error(`Workflow binding path is unavailable: ${label}`);
+    }
+    value = value[segment]!;
+  }
+  return structuredClone(value);
 }
 
 export function parseExecutionPlanWorkflowNodeOutput(

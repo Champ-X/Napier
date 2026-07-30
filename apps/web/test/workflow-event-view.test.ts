@@ -83,6 +83,30 @@ describe("Workflow event Trace projection", () => {
     expect(workflowEventTraceSummary(failed)).not.toContain(
       "PRIVATE_MODEL_ERROR",
     );
+
+    const toolCompleted = workflowEvent("workflow.node.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "inventory",
+      nodeType: "tool",
+      toolName: "list_files",
+      effect: "read",
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      outputSha256: "5".repeat(64),
+      recovered: false,
+      workflowOutput: "PRIVATE_TOOL_OUTPUT",
+    });
+    expect(workflowEventTraceSummary(toolCompleted)).toContain(
+      "node inventory / attempt 1",
+    );
+    expect(workflowEventTraceSummary(toolCompleted)).toContain(
+      "tool list_files (read)",
+    );
+    expect(workflowEventTraceSummary(toolCompleted)).not.toContain("PRIVATE");
   });
 
   it("summarizes experiment lineage and reused outputs without source bodies", () => {

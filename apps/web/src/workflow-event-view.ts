@@ -159,6 +159,20 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `input ${inputSha256.slice(0, 12)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,
     );
+    if (payload["nodeType"] === "tool") {
+      const toolName = safeToken(payload["toolName"]);
+      const effect =
+        payload["effect"] === "read" || payload["effect"] === "write"
+          ? payload["effect"]
+          : undefined;
+      if (!toolName || !effect) return undefined;
+      parts.push(`tool ${toolName} (${effect})`);
+    } else if (
+      payload["nodeType"] !== undefined &&
+      payload["nodeType"] !== "agent"
+    ) {
+      return undefined;
+    }
     if (event.type === "workflow.node.completed") {
       const outputSha256 = hash(payload["outputSha256"]);
       if (!outputSha256 || typeof payload["recovered"] !== "boolean") {

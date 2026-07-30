@@ -203,6 +203,114 @@ describe("Workflow HTTP path", () => {
     ).toEqual(expect.objectContaining({ resumed: true }));
   }, 20_000);
 
+  it("executes a model-free Tool Workflow through the public SSE route", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-tool-workflow-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: new UnsupportedSandboxAdapter("server-tool-workflow-test"),
+    });
+    openServices.push(services);
+    const blueprintThread = services.store.listThreads()[0]!;
+    const blueprintPlan = await services.store.createPlan(blueprintThread.id, {
+      objective: "Inventory the workspace through a typed Tool node.",
+      steps: [
+        {
+          id: "inventory",
+          title: "Inventory",
+          description: "List the workspace root.",
+          verification: "Return a typed list-files receipt.",
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      blueprintThread.id,
+      blueprintPlan.id,
+    );
+    const outputSchema = listFilesReceiptSchema();
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP Tool inventory",
+      version: 1,
+      description: "Execute one policy-checked model-free Tool node.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema,
+      outputNodeId: "inventory",
+      nodes: [
+        {
+          id: "inventory",
+          type: "tool",
+          tool: "list_files",
+          effect: "read",
+          inputBindings: {
+            path: { source: "literal", value: "." },
+            depth: { source: "literal", value: 1 },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: { type: "string", minLength: 1, maxLength: 20 },
+              depth: { type: "integer", minimum: 0, maximum: 4 },
+            },
+            required: ["path", "depth"],
+            additionalProperties: false,
+          },
+          outputSchema,
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+    });
+    const targetThread = await services.store.createThread({
+      title: "HTTP Tool Workflow target",
+      agentId: blueprintThread.agentId,
+    });
+    const response = await createApp(services).request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { request: "Inventory without a model." },
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const frame = validateExecutionPlanWorkflowResultFrame(
+      parseSseFrames(await response.text()).at(-1),
+    );
+    expect(frame.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: expect.objectContaining({
+          count: 0,
+          truncated: false,
+          pathSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          entrySetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      }),
+    );
+    const events = await services.store.listEvents(targetThread.id);
+    expect(events.some((event) => event.type === "model.response")).toBe(false);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "tool.started" || event.type === "tool.completed",
+      ),
+    ).toHaveLength(2);
+    expect(
+      services.store.listRuns(targetThread.id).map((run) => run.source),
+    ).toEqual(["workflow"]);
+  });
+
   it("rejects malformed requests before starting an SSE execution", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "napier-server-workflow-"));
     temporaryRoots.push(root);
@@ -236,6 +344,20 @@ function requestSchema(): WorkflowObjectSchema {
       request: { type: "string", minLength: 1, maxLength: 500 },
     },
     required: ["request"],
+    additionalProperties: false,
+  };
+}
+
+function listFilesReceiptSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      count: { type: "integer", minimum: 0 },
+      truncated: { type: "boolean" },
+      pathSha256: { type: "string", minLength: 64, maxLength: 64 },
+      entrySetSha256: { type: "string", minLength: 64, maxLength: 64 },
+    },
+    required: ["count", "truncated", "pathSha256", "entrySetSha256"],
     additionalProperties: false,
   };
 }

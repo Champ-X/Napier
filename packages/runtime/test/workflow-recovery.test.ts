@@ -217,6 +217,107 @@ describe("Execution Plan Workflow recovery", () => {
     );
     reopened.store.close();
   });
+
+  it("does not rerun a Tool node when restart leaves only tool.started evidence", async () => {
+    const fixture = await createToolFixture();
+    const seeded = await seedRunningToolNode(fixture, false);
+    fixture.store.close();
+
+    const reopened = await reopen(fixture);
+    const result = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: seeded.plan.id,
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            runId: seeded.runId,
+            errorCode: "run_interrupted",
+          }),
+        ],
+      }),
+    );
+    expect(reopened.store.listRuns(fixture.threadId)).toHaveLength(1);
+    const events = await reopened.store.listEvents(fixture.threadId);
+    expect(
+      events.filter((event) => event.type === "tool.started"),
+    ).toHaveLength(1);
+    expect(
+      events.filter((event) => event.type === "tool.completed"),
+    ).toHaveLength(0);
+    reopened.store.close();
+  });
+
+  it("settles a Tool node after restart when its bound terminal event is durable", async () => {
+    const fixture = await createToolFixture();
+    const seeded = await seedRunningToolNode(fixture, true);
+    fixture.store.close();
+
+    const reopened = await reopen(fixture);
+    const result = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: seeded.plan.id,
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: listFilesReceipt(),
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            runId: seeded.runId,
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    expect(reopened.store.listRuns(fixture.threadId)).toHaveLength(1);
+    const events = await reopened.store.listEvents(fixture.threadId);
+    expect(
+      events.filter((event) => event.type === "tool.started"),
+    ).toHaveLength(1);
+    expect(
+      events.filter((event) => event.type === "workflow.node.completed"),
+    ).toEqual([
+      expect.objectContaining({
+        payload: expect.objectContaining({ recovered: true }),
+      }),
+    ]);
+    reopened.store.close();
+  });
+
+  it("fails closed on a tampered terminal Tool output after restart", async () => {
+    const fixture = await createToolFixture();
+    const seeded = await seedRunningToolNode(fixture, true, true);
+    fixture.store.close();
+
+    const reopened = await reopen(fixture);
+    await expect(
+      reopened.workflows.run({
+        threadId: fixture.threadId,
+        request: {
+          manifest: fixture.manifest,
+          planId: seeded.plan.id,
+        },
+      }),
+    ).rejects.toThrow("output evidence hash mismatch");
+    expect(reopened.store.getPlan(seeded.plan.id).steps[0]?.status).toBe(
+      "blocked",
+    );
+    expect(reopened.store.listRuns(fixture.threadId)).toHaveLength(1);
+    reopened.store.close();
+  });
 });
 
 interface RecoveryFixture {
@@ -289,6 +390,42 @@ async function createFixture(): Promise<RecoveryFixture> {
     threadId: thread.id,
     manifest,
   };
+}
+
+async function createToolFixture(): Promise<RecoveryFixture> {
+  const fixture = await createFixture();
+  fixture.manifest = defineExecutionPlanWorkflow({
+    name: "Recovery inventory",
+    version: 1,
+    description: "Recover one typed Tool node.",
+    blueprint: fixture.manifest.blueprint,
+    inputSchema: requestSchema(),
+    outputSchema: listFilesReceiptSchema(),
+    outputNodeId: "inspect",
+    nodes: [
+      {
+        id: "inspect",
+        type: "tool",
+        tool: "list_files",
+        effect: "read",
+        inputBindings: {
+          path: { source: "literal", value: "." },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            path: { type: "string", minLength: 1, maxLength: 20 },
+          },
+          required: ["path"],
+          additionalProperties: false,
+        },
+        outputSchema: listFilesReceiptSchema(),
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  return fixture;
 }
 
 async function seedRunningNode(
@@ -391,6 +528,124 @@ async function seedRunningNode(
   return { plan, runId: run.id };
 }
 
+async function seedRunningToolNode(
+  fixture: RecoveryFixture,
+  terminal: boolean,
+  tamperedOutputSha256 = false,
+): Promise<{ plan: ExecutionPlan; runId: string }> {
+  const input: JsonValue = { request: "Recover this Tool Workflow." };
+  const thread = fixture.store.getThread(fixture.threadId);
+  const agent = fixture.store.getAgent(thread.agentId);
+  const plan = await fixture.store.createPlan(
+    fixture.threadId,
+    executionPlanRequestFromBlueprint(fixture.manifest.blueprint),
+  );
+  await fixture.store.appendEvent({
+    threadId: fixture.threadId,
+    runId: "runctl_workflow_tool_recovery",
+    type: "workflow.started",
+    category: "plan",
+    visibility: "user",
+    payload: {
+      schemaVersion: 1,
+      planId: plan.id,
+      manifestSha256: fixture.manifest.contentSha256,
+      blueprintSha256: fixture.manifest.blueprint.contentSha256,
+      workflowVersion: fixture.manifest.version,
+      nodeCount: 1,
+      agentId: agent.id,
+      agentRevision: agent.revision,
+      input,
+      inputSha256: sha256(canonicalJson(input)),
+      inputSchemaSha256: workflowSchemaSha256(fixture.manifest.inputSchema),
+      outputSchemaSha256: workflowSchemaSha256(fixture.manifest.outputSchema),
+      outputNodeId: fixture.manifest.outputNodeId,
+    },
+  });
+  const run = await fixture.store.createRun({
+    threadId: fixture.threadId,
+    agentId: thread.agentId,
+    agentRevision: agent.revision,
+    model: agent.model,
+    source: "workflow",
+  });
+  const started = await fixture.store.transitionPlanStep(plan.id, "inspect", {
+    action: "start",
+    runId: run.id,
+  });
+  const nodeInput = { path: "." };
+  const inputSha256 = sha256(canonicalJson(nodeInput));
+  await fixture.store.appendEvent({
+    threadId: fixture.threadId,
+    runId: run.id,
+    type: "workflow.node.started",
+    category: "plan",
+    visibility: "user",
+    payload: {
+      schemaVersion: 1,
+      planId: plan.id,
+      nodeId: "inspect",
+      nodeType: "tool",
+      toolName: "list_files",
+      effect: "read",
+      attempt: 1,
+      manifestSha256: fixture.manifest.contentSha256,
+      inputSha256,
+      inputSchemaSha256: workflowSchemaSha256(
+        fixture.manifest.nodes[0]!.inputSchema,
+      ),
+      outputSchemaSha256: workflowSchemaSha256(
+        fixture.manifest.nodes[0]!.outputSchema,
+      ),
+      planRevisionBefore: plan.revision,
+      planRevisionAfter: started.revision,
+      recovered: false,
+    },
+  });
+  await fixture.store.appendEvent({
+    threadId: fixture.threadId,
+    runId: run.id,
+    type: "tool.started",
+    category: "tool",
+    visibility: "user",
+    payload: {
+      callId: "toolcall_workflow_recovery",
+      toolName: "list_files",
+      status: "started",
+      effect: "read",
+      workflowPlanId: plan.id,
+      workflowNodeId: "inspect",
+      workflowAttempt: 1,
+      inputSha256,
+    },
+  });
+  if (terminal) {
+    const output = listFilesReceipt();
+    await fixture.store.appendEvent({
+      threadId: fixture.threadId,
+      runId: run.id,
+      type: "tool.completed",
+      category: "tool",
+      visibility: "user",
+      payload: {
+        callId: "toolcall_workflow_recovery",
+        toolName: "list_files",
+        status: "completed",
+        effect: "read",
+        workflowPlanId: plan.id,
+        workflowNodeId: "inspect",
+        workflowAttempt: 1,
+        workflowInputSha256: inputSha256,
+        workflowOutput: output,
+        workflowOutputSha256: tamperedOutputSha256
+          ? "f".repeat(64)
+          : sha256(canonicalJson(output)),
+      },
+    });
+  }
+  return { plan, runId: run.id };
+}
+
 async function reopen(fixture: RecoveryFixture): Promise<{
   store: LocalStore;
   agentRuntime: AgentRuntime;
@@ -429,5 +684,28 @@ function inspectionSchema(): WorkflowObjectSchema {
     },
     required: ["summary", "count"],
     additionalProperties: false,
+  };
+}
+
+function listFilesReceiptSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      count: { type: "integer", minimum: 0 },
+      truncated: { type: "boolean" },
+      pathSha256: { type: "string", minLength: 64, maxLength: 64 },
+      entrySetSha256: { type: "string", minLength: 64, maxLength: 64 },
+    },
+    required: ["count", "truncated", "pathSha256", "entrySetSha256"],
+    additionalProperties: false,
+  };
+}
+
+function listFilesReceipt(): JsonValue {
+  return {
+    count: 0,
+    truncated: false,
+    pathSha256: "1".repeat(64),
+    entrySetSha256: "2".repeat(64),
   };
 }

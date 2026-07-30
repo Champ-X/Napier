@@ -437,6 +437,42 @@ export function transitionPlanStep(
   return next;
 }
 
+export function recoverCompletedPlanStep(
+  plan: ExecutionPlan,
+  stepId: string,
+  runId: string,
+  evidenceInput: string,
+): ExecutionPlan {
+  if (plan.status === "cancelled") {
+    throw new Error("Cancelled plans cannot recover a completed step");
+  }
+  const next = structuredClone(plan);
+  const step = next.steps.find((candidate) => candidate.id === stepId);
+  if (!step) throw new Error(`Plan step not found: ${stepId}`);
+  if (step.status !== "blocked" || step.runId !== runId) {
+    throw new Error("Only the same blocked Plan Run can recover completion");
+  }
+  const evidence = normalizeText(evidenceInput, 2_000);
+  if (!evidence) {
+    throw new Error("Recovered plan steps require evidence");
+  }
+  if (!dependenciesSatisfied(next, step)) {
+    throw new Error("Recovered plan step dependencies are incomplete");
+  }
+  const timestamp = nowIso();
+  step.status = "completed";
+  step.evidence = evidence;
+  delete step.blocker;
+  step.finishedAt = timestamp;
+  step.updatedAt = timestamp;
+  settleReadySteps(next);
+  next.status = derivePlanStatus(next);
+  next.revision += 1;
+  next.updatedAt = timestamp;
+  refreshPlanProjection(next);
+  return next;
+}
+
 export function interruptPlanRun(
   plan: ExecutionPlan,
   runId: string,

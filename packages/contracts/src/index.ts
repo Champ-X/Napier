@@ -815,9 +815,22 @@ export type WorkflowValueSchema =
   | WorkflowArraySchema
   | WorkflowObjectSchema;
 
+export type ExecutionPlanWorkflowValuePathSegment = string | number;
+
 export type ExecutionPlanWorkflowInputBinding =
-  | { source: "workflow" }
-  | { source: "node"; nodeId: string };
+  | {
+      source: "literal";
+      value: JsonValue;
+    }
+  | {
+      source: "workflow";
+      path?: ExecutionPlanWorkflowValuePathSegment[];
+    }
+  | {
+      source: "node";
+      nodeId: string;
+      path?: ExecutionPlanWorkflowValuePathSegment[];
+    };
 
 export interface ExecutionPlanWorkflowAgentNode {
   id: string;
@@ -829,6 +842,46 @@ export interface ExecutionPlanWorkflowAgentNode {
   timeoutMs: number;
   maxAttempts: number;
 }
+
+export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
+  "list_files",
+  "read_file",
+  "search_files",
+  "list_symbols",
+  "inspect_data",
+  "inspect_code",
+  "read_symbol",
+  "ast_query",
+  "ast_edit_preview",
+  "lsp_diagnostics",
+  "lsp_symbols",
+  "lsp_definition",
+  "lsp_references",
+  "lsp_rename",
+  "lsp_code_actions",
+  "apply_patch",
+  "run_command",
+  "verify_workspace",
+] as const;
+
+export type ExecutionPlanWorkflowToolName =
+  (typeof EXECUTION_PLAN_WORKFLOW_TOOL_NAMES)[number];
+
+export interface ExecutionPlanWorkflowToolNode {
+  id: string;
+  type: "tool";
+  tool: ExecutionPlanWorkflowToolName;
+  effect: Exclude<McpToolEffect, "unknown">;
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowValueSchema;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
+export type ExecutionPlanWorkflowNode =
+  | ExecutionPlanWorkflowAgentNode
+  | ExecutionPlanWorkflowToolNode;
 
 export interface ExecutionPlanWorkflowManifest {
   kind: "napier.execution-plan-workflow";
@@ -842,7 +895,7 @@ export interface ExecutionPlanWorkflowManifest {
   inputSchema: WorkflowValueSchema;
   outputSchema: WorkflowValueSchema;
   outputNodeId: string;
-  nodes: ExecutionPlanWorkflowAgentNode[];
+  nodes: ExecutionPlanWorkflowNode[];
   nodeCount: number;
   contentSha256: string;
 }

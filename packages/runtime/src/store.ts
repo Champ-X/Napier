@@ -465,6 +465,7 @@ import {
   assertPlanArtifactEventBindings,
   createExecutionPlan,
   interruptPlanRun,
+  recoverCompletedPlanStep as recoverCompletedPlanStepProjection,
   refreshPlanProjection,
   replanExecutionPlan,
   transitionPlanStep,
@@ -5653,6 +5654,42 @@ export class LocalStore {
       const updated = transitionPlanStep(current, stepId, request);
       this.state.plans[index] = updated;
       if (updated.revision !== current.revision) await this.persistState();
+      return structuredClone(updated);
+    });
+  }
+
+  async recoverCompletedWorkflowToolPlanStep(
+    planId: string,
+    stepId: string,
+    runId: string,
+    evidence: string,
+  ): Promise<ExecutionPlan> {
+    this.assertInitialized();
+    return this.stateQueue.run(async () => {
+      const index = this.state.plans.findIndex(
+        (candidate) => candidate.id === planId,
+      );
+      const current = this.state.plans[index];
+      if (!current) throw new Error(`Plan not found: ${planId}`);
+      const run = this.state.runs.find((candidate) => candidate.id === runId);
+      if (
+        !run ||
+        run.threadId !== current.threadId ||
+        run.source !== "workflow" ||
+        (run.status !== "completed" && run.status !== "interrupted")
+      ) {
+        throw new Error(
+          "Recovered Workflow Tool completion requires its completed or interrupted Run",
+        );
+      }
+      const updated = recoverCompletedPlanStepProjection(
+        current,
+        stepId,
+        runId,
+        evidence,
+      );
+      this.state.plans[index] = updated;
+      await this.persistState();
       return structuredClone(updated);
     });
   }

@@ -173,6 +173,10 @@ export class ExecutionPlanWorkflowReuseMaterializer {
               schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
               planId: context.plan.id,
               nodeId: node.id,
+              nodeType: node.type,
+              ...(node.type === "tool"
+                ? { toolName: node.tool, effect: node.effect }
+                : {}),
               attempt: 1,
               manifestSha256: context.manifest.contentSha256,
               inputSha256,
@@ -261,6 +265,10 @@ export class ExecutionPlanWorkflowReuseMaterializer {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
+          nodeType: node.type,
+          ...(node.type === "tool"
+            ? { toolName: node.tool, effect: node.effect }
+            : {}),
           attempt: 1,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,

@@ -279,8 +279,16 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
     }
   }
   for (const [index, node] of validated.nodes.entries()) {
-    const sourceModel = sourceManifest.nodes[index]?.model;
-    const targetModel = candidateManifest.nodes[index]?.model;
+    const sourceManifestNode = sourceManifest.nodes[index];
+    const targetManifestNode = candidateManifest.nodes[index];
+    const sourceModel =
+      sourceManifestNode?.type === "agent"
+        ? sourceManifestNode.model
+        : undefined;
+    const targetModel =
+      targetManifestNode?.type === "agent"
+        ? targetManifestNode.model
+        : undefined;
     const expectedRunSource =
       node.execution === "reused" ? "workflow_reuse" : "workflow";
     if (

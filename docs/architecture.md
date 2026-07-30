@@ -232,7 +232,7 @@ ExecutionPlanBlueprint
   -> defineExecutionPlanWorkflow()
   -> hash-bound napier.execution-plan-workflow manifest
   -> existing ExecutionPlan projection
-  -> source=workflow Agent Run per ready node
+  -> source=workflow Run per ready Agent or Tool node
   -> strict typed node result
   -> existing Plan transition and Work Ledger
 ```
@@ -240,41 +240,47 @@ ExecutionPlanBlueprint
 `workflow-manifests.ts` validates the stable manifest and its Blueprint
 binding. `workflow-schemas.ts` owns the bounded JSON Schema subset and runtime
 value validation. `workflow-runtime.ts` owns scheduling and node state
-transitions, while `workflow-ledger.ts` and `workflow-recovery.ts` own durable
-evidence reconstruction. `workflow-protocol.ts` validates HTTP/CLI requests,
-typed results, and final snapshot/event-stream-bound result frames. This keeps
-Workflow logic outside the oversized Store and Server modules.
+transitions. `workflow-tool-node.ts` coordinates Tool-node Plan state and
+timeouts; `workflow-tool-runtime.ts` owns leased direct execution; and
+`stateless-agent-tools.ts` is the shared Agent/Workflow built-in catalog.
+`workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
+reconstruction. `workflow-protocol.ts` validates HTTP/CLI requests, typed
+results, and final snapshot/event-stream-bound result frames. This keeps
+Workflow logic outside the oversized Store and Server modules and removes the
+former tool-construction block from `agent-runtime.ts`.
 
 A new execution validates the complete manifest and typed input before
 creating state, creates the normal `ExecutionPlan`, freezes the target Agent
 revision in `workflow.started`, and executes one dependency-ready node at a
-time. Each node is a normal `AgentRuntime.runPrompt()` invocation with its
+time. Agent nodes are normal `AgentRuntime.runPrompt()` invocations with their
 manifest model override, timeout, AbortSignal, Run lease, policy, Sandbox,
-tools, and Ledger. `source=workflow` is a durable context boundary: Thread
-message history, prior-node delegation/milestone projections, Goal evaluation,
-automatic Memory proposal, Plan mutation tools, milestone tools, and operator
-decision tools are excluded. Explicit node bindings remain the data path
-between node outputs. Reviewed Agent Memory and ordinary policy-approved
-execution tools remain available and are bound by the Run configuration and
-context evidence.
+tools, and Ledger. Tool nodes create the same leased `source=workflow` Run but
+perform no model call. They select one of 18 stateless built-ins, validate
+literal/Workflow/dependency field-path bindings, TypeBox arguments, declared
+effect, enabled capability, Agent policy, workspace scope, and freshness before
+`tool.started`. JavaScript/Python kernels, Node debugger, and background
+Process Sessions and preview-bound workspace file mutations stay Run-owned
+Agent tools because a one-shot Tool node cannot honestly provide their
+persistent session lifecycle.
 
-The node prompt labels Workflow input as untrusted data and requires exactly
-one JSON value. Runtime schema validation occurs after the Agent Run completes
-and before the Plan step completes. Output bodies remain in the normal local
-message evidence and typed result for recovery and delivery; Workflow-specific
-events and Web Trace summaries retain only safe identifiers, counts, status,
-error codes, and hashes.
+The Agent-node prompt labels Workflow input as untrusted data and requires
+exactly one JSON value. Tool-node output is its structured `details`, never the
+tool's model-facing text body. Runtime schema validation occurs before the Plan
+step completes. Generic tool arguments and text are reduced to bytes/hash in
+Tool-node Ledger evidence, while the typed structured output remains bound for
+recovery and delivery. Workflow-specific Trace summaries retain only safe
+identifiers, declared effect, status, error codes, and hash prefixes.
 
 Resume accepts the original Manifest plus Plan ID, recovers the original input
 and frozen Agent revision from `workflow.started`, and revalidates both against
-the target Thread. Completed node output is reconstructed from its bound Run,
-strictly parsed again, and compared with node completion evidence. Recovery
-also handles process-exit windows between Run settlement, Plan transition,
-Plan event, and Workflow event commits. An interrupted Run becomes a blocked
-`run_interrupted` node at its original attempt. A missing failure event is
-reconstructed from durable Plan/Run state without executing the node. Existing
-started, completed, failed, and terminal evidence is semantically checked;
-observation is idempotent.
+the target Thread. Agent output is reconstructed from its bound assistant
+event; Tool output requires a unique terminal tool event bound to
+Plan/node/tool/effect/input/output hashes. Recovery also handles process-exit
+windows between tool completion, Run settlement, Plan transition, and Workflow
+event commits. `tool.started` without terminal evidence becomes
+`run_interrupted` and is never rerun silently. A valid `tool.completed` can
+settle the same interrupted Run through the internal blocked-step recovery
+transition without manufacturing a second Run or tool call.
 
 Workflow-owned Runs are excluded from generic manual and automatic Run
 recovery. Only Workflow resume may inspect them, and only explicit
@@ -299,7 +305,7 @@ source Thread + Plan + source Manifest
   -> require exact preview confirmation for write/unknown effects
   -> create independent target Thread and normal ExecutionPlan
   -> materialize verified ancestors as source=workflow_reuse control Runs
-  -> execute selected node and descendants through AgentRuntime
+  -> execute selected Agent/Tool node and descendants through Workflow Runtime
   -> align source/target node evidence and derive target-minus-source metrics
   -> append privacy-bounded workflow.experiment.compared evidence
   -> emit target snapshot + workflow_experiment_result
@@ -365,12 +371,12 @@ bounds cover the Runtime's 5.5 MiB legal terminal-frame maximum plus the new
 target Thread Snapshot. Experiment SSE responses override the streaming
 helper's default cache policy with `Cache-Control: no-store`.
 
-Schema version 1 is intentionally narrow: Agent nodes, direct typed bindings,
-sequential dependency-ready DAG scheduling, cancellation, timeout, explicit
-retry, and restart recovery. It does not yet implement deterministic or Tool
-nodes, approvals, parallel execution, conditions, loops, Map/Reduce,
-compensation, per-node breakpoints, external Agent adapters, or artifact
-settlement.
+Schema version 1 is intentionally narrow: Agent nodes, stateless built-in Tool
+nodes, literal/field-path typed bindings, sequential dependency-ready DAG
+scheduling, cancellation, timeout, explicit retry, and restart recovery. It
+does not yet implement deterministic or approval nodes, stateful session Tool
+nodes, parallel execution, conditions, loops, Map/Reduce, compensation,
+per-node breakpoints, external Agent adapters, or artifact settlement.
 
 ### Coding Outcome Benchmark
 
@@ -4898,9 +4904,10 @@ deferred until the local P0-P9 product loop is stable.
   policy, Node attach/source-map/multi-thread DAP and debugger UX, broader
   multi-node AST transforms, write-linked test/symbol association, and isolated
   subagent worktrees;
-- extend typed Agent DAG execution with deterministic/Tool/approval nodes,
-  parallelism, control flow, compensation, single-node tests and breakpoints,
-  external Agent adapters, artifact settlement, and a visual builder;
+- extend typed Agent/Tool DAG execution with deterministic/approval nodes,
+  stateful session nodes, parallelism, control flow, compensation, single-node
+  tests and breakpoints, external Agent adapters, artifact settlement, and a
+  visual builder;
 - extend controlled Workflow checkpoint re-execution with model-call/tool-call
   checkpoints, side-effect simulation, dependency replacement, batch
   experiments, interactive root-cause views, and evaluation promotion.

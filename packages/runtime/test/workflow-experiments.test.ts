@@ -708,6 +708,103 @@ describe("Execution Plan Workflow experiments", () => {
     expect(fixture.store.listThreads()).toHaveLength(before);
     fixture.store.close();
   });
+
+  it("reruns and reuses a Tool checkpoint without allowing a model override", async () => {
+    const fixture = await createFixture({ toolInspect: true });
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Tool checkpoint rerun","approved":true}',
+      ),
+    ]);
+    const rerunPreview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+      },
+    );
+    expect(rerunPreview).toEqual(
+      expect.objectContaining({
+        reusedNodeIds: [],
+        rerunNodeIds: ["inspect", "report"],
+        requiresSideEffectConfirmation: false,
+        toolEffects: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            toolCallCount: 1,
+            readOnlyCount: 1,
+            writeCount: 0,
+          }),
+          expect.objectContaining({ nodeId: "report" }),
+        ],
+      }),
+    );
+
+    const rerun = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+      },
+    });
+    expect(rerun.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { report: "Tool checkpoint rerun", approved: true },
+      }),
+    );
+    expect(rerun.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "rerun",
+        modelChanged: false,
+        source: expect.objectContaining({ toolNames: ["list_files"] }),
+        target: expect.objectContaining({ toolNames: ["list_files"] }),
+      }),
+    );
+    expect(
+      (await fixture.store.listEvents(rerun.targetThreadId)).filter(
+        (event) =>
+          event.type === "tool.started" &&
+          record(event.payload)?.["toolName"] === "list_files",
+      ),
+    ).toHaveLength(1);
+
+    await expect(
+      fixture.experiments.preview(fixture.sourceThreadId, {
+        ...experimentRequest(fixture),
+        fromNodeId: "inspect",
+        modelOverrides: {
+          inspect: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      }),
+    ).rejects.toThrow("Tool node model");
+
+    fixture.alternate.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Tool checkpoint reused","approved":true}',
+      ),
+    ]);
+    const reused = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: experimentRequest(fixture, {
+        modelOverrides: {
+          report: { provider: "faux-workflow-alternate", id: "faux-1" },
+        },
+      }),
+    });
+    expect(reused.result.output).toEqual({
+      report: "Tool checkpoint reused",
+      approved: true,
+    });
+    expect(reused.result.nodeResults[0]?.output).toEqual(
+      fixture.sourceResult.nodeResults[0]?.output,
+    );
+    expect(
+      fixture.store.listRuns(reused.targetThreadId).map((run) => run.source),
+    ).toEqual(["workflow_reuse", "workflow"]);
+    fixture.store.close();
+  });
 });
 
 interface Fixture {
@@ -721,7 +818,9 @@ interface Fixture {
   experiments: ExecutionPlanWorkflowExperimentRuntime;
 }
 
-async function createFixture(): Promise<Fixture> {
+async function createFixture(
+  options: { toolInspect?: boolean } = {},
+): Promise<Fixture> {
   const root = await mkdtemp(
     path.join(tmpdir(), "napier-workflow-experiment-"),
   );
@@ -779,33 +878,79 @@ async function createFixture(): Promise<Fixture> {
     nodes: [
       {
         id: "inspect",
-        type: "agent",
-        inputBindings: { workflow: { source: "workflow" } },
-        inputSchema: {
-          type: "object",
-          properties: { workflow: requestSchema() },
-          required: ["workflow"],
-          additionalProperties: false,
-        },
-        outputSchema: inspectionSchema(),
-        model: { provider: "faux-workflow-primary", id: "faux-1" },
-        timeoutMs: 5_000,
-        maxAttempts: 2,
+        ...(options.toolInspect
+          ? {
+              type: "tool" as const,
+              tool: "list_files" as const,
+              effect: "read" as const,
+              inputBindings: {
+                path: { source: "literal" as const, value: "." },
+                depth: { source: "literal" as const, value: 1 },
+              },
+              inputSchema: {
+                type: "object" as const,
+                properties: {
+                  path: {
+                    type: "string" as const,
+                    minLength: 1,
+                    maxLength: 20,
+                  },
+                  depth: {
+                    type: "integer" as const,
+                    minimum: 0,
+                    maximum: 4,
+                  },
+                },
+                required: ["path", "depth"],
+                additionalProperties: false as const,
+              },
+              outputSchema: listFilesReceiptSchema(),
+              timeoutMs: 5_000,
+              maxAttempts: 2,
+            }
+          : {
+              type: "agent" as const,
+              inputBindings: {
+                workflow: { source: "workflow" as const },
+              },
+              inputSchema: {
+                type: "object" as const,
+                properties: { workflow: requestSchema() },
+                required: ["workflow"],
+                additionalProperties: false as const,
+              },
+              outputSchema: inspectionSchema(),
+              model: {
+                provider: "faux-workflow-primary",
+                id: "faux-1",
+              },
+              timeoutMs: 5_000,
+              maxAttempts: 2,
+            }),
       },
       {
         id: "report",
         type: "agent",
         inputBindings: {
           workflow: { source: "workflow" },
-          inspection: { source: "node", nodeId: "inspect" },
+          [options.toolInspect ? "inventory" : "inspection"]: {
+            source: "node",
+            nodeId: "inspect",
+          },
         },
         inputSchema: {
           type: "object",
           properties: {
             workflow: requestSchema(),
-            inspection: inspectionSchema(),
+            [options.toolInspect ? "inventory" : "inspection"]:
+              options.toolInspect
+                ? listFilesReceiptSchema()
+                : inspectionSchema(),
           },
-          required: ["workflow", "inspection"],
+          required: [
+            "workflow",
+            options.toolInspect ? "inventory" : "inspection",
+          ],
           additionalProperties: false,
         },
         outputSchema: reportSchema(),
@@ -815,10 +960,14 @@ async function createFixture(): Promise<Fixture> {
       },
     ],
   });
-  primary.setResponses([
-    fauxAssistantMessage('{"summary":"Source inspection","count":1}'),
-    fauxAssistantMessage('{"report":"Source report","approved":true}'),
-  ]);
+  primary.setResponses(
+    options.toolInspect
+      ? [fauxAssistantMessage('{"report":"Source report","approved":true}')]
+      : [
+          fauxAssistantMessage('{"summary":"Source inspection","count":1}'),
+          fauxAssistantMessage('{"report":"Source report","approved":true}'),
+        ],
+  );
   const sourceResult = await workflows.run({
     threadId: sourceThread.id,
     request: {
@@ -933,6 +1082,20 @@ function reportSchema(): WorkflowObjectSchema {
       approved: { type: "boolean" },
     },
     required: ["report", "approved"],
+    additionalProperties: false,
+  };
+}
+
+function listFilesReceiptSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      count: { type: "integer", minimum: 0 },
+      truncated: { type: "boolean" },
+      pathSha256: { type: "string", minLength: 64, maxLength: 64 },
+      entrySetSha256: { type: "string", minLength: 64, maxLength: 64 },
+    },
+    required: ["count", "truncated", "pathSha256", "entrySetSha256"],
     additionalProperties: false,
   };
 }

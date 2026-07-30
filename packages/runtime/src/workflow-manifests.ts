@@ -1,9 +1,13 @@
 import {
+  EXECUTION_PLAN_WORKFLOW_TOOL_NAMES,
   NAPIER_API_VERSION,
-  type ExecutionPlanWorkflowAgentNode,
   type ExecutionPlanWorkflowInputBinding,
   type ExecutionPlanWorkflowManifest,
   type ExecutionPlanWorkflowManifestVerification,
+  type ExecutionPlanWorkflowNode,
+  type ExecutionPlanWorkflowToolName,
+  type ExecutionPlanWorkflowValuePathSegment,
+  type JsonValue,
   type WorkflowObjectSchema,
   type WorkflowValueSchema,
 } from "@napier/contracts";
@@ -12,6 +16,8 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { validateExecutionPlanBlueprint } from "./workflow-blueprints.js";
 import {
   assertWorkflowEncodedBytes,
+  assertWorkflowValue,
+  MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
   MAX_WORKFLOW_SCHEMA_BYTES,
   MAX_WORKFLOW_SCHEMA_PROPERTIES,
   validateWorkflowSchema,
@@ -25,6 +31,7 @@ export {
   MAX_EXECUTION_PLAN_WORKFLOW_NODE_OUTPUT_BYTES,
   MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
   parseExecutionPlanWorkflowNodeOutput,
+  workflowNodeBindingContextSha256,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
 
@@ -36,6 +43,13 @@ const MAX_WORKFLOW_ATTEMPTS = 3;
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u;
+const MAX_WORKFLOW_BINDING_PATH_DEPTH = 8;
+const WORKFLOW_TOOL_NAMES = new Set<string>(EXECUTION_PLAN_WORKFLOW_TOOL_NAMES);
+const FORBIDDEN_PATH_SEGMENTS = new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+]);
 
 export type ExecutionPlanWorkflowManifestContent = Omit<
   ExecutionPlanWorkflowManifest,
@@ -50,7 +64,7 @@ export interface DefineExecutionPlanWorkflowInput {
   inputSchema: WorkflowValueSchema;
   outputSchema: WorkflowValueSchema;
   outputNodeId: string;
-  nodes: ExecutionPlanWorkflowAgentNode[];
+  nodes: ExecutionPlanWorkflowNode[];
   generatedAt?: string;
 }
 
@@ -285,28 +299,46 @@ function validateWorkflowNode(
   input: unknown,
   index: number,
   schemaBudget: { nodes: number },
-): ExecutionPlanWorkflowAgentNode {
+): ExecutionPlanWorkflowNode {
   const label = `Workflow node ${String(index + 1)}`;
   const node = record(input, label);
-  assertExactKeys(
-    node,
-    [
-      "id",
-      "type",
-      "inputBindings",
-      "inputSchema",
-      "outputSchema",
-      "model",
-      "timeoutMs",
-      "maxAttempts",
-    ],
-    label,
-    new Set(["model"]),
-  );
-  const id = resourceId(node["id"], `${label} ID`);
-  if (node["type"] !== "agent") {
+  const type = node["type"];
+  if (type === "agent") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "model",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+      new Set(["model"]),
+    );
+  } else if (type === "tool") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "tool",
+        "effect",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+    );
+  } else {
     throw new Error(`${label} type is unsupported`);
   }
+  const id = resourceId(node["id"], `${label} ID`);
   const bindingsRecord = record(node["inputBindings"], `${label} bindings`);
   const bindingKeys = Object.keys(bindingsRecord);
   if (bindingKeys.length > MAX_WORKFLOW_SCHEMA_PROPERTIES) {
@@ -318,18 +350,47 @@ function validateWorkflowNode(
       throw new Error(`${label} binding name is invalid`);
     }
     const binding = record(bindingInput, `${label} binding`);
+    if (binding["source"] === "literal") {
+      assertExactKeys(binding, ["source", "value"], `${label} literal binding`);
+      assertWorkflowEncodedBytes(
+        binding["value"],
+        MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
+        `${label} literal binding`,
+      );
+      inputBindings[name] = {
+        source: "literal",
+        value: structuredClone(binding["value"]) as JsonValue,
+      };
+      continue;
+    }
     if (binding["source"] === "workflow") {
-      assertExactKeys(binding, ["source"], `${label} workflow binding`);
-      inputBindings[name] = { source: "workflow" };
+      assertExactKeys(
+        binding,
+        ["source", "path"],
+        `${label} workflow binding`,
+        new Set(["path"]),
+      );
+      const path = validateBindingPath(binding["path"], `${label} binding`);
+      inputBindings[name] = {
+        source: "workflow",
+        ...(path ? { path } : {}),
+      };
       continue;
     }
     if (binding["source"] !== "node") {
       throw new Error(`${label} binding source is invalid`);
     }
-    assertExactKeys(binding, ["source", "nodeId"], `${label} node binding`);
+    assertExactKeys(
+      binding,
+      ["source", "nodeId", "path"],
+      `${label} node binding`,
+      new Set(["path"]),
+    );
+    const path = validateBindingPath(binding["path"], `${label} binding`);
     inputBindings[name] = {
       source: "node",
       nodeId: resourceId(binding["nodeId"], `${label} binding node ID`),
+      ...(path ? { path } : {}),
     };
   }
   assertWorkflowEncodedBytes(
@@ -369,6 +430,38 @@ function validateWorkflowNode(
     MAX_WORKFLOW_ATTEMPTS,
     `${label} maxAttempts`,
   );
+  for (const [name, binding] of Object.entries(inputBindings)) {
+    if (binding.source !== "literal") continue;
+    const propertySchema = inputSchema.properties[name];
+    if (!propertySchema) {
+      throw new Error(`${label} literal binding has no input schema`);
+    }
+    assertWorkflowValue(
+      propertySchema,
+      binding.value,
+      `${label} literal binding ${name}`,
+    );
+  }
+  if (type === "tool") {
+    if (
+      typeof node["tool"] !== "string" ||
+      !WORKFLOW_TOOL_NAMES.has(node["tool"]) ||
+      (node["effect"] !== "read" && node["effect"] !== "write")
+    ) {
+      throw new Error(`${label} tool contract is invalid`);
+    }
+    return {
+      id,
+      type,
+      tool: node["tool"] as ExecutionPlanWorkflowToolName,
+      effect: node["effect"],
+      inputBindings,
+      inputSchema: inputSchema as WorkflowObjectSchema,
+      outputSchema,
+      timeoutMs,
+      maxAttempts,
+    };
+  }
   const model =
     node["model"] === undefined
       ? undefined
@@ -383,6 +476,37 @@ function validateWorkflowNode(
     timeoutMs,
     maxAttempts,
   };
+}
+
+function validateBindingPath(
+  input: unknown,
+  label: string,
+): ExecutionPlanWorkflowValuePathSegment[] | undefined {
+  if (input === undefined) return undefined;
+  if (
+    !Array.isArray(input) ||
+    input.length < 1 ||
+    input.length > MAX_WORKFLOW_BINDING_PATH_DEPTH
+  ) {
+    throw new Error(`${label} path is invalid`);
+  }
+  return input.map((segment) => {
+    if (
+      typeof segment === "number" &&
+      Number.isSafeInteger(segment) &&
+      segment >= 0
+    ) {
+      return segment;
+    }
+    if (
+      typeof segment === "string" &&
+      WORKFLOW_BINDING_NAME.test(segment) &&
+      !FORBIDDEN_PATH_SEGMENTS.has(segment)
+    ) {
+      return segment;
+    }
+    throw new Error(`${label} path segment is invalid`);
+  });
 }
 
 function validateModel(

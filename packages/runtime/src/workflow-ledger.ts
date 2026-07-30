@@ -1,7 +1,7 @@
 import type {
   ExecutionPlan,
-  ExecutionPlanWorkflowAgentNode,
   ExecutionPlanWorkflowManifest,
+  ExecutionPlanWorkflowNode,
   JsonValue,
   RunEvent,
 } from "@napier/contracts";
@@ -10,7 +10,11 @@ import type { EventSink } from "./agent-runtime.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
 import { workflowPlanStepPayload } from "./workflow-runtime-model.js";
-import { workflowSchemaSha256 } from "./workflow-schemas.js";
+import {
+  assertWorkflowValue,
+  parseExecutionPlanWorkflowNodeOutput,
+  workflowSchemaSha256,
+} from "./workflow-schemas.js";
 
 export const WORKFLOW_EVENT_SCHEMA_VERSION = 1;
 export const WORKFLOW_STARTED_EVENT = "workflow.started";
@@ -89,9 +93,78 @@ export class ExecutionPlanWorkflowLedger {
     throw new Error("Workflow node assistant output is unavailable");
   }
 
+  async nodeOutput(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    runId: string,
+    inputSha256: string,
+  ): Promise<JsonValue> {
+    const run = this.store
+      .listRuns(context.threadId)
+      .find((candidate) => candidate.id === runId);
+    if (!run) throw new Error("Workflow node Run is missing");
+    if (node.type === "agent" || run.source === "workflow_reuse") {
+      return parseExecutionPlanWorkflowNodeOutput(
+        await this.nodeAssistantOutput(context.threadId, runId),
+        node.outputSchema,
+      );
+    }
+    const completions = (await this.store.listEvents(context.threadId)).filter(
+      (event) =>
+        event.runId === runId &&
+        event.type === "tool.completed" &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["workflowPlanId"] === context.plan.id &&
+        event.payload["workflowNodeId"] === node.id,
+    );
+    const completed = completions.length === 1 ? completions[0] : undefined;
+    if (
+      !completed ||
+      !isWorkflowRecord(completed.payload) ||
+      completed.payload["toolName"] !== node.tool ||
+      completed.payload["effect"] !== node.effect ||
+      completed.payload["workflowInputSha256"] !== inputSha256 ||
+      completed.payload["workflowOutput"] === undefined ||
+      typeof completed.payload["workflowOutputSha256"] !== "string"
+    ) {
+      throw new Error("Workflow tool output evidence is unavailable");
+    }
+    const output = structuredClone(
+      completed.payload["workflowOutput"],
+    ) as JsonValue;
+    assertWorkflowValue(
+      node.outputSchema,
+      output,
+      `Workflow tool output ${node.id}`,
+    );
+    if (
+      sha256(canonicalJson(output)) !==
+      completed.payload["workflowOutputSha256"]
+    ) {
+      throw new Error("Workflow tool output evidence hash mismatch");
+    }
+    return output;
+  }
+
+  async hasNodeToolCompletionEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    runId: string,
+  ): Promise<boolean> {
+    if (node.type !== "tool") return false;
+    return (await this.store.listEvents(context.threadId)).some(
+      (event) =>
+        event.runId === runId &&
+        event.type === "tool.completed" &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["workflowPlanId"] === context.plan.id &&
+        event.payload["workflowNodeId"] === node.id,
+    );
+  }
+
   async verifyOrRecoverNodeCompletedEvent(
     context: WorkflowLedgerContext,
-    node: ExecutionPlanWorkflowAgentNode,
+    node: ExecutionPlanWorkflowNode,
     runId: string,
     inputSha256: string,
     outputSha256: string,
@@ -124,6 +197,7 @@ export class ExecutionPlanWorkflowLedger {
           workflowSchemaSha256(node.inputSchema) ||
         completed.payload["outputSchemaSha256"] !==
           workflowSchemaSha256(node.outputSchema) ||
+        !workflowNodeEventMetadataMatches(node, completed.payload) ||
         typeof completed.payload["recovered"] !== "boolean"
       ) {
         throw new Error("Workflow node completion evidence mismatch");
@@ -141,6 +215,10 @@ export class ExecutionPlanWorkflowLedger {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
+          nodeType: node.type,
+          ...(node.type === "tool"
+            ? { toolName: node.tool, effect: node.effect }
+            : {}),
           attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,
@@ -156,7 +234,7 @@ export class ExecutionPlanWorkflowLedger {
 
   async ensureNodeStartedEvent(
     context: WorkflowLedgerContext,
-    node: ExecutionPlanWorkflowAgentNode,
+    node: ExecutionPlanWorkflowNode,
     runId: string,
     inputSha256: string,
   ): Promise<void> {
@@ -182,6 +260,7 @@ export class ExecutionPlanWorkflowLedger {
           workflowSchemaSha256(node.inputSchema) ||
         started.payload["outputSchemaSha256"] !==
           workflowSchemaSha256(node.outputSchema) ||
+        !workflowNodeEventMetadataMatches(node, started.payload) ||
         !positiveInteger(before) ||
         !positiveInteger(after) ||
         Number(after) < Number(before) ||
@@ -207,6 +286,10 @@ export class ExecutionPlanWorkflowLedger {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
+          nodeType: node.type,
+          ...(node.type === "tool"
+            ? { toolName: node.tool, effect: node.effect }
+            : {}),
           attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,
@@ -274,30 +357,42 @@ export class ExecutionPlanWorkflowLedger {
     manifestSha256: string;
     blueprintSha256: string;
     status: string;
+    planRevision: number;
     nodeResultCount: number;
     completedNodeCount: number;
     outputSha256?: string;
   }): Promise<boolean> {
-    const terminal = (await this.store.listEvents(input.threadId)).find(
+    const terminals = (await this.store.listEvents(input.threadId)).filter(
       (event) =>
         event.type === input.eventType &&
         isWorkflowRecord(event.payload) &&
         event.payload["planId"] === input.planId,
     );
-    if (!terminal || !isWorkflowRecord(terminal.payload)) return false;
-    if (
-      terminal.payload["schemaVersion"] !== WORKFLOW_EVENT_SCHEMA_VERSION ||
-      terminal.payload["manifestSha256"] !== input.manifestSha256 ||
-      terminal.payload["blueprintSha256"] !== input.blueprintSha256 ||
-      terminal.payload["status"] !== input.status ||
-      terminal.payload["nodeResultCount"] !== input.nodeResultCount ||
-      terminal.payload["completedNodeCount"] !== input.completedNodeCount ||
-      terminal.payload["outputSha256"] !== input.outputSha256 ||
-      !hash(terminal.payload["resultSha256"])
-    ) {
-      throw new Error("Workflow terminal evidence mismatch");
+    const current = terminals.find(
+      (event) =>
+        isWorkflowRecord(event.payload) &&
+        event.payload["planRevision"] === input.planRevision,
+    );
+    if (current && isWorkflowRecord(current.payload)) {
+      if (!workflowTerminalEventMatches(current.payload, input, true)) {
+        throw new Error("Workflow terminal evidence mismatch");
+      }
+      return true;
     }
-    return true;
+    const legacy =
+      terminals.length === 1 &&
+      isWorkflowRecord(terminals[0]?.payload) &&
+      terminals[0].payload["planRevision"] === undefined
+        ? terminals[0]
+        : undefined;
+    if (
+      legacy &&
+      isWorkflowRecord(legacy.payload) &&
+      workflowTerminalEventMatches(legacy.payload, input, false)
+    ) {
+      return true;
+    }
+    return false;
   }
 
   async appendPlanStepEvent(
@@ -359,6 +454,35 @@ export class ExecutionPlanWorkflowLedger {
   }
 }
 
+function workflowTerminalEventMatches(
+  payload: Record<string, JsonValue>,
+  input: {
+    manifestSha256: string;
+    blueprintSha256: string;
+    status: string;
+    planRevision: number;
+    nodeResultCount: number;
+    completedNodeCount: number;
+    outputSha256?: string;
+  },
+  requirePlanRevision: boolean,
+): boolean {
+  if (
+    payload["schemaVersion"] !== WORKFLOW_EVENT_SCHEMA_VERSION ||
+    payload["manifestSha256"] !== input.manifestSha256 ||
+    payload["blueprintSha256"] !== input.blueprintSha256 ||
+    payload["status"] !== input.status ||
+    (requirePlanRevision && payload["planRevision"] !== input.planRevision) ||
+    payload["nodeResultCount"] !== input.nodeResultCount ||
+    payload["completedNodeCount"] !== input.completedNodeCount ||
+    payload["outputSha256"] !== input.outputSha256 ||
+    !hash(payload["resultSha256"])
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export function isWorkflowRecord(
   value: unknown,
 ): value is Record<string, JsonValue> {
@@ -377,4 +501,18 @@ function positiveInteger(value: unknown): value is number {
 
 function hash(value: unknown): value is string {
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value);
+}
+
+export function workflowNodeEventMetadataMatches(
+  node: ExecutionPlanWorkflowNode,
+  payload: Record<string, JsonValue>,
+): boolean {
+  if (node.type === "tool") {
+    return (
+      payload["nodeType"] === "tool" &&
+      payload["toolName"] === node.tool &&
+      payload["effect"] === node.effect
+    );
+  }
+  return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
 }

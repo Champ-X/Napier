@@ -1,5 +1,5 @@
 import type {
-  ExecutionPlanWorkflowAgentNode,
+  ExecutionPlanWorkflowNode,
   ExecutionPlanWorkflowNodeResult,
 } from "@napier/contracts";
 
@@ -13,20 +13,21 @@ import type {
 import {
   ExecutionPlanWorkflowLedger,
   isWorkflowRecord,
+  workflowNodeEventMetadataMatches,
   WORKFLOW_EVENT_SCHEMA_VERSION,
   WORKFLOW_NODE_FAILED_EVENT,
 } from "./workflow-ledger.js";
 import { completedWorkflowNodeResult } from "./workflow-runtime-model.js";
 import {
   buildExecutionPlanWorkflowNodeInput,
-  parseExecutionPlanWorkflowNodeOutput,
+  workflowNodeBindingContextSha256,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
 
 export interface WorkflowRecoveryOperations {
   blockNode(
     context: WorkflowExecutionContext,
-    node: ExecutionPlanWorkflowAgentNode,
+    node: ExecutionPlanWorkflowNode,
     failure: WorkflowNodeFailure,
   ): Promise<ExecutionPlanWorkflowNodeResult>;
   completePlanStep(
@@ -60,13 +61,23 @@ export class ExecutionPlanWorkflowRecovery {
       for (const nodeId of orderedNodeIds) {
         if (context.nodeResults.has(nodeId)) continue;
         const node = nodeById.get(nodeId)!;
-        const step = context.plan.steps.find(
+        let step = context.plan.steps.find(
           (candidate) => candidate.id === nodeId,
         )!;
         if (step.status === "skipped") {
           throw new Error("Workflow Plan contains an unsupported skipped node");
         }
-        if (step.status !== "completed" && step.status !== "running") continue;
+        if (
+          step.status !== "completed" &&
+          step.status !== "running" &&
+          !(
+            step.status === "blocked" &&
+            node.type === "tool" &&
+            step.runId !== undefined
+          )
+        ) {
+          continue;
+        }
         if (
           Object.values(node.inputBindings).some(
             (binding) =>
@@ -94,37 +105,64 @@ export class ExecutionPlanWorkflowRecovery {
           run.id,
           inputSha256,
         );
+        let knownToolOutput;
+        if (
+          node.type === "tool" &&
+          run.status !== "running" &&
+          run.status !== "queued" &&
+          (await this.ledger.hasNodeToolCompletionEvent(context, node, run.id))
+        ) {
+          knownToolOutput = await this.ledger.nodeOutput(
+            context,
+            node,
+            run.id,
+            inputSha256,
+          );
+        }
+        if (step.status === "blocked") {
+          if (knownToolOutput === undefined) continue;
+          context.plan = await this.store.recoverCompletedWorkflowToolPlanStep(
+            context.plan.id,
+            node.id,
+            run.id,
+            `Workflow output ${sha256(canonicalJson(knownToolOutput))} passed its runtime schema before Run settlement was interrupted.`,
+          );
+          step = context.plan.steps.find(
+            (candidate) => candidate.id === nodeId,
+          )!;
+        }
         if (step.status === "running") {
           if (run.status === "running" || run.status === "queued") {
             throw new Error("Workflow node Run is still active");
           }
           if (run.status !== "completed") {
-            const blocked = await this.operations.blockNode(context, node, {
-              runId: run.id,
-              inputSha256,
-              errorCode: `run_${run.status}`,
-              diagnosticSha256: sha256(run.error ?? run.status),
-              attempt: await this.ledger.attemptForRun(
-                context.threadId,
-                context.plan.id,
-                node.id,
-                run.id,
-              ),
-            });
-            context.nodeResults.set(node.id, blocked);
-            madeProgress = true;
-            continue;
+            if (knownToolOutput === undefined) {
+              const blocked = await this.operations.blockNode(context, node, {
+                runId: run.id,
+                inputSha256,
+                errorCode: `run_${run.status}`,
+                diagnosticSha256: sha256(run.error ?? run.status),
+                attempt: await this.ledger.attemptForRun(
+                  context.threadId,
+                  context.plan.id,
+                  node.id,
+                  run.id,
+                ),
+              });
+              context.nodeResults.set(node.id, blocked);
+              madeProgress = true;
+              continue;
+            }
           }
         }
-        if (run.status !== "completed") {
+        if (run.status !== "completed" && knownToolOutput === undefined) {
           throw new Error("Completed Workflow step has a non-completed Run");
         }
         let output;
         try {
-          output = parseExecutionPlanWorkflowNodeOutput(
-            await this.ledger.nodeAssistantOutput(context.threadId, run.id),
-            node.outputSchema,
-          );
+          output =
+            knownToolOutput ??
+            (await this.ledger.nodeOutput(context, node, run.id, inputSha256));
         } catch (error) {
           if (step.status !== "running") throw error;
           const blocked = await this.operations.blockNode(context, node, {
@@ -237,12 +275,21 @@ export class ExecutionPlanWorkflowRecovery {
       if (step.status !== "blocked" || context.nodeResults.has(node.id)) {
         continue;
       }
-      const nodeInput = buildExecutionPlanWorkflowNodeInput(
-        node,
-        context.input,
-        context.outputs,
-      );
-      const expectedInputSha256 = sha256(canonicalJson(nodeInput));
+      let expectedInputSha256: string;
+      try {
+        const nodeInput = buildExecutionPlanWorkflowNodeInput(
+          node,
+          context.input,
+          context.outputs,
+        );
+        expectedInputSha256 = sha256(canonicalJson(nodeInput));
+      } catch {
+        expectedInputSha256 = workflowNodeBindingContextSha256(
+          node,
+          context.input,
+          context.outputs,
+        );
+      }
       const failed = [...events]
         .reverse()
         .find(
@@ -269,6 +316,7 @@ export class ExecutionPlanWorkflowRecovery {
           inputSha256 !== expectedInputSha256 ||
           inputSchemaSha256 !== workflowSchemaSha256(node.inputSchema) ||
           outputSchemaSha256 !== workflowSchemaSha256(node.outputSchema) ||
+          !workflowNodeEventMetadataMatches(node, failed.payload) ||
           !safeToken(errorCode) ||
           !hash(diagnosticSha256)
         ) {

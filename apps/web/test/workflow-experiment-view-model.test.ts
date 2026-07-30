@@ -27,6 +27,24 @@ describe("Workflow experiment Workbench view model", () => {
     ).rejects.toThrow("content hash");
   });
 
+  it("accepts Tool nodes and rejects unsafe binding paths", async () => {
+    const manifest = workflowToolManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const unsafe = structuredClone(manifest);
+    unsafe.nodes[0]!.inputBindings = {
+      path: {
+        source: "workflow",
+        path: ["__proto__"],
+      },
+    };
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafe)),
+    ).rejects.toThrow("path segment");
+  });
+
   it("projects bounded comparison data without output bodies", () => {
     const comparison = workflowComparison();
     const view = projectWorkflowExperimentComparison(comparison);
@@ -156,6 +174,60 @@ function workflowManifest() {
   return {
     ...content,
     generatedAt: "2026-07-31T00:00:00.000Z",
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowToolManifest() {
+  const base = workflowManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const outputSchema = {
+    type: "object" as const,
+    properties: {
+      count: { type: "integer" as const, minimum: 0 },
+      truncated: { type: "boolean" as const },
+      pathSha256: { type: "string" as const, minLength: 64, maxLength: 64 },
+      entrySetSha256: {
+        type: "string" as const,
+        minLength: 64,
+        maxLength: 64,
+      },
+    },
+    required: ["count", "truncated", "pathSha256", "entrySetSha256"],
+    additionalProperties: false as const,
+  };
+  const content = {
+    ...baseContent,
+    outputSchema,
+    nodes: [
+      {
+        id: "report",
+        type: "tool" as const,
+        tool: "list_files" as const,
+        effect: "read" as const,
+        inputBindings: {
+          path: {
+            source: "workflow" as const,
+            path: ["request"],
+          },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            path: { type: "string" as const, minLength: 1, maxLength: 200 },
+          },
+          required: ["path"],
+          additionalProperties: false as const,
+        },
+        outputSchema,
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
     contentSha256: sha256(canonicalJson(content)),
   };
 }

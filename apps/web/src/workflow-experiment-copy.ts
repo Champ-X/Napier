@@ -13,6 +13,8 @@ export const workflowExperimentCopy = {
   overrideModel: "Replace checkpoint model",
   overrideHint:
     "Only the selected checkpoint is replaced. Descendants keep their manifest models.",
+  toolModelUnavailable:
+    "Tool checkpoints use the pinned Agent policy and have no replaceable model.",
   preview: "Preview experiment",
   previewing: "Projecting evidence...",
   execute: "Run isolated fork",

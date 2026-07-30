@@ -232,6 +232,61 @@ describe("Napier Workflow CLI", () => {
     );
   }, 20_000);
 
+  it("streams a model-free Tool Workflow through ordered JSONL", async () => {
+    const fixture = await createToolFixture();
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        '{"request":"Inventory without a model."}',
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout),
+      {
+        createRuntime: (options) =>
+          createLocalAgentRuntime({
+            ...options,
+            sandbox: new UnsupportedSandboxAdapter("workflow-tool-cli-test"),
+          }),
+      },
+    );
+
+    expect(code).toBe(0);
+    const frames = parseFrames(stdout.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: expect.objectContaining({
+            count: 1,
+            truncated: false,
+            pathSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+            entrySetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          }),
+        }),
+      }),
+    );
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    expect(events.some((event) => event.type === "model.response")).toBe(false);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "tool.started" || event.type === "tool.completed",
+      ),
+    ).toHaveLength(2);
+    expect(frames.at(-2)?.type).toBe("snapshot");
+  });
+
   it("previews and executes a checkpoint experiment through ordered JSONL", async () => {
     const fixture = await createFixture();
     const provider = fauxProvider({ provider: "faux-workflow-cli" });
@@ -601,6 +656,80 @@ async function createFixture(): Promise<{
   return { root, workspaceRoot, dataRoot };
 }
 
+async function createToolFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-tool-workflow-cli-"));
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-tool-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Inventory the CLI workspace.",
+    steps: [
+      {
+        id: "inventory",
+        title: "Inventory",
+        description: "List the workspace root.",
+        verification: "Return a typed list-files receipt.",
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const outputSchema = listFilesReceiptSchema();
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI Tool inventory",
+    version: 1,
+    description: "Execute a model-free Tool node through CLI JSONL.",
+    blueprint,
+    inputSchema: requestSchema(),
+    outputSchema,
+    outputNodeId: "inventory",
+    nodes: [
+      {
+        id: "inventory",
+        type: "tool",
+        tool: "list_files",
+        effect: "read",
+        inputBindings: {
+          path: { source: "literal", value: "." },
+          depth: { source: "literal", value: 1 },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            path: { type: "string", minLength: 1, maxLength: 20 },
+            depth: { type: "integer", minimum: 0, maximum: 4 },
+          },
+          required: ["path", "depth"],
+          additionalProperties: false,
+        },
+        outputSchema,
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
 function providerDependencies(
   provider: ReturnType<typeof fauxProvider>,
 ): RunCliDependencies {
@@ -647,6 +776,20 @@ function reportSchema(): WorkflowObjectSchema {
       approved: { type: "boolean" },
     },
     required: ["report", "approved"],
+    additionalProperties: false,
+  };
+}
+
+function listFilesReceiptSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      count: { type: "integer", minimum: 0 },
+      truncated: { type: "boolean" },
+      pathSha256: { type: "string", minLength: 64, maxLength: 64 },
+      entrySetSha256: { type: "string", minLength: 64, maxLength: 64 },
+    },
+    required: ["count", "truncated", "pathSha256", "entrySetSha256"],
     additionalProperties: false,
   };
 }

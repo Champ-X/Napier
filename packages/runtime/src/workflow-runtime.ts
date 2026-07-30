@@ -1,6 +1,6 @@
 import type {
   ExecuteExecutionPlanWorkflowRequest,
-  ExecutionPlanWorkflowAgentNode,
+  ExecutionPlanWorkflowNode,
   ExecutionPlanWorkflowNodeResult,
   ExecutionPlanWorkflowResult,
   JsonValue,
@@ -41,6 +41,7 @@ import {
   buildExecutionPlanWorkflowNodeInput,
   parseExecutionPlanWorkflowNodeOutput,
   validateExecutionPlanWorkflowManifest,
+  workflowNodeBindingContextSha256,
   workflowSchemaSha256,
 } from "./workflow-manifests.js";
 import {
@@ -51,6 +52,7 @@ import {
 } from "./workflow-runtime-model.js";
 import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
+import { ExecutionPlanWorkflowToolNodeExecutor } from "./workflow-tool-node.js";
 
 export interface RunExecutionPlanWorkflowOptions {
   threadId: string;
@@ -70,12 +72,24 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly ledger: ExecutionPlanWorkflowLedger;
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
+  private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
   constructor(
     private readonly store: LocalStore,
     private readonly agentRuntime: AgentRuntime,
   ) {
     this.ledger = new ExecutionPlanWorkflowLedger(store);
+    this.toolNodeExecutor = new ExecutionPlanWorkflowToolNodeExecutor(
+      store,
+      agentRuntime,
+      this.ledger,
+      {
+        blockNode: (context, node, failure) =>
+          this.blockNode(context, node, failure),
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      },
+    );
     this.recovery = new ExecutionPlanWorkflowRecovery(store, this.ledger, {
       blockNode: (context, node, failure) =>
         this.blockNode(context, node, failure),
@@ -319,19 +333,37 @@ export class ExecutionPlanWorkflowRuntime {
 
   private async executeNode(
     context: WorkflowExecutionContext,
-    node: ExecutionPlanWorkflowAgentNode,
+    node: ExecutionPlanWorkflowNode,
   ): Promise<NodeExecutionOutcome> {
-    const input = buildExecutionPlanWorkflowNodeInput(
-      node,
-      context.input,
-      context.outputs,
-    );
-    const inputSha256 = sha256(canonicalJson(input));
     const attempt = await this.ledger.nextAttempt(
       context.threadId,
       context.plan.id,
       node.id,
     );
+    let input: JsonValue;
+    try {
+      input = buildExecutionPlanWorkflowNodeInput(
+        node,
+        context.input,
+        context.outputs,
+      );
+    } catch (error) {
+      return {
+        result: await this.blockNode(context, node, {
+          inputSha256: workflowNodeBindingContextSha256(
+            node,
+            context.input,
+            context.outputs,
+          ),
+          attempt: Math.min(attempt, node.maxAttempts),
+          errorCode:
+            attempt > node.maxAttempts ? "attempt_limit" : "input_invalid",
+          diagnosticSha256: sha256(errorMessage(error)),
+        }),
+        cancelled: false,
+      };
+    }
+    const inputSha256 = sha256(canonicalJson(input));
     if (attempt > node.maxAttempts) {
       return {
         result: await this.blockNode(context, node, {
@@ -342,6 +374,15 @@ export class ExecutionPlanWorkflowRuntime {
         }),
         cancelled: false,
       };
+    }
+    if (node.type === "tool") {
+      return this.toolNodeExecutor.execute(
+        context,
+        node,
+        input,
+        inputSha256,
+        attempt,
+      );
     }
 
     const controller = new AbortController();
@@ -390,6 +431,7 @@ export class ExecutionPlanWorkflowRuntime {
                 schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
                 planId: started.id,
                 nodeId: node.id,
+                nodeType: node.type,
                 attempt,
                 manifestSha256: context.manifest.contentSha256,
                 inputSha256,
@@ -497,6 +539,7 @@ export class ExecutionPlanWorkflowRuntime {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: context.plan.id,
           nodeId: node.id,
+          nodeType: node.type,
           attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256,
@@ -549,7 +592,7 @@ export class ExecutionPlanWorkflowRuntime {
 
   private async blockNode(
     context: WorkflowExecutionContext,
-    node: ExecutionPlanWorkflowAgentNode,
+    node: ExecutionPlanWorkflowNode,
     input: WorkflowNodeFailure,
   ): Promise<ExecutionPlanWorkflowNodeResult> {
     const current = this.store.getPlan(context.plan.id);
@@ -581,6 +624,10 @@ export class ExecutionPlanWorkflowRuntime {
           schemaVersion: WORKFLOW_EVENT_SCHEMA_VERSION,
           planId: plan.id,
           nodeId: node.id,
+          nodeType: node.type,
+          ...(node.type === "tool"
+            ? { toolName: node.tool, effect: node.effect }
+            : {}),
           attempt: input.attempt,
           manifestSha256: context.manifest.contentSha256,
           inputSha256: input.inputSha256,
@@ -665,6 +712,7 @@ export class ExecutionPlanWorkflowRuntime {
         manifestSha256: context.manifest.contentSha256,
         blueprintSha256: context.manifest.blueprint.contentSha256,
         status,
+        planRevision: context.plan.revision,
         nodeResultCount: nodeResults.length,
         completedNodeCount,
         ...(result.outputSha256 ? { outputSha256: result.outputSha256 } : {}),
@@ -683,6 +731,7 @@ export class ExecutionPlanWorkflowRuntime {
             manifestSha256: context.manifest.contentSha256,
             blueprintSha256: context.manifest.blueprint.contentSha256,
             status,
+            planRevision: context.plan.revision,
             nodeResultCount: nodeResults.length,
             completedNodeCount,
             ...(result.outputSha256

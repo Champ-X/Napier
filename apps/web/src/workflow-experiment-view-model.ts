@@ -1,15 +1,25 @@
-import type {
-  ExecutionPlanWorkflowExperimentComparison,
-  ExecutionPlanWorkflowExperimentNodeComparison,
-  ExecutionPlanWorkflowExperimentResultFrame,
-  ExecutionPlanWorkflowManifest,
-  ModelRef,
+import {
+  EXECUTION_PLAN_WORKFLOW_TOOL_NAMES,
+  type ExecutionPlanWorkflowInputBinding,
+  type ExecutionPlanWorkflowExperimentComparison,
+  type ExecutionPlanWorkflowExperimentNodeComparison,
+  type ExecutionPlanWorkflowExperimentResultFrame,
+  type ExecutionPlanWorkflowManifest,
+  type JsonValue,
+  type ModelRef,
 } from "@napier/contracts";
 
 import { canonicalJson, sha256Text } from "./stable-digest";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const NODE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
+const BINDING_NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/u;
+const WORKFLOW_TOOL_NAMES = new Set<string>(EXECUTION_PLAN_WORKFLOW_TOOL_NAMES);
+const FORBIDDEN_PATH_SEGMENTS = new Set([
+  "__proto__",
+  "constructor",
+  "prototype",
+]);
 
 export interface WorkflowExperimentNodeView {
   nodeId: string;
@@ -99,7 +109,7 @@ export async function validateWorkflowManifest(
       typeof nodeInput["id"] !== "string" ||
       !NODE_ID.test(nodeInput["id"]) ||
       nodeIds.has(nodeInput["id"]) ||
-      nodeInput["type"] !== "agent" ||
+      (nodeInput["type"] !== "agent" && nodeInput["type"] !== "tool") ||
       !record(nodeInput["inputBindings"]) ||
       !record(nodeInput["inputSchema"]) ||
       !record(nodeInput["outputSchema"]) ||
@@ -107,6 +117,20 @@ export async function validateWorkflowManifest(
       !Number.isSafeInteger(nodeInput["maxAttempts"])
     ) {
       throw new Error("Workflow manifest node is invalid");
+    }
+    if (
+      nodeInput["type"] === "tool" &&
+      (typeof nodeInput["tool"] !== "string" ||
+        !WORKFLOW_TOOL_NAMES.has(nodeInput["tool"]) ||
+        (nodeInput["effect"] !== "read" && nodeInput["effect"] !== "write"))
+    ) {
+      throw new Error("Workflow manifest Tool node is invalid");
+    }
+    for (const [name, binding] of Object.entries(nodeInput["inputBindings"])) {
+      if (!BINDING_NAME.test(name)) {
+        throw new Error("Workflow manifest binding name is invalid");
+      }
+      validateWorkflowBinding(binding);
     }
     nodeIds.add(nodeInput["id"]);
   }
@@ -131,6 +155,100 @@ export async function validateWorkflowManifest(
     throw new Error("Workflow manifest content hash is invalid");
   }
   return structuredClone(input) as unknown as ExecutionPlanWorkflowManifest;
+}
+
+function validateWorkflowBinding(
+  input: unknown,
+): ExecutionPlanWorkflowInputBinding {
+  if (!record(input)) {
+    throw new Error("Workflow manifest binding is invalid");
+  }
+  if (input["source"] === "literal") {
+    if (
+      !exactKeys(input, ["source", "value"]) ||
+      !jsonValue(input["value"], 0)
+    ) {
+      throw new Error("Workflow manifest literal binding is invalid");
+    }
+    return { source: "literal", value: input["value"] as JsonValue };
+  }
+  const path = validateWorkflowBindingPath(input["path"]);
+  if (input["source"] === "workflow") {
+    if (!exactKeys(input, ["source"], ["path"])) {
+      throw new Error("Workflow manifest Workflow binding is invalid");
+    }
+    return { source: "workflow", ...(path ? { path } : {}) };
+  }
+  if (
+    input["source"] !== "node" ||
+    !exactKeys(input, ["source", "nodeId"], ["path"]) ||
+    typeof input["nodeId"] !== "string" ||
+    !NODE_ID.test(input["nodeId"])
+  ) {
+    throw new Error("Workflow manifest binding source is invalid");
+  }
+  return {
+    source: "node",
+    nodeId: input["nodeId"],
+    ...(path ? { path } : {}),
+  };
+}
+
+function validateWorkflowBindingPath(
+  input: unknown,
+): Array<string | number> | undefined {
+  if (input === undefined) return undefined;
+  if (!Array.isArray(input) || input.length < 1 || input.length > 8) {
+    throw new Error("Workflow manifest binding path is invalid");
+  }
+  return input.map((segment) => {
+    if (
+      typeof segment === "number" &&
+      Number.isSafeInteger(segment) &&
+      segment >= 0
+    ) {
+      return segment;
+    }
+    if (
+      typeof segment === "string" &&
+      BINDING_NAME.test(segment) &&
+      !FORBIDDEN_PATH_SEGMENTS.has(segment)
+    ) {
+      return segment;
+    }
+    throw new Error("Workflow manifest binding path segment is invalid");
+  });
+}
+
+function exactKeys(
+  input: Record<string, unknown>,
+  required: string[],
+  optional: string[] = [],
+): boolean {
+  const allowed = new Set([...required, ...optional]);
+  return (
+    required.every((key) => Object.hasOwn(input, key)) &&
+    Object.keys(input).every((key) => allowed.has(key))
+  );
+}
+
+function jsonValue(input: unknown, depth: number): input is JsonValue {
+  if (depth > 16) return false;
+  if (
+    input === null ||
+    typeof input === "string" ||
+    typeof input === "boolean"
+  ) {
+    return true;
+  }
+  if (typeof input === "number") return Number.isFinite(input);
+  if (Array.isArray(input)) {
+    return (
+      input.length <= 256 && input.every((item) => jsonValue(item, depth + 1))
+    );
+  }
+  if (!record(input) || Object.keys(input).length > 64) return false;
+  return Object.values(input).every((value) => jsonValue(value, depth + 1));
 }
 
 export function parseWorkflowModelKey(key: string): ModelRef {

@@ -8,6 +8,7 @@ import {
   createPlanArtifactEventPayload,
   createExecutionPlan,
   interruptPlanRun,
+  recoverCompletedPlanStep,
   replanExecutionPlan,
   transitionPlanStep,
   updateArtifactManifest,
@@ -105,6 +106,51 @@ describe("execution plans", () => {
       blocker: "Late callback",
     });
     expect(lateFailure).toEqual(inspected);
+  });
+
+  it("recovers completion only for the same blocked Plan Run", () => {
+    const running = transitionPlanStep(createDeliveryPlan(), "inspect", {
+      action: "start",
+      runId: "run-original",
+    });
+    const blocked = transitionPlanStep(running, "inspect", {
+      action: "block",
+      blocker: "Run settlement was interrupted.",
+      evidence: "A terminal tool receipt may still prove completion.",
+    });
+
+    expect(() =>
+      recoverCompletedPlanStep(
+        blocked,
+        "inspect",
+        "run-other",
+        "Mismatched evidence.",
+      ),
+    ).toThrow("same blocked Plan Run");
+    expect(() =>
+      recoverCompletedPlanStep(
+        running,
+        "inspect",
+        "run-original",
+        "Premature evidence.",
+      ),
+    ).toThrow("same blocked Plan Run");
+
+    const recovered = recoverCompletedPlanStep(
+      blocked,
+      "inspect",
+      "run-original",
+      "The bound terminal tool event passed its output schema.",
+    );
+    expect(recovered.steps[0]).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        runId: "run-original",
+        evidence: "The bound terminal tool event passed its output schema.",
+      }),
+    );
+    expect(recovered.steps[1]?.status).toBe("ready");
+    expect(recovered.revision).toBe(blocked.revision + 1);
   });
 
   it("rejects missing dependencies, self-dependencies, and cycles", () => {

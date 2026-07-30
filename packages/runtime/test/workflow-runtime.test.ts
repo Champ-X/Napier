@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -230,6 +230,582 @@ describe("Execution Plan Workflow runtime", () => {
     fixture.store.close();
   }, 20_000);
 
+  it("executes a policy-checked Tool node before one Agent node and resumes without rerun", async () => {
+    const fixture = await createFixture();
+    const definition = workflowDefinition(fixture.manifest.blueprint);
+    const manifest = defineExecutionPlanWorkflow({
+      ...definition,
+      nodes: [
+        {
+          id: "inspect",
+          type: "tool",
+          tool: "list_files",
+          effect: "read",
+          inputBindings: {
+            path: { source: "literal", value: "." },
+            depth: { source: "literal", value: 1 },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: { type: "string", minLength: 1, maxLength: 20 },
+              depth: { type: "integer", minimum: 0, maximum: 4 },
+            },
+            required: ["path", "depth"],
+            additionalProperties: false,
+          },
+          outputSchema: listFilesReceiptSchema(),
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+        {
+          ...definition.nodes[1]!,
+          inputBindings: {
+            inventory: { source: "node", nodeId: "inspect" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              inventory: listFilesReceiptSchema(),
+            },
+            required: ["inventory"],
+            additionalProperties: false,
+          },
+        },
+      ],
+    });
+    fixture.provider.setResponses([
+      (context) => {
+        const prompt = JSON.stringify(context.messages);
+        expect(prompt).toContain('\\"count\\":1');
+        return fauxAssistantMessage(
+          '{"report":"Inventory verified","approved":true}',
+        );
+      },
+    ]);
+
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Inventory the workspace." },
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { report: "Inventory verified", approved: true },
+      }),
+    );
+    expect(result.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        status: "completed",
+        output: expect.objectContaining({
+          count: 1,
+          truncated: false,
+          pathSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+          entrySetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      }),
+    );
+    const runs = fixture.store.listRuns(fixture.targetThreadId);
+    expect(runs).toHaveLength(2);
+    expect(runs.map((run) => run.source)).toEqual(["workflow", "workflow"]);
+    const events = await fixture.store.listEvents(fixture.targetThreadId);
+    const toolStarted = events.find(
+      (event) =>
+        event.type === "tool.started" &&
+        record(event.payload)?.["workflowNodeId"] === "inspect",
+    );
+    const toolCompleted = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        record(event.payload)?.["workflowNodeId"] === "inspect",
+    );
+    expect(toolStarted?.payload).toEqual(
+      expect.objectContaining({
+        toolName: "list_files",
+        effect: "read",
+        inputRedacted: true,
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(toolCompleted?.payload).toEqual(
+      expect.objectContaining({
+        workflowOutputSha256: result.nodeResults[0]?.outputSha256,
+        toolOutputRedacted: true,
+        toolOutputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(JSON.stringify(toolCompleted)).not.toContain("evidence.txt");
+    expect(events.some((event) => event.type === "model.response")).toBe(true);
+    expect(
+      events.filter(
+        (event) =>
+          event.type === "model.response" &&
+          event.runId === result.nodeResults[0]?.runId,
+      ),
+    ).toHaveLength(0);
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(fixture.store, fixture.targetThreadId),
+      ).status,
+    ).toBe("valid");
+
+    const resumed = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: result.planId },
+    });
+    expect(resumed.output).toEqual(result.output);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    fixture.store.close();
+  }, 20_000);
+
+  it("recovers a completed Tool Run after Plan completion fails", async () => {
+    const fixture = await createFixture();
+    const manifest = listToolWorkflowManifest(
+      fixture.manifest.blueprint,
+      5_000,
+    );
+    fixture.provider.setResponses([
+      fauxAssistantMessage('{"report":"Commit gap recovered","approved":true}'),
+    ]);
+    const transitionPlanStep = fixture.store.transitionPlanStep.bind(
+      fixture.store,
+    );
+    let failCompletion = true;
+    fixture.store.transitionPlanStep = async (planId, stepId, request) => {
+      if (request.action === "complete" && failCompletion) {
+        failCompletion = false;
+        throw new Error("Injected Plan completion failure");
+      }
+      return transitionPlanStep(planId, stepId, request);
+    };
+
+    const blocked = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Recover one commit gap." },
+      },
+    });
+    expect(blocked).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "blocked",
+            runId: expect.stringMatching(/^run_[a-z0-9]{20}$/u),
+            errorCode: "tool_failed",
+          }),
+        ],
+      }),
+    );
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toEqual([
+      expect.objectContaining({ status: "completed", source: "workflow" }),
+    ]);
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).filter(
+        (event) => event.type === "workflow.completed",
+      ),
+    ).toEqual([]);
+
+    fixture.store.transitionPlanStep = transitionPlanStep;
+    const recovered = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        planId: blocked.planId,
+      },
+    });
+    expect(recovered).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Commit gap recovered",
+          approved: true,
+        },
+      }),
+    );
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).filter(
+        (event) =>
+          event.type === "tool.started" &&
+          record(event.payload)?.["toolName"] === "list_files",
+      ),
+    ).toHaveLength(1);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    fixture.store.close();
+  });
+
+  it("blocks a Tool node before execution when its declared effect drifts", async () => {
+    const fixture = await createFixture();
+    const definition = workflowDefinition(fixture.manifest.blueprint);
+    const manifest = defineExecutionPlanWorkflow({
+      ...definition,
+      nodes: [
+        {
+          id: "inspect",
+          type: "tool",
+          tool: "list_files",
+          effect: "write",
+          inputBindings: {
+            path: { source: "literal", value: "." },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: { type: "string", minLength: 1, maxLength: 20 },
+            },
+            required: ["path"],
+            additionalProperties: false,
+          },
+          outputSchema: listFilesReceiptSchema(),
+          timeoutMs: 5_000,
+          maxAttempts: 1,
+        },
+        definition.nodes[1]!,
+      ],
+    });
+
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Reject effect drift." },
+      },
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            errorCode: "effect_mismatch",
+          }),
+        ],
+      }),
+    );
+    const events = await fixture.store.listEvents(fixture.targetThreadId);
+    expect(
+      events.some(
+        (event) =>
+          event.type === "tool.blocked" &&
+          record(event.payload)?.["errorCode"] === "effect_mismatch",
+      ),
+    ).toBe(true);
+    expect(events.some((event) => event.type === "tool.started")).toBe(false);
+    fixture.store.close();
+  });
+
+  it("cancels and times out Tool preflight before tool.started", async () => {
+    const cancelledFixture = await createFixture();
+    const cancelledManifest = listToolWorkflowManifest(
+      cancelledFixture.manifest.blueprint,
+      5_000,
+    );
+    const controller = new AbortController();
+    const cancelled = await cancelledFixture.workflows.run({
+      threadId: cancelledFixture.targetThreadId,
+      request: {
+        manifest: cancelledManifest,
+        input: { request: "Cancel Tool preflight." },
+      },
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (event.type === "workflow.node.started") controller.abort();
+      },
+    });
+    expect(cancelled).toEqual(
+      expect.objectContaining({
+        status: "cancelled",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            errorCode: "cancelled",
+          }),
+        ],
+      }),
+    );
+    expect(
+      (
+        await cancelledFixture.store.listEvents(cancelledFixture.targetThreadId)
+      ).some((event) => event.type === "tool.started"),
+    ).toBe(false);
+    cancelledFixture.store.close();
+
+    const timeoutFixture = await createFixture();
+    const timeoutManifest = listToolWorkflowManifest(
+      timeoutFixture.manifest.blueprint,
+      1_000,
+    );
+    const timedOut = await timeoutFixture.workflows.run({
+      threadId: timeoutFixture.targetThreadId,
+      request: {
+        manifest: timeoutManifest,
+        input: { request: "Time out Tool preflight." },
+      },
+      onEvent: async (event) => {
+        if (event.type === "workflow.node.started") {
+          await new Promise((resolve) => setTimeout(resolve, 1_100));
+        }
+      },
+    });
+    expect(timedOut).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            errorCode: "timeout",
+          }),
+        ],
+      }),
+    );
+    expect(
+      (
+        await timeoutFixture.store.listEvents(timeoutFixture.targetThreadId)
+      ).some((event) => event.type === "tool.started"),
+    ).toBe(false);
+    timeoutFixture.store.close();
+  }, 20_000);
+
+  it("denies a write Tool node under the pinned observe policy", async () => {
+    const fixture = await createFixture();
+    const definition = workflowDefinition(fixture.manifest.blueprint);
+    const manifest = defineExecutionPlanWorkflow({
+      ...definition,
+      nodes: [
+        {
+          id: "inspect",
+          type: "tool",
+          tool: "apply_patch",
+          effect: "write",
+          inputBindings: {
+            operation: { source: "literal", value: "create" },
+            path: { source: "literal", value: "should-not-exist.txt" },
+            expectedSha256: { source: "literal", value: null },
+            content: { source: "literal", value: "must not be written" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              operation: { type: "string", enum: ["create"] },
+              path: { type: "string", minLength: 1, maxLength: 200 },
+              expectedSha256: { type: "null" },
+              content: { type: "string", minLength: 1, maxLength: 200 },
+            },
+            required: ["operation", "path", "expectedSha256", "content"],
+            additionalProperties: false,
+          },
+          outputSchema: listFilesReceiptSchema(),
+          timeoutMs: 5_000,
+          maxAttempts: 1,
+        },
+        definition.nodes[1]!,
+      ],
+    });
+
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Attempt a denied write." },
+      },
+    });
+
+    expect(result.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        errorCode: "policy_denied",
+      }),
+    ]);
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, "should-not-exist.txt")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).some(
+        (event) => event.type === "tool.started",
+      ),
+    ).toBe(false);
+    fixture.store.close();
+  });
+
+  it("executes a fresh CAS-bound write Tool under workspace policy", async () => {
+    const fixture = await createFixture();
+    const thread = fixture.store.getThread(fixture.targetThreadId);
+    await fixture.store.updateAgent(thread.agentId, {
+      toolPolicy: "workspace",
+    });
+    const definition = workflowDefinition(fixture.manifest.blueprint);
+    const manifest = defineExecutionPlanWorkflow({
+      ...definition,
+      nodes: [
+        {
+          id: "inspect",
+          type: "tool",
+          tool: "apply_patch",
+          effect: "write",
+          inputBindings: {
+            operation: { source: "literal", value: "create" },
+            path: { source: "literal", value: "tool-created.txt" },
+            expectedSha256: { source: "literal", value: null },
+            content: { source: "literal", value: "created by Tool node\n" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              operation: { type: "string", enum: ["create"] },
+              path: { type: "string", minLength: 1, maxLength: 200 },
+              expectedSha256: { type: "null" },
+              content: { type: "string", minLength: 1, maxLength: 200 },
+            },
+            required: ["operation", "path", "expectedSha256", "content"],
+            additionalProperties: false,
+          },
+          outputSchema: workspacePatchReceiptSchema(),
+          timeoutMs: 5_000,
+          maxAttempts: 1,
+        },
+        {
+          ...definition.nodes[1]!,
+          inputBindings: {
+            patch: { source: "node", nodeId: "inspect" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              patch: workspacePatchReceiptSchema(),
+            },
+            required: ["patch"],
+            additionalProperties: false,
+          },
+        },
+      ],
+    });
+    fixture.provider.setResponses([
+      (context) => {
+        expect(JSON.stringify(context.messages)).toContain(
+          '\\"operation\\":\\"create\\"',
+        );
+        return fauxAssistantMessage(
+          '{"report":"Write verified","approved":true}',
+        );
+      },
+    ]);
+
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Create one file." },
+      },
+    });
+
+    expect(result.status).toBe("completed");
+    expect(result.nodeResults[0]?.output).toEqual(
+      expect.objectContaining({
+        kind: "napier.workspace-patch",
+        operation: "create",
+        beforeSha256: null,
+        afterSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    await expect(
+      readFile(path.join(fixture.workspaceRoot, "tool-created.txt"), "utf8"),
+    ).resolves.toBe("created by Tool node\n");
+    const started = (
+      await fixture.store.listEvents(fixture.targetThreadId)
+    ).find((event) => event.type === "tool.started");
+    expect(started?.payload).toEqual(
+      expect.objectContaining({
+        toolName: "apply_patch",
+        effect: "write",
+        inputRedacted: true,
+      }),
+    );
+    fixture.store.close();
+  });
+
+  it("records missing field-path input as a bounded blocked attempt", async () => {
+    const fixture = await createFixture();
+    const definition = workflowDefinition(fixture.manifest.blueprint);
+    const manifest = defineExecutionPlanWorkflow({
+      ...definition,
+      inputSchema: {
+        type: "object",
+        properties: {
+          optionalPath: { type: "string", minLength: 1, maxLength: 100 },
+        },
+        required: [],
+        additionalProperties: false,
+      },
+      nodes: [
+        {
+          id: "inspect",
+          type: "tool",
+          tool: "list_files",
+          effect: "read",
+          inputBindings: {
+            path: {
+              source: "workflow",
+              path: ["optionalPath"],
+            },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              path: { type: "string", minLength: 1, maxLength: 100 },
+            },
+            required: ["path"],
+            additionalProperties: false,
+          },
+          outputSchema: listFilesReceiptSchema(),
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+        definition.nodes[1]!,
+      ],
+    });
+
+    const first = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, input: {} },
+    });
+    expect(first.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        attempt: 1,
+        errorCode: "input_invalid",
+        inputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    ]);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(0);
+
+    const observed = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: first.planId },
+    });
+    expect(observed.nodeResults).toEqual(first.nodeResults);
+    const retried = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: first.planId, retryBlocked: true },
+    });
+    expect(retried.nodeResults).toEqual([
+      expect.objectContaining({
+        attempt: 2,
+        errorCode: "input_invalid",
+      }),
+    ]);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(0);
+    fixture.store.close();
+  });
+
   it("isolates each node from Thread message history and unbound node outputs", async () => {
     const fixture = await createFixture();
     const definition = workflowDefinition(fixture.manifest.blueprint);
@@ -389,6 +965,44 @@ describe("Execution Plan Workflow runtime", () => {
     ).toHaveLength(2);
     fixture.store.close();
   }, 20_000);
+
+  it("records repeated blocked outcomes at distinct Plan revisions", async () => {
+    const fixture = await createFixture();
+    fixture.provider.setResponses([
+      fauxAssistantMessage('{"summary":"Ready","count":1}'),
+      fauxAssistantMessage("not json"),
+    ]);
+    const first = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest: fixture.manifest,
+        input: { request: "Fail the report twice." },
+      },
+    });
+    expect(first.status).toBe("blocked");
+
+    fixture.provider.setResponses([fauxAssistantMessage("still not json")]);
+    const second = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: first.planId,
+        retryBlocked: true,
+      },
+    });
+    expect(second.status).toBe("blocked");
+    const blockedEvents = (
+      await fixture.store.listEvents(fixture.targetThreadId)
+    ).filter((event) => event.type === "workflow.blocked");
+    expect(blockedEvents).toHaveLength(2);
+    expect(
+      blockedEvents.map((event) => record(event.payload)?.["planRevision"]),
+    ).toEqual([expect.any(Number), expect.any(Number)]);
+    expect(record(blockedEvents[1]?.payload)?.["planRevision"]).toBeGreaterThan(
+      Number(record(blockedEvents[0]?.payload)?.["planRevision"]),
+    );
+    fixture.store.close();
+  });
 
   it("fails pre-abort without mutation and records cancellation during a real model stream", async () => {
     const fixture = await createFixture({ tokensPerSecond: 1 });
@@ -603,11 +1217,13 @@ async function createFixture(
   workflows: ExecutionPlanWorkflowRuntime;
   targetThreadId: string;
   manifest: ExecutionPlanWorkflowManifest;
+  workspaceRoot: string;
 }> {
   const root = await mkdtemp(path.join(tmpdir(), "napier-workflow-runtime-"));
   temporaryRoots.push(root);
   const workspaceRoot = path.join(root, "workspace");
   await mkdir(workspaceRoot, { recursive: true });
+  await writeFile(path.join(workspaceRoot, "evidence.txt"), "evidence\n");
   const store = new LocalStore({
     workspaceRoot,
     dataRoot: path.join(root, "data"),
@@ -657,6 +1273,7 @@ async function createFixture(
     workflows: new ExecutionPlanWorkflowRuntime(store, agentRuntime),
     targetThreadId: targetThread.id,
     manifest: defineExecutionPlanWorkflow(workflowDefinition(blueprint)),
+    workspaceRoot,
   };
 }
 
@@ -743,6 +1360,97 @@ function reportSchema(): WorkflowObjectSchema {
       approved: { type: "boolean" },
     },
     required: ["report", "approved"],
+    additionalProperties: false,
+  };
+}
+
+function listToolWorkflowManifest(
+  blueprint: ExecutionPlanBlueprint,
+  timeoutMs: number,
+): ExecutionPlanWorkflowManifest {
+  const definition = workflowDefinition(blueprint);
+  return defineExecutionPlanWorkflow({
+    ...definition,
+    nodes: [
+      {
+        id: "inspect",
+        type: "tool",
+        tool: "list_files",
+        effect: "read",
+        inputBindings: {
+          path: { source: "literal", value: "." },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            path: { type: "string", minLength: 1, maxLength: 20 },
+          },
+          required: ["path"],
+          additionalProperties: false,
+        },
+        outputSchema: listFilesReceiptSchema(),
+        timeoutMs,
+        maxAttempts: 1,
+      },
+      {
+        ...definition.nodes[1]!,
+        inputBindings: {
+          inventory: { source: "node", nodeId: "inspect" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: {
+            inventory: listFilesReceiptSchema(),
+          },
+          required: ["inventory"],
+          additionalProperties: false,
+        },
+      },
+    ],
+  });
+}
+
+function listFilesReceiptSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      count: { type: "integer", minimum: 0 },
+      truncated: { type: "boolean" },
+      pathSha256: { type: "string", minLength: 64, maxLength: 64 },
+      entrySetSha256: { type: "string", minLength: 64, maxLength: 64 },
+    },
+    required: ["count", "truncated", "pathSha256", "entrySetSha256"],
+    additionalProperties: false,
+  };
+}
+
+function workspacePatchReceiptSchema(): WorkflowObjectSchema {
+  return {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["napier.workspace-patch"] },
+      schemaVersion: { type: "integer", minimum: 1, maximum: 1 },
+      pathSha256: { type: "string", minLength: 64, maxLength: 64 },
+      operation: { type: "string", enum: ["create"] },
+      beforeSha256: { type: "null" },
+      afterSha256: { type: "string", minLength: 64, maxLength: 64 },
+      beforeBytes: { type: "integer", minimum: 0 },
+      afterBytes: { type: "integer", minimum: 0 },
+      editCount: { type: "integer", minimum: 0 },
+      resultSha256: { type: "string", minLength: 64, maxLength: 64 },
+    },
+    required: [
+      "kind",
+      "schemaVersion",
+      "pathSha256",
+      "operation",
+      "beforeSha256",
+      "afterSha256",
+      "beforeBytes",
+      "afterBytes",
+      "editCount",
+      "resultSha256",
+    ],
     additionalProperties: false,
   };
 }

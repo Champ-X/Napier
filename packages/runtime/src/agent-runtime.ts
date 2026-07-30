@@ -51,18 +51,14 @@ import {
   createDelegationLedgerProjection,
   formatDelegationLedgerProjection,
 } from "./delegation-ledger.js";
-import { createCommandTool } from "./command-execution.js";
 import {
   agentToolCallArgumentsLedgerProjection as toolCallArgumentsLedgerProjection,
   agentToolInputLedgerProjection as toolInputLedgerProjection,
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
+import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
-import {
-  createWorkspaceFileApplyTool,
-  createWorkspaceFilePreviewTool,
-} from "./workspace-file-tools.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import { formatWorkspaceToolGuidance } from "./workspace-tool-guidance.js";
@@ -90,18 +86,10 @@ import {
   memoryReplacementTargetIds,
   parseMemoryProposalResponse,
 } from "./memory.js";
-import { createLspCodeActionsTool } from "./lsp-code-actions-tool.js";
-import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
-import { createLspDefinitionTool } from "./lsp-definition-tool.js";
-import { LspWorkspacePatchObserver } from "./lsp-patch-diagnostics.js";
-import { createLspReferencesTool } from "./lsp-references-tool.js";
-import { createLspRenameTool } from "./lsp-rename-tool.js";
-import { createLspSymbolsTool } from "./lsp-symbols-tool.js";
 import {
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
 } from "./model-context-envelope.js";
-import { createTypescriptAstTools } from "./typescript-ast-tool.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
   CombinedModelAdvisorBlockedError,
@@ -139,6 +127,7 @@ import {
   loadWorkspaceSkills,
   type LoadedSkillCatalog,
 } from "./skills.js";
+import { createStatelessAgentTools } from "./stateless-agent-tools.js";
 import { LocalStore } from "./store.js";
 import { SubagentCoordinator } from "./subagents.js";
 import { createUsageAccounting } from "./token-accounting.js";
@@ -154,8 +143,6 @@ import {
   TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   toolLoopGuardBlockReason,
 } from "./tool-loop-guard.js";
-import { createWorkspaceTools } from "./tools.js";
-import { createVerificationTool } from "./verification.js";
 
 export type EventSink = (event: RunEvent) => Promise<void> | void;
 
@@ -1184,161 +1171,19 @@ export class AgentRuntime {
       },
       onEvent,
     );
-    const patchObserver =
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("apply_patch") &&
-      profile.enabledTools.includes("lsp_diagnostics")
-        ? new LspWorkspacePatchObserver({
-            workspaceRoot: this.store.workspaceRoot,
-            sandbox: this.verificationSandbox,
-          })
-        : undefined;
-    const tools = advisorCorrection
-      ? []
-      : createWorkspaceTools(this.store.workspaceRoot, {
-          includeWriteTools: profile.toolPolicy !== "observe",
-          dataRoot: this.store.dataRoot,
-          ...(patchObserver ? { patchObserver } : {}),
-        }).filter((tool) => profile.enabledTools.includes(tool.name));
-    if (!advisorCorrection) {
-      tools.push(
-        ...createTypescriptAstTools(this.store.workspaceRoot).filter((tool) =>
-          profile.enabledTools.includes(tool.name),
-        ),
-      );
-    }
-    if (
-      !advisorCorrection &&
-      profile.enabledTools.includes("workspace_file_preview") &&
-      this.workspaceFileMutations
-    ) {
-      tools.push(
-        createWorkspaceFilePreviewTool(this.workspaceFileMutations, {
-          threadId: run.threadId,
-          runId: run.id,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("workspace_file_apply") &&
-      this.workspaceFileMutations
-    ) {
-      tools.push(
-        createWorkspaceFileApplyTool(this.workspaceFileMutations, {
-          threadId: run.threadId,
-          runId: run.id,
-        }),
-      );
-    }
+    const tools = createStatelessAgentTools({
+      store: this.store,
+      profile,
+      threadId: run.threadId,
+      runId: run.id,
+      sandbox: this.verificationSandbox,
+      ...(this.workspaceFileMutations
+        ? { workspaceFileMutations: this.workspaceFileMutations }
+        : {}),
+      safeReadOnlyRecovery,
+      advisorCorrection,
+    });
     let pendingOperatorDecisionId: string | undefined;
-    if (
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("verify_workspace")
-    ) {
-      tools.push(
-        createVerificationTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("lsp_diagnostics")
-    ) {
-      tools.push(
-        createLspDiagnosticsTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("lsp_symbols")
-    ) {
-      tools.push(
-        createLspSymbolsTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("lsp_definition")
-    ) {
-      tools.push(
-        createLspDefinitionTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("lsp_references")
-    ) {
-      tools.push(
-        createLspReferencesTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("lsp_rename")
-    ) {
-      tools.push(
-        createLspRenameTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("lsp_code_actions")
-    ) {
-      tools.push(
-        createLspCodeActionsTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
-    if (
-      !safeReadOnlyRecovery &&
-      !advisorCorrection &&
-      profile.toolPolicy !== "observe" &&
-      profile.enabledTools.includes("run_command")
-    ) {
-      tools.push(
-        createCommandTool({
-          workspaceRoot: this.store.workspaceRoot,
-          sandbox: this.verificationSandbox,
-        }),
-      );
-    }
     if (
       !safeReadOnlyRecovery &&
       !advisorCorrection &&
@@ -3510,66 +3355,6 @@ function modelRefFromModel(model: Model<Api>): ModelRef {
     provider: model.provider,
     id: model.id,
   };
-}
-
-function builtInToolEffect(
-  toolName: string,
-  args?: unknown,
-): "read" | "write" | undefined {
-  if (toolName === "javascript_kernel") return "write";
-  if (toolName === "python_kernel") return "write";
-  if (toolName === "node_debugger") {
-    return recordValue(args) &&
-      (args["action"] === "stack_trace" ||
-        args["action"] === "scopes" ||
-        args["action"] === "variables" ||
-        args["action"] === "evaluate")
-      ? "read"
-      : "write";
-  }
-  if (toolName === "workspace_process") {
-    return recordValue(args) && args["action"] === "poll" ? "read" : "write";
-  }
-  if (
-    toolName === "list_files" ||
-    toolName === "read_file" ||
-    toolName === "search_files" ||
-    toolName === "list_symbols" ||
-    toolName === "inspect_data" ||
-    toolName === "inspect_code" ||
-    toolName === "read_symbol" ||
-    toolName === "ast_query" ||
-    toolName === "ast_edit_preview" ||
-    toolName === "lsp_diagnostics" ||
-    toolName === "lsp_symbols" ||
-    toolName === "lsp_definition" ||
-    toolName === "lsp_references" ||
-    toolName === "lsp_rename" ||
-    toolName === "lsp_code_actions" ||
-    toolName === "workspace_file_preview" ||
-    toolName === "run_command" ||
-    toolName === "verify_workspace" ||
-    toolName === "web_fetch" ||
-    toolName === "web_search"
-  ) {
-    return "read";
-  }
-  if (
-    toolName === "apply_patch" ||
-    toolName === "workspace_file_apply" ||
-    toolName === "bash" ||
-    toolName === "create_plan" ||
-    toolName === "update_plan_step" ||
-    toolName === "update_plan_artifact" ||
-    toolName === "delegate_task"
-  ) {
-    return "write";
-  }
-  return undefined;
-}
-
-function recordValue(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function formatPlanToolGuidance(tools: readonly AgentTool[]): string {

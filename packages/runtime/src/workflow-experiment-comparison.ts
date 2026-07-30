@@ -90,8 +90,8 @@ export async function createExecutionPlanWorkflowExperimentComparison(
       return compareNode(
         sourceNode.id,
         rerun.has(sourceNode.id) ? "rerun" : "reused",
-        sourceNode.model,
-        targetNode.model,
+        sourceNode.type === "agent" ? sourceNode.model : undefined,
+        targetNode.type === "agent" ? targetNode.model : undefined,
         source,
         target,
       );

@@ -6,6 +6,24 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added model-free Tool nodes to typed Plan Workflows. Schema-v1 Manifests can
+  now mix Agent nodes with 18 allowlisted stateless built-ins, declare the
+  expected `read`/`write` effect, and bind literal or field-path values from
+  Workflow input and direct dependencies. Each Tool node uses a leased
+  `source=workflow` Run and the frozen Agent revision, then checks enabled
+  capability, TypeBox arguments, effect, policy, workspace scope, and freshness
+  before `tool.started`; schema-validated structured details become its typed
+  output. Agent and Workflow execution share an extracted stateless tool
+  catalog. Generic tool arguments and text are hash-only in Tool-node evidence.
+  Recovery never reruns a start without terminal evidence, but can settle a
+  terminal tool event whose Run settlement was interrupted without
+  manufacturing a second call. Checkpoint experiments rerun or reuse Tool
+  outputs, reject model overrides on Tool nodes, and include actual tool
+  metrics. Runtime, restart, effect drift, policy denial, cancellation, timeout,
+  field-path failure, experiment, Web Manifest/Trace, real HTTP SSE, and CLI
+  JSONL coverage exercise the complete path. Stateful Kernel, debugger, Process
+  Session, and preview-bound workspace file mutation tools remain Run-owned
+  Agent capabilities.
 - Added a lazy Workflow Experiment Desk to the Plan Workbench. A developer can
   load a canonical versioned Manifest, select a source Plan/checkpoint,
   optionally replace the checkpoint model, preview reused/rerun nodes and

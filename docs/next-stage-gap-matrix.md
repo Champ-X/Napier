@@ -23,7 +23,7 @@ Audit date: 2026-07-31
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                   |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, write-linked diagnostic deltas, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.  |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| P4 executable Workflows           | Partial        | Versioned typed Agent DAG manifests, runtime schemas, explicit bindings, real Run-backed nodes, explicit retry, restart recovery, CLI JSONL, HTTP SSE, and privacy-bounded Trace now exist. Deterministic/Tool/approval nodes, true parallelism, control flow, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain.                                                                                                                                                                 |
+| P4 executable Workflows           | Partial        | Versioned typed Agent/Tool DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, policy-checked model-free stateless Tool nodes, explicit retry, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Deterministic/approval/stateful-session nodes, true parallelism, control flow, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain.                                                    |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified ancestor reuse, descendant rerun, per-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target node and outcome comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual Plan Workbench experiment desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, interactive root-cause views, and evaluation promotion remain. |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and human/JSONL CLI run/resume/branch/Workflow execution exist over one Runtime; Web now previews, executes, inspects, downloads, and navigates Workflow checkpoint experiments. Interactive TUI, generic SDK/RPC, ACP, Desktop, new Workflow execution/composition, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                             |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -2093,3 +2093,77 @@ Observed result:
   tests with 19 opt-in live tests skipped by default, verified 247 current
   OpenAPI routes against the 244/244 compatibility baseline, and kept the Web
   main entry at 129.87 KiB against the 150 KiB budget.
+
+## Completed Slice: Run-Backed Workflow Tool Nodes
+
+User scenario: a Workflow author can place a model-free Napier tool between
+typed Agent nodes, bind exact arguments from literals or upstream fields, and
+receive a recoverable structured receipt without asking a model to proxy the
+tool call.
+
+Acceptance:
+
+- extend the existing schema-v1 Manifest with a discriminated Agent/Tool node
+  union while keeping every existing Agent-only Manifest valid;
+- allow literal bindings and bounded property/array path segments from
+  Workflow input or a direct dependency, with prototype keys, missing values,
+  invalid indices, oversized literals, and schema mismatches rejected;
+- restrict Tool nodes to 18 stateless built-ins. Kernel, debugger, background
+  Process Session, and preview-bound workspace file mutation lifecycles remain
+  Run-owned Agent tools;
+- bind tool name, declared read/write effect, timeout, attempts, input/output
+  schemas, and Blueprint position into the Manifest content hash;
+- execute each Tool node in a leased `source=workflow` Run at the frozen Agent
+  revision, with no model request;
+- check enabled capability, TypeBox arguments, actual effect, Agent policy,
+  workspace scope, and tool-specific freshness before `tool.started`;
+- use the tool's structured details as schema-validated node output and redact
+  its model-facing text body to bytes/hash in Tool-node Ledger evidence;
+- preserve normal Plan transitions, result frames, CLI JSONL, HTTP SSE, Web
+  Trace, experiment preview/rerun/reuse, comparison metrics, and target
+  isolation;
+- block failed bindings, invalid arguments/output, effect drift, permission
+  denial, timeout, cancellation, unavailable tools, and lost leases with
+  bounded codes and diagnostic hashes.
+
+Threat boundary:
+
+- Manifest code cannot name MCP/extension tools, arbitrary executables, shell,
+  stateful session tools, or an unknown effect. Tool policy remains the pinned
+  Agent profile's policy and cannot be elevated by Workflow input;
+- cancellation and timeout are rechecked immediately before `tool.started`.
+  A denied or aborted preflight therefore cannot reach tool execution;
+- a restart with only `tool.started` has unknown outcome and becomes
+  `run_interrupted`; only explicit bounded retry can rerun it;
+- a valid bound `tool.completed` that preceded interrupted Run settlement can
+  complete the same blocked Plan step through an internal terminal-Run
+  transition. It does not execute the tool again or create a synthetic Run;
+- field-path resolution evaluates structured segments only. It performs no
+  JSONPath, JavaScript, template, or property-prototype execution;
+- structured node output remains local delivery/recovery data. Workflow Trace
+  summaries expose tool name, effect, status, and hashes, not arguments or
+  output bodies.
+
+Observed result:
+
+- a real `list_files` Tool node inventories a temporary workspace, passes its
+  typed receipt to an Agent node, and resumes without creating another Run;
+- a real `apply_patch` Tool under a pinned `workspace` policy creates a
+  CAS-preconditioned file, passes its path-free patch receipt downstream, and
+  verifies the workspace bytes;
+- effect mismatch and observe-policy write denial stop before `tool.started`;
+  cancellation and a one-second timeout during preflight also create no tool
+  call or workspace mutation;
+- restart tests distinguish unknown started-only evidence from a durable
+  terminal event and prove both paths are idempotent;
+- checkpoint experiments rerun a Tool node, reuse its verified output, include
+  real tool metrics, and reject model replacement on a Tool checkpoint;
+- real Hono HTTP SSE and CLI JSONL dogfood execute Tool-only Manifests without
+  registering any model Provider;
+- extracting `stateless-agent-tools.ts` removed the duplicated construction
+  block from `agent-runtime.ts`, while `workflow-tool-node.ts` keeps the main
+  Workflow scheduler near its prior size;
+- the complete repository gate passed 1164 tests with 19 opt-in live tests
+  skipped by default, verified 247 current OpenAPI routes against the 244/244
+  compatibility baseline, and kept the Web main entry at 129.91 KiB against
+  the 150 KiB budget.

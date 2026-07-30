@@ -2,6 +2,7 @@ import type {
   ExecutionPlan,
   ExecutionPlanWorkflowAgentNode,
   ExecutionPlanWorkflowManifest,
+  ExecutionPlanWorkflowNode,
   ExecutionPlanWorkflowNodeResult,
   JsonValue,
 } from "@napier/contracts";
@@ -32,7 +33,7 @@ export function workflowNodePrompt(
 }
 
 export function completedWorkflowNodeResult(
-  node: ExecutionPlanWorkflowAgentNode,
+  node: ExecutionPlanWorkflowNode,
   attempt: number,
   runId: string,
   inputSha256: string,

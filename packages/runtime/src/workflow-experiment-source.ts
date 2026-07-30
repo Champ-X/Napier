@@ -20,7 +20,6 @@ import {
 import { assertWorkflowPlanMatchesManifest } from "./workflow-runtime-model.js";
 import {
   buildExecutionPlanWorkflowNodeInput,
-  parseExecutionPlanWorkflowNodeOutput,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
 
@@ -80,7 +79,7 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     outputNodeId: manifest.outputNodeId,
     nodes: manifest.nodes.map((node) => ({
       ...node,
-      ...(modelOverrides[node.id]
+      ...(node.type === "agent" && modelOverrides[node.id]
         ? { model: structuredClone(modelOverrides[node.id]) }
         : {}),
     })),
@@ -204,9 +203,12 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
     const expectedModel =
       run.source === "workflow_reuse"
         ? { provider: "napier", id: "workflow-reuse" }
-        : (node.model ?? agent.model);
+        : node.type === "agent"
+          ? (node.model ?? agent.model)
+          : agent.model;
     if (
-      run.configuration?.model.provider !== expectedModel.provider ||
+      !run.configuration ||
+      run.configuration.model.provider !== expectedModel.provider ||
       run.configuration.model.id !== expectedModel.id
     ) {
       throw new Error("Workflow experiment source Run model is invalid");
@@ -226,9 +228,15 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
       inputSha256,
       reused,
     );
-    const output = parseExecutionPlanWorkflowNodeOutput(
-      nodeAssistantOutput(events, run.id),
-      node.outputSchema,
+    const output = await ledger.nodeOutput(
+      {
+        threadId: sourceThreadId,
+        manifest,
+        plan: sourcePlan,
+      },
+      node,
+      run.id,
+      inputSha256,
     );
     const outputSha256 = sha256(canonicalJson(output));
     const completedEvent = matchingNodeEvent(
@@ -320,6 +328,11 @@ function normalizedModelOverrides(
     if (!rerunNodeIds.has(node.id)) {
       throw new Error(
         `Workflow experiment cannot override a reused node model: ${node.id}`,
+      );
+    }
+    if (node.type !== "agent") {
+      throw new Error(
+        `Workflow experiment cannot override a Tool node model: ${node.id}`,
       );
     }
     output[node.id] = structuredClone(model);
@@ -416,6 +429,7 @@ function validateSourceStartedEvent(
     payload["inputSha256"] !== inputSha256 ||
     payload["inputSchemaSha256"] !== workflowSchemaSha256(node.inputSchema) ||
     payload["outputSchemaSha256"] !== workflowSchemaSha256(node.outputSchema) ||
+    !sourceNodeMetadataMatches(node, payload) ||
     !Number.isSafeInteger(attempt) ||
     Number(attempt) < 1 ||
     Number(attempt) > node.maxAttempts ||
@@ -444,6 +458,7 @@ function validateSourceCompletedEvent(
     payload["outputSha256"] !== outputSha256 ||
     payload["inputSchemaSha256"] !== workflowSchemaSha256(node.inputSchema) ||
     payload["outputSchemaSha256"] !== workflowSchemaSha256(node.outputSchema) ||
+    !sourceNodeMetadataMatches(node, payload) ||
     typeof payload["recovered"] !== "boolean" ||
     Boolean(payload["reused"]) !== reused
   ) {
@@ -474,26 +489,24 @@ function validateSourceReuseEvent(
   }
 }
 
-function nodeAssistantOutput(events: RunEvent[], runId: string): string {
-  const event = [...events]
-    .reverse()
-    .find(
-      (candidate) =>
-        candidate.runId === runId &&
-        candidate.type === "message.assistant" &&
-        typeof record(candidate.payload)?.["text"] === "string",
-    );
-  const text = event ? record(event.payload)?.["text"] : undefined;
-  if (typeof text !== "string") {
-    throw new Error("Workflow experiment source output is unavailable");
-  }
-  return text;
-}
-
 function record(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : undefined;
+}
+
+function sourceNodeMetadataMatches(
+  node: ExecutionPlanWorkflowManifest["nodes"][number],
+  payload: Record<string, unknown>,
+): boolean {
+  if (node.type === "tool") {
+    return (
+      payload["nodeType"] === "tool" &&
+      payload["toolName"] === node.tool &&
+      payload["effect"] === node.effect
+    );
+  }
+  return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
 }
 
 function canonicalNames(values: string[]): string[] {
