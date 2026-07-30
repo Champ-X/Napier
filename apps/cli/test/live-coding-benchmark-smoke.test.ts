@@ -14,6 +14,10 @@ const CASE_ROOT = path.resolve(
   import.meta.dirname,
   "../../../benchmarks/coding/shipping-boundary-v1",
 );
+const MULTI_FILE_CASE_ROOT = path.resolve(
+  import.meta.dirname,
+  "../../../benchmarks/coding/pricing-options-migration-v1",
+);
 const temporaryRoots: string[] = [];
 
 afterEach(async () => {
@@ -58,6 +62,51 @@ describeLive("live DeepSeek coding outcome benchmark", () => {
         }),
         evaluation: expect.objectContaining({
           status: "passed",
+          diagnostics: [],
+        }),
+      }),
+    );
+    const serialized = await Promise.all([
+      readFile(artifacts.resultPath, "utf8"),
+      readFile(artifacts.ledgerPath, "utf8"),
+    ]);
+    expect(serialized.join("\n")).not.toContain(apiKey);
+  }, 180_000);
+
+  it("migrates the multi-file pricing API and every call site", async () => {
+    const apiKey = process.env["DEEPSEEK_API_KEY"]?.trim();
+    if (!apiKey) {
+      throw new Error(
+        "Set DEEPSEEK_API_KEY before running the live coding benchmark",
+      );
+    }
+    const modelId =
+      process.env["DEEPSEEK_MODEL"]?.trim() || "deepseek-v4-flash";
+    const outputDir = await mkdtemp(
+      path.join(tmpdir(), "napier-live-coding-multifile-"),
+    );
+    temporaryRoots.push(outputDir);
+
+    const artifacts = await runCodingBenchmark({
+      caseRoot: MULTI_FILE_CASE_ROOT,
+      outputDir,
+      model: { provider: "deepseek", id: modelId },
+      env: { DEEPSEEK_API_KEY: apiKey },
+      credentialEnv: "DEEPSEEK_API_KEY",
+      timeoutMs: 120_000,
+    });
+
+    expect(artifacts.result).toEqual(
+      expect.objectContaining({
+        status: "passed",
+        model: { provider: "deepseek", id: modelId },
+        tooling: expect.objectContaining({
+          applyPatchCompleted: true,
+          failed: 0,
+        }),
+        evaluation: expect.objectContaining({
+          status: "passed",
+          changedFileCount: 3,
           diagnostics: [],
         }),
       }),

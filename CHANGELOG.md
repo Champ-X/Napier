@@ -6,6 +6,19 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a second fixed Coding outcome case for a multi-file pricing API
+  migration. The Agent must inspect the API, run real TypeScript LSP
+  References, update two independent call sites, and satisfy hash-bound hidden
+  behavior assertions while changing exactly three allowed paths. The public
+  `--case` CLI path, offline verifier, deterministic Agent integration, and an
+  opt-in DeepSeek smoke cover the case end to end. Dogfooding also fixed
+  repeated-tool metrics for generic tools by hashing their structured input
+  when no specialized `inputSha256` projection exists, and serializes
+  concurrent CLI JSONL events by Ledger sequence before emitting the terminal
+  snapshot. Missing or duplicate sequences fail closed. The archived live
+  DeepSeek Run remains explicitly inconclusive because this IDE host denied
+  both LSP and outcome Sandbox launches; it is evidence of the attempted
+  multi-file workflow, not a success claim.
 - Added repeated Coding benchmark trials and a behavior-based outcome oracle.
   `--trials 2..10` executes independent sequential CLI Runs and emits a
   CAS-named series that binds every result/Ledger pair, rejects duplicate Runs

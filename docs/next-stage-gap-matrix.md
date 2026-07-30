@@ -28,7 +28,7 @@ Audit date: 2026-07-30
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and one-shot human/JSONL CLI exist; interactive TUI, resume/branch CLI commands, SDK/RPC, ACP, and Desktop remain.                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
-| P9 outcome benchmark              | Started        | One fixed CLI Coding case now supports repeated independent trials, Sandbox assertions, aggregate cost/latency/tool distributions, and privacy-bounded Ledger evidence; non-nested scoring, cross-model/multi-case Coding plus other domains remain.         |
+| P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain. |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                             |
 
 ## Completed Slice: Read-Only Sandboxed Commands
@@ -972,6 +972,75 @@ Observed result:
   collision-safe cleanup, cancellation prefix, duplicate trials, aggregate
   tampering, self-consistently rehashed path escape, oversized artifacts, and
   schema-v1 compatibility;
-- the complete repository gate passed 944 tests with ten opt-in live tests
+- the complete repository gate passed 945 tests with ten opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: Multi-File Coding Outcome Case
+
+User scenario: a developer can evaluate whether an Agent discovers and safely
+migrates every workspace use of a JavaScript API instead of succeeding on a
+single obvious edit.
+
+Acceptance:
+
+- add a second versioned case selected through the existing `--case` CLI
+  option, without adding another Agent loop or benchmark runner;
+- require one options-object API migration plus two independent call-site
+  updates, with an exact three-path change allowlist;
+- expose only `read_file`, `lsp_references`, and `apply_patch`, and instruct
+  the Agent to inspect the real LSP impact set before editing;
+- bind prompt, five-file fixture, canonical primary target, hidden behavior
+  test, and case manifest to fixed hashes;
+- assert the new object API, default discount, both call chains, legacy API
+  rejection, and invalid input handling inside the existing read-only,
+  network-denied outcome Sandbox;
+- exercise the real Agent loop with the standard TypeScript language server,
+  three writes, result/Ledger generation, and offline verification;
+- retain a public subprocess regression and an opt-in live DeepSeek smoke;
+- correct repeated-call metrics for generic tools by hashing their structured
+  input when no specialized input digest exists;
+- serialize concurrent one-shot JSONL callbacks by authoritative Ledger
+  sequence and reject missing, duplicate, or cross-Thread frames before the
+  terminal snapshot.
+
+Threat boundary:
+
+- The Agent never sees the hidden test. It is copied only after the Run and is
+  executed with generated modules only inside the managed Sandbox.
+- `package.json` remains fixture input and is outside the three-path mutation
+  allowlist. Creating, deleting, or modifying any other path fails evaluation.
+- A test-only direct process adapter exercises the real TypeScript language
+  server because this IDE host rejects nested `sandbox-exec`; production and
+  live paths retain the OS Sandbox and never fall back to host execution.
+- A failed LSP launch may be recovered by the Agent, but it remains a failed
+  tool call in Ledger evidence. An unavailable outcome Sandbox makes the task
+  inconclusive regardless of workspace shape or assistant claims.
+
+Observed result:
+
+- the deterministic Agent integration completed seven tool calls: three
+  distinct reads, one real LSP References query, and three successful patches;
+  the exact three-path delta and hidden outcome both passed;
+- the real DeepSeek `deepseek-v4-flash` Run completed in 19,087 ms with 10,962
+  input, 2,170 output, and 21,120 cache-read tokens at a reported cost of
+  `$0.002201416`;
+- that live Run made 10 tool calls, completed nine, failed one Sandbox-backed
+  LSP attempt, changed exactly the three allowed files, and used a
+  non-canonical primary AST. The host also denied the outcome Sandbox, so the
+  result is correctly `inconclusive`; no behavior-success claim is made;
+- an earlier live attempt exposed out-of-order concurrent delta frames. The
+  shared CLI writer now buffers by Ledger sequence; the repeated live Run
+  emitted a complete stream and reached offline-verifiable artifacts;
+- the archived result
+  `napier-benchmark-result-coding_pricing_options_migration_v1-ecba9265f0750865.json`
+  has logical content SHA-256
+  `ecba9265f0750865cd771ebb8ff6930827d7094da4e65a2dd3705580591e4cc6`;
+  its Ledger
+  `napier-benchmark-ledger-coding_pricing_options_migration_v1-e8ef307d538aab40.json`
+  has logical content SHA-256
+  `e8ef307d538aab402e648bb02f178104c85a659dd6daa28a31d8ecacdcfc0898`.
+  Offline verification returns zero diagnostics;
+- the complete repository gate passed 952 tests with 11 opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.

@@ -7,13 +7,14 @@ import type { ModelRef, RunEvent, StreamFrame } from "@napier/contracts";
 import {
   createLocalAgentRuntime,
   hashEventStream,
-  streamEventFrame,
   streamRunDoneFrame,
   streamRunErrorFrame,
   streamSnapshotFrame,
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
+
+import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 
 export const CLI_VERSION = "0.1.0";
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1_000;
@@ -116,21 +117,29 @@ async function executeRun(
       ? existingThread(services, options)
       : await newThread(services, options);
     threadId = thread.id;
+    const eventWriter = options.jsonl
+      ? new OrderedEventFrameWriter(
+          io.stdout,
+          thread.id,
+          thread.eventCount + 1,
+        )
+      : undefined;
     const run = await services.runtime.runPrompt({
       threadId,
       text: options.prompt,
       ...(options.model ? { model: options.model } : {}),
       signal: controller.signal,
-      ...(options.jsonl
+      ...(eventWriter
         ? {
             onEvent: async (event: RunEvent) => {
-              await writeJsonLine(io.stdout, streamEventFrame(event));
+              await eventWriter.write(event);
             },
           }
         : {}),
     });
     const detail = await services.store.getDetail(threadId);
-    if (options.jsonl) {
+    if (eventWriter) {
+      await eventWriter.finish(detail.thread.eventCount);
       const snapshot = streamSnapshotFrame(detail);
       const done = streamRunDoneFrame(
         threadId,

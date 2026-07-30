@@ -365,18 +365,26 @@ growth can be audited independently of wall-clock noise.
 
 ## Coding Outcome Benchmark
 
-The first fixed Outcome case asks the CLI Agent to repair one JavaScript
-boundary bug in an isolated temporary workspace. The scorer does not trust the
-assistant summary or execute generated code without isolation. Case schema v2
-requires the declared changed path and runs hash-bound hidden assertions in the
-existing read-only, network-denied Node Sandbox. The complete target-file AST
-remains evidence, but behaviorally correct alternative structures are not
-rejected merely for differing from one expected AST.
+Two fixed Outcome cases cover a single-file boundary repair and a multi-file
+API migration with real TypeScript LSP References. Each runs in an isolated
+temporary workspace. The scorer does not trust the assistant summary or
+execute generated code without isolation. Case schema v2 requires the exact
+declared changed-path set and runs hash-bound hidden assertions in the existing
+read-only, network-denied Node Sandbox. The complete target-file AST remains
+evidence, but behaviorally correct alternative structures are not rejected
+merely for differing from one expected AST.
 
 Run a deterministic failed demo baseline:
 
 ```bash
 npm run bench:coding
+```
+
+Select the multi-file API migration:
+
+```bash
+npm run bench:coding -- \
+  --case benchmarks/coding/pricing-options-migration-v1
 ```
 
 Run the real provider case with an explicit credential locator:
@@ -434,9 +442,15 @@ and
 remain a historical AST-scored successful sample. The checked-in v2
 [three-trial series](docs/artifacts/benchmarks/napier-benchmark-series-coding_shipping_boundary_v1-d7738151e8036e7e.json)
 is deliberately inconclusive because this IDE host denied nested
-`sandbox-exec`; it is not a 0% success rate. Cross-model and broader Coding,
-Research, Workflow, long-horizon, security, UX, and reference-project suites
-remain open.
+`sandbox-exec`; it is not a 0% success rate. A real DeepSeek execution of the
+multi-file case also has an archived
+[result](docs/artifacts/benchmarks/napier-benchmark-result-coding_pricing_options_migration_v1-ecba9265f0750865.json)
+and
+[Ledger bundle](docs/artifacts/benchmarks/napier-benchmark-ledger-coding_pricing_options_migration_v1-e8ef307d538aab40.json).
+It changed exactly the three allowed files in 19.087 seconds, but its LSP and
+outcome Sandbox launches were denied by this host, so it remains inconclusive.
+Cross-model, broader Coding, Research, Workflow, long-horizon, security, UX,
+and reference-project suites remain open.
 
 ## Live Models
 

@@ -232,6 +232,49 @@ describe("coding benchmark command", () => {
       }),
     );
   }, 20_000);
+
+  it("runs and verifies the multi-file case through --case", async () => {
+    const outputDir = await mkdtemp(
+      path.join(tmpdir(), "napier-benchmark-multifile-command-"),
+    );
+    temporaryRoots.push(outputDir);
+    const caseRoot = path.join(
+      repoRoot,
+      "benchmarks/coding/pricing-options-migration-v1",
+    );
+
+    const execution = await runNode([
+      scriptPath,
+      "--case",
+      caseRoot,
+      "--output-dir",
+      outputDir,
+    ]);
+
+    expect(execution).toEqual(expect.objectContaining({ code: 1, stderr: "" }));
+    const summary = JSON.parse(execution.stdout);
+    expect(summary).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        caseId: "coding_pricing_options_migration_v1",
+        model: { provider: "napier", id: "demo" },
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const verification = await runNode([
+      scriptPath,
+      "--verify-result",
+      path.resolve(repoRoot, summary.resultPath),
+      "--ledger",
+      path.resolve(repoRoot, summary.ledgerPath),
+    ]);
+    expect(verification).toEqual(
+      expect.objectContaining({ code: 0, stderr: "" }),
+    );
+    expect(JSON.parse(verification.stdout)).toEqual(
+      expect.objectContaining({ valid: true, diagnostics: [] }),
+    );
+  }, 15_000);
 });
 
 function runNode(args) {

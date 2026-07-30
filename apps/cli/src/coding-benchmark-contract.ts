@@ -200,8 +200,12 @@ export function collectCodingBenchmarkToolMetrics(
   let repeatedCallCount = 0;
   for (const event of started) {
     const payload = record(event.payload) ? event.payload : {};
+    const inputSha256 =
+      typeof payload["inputSha256"] === "string"
+        ? payload["inputSha256"]
+        : sha256(canonicalJson(payload["input"] ?? null));
     const signature = `${String(payload["toolName"] ?? "")}:${String(
-      payload["inputSha256"] ?? "",
+      inputSha256,
     )}`;
     if (seen.has(signature)) repeatedCallCount += 1;
     seen.add(signature);

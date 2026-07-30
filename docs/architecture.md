@@ -182,6 +182,12 @@ preflight input and bootstrap failures produce only the stable public error
 frame and a diagnostic hash; raw provider, credential, Sandbox, and tool
 errors are not written.
 
+Model and tool callbacks may complete concurrently even though SQLite assigns
+one authoritative Ledger sequence. The CLI buffers event frames by `seq`,
+writes only the contiguous prefix, and verifies the final sequence before the
+snapshot. Out-of-order arrivals remain live-streamed once their gap closes;
+missing, duplicate, or cross-Thread sequences fail closed.
+
 Timeout, SIGINT, and SIGTERM flow into the active Runtime AbortSignal. Shutdown
 settles Napier-owned Process Sessions and MCP transports before closing
 SQLite; it does not kill unrelated workspace processes or delete state.
@@ -199,14 +205,16 @@ then consumes the same JSONL `StreamFrame` sequence as external automation.
 The demo model provides a deterministic failed baseline; live providers require
 an explicit environment-variable credential locator.
 
-The `coding_shipping_boundary_v1` case hashes the complete before/after
-workspace and requires the changed path set to equal the case allowlist. Case
-schema v2 also binds a hidden assertion module. After the Agent Run and
-workspace snapshot, the runner adds that module under a reserved one-use name,
-executes it with the existing `CommandRunner` in a read-only, network-denied
-Node Sandbox, records only status/latency/exit/output hashes, and removes it.
-The module loads generated source through a data URL inside the Sandbox, so
-model-modified code is never imported into the benchmark host process.
+The `coding_shipping_boundary_v1` case covers a single-file repair.
+`coding_pricing_options_migration_v1` requires one API definition and two call
+sites to migrate together after a real `lsp_references` impact query. Each case
+hashes the complete before/after workspace and requires the changed path set to
+equal its allowlist. Case schema v2 also binds a hidden assertion module. After
+the Agent Run and workspace snapshot, the runner adds that module under a
+reserved one-use name, executes it with the existing `CommandRunner` in a
+read-only, network-denied Node Sandbox, records only
+status/latency/exit/output hashes, and removes it. Generated modules are loaded
+only inside that Sandbox, never into the benchmark host process.
 A trusted marker is written before importing generated code; wrapper
 diagnostics count as Sandbox unavailability only when that marker is absent,
 so generated stderr cannot spoof an inconclusive outcome.
@@ -260,11 +268,13 @@ The live case also established two Runtime compatibility boundaries:
   successful assistant output. The Runtime records only the diagnostic hash
   and settles the Run as failed or cancelled.
 
-One case and a three-trial execution do not establish task success rate or
-superiority. The checked-in v2 series is explicitly inconclusive because the
-current IDE host denied nested `sandbox-exec`. A non-nested Sandbox run,
-cross-model execution, more Coding cases, reference-project runs, and the other
-P9 domains remain required.
+Two cases and the current executions do not establish task success rate or
+superiority. The checked-in v2 shipping series and multi-file DeepSeek result
+are explicitly inconclusive because the current IDE host denied nested
+`sandbox-exec`; the latter still proves exact three-path modification plus
+Run/cost/tool evidence. A non-nested Sandbox run, cross-model execution, more
+Coding categories, reference-project runs, and the other P9 domains remain
+required.
 
 ### Workbench
 
