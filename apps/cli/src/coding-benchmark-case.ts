@@ -25,10 +25,12 @@ import {
 const MAX_FIXTURE_FILES = 256;
 const MAX_FIXTURE_BYTES = 2 * 1024 * 1024;
 const MAX_TARGET_BYTES = 256 * 1024;
+const MAX_OUTCOME_TEST_BYTES = 64 * 1024;
 
 export interface LoadedCodingBenchmarkCase {
   benchmarkCase: CodingBenchmarkCase;
   prompt: string;
+  outcomeTestSource: string;
   fixtureRoot: string;
 }
 
@@ -59,6 +61,11 @@ export async function loadCodingBenchmarkCase(
     manifest.expectedTargetPath,
     "file",
   );
+  const outcomeTest = await resolveCaseEntry(
+    caseRoot,
+    manifest.outcomeTestPath,
+    "file",
+  );
   const prompt = await readFile(promptPath, "utf8");
   if (sha256(prompt) !== manifest.promptSha256) {
     throw new Error("Coding benchmark prompt hash mismatch");
@@ -84,7 +91,22 @@ export async function loadCodingBenchmarkCase(
   ) {
     throw new Error("Coding benchmark expected target AST hash mismatch");
   }
-  return { benchmarkCase: manifest, prompt, fixtureRoot };
+  const outcomeTestBuffer = await readFile(outcomeTest);
+  if (
+    outcomeTestBuffer.byteLength > MAX_OUTCOME_TEST_BYTES ||
+    sha256(outcomeTestBuffer) !== manifest.outcomeTestSha256
+  ) {
+    throw new Error("Coding benchmark outcome test hash mismatch");
+  }
+  const outcomeTestSource = new TextDecoder("utf-8", { fatal: true }).decode(
+    outcomeTestBuffer,
+  );
+  return {
+    benchmarkCase: manifest,
+    prompt,
+    outcomeTestSource,
+    fixtureRoot,
+  };
 }
 
 export async function copyCodingBenchmarkFixture(

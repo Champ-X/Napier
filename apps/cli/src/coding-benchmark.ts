@@ -33,6 +33,10 @@ import {
   type CodingBenchmarkResult,
 } from "./coding-benchmark-contract.js";
 import {
+  runCodingBenchmarkOutcomeTest,
+  type RunCodingBenchmarkOutcomeTestInput,
+} from "./coding-benchmark-outcome.js";
+import {
   configureCodingBenchmarkAgent,
   validateCodingBenchmarkCredential,
   type CodingBenchmarkRuntimeFactory,
@@ -54,6 +58,9 @@ export interface RunCodingBenchmarkOptions {
 
 export interface CodingBenchmarkDependencies extends CodingBenchmarkRuntimeFactory {
   now(): Date;
+  runOutcomeTest?(
+    input: RunCodingBenchmarkOutcomeTestInput,
+  ): ReturnType<typeof runCodingBenchmarkOutcomeTest>;
 }
 
 export interface CodingBenchmarkArtifacts {
@@ -65,6 +72,7 @@ export interface CodingBenchmarkArtifacts {
 const DEFAULT_DEPENDENCIES: CodingBenchmarkDependencies = {
   createRuntime: createLocalAgentRuntime,
   now: () => new Date(),
+  runOutcomeTest: runCodingBenchmarkOutcomeTest,
 };
 
 export async function runCodingBenchmark(
@@ -157,6 +165,19 @@ export async function runCodingBenchmark(
     const targetEvidence = await codingBenchmarkTargetEvidence(
       path.join(workspaceRoot, loaded.benchmarkCase.targetPath),
     );
+    const outcomeSignal =
+      stream.done.status === "cancelled" ? AbortSignal.abort() : options.signal;
+    const outcomeTest = await (
+      dependencies.runOutcomeTest ?? runCodingBenchmarkOutcomeTest
+    )({
+      workspaceRoot,
+      dataRoot,
+      env: options.env,
+      testSource: loaded.outcomeTestSource,
+      testSha256: loaded.benchmarkCase.outcomeTestSha256,
+      runtimeFactory: dependencies,
+      ...(outcomeSignal ? { signal: outcomeSignal } : {}),
+    });
     const evaluation = createCodingBenchmarkEvaluation({
       benchmarkCase: loaded.benchmarkCase,
       runStatus: stream.done.status,
@@ -165,6 +186,7 @@ export async function runCodingBenchmark(
       delta: diffWorkspaceSnapshots(before, after),
       targetAfterSha256: targetEvidence.sha256,
       targetAfterAstSha256: targetEvidence.astSha256,
+      outcomeTest,
     });
     const evidence = await appendCodingBenchmarkEvidence({
       dependencies,

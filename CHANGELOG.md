@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added repeated Coding benchmark trials and a behavior-based outcome oracle.
+  `--trials 2..10` executes independent sequential CLI Runs and emits a
+  CAS-named series that binds every result/Ledger pair, rejects duplicate Runs
+  or hash-derived filename drift, and reports completed, scored, passed,
+  failed, and inconclusive counts plus latency, cost, token, tool, and
+  repetition distributions. `--verify-series` bounds input sizes, confines
+  references to the series directory, verifies every pair, and recomputes all
+  aggregates. Case schema v2 runs hash-bound hidden assertions through the
+  existing read-only, network-denied Node Sandbox; AST equality remains
+  evidence rather than the sole success criterion. Sandbox startup denial is
+  classified as `inconclusive`, produces no success rate when every trial is
+  unscoreable, exits non-zero, and never falls back to host execution. Parent
+  cancellation preserves the completed prefix without launching another
+  trial. Existing v1 result/Ledger artifacts remain offline-verifiable.
 - Added the first outcome-scored Coding benchmark. `npm run bench:coding`
   copies a hash-bound fixture into a temporary workspace, configures a fixed
   Agent revision, and drives the real one-shot CLI JSONL path. Success is

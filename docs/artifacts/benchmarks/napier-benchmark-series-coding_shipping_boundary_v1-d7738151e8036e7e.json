@@ -1,0 +1,147 @@
+{
+  "kind": "napier.coding-benchmark-series",
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-30T00:19:29.830Z",
+  "caseId": "coding_shipping_boundary_v1",
+  "caseSha256": "d86df81541f897ff296e20e0dc4ac473a6c43d13397092a7a68ac0d81451ae43",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "status": "completed",
+  "requestedTrialCount": 3,
+  "completedTrialCount": 3,
+  "scoredTrialCount": 0,
+  "passedTrialCount": 0,
+  "failedTrialCount": 0,
+  "inconclusiveTrialCount": 3,
+  "completionRate": 1,
+  "passRate": null,
+  "applyPatchCompletedTrialCount": 3,
+  "metrics": {
+    "durationMs": {
+      "total": 19691,
+      "min": 6201,
+      "p50": 6309,
+      "p95": 7181,
+      "max": 7181,
+      "mean": 6563.666666666667
+    },
+    "costUsd": {
+      "total": 0.002819208,
+      "min": 0.0009103472,
+      "p50": 0.0009147488000000001,
+      "p95": 0.0009941120000000001,
+      "max": 0.0009941120000000001,
+      "mean": 0.000939736
+    },
+    "inputTokens": {
+      "total": 16068,
+      "min": 5186,
+      "p50": 5234,
+      "p95": 5648,
+      "max": 5648,
+      "mean": 5356
+    },
+    "outputTokens": {
+      "total": 1721,
+      "min": 545,
+      "p50": 552,
+      "p95": 624,
+      "max": 624,
+      "mean": 573.6666666666666
+    },
+    "cacheReadTokens": {
+      "total": 31360,
+      "min": 10240,
+      "p50": 10496,
+      "p95": 10624,
+      "max": 10624,
+      "mean": 10453.333333333334
+    },
+    "cacheWriteTokens": {
+      "total": 0,
+      "min": 0,
+      "p50": 0,
+      "p95": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "toolStarted": {
+      "total": 6,
+      "min": 2,
+      "p50": 2,
+      "p95": 2,
+      "max": 2,
+      "mean": 2
+    },
+    "toolCompleted": {
+      "total": 6,
+      "min": 2,
+      "p50": 2,
+      "p95": 2,
+      "max": 2,
+      "mean": 2
+    },
+    "toolFailed": {
+      "total": 0,
+      "min": 0,
+      "p50": 0,
+      "p95": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "toolBlocked": {
+      "total": 0,
+      "min": 0,
+      "p50": 0,
+      "p95": 0,
+      "max": 0,
+      "mean": 0
+    },
+    "repeatedToolCalls": {
+      "total": 0,
+      "min": 0,
+      "p50": 0,
+      "p95": 0,
+      "max": 0,
+      "mean": 0
+    }
+  },
+  "trials": [
+    {
+      "index": 1,
+      "runId": "run_952f82a22a644d3eb2b2",
+      "status": "inconclusive",
+      "resultFileName": "napier-benchmark-result-coding_shipping_boundary_v1-bf83201739c113e9.json",
+      "resultSha256": "bf83201739c113e92de0ba4233e90a4a24cfe20a86c1ca0fa59b162661356919",
+      "ledgerFileName": "napier-benchmark-ledger-coding_shipping_boundary_v1-d782e08931ea7364.json",
+      "ledgerSha256": "d782e08931ea7364bb68a921b286a5c6a5b6261bc14b45f878ade008289bc2f0"
+    },
+    {
+      "index": 2,
+      "runId": "run_43f1d6336938420da1cf",
+      "status": "inconclusive",
+      "resultFileName": "napier-benchmark-result-coding_shipping_boundary_v1-f2139f84dd22ce51.json",
+      "resultSha256": "f2139f84dd22ce5183b43473a5276c341c701eb393f7d7346b6129f9252e0356",
+      "ledgerFileName": "napier-benchmark-ledger-coding_shipping_boundary_v1-db042e6d80ad977f.json",
+      "ledgerSha256": "db042e6d80ad977fa36af8b1c420ed72109ab472117b7968bcdc769182a49b28"
+    },
+    {
+      "index": 3,
+      "runId": "run_72472489756c456584cd",
+      "status": "inconclusive",
+      "resultFileName": "napier-benchmark-result-coding_shipping_boundary_v1-f9caed557791cd4d.json",
+      "resultSha256": "f9caed557791cd4ddeb6d8d5d2db7f713423ebba65518b4173afb6e3313be57a",
+      "ledgerFileName": "napier-benchmark-ledger-coding_shipping_boundary_v1-0cdd988f384cdf71.json",
+      "ledgerSha256": "0cdd988f384cdf71c2d11f5ac79a6c215bb2b6a7ea5b13dc360af83f485c97d6"
+    }
+  ],
+  "contentSha256": "d7738151e8036e7e8402c1e1c37d4df2c5879243af642572ac7f0ebc0bebe1c6"
+}

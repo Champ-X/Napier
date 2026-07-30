@@ -1,11 +1,11 @@
 import type { RunStatus } from "@napier/contracts";
 
 import type {
-  CodingBenchmarkEvaluation,
   CodingBenchmarkLedgerBundle,
   CodingBenchmarkResult,
   CodingBenchmarkToolMetrics,
 } from "./coding-benchmark-types.js";
+import { validCodingBenchmarkEvaluationShape } from "./coding-benchmark-evaluation-shape.js";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
@@ -17,31 +17,17 @@ const TERMINAL_RUN_STATUSES = new Set<RunStatus>([
   "cancelled",
   "interrupted",
 ]);
-const EVALUATION_DIAGNOSTICS = new Set([
-  "run_not_completed",
-  "workspace_snapshot_truncated",
-  "target_mismatch",
-  "expected_change_missing",
-  "unexpected_workspace_changes",
-]);
-
 const RESULT_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 status model environment run tooling evaluation ledger contentSha256",
 );
 const BUNDLE_KEYS = keySet(
   "kind schemaVersion generatedAt caseId caseSha256 threadId run tooling evaluationEvent eventCount retainedEventCount omittedEventCount eventTypeCounts eventTypeSetSha256 sourceEventStreamSha256 sourceSnapshotSha256 eventReceipts receiptSetSha256 contentSha256",
 );
-const EVALUATION_KEYS = keySet(
-  "kind schemaVersion caseId caseSha256 status runStatus criteriaSha256 workspaceBeforeSha256 workspaceAfterSha256 targetBeforeSha256 targetAfterSha256 expectedTargetSha256 targetAfterAstSha256 expectedTargetAstSha256 changedFileCount changedPathSetSha256 targetSemanticMatch allowedChangeSetMatch diagnostics contentSha256",
-);
 const TOOLING_KEYS = keySet(
   "started completed failed blocked repeatedCallCount applyPatchCompleted",
 );
 const TOOLING_COUNT_KEYS = keySet(
   "started completed failed blocked repeatedCallCount",
-);
-const EVALUATION_SHA256_KEYS = keySet(
-  "criteriaSha256 workspaceBeforeSha256 workspaceAfterSha256 targetBeforeSha256 targetAfterSha256 expectedTargetSha256 targetAfterAstSha256 expectedTargetAstSha256 changedPathSetSha256 contentSha256",
 );
 const ENVIRONMENT_KEYS = keySet("nodeVersion platform arch cliVersion");
 const RESULT_RUN_KEYS = keySet(
@@ -73,12 +59,14 @@ export function validCodingBenchmarkResultShape(
     validIsoDate(value["generatedAt"]) &&
     resourceId(value["caseId"]) &&
     isSha256(value["caseSha256"]) &&
-    (value["status"] === "passed" || value["status"] === "failed") &&
+    (value["status"] === "passed" ||
+      value["status"] === "failed" ||
+      value["status"] === "inconclusive") &&
     validModel(value["model"]) &&
     validEnvironment(value["environment"]) &&
     validResultRun(value["run"]) &&
     validCodingBenchmarkToolMetricsShape(value["tooling"]) &&
-    validEvaluation(value["evaluation"]) &&
+    validCodingBenchmarkEvaluationShape(value["evaluation"]) &&
     validResultLedger(value["ledger"]) &&
     isSha256(value["contentSha256"])
   );
@@ -120,37 +108,6 @@ export function validCodingBenchmarkToolMetricsShape(
   return (
     TOOLING_COUNT_KEYS.every((key) => nonNegativeInteger(value[key])) &&
     typeof value["applyPatchCompleted"] === "boolean"
-  );
-}
-
-function validEvaluation(value: unknown): value is CodingBenchmarkEvaluation {
-  if (!exactRecord(value, EVALUATION_KEYS)) return false;
-  const diagnostics = value["diagnostics"];
-  return (
-    value["kind"] === "napier.coding-benchmark-evaluation" &&
-    value["schemaVersion"] === 1 &&
-    resourceId(value["caseId"]) &&
-    isSha256(value["caseSha256"]) &&
-    (value["status"] === "passed" || value["status"] === "failed") &&
-    terminalRunStatus(value["runStatus"]) &&
-    EVALUATION_SHA256_KEYS.every((key) => isSha256(value[key])) &&
-    nonNegativeInteger(value["changedFileCount"]) &&
-    typeof value["targetSemanticMatch"] === "boolean" &&
-    typeof value["allowedChangeSetMatch"] === "boolean" &&
-    Array.isArray(diagnostics) &&
-    diagnostics.length <= EVALUATION_DIAGNOSTICS.size &&
-    new Set(diagnostics).size === diagnostics.length &&
-    diagnostics.every(
-      (diagnostic) =>
-        typeof diagnostic === "string" &&
-        EVALUATION_DIAGNOSTICS.has(diagnostic),
-    ) &&
-    (value["status"] === "passed") === (diagnostics.length === 0) &&
-    (value["status"] !== "passed" ||
-      (value["runStatus"] === "completed" &&
-        value["targetSemanticMatch"] === true &&
-        value["allowedChangeSetMatch"] === true &&
-        Number(value["changedFileCount"]) >= 1))
   );
 }
 
@@ -218,7 +175,7 @@ function validEvaluationEvent(value: unknown): boolean {
     value["category"] === "evaluation" &&
     value["visibility"] === "user" &&
     validIsoDate(value["createdAt"]) &&
-    validEvaluation(value["payload"])
+    validCodingBenchmarkEvaluationShape(value["payload"])
   );
 }
 

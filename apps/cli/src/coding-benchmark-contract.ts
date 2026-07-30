@@ -12,6 +12,7 @@ import type {
   CodingBenchmarkCase,
   CodingBenchmarkDiagnostic,
   CodingBenchmarkEvaluation,
+  CodingBenchmarkOutcomeTestEvidence,
   CodingBenchmarkResult,
   CodingBenchmarkToolMetrics,
 } from "./coding-benchmark-types.js";
@@ -39,6 +40,8 @@ const CASE_KEYS = [
   "targetBeforeSha256",
   "expectedTargetSha256",
   "expectedTargetAstSha256",
+  "outcomeTestPath",
+  "outcomeTestSha256",
   "contentSha256",
 ] as const;
 
@@ -50,7 +53,7 @@ export function validateCodingBenchmarkCase(
   }
   if (
     input["kind"] !== "napier.coding-benchmark-case" ||
-    input["schemaVersion"] !== 1 ||
+    input["schemaVersion"] !== 2 ||
     typeof input["id"] !== "string" ||
     !RESOURCE_ID.test(input["id"]) ||
     !boundedText(input["title"], 1, 160) ||
@@ -58,6 +61,7 @@ export function validateCodingBenchmarkCase(
     !safeRelativePath(input["fixturePath"]) ||
     !safeRelativePath(input["targetPath"]) ||
     !safeRelativePath(input["expectedTargetPath"]) ||
+    !safeRelativePath(input["outcomeTestPath"]) ||
     !stringArray(input["allowedChangedPaths"], 1, 16, safeRelativePath) ||
     !stringArray(
       input["requiredTools"],
@@ -74,6 +78,7 @@ export function validateCodingBenchmarkCase(
     !isSha256(input["targetBeforeSha256"]) ||
     !isSha256(input["expectedTargetSha256"]) ||
     !isSha256(input["expectedTargetAstSha256"]) ||
+    !isSha256(input["outcomeTestSha256"]) ||
     !isSha256(input["contentSha256"])
   ) {
     throw new Error("Coding benchmark case is invalid");
@@ -105,7 +110,13 @@ export function createCodingBenchmarkEvaluation(input: {
   delta: WorkspaceSnapshotDelta;
   targetAfterSha256: string;
   targetAfterAstSha256: string;
+  outcomeTest: CodingBenchmarkOutcomeTestEvidence;
 }): CodingBenchmarkEvaluation {
+  if (
+    input.outcomeTest.testSha256 !== input.benchmarkCase.outcomeTestSha256
+  ) {
+    throw new Error("Coding benchmark outcome test evidence hash mismatch");
+  }
   const allowed = [...input.benchmarkCase.allowedChangedPaths].sort();
   const observed = input.delta.entries.map((entry) => entry.path).sort();
   const targetSemanticMatch =
@@ -119,7 +130,16 @@ export function createCodingBenchmarkEvaluation(input: {
   if (input.before.truncated || input.after.truncated) {
     diagnostics.push("workspace_snapshot_truncated");
   }
-  if (!targetSemanticMatch) diagnostics.push("target_mismatch");
+  const outcomeTestUnavailable =
+    input.outcomeTest.status === "unavailable" ||
+    input.outcomeTest.status === "cancelled";
+  const cancelledInconclusive =
+    input.runStatus === "cancelled" && input.outcomeTest.status === "cancelled";
+  if (outcomeTestUnavailable) {
+    diagnostics.push("outcome_test_unavailable");
+  } else if (!input.outcomeTest.passed) {
+    diagnostics.push("outcome_test_failed");
+  }
   if (input.delta.status === "unchanged") {
     diagnostics.push("expected_change_missing");
   }
@@ -129,16 +149,25 @@ export function createCodingBenchmarkEvaluation(input: {
   const criteriaSha256 = sha256(
     canonicalJson({
       expectedTargetAstSha256: input.benchmarkCase.expectedTargetAstSha256,
+      outcomeTestSha256: input.benchmarkCase.outcomeTestSha256,
       allowedPathSetSha256: sha256(canonicalJson(allowed)),
     }),
   );
   const content = {
     kind: "napier.coding-benchmark-evaluation" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     caseId: input.benchmarkCase.id,
     caseSha256: input.benchmarkCase.contentSha256,
     status:
-      diagnostics.length === 0 ? ("passed" as const) : ("failed" as const),
+      diagnostics.length === 0
+        ? ("passed" as const)
+        : cancelledInconclusive ||
+            (outcomeTestUnavailable &&
+              diagnostics.every(
+                (diagnostic) => diagnostic === "outcome_test_unavailable",
+              ))
+          ? ("inconclusive" as const)
+          : ("failed" as const),
     runStatus: input.runStatus,
     criteriaSha256,
     workspaceBeforeSha256: input.before.sha256,
@@ -152,6 +181,7 @@ export function createCodingBenchmarkEvaluation(input: {
     changedPathSetSha256: input.delta.changedPathSetSha256,
     targetSemanticMatch,
     allowedChangeSetMatch,
+    outcomeTest: structuredClone(input.outcomeTest),
     diagnostics,
   };
   return {

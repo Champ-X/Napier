@@ -8,7 +8,7 @@ import type {
 
 export interface CodingBenchmarkCase {
   kind: "napier.coding-benchmark-case";
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   title: string;
   promptPath: string;
@@ -23,6 +23,8 @@ export interface CodingBenchmarkCase {
   targetBeforeSha256: string;
   expectedTargetSha256: string;
   expectedTargetAstSha256: string;
+  outcomeTestPath: string;
+  outcomeTestSha256: string;
   contentSha256: string;
 }
 
@@ -30,15 +32,35 @@ export type CodingBenchmarkDiagnostic =
   | "run_not_completed"
   | "workspace_snapshot_truncated"
   | "target_mismatch"
+  | "outcome_test_failed"
+  | "outcome_test_unavailable"
   | "expected_change_missing"
   | "unexpected_workspace_changes";
 
+export interface CodingBenchmarkOutcomeTestEvidence {
+  testSha256: string;
+  status:
+    | "succeeded"
+    | "failed"
+    | "timed_out"
+    | "output_capped"
+    | "unavailable"
+    | "cancelled";
+  sandboxId: string;
+  resultSha256: string;
+  durationMs: number;
+  exitCode: number | null;
+  stdoutSha256: string;
+  stderrSha256: string;
+  passed: boolean;
+}
+
 export interface CodingBenchmarkEvaluation {
   kind: "napier.coding-benchmark-evaluation";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   caseId: string;
   caseSha256: string;
-  status: "passed" | "failed";
+  status: "passed" | "failed" | "inconclusive";
   runStatus: RunStatus;
   criteriaSha256: string;
   workspaceBeforeSha256: string;
@@ -52,6 +74,7 @@ export interface CodingBenchmarkEvaluation {
   changedPathSetSha256: string;
   targetSemanticMatch: boolean;
   allowedChangeSetMatch: boolean;
+  outcomeTest?: CodingBenchmarkOutcomeTestEvidence;
   diagnostics: CodingBenchmarkDiagnostic[];
   contentSha256: string;
 }
@@ -115,7 +138,7 @@ export interface CodingBenchmarkResult {
   generatedAt: string;
   caseId: string;
   caseSha256: string;
-  status: "passed" | "failed";
+  status: "passed" | "failed" | "inconclusive";
   model: ModelRef;
   environment: {
     nodeVersion: string;

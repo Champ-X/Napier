@@ -1,6 +1,6 @@
 {
   "kind": "napier.coding-benchmark-case",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "coding_shipping_boundary_v1",
   "title": "Fix the free-shipping boundary",
   "promptPath": "prompt.md",
@@ -15,5 +15,7 @@
   "targetBeforeSha256": "7599d299a32b68c2995a51f11b0b59927d6fa95cf5906075d122463e1012953e",
   "expectedTargetSha256": "d389ee6c5ef6830cedbd4fc003a693358923aa94a64b58cf338afa66937676fe",
   "expectedTargetAstSha256": "977058b3c7b87f5b64bc18756c0cae8b71adb84263b015e26f37090525c2680d",
-  "contentSha256": "c6c848549c710ef5c6dec793103663907f56591b3c3db3ad35d90d5aaa5bd94f"
+  "outcomeTestPath": "tests/outcome.mjs",
+  "outcomeTestSha256": "b3b7647c34fff450c84cbcdfaf633d15c73d207451b3e7249c629888802e6df5",
+  "contentSha256": "d86df81541f897ff296e20e0dc4ac473a6c43d13397092a7a68ac0d81451ae43"
 }

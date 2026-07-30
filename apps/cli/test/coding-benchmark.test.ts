@@ -43,6 +43,8 @@ const CASE_ROOT = path.resolve(
 );
 const SOURCE_SHA256 =
   "7599d299a32b68c2995a51f11b0b59927d6fa95cf5906075d122463e1012953e";
+const EXPECTED_AST_SHA256 =
+  "977058b3c7b87f5b64bc18756c0cae8b71adb84263b015e26f37090525c2680d";
 const temporaryRoots: string[] = [];
 
 afterEach(async () => {
@@ -158,6 +160,101 @@ describe("CLI coding outcome benchmark", () => {
     expect(bundleText).not.toContain("src/shipping.js");
   });
 
+  it("marks a correct edit inconclusive when the outcome Sandbox is unavailable", async () => {
+    const outputDir = await temporaryOutput();
+    const provider = fauxProvider({ provider: "faux-coding-inconclusive" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("read_file", { path: "src/shipping.js" }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("apply_patch", {
+          operation: "replace",
+          path: "src/shipping.js",
+          expectedSha256: SOURCE_SHA256,
+          edits: [{ oldText: "> 5_000", newText: ">= 5_000" }],
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage("Fixed the free-shipping boundary."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const dependencies = providerDependencies(provider);
+    dependencies.runOutcomeTest = async (input) => ({
+      testSha256: input.testSha256,
+      status: "unavailable",
+      sandboxId: "nested-sandbox-unavailable",
+      resultSha256: sha256("sandbox unavailable"),
+      durationMs: 0,
+      exitCode: null,
+      stdoutSha256: sha256(""),
+      stderrSha256: sha256(""),
+      passed: false,
+    });
+
+    const artifacts = await runCodingBenchmark(
+      {
+        caseRoot: CASE_ROOT,
+        outputDir,
+        model: { provider: "faux-coding-inconclusive", id: "faux-1" },
+        env: {},
+      },
+      dependencies,
+    );
+
+    expect(artifacts.result).toEqual(
+      expect.objectContaining({
+        status: "inconclusive",
+        evaluation: expect.objectContaining({
+          status: "inconclusive",
+          targetSemanticMatch: true,
+          allowedChangeSetMatch: true,
+          diagnostics: ["outcome_test_unavailable"],
+          outcomeTest: expect.objectContaining({
+            status: "unavailable",
+            passed: false,
+          }),
+        }),
+      }),
+    );
+    expect(
+      verifyCodingBenchmarkArtifacts(
+        await readJson(artifacts.resultPath),
+        await readJson(artifacts.ledgerPath),
+      ),
+    ).toEqual(expect.objectContaining({ valid: true, diagnostics: [] }));
+  });
+
+  it("rejects outcome evidence bound to another hidden test", async () => {
+    const outputDir = await temporaryOutput();
+    const provider = fauxProvider({ provider: "faux-coding-oracle-drift" });
+    provider.setResponses([
+      fauxAssistantMessage("No edit was needed."),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const dependencies = providerDependencies(provider);
+    const runOutcomeTest = dependencies.runOutcomeTest!;
+    dependencies.runOutcomeTest = async (input) => ({
+      ...(await runOutcomeTest(input)),
+      testSha256: sha256("different hidden test"),
+    });
+
+    await expect(
+      runCodingBenchmark(
+        {
+          caseRoot: CASE_ROOT,
+          outputDir,
+          model: { provider: "faux-coding-oracle-drift", id: "faux-1" },
+          env: {},
+        },
+        dependencies,
+      ),
+    ).rejects.toThrow(
+      "Coding benchmark outcome test evidence hash mismatch",
+    );
+  });
+
   it("records a failed outcome without leaking credentials and rejects tampering", async () => {
     const outputDir = await temporaryOutput();
     const provider = fauxProvider({ provider: "faux-coding-failure" });
@@ -181,7 +278,7 @@ describe("CLI coding outcome benchmark", () => {
     expect(artifacts.result.status).toBe("failed");
     expect(artifacts.result.run.status).toBe("completed");
     expect(artifacts.result.evaluation.diagnostics).toEqual([
-      "target_mismatch",
+      "outcome_test_failed",
       "expected_change_missing",
     ]);
     const [storedResult, bundle] = await Promise.all([
@@ -263,7 +360,7 @@ describe("CLI coding outcome benchmark", () => {
     );
   });
 
-  it("turns an external timeout into a scored cancelled Run", async () => {
+  it("keeps an externally timed-out Run out of scored outcomes", async () => {
     const outputDir = await temporaryOutput();
     const provider = fauxProvider({ provider: "faux-coding-timeout" });
     provider.setResponses([
@@ -288,10 +385,10 @@ describe("CLI coding outcome benchmark", () => {
       dependencies,
     );
 
-    expect(artifacts.result.status).toBe("failed");
+    expect(artifacts.result.status).toBe("inconclusive");
     expect(artifacts.result.run.status).toBe("cancelled");
     expect(artifacts.result.evaluation.diagnostics).toEqual(
-      expect.arrayContaining(["run_not_completed", "target_mismatch"]),
+      expect.arrayContaining(["run_not_completed", "outcome_test_unavailable"]),
     );
     expect(provider.state.callCount).toBe(0);
   }, 10_000);
@@ -303,6 +400,33 @@ function providerDependencies(
 ): CodingBenchmarkDependencies {
   return {
     now: () => new Date("2026-07-30T00:00:00.000Z"),
+    async runOutcomeTest(input) {
+      const source = await readFile(
+        path.join(input.workspaceRoot, "src/shipping.js"),
+        "utf8",
+      );
+      const passed =
+        !input.signal?.aborted &&
+        codingBenchmarkAstSha256(source) === EXPECTED_AST_SHA256;
+      const status = input.signal?.aborted
+        ? ("cancelled" as const)
+        : passed
+          ? ("succeeded" as const)
+          : ("failed" as const);
+      return {
+        testSha256: input.testSha256,
+        status,
+        sandboxId: "coding-benchmark-test",
+        resultSha256: sha256(
+          canonicalJson({ testSha256: input.testSha256, status }),
+        ),
+        durationMs: 0,
+        exitCode: status === "succeeded" ? 0 : status === "failed" ? 1 : null,
+        stdoutSha256: sha256(""),
+        stderrSha256: sha256(""),
+        passed,
+      };
+    },
     async createRuntime(options: LocalAgentRuntimeOptions) {
       await beforeCreate?.();
       const services = await createLocalAgentRuntime({

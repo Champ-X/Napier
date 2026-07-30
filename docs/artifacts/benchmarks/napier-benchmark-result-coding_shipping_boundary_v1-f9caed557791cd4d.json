@@ -1,0 +1,87 @@
+{
+  "kind": "napier.coding-benchmark-result",
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-30T00:19:29.823Z",
+  "caseId": "coding_shipping_boundary_v1",
+  "caseSha256": "d86df81541f897ff296e20e0dc4ac473a6c43d13397092a7a68ac0d81451ae43",
+  "status": "inconclusive",
+  "model": {
+    "provider": "deepseek",
+    "id": "deepseek-v4-flash"
+  },
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cliVersion": "0.1.0"
+  },
+  "run": {
+    "threadId": "thread_8d6ced1a458f49c5ac3d",
+    "runId": "run_72472489756c456584cd",
+    "status": "completed",
+    "agentId": "agent_napier",
+    "agentRevision": 2,
+    "configurationSha256": "40a8ac1c0a18bb38c0e57eb326a93f554fdf57d578f5609da3150129865ddf53",
+    "durationMs": 7181,
+    "usage": {
+      "inputTokens": 5648,
+      "outputTokens": 624,
+      "cacheReadTokens": 10240,
+      "cacheWriteTokens": 0,
+      "costUsd": 0.0009941120000000001
+    }
+  },
+  "tooling": {
+    "started": 2,
+    "completed": 2,
+    "failed": 0,
+    "blocked": 0,
+    "repeatedCallCount": 0,
+    "applyPatchCompleted": true
+  },
+  "evaluation": {
+    "kind": "napier.coding-benchmark-evaluation",
+    "schemaVersion": 2,
+    "caseId": "coding_shipping_boundary_v1",
+    "caseSha256": "d86df81541f897ff296e20e0dc4ac473a6c43d13397092a7a68ac0d81451ae43",
+    "status": "inconclusive",
+    "runStatus": "completed",
+    "criteriaSha256": "995760210d95ce97f5eec833377ac826028810582dca4d2d7e06fc4dc7130600",
+    "workspaceBeforeSha256": "8d86ebd9d496263610e10e7c93bedba1cd34ce7dececabf295911b5bc6b87083",
+    "workspaceAfterSha256": "5d4ee6fa781647cadb3502e83dbed515d24117641606e7bda6b3effdd608ec98",
+    "targetBeforeSha256": "7599d299a32b68c2995a51f11b0b59927d6fa95cf5906075d122463e1012953e",
+    "targetAfterSha256": "14a346316a5bb320e276edb38b743a21956266b566a242b9c539e761722e7596",
+    "expectedTargetSha256": "d389ee6c5ef6830cedbd4fc003a693358923aa94a64b58cf338afa66937676fe",
+    "targetAfterAstSha256": "2984ea5c857df5ae565c5bf575630294d82de809316a8d2a93551e8c16c88650",
+    "expectedTargetAstSha256": "977058b3c7b87f5b64bc18756c0cae8b71adb84263b015e26f37090525c2680d",
+    "changedFileCount": 1,
+    "changedPathSetSha256": "aee6bdccb0ad856759ba7628aaa646bdb50443dcc228eb58214336c67ca17309",
+    "targetSemanticMatch": false,
+    "allowedChangeSetMatch": true,
+    "outcomeTest": {
+      "testSha256": "b3b7647c34fff450c84cbcdfaf633d15c73d207451b3e7249c629888802e6df5",
+      "status": "unavailable",
+      "sandboxId": "macos-sandbox-exec",
+      "resultSha256": "215820f954585c487c587e78dc076f9f1297070a80eab992b5c80aede9e12628",
+      "durationMs": 13,
+      "exitCode": 71,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrSha256": "d34a4e4359a4dc36526cf5b363da32f7b7594a3a09eea17cbdfd6425b052d93e",
+      "passed": false
+    },
+    "diagnostics": [
+      "outcome_test_unavailable"
+    ],
+    "contentSha256": "2a1a0b96f16768deedc7fd86359ebc328ef49d0f3d702e7fb3fef14b297c0e5f"
+  },
+  "ledger": {
+    "eventId": "event_3c86569321eb451582d6",
+    "eventSeq": 397,
+    "eventSha256": "9af3fee923bc62ca529e25b9ba110812ad7dbbcece1d7c14aa4a30f31633af1a",
+    "eventStreamSha256": "832ec82ffbdf6781a9960146d7e781b2c18eb722be2087c917612fc6bb14cdab",
+    "bundleFileName": "napier-benchmark-ledger-coding_shipping_boundary_v1-0cdd988f384cdf71.json",
+    "bundleSha256": "0cdd988f384cdf71c2d11f5ac79a6c215bb2b6a7ea5b13dc360af83f485c97d6",
+    "bundleBytes": 21082
+  },
+  "contentSha256": "f9caed557791cd4ddeb6d8d5d2db7f713423ebba65518b4173afb6e3313be57a"
+}

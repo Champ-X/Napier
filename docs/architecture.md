@@ -199,13 +199,24 @@ then consumes the same JSONL `StreamFrame` sequence as external automation.
 The demo model provides a deterministic failed baseline; live providers require
 an explicit environment-variable credential locator.
 
-The initial `coding_shipping_boundary_v1` scorer is host-execution-free. It
-hashes the complete before/after workspace, requires the changed path set to
-equal the case allowlist, and compares a TypeScript-parser AST projection of
-the target with the hidden expected AST. The projection ignores comments,
-whitespace, and numeric separators while preserving every syntax node and
-token kind, so formatting-equivalent output passes without accepting extra
-logic.
+The `coding_shipping_boundary_v1` case hashes the complete before/after
+workspace and requires the changed path set to equal the case allowlist. Case
+schema v2 also binds a hidden assertion module. After the Agent Run and
+workspace snapshot, the runner adds that module under a reserved one-use name,
+executes it with the existing `CommandRunner` in a read-only, network-denied
+Node Sandbox, records only status/latency/exit/output hashes, and removes it.
+The module loads generated source through a data URL inside the Sandbox, so
+model-modified code is never imported into the benchmark host process.
+A trusted marker is written before importing generated code; wrapper
+diagnostics count as Sandbox unavailability only when that marker is absent,
+so generated stderr cannot spoof an inconclusive outcome.
+
+A TypeScript-parser AST projection remains supplementary evidence. It ignores
+comments, whitespace, and numeric separators while preserving syntax nodes and
+token kinds. Unlike case v1, AST equality with one expected implementation is
+not the v2 success oracle. A Run passes only when the hidden assertions pass
+and the exact changed-path policy holds. If the Sandbox backend cannot start,
+the result is `inconclusive`; Napier never falls back to host execution.
 
 After scoring, the runner appends one hash-only `benchmark.evaluated` event to
 the source Run. It emits:
@@ -217,6 +228,16 @@ the source Run. It emits:
   and snapshot hashes, event-type counts, Run/evaluation bindings, and chained
   receipts for non-delta events.
 
+`--trials 2..10` runs the same case/model sequentially in independent
+workspace, data-root, Thread, and Run lifecycles. The resulting
+`napier-benchmark-series-<case>-<hash>.json` binds every result/Ledger pair,
+rejects duplicate result or Run identities, and reports completed, scored,
+passed, failed, and inconclusive counts. Pass rate is computed only over
+scoreable trials and remains `null` when the Sandbox made every trial
+inconclusive. Duration, cost, token, tool, and repetition distributions retain
+total/min/p50/p95/max/mean values. Parent cancellation records the completed
+prefix and does not start another trial.
+
 High-volume text/thinking delta receipts are summarized by count and source
 event-stream hash. Prompt, assistant text, reasoning, tool bodies, workspace
 paths, and credentials do not enter benchmark artifacts. Offline verification
@@ -224,7 +245,11 @@ first enforces exact nested schemas, so adding an unknown raw field and
 recomputing every self-describing hash still fails closed. It then recomputes
 result/bundle hashes, receipt chains, event aggregates, Run/tool bindings, and
 the evaluation-event receipt. The command rejects result files above 256 KiB
-and Ledger bundles above 4 MiB before JSON parsing.
+and Ledger bundles above 4 MiB before JSON parsing. `--verify-series` first
+enforces hash-derived local filenames, then verifies every referenced pair and
+recomputes all aggregate statistics; `.`/`..`, missing artifacts, duplicated
+Runs, symlinked inputs, and self-consistently rehashed aggregate drift fail
+closed.
 
 The live case also established two Runtime compatibility boundaries:
 
@@ -235,8 +260,10 @@ The live case also established two Runtime compatibility boundaries:
   successful assistant output. The Runtime records only the diagnostic hash
   and settles the Run as failed or cancelled.
 
-One case and one live sample do not establish task success rate or superiority.
-Repeated trials, cross-model execution, reference-project runs, and the other
+One case and a three-trial execution do not establish task success rate or
+superiority. The checked-in v2 series is explicitly inconclusive because the
+current IDE host denied nested `sandbox-exec`. A non-nested Sandbox run,
+cross-model execution, more Coding cases, reference-project runs, and the other
 P9 domains remain required.
 
 ### Workbench

@@ -367,10 +367,11 @@ growth can be audited independently of wall-clock noise.
 
 The first fixed Outcome case asks the CLI Agent to repair one JavaScript
 boundary bug in an isolated temporary workspace. The scorer does not trust the
-assistant summary or execute generated code on the host. It requires the
-complete target-file AST to match the hidden expected AST, permits only the
-declared changed path, and records success, model usage, cost, latency, tool
-failures, and repeated calls.
+assistant summary or execute generated code without isolation. Case schema v2
+requires the declared changed path and runs hash-bound hidden assertions in the
+existing read-only, network-denied Node Sandbox. The complete target-file AST
+remains evidence, but behaviorally correct alternative structures are not
+rejected merely for differing from one expected AST.
 
 Run a deterministic failed demo baseline:
 
@@ -387,8 +388,20 @@ npm run bench:coding -- \
   --credential-env DEEPSEEK_API_KEY
 ```
 
-The command writes two CAS-named files under ignored `benchmark-results/`: a
-small result and a privacy-bounded Ledger bundle. The bundle retains the full
+Run 2–10 independent trials sequentially:
+
+```bash
+npm run bench:coding -- \
+  --model deepseek/deepseek-v4-flash \
+  --credential-env DEEPSEEK_API_KEY \
+  --trials 3
+```
+
+A single run writes two CAS-named files under ignored `benchmark-results/`: a
+small result and a privacy-bounded Ledger bundle. A repeated run also writes a
+CAS series with completed/scored/inconclusive counts, pass rate, and
+min/p50/p95/max/mean/total distributions for latency, cost, tokens, and tool
+behavior. The bundle retains the full
 source event-stream hash, event-type counts, Run configuration/usage, tool
 metrics, the `benchmark.evaluated` event, and chained receipts for important
 events. Prompt, assistant text, reasoning, tool bodies, paths, and credential
@@ -404,13 +417,26 @@ npm run bench:coding -- \
   --ledger <napier-benchmark-ledger-...json>
 ```
 
-The checked-in
+Verify a series and every referenced result/Ledger pair from the same
+directory:
+
+```bash
+npm run bench:coding -- \
+  --verify-series <napier-benchmark-series-...json>
+```
+
+If the OS Sandbox is unavailable, Napier records the trial as `inconclusive`,
+keeps `passRate` null when no trial was scoreable, exits non-zero, and never
+falls back to host execution. The checked-in v1
 [DeepSeek result](docs/artifacts/benchmarks/napier-benchmark-result-coding_shipping_boundary_v1-ad31aff64f35d15a.json)
 and
 [Ledger bundle](docs/artifacts/benchmarks/napier-benchmark-ledger-coding_shipping_boundary_v1-c52d3c3d04232076.json)
-are one successful sample, not a success-rate or cross-project comparison.
-Research, Workflow, long-horizon, security, UX, repeated-trial, and reference
-project suites remain open.
+remain a historical AST-scored successful sample. The checked-in v2
+[three-trial series](docs/artifacts/benchmarks/napier-benchmark-series-coding_shipping_boundary_v1-d7738151e8036e7e.json)
+is deliberately inconclusive because this IDE host denied nested
+`sandbox-exec`; it is not a 0% success rate. Cross-model and broader Coding,
+Research, Workflow, long-horizon, security, UX, and reference-project suites
+remain open.
 
 ## Live Models
 

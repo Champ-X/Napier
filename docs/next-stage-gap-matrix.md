@@ -28,7 +28,7 @@ Audit date: 2026-07-30
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, and one-shot human/JSONL CLI exist; interactive TUI, resume/branch CLI commands, SDK/RPC, ACP, and Desktop remain.                                                                                                                  |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                              |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                    |
-| P9 outcome benchmark              | Started        | One fixed CLI Coding case now records deterministic AST/workspace outcomes, model cost/latency, tool retries, and privacy-bounded Ledger evidence; repeated/cross-model Coding plus Research, Workflow, Long-horizon, Security, and UX suites remain.        |
+| P9 outcome benchmark              | Started        | One fixed CLI Coding case now supports repeated independent trials, Sandbox assertions, aggregate cost/latency/tool distributions, and privacy-bounded Ledger evidence; non-nested scoring, cross-model/multi-case Coding plus other domains remain.         |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                             |
 
 ## Completed Slice: Read-Only Sandboxed Commands
@@ -886,5 +886,92 @@ Observed result:
   to nine tool calls despite the same case/model. This variance is recorded,
   not hidden, and is why repeated-trial aggregation is the next P9 requirement;
 - the complete repository gate passed 938 tests with ten opt-in live tests
+  skipped by default, verified 244/244 OpenAPI operations, and kept the Web
+  main entry at 129.13 KiB against the 150 KiB budget.
+
+## Completed Slice: Repeated Coding Trials And Sandbox Outcome Oracle
+
+User scenario: a developer can run the same fixed case/model several times,
+distinguish task failures from unscoreable infrastructure, inspect latency,
+cost, token, and tool variance, and verify every aggregate back to independent
+Run/Ledger evidence without cherry-picking a favorable sample.
+
+Acceptance:
+
+- add `--trials 2..10` without changing the default single-run command;
+- execute trials sequentially with fresh workspace, data root, Thread, Run,
+  Agent revision, and credential reference lifecycles;
+- bind every series entry to a unique Run id, result logical hash, result
+  filename, Ledger logical hash, and Ledger filename; duplicate result or Run
+  identities are invalid;
+- report requested/completed/scored/passed/failed/inconclusive counts,
+  completion rate, scoreable-only pass rate, and
+  total/min/p50/p95/max/mean distributions for latency, cost, tokens, tool
+  starts/completions/failures/blocks, and repeated calls;
+- preserve a completed prefix on parent cancellation and never start another
+  trial after observing the parent signal;
+- evolve the fixed case to schema v2 with a hash-bound hidden assertion module;
+  copy it under a reserved one-use workspace name only after the Agent Run and
+  before cleanup;
+- execute generated source only through the existing explicit-argv Node
+  `CommandRunner` with read-only workspace, denied network, fixed environment,
+  wall/output limits, and process-group termination;
+- retain AST equality as structural evidence but determine v2 success from
+  hidden behavior assertions plus the exact changed-path allowlist;
+- classify Sandbox backend denial as `inconclusive`, set pass rate to `null`
+  when no trial is scoreable, return a non-zero command status, and never fall
+  back to host execution;
+- append only test script/result/output hashes, status, Sandbox id, duration,
+  and exit code to `benchmark.evaluated`; hidden assertions and process output
+  remain absent from benchmark artifacts;
+- add `--verify-series`, bound the series to 256 KiB, read each result and
+  Ledger under their existing limits, derive every referenced filename from
+  case id plus logical hash, and recompute all trial and aggregate bindings;
+- continue verifying the checked-in schema-v1 result/Ledger pair.
+
+Threat boundary:
+
+- Generated code is untrusted. The benchmark host parses it for AST evidence
+  but never imports it; only the managed OS Sandbox executes it.
+- The hidden test is trusted, hash-bound repository input, is not copied into
+  the Agent workspace until after the model Run, and is removed only when the
+  benchmark created the reserved file. A colliding model-created file makes
+  the outcome unavailable and is never deleted.
+- Nested `sandbox-exec` can be denied by the current host. That is an
+  infrastructure limitation, not a task failure. Fail-closed inconclusive
+  evidence is preferable to either false 0% scoring or unsandboxed execution.
+  A trusted pre-import stdout handshake prevents generated code from spoofing
+  a wrapper diagnostic to downgrade a real failure to inconclusive.
+- Series verification accepts only hash-derived basenames in the series
+  directory and refuses symlinked inputs. `.`/`..`, path separators, missing
+  artifacts, extra fields, duplicate Runs, tampered statistics, and
+  self-consistently rehashed drift fail closed.
+- Trial order is preserved and all completed attempts are included. The series
+  cannot silently drop a failed or inconclusive completed trial.
+
+Observed result:
+
+- a real DeepSeek `deepseek-v4-flash` three-trial Run completed all three
+  independent Agent Runs with two tool calls each, zero failed/blocked/repeated
+  tool calls, and exact allowed-path adherence;
+- model duration was 6,201–7,181 ms (p50 6,309 ms, mean 6,563.67 ms), reported
+  total cost was `$0.002819208`, and total input/output/cache-read tokens were
+  16,068 / 1,721 / 31,360;
+- one target matched the hidden expected AST and two used different ASTs. The
+  current IDE host denied all three nested macOS Sandbox launches, so the
+  series correctly reports three completed, zero scored, zero failed, three
+  inconclusive, and `passRate: null`; no model success-rate conclusion is
+  drawn;
+- the archived series
+  `napier-benchmark-series-coding_shipping_boundary_v1-d7738151e8036e7e.json`
+  has logical content SHA-256
+  `d7738151e8036e7e8402c1e1c37d4df2c5879243af642572ac7f0ebc0bebe1c6`
+  and binds three result/Ledger pairs. Offline verification returns zero
+  diagnostics;
+- targeted tests cover success, task failure, unavailable Sandbox,
+  collision-safe cleanup, cancellation prefix, duplicate trials, aggregate
+  tampering, self-consistently rehashed path escape, oversized artifacts, and
+  schema-v1 compatibility;
+- the complete repository gate passed 944 tests with ten opt-in live tests
   skipped by default, verified 244/244 OpenAPI operations, and kept the Web
   main entry at 129.13 KiB against the 150 KiB budget.
