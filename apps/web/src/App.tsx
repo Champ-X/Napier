@@ -538,6 +538,7 @@ export function App() {
                 selectedModelConfigured={activeModel.configured}
                 onContinue={() => void vm.submit(copy.planNextPrompt)}
                 onDraftApplied={() => void vm.refreshActiveThread()}
+                onOpenThread={vm.selectThread}
               />
             </Suspense>
           ) : null}

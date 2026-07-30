@@ -144,7 +144,6 @@ import {
   NapierStreamFrameEventTypeError,
   NapierStreamFrameIdError,
   NapierStreamFrameOrderError,
-  NapierStreamFrameParseError,
   NapierStreamRunIdentityError,
   NapierStreamResponseContractError,
   NapierStreamSnapshotEventError,
@@ -158,6 +157,7 @@ import {
   sha256Text,
   throwNapierApiError,
 } from "./api-error";
+import { type ParsedSseJsonRecord, readSseJsonRecords } from "./sse-json";
 
 const TERMINAL_RUN_STATUSES = new Set([
   "completed",
@@ -1337,7 +1337,7 @@ type StreamRunExpectation =
       decisionId: string;
     };
 
-interface ParsedStreamFrame {
+export interface ParsedStreamFrame {
   frame: StreamFrame;
   frameSha256: string;
 }
@@ -1359,8 +1359,6 @@ async function streamRunFrames(
   await verifyStreamRunResponseContract(path, response, expectation);
   if (!response.body) throw new Error("Streaming response is unavailable");
 
-  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
-  let buffer = "";
   let frameCount = 0;
   let lastFrameType: StreamFrame["type"] | undefined;
   let terminalFrameType: StreamFrame["type"] | undefined;
@@ -1517,18 +1515,8 @@ async function streamRunFrames(
       terminalFrameType = frame.type;
     }
   };
-  for (;;) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += value;
-    const records = buffer.split(/\r?\n\r?\n/);
-    buffer = records.pop() ?? "";
-    for (const record of records) {
-      await dispatchParsedFrame(await parseStreamFrameRecord(path, record));
-    }
-  }
-  if (buffer.trim()) {
-    await dispatchParsedFrame(await parseStreamFrameRecord(path, buffer));
+  for await (const record of readSseJsonRecords(path, response.body)) {
+    await dispatchParsedFrame(await validateStreamFrameRecord(path, record));
   }
   if (!terminalFrameType) {
     throw new NapierStreamTerminationError(path, {
@@ -1764,35 +1752,17 @@ function expectHeaderIncludes(
   }
 }
 
-async function parseStreamFrameRecord(
+export async function validateStreamFrameRecord(
   path: string,
-  record: string,
-): Promise<ParsedStreamFrame | undefined> {
-  const lines = record.split(/\r?\n/);
-  const data = lines
-    .filter((line) => line.startsWith("data:"))
-    .map((line) => line.slice(5).trimStart())
-    .join("\n");
-  if (!data) return undefined;
-  const frameSha256 = await sha256Text(data);
-  const lineCount = data.split(/\r?\n/).length;
-  const eventType = lines
-    .filter((line) => line.startsWith("event:"))
-    .map((line) => line.slice(6).trimStart())
-    .at(-1);
-  const sseId = lines
-    .filter((line) => line.startsWith("id:"))
-    .map((line) => line.slice(3).trimStart())
-    .at(-1);
-  let frame: unknown;
-  try {
-    frame = JSON.parse(data);
-  } catch {
-    throw new NapierStreamFrameParseError(path, {
-      frameSha256,
-      lineCount,
-    });
-  }
+  record: ParsedSseJsonRecord,
+): Promise<ParsedStreamFrame> {
+  const {
+    value: frame,
+    dataSha256: frameSha256,
+    lineCount,
+    eventType,
+    id: sseId,
+  } = record;
   if (!isStreamFrame(frame)) {
     const contractReason = streamFrameContractReason(frame) ?? "not_object";
     throw new NapierStreamFrameContractError(path, {

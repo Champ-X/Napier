@@ -13,14 +13,19 @@ import {
   UnsupportedSandboxAdapter,
   validateExecutionPlanWorkflowExperimentResultFrame,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
+import {
+  executeWorkflowExperiment,
+  previewWorkflowExperiment,
+} from "../../web/src/workflow-experiment-api.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   for (const services of openServices.splice(0)) {
     await services.shutdownLocalRuntime();
   }
@@ -77,6 +82,7 @@ describe("Workflow experiment HTTP path", () => {
       },
     );
     expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
     expect(
       response.headers.get(
         "x-napier-workflow-experiment-candidate-manifest-sha256",
@@ -107,6 +113,63 @@ describe("Workflow experiment HTTP path", () => {
       }),
     );
     expect(result.targetThreadId).not.toBe(fixture.sourceThreadId);
+  }, 20_000);
+
+  it("completes the real Web client preview and comparison path", async () => {
+    const fixture = await createFixture();
+    const app = createApp(fixture.services);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const path =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(path, init);
+      }),
+    );
+    const request = {
+      manifest: fixture.manifest,
+      fromNodeId: "report",
+      modelOverrides: {
+        report: { provider: "faux-http-experiment-alt", id: "faux-1" },
+      },
+    };
+    const preview = await previewWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      request,
+    );
+    fixture.alternate.setResponses([
+      fauxAssistantMessage('{"report":"Web experiment","approved":true}'),
+    ]);
+    const frames: string[] = [];
+    const result = await executeWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+      preview,
+      (frame) => frames.push(frame.type),
+    );
+
+    expect(result.experiment.result.output).toEqual({
+      report: "Web experiment",
+      approved: true,
+    });
+    expect(result.experiment.comparison).toEqual(
+      expect.objectContaining({
+        inputChange: "unchanged",
+        outputChange: "changed",
+        changedNodeIds: ["report"],
+      }),
+    );
+    expect(frames.at(-2)).toBe("snapshot");
+    expect(frames.at(-1)).toBe("workflow_experiment_result");
   }, 20_000);
 
   it("returns a no-mutation conflict until write-effect evidence is confirmed", async () => {

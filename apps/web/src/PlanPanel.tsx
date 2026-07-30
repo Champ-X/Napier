@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
   Brain,
   ChevronRight,
@@ -156,6 +156,9 @@ const MAX_PLAN_BLUEPRINT_REPLAY_HISTORY_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_REPLAY_OUTCOMES_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_PLAN_BLUEPRINT_POLICY_OVERRIDE_RETIREMENT_HISTORY_FILE_BYTES =
   2 * 1024 * 1024;
+const LazyWorkflowExperimentDesk = lazy(
+  () => import("./WorkflowExperimentDesk"),
+);
 
 type PlanArchiveReceipt =
   | {
@@ -270,6 +273,7 @@ export default function PlanPanel({
   selectedModelConfigured,
   onContinue,
   onDraftApplied,
+  onOpenThread,
 }: {
   threadId: string | undefined;
   plans: ExecutionPlan[];
@@ -278,6 +282,7 @@ export default function PlanPanel({
   selectedModelConfigured: boolean;
   onContinue: () => void;
   onDraftApplied: () => void | Promise<void>;
+  onOpenThread: (threadId: string) => void | Promise<void>;
 }) {
   const plan =
     plans.findLast((candidate) => candidate.status === "active") ??
@@ -1606,6 +1611,18 @@ export default function PlanPanel({
           {plans.length} {planCopy.count}
         </span>
       </div>
+      {threadId && plans.length > 0 ? (
+        <Suspense fallback={null}>
+          <LazyWorkflowExperimentDesk
+            threadId={threadId}
+            plans={plans}
+            running={running}
+            selectedModelKey={selectedModelKey}
+            selectedModelConfigured={selectedModelConfigured}
+            onOpenThread={onOpenThread}
+          />
+        </Suspense>
+      ) : null}
       {!plan ? (
         <p className="empty-panel">{planCopy.empty}</p>
       ) : (

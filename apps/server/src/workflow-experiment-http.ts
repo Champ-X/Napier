@@ -109,7 +109,7 @@ export async function executeWorkflowExperimentHttp(
     preview.candidateManifestSha256,
   );
 
-  return streamSSE(context, async (stream) => {
+  const response = streamSSE(context, async (stream) => {
     let targetThreadId = prepared.sourceThreadId;
     const writeFrame = async (
       frame: StreamFrame | ExecutionPlanWorkflowExperimentResultFrame,
@@ -146,6 +146,8 @@ export async function executeWorkflowExperimentHttp(
       await writeFrame(streamRunErrorFrame(targetThreadId, error));
     }
   });
+  response.headers.set("Cache-Control", "no-store");
+  return response;
 }
 
 async function prepareExperimentRequest(

@@ -6,6 +6,25 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a lazy Workflow Experiment Desk to the Plan Workbench. A developer can
+  load a canonical versioned Manifest, select a source Plan/checkpoint,
+  optionally replace the checkpoint model, preview reused/rerun nodes and
+  historical tool effects, confirm the exact side-effect-bearing preview, run
+  the existing isolated experiment Runtime, inspect aggregate and per-node
+  differences, open the target Thread, and download the complete result with a
+  CAS filename. The browser independently binds Preview to source
+  Thread/Plan/Manifest/node/model overrides and validates multi-Run SSE event
+  hashes/order, one terminal Snapshot, comparison/result hashes, target
+  identity, event-stream hash, no-store headers, and bounded response sizes.
+  Thread or form changes abort and invalidate in-flight work so stale responses
+  cannot repopulate another Thread. UI projection excludes output bodies, tool
+  arguments, Evaluation prose, Artifact paths, and diagnostics. A shared SSE
+  JSON reader replaces duplicate stream decoding without narrowing ordinary
+  long-Thread Run streams. Real Server/SQLite/Runtime/Web-client dogfood and
+  source-drift, stale-preview, duplicate-Snapshot, missing-terminal, tamper,
+  UTF-8 split, privacy, API-boundary, and byte-limit regressions cover the
+  vertical path. Review also fixed experiment SSE responses being downgraded
+  from `no-store` to `no-cache` by the streaming helper.
 - Added source-versus-target comparison for controlled Workflow checkpoint
   experiments. Newly generated results align nodes by Manifest order, classify
   verified reuse versus actual rerun, and report current status, Run/source,

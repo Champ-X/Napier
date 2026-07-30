@@ -346,6 +346,25 @@ reasons/evidence, Artifact paths, and raw diagnostics are excluded. Comparison
 creation rechecks source and target Plan revisions after observation and fails
 closed on source drift or non-Workflow Run bindings.
 
+The Plan Workbench adds a lazy Workflow Experiment Desk over the same HTTP
+boundary. It accepts a browser-local, content-verified Manifest, lets the user
+select a source Plan/checkpoint and optional selected-model override, then
+requires preview before execution. Preview responses are rebound to the exact
+Thread, Plan, Manifest, node, model overrides, response hash, and no-store
+headers. Execution reuses the existing isolated Runtime; the browser validates
+multi-Run event hashes/order, one final Snapshot, the complete experiment
+result/comparison hash chain, and source/target identities before rendering.
+Navigation aborts the current fetch and operation-generation checks prevent an
+old response from repopulating a newly selected Thread.
+
+The UI projection excludes Workflow input/output bodies, tool arguments,
+Evaluation prose, Artifact paths, and diagnostics. An explicit download may
+save the complete local result with CAS naming. The client accepts up to 2 MiB
+for Preview, 6 MiB for one SSE record, and 12 MiB for the complete stream; these
+bounds cover the Runtime's 5.5 MiB legal terminal-frame maximum plus the new
+target Thread Snapshot. Experiment SSE responses override the streaming
+helper's default cache policy with `Cache-Control: no-store`.
+
 Schema version 1 is intentionally narrow: Agent nodes, direct typed bindings,
 sequential dependency-ready DAG scheduling, cancellation, timeout, explicit
 retry, and restart recovery. It does not yet implement deterministic or Tool
@@ -455,7 +474,9 @@ The UI has ten primary projections:
 - **Plan**: dependency DAG, step evidence, blockers, artifact manifests,
   portable Plan archive verification, reusable blueprint export/upload
   verification, and a local template shelf for saving, archiving, restoring,
-  and replaying workflow blueprints;
+  and replaying workflow blueprints, plus a controlled Workflow experiment
+  desk for Manifest upload, checkpoint preview, side-effect confirmation,
+  isolated execution, comparison, target navigation, and CAS download;
 - **Goal**: durable objective state, blockers, and completion evidence;
 - **Memory**: proposed, active, stale, rejected, and archived facts, review
   deadlines, per-Run usage evidence, immutable correction links, and
@@ -473,10 +494,10 @@ The UI has ten primary projections:
   signed Prompt package transfer, credential-reference availability, workspace
   boundary, and verified compaction checkpoints.
 
-Trace, Plan, Run Lab, Evaluation Suite, Memory, Extensions, Context, and
-Automations are separate browser chunks. Their forms and mutation clients
-remain inside those lazy boundaries so the primary Workbench entry stays under
-its 150 kB budget.
+Trace, Plan, the Workflow Experiment Desk, Run Lab, Evaluation Suite, Memory,
+Extensions, Context, and Automations are separate browser chunks. Their forms
+and mutation clients remain inside those lazy boundaries so the primary
+Workbench entry stays under its 150 kB budget.
 
 An open Operator Decision is a separate lazy Workbench docket between the
 Ledger and composer. It owns accessible option selection, custom answer,

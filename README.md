@@ -41,7 +41,8 @@ Version `0.1.0` includes:
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
   retry, latency, usage, cost, tool, output, Evaluation, and Artifact
-  comparison;
+  comparison, plus a lazy Plan Workbench experiment desk for the complete
+  preview-confirm-execute-inspect flow;
 - an authoritative SQLite WAL that commits workspace projections and ordered
   events atomically, uses revision CAS for concurrent local writers, and
   migrates legacy `workspace.json`/JSONL state without evidence loss;
@@ -468,6 +469,19 @@ source-versus-target comparison with per-node execution classification and
 target-minus-source metrics. Human mode prints the aggregate duration, token,
 tool-call, and cost delta; output bodies, prompts, tool arguments, Evaluation
 prose, and Artifact paths remain outside the comparison.
+
+The same path is available in **Plan -> Workflow experiment desk**. Load the
+exact versioned Manifest used by the source run, select its durable source Plan
+and checkpoint node, optionally replace that node with the currently selected
+configured model, and preview before execution. The desk renders historical
+read/write/unknown effects and requires an explicit checkbox for a preview that
+needs side-effect confirmation. A successful isolated fork shows aggregate and
+per-node target-minus-source deltas, can open the target Thread, and downloads
+the complete local result as
+`napier-workflow-experiment-<plan>-<hash>.json`. The browser revalidates the
+Manifest, Preview, SSE event hashes/order, final Snapshot, comparison, result
+frame, source/target identities, and no-store response contract; changing
+Thread aborts the in-flight browser request.
 
 ## Store Scale Baseline
 
@@ -2350,6 +2364,16 @@ reopened or newly failed node cannot inherit a historical successful output.
 The complete comparison is delivered in the existing JSONL/SSE terminal frame;
 `workflow.experiment.compared` records only bounded counts, deltas, statuses,
 and hashes for Ledger and Web Trace.
+
+The lazy Plan Workbench experiment desk consumes those same routes rather than
+implementing a browser scheduler. Uploaded Manifest text remains browser-local
+until preview/execute. The UI renders only statuses, models, metrics, tool
+names, output availability, and safe IDs/hashes; it never projects model output
+bodies, tool arguments, Evaluation prose, or Artifact paths. Complete result
+JSON is available only through the explicit local download action. Preview and
+execution responses must be `no-store`, and the browser enforces 2 MiB preview,
+6 MiB frame, and 12 MiB stream bounds sized above the Runtime's legal frame
+maximum.
 
 Version 1 intentionally supports Agent nodes and sequential dependency-ready
 DAG scheduling only. Deterministic and Tool nodes, human approval nodes,
