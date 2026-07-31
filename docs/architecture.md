@@ -1744,6 +1744,13 @@ as `manual`; an old Run never inherits permission from a newer Agent revision.
 Napier persists credential locators, never credential values:
 
 ```text
+bootstrap ModelRegistry
+  -> construct Pi builtinProviders() from the pinned dependency
+  -> register all 38 Provider auth/endpoint/API/model implementations
+  -> retain the complete 1,116-model collection for explicit ModelRef lookup
+  -> project catalogs round-robin, at most 18 per Provider and 512 live total
+  -> check auth availability without refresh, login, model call, or network
+  -> publish object-union tools as top-level object function schemas
 choose provider in Context
   -> prefill provider-specific label, ENV variable name, and Keychain service
   -> preserve custom locator fields when switching providers
@@ -1789,9 +1796,12 @@ positional arguments, a timeout, and bounded output; no shell is involved.
 The Context prefill is draft-only UI state; it never reads environment values
 or writes secrets. The model selector grouping is likewise a projection over
 the server-returned model catalog and credential availability; it does not
-perform an authentication attempt. Evaluation Suite creation uses the same
-full catalog projection, while Casebook qualification filters that projection
-to executable configured candidates before replaying a gold set. The composer,
+refresh a catalog or perform a model call. Round-robin projection preserves at
+least one model from every static Pi Provider before adding later models, while
+explicit CLI/SDK/RPC ModelRefs resolve against the full collection. Evaluation
+Suite creation uses the same bounded catalog projection, while Casebook
+qualification filters that projection to executable configured candidates
+before replaying a gold set. The composer,
 resume banner, Run Lab evaluation, Evaluation Suite gate, and Plan Workbench
 model-review actions also consume that model-availability projection, so
 unavailable providers fail closed before a request leaves the browser. Trace
@@ -1830,6 +1840,14 @@ variable locator. The test persists only that locator, invokes the normal
 asserting that the raw key is absent from the stored event stream. Default
 `npm run check` keeps this file skipped, so routine verification remains
 offline and zero-cost.
+`npm run test:live-provider` instead accepts a caller-selected Provider/model
+outside Napier's prior five-Provider set plus the name of its credential
+environment variable. It uses the same CredentialReferenceStore, Agent Runtime,
+context-envelope, secret-redaction, and portable Replay path.
+The existing DeepSeek live smoke additionally verifies that the complete
+default Agent tool set is accepted by a strict OpenAI-compatible function API;
+all action-union built-in tools retain their `anyOf` validation and publish
+top-level `type: object`.
 
 Credential management responses are no-store and response-hash-bound:
 
@@ -5263,7 +5281,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has fifty parts:
+The current boundary has fifty-one parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5455,6 +5473,11 @@ The current boundary has fifty parts:
     with complete-result enforcement, finite fixed SVG geometry, live-only
     semantic output, typed Workflow receipts, public SSE/Trace projection, and
     CAS plus Plan Artifact verification for actual file delivery.
+51. Pi's complete pinned built-in Provider catalog, with no duplicated Napier
+    protocol implementations, fair bounded Workbench projection, full explicit
+    ModelRef resolution, existing credential-reference enforcement, offline
+    listing, caller-selected live-provider smoke coverage, and object-rooted
+    function schemas for strict OpenAI-compatible endpoints.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5513,6 +5536,9 @@ deferred until the local P0-P9 product loop is stable.
 - add authenticated remote transport, a full-screen TUI, ACP, Desktop,
   persistent browser UX, and broader data/research capability slices over the
   same Runtime and Ledger;
+- add explicit dynamic catalog refresh, subscription login UX, custom
+  OpenAI-compatible Provider manifests, local-server discovery, and
+  evaluation-backed routing over the pinned Pi Provider core;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;
 - fixed Capability & Outcome benchmarks centered on task success, recovery,

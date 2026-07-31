@@ -64,7 +64,7 @@ describeLive("live DeepSeek smoke", () => {
       model: { provider: "deepseek", id: modelId },
     });
 
-    expect(run.status).toBe("completed");
+    expect(run.status, run.error).toBe("completed");
     const events = await store.listEvents(thread.id);
     expect(
       events.some((event) => event.type === "context.model_envelope"),

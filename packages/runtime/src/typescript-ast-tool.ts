@@ -79,6 +79,7 @@ const astEditPreviewSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(astEditPreviewSchema, { type: "object" });
 
 export function createTypescriptAstTools(workspaceRoot: string) {
   const runner = new TypescriptAstRunner(workspaceRoot);

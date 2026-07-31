@@ -63,6 +63,7 @@ const previewSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(previewSchema, { type: "object" });
 
 const applySchema = Type.Object(
   {

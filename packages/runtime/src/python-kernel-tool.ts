@@ -70,6 +70,7 @@ const pythonKernelSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(pythonKernelSchema, { type: "object" });
 
 export interface PythonKernelToolDetails {
   kind: "napier.python-kernel";

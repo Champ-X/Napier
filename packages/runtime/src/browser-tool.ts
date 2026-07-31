@@ -123,6 +123,7 @@ const browserSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(browserSchema, { type: "object" });
 
 export function createBrowserTool(
   manager: RunBrowserSessionManager,

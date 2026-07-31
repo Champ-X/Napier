@@ -6,6 +6,21 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Replaced Napier's five hand-registered model Provider factories with Pi's
+  complete version-pinned `builtinProviders()` catalog. The shared Runtime now
+  resolves 38 Provider implementations and 1,116 models across Web, CLI, SDK,
+  RPC, Agent, and Workflow paths without copying endpoints, API adapters, auth,
+  compatibility, or model tables into Napier. Workbench projection remains
+  network-free and bounded to 18 models per Provider and 512 live models total;
+  round-robin selection preserves every static Provider before later catalog
+  entries. Existing environment/Keychain credential references configure newly
+  exposed API-key Providers, while missing credentials still fail closed before
+  model execution. Built-in action-union tools now retain `anyOf` validation
+  while publishing the top-level object schema required by strict
+  OpenAI-compatible function APIs. Registry, bootstrap, credential,
+  payload-budget, full-model resolution, performance, real DeepSeek Agent, and
+  caller-selected opt-in live smoke coverage prove the path. Dynamic refresh,
+  subscription login UI, and custom Provider manifests remain explicit gaps.
 - Added verified SQLite chart delivery to the existing `sqlite_query` tool.
   `chart` executes one database-hash-bound parameterized query through the
   unchanged read-only child worker and accepts only a complete 1-50 row result

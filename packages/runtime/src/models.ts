@@ -6,25 +6,18 @@ import {
   type MutableModels,
   type Provider,
 } from "@earendil-works/pi-ai";
-import { anthropicProvider } from "@earendil-works/pi-ai/providers/anthropic";
-import { deepseekProvider } from "@earendil-works/pi-ai/providers/deepseek";
-import { googleProvider } from "@earendil-works/pi-ai/providers/google";
-import { openaiProvider } from "@earendil-works/pi-ai/providers/openai";
-import { openrouterProvider } from "@earendil-works/pi-ai/providers/openrouter";
+import { builtinProviders } from "@earendil-works/pi-ai/providers/all";
 import type { ModelRef, ModelSummary } from "@napier/contracts";
 
-const MAX_MODELS_PER_PROVIDER = 18;
+export const MAX_MODELS_PER_PROVIDER = 18;
+export const MAX_PROJECTED_LIVE_MODELS = 512;
 
 export class ModelRegistry {
   readonly models: MutableModels;
 
   constructor(credentials?: CredentialStore) {
     const models = createModels(credentials ? { credentials } : undefined);
-    models.setProvider(openaiProvider());
-    models.setProvider(anthropicProvider());
-    models.setProvider(deepseekProvider());
-    models.setProvider(googleProvider());
-    models.setProvider(openrouterProvider());
+    for (const provider of builtinProviders()) models.setProvider(provider);
     this.models = models;
   }
 
@@ -76,22 +69,17 @@ export class ModelRegistry {
       }),
     );
     const configuredByProvider = new Map(configuredEntries);
-    const liveModels = providers.flatMap((provider) =>
-      this.models
-        .getModels(provider.id)
-        .slice(0, MAX_MODELS_PER_PROVIDER)
-        .map(
-          (model): ModelSummary => ({
-            provider: provider.id,
-            providerName: provider.name,
-            id: model.id,
-            name: model.name,
-            contextWindow: model.contextWindow,
-            reasoning: model.reasoning,
-            vision: model.input.includes("image"),
-            configured: configuredByProvider.get(provider.id) ?? false,
-          }),
-        ),
+    const liveModels = projectedProviderModels(providers, this.models).map(
+      ({ provider, model }): ModelSummary => ({
+        provider: provider.id,
+        providerName: provider.name,
+        id: model.id,
+        name: model.name,
+        contextWindow: model.contextWindow,
+        reasoning: model.reasoning,
+        vision: model.input.includes("image"),
+        configured: configuredByProvider.get(provider.id) ?? false,
+      }),
     );
 
     return [
@@ -114,4 +102,28 @@ export class ModelRegistry {
       }),
     ];
   }
+}
+
+function projectedProviderModels(
+  providers: readonly Provider[],
+  models: MutableModels,
+): Array<{ provider: Provider; model: Model<Api> }> {
+  const catalogs = providers.map((provider) => ({
+    provider,
+    models: models.getModels(provider.id).slice(0, MAX_MODELS_PER_PROVIDER),
+  }));
+  const projected: Array<{ provider: Provider; model: Model<Api> }> = [];
+  for (
+    let index = 0;
+    index < MAX_MODELS_PER_PROVIDER &&
+    projected.length < MAX_PROJECTED_LIVE_MODELS;
+    index += 1
+  ) {
+    for (const catalog of catalogs) {
+      const model = catalog.models[index];
+      if (model) projected.push({ provider: catalog.provider, model });
+      if (projected.length >= MAX_PROJECTED_LIVE_MODELS) break;
+    }
+  }
+  return projected;
 }

@@ -144,6 +144,7 @@ const workspaceProcessSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(workspaceProcessSchema, { type: "object" });
 
 export interface WorkspaceProcessToolDetails {
   action: "start" | "input" | "poll" | "resize" | "cancel";

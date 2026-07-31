@@ -176,6 +176,7 @@ const sqliteQuerySchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(sqliteQuerySchema, { type: "object" });
 
 export interface SqliteQueryToolDetails {
   kind: "napier.sqlite-query";

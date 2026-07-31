@@ -64,6 +64,7 @@ const researchSourceSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(researchSourceSchema, { type: "object" });
 
 export function createResearchSourceTool(
   manager: RunResearchSourceManager,

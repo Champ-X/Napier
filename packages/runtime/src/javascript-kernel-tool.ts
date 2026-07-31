@@ -70,6 +70,7 @@ const javascriptKernelSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(javascriptKernelSchema, { type: "object" });
 
 export interface JavascriptKernelToolDetails {
   kind: "napier.javascript-kernel";

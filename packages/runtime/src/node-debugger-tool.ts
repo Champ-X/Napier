@@ -130,6 +130,7 @@ const nodeDebuggerSchema = Type.Union([
     { additionalProperties: false },
   ),
 ]);
+Object.assign(nodeDebuggerSchema, { type: "object" });
 
 export interface NodeDebuggerToolDetails {
   kind: "napier.node-debugger";

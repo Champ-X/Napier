@@ -26,8 +26,9 @@ runtime decisions share one ordered evidence stream.
 
 Version `0.1.0` includes:
 
-- a Pi-powered multi-provider runtime for OpenAI, Anthropic, Google, and
-  OpenRouter;
+- Pi's complete version-pinned built-in model catalog: 38 Provider factories
+  spanning OpenAI/Anthropic/Google APIs, OpenAI-compatible services, regional
+  endpoints, subscription-capable Providers, gateways, and local-model hosts;
 - a deterministic zero-key demo model for onboarding and CI;
 - `napier chat` for one-Runtime multi-turn terminal sessions with model/Thread
   switching, interrupted-Run resume, per-turn timeout, active-Run cancellation,
@@ -751,6 +752,21 @@ and reference-project suites remain open.
 Napier resolves credentials on the server. Keys are never persisted in Napier
 or returned to the web client.
 
+Napier registers Pi's complete built-in Provider catalog rather than
+maintaining a second endpoint or compatibility list. The pinned Pi version
+contributes 38 Provider factories and 1,116 resolvable models. The Workbench
+projection is network-free and bounded to 18 models per Provider and 512 live
+models total, with round-robin selection ensuring every static Provider remains
+visible; the current catalog projects 414 models in about 76 KiB. CLI, SDK,
+RPC, Workflow, and direct Agent calls can still resolve any model in the full
+catalog by `provider/model-id`, including models omitted from the bounded
+Workbench list.
+
+Action-union tool definitions retain their precise `anyOf` validation while
+also publishing the top-level `type: object` required by strict
+OpenAI-compatible function APIs. This applies across Browser, kernels, DAP,
+research, SQLite, AST editing, file lifecycle, and Process Sessions.
+
 ```bash
 export OPENAI_API_KEY="..."
 export DEEPSEEK_API_KEY="..."
@@ -771,8 +787,9 @@ or re-enabled independently. If it is missing, model authentication fails
 closed rather than falling back to ambient credentials. The active Agent
 profile defaults to `napier/demo`; Context separates the next-run model from
 the revisioned persistent default. Runtime model selectors group models by
-provider and show configured/total counts, so a provider like DeepSeek remains
-visible but disabled until its credential reference is available. Evaluation
+provider and show configured/total counts, so Providers such as Groq, Mistral,
+xAI, OpenAI Codex, GitHub Copilot, and DeepSeek remain visible but disabled
+until their credential requirements are available. Evaluation
 Suite creation uses the same grouped catalog selector; executable Casebook
 qualification only offers configured evaluator candidates. The main Run,
 resume, Run Lab evaluation, Evaluation Suite gate, and Plan Workbench
@@ -813,6 +830,23 @@ asserts `model.response`, `context.model_envelope`, assistant message, and
 `run.completed` Ledger evidence. The CLI smoke drives the JSONL entry point and
 verifies one-shot, interrupted-resume, and typed Workflow terminal frames. They
 are skipped by default and are not part of `npm run check`.
+
+To test a newly exposed API-key Provider with a real model:
+
+```bash
+export GROQ_API_KEY="..."
+export NAPIER_LIVE_PROVIDER_MODEL="groq/<model-id>"
+export NAPIER_LIVE_PROVIDER_CREDENTIAL_ENV="GROQ_API_KEY"
+npm run test:live-provider
+```
+
+The generic smoke rejects the five Providers that Napier registered before
+this catalog expansion, then runs the selected model through the same Agent,
+CredentialReferenceStore, model-context evidence, secret redaction, and
+portable Replay path. The existing DeepSeek live smoke also exercises the
+complete default Agent tool catalog against a strict OpenAI-compatible API.
+Dynamic model refresh, subscription login UI, custom Provider manifests, and
+adaptive routing remain separate follow-up work.
 
 Credential list, registration, Keychain write, availability check, and status
 responses are no-store and hash-bound. Headers mirror only provider ID, source

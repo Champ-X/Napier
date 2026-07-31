@@ -27,9 +27,86 @@ Audit date: 2026-07-31
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, TypeScript SDK, local stdio RPC, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                          |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. Chat reuses `EmbeddedAgentService` for durable multi-turn, model/Thread switching, interrupted resume, per-turn cancellation, and metadata-only tool status. RPC supports Agent and typed Workflow run/resume, Approval answer-and-resume, checkpoint experiments, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                         |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                 |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+## Active Slice: Full Pi Built-In Provider Catalog
+
+User scenario: a local user can select and run a model from any static Provider
+shipped by the pinned Pi dependency, register its existing environment or
+Keychain credential reference in the Workbench, and use the same model through
+Web, CLI, SDK, RPC, Agent, and Workflow entry points without Napier maintaining
+a second provider implementation list.
+
+Acceptance:
+
+- replace the five hand-registered Provider factories with Pi's version-pinned
+  `builtinProviders()` catalog; do not copy provider protocols, model tables,
+  endpoints, auth rules, compatibility flags, or pricing into Napier;
+- preserve `napier/demo`, test-only Provider replacement, `ModelRef`
+  validation, configured/unconfigured status, credential references, Run
+  configuration binding, model context envelopes, and all execution paths;
+- expose at least one representative model for every static built-in Provider,
+  at most 18 models per Provider, and at most 512 live summaries plus demo;
+  interleave Provider catalogs before the global cap so later Providers cannot
+  disappear merely because earlier catalogs are large;
+- keep catalog listing side-effect-free and network-free. Registration and
+  auth availability checks may inspect existing credential/environment state
+  but cannot refresh catalogs, login, or make model calls;
+- keep the serialized bootstrap model projection below 128 KiB and verify that
+  startup/model-list latency remains inside the existing product budget;
+- prove representative OpenAI Responses, Anthropic, Google, OpenAI-compatible,
+  OAuth-capable, regional, and local/gateway Provider models resolve through
+  the shared Pi collection;
+- verify that an existing credential reference configures a newly exposed
+  API-key Provider and that missing credentials still fail closed before a
+  model request;
+- run an opt-in live Agent smoke against a caller-selected newly exposed
+  Provider/model while retaining the existing DeepSeek path.
+
+Threat boundary:
+
+- catalog presence is not credential availability, endpoint reachability,
+  model quality, tool-call support, legal availability, or price accuracy.
+  `configured` remains an auth-resolution statement only;
+- more Providers do not grant tools, network destinations, filesystem access,
+  or side-effect permissions. A selected model still runs under the Agent's
+  frozen profile, policy, Sandbox, budget, and Ledger;
+- Provider auth comes from Pi plus Napier credential references. Secret values,
+  OAuth tokens, request headers, and resolved endpoints remain process-local;
+- this slice does not claim dynamic catalog refresh, subscription login UI,
+  custom Provider manifests, local-server discovery, routing fallback, or
+  adaptive model selection.
+
+Observed result:
+
+- Pi 0.82.0 contributes 38 Provider factories, 37 static Provider catalogs,
+  and 1,116 resolvable models. A cold built Runtime constructed the registry in
+  0.862 ms and listed it in 7.651 ms with zero fetches;
+- the fair projection contains 414 live summaries across all 37 static
+  Providers plus `napier/demo`, serialized to 76,349 bytes. Models outside the
+  18-per-Provider projection still resolve by explicit `ModelRef`;
+- Runtime and HTTP tests prove complete registration, all-static-Provider
+  visibility, full-model resolution, existing Groq credential references,
+  missing-secret fail-closed behavior, offline bootstrap, and the 128 KiB
+  payload budget;
+- real DeepSeek Agent execution initially exposed a strict
+  OpenAI-compatible function-schema rejection for `sqlite_query`. All
+  object-union built-in tools now publish a top-level JSON Schema
+  `type: object`, with a cross-tool contract test covering Browser, JavaScript,
+  Python, DAP, Research, SQLite, AST, file lifecycle, and Process Sessions;
+- after that repair, the real DeepSeek Agent completed in 3.45 seconds with
+  model-context, model-response, assistant-message, completion, secret
+  redaction, and Ledger assertions. The caller-selected new-Provider smoke is
+  implemented and skipped by default; it was not executed in this environment
+  because no newly exposed Provider credential was available;
+- the complete repository gate passed 1,430 regular tests with 26 opt-in live
+  tests skipped, 247 OpenAPI routes, 244/244 compatibility operations, and a
+  130.08 KiB Web main bundle. Its product performance run measured 747.6 ms to
+  the first built CLI event, 900.1 ms to first token, 1,214.8 ms to
+  completion, 0.3 ms read p95, 6.7 ms for a 1,000-event projection, and
+  753.664 SQLite bytes per event.
 
 ## Completed Slice: Verified SQLite Chart Delivery
 
