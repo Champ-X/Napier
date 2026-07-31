@@ -25,7 +25,7 @@ Audit date: 2026-07-31
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                       |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, and local TypeScript SDK Workflow definition/execution/resume exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, remote RPC, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                        |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, and a local TypeScript SDK for Agent run/continue/recovery plus Workflow definition/execution/resume exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, remote RPC, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                 |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -2532,4 +2532,72 @@ Observed result:
   current OpenAPI routes against the 244/244 compatibility baseline, and kept
   the Web main entry at 130.08 KiB against the 150 KiB budget. The Web dist
   remains `de3b8577b2455f9a`; the six-artifact release set is
+  `47cd400884c9da87`.
+
+## Completed Slice: Local TypeScript Agent SDK
+
+User scenario: a Node application can start an Agent task, continue the same
+Thread, observe normal Ledger events, cancel during shutdown, and recover a
+reconciled interrupted Run without importing Runtime internals or reading
+Store directly.
+
+Acceptance:
+
+- expose `runAgent()` and `resumeAgent()` through the existing `NapierClient`;
+- create a new Thread or continue an explicit Thread with the same AgentRuntime
+  used by CLI, including model selection, policy, Sandbox, tools, budgets,
+  memory, goals, and Ledger behavior;
+- preflight prompt, model, title, Agent binding, cancellation, and optional Run
+  ID before creating a new Thread or recovery child;
+- enforce the CLI-equivalent 64 KiB UTF-8 prompt bound and reject a title for
+  an existing Thread rather than ignoring it;
+- return the terminal Run plus assistant text only from that exact Run's
+  `message.assistant` event;
+- recover only a reconciled non-Workflow interrupted Run through the existing
+  `source=recovery` parent/child contract;
+- keep concurrent new Agent calls isolated in distinct Threads;
+- make SDK close abort and await active Agent calls before shared-service
+  shutdown;
+- provide a built external Node example that starts and continues one Agent
+  Thread.
+
+Threat boundary:
+
+- the Agent SDK receives `EmbeddedAgentService`, not Store, ModelRegistry,
+  credentials, internal Agent revisions, invocation sources, recovery claims,
+  operator-decision continuation, or Workflow capabilities;
+- callers cannot manufacture `source=recovery`, `parentRunId`,
+  `agentRevision`, safe-read-only recovery mode, schedule/channel triggers, or
+  Workflow node authorization;
+- model references are syntax-checked before mutation, but provider
+  configuration and credentials remain the existing fail-closed Runtime
+  checks;
+- assistant text is returned live to the local caller from the exact Run. The
+  SDK adds no second persisted copy, log, export field, or Trace projection;
+- resume rejects ordinary completed/failed/cancelled Runs and Workflow-owned
+  Runs through the existing recovery boundary;
+- this is local Node embedding, not a remotely authenticated RPC surface.
+
+Observed result:
+
+- a demo Agent Run created a normal user Run and assistant event, then a second
+  SDK call continued the same Thread with a distinct Run;
+- the resulting Thread remained a valid portable Replay and contained exactly
+  the two expected Runs;
+- empty and oversized prompts, explicit empty Thread/Agent/title/Run IDs, null
+  or malformed model references, pre-aborted calls, and a title on an existing
+  Thread failed before extra execution state;
+- two concurrent Agent calls completed in distinct Threads;
+- closing after `run.started` cancelled the active Run, produced terminal
+  `run.cancelled` evidence, and only then closed SQLite;
+- startup reconciliation converted a seeded running Run to interrupted, and
+  `resumeAgent()` created a completed `source=recovery` child bound by
+  `parentRunId` while preserving the interrupted parent;
+- the built `agent-run.mjs` example ran in a separate Node process, completed
+  two Runs on one Thread, and consumed normal Agent events;
+- the complete repository gate passed 1218 tests with 19 opt-in live tests
+  skipped by default, audited 6 workspaces and 251 packages, verified 247
+  current OpenAPI routes against the 244/244 compatibility baseline, and kept
+  the Web main entry at 130.08 KiB against the 150 KiB budget. The Web dist
+  remains `de3b8577b2455f9a`; the six-artifact release set remains
   `47cd400884c9da87`.

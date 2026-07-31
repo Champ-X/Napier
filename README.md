@@ -2331,7 +2331,8 @@ and divergence count as part of the selection/backtest/override receipts.
 `@napier/sdk` is the first supported local embedding entry point for Node
 applications. It owns one `LocalAgentRuntime` lifecycle but exposes no Store,
 credential registry, scheduler internals, or experiment-reuse capability.
-TypeScript code can define a Workflow from a Plan shape plus typed nodes,
+TypeScript code can run or continue a normal Agent task, recover an interrupted
+Run, define a Workflow from a Plan shape plus typed nodes,
 serialize the resulting stable Manifest as JSON, load it again with full hash
 validation, execute it in a new or selected Thread, and resume the exact Plan:
 
@@ -2343,6 +2344,18 @@ const client = await createNapierClient({
   dataRoot: ".napier",
 });
 try {
+  const first = await client.runAgent({
+    prompt: "Inspect this workspace and report the highest-risk gap.",
+    model: { provider: "napier", id: "demo" },
+    signal: abortController.signal,
+    onEvent,
+  });
+  await client.runAgent({
+    threadId: first.threadId,
+    prompt: "Continue from the existing Ledger evidence.",
+    onEvent,
+  });
+
   const defined = await client.defineWorkflow<Request, Report>(definition);
   const workflow = loadNapierWorkflow<Request, Report>(
     JSON.parse(JSON.stringify(defined.manifest)),
@@ -2366,13 +2379,17 @@ try {
 `defineWorkflow()` performs pure Plan/Manifest/Schema preflight before
 persisting a definition Thread and source Plan, then derives the normal
 evidence-bound Blueprint. `runWorkflow()` validates Manifest and input before
-creating an execution Thread. Agent, Deterministic, Tool, Approval, condition,
-parallelism, retry, cancellation, recovery, policy, Sandbox, and Ledger
-behavior remain the existing Workflow Runtime behavior. The complete runnable
-model-free example is
+creating an execution Thread. `runAgent()` validates its prompt, model, title,
+and Thread/Agent binding before mutation; `resumeAgent()` uses the same
+interrupted-Run recovery path as CLI. Agent, Deterministic, Tool, Approval,
+condition, parallelism, retry, cancellation, recovery, policy, Sandbox, and
+Ledger behavior remain the existing Runtime behavior. Runnable examples are
+[`packages/sdk/examples/agent-run.mjs`](packages/sdk/examples/agent-run.mjs)
+and
 [`packages/sdk/examples/typed-workflow.mjs`](packages/sdk/examples/typed-workflow.mjs).
-`close()` rejects new calls, aborts and waits for active Workflow calls to
-settle their terminal evidence, then shuts down shared services idempotently.
+`close()` rejects new calls, aborts and waits for active Agent or Workflow
+calls to settle their terminal evidence, then shuts down shared services
+idempotently.
 This SDK does not yet claim remote RPC, ACP, Desktop, or a browser-safe client.
 
 ## Executable Plan Workflows

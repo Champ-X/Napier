@@ -264,6 +264,11 @@ and HTTP SSE one sequence-accurate concurrent event projection. This keeps
 Workflow logic outside the oversized Store and Server modules and removes the
 former tool-construction block from `agent-runtime.ts`.
 
+`embedded-agents.ts` is the local Agent Experience-to-Capability adapter. It
+validates prompt bytes, model references, titles, and Thread/Agent ownership
+before creating state; delegates one-shot, continuation, cancellation, and
+manual interrupted-Run recovery to `AgentRuntime`; and projects assistant text
+only from the exact returned Run's `message.assistant` event.
 `embedded-workflows.ts` is the local Experience-to-Capability adapter. It
 performs pure Plan, Manifest, Schema, and typed-input preflight before creating
 durable state; creates the definition Thread and source Plan needed for a real
@@ -274,13 +279,17 @@ service from `LocalAgentRuntime`. It does not receive or expose Store,
 credentials, model registries, internal experiment injection, or a second
 scheduler.
 
-The SDK's stable serialization boundary is the existing
+The SDK Agent API creates a new Thread or explicitly continues an existing
+one, while `resumeAgent()` creates the normal `source=recovery` child of a
+reconciled interrupted Run. The SDK's stable Workflow serialization boundary is
+the existing
 `ExecutionPlanWorkflowManifest`. Loading JSON revalidates its Blueprint,
 Schemas, nodes, and content hash before a typed handle is returned. New runs
 may create an isolated Thread or use an explicit existing Thread; resume
 requires the exact Thread, Plan, and Manifest. AbortSignal and event callbacks
 pass through unchanged. Closing the SDK first rejects new operations, aborts
-and waits for every active SDK Workflow to settle terminal evidence, then
+and waits for every active SDK Agent or Workflow call to settle terminal
+evidence, then
 settles Process Sessions and MCP transports before SQLite just like CLI and
 Server shutdown.
 

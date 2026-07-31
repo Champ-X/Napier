@@ -6,6 +6,17 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Extended `@napier/sdk` with ordinary Agent execution and recovery.
+  `runAgent()` starts a new Thread or continues an explicit existing Thread,
+  while `resumeAgent()` creates the same evidence-bound recovery child as CLI.
+  The Runtime facade validates the 64 KiB prompt bound, model reference, title,
+  Thread/Agent ownership, cancellation, and optional interrupted Run ID before
+  mutation, then returns assistant text only from the exact returned Run.
+  Concurrent Agent calls remain Thread-isolated; closing the SDK cancels and
+  waits for active Agent Runs before shared-service shutdown. Tests cover
+  one-shot and continuation, malformed preflight, concurrency, active close,
+  restart reconciliation plus recovery, portable Replay, and a built external
+  Node example.
 - Added `@napier/sdk` as a Store-free local TypeScript embedding entry point.
   `createNapierClient()` owns the existing local Runtime lifecycle;
   `defineWorkflow()` preflights a typed Plan and node graph before deriving a

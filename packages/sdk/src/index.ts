@@ -2,7 +2,9 @@ import type {
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowResult,
   JsonValue,
+  ModelRef,
   RunEvent,
+  RunRecord,
   WorkflowValueSchema,
 } from "@napier/contracts";
 import {
@@ -15,6 +17,32 @@ import {
 
 declare const workflowInputType: unique symbol;
 declare const workflowOutputType: unique symbol;
+
+export interface RunNapierAgentOptions {
+  prompt: string;
+  threadId?: string;
+  agentId?: string;
+  title?: string;
+  model?: ModelRef;
+  signal?: AbortSignal;
+  onEvent?: (event: RunEvent) => Promise<void> | void;
+}
+
+export interface ResumeNapierAgentOptions {
+  threadId: string;
+  runId?: string;
+  model?: ModelRef;
+  signal?: AbortSignal;
+  onEvent?: (event: RunEvent) => Promise<void> | void;
+}
+
+export interface NapierAgentExecution {
+  threadId: string;
+  runId: string;
+  status: RunRecord["status"];
+  assistantText?: string;
+  run: RunRecord;
+}
 
 export interface NapierWorkflow<
   TInput extends JsonValue = JsonValue,
@@ -73,6 +101,10 @@ export interface NapierWorkflowExecution<TOutput extends JsonValue> {
 export type NapierClientOptions = LocalAgentRuntimeOptions;
 
 export interface NapierClient {
+  runAgent(options: RunNapierAgentOptions): Promise<NapierAgentExecution>;
+
+  resumeAgent(options: ResumeNapierAgentOptions): Promise<NapierAgentExecution>;
+
   defineWorkflow<TInput extends JsonValue, TOutput extends JsonValue>(
     definition: DefineNapierWorkflowInput<TInput, TOutput>,
   ): Promise<NapierWorkflow<TInput, TOutput>>;
@@ -109,6 +141,48 @@ class LocalNapierClient implements NapierClient {
   private closing: Promise<void> | undefined;
 
   constructor(private readonly services: LocalAgentRuntimeServices) {}
+
+  async runAgent(
+    options: RunNapierAgentOptions,
+  ): Promise<NapierAgentExecution> {
+    const execution = await this.track(() =>
+      this.services.embeddedAgents.run({
+        prompt: options.prompt,
+        ...(options.threadId !== undefined
+          ? { threadId: options.threadId }
+          : {}),
+        ...(options.agentId !== undefined ? { agentId: options.agentId } : {}),
+        ...(options.title !== undefined ? { title: options.title } : {}),
+        ...(options.model !== undefined ? { model: options.model } : {}),
+        signal: combinedSignal(options.signal, this.closeController.signal),
+        ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      }),
+    );
+    return agentExecution(
+      execution.threadId,
+      execution.run,
+      execution.assistantText,
+    );
+  }
+
+  async resumeAgent(
+    options: ResumeNapierAgentOptions,
+  ): Promise<NapierAgentExecution> {
+    const execution = await this.track(() =>
+      this.services.embeddedAgents.resume({
+        threadId: options.threadId,
+        ...(options.runId !== undefined ? { runId: options.runId } : {}),
+        ...(options.model !== undefined ? { model: options.model } : {}),
+        signal: combinedSignal(options.signal, this.closeController.signal),
+        ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      }),
+    );
+    return agentExecution(
+      execution.threadId,
+      execution.run,
+      execution.assistantText,
+    );
+  }
 
   async defineWorkflow<TInput extends JsonValue, TOutput extends JsonValue>(
     definition: DefineNapierWorkflowInput<TInput, TOutput>,
@@ -186,6 +260,20 @@ function workflowHandle<TInput extends JsonValue, TOutput extends JsonValue>(
     manifest: structuredClone(manifest),
     sourceThreadId: manifest.blueprint.source.threadId,
     sourcePlanId: manifest.blueprint.source.planId,
+  };
+}
+
+function agentExecution(
+  threadId: string,
+  run: RunRecord,
+  assistantText: string | undefined,
+): NapierAgentExecution {
+  return {
+    threadId,
+    runId: run.id,
+    status: run.status,
+    ...(assistantText !== undefined ? { assistantText } : {}),
+    run: structuredClone(run),
   };
 }
 
