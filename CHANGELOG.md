@@ -6,6 +6,24 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added controlled single-tool-invocation re-execution for ten built-in,
+  stateless, workspace-read-only tools. Eligible Agent calls capture exact
+  validated arguments and their tool-definition hash in the same
+  permission-restricted, concurrent-capacity-safe local CAS used by model
+  capsules; the Ledger, Replay, and public experiment events retain only a
+  hash-bound receipt. `napier tool-experiment`, HTTP preview/SSE, and the
+  TypeScript SDK can preview-bind the source Run/call, current scoped Workspace
+  snapshot, Agent revision, tool Schema, arguments, and completed source output,
+  then execute exactly that tool once in an isolated
+  `tool_experiment_read_only` Run. Store requires an internal capability and
+  rejects direct mode selection. Source/target status, latency, output hashes,
+  and output bytes are compared; execution never enters the Agent Loop or
+  resolves Extensions, Browser/Process/Kernel/Debugger Sessions, write tools,
+  or unknown-effect tools. Real read-file and SQLite tests cover unchanged and
+  changed output, stale preview, target failure, cancellation, concurrency,
+  exposed permissions, direct Store bypass, portable Replay, and SQL/parameter/
+  row privacy. Write/session tool checkpoints, result reuse or simulation, Web,
+  RPC, batch execution, and experiment promotion remain open.
 - Added controlled single-model-invocation re-execution for provider-backed
   Agent calls. Before dispatch, primary Agent turns, context compaction, Goal
   evaluation, and Memory extraction write an exact provider Context plus safe

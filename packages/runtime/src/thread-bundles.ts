@@ -119,6 +119,7 @@ const RUN_SOURCES = new Set([
   "workflow",
   "workflow_reuse",
   "model_experiment",
+  "tool_experiment",
 ]);
 const EVENT_CATEGORIES = new Set([
   "lifecycle",

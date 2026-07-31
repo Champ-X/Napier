@@ -551,6 +551,11 @@ import {
   type ModelInvocationExperimentExecution,
 } from "./model-invocation-experiment-execution.js";
 import { validateModelInvocationExperimentRunGate } from "./model-invocation-experiment-run-gate.js";
+import {
+  TOOL_INVOCATION_EXPERIMENT_EXECUTION,
+  type ToolInvocationExperimentExecution,
+} from "./tool-invocation-experiment-execution.js";
+import { validateToolInvocationExperimentRunGate } from "./tool-invocation-experiment-run-gate.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
@@ -751,6 +756,7 @@ export interface CreateRunInput {
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
   [MODEL_INVOCATION_EXPERIMENT_EXECUTION]?: ModelInvocationExperimentExecution;
+  [TOOL_INVOCATION_EXPERIMENT_EXECUTION]?: ToolInvocationExperimentExecution;
 }
 
 export interface RunLeaseOptions {
@@ -11276,6 +11282,8 @@ export class LocalStore {
     const messageExperiment = input[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
     const modelInvocationExperiment =
       input[MODEL_INVOCATION_EXPERIMENT_EXECUTION];
+    const toolInvocationExperiment =
+      input[TOOL_INVOCATION_EXPERIMENT_EXECUTION];
     if (
       input.source === "model_experiment" ||
       executionMode === "model_experiment_single_call" ||
@@ -11293,6 +11301,27 @@ export class LocalStore {
         sourceEvents: modelInvocationExperiment
           ? this.requireLedger().listEvents(
               modelInvocationExperiment.sourceThreadId,
+            )
+          : [],
+      });
+    }
+    if (
+      input.source === "tool_experiment" ||
+      executionMode === "tool_experiment_read_only" ||
+      toolInvocationExperiment
+    ) {
+      validateToolInvocationExperimentRunGate({
+        source: input.source,
+        executionMode,
+        targetThreadId: input.threadId,
+        targetAgentId: input.agentId,
+        targetAgentRevision: runAgent.revision,
+        targetModel: input.model ?? runAgent.model,
+        execution: toolInvocationExperiment,
+        runs: this.state.runs,
+        sourceEvents: toolInvocationExperiment
+          ? this.requireLedger().listEvents(
+              toolInvocationExperiment.sourceThreadId,
             )
           : [],
       });

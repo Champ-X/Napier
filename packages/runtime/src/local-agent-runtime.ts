@@ -10,6 +10,7 @@ import { EmbeddedWorkflowService } from "./embedded-workflows.js";
 import { McpExtensionManager } from "./mcp.js";
 import { ModelRegistry } from "./models.js";
 import { ModelInvocationExperimentRuntime } from "./model-invocation-experiments.js";
+import { ToolInvocationExperimentRuntime } from "./tool-invocation-experiments.js";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
@@ -42,6 +43,7 @@ export interface LocalAgentRuntimeServices {
   embeddedAgents: EmbeddedAgentService;
   agentMessageExperiments: AgentMessageExperimentRuntime;
   modelInvocationExperiments: ModelInvocationExperimentRuntime;
+  toolInvocationExperiments: ToolInvocationExperimentRuntime;
   workflows: ExecutionPlanWorkflowRuntime;
   embeddedWorkflows: EmbeddedWorkflowService;
   workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
@@ -102,6 +104,11 @@ export async function createLocalAgentRuntime(
       models,
       runtime.modelInvocationCapsules,
     );
+    const toolInvocationExperiments = new ToolInvocationExperimentRuntime(
+      store,
+      runtime,
+      runtime.toolInvocationCapsules,
+    );
     const workflows = new ExecutionPlanWorkflowRuntime(store, runtime);
     const embeddedWorkflows = new EmbeddedWorkflowService(store, workflows);
     const workflowExperiments = new ExecutionPlanWorkflowExperimentRuntime(
@@ -123,6 +130,7 @@ export async function createLocalAgentRuntime(
       embeddedAgents,
       agentMessageExperiments,
       modelInvocationExperiments,
+      toolInvocationExperiments,
       workflows,
       embeddedWorkflows,
       workflowExperiments,

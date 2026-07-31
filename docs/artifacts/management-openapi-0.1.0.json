@@ -11020,6 +11020,106 @@
         }
       }
     },
+    "/api/threads/{threadId}/tool-invocation-experiments": {
+      "post": {
+        "operationId": "post-threads-by-threadId-tool-invocation-experiments",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/tool-invocation-experiments",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/tool-invocation-experiments"
+      }
+    },
+    "/api/threads/{threadId}/tool-invocation-experiments/preview": {
+      "post": {
+        "operationId": "post-threads-by-threadId-tool-invocation-experiments-preview",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/tool-invocation-experiments/preview",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/tool-invocation-experiments/preview"
+      }
+    },
     "/api/threads/{threadId}/trace/otlp": {
       "post": {
         "operationId": "post-threads-by-threadId-trace-otlp",
@@ -14324,7 +14424,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "ecf224927290d9ae9a975bd5f66c4fbd4c79a54138c36b6f11b3a9eda4e70003",
-  "x-napier-route-count": 251,
-  "x-napier-route-set-sha256": "b1eb944fdf2d7febd741ff6f257a834f8a778fcb28b7ec376a425b8db8f2bed1"
+  "x-napier-source-sha256": "e81a4b8eb25818d4da58231a0da7c41a9d2b4d95f7f1aa16edec01434f636310",
+  "x-napier-route-count": 253,
+  "x-napier-route-set-sha256": "748569dd95e9ea00047070803d3870dfd570dda51d4778acc57dd0a1945a1d00"
 }

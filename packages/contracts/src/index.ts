@@ -22,7 +22,8 @@ export type RunInvocationSource =
   | "channel"
   | "workflow"
   | "workflow_reuse"
-  | "model_experiment";
+  | "model_experiment"
+  | "tool_experiment";
 export type GoalStatus = "active" | "completed" | "blocked";
 export type GoalBlocker =
   | "none"
@@ -1291,6 +1292,92 @@ export interface ModelInvocationExperimentResult {
   comparison: ModelInvocationExperimentComparison;
 }
 
+export interface ToolInvocationCapsuleReceipt {
+  kind: "napier.tool-invocation-capsule-receipt";
+  schemaVersion: 1;
+  callId: string;
+  toolName: string;
+  effect: "read";
+  toolDefinitionSha256: string;
+  argumentsSha256: string;
+  workspaceScopeSha256: string;
+  capsuleSha256: string;
+  capsuleBytes: number;
+  storage: "local_only";
+  contentSha256: string;
+}
+
+export interface CreateToolInvocationExperimentRequest {
+  sourceRunId: string;
+  sourceCallId: string;
+  title?: string;
+  expectedPreviewSha256?: string;
+}
+
+export interface ToolInvocationExperimentPreview {
+  kind: "napier.tool-invocation-experiment-preview";
+  schemaVersion: 1;
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceAgentId: string;
+  sourceAgentRevision: number;
+  sourceCallId: string;
+  sourceCapsuleEventSeq: number;
+  sourceStartedEventSeq: number;
+  sourceTerminalEventSeq: number;
+  sourceToolName: string;
+  sourceEffect: "read";
+  sourceToolDefinitionSha256: string;
+  sourceArgumentsSha256: string;
+  sourceWorkspaceScopeSha256: string;
+  sourceCapsuleSha256: string;
+  sourceCapsuleBytes: number;
+  sourceDurationMs: number;
+  sourceOutputSha256: string;
+  sourceOutputBytes: number;
+  candidateWorkspaceSnapshotSha256: string;
+  candidateWorkspaceFileCount: number;
+  candidateWorkspaceBytes: number;
+  targetExecutionMode: "tool_experiment_read_only";
+  previewSha256: string;
+}
+
+export type ToolInvocationExperimentStatus =
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface ToolInvocationExperimentObservation {
+  threadId: string;
+  runId: string;
+  status: ToolInvocationExperimentStatus;
+  toolName: string;
+  durationMs: number;
+  outputSha256: string;
+  outputBytes: number;
+}
+
+export interface ToolInvocationExperimentComparison {
+  kind: "napier.tool-invocation-experiment-comparison";
+  schemaVersion: 1;
+  source: ToolInvocationExperimentObservation;
+  target: ToolInvocationExperimentObservation;
+  durationMsDelta: number;
+  outputChanged: boolean;
+  contentSha256: string;
+}
+
+export interface ToolInvocationExperimentResult {
+  kind: "napier.tool-invocation-experiment-result";
+  schemaVersion: 1;
+  preview: ToolInvocationExperimentPreview;
+  targetThreadId: string;
+  targetRunId: string;
+  status: ToolInvocationExperimentStatus;
+  candidateOutput?: string;
+  comparison: ToolInvocationExperimentComparison;
+}
+
 export interface ExecutionPlanWorkflowExperimentToolEffects {
   nodeId: string;
   attemptCount: number;
@@ -2557,7 +2644,8 @@ export type RunExecutionMode =
   | "safe_read_only_recovery"
   | "workflow_map_read_only"
   | "agent_experiment_read_only"
-  | "model_experiment_single_call";
+  | "model_experiment_single_call"
+  | "tool_experiment_read_only";
 
 export interface SubagentTask {
   id: string;
@@ -8166,6 +8254,24 @@ export interface ModelInvocationExperimentResultFrame {
   status: ModelInvocationExperimentStatus;
   previewSha256: string;
   experiment: ModelInvocationExperimentResult;
+  snapshotSha256: string;
+  snapshotBytes: number;
+  eventCount: number;
+  eventBytes: number;
+  eventStreamSha256: string;
+  contentSha256: string;
+}
+
+export interface ToolInvocationExperimentResultFrame {
+  type: "tool_invocation_experiment_result";
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceCallId: string;
+  targetThreadId: string;
+  targetRunId: string;
+  status: ToolInvocationExperimentStatus;
+  previewSha256: string;
+  experiment: ToolInvocationExperimentResult;
   snapshotSha256: string;
   snapshotBytes: number;
   eventCount: number;

@@ -562,8 +562,57 @@ Only provider-consumed Context fields and safe sampling options are captured;
 credentials, headers, environment, callbacks, and AbortSignals are excluded.
 Portable Replay carries the receipt, not the capsule. This path currently has
 Runtime, CLI, HTTP/SSE, SDK, local stdio RPC, lazy Web Run Lab, and
-privacy-bounded Trace entrances. It does not implement tool-call checkpoint
-re-execution.
+privacy-bounded Trace entrances.
+
+Preview and execute exactly one captured built-in read-only tool call without
+entering the Agent Loop:
+
+```bash
+npm run --silent napier -- tool-experiment \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --run run_example \
+  --call-id call_example \
+  --preview \
+  --jsonl
+
+npm run --silent napier -- tool-experiment \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --run run_example \
+  --call-id call_example \
+  --expected-preview <sha256> \
+  --jsonl
+```
+
+Eligible source calls are `list_files`, `read_file`, `search_files`,
+`list_symbols`, `inspect_data`, `sqlite_query`, `inspect_code`, `read_symbol`,
+`ast_query`, and `ast_edit_preview`. Capture occurs only after capability and
+policy admission and before the tool body executes. Exact validated arguments
+stay in a local-only capsule; Ledger and portable Replay contain its receipt,
+the tool/result hashes, sizes, and status, not the private argument body.
+Preview requires a terminal configured source Run, one exact capsule receipt,
+one matching completed call, the unchanged source Agent revision and tool
+definition, and a complete current snapshot of the argument's workspace scope.
+
+Execution reprojects freshness, creates one capability-gated
+`tool_experiment_read_only` Run, regenerates the same built-in tool through the
+normal Runtime factory, repeats Schema/effect/`observe` policy checks, and calls
+that tool exactly once. It compares status, latency, output SHA-256, and output
+bytes. Failure and cancellation settle inspectable targets; a stale preview
+creates no target. SQL, query parameters, and result rows remain absent from
+Ledger and Replay, while deliberate CLI/HTTP/SDK results may return the live
+candidate output to their caller. The shared private CAS uses `0700`/`0600`
+permissions, atomic no-overwrite installation, serialized capacity admission,
+and post-install validation; tool capsules are limited to 512 KiB each and 512
+objects / 64 MiB total.
+
+This slice does not allow Extensions, Browser, shell/Process, Kernel, Debugger,
+stateful Session, write, or unknown-effect tools. It also does not yet provide
+Web/RPC access, historical result reuse, side-effect simulation, write-capable
+experiments, environment restoration, or batch execution.
 
 Run one local Runtime as a line-delimited stdio JSON-RPC 2.0 process for an
 editor, desktop shell, or automation host:
@@ -3116,8 +3165,8 @@ preview/comparison/frame fields and hashes, status/stop consistency, metric
 deltas, source/target model and output bindings, streamed event hashes, the
 final Snapshot, and complete event-stream hash. Provider Context, raw thinking,
 source/candidate text, and tool arguments never render in the desk. Tool-call
-checkpoint execution, result reuse/simulation, batch experiments, and
-experiment promotion remain open.
+Web/RPC integration, result reuse/simulation, batch experiments, and experiment
+promotion remain open.
 
 The lazy Run Lab message experiment desk consumes these same routes. It lists
 only terminal modern user-message checkpoints by Run/model/sequence metadata,
@@ -3159,10 +3208,11 @@ durable Approval nodes with bounded parallel dependency-ready DAG scheduling
 and typed equality guards. Stateful session Tool nodes, write-capable Map,
 multi-way switch, loops, compensation, per-node breakpoints, adapter runtimes,
 artifact settlement, and a visual builder remain open. Checkpoint experiments
-do not yet provide tool-call single-stepping, side-effect simulation,
-Prompt/Skill/Memory replacement, batch experiments, an interactive root-cause
-timeline, or Evaluation promotion. The opt-in DeepSeek CLI smoke executes and
-checkpoint-reruns one
+now provide single-call execution for an explicit stateless read-only built-in
+subset, but do not provide stateful/write tool stepping, result reuse,
+side-effect simulation, Prompt/Skill/Memory replacement, batch experiments, an
+interactive root-cause timeline, or Evaluation promotion. The opt-in DeepSeek
+CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live
 smoke executes two real concurrent item calls, deterministically reduces their

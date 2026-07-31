@@ -723,6 +723,65 @@ preview, configured provider replacement, explicit cancellation, target
 navigation, and deliberate result download. Provider Context, raw thinking,
 source/candidate text, and tool arguments never render.
 
+Tool invocation experiments add the first tool-call checkpoint path without
+weakening the normal policy boundary:
+
+```text
+admitted built-in read-only Agent tool call
+  -> append tool.started from the Pi event stream
+  -> before tool execution, canonicalize exact validated arguments
+  -> bind Agent revision, tool name/Schema, arguments, and workspace scope
+  -> write one permission-restricted local capsule
+  -> append context.tool_invocation with receipt hashes and size only
+  -> execute the original tool and append result hash/bytes
+select terminal source Run + exact call ID
+  -> require one receipt, one preceding start, and one following completion
+  -> load and revalidate the local capsule
+  -> regenerate the tool from the pinned Agent revision
+  -> require the same definition hash, TypeBox Schema, read effect, and
+     observe-policy decision
+  -> snapshot the exact current workspace path scope without truncation
+  -> bind all source events, output, capsule, tool, and workspace evidence into
+     previewSha256
+execute with expectedPreviewSha256
+  -> reproject freshness before mutation
+  -> create an isolated capability-gated tool_experiment_read_only Run
+  -> regenerate and revalidate the same tool
+  -> invoke the tool exactly once with the private capsule arguments
+  -> compare status, duration, output hash, and output bytes
+  -> emit target Snapshot + tool_invocation_experiment_result
+```
+
+The eligible surface is deliberately limited to the stateless workspace/data
+read tools `list_files`, `read_file`, `search_files`, `list_symbols`,
+`inspect_data`, `sqlite_query`, `inspect_code`, `read_symbol`, `ast_query`, and
+`ast_edit_preview`. Extensions and Browser, Process, shell, Kernel, Debugger,
+LSP Session, mutation-preview state, write, and unknown-effect tools are not
+resolved. The target never enters the Agent Loop and makes no model call.
+Store validates a package-private capability against the exact source receipt
+and start/completion events, so the public execution-mode string cannot create
+one of these Runs.
+
+Tool and model capsules share one local private CAS implementation: `0700`
+directories, `0600` files, no symlink reads, canonical content addressing,
+fsynced temporary files, no-overwrite hard-link installation, serialized
+capacity admission, and post-install count/byte validation. Tool capsules are
+limited to 512 KiB each, 512 objects, and 64 MiB total. Capture failure does
+not change the original tool call and emits only
+`context.tool_invocation_unavailable`. Raw capsules never enter portable
+Replay. Durable experiment events contain hashes, sizes, statuses, safe IDs,
+and deltas; deliberate CLI/HTTP/SDK results can return candidate output.
+
+Preview snapshots only the argument-selected workspace file or directory and
+rejects truncation. Any preview-to-execution change fails before target
+creation. A race after target creation can only produce a failed read-only
+target, never a workspace mutation. Cancellation settles a cancelled target;
+generic and automatic recovery reject experiment Runs so retry starts from the
+source checkpoint. The first product surface is Runtime, CLI JSONL, HTTP/SSE,
+and TypeScript SDK. Web/RPC, write/session checkpoints, historical result
+reuse, simulation, environment restoration, batch experiments, and promotion
+remain separate work.
+
 The browser desk remains inside the lazy Run Lab boundary. Its independent
 protocol parser requires exact fields and recomputes preview, comparison, and
 terminal-frame hashes plus metric deltas, output-hash state, and added/removed
@@ -5679,10 +5738,11 @@ deferred until the local P0-P9 product loop is stable.
   session nodes, multi-way switch, loops, write-capable Map, compensation,
   single-node tests and breakpoints, external Agent adapters, artifact
   settlement, and a visual builder;
-- extend controlled Workflow, user-message, and model-call re-execution with
-  tool-call checkpoints, side-effect result reuse/simulation,
-  Prompt/Skill/Memory/environment replacement, batch experiments, interactive
-  root-cause views, and evaluation promotion.
+- extend controlled Workflow, user-message, model-call, and stateless read-only
+  tool-call re-execution with Web/RPC tool access, stateful/write checkpoints,
+  side-effect result reuse/simulation, Prompt/Skill/Memory/environment
+  replacement, batch experiments, interactive root-cause views, and evaluation
+  promotion.
 
 ### Layer 3: Product and outcome proof
 

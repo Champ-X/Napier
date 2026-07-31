@@ -68,6 +68,16 @@ export interface CliModelInvocationExperimentOptions extends CliExecutionOptions
   preview: boolean;
 }
 
+export interface CliToolInvocationExperimentOptions extends CliWorkspaceOptions {
+  threadId: string;
+  sourceRunId: string;
+  sourceCallId: string;
+  title?: string;
+  expectedPreviewSha256?: string;
+  preview: boolean;
+  timeoutMs: number;
+}
+
 export interface CliRpcOptions {
   workspace: string;
   dataRoot?: string;
@@ -104,6 +114,10 @@ export type CliAction =
   | {
       kind: "model-experiment";
       options: CliModelInvocationExperimentOptions;
+    }
+  | {
+      kind: "tool-experiment";
+      options: CliToolInvocationExperimentOptions;
     }
   | { kind: "rpc"; options: CliRpcOptions }
   | { kind: "workflow"; options: CliWorkflowOptions };
@@ -157,6 +171,17 @@ const MODEL_EXPERIMENT_VALUE_OPTIONS = new Set([
   "--timeout-ms",
 ]);
 const MODEL_EXPERIMENT_FLAG_OPTIONS = new Set(["--preview"]);
+const TOOL_EXPERIMENT_VALUE_OPTIONS = new Set([
+  "--workspace",
+  "--data-root",
+  "--thread",
+  "--run",
+  "--call-id",
+  "--title",
+  "--expected-preview",
+  "--timeout-ms",
+]);
+const TOOL_EXPERIMENT_FLAG_OPTIONS = new Set(["--preview"]);
 const RPC_VALUE_OPTIONS = new Set(["--workspace", "--data-root"]);
 const WORKFLOW_VALUE_OPTIONS = new Set([
   "--workspace",
@@ -197,6 +222,7 @@ export function parseCliArgs(argv: string[]): CliAction {
     command !== "branch" &&
     command !== "experiment" &&
     command !== "model-experiment" &&
+    command !== "tool-experiment" &&
     command !== "rpc" &&
     command !== "workflow"
   ) {
@@ -219,16 +245,20 @@ export function parseCliArgs(argv: string[]): CliAction {
               ? EXPERIMENT_VALUE_OPTIONS
               : command === "model-experiment"
                 ? MODEL_EXPERIMENT_VALUE_OPTIONS
-                : command === "rpc"
-                  ? RPC_VALUE_OPTIONS
-                  : WORKFLOW_VALUE_OPTIONS,
+                : command === "tool-experiment"
+                  ? TOOL_EXPERIMENT_VALUE_OPTIONS
+                  : command === "rpc"
+                    ? RPC_VALUE_OPTIONS
+                    : WORKFLOW_VALUE_OPTIONS,
     command === "workflow"
       ? WORKFLOW_FLAG_OPTIONS
       : command === "experiment"
         ? EXPERIMENT_FLAG_OPTIONS
         : command === "model-experiment"
           ? MODEL_EXPERIMENT_FLAG_OPTIONS
-          : new Set(),
+          : command === "tool-experiment"
+            ? TOOL_EXPERIMENT_FLAG_OPTIONS
+            : new Set(),
   );
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "chat") return parseChatOptions(values, jsonl);
@@ -239,6 +269,9 @@ export function parseCliArgs(argv: string[]): CliAction {
   }
   if (command === "model-experiment") {
     return parseModelInvocationExperimentOptions(values, flags, jsonl);
+  }
+  if (command === "tool-experiment") {
+    return parseToolInvocationExperimentOptions(values, flags, jsonl);
   }
   if (command === "rpc") return parseRpcOptions(values, jsonl);
   return parseWorkflowOptions(values, flags, jsonl);
@@ -462,6 +495,65 @@ function parseModelInvocationExperimentOptions(
   };
 }
 
+function parseToolInvocationExperimentOptions(
+  values: Map<string, string>,
+  flags: ReadonlySet<string>,
+  jsonl: boolean,
+): Extract<CliAction, { kind: "tool-experiment" }> {
+  const preview = flags.has("--preview");
+  const expectedPreviewSha256 = values.get("--expected-preview")?.trim();
+  if (
+    expectedPreviewSha256 !== undefined &&
+    !/^[a-f0-9]{64}$/u.test(expectedPreviewSha256)
+  ) {
+    throw new Error("--expected-preview must be a SHA-256 digest");
+  }
+  if (preview && expectedPreviewSha256) {
+    throw new Error("--preview cannot include --expected-preview");
+  }
+  if (!preview && !expectedPreviewSha256) {
+    throw new Error(
+      "Tool invocation experiment execution requires --expected-preview",
+    );
+  }
+  const rawTitle = values.get("--title");
+  const title = rawTitle?.replace(/\s+/gu, " ").trim();
+  if (
+    rawTitle !== undefined &&
+    (!title ||
+      title.length > MAX_BRANCH_TITLE_CHARS ||
+      /[\u0000-\u001f\u007f<>]/u.test(title))
+  ) {
+    throw new Error(
+      `--title must be 1-${MAX_BRANCH_TITLE_CHARS} safe characters`,
+    );
+  }
+  const sourceCallId = requiredValue(values, "--call-id");
+  if (
+    sourceCallId.length > 256 ||
+    /[\u0000-\u001f\u007f]/u.test(sourceCallId)
+  ) {
+    throw new Error("--call-id is invalid");
+  }
+  return {
+    kind: "tool-experiment",
+    options: {
+      workspace: requiredValue(values, "--workspace"),
+      threadId: requiredResourceId(values, "--thread"),
+      sourceRunId: requiredResourceId(values, "--run"),
+      sourceCallId,
+      timeoutMs: parseTimeout(values.get("--timeout-ms")),
+      jsonl,
+      preview,
+      ...(values.has("--data-root")
+        ? { dataRoot: requiredValue(values, "--data-root") }
+        : {}),
+      ...(title ? { title } : {}),
+      ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
+    },
+  };
+}
+
 function parseWorkflowOptions(
   values: Map<string, string>,
   flags: ReadonlySet<string>,
@@ -675,6 +767,7 @@ Usage:
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
   napier experiment --workspace <path> --thread <thread-id> --run <run-id> --message-seq <n> [options]
   napier model-experiment --workspace <path> --thread <thread-id> --run <run-id> --turn-index <n> [options]
+  napier tool-experiment --workspace <path> --thread <thread-id> --run <run-id> --call-id <id> [options]
   napier rpc --workspace <path> [options]
   napier workflow --workspace <path> --manifest <path> [options]
 
@@ -685,6 +778,7 @@ Commands:
   branch                 Fork message history at an exact Ledger sequence
   experiment             Re-run a historical Agent message read-only
   model-experiment       Re-run one captured provider call without tools
+  tool-experiment        Re-run one captured built-in read-only tool call
   rpc                    Serve local JSON-RPC 2.0 over stdio
   workflow               Execute or resume a typed Plan/Blueprint Workflow
 
@@ -734,6 +828,15 @@ Model invocation experiment options:
   --model <provider/id>  Optional candidate provider-backed model
   --title <text>         Optional isolated target title
   --preview              Preview frozen provider context without mutation
+  --expected-preview     Required preview SHA-256 for execution
+  --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
+
+Tool invocation experiment options:
+  --thread <thread-id>   Source Agent Thread
+  --run <run-id>         Terminal source Run with a local tool capsule
+  --call-id <id>         Exact source tool call ID
+  --title <text>         Optional isolated target title
+  --preview              Preview frozen arguments and current scope
   --expected-preview     Required preview SHA-256 for execution
   --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
 

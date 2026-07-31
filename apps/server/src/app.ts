@@ -388,6 +388,7 @@ import {
   type McpExtensionManager,
   type ModelRegistry,
   type ModelInvocationExperimentRuntime,
+  type ToolInvocationExperimentRuntime,
   normalizePromptVariableDefinitions,
   normalizeToolLoopGuardPolicy,
   openTelemetryTraceArtifactEventAnchorSetSha256,
@@ -467,6 +468,10 @@ import {
   executeModelInvocationExperimentHttp,
   previewModelInvocationExperimentHttp,
 } from "./model-invocation-experiment-http.js";
+import {
+  executeToolInvocationExperimentHttp,
+  previewToolInvocationExperimentHttp,
+} from "./tool-invocation-experiment-http.js";
 import { executeWorkflowHttp } from "./workflow-http.js";
 import {
   executeWorkflowExperimentHttp,
@@ -482,6 +487,7 @@ export interface NapierServices {
   workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
   agentMessageExperiments: AgentMessageExperimentRuntime;
   modelInvocationExperiments: ModelInvocationExperimentRuntime;
+  toolInvocationExperiments: ToolInvocationExperimentRuntime;
   evaluations: RunEvaluationService;
   evaluationCasebookQualifications: EvaluationCasebookQualificationService;
   evaluationSuites: EvaluationSuiteService;
@@ -687,6 +693,7 @@ export async function createServices(options?: {
     workflowExperiments,
     agentMessageExperiments,
     modelInvocationExperiments,
+    toolInvocationExperiments,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
@@ -720,6 +727,7 @@ export async function createServices(options?: {
     workflowExperiments,
     agentMessageExperiments,
     modelInvocationExperiments,
+    toolInvocationExperiments,
     evaluations,
     evaluationCasebookQualifications,
     evaluationSuites,
@@ -11031,6 +11039,26 @@ export function createApp(services: NapierServices): Hono {
 
   app.post("/api/threads/:threadId/model-invocation-experiments", (context) =>
     executeModelInvocationExperimentHttp(context, services, {
+      readJson: readLimitedJson,
+      jsonError: (target, message, status) =>
+        jsonError(target, message, status),
+      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    }),
+  );
+
+  app.post(
+    "/api/threads/:threadId/tool-invocation-experiments/preview",
+    (context) =>
+      previewToolInvocationExperimentHttp(context, services, {
+        readJson: readLimitedJson,
+        jsonError: (target, message, status) =>
+          jsonError(target, message, status),
+        isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+      }),
+  );
+
+  app.post("/api/threads/:threadId/tool-invocation-experiments", (context) =>
+    executeToolInvocationExperimentHttp(context, services, {
       readJson: readLimitedJson,
       jsonError: (target, message, status) =>
         jsonError(target, message, status),

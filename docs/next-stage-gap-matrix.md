@@ -24,12 +24,99 @@ Audit date: 2026-08-01
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                     |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                      |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, typed model-free Reduce aggregation, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
-| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user-message checkpoints freeze Agent, Prompt Variable, Skill, Memory, model-history, model, and Workspace bindings, then execute in an isolated read-only Branch with source/target comparison through Web Run Lab, CLI, HTTP, SDK, RPC, Replay, and Trace. Provider-backed Agent calls capture exact local-only Context capsules, and one selected model call can be preview-bound and re-executed exactly once through Web Run Lab, CLI, HTTP, SDK, and RPC without dispatching returned tools. Tool-call checkpoints, Prompt/Skill/Memory/environment replacement, historical tool-result reuse or simulation, write-capable experiments, batch experiments, richer root-cause views, and evaluation promotion remain.        |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. Run Lab, CLI, HTTP, SDK, and RPC now expose both preview-bound historical-message reruns and isolated single-provider-call execution. RPC also supports Agent and typed Workflow run/resume, Approval answer-and-resume, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                    |
+| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC. Captured provider calls execute exactly once without dispatching returned tools. Ten built-in stateless read-only tools now capture exact local-only argument capsules and can be preview-bound and executed exactly once through CLI, HTTP, and SDK with scoped Workspace freshness and source/target output comparison. Web/RPC tool-call access, stateful or write tool checkpoints, Prompt/Skill/Memory/environment replacement, historical result reuse or simulation, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                       |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. Run Lab, CLI, HTTP, SDK, and RPC expose historical-message and isolated provider-call experiments; CLI, HTTP, and SDK also expose built-in read-only tool-call experiments. RPC supports Agent and typed Workflow run/resume, Approval answer-and-resume, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Tool-call Web/RPC parity, authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                         |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+## Implemented Slice: Read-Only Tool-Invocation Re-execution
+
+User scenario: select one completed built-in read-only tool call from a
+terminal Agent Run, preview its exact private arguments and current scoped
+Workspace binding without revealing either, then execute that tool once in an
+isolated Run and inspect whether the live output changed.
+
+Acceptance:
+
+- after normal capability, budget, loop, and policy admission, capture exact
+  validated arguments for ten explicitly allowlisted stateless workspace/data
+  read tools before the tool body runs;
+- bind source Thread/Run/call, Agent revision, tool name and definition hash,
+  canonical arguments, read effect, and argument-selected Workspace scope into
+  a local-only capsule and append only its hash-bound receipt to Ledger;
+- share the model-capsule CAS implementation, including `0700`/`0600`
+  permissions, symlink and permission-drift rejection, fsynced temporary
+  writes, no-overwrite atomic installation, serialized concurrent capacity
+  admission, and post-install count/byte validation;
+- limit each tool capsule to 512 KiB and the store to 512 objects / 64 MiB;
+  capture failure must not alter the original tool execution;
+- require a terminal configured source Run, exactly one capsule receipt, one
+  preceding matching `tool.started`, one following matching
+  `tool.completed`, a current pinned Agent revision, unchanged tool Schema,
+  valid TypeBox arguments, read effect, and successful `observe` policy;
+- snapshot only the argument-selected file/directory scope, reject truncated
+  snapshots, and bind its current hash/count/bytes plus all source evidence and
+  source output hash/bytes into one stable preview SHA-256;
+- reproject freshness before mutation and admit only an internal
+  `tool_experiment_read_only` capability; direct Store mode selection must
+  fail;
+- regenerate the same tool through `createStatelessAgentTools`, recheck
+  definition/Schema/effect/policy, invoke it exactly once, and never enter the
+  Agent Loop or call a model;
+- compare actual status, duration, output SHA-256, and output bytes; return live
+  candidate output only as a deliberate caller result;
+- make stale preview mutation-free; settle execution failure and cancellation
+  as isolated terminal targets; isolate concurrent candidates and require retry
+  from the source checkpoint rather than generic recovery;
+- expose the same Runtime through `napier tool-experiment` human/JSONL, HTTP
+  preview/SSE, and the local TypeScript SDK;
+- preserve portable target Replay while excluding every raw local capsule.
+
+Threat boundary:
+
+- eligible tools are exactly `list_files`, `read_file`, `search_files`,
+  `list_symbols`, `inspect_data`, `sqlite_query`, `inspect_code`,
+  `read_symbol`, `ast_query`, and `ast_edit_preview`;
+- Extensions, Browser, shell/Process, Kernel, Debugger, LSP and mutation
+  Sessions, write tools, and unknown-effect tools are not resolved;
+- exact arguments can include SQL, query parameters, paths, selectors, or
+  replacement previews, so they remain local-only. Ledger and portable Replay
+  carry receipts and privacy projections, never the capsule;
+- a complete current scoped snapshot binds the candidate environment; this is
+  not source-environment restoration. A changed current scope intentionally
+  produces a different preview;
+- this slice does not claim historical result reuse, side-effect simulation,
+  write-capable replay, Web/RPC access, batch experiments, or promotion.
+
+Observed result:
+
+- Runtime tests execute a real Pi faux-provider Agent `read_file`, capture its
+  exact call, run two concurrent isolated candidates, and verify unchanged
+  output with one tool call and zero model calls per target;
+- stale Workspace input creates no target; deleting the selected file after
+  target creation settles a failed target; pre-abort is mutation-free and
+  target-creation abort settles a cancelled target without starting the tool;
+- Store bypass and write-tool capsule construction fail closed; exposed
+  capsule permissions are rejected;
+- a real process-isolated SQLite query proves SQL, parameters, and result rows
+  stay absent from source/target Ledger and portable Replay while deliberate
+  candidate output remains available to the caller;
+- a 528-write concurrent stress case leaves the private CAS at its exact
+  512-object bound and rejects overflow rather than deleting the whole batch;
+- real CLI JSONL, Hono HTTP/SSE, and SDK tests each create a source Agent call,
+  execute the candidate through the shared Runtime, and validate target events,
+  Snapshot/result binding, comparison, and portable Replay.
+- `npm run check` passed 1,498 regular tests with 26 opt-in live tests skipped,
+  253 generated OpenAPI routes, and 244/244 compatibility operations. The
+  checked product path measured 571.3 ms to first CLI event, 720.6 ms to first
+  token, 1,026.1 ms to completion, 0.3 ms read p95, 6.8 ms for 1,000-event
+  projection, and 749.568 closed SQLite bytes/event; all checked latency,
+  projection, RSS, bundle, and database budgets passed;
+- the unchanged 79-file Web dist keeps the main entry at 130.13 KiB under its
+  150 KiB budget and remains bound to `a158e4c019a418d8`; the refreshed
+  seven-artifact release set is bound to `0205a1769a3472d1`.
 
 ## Implemented Slice: Single-Model-Invocation Re-execution
 

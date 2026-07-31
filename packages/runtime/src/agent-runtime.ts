@@ -155,6 +155,8 @@ import {
   TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   toolLoopGuardBlockReason,
 } from "./tool-loop-guard.js";
+import { captureToolInvocation } from "./tool-invocation-capture.js";
+import { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
 
 export type EventSink = (event: RunEvent) => Promise<void> | void;
 
@@ -239,6 +241,9 @@ export class AgentRuntime {
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
     readonly browserSessions?: RunBrowserSessionManager,
     readonly modelInvocationCapsules = new ModelInvocationCapsuleStore(
+      store.dataRoot,
+    ),
+    readonly toolInvocationCapsules = new ToolInvocationCapsuleStore(
       store.dataRoot,
     ),
   ) {
@@ -857,6 +862,11 @@ export class AgentRuntime {
     if (interrupted.source === "model_experiment") {
       throw new Error(
         "Model invocation experiment Runs must be retried from their source checkpoint",
+      );
+    }
+    if (interrupted.source === "tool_experiment") {
+      throw new Error(
+        "Tool invocation experiment Runs must be retried from their source checkpoint",
       );
     }
     const events = (await this.store.listEvents(thread.id)).filter(
@@ -1554,6 +1564,16 @@ export class AgentRuntime {
         );
         return { block: true, reason: decision.reason };
       }
+      await captureToolInvocation(
+        this.store,
+        this.toolInvocationCapsules,
+        run,
+        tools.find((tool) => tool.name === toolCall.name),
+        toolCall.id,
+        toolCall.name,
+        args,
+        onEvent,
+      );
       return undefined;
     };
     const preRecordedControlMessages = new Map<string, number>();
@@ -2142,6 +2162,8 @@ export class AgentRuntime {
             callId: event.toolCallId,
             toolName: event.toolName,
             status: event.isError ? "failed" : "completed",
+            outputTextSha256: sha256Text(output),
+            outputTextBytes: Buffer.byteLength(output, "utf8"),
             ...toolOutputLedgerProjection(event.toolName, output, event.result),
             ...(event.result.details !== undefined
               ? { details: toJsonValue(event.result.details) }
