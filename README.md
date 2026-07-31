@@ -142,9 +142,10 @@ Version `0.1.0` includes:
 - preview-bound `workspace_file_preview` / `workspace_file_apply` tools plus a
   lazy Files recovery panel for directory creation, no-overwrite-intent moves,
   reversible trash, and explicit restore without shell access;
-- a `sqlite_query` tool for schema inspection and parameterized read-only SQL
-  over canonical static workspace database snapshots, with process-isolated
-  timeout/cancellation and live-only rows;
+- a `sqlite_query` tool for schema inspection, parameterized read-only SQL, and
+  deterministic single-series bar/line SVG over canonical static workspace
+  database snapshots, with process-isolated timeout/cancellation, live-only
+  rows/SVG, and verified Artifact delivery through the existing CAS writer;
 - Run-owned controlled Chrome Sessions plus a `research_source` tool that
   freezes bounded visible page text, binds exact line ranges to report claims,
   returns citation tokens to the live Agent, and retains only privacy-bounded
@@ -1897,7 +1898,10 @@ shell capability. `schema` accepts a canonical `.db`, `.sqlite`, or `.sqlite3`
 workspace file up to 64 MiB and returns its bounded table/view shape plus
 complete file SHA-256. `query` requires that exact database hash, one
 parameterized `SELECT`, `WITH`, or `VALUES` statement, up to 50 positional
-parameters, 100 rows, and a 100-5,000 ms deadline.
+parameters, 100 rows, and a 100-5,000 ms deadline. `chart` uses the same query
+boundary but requires a complete 1-50 row result, one unique X column, and one
+finite numeric Y column. It renders a fixed-theme standalone bar or line SVG
+with bounded title, axis labels, and dimensions.
 
 Napier rejects symlinks, protected paths, live WAL/journal sidecars, PRAGMA,
 ATTACH, DDL, DML, extension loading, multiple statements, unsafe functions,
@@ -1909,12 +1913,15 @@ timeout and cancellation to terminate native SQLite work; the source database
 is rehashed before results are accepted. SQLite authorizer/defensive mode
 requires Node.js 24.12 or newer and fails closed on older runtimes.
 
-Schema names and rows are untrusted live tool output. Ledger, Replay, SSE, and
-Trace retain only database/path, SQL, parameter-set, column-set, row-set,
-worker, runtime, limit, and result hashes plus bounded counts and duration. Typed
-Workflow Tool nodes can consume that receipt, including a hash of the actual
-Node/SQLite runtime, while semantic row values remain live-only for the Agent
-to turn into a verified workspace artifact.
+Schema names, rows, labels, and generated SVG are untrusted live tool output.
+The renderer accepts no markup, URL, CSS, event handler, image, script, or
+foreign object from data; text is XML-escaped and geometry must remain finite.
+Ledger, Replay, SSE, and Trace retain only database/path, SQL, parameter-set,
+column-set, row-set, chart-spec, renderer, SVG, worker, runtime, limit, and
+result hashes plus bounded counts, dimensions, bytes, and duration. Typed
+Workflow Tool nodes consume only that receipt. To deliver a chart, the Agent
+must still create the `.svg` through `apply_patch` and verify the actual file as
+a Plan Artifact; `sqlite_query chart` itself has no write capability.
 
 Run the real process-isolated smoke:
 

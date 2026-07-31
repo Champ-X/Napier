@@ -2185,6 +2185,16 @@ sqlite_query query
   -> return schema/rows only to the live Agent
   -> retain database/SQL/parameter/result and Node/SQLite runtime hashes
      plus bounded metrics in Trace
+sqlite_query chart
+  -> execute the unchanged hash-bound query path with at most 50 rows
+  -> reject truncation, missing/ambiguous columns, duplicate X labels,
+     non-finite Y values, unsafe text, and non-finite geometry
+  -> project one complete X/Y series through a pure fixed-theme bar/line SVG
+     renderer with XML escaping and no script, URL, CSS, image, link, event
+     handler, foreign object, or model-provided markup
+  -> return SVG only to the live Agent; expose query/spec/renderer/SVG hashes,
+     point/byte counts, dimensions, and chart type to Workflow and Trace
+  -> require apply_patch plus Plan Artifact verification for file delivery
 inspect_code
   -> resolve TypeScript / JavaScript / Python / Go files through the same
      read-only realpath and UTF-8 boundary as read_file
@@ -5253,7 +5263,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has forty-nine parts:
+The current boundary has fifty parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5441,6 +5451,10 @@ The current boundary has forty-nine parts:
     bounded model/Thread/new/resume/status controls, separates assistant output
     from metadata-only tool status, applies per-turn cancellation and timeout,
     and is covered through a real built-process PTY.
+50. Deterministic SQLite chart delivery through the existing read-only worker,
+    with complete-result enforcement, finite fixed SVG geometry, live-only
+    semantic output, typed Workflow receipts, public SSE/Trace projection, and
+    CAS plus Plan Artifact verification for actual file delivery.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally

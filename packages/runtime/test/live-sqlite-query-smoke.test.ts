@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { executeSqliteChart } from "../src/sqlite-chart.js";
 import { executeSqliteQuery } from "../src/sqlite-query.js";
 
 const describeLive =
@@ -41,6 +42,18 @@ describeLive("live SQLite analysis smoke", () => {
       databaseSha256: schema.database.fileSha256,
       sql: "SELECT region, SUM(amount) AS total FROM sales GROUP BY region ORDER BY total DESC",
     });
+    const chart = await executeSqliteChart(root, {
+      action: "chart",
+      path: "analytics.sqlite",
+      databaseSha256: schema.database.fileSha256,
+      sql: "SELECT region, SUM(amount) AS total FROM sales GROUP BY region ORDER BY total DESC",
+      chart: {
+        type: "bar",
+        xColumn: "region",
+        yColumn: "total",
+        title: "Sales by region",
+      },
+    });
 
     expect(schema.rows).toEqual(
       expect.arrayContaining([expect.arrayContaining(["table", "sales", 2])]),
@@ -50,5 +63,8 @@ describeLive("live SQLite analysis smoke", () => {
       ["east", "15"],
     ]);
     expect(result.durationMs).toBeLessThan(5_000);
+    expect(chart.pointCount).toBe(2);
+    expect(chart.svg).toContain("Sales by region");
+    expect(chart.svgSha256).toMatch(/^[a-f0-9]{64}$/u);
   }, 15_000);
 });

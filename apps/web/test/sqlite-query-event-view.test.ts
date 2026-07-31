@@ -68,6 +68,28 @@ describe("SQLite query Trace projection", () => {
     expect(summary).not.toContain("PRIVATE_SQLITE");
   });
 
+  it("projects complete chart evidence without SVG or semantic labels", () => {
+    const view = sqliteQueryEventEvidence(chartDetails());
+
+    expect(view).toEqual(
+      expect.objectContaining({
+        sqliteQueryAction: "chart",
+        sqliteChartType: "bar",
+        sqliteChartPointCount: 10,
+        sqliteChartWidth: 960,
+        sqliteChartHeight: 540,
+        sqliteChartSvgBytes: 12_345,
+      }),
+    );
+    const summary = sqliteQuerySummaryParts(view!);
+    expect(summary).toContain("sqlite chart");
+    expect(summary).toContain("chart bar");
+    expect(summary).toContain("chart-points 10");
+    expect(summary).toContain("chart-size 960x540");
+    expect(summary).toContain(`svg ${"b".repeat(12)}`);
+    expect(JSON.stringify(view)).not.toContain("PRIVATE_CHART");
+  });
+
   it("fails closed on partial or impossible evidence", () => {
     expect(
       sqliteQueryEventEvidence({
@@ -85,6 +107,24 @@ describe("SQLite query Trace projection", () => {
       sqliteQueryEventEvidence({
         ...details("query"),
         rowsSha256: undefined,
+      }),
+    ).toBeUndefined();
+    expect(
+      sqliteQueryEventEvidence({
+        ...chartDetails(),
+        pointCount: 9,
+      }),
+    ).toBeUndefined();
+    expect(
+      sqliteQueryEventEvidence({
+        ...chartDetails(),
+        truncated: true,
+      }),
+    ).toBeUndefined();
+    expect(
+      sqliteQueryEventEvidence({
+        ...chartDetails(),
+        svgSha256: undefined,
       }),
     ).toBeUndefined();
   });
@@ -117,5 +157,26 @@ function details(action: "schema" | "query") {
     path: "PRIVATE_SQLITE_PATH",
     sql: "PRIVATE_SQLITE_SQL",
     rows: ["PRIVATE_SQLITE_ROWS"],
+  };
+}
+
+function chartDetails() {
+  return {
+    ...details("query"),
+    kind: "napier.sqlite-chart",
+    action: "chart",
+    truncated: false,
+    chartType: "bar",
+    pointCount: 10,
+    width: 960,
+    height: 540,
+    svgBytes: 12_345,
+    chartSpecSha256: "a".repeat(64),
+    svgSha256: "b".repeat(64),
+    rendererSha256: "c".repeat(64),
+    chartLimitsSha256: "d".repeat(64),
+    queryResultSha256: "e".repeat(64),
+    title: "PRIVATE_CHART_TITLE",
+    svg: "<svg>PRIVATE_CHART</svg>",
   };
 }

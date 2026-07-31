@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added verified SQLite chart delivery to the existing `sqlite_query` tool.
+  `chart` executes one database-hash-bound parameterized query through the
+  unchanged read-only child worker and accepts only a complete 1-50 row result
+  with one unique X column and one finite numeric Y column. A pure renderer
+  emits deterministic fixed-theme bar or line SVG with bounded dimensions,
+  XML-escaped text, finite geometry, and no script, URL, CSS, image, link,
+  event handler, foreign object, or model-provided markup. SVG and semantic
+  rows remain live-only; Ledger, Replay, SSE, typed Workflow output, and Web
+  Trace retain only query/spec/renderer/SVG hashes and bounded metrics. Chart
+  generation remains read-only: the Agent dogfood writes the returned SVG
+  through `apply_patch`, verifies exact Workspace bytes as a Plan Artifact, and
+  preserves a valid portable Replay. Runtime failure/cancellation/drift/
+  concurrency tests, public Hono SSE coverage, privacy projection tests, and
+  the real process-isolated SQLite smoke cover the vertical path.
 - Added `napier chat`, a line-oriented interactive Agent entry that keeps one
   `LocalAgentRuntime` open across durable turns and delegates run/recovery to
   the existing `EmbeddedAgentService`. Bounded slash commands switch model or

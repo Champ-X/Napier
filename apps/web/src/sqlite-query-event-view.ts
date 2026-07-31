@@ -1,5 +1,5 @@
 export interface SqliteQueryToolEventTraceView {
-  sqliteQueryAction?: "schema" | "query";
+  sqliteQueryAction?: "schema" | "query" | "chart";
   sqliteDatabasePathSha256?: string;
   sqliteDatabaseSha256?: string;
   sqliteDatabaseBytes?: number;
@@ -16,6 +16,16 @@ export interface SqliteQueryToolEventTraceView {
   sqliteRuntimeSha256?: string;
   sqliteLimitsSha256?: string;
   sqliteResultSha256?: string;
+  sqliteChartType?: "bar" | "line";
+  sqliteChartPointCount?: number;
+  sqliteChartWidth?: number;
+  sqliteChartHeight?: number;
+  sqliteChartSvgBytes?: number;
+  sqliteChartSpecSha256?: string;
+  sqliteChartSvgSha256?: string;
+  sqliteChartRendererSha256?: string;
+  sqliteChartLimitsSha256?: string;
+  sqliteChartQueryResultSha256?: string;
 }
 
 const EMPTY_SHA256 =
@@ -26,7 +36,9 @@ export function sqliteQueryEventEvidence(
 ): SqliteQueryToolEventTraceView | undefined {
   if (!record(value)) return undefined;
   const action =
-    value["action"] === "schema" || value["action"] === "query"
+    value["action"] === "schema" ||
+    value["action"] === "query" ||
+    value["action"] === "chart"
       ? value["action"]
       : undefined;
   const databaseBytes = integer(value["databaseBytes"], 16, 64 * 1024 * 1024);
@@ -34,9 +46,36 @@ export function sqliteQueryEventEvidence(
   const columnCount = integer(value["columnCount"], 0, 80);
   const rowCount = integer(value["rowCount"], 0, 100);
   const durationMs = integer(value["durationMs"], 0, 6_000);
+  const chartType =
+    value["chartType"] === "bar" || value["chartType"] === "line"
+      ? value["chartType"]
+      : undefined;
+  const chartPointCount = integer(value["pointCount"], 1, 50);
+  const chartWidth = integer(value["width"], 480, 1_600);
+  const chartHeight = integer(value["height"], 320, 1_000);
+  const chartSvgBytes = integer(value["svgBytes"], 1, 48 * 1024);
+  const chartReceipt =
+    action === "chart" &&
+    value["kind"] === "napier.sqlite-chart" &&
+    value["schemaVersion"] === 1 &&
+    chartType !== undefined &&
+    chartPointCount !== undefined &&
+    chartPointCount === rowCount &&
+    chartWidth !== undefined &&
+    chartHeight !== undefined &&
+    chartSvgBytes !== undefined &&
+    value["truncated"] === false &&
+    sha256(value["chartSpecSha256"]) &&
+    sha256(value["svgSha256"]) &&
+    sha256(value["rendererSha256"]) &&
+    sha256(value["chartLimitsSha256"]) &&
+    sha256(value["queryResultSha256"]);
+  const queryReceipt =
+    action !== "chart" &&
+    value["kind"] === "napier.sqlite-query" &&
+    value["schemaVersion"] === 1;
   if (
-    value["kind"] !== "napier.sqlite-query" ||
-    value["schemaVersion"] !== 1 ||
+    (!queryReceipt && !chartReceipt) ||
     !action ||
     !sha256(value["databasePathSha256"]) ||
     !sha256(value["databaseSha256"]) ||
@@ -77,6 +116,20 @@ export function sqliteQueryEventEvidence(
     sqliteRuntimeSha256: value["runtimeSha256"],
     sqliteLimitsSha256: value["limitsSha256"],
     sqliteResultSha256: value["resultSha256"],
+    ...(chartReceipt
+      ? {
+          sqliteChartType: chartType,
+          sqliteChartPointCount: chartPointCount,
+          sqliteChartWidth: chartWidth,
+          sqliteChartHeight: chartHeight,
+          sqliteChartSvgBytes: chartSvgBytes,
+          sqliteChartSpecSha256: value["chartSpecSha256"] as string,
+          sqliteChartSvgSha256: value["svgSha256"] as string,
+          sqliteChartRendererSha256: value["rendererSha256"] as string,
+          sqliteChartLimitsSha256: value["chartLimitsSha256"] as string,
+          sqliteChartQueryResultSha256: value["queryResultSha256"] as string,
+        }
+      : {}),
   };
 }
 
@@ -98,6 +151,17 @@ export function sqliteQuerySummaryParts(
       ? [`rows ${view.sqliteRowCount}`]
       : []),
     ...(view.sqliteResultTruncated ? ["result-truncated"] : []),
+    ...(view.sqliteChartType ? [`chart ${view.sqliteChartType}`] : []),
+    ...(view.sqliteChartPointCount !== undefined
+      ? [`chart-points ${view.sqliteChartPointCount}`]
+      : []),
+    ...(view.sqliteChartWidth !== undefined &&
+    view.sqliteChartHeight !== undefined
+      ? [`chart-size ${view.sqliteChartWidth}x${view.sqliteChartHeight}`]
+      : []),
+    ...(view.sqliteChartSvgBytes !== undefined
+      ? [`svg-bytes ${view.sqliteChartSvgBytes}`]
+      : []),
     ...(view.sqliteDurationMs !== undefined
       ? [`duration-ms ${view.sqliteDurationMs}`]
       : []),
@@ -106,6 +170,9 @@ export function sqliteQuerySummaryParts(
     ...hash("sql", view.sqliteSqlSha256),
     ...hash("runtime", view.sqliteRuntimeSha256),
     ...hash("sqlite-result", view.sqliteResultSha256),
+    ...hash("chart-spec", view.sqliteChartSpecSha256),
+    ...hash("svg", view.sqliteChartSvgSha256),
+    ...hash("chart-renderer", view.sqliteChartRendererSha256),
   ];
 }
 

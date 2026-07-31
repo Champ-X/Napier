@@ -64,6 +64,78 @@ describe("sqlite_query Agent tool", () => {
     expect(JSON.stringify(queried.details)).not.toContain("PRIVATE");
   });
 
+  it("returns deterministic chart SVG live and keeps chart bodies out of Ledger projections", async () => {
+    const root = await fixture();
+    const tool = createSqliteQueryTool(root);
+    const schema = await tool.execute("schema-chart-call", {
+      action: "schema",
+      path: "private-analytics.db",
+    });
+    const args = {
+      action: "chart" as const,
+      path: "private-analytics.db",
+      databaseSha256: schema.details.databaseSha256,
+      sql: "SELECT category AS PRIVATE_LABEL, SUM(value) AS PRIVATE_TOTAL FROM metrics GROUP BY category ORDER BY PRIVATE_TOTAL DESC",
+      chart: {
+        type: "bar" as const,
+        xColumn: "PRIVATE_LABEL",
+        yColumn: "PRIVATE_TOTAL",
+        title: "PRIVATE CHART TITLE <review>",
+      },
+    };
+    const charted = await tool.execute("chart-call", args);
+    const live = charted.content[0]?.text ?? "";
+
+    expect(live).toContain("<svg");
+    expect(live).toContain("PRIVATE CHART TITLE &lt;review&gt;");
+    expect(live).not.toContain("<review>");
+    expect(charted.details).toEqual(
+      expect.objectContaining({
+        kind: "napier.sqlite-chart",
+        schemaVersion: 1,
+        action: "chart",
+        chartType: "bar",
+        pointCount: 2,
+        rowCount: 2,
+        truncated: false,
+        svgSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        rendererSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+
+    const call = sqliteQueryToolCallArgumentsLedgerProjection(args);
+    const output = sqliteQueryToolOutputLedgerProjection(live, {
+      details: charted.details,
+    });
+    const durable = JSON.stringify({ call, output, details: charted.details });
+    for (const secret of [
+      "private-analytics",
+      "PRIVATE_LABEL",
+      "PRIVATE_TOTAL",
+      "PRIVATE CHART TITLE",
+      "<svg",
+      "alpha",
+      "beta",
+    ]) {
+      expect(durable).not.toContain(secret);
+    }
+    expect(call).toEqual(
+      expect.objectContaining({
+        action: "chart",
+        chartType: "bar",
+        chartRequestSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        redacted: true,
+      }),
+    );
+    expect(output).toEqual(
+      expect.objectContaining({
+        outputRedacted: true,
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+  });
+
   it("requires workspace confinement and remains a read effect", () => {
     const workspace = path.resolve("/workspace");
     expect(
