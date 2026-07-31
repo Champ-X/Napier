@@ -30,7 +30,7 @@ export interface CreateStatelessAgentToolsOptions {
   sandbox: OsSandboxAdapter;
   lspSession?: LspProtocolExecutor;
   workspaceFileMutations?: WorkspaceFileMutationManager;
-  safeReadOnlyRecovery?: boolean;
+  restrictedReadOnlyExecution?: boolean;
   advisorCorrection?: boolean;
 }
 
@@ -40,7 +40,7 @@ export function createStatelessAgentTools(
   if (options.advisorCorrection) return [];
   const { profile } = options;
   const processAllowed =
-    !options.safeReadOnlyRecovery && profile.toolPolicy !== "observe";
+    !options.restrictedReadOnlyExecution && profile.toolPolicy !== "observe";
   const lspOptions = {
     workspaceRoot: options.store.workspaceRoot,
     sandbox: options.sandbox,

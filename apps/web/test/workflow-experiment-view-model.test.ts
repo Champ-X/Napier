@@ -119,6 +119,19 @@ describe("Workflow experiment Workbench view model", () => {
     ).rejects.toThrow("Approval node");
   });
 
+  it("accepts bounded Map nodes and rejects excessive concurrency", async () => {
+    const manifest = workflowMapManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const unsafe = structuredClone(manifest);
+    unsafe.nodes[0]!.maxConcurrency = 4;
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafe)),
+    ).rejects.toThrow("Map node");
+  });
+
   it("projects bounded comparison data without output bodies", () => {
     const comparison = workflowComparison();
     const view = projectWorkflowExperimentComparison(comparison);
@@ -385,6 +398,76 @@ function workflowDeterministicManifest() {
           },
         },
         timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowMapManifest() {
+  const base = workflowManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const itemSchema = {
+    type: "string" as const,
+    minLength: 1,
+    maxLength: 100,
+  };
+  const outputSchema = {
+    type: "array" as const,
+    items: base.outputSchema,
+    minItems: 0,
+    maxItems: 4,
+  };
+  const content = {
+    ...baseContent,
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        items: {
+          type: "array" as const,
+          items: itemSchema,
+          minItems: 0,
+          maxItems: 4,
+        },
+      },
+      required: ["items"],
+      additionalProperties: false as const,
+    },
+    outputSchema,
+    nodes: [
+      {
+        id: "report",
+        type: "map" as const,
+        inputBindings: {
+          items: {
+            source: "workflow" as const,
+            path: ["items"],
+          },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            items: {
+              type: "array" as const,
+              items: itemSchema,
+              minItems: 0,
+              maxItems: 4,
+            },
+          },
+          required: ["items"],
+          additionalProperties: false as const,
+        },
+        outputSchema,
+        itemsPath: ["items"],
+        model: { provider: "faux", id: "map" },
+        maxConcurrency: 3,
+        itemTimeoutMs: 5_000,
+        timeoutMs: 15_000,
         maxAttempts: 2,
       },
     ],

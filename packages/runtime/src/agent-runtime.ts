@@ -319,9 +319,9 @@ export class AgentRuntime {
     );
     const run = leasedRun.run;
     const agentProfile = effectiveRunProfile(agentSnapshot, run);
-    const safeReadOnlyRecovery =
+    const restrictedReadOnlyExecution =
       modernRunConfiguration(run.configuration) &&
-      run.configuration.executionMode === "safe_read_only_recovery";
+      run.configuration.executionMode !== "standard";
     const abortController = new AbortController();
     const budget = new RunBudgetTracker(
       run.limits ??
@@ -467,7 +467,7 @@ export class AgentRuntime {
       abortController.signal.throwIfAborted();
       const model = await this.modelRegistry.resolveConfigured(modelRef);
       const subagents =
-        model && !safeReadOnlyRecovery
+        model && !restrictedReadOnlyExecution
           ? new SubagentCoordinator({
               store: this.store,
               models: this.modelRegistry.models,
@@ -493,7 +493,7 @@ export class AgentRuntime {
               text,
               source,
               subagents,
-              safeReadOnlyRecovery,
+              restrictedReadOnlyExecution,
               skillCatalog,
               promptVariables.renderedSystemPrompt,
               promptVariables.snapshot.skillCatalogInjected,
@@ -640,7 +640,7 @@ export class AgentRuntime {
       }
       if (
         model &&
-        !safeReadOnlyRecovery &&
+        !restrictedReadOnlyExecution &&
         !workflowInvocation &&
         !abortController.signal.aborted
       ) {
@@ -1125,7 +1125,7 @@ export class AgentRuntime {
     prompt: string,
     source: TurnSource,
     subagents: SubagentCoordinator | undefined,
-    safeReadOnlyRecovery: boolean,
+    restrictedReadOnlyExecution: boolean,
     skillCatalog: LoadedSkillCatalog,
     resolvedSystemPrompt: string,
     skillCatalogInjected: boolean,
@@ -1146,9 +1146,11 @@ export class AgentRuntime {
       onEvent,
     );
     budget.assertCanStartPrimaryTurn();
-    const expiredMemories = await this.store.expireDueMemories({
-      agentId: profile.id,
-    });
+    const expiredMemories = restrictedReadOnlyExecution
+      ? []
+      : await this.store.expireDueMemories({
+          agentId: profile.id,
+        });
     for (const memory of expiredMemories) {
       await this.record(
         {
@@ -1173,7 +1175,9 @@ export class AgentRuntime {
       this.store.listMemories({ agentId: profile.id }),
       profile.id,
     );
-    await this.store.recordMemoryUsage(memoryContext.factIds, run.id);
+    if (!restrictedReadOnlyExecution) {
+      await this.store.recordMemoryUsage(memoryContext.factIds, run.id);
+    }
     const skillPrompt = skillCatalogInjected
       ? resolvedSystemPrompt
       : appendSkillCatalog(resolvedSystemPrompt, skillCatalog.skills);
@@ -1218,12 +1222,12 @@ export class AgentRuntime {
       ...(this.workspaceFileMutations
         ? { workspaceFileMutations: this.workspaceFileMutations }
         : {}),
-      safeReadOnlyRecovery,
+      restrictedReadOnlyExecution,
       advisorCorrection,
     });
     let pendingOperatorDecisionId: string | undefined;
     if (
-      !safeReadOnlyRecovery &&
+      !restrictedReadOnlyExecution &&
       !advisorCorrection &&
       profile.toolPolicy !== "observe"
     ) {
@@ -1235,7 +1239,7 @@ export class AgentRuntime {
       );
     }
     if (
-      !safeReadOnlyRecovery &&
+      !restrictedReadOnlyExecution &&
       !advisorCorrection &&
       profile.toolPolicy !== "observe" &&
       profile.enabledTools.includes("workspace_process") &&
@@ -1248,7 +1252,11 @@ export class AgentRuntime {
         }),
       );
     }
-    if (!safeReadOnlyRecovery && !advisorCorrection && !workflowInvocation) {
+    if (
+      !restrictedReadOnlyExecution &&
+      !advisorCorrection &&
+      !workflowInvocation
+    ) {
       tools.push(...createPlanTools(this.store, run));
       tools.push(
         createAgentMilestoneTool({
@@ -1279,7 +1287,11 @@ export class AgentRuntime {
       );
     }
     let deferredExtensionTools: AgentTool[] = [];
-    if (this.extensionManager && !safeReadOnlyRecovery && !advisorCorrection) {
+    if (
+      this.extensionManager &&
+      !restrictedReadOnlyExecution &&
+      !advisorCorrection
+    ) {
       const extensionTools = this.extensionManager.createDeferredAgentTools(
         profile.id,
       );
@@ -1287,7 +1299,7 @@ export class AgentRuntime {
       deferredExtensionTools = extensionTools.deferredTools;
     }
     if (
-      !safeReadOnlyRecovery &&
+      !restrictedReadOnlyExecution &&
       !advisorCorrection &&
       subagents?.hasEnabledRoles()
     ) {
@@ -1463,7 +1475,7 @@ export class AgentRuntime {
         return { block: true, reason };
       }
       if (toolCall.name === "delegate_task") return undefined;
-      const decision = safeReadOnlyRecovery
+      const decision = restrictedReadOnlyExecution
         ? assessToolCall(
             "observe",
             toolCall.name,

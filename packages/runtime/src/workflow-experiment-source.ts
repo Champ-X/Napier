@@ -17,6 +17,7 @@ import {
   executionPlanWorkflowConditionSha256,
 } from "./workflow-condition-model.js";
 import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-deterministic-model.js";
+import { workflowMapNodeConfigurationSha256 } from "./workflow-map-model.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import {
   defineExecutionPlanWorkflow,
@@ -84,7 +85,8 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     outputNodeId: manifest.outputNodeId,
     nodes: manifest.nodes.map((node) => ({
       ...node,
-      ...(node.type === "agent" && modelOverrides[node.id]
+      ...((node.type === "agent" || node.type === "map") &&
+      modelOverrides[node.id]
         ? { model: structuredClone(modelOverrides[node.id]) }
         : {}),
     })),
@@ -263,7 +265,7 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
     const expectedModel =
       run.source === "workflow_reuse"
         ? { provider: "napier", id: "workflow-reuse" }
-        : node.type === "agent"
+        : node.type === "agent" || node.type === "map"
           ? (node.model ?? agent.model)
           : agent.model;
     if (
@@ -297,6 +299,7 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
       node,
       run.id,
       inputSha256,
+      input,
     );
     const outputSha256 = sha256(canonicalJson(output));
     const completedEvent = matchingNodeEvent(
@@ -391,7 +394,7 @@ function normalizedModelOverrides(
         `Workflow experiment cannot override a reused node model: ${node.id}`,
       );
     }
-    if (node.type !== "agent") {
+    if (node.type !== "agent" && node.type !== "map") {
       throw new Error(
         `Workflow experiment cannot override a non-Agent node model: ${node.id}`,
       );
@@ -416,7 +419,16 @@ function experimentNodeToolEffects(
       record(event.payload)?.["nodeId"] === nodeId,
   );
   const runIds = [...new Set(started.map((event) => event.runId))];
-  const observations = runIds.flatMap((runId) =>
+  const mapItemRunIds = events
+    .filter(
+      (event) =>
+        event.type === "workflow.map.item.started" &&
+        record(event.payload)?.["planId"] === planId &&
+        record(event.payload)?.["nodeId"] === nodeId,
+    )
+    .map((event) => event.runId);
+  const observationRunIds = [...new Set([...runIds, ...mapItemRunIds])];
+  const observations = observationRunIds.flatMap((runId) =>
     collectRunToolEffectObservations(
       events.filter((event) => event.runId === runId),
     ),
@@ -620,6 +632,13 @@ function sourceNodeMetadataMatches(
       payload["nodeType"] === "deterministic" &&
       payload["templateSha256"] ===
         executionPlanWorkflowDeterministicTemplateSha256(node.template)
+    );
+  }
+  if (node.type === "map") {
+    return (
+      payload["nodeType"] === "map" &&
+      payload["mapConfigurationSha256"] ===
+        workflowMapNodeConfigurationSha256(node)
     );
   }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";

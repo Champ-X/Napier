@@ -23,6 +23,12 @@ import {
   workflowDeterministicNodeMetadata,
   workflowDeterministicNodeMetadataMatches,
 } from "./workflow-deterministic-evidence.js";
+import {
+  hasWorkflowMapCompletionEvent,
+  readWorkflowMapOutputEvidence,
+  workflowMapNodeMetadata,
+  workflowMapNodeMetadataMatches,
+} from "./workflow-map-evidence.js";
 import { workflowPlanStepPayload } from "./workflow-runtime-model.js";
 import {
   assertWorkflowValue,
@@ -117,6 +123,7 @@ export class ExecutionPlanWorkflowLedger {
     node: ExecutionPlanWorkflowNode,
     runId: string,
     inputSha256: string,
+    input: JsonValue,
   ): Promise<JsonValue> {
     const run = this.store
       .listRuns(context.threadId)
@@ -165,6 +172,29 @@ export class ExecutionPlanWorkflowLedger {
         runId,
         planId: context.plan.id,
         manifestSha256: context.manifest.contentSha256,
+        inputSha256,
+        attempt,
+        assistantOutput: await this.nodeAssistantOutput(
+          context.threadId,
+          runId,
+        ),
+      });
+    }
+    if (node.type === "map") {
+      const attempt = await this.attemptForRun(
+        context.threadId,
+        context.plan.id,
+        node.id,
+        runId,
+      );
+      return readWorkflowMapOutputEvidence({
+        events: await this.store.listEvents(context.threadId),
+        runs: this.store.listRuns(context.threadId),
+        node,
+        runId,
+        planId: context.plan.id,
+        manifestSha256: context.manifest.contentSha256,
+        input,
         inputSha256,
         attempt,
         assistantOutput: await this.nodeAssistantOutput(
@@ -306,6 +336,20 @@ export class ExecutionPlanWorkflowLedger {
   ): Promise<boolean> {
     if (node.type !== "deterministic") return false;
     return hasWorkflowDeterministicCompletionEvent(
+      await this.store.listEvents(context.threadId),
+      context.plan.id,
+      node.id,
+      runId,
+    );
+  }
+
+  async hasNodeMapCompletionEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    runId: string,
+  ): Promise<boolean> {
+    if (node.type !== "map") return false;
+    return hasWorkflowMapCompletionEvent(
       await this.store.listEvents(context.threadId),
       context.plan.id,
       node.id,
@@ -818,6 +862,9 @@ export function workflowNodeEventMetadataMatches(
   if (node.type === "deterministic") {
     return workflowDeterministicNodeMetadataMatches(node, payload);
   }
+  if (node.type === "map") {
+    return workflowMapNodeMetadataMatches(node, payload);
+  }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
 }
 
@@ -842,6 +889,9 @@ export function workflowNodeEventMetadata(
   }
   if (node.type === "deterministic") {
     return { ...workflowDeterministicNodeMetadata(node), ...condition };
+  }
+  if (node.type === "map") {
+    return { ...workflowMapNodeMetadata(node), ...condition };
   }
   return { nodeType: "agent", ...condition };
 }

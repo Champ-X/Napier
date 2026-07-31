@@ -881,6 +881,22 @@ export interface ExecutionPlanWorkflowDeterministicNode {
   maxAttempts: number;
 }
 
+export interface ExecutionPlanWorkflowMapNode {
+  id: string;
+  type: "map";
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowArraySchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
+  itemsPath: ExecutionPlanWorkflowValuePathSegment[];
+  model?: ModelRef;
+  maxConcurrency: number;
+  itemTimeoutMs: number;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
 export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
   "list_files",
   "read_file",
@@ -968,6 +984,7 @@ export const EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA = {
 export type ExecutionPlanWorkflowNode =
   | ExecutionPlanWorkflowAgentNode
   | ExecutionPlanWorkflowDeterministicNode
+  | ExecutionPlanWorkflowMapNode
   | ExecutionPlanWorkflowToolNode
   | ExecutionPlanWorkflowApprovalNode;
 
@@ -2317,7 +2334,10 @@ export interface AutomaticRecoveryPolicy {
   backoffMs: number;
 }
 
-export type RunExecutionMode = "standard" | "safe_read_only_recovery";
+export type RunExecutionMode =
+  | "standard"
+  | "safe_read_only_recovery"
+  | "workflow_map_read_only";
 
 export interface SubagentTask {
   id: string;

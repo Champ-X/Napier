@@ -36,6 +36,7 @@
     "test:live-cli": "npm run test:live-deepseek -w @napier/cli",
     "test:live-files": "npm run test:live-files -w @napier/runtime",
     "test:live-lsp": "npm run test:live-lsp -w @napier/runtime",
+    "test:live-map": "npm run test:live-map -w @napier/runtime",
     "test:live-process": "npm run test:live-process -w @napier/runtime",
     "test:live-sqlite": "npm run test:live-sqlite -w @napier/runtime",
     "test:live-deepseek": "npm run test:live-deepseek -w @napier/runtime",

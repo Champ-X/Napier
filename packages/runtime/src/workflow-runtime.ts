@@ -58,6 +58,7 @@ import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materia
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deterministic-node.js";
+import { ExecutionPlanWorkflowMapNodeExecutor } from "./workflow-map-node.js";
 import {
   DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
   executeExecutionPlanWorkflowReadyBatch,
@@ -86,6 +87,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
   private readonly conditionNodeExecutor: ExecutionPlanWorkflowConditionNodeExecutor;
   private readonly deterministicNodeExecutor: ExecutionPlanWorkflowDeterministicNodeExecutor;
+  private readonly mapNodeExecutor: ExecutionPlanWorkflowMapNodeExecutor;
   private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
   constructor(
@@ -114,6 +116,17 @@ export class ExecutionPlanWorkflowRuntime {
         completePlanStep: (context, nodeId, runId, outputSha256) =>
           this.completePlanStep(context, nodeId, runId, outputSha256),
       });
+    this.mapNodeExecutor = new ExecutionPlanWorkflowMapNodeExecutor(
+      store,
+      agentRuntime,
+      this.ledger,
+      {
+        blockNode: (context, node, failure) =>
+          this.blockNode(context, node, failure),
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      },
+    );
     this.toolNodeExecutor = new ExecutionPlanWorkflowToolNodeExecutor(
       store,
       agentRuntime,
@@ -460,6 +473,15 @@ export class ExecutionPlanWorkflowRuntime {
     }
     if (node.type === "deterministic") {
       return this.deterministicNodeExecutor.execute(
+        context,
+        node,
+        input,
+        inputSha256,
+        attempt,
+      );
+    }
+    if (node.type === "map") {
+      return this.mapNodeExecutor.execute(
         context,
         node,
         input,

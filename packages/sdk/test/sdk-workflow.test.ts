@@ -32,6 +32,14 @@ type DraftReport = {
   message: string;
 };
 
+type MapRequest = {
+  items: string[];
+};
+
+type MapReport = Array<{
+  item: string;
+}>;
+
 afterEach(async () => {
   await Promise.all(
     temporaryRoots
@@ -316,6 +324,32 @@ describe("Napier TypeScript SDK Workflows", () => {
       ]),
     );
   });
+
+  it("defines and reloads a typed bounded Map manifest", async () => {
+    const fixture = await createFixture("map-definition");
+    const client = await createNapierClient({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("sdk-map-definition-test"),
+    });
+    const workflow = await client.defineWorkflow<MapRequest, MapReport>(
+      mapWorkflowDefinition(),
+    );
+    const loaded = loadNapierWorkflow<MapRequest, MapReport>(
+      JSON.parse(JSON.stringify(workflow.manifest)),
+    );
+
+    expect(loaded.manifest.nodes).toEqual([
+      expect.objectContaining({
+        id: "map_items",
+        type: "map",
+        itemsPath: ["items"],
+        maxConcurrency: 3,
+        itemTimeoutMs: 5_000,
+      }),
+    ]);
+    await client.close();
+  });
 });
 
 function draftWorkflowDefinition(): DefineNapierWorkflowInput<
@@ -415,6 +449,60 @@ function blockedWorkflowDefinition(): DefineNapierWorkflowInput<
         outputSchema: draftReportSchema(),
         model: { provider: "missing-sdk-provider", id: "missing-1" },
         timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+}
+
+function mapWorkflowDefinition(): DefineNapierWorkflowInput<
+  MapRequest,
+  MapReport
+> {
+  const itemSchema = {
+    type: "string" as const,
+    minLength: 1,
+    maxLength: 100,
+  };
+  const inputSchema = objectSchema({
+    items: {
+      type: "array",
+      items: itemSchema,
+      minItems: 0,
+      maxItems: 8,
+    },
+  });
+  const outputSchema = {
+    type: "array" as const,
+    items: objectSchema({ item: itemSchema }),
+    minItems: 0,
+    maxItems: 8,
+  };
+  return {
+    name: "SDK typed Map",
+    version: 1,
+    description: "Define one bounded read-only Agent Map.",
+    plan: {
+      objective: "Map one typed SDK collection.",
+      steps: [planStep("map_items", "Map items")],
+    },
+    inputSchema,
+    outputSchema,
+    outputNodeId: "map_items",
+    nodes: [
+      {
+        id: "map_items",
+        type: "map",
+        inputBindings: {
+          items: { source: "workflow", path: ["items"] },
+        },
+        inputSchema,
+        outputSchema,
+        itemsPath: ["items"],
+        model: { provider: "openai", id: "gpt-4.1-mini" },
+        maxConcurrency: 3,
+        itemTimeoutMs: 5_000,
+        timeoutMs: 30_000,
         maxAttempts: 2,
       },
     ],

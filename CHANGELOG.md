@@ -6,6 +6,23 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added bounded read-only Agent Map nodes to typed Plan Workflows. A Map selects
+  one Schema-bounded runtime array, uses one coordinator Run, and fans out at
+  most 16 items through up to three parent-bound Agent Runs at the frozen Agent
+  revision. Item Runs force `observe`, admit only bounded read-only tools, and
+  disable writes, verifier processes, stateful sessions, extensions, subagents,
+  Plan/operator tools, and Memory metadata mutation. Independent item
+  deadlines, Workflow cancellation, strict item/aggregate Schemas, and
+  input-order collection bound the execution. The outer scheduler runs Map
+  exclusively so the coordinator and workers stay within the four-Run Store
+  limit. Ledger evidence binds item indexes, lineage, Manifest/configuration,
+  input/output/Schema hashes, and ordered Run/hash sets without exposing raw
+  item bodies in Trace. Restart reconstruction accepts only a complete proved
+  aggregate; incomplete interruption requires explicit retry. Checkpoint
+  experiments include child metrics, tool observations, and Map model
+  replacement. Runtime, HTTP SSE, CLI JSONL, SDK Manifest, Web experiment, and
+  Web Trace tests cover the shared path, with an opt-in real DeepSeek Map
+  smoke.
 - Added process-isolated read-only SQLite analysis. `sqlite_query schema`
   inspects bounded table/view columns from a canonical checkpointed workspace
   database; `query` requires that exact database SHA-256 and executes one

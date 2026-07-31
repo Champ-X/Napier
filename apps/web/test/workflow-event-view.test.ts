@@ -294,6 +294,81 @@ describe("Workflow event Trace projection", () => {
     ).not.toContain("PRIVATE");
   });
 
+  it("summarizes Map coordination and item evidence without data bodies", () => {
+    const nodeStarted = workflowEvent("workflow.node.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "analyze",
+      nodeType: "map",
+      mapConfigurationSha256: "8".repeat(64),
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      planRevisionBefore: 1,
+      planRevisionAfter: 2,
+      recovered: false,
+      input: "PRIVATE_MAP_INPUT",
+    });
+    const itemCompleted = workflowEvent("workflow.map.item.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "analyze",
+      coordinatorRunId: "run_abcdefghijklmnopqrst",
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      mapConfigurationSha256: "8".repeat(64),
+      itemIndex: 1,
+      itemCount: 3,
+      itemInputSha256: "2".repeat(64),
+      itemOutputSha256: "5".repeat(64),
+      itemOutputBytes: 42,
+      itemOutputSchemaSha256: "4".repeat(64),
+      output: "PRIVATE_MAP_ITEM_OUTPUT",
+    });
+    const completed = workflowEvent("workflow.map.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "analyze",
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      mapConfigurationSha256: "8".repeat(64),
+      inputSha256: "2".repeat(64),
+      outputSha256: "5".repeat(64),
+      outputBytes: 120,
+      outputSchemaSha256: "4".repeat(64),
+      itemOutputSchemaSha256: "6".repeat(64),
+      itemCount: 3,
+      maxConcurrency: 3,
+      itemInputSetSha256: "7".repeat(64),
+      itemOutputSetSha256: "9".repeat(64),
+      itemRunSetSha256: "a".repeat(64),
+      output: "PRIVATE_MAP_OUTPUT",
+    });
+
+    expect(workflowEventTraceSummary(nodeStarted)).toContain(
+      `map ${"8".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(itemCompleted)).toContain(
+      `item 2/3 / input ${"2".repeat(12)} / map ${"8".repeat(12)} / output ${"5".repeat(12)} / bytes 42`,
+    );
+    expect(workflowEventTraceSummary(completed)).toContain(
+      `items 3 / concurrency 3 / output ${"5".repeat(12)} / bytes 120 / map ${"8".repeat(12)}`,
+    );
+    expect(
+      `${workflowEventTraceSummary(nodeStarted)} ${workflowEventTraceSummary(itemCompleted)} ${workflowEventTraceSummary(completed)}`,
+    ).not.toContain("PRIVATE_MAP");
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.map.item.completed", {
+          ...(itemCompleted.payload as Record<string, JsonValue>),
+          itemOutputSha256: undefined,
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
   it("rejects malformed Workflow evidence", () => {
     expect(
       workflowEventTraceSummary(

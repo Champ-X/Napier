@@ -117,6 +117,7 @@ export async function validateWorkflowManifest(
       nodeIds.has(nodeInput["id"]) ||
       (nodeInput["type"] !== "agent" &&
         nodeInput["type"] !== "deterministic" &&
+        nodeInput["type"] !== "map" &&
         nodeInput["type"] !== "tool" &&
         nodeInput["type"] !== "approval") ||
       !record(nodeInput["inputBindings"]) ||
@@ -137,6 +138,29 @@ export async function validateWorkflowManifest(
     }
     if (nodeInput["type"] === "deterministic") {
       validateWorkflowDeterministicTemplate(nodeInput["template"]);
+    }
+    if (nodeInput["type"] === "map") {
+      const itemsPath = validateWorkflowBindingPath(nodeInput["itemsPath"]);
+      const outputSchema = nodeInput["outputSchema"];
+      if (
+        !itemsPath ||
+        !Number.isSafeInteger(nodeInput["maxConcurrency"]) ||
+        Number(nodeInput["maxConcurrency"]) < 1 ||
+        Number(nodeInput["maxConcurrency"]) > 3 ||
+        !Number.isSafeInteger(nodeInput["itemTimeoutMs"]) ||
+        Number(nodeInput["itemTimeoutMs"]) < 1_000 ||
+        !record(outputSchema) ||
+        outputSchema["type"] !== "array" ||
+        !Number.isSafeInteger(outputSchema["maxItems"]) ||
+        Number(outputSchema["maxItems"]) < 0 ||
+        Number(outputSchema["maxItems"]) > 16 ||
+        (nodeInput["model"] !== undefined &&
+          (!record(nodeInput["model"]) ||
+            typeof nodeInput["model"]["provider"] !== "string" ||
+            typeof nodeInput["model"]["id"] !== "string"))
+      ) {
+        throw new Error("Workflow manifest Map node is invalid");
+      }
     }
     if (
       nodeInput["type"] === "approval" &&

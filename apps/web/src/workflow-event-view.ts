@@ -9,6 +9,10 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.reused",
   "workflow.approval.requested",
   "workflow.deterministic.completed",
+  "workflow.map.item.started",
+  "workflow.map.item.completed",
+  "workflow.map.item.failed",
+  "workflow.map.completed",
   "workflow.experiment.started",
   "workflow.experiment.compared",
   "workflow.experiment.failed",
@@ -184,6 +188,99 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `bytes ${String(outputBytes)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,
     );
+  } else if (event.type.startsWith("workflow.map.item.")) {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const coordinatorRunId = runId(payload["coordinatorRunId"]);
+    const attempt = boundedInteger(payload["attempt"], 1, 3);
+    const itemIndex = boundedInteger(payload["itemIndex"], 0, 15);
+    const itemCount = boundedInteger(payload["itemCount"], 1, 16);
+    const itemInputSha256 = hash(payload["itemInputSha256"]);
+    const mapConfigurationSha256 = hash(payload["mapConfigurationSha256"]);
+    if (
+      !nodeIdValue ||
+      !coordinatorRunId ||
+      attempt === undefined ||
+      itemIndex === undefined ||
+      itemCount === undefined ||
+      itemIndex >= itemCount ||
+      !itemInputSha256 ||
+      !mapConfigurationSha256
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `attempt ${String(attempt)}`,
+      `item ${String(itemIndex + 1)}/${String(itemCount)}`,
+      `input ${itemInputSha256.slice(0, 12)}`,
+      `map ${mapConfigurationSha256.slice(0, 12)}`,
+    );
+    if (event.type === "workflow.map.item.completed") {
+      const itemOutputSha256 = hash(payload["itemOutputSha256"]);
+      const itemOutputSchemaSha256 = hash(payload["itemOutputSchemaSha256"]);
+      const itemOutputBytes = boundedInteger(
+        payload["itemOutputBytes"],
+        0,
+        32 * 1024,
+      );
+      if (
+        !itemOutputSha256 ||
+        !itemOutputSchemaSha256 ||
+        itemOutputBytes === undefined
+      ) {
+        return undefined;
+      }
+      parts.push(
+        `output ${itemOutputSha256.slice(0, 12)}`,
+        `bytes ${String(itemOutputBytes)}`,
+      );
+    } else if (event.type === "workflow.map.item.failed") {
+      const errorCode = safeToken(payload["errorCode"]);
+      const diagnosticSha256 = hash(payload["diagnosticSha256"]);
+      if (!errorCode || !diagnosticSha256) return undefined;
+      parts.push(
+        `error ${errorCode}`,
+        `diagnostic ${diagnosticSha256.slice(0, 12)}`,
+      );
+    } else if (!hash(payload["itemOutputSchemaSha256"])) {
+      return undefined;
+    }
+  } else if (event.type === "workflow.map.completed") {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const attempt = boundedInteger(payload["attempt"], 1, 3);
+    const itemCount = boundedInteger(payload["itemCount"], 0, 16);
+    const maxConcurrency = boundedInteger(payload["maxConcurrency"], 1, 3);
+    const outputSha256 = hash(payload["outputSha256"]);
+    const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
+    const itemInputSetSha256 = hash(payload["itemInputSetSha256"]);
+    const itemOutputSetSha256 = hash(payload["itemOutputSetSha256"]);
+    const itemRunSetSha256 = hash(payload["itemRunSetSha256"]);
+    const mapConfigurationSha256 = hash(payload["mapConfigurationSha256"]);
+    const outputBytes = boundedInteger(payload["outputBytes"], 0, 32 * 1024);
+    if (
+      !nodeIdValue ||
+      attempt === undefined ||
+      itemCount === undefined ||
+      maxConcurrency === undefined ||
+      !outputSha256 ||
+      !outputSchemaSha256 ||
+      !itemInputSetSha256 ||
+      !itemOutputSetSha256 ||
+      !itemRunSetSha256 ||
+      !mapConfigurationSha256 ||
+      outputBytes === undefined
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `attempt ${String(attempt)}`,
+      `items ${String(itemCount)}`,
+      `concurrency ${String(maxConcurrency)}`,
+      `output ${outputSha256.slice(0, 12)}`,
+      `bytes ${String(outputBytes)}`,
+      `map ${mapConfigurationSha256.slice(0, 12)}`,
+    );
   } else if (event.type === "workflow.approval.requested") {
     const nodeIdValue = nodeId(payload["nodeId"]);
     const decisionId = safeDecisionId(payload["decisionId"]);
@@ -249,6 +346,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       const templateSha256 = hash(payload["templateSha256"]);
       if (!templateSha256) return undefined;
       parts.push(`deterministic ${templateSha256.slice(0, 12)}`);
+    } else if (payload["nodeType"] === "map") {
+      const mapConfigurationSha256 = hash(payload["mapConfigurationSha256"]);
+      if (!mapConfigurationSha256) return undefined;
+      parts.push(`map ${mapConfigurationSha256.slice(0, 12)}`);
     } else if (
       payload["nodeType"] !== undefined &&
       payload["nodeType"] !== "agent"
@@ -375,6 +476,12 @@ function planId(value: unknown): string | undefined {
 
 function nodeId(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-z][a-z0-9_-]{0,63}$/u.test(value)
+    ? value
+    : undefined;
+}
+
+function runId(value: unknown): string | undefined {
+  return typeof value === "string" && /^run_[a-z0-9]{8,80}$/u.test(value)
     ? value
     : undefined;
 }

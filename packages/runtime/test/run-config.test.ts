@@ -129,6 +129,19 @@ describe("Run configuration fingerprints", () => {
         executionMode: "safe_read_only_recovery",
       }),
     );
+    const map = createRunConfigurationFingerprint(
+      PROFILE,
+      PROFILE.model,
+      "workflow_map_read_only",
+    );
+    expect(validateRunConfigurationFingerprint(map)).toEqual(
+      expect.objectContaining({
+        toolPolicy: "observe",
+        enabledTools: ["read_file"],
+        enabledSubagents: [],
+        executionMode: "workflow_map_read_only",
+      }),
+    );
   });
 
   it("binds Skill catalog hashes without copying Skill instructions", () => {

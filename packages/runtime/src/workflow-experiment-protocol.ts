@@ -259,7 +259,8 @@ export function validateExecutionPlanWorkflowExperimentResult(
     outputNodeId: sourceManifest.outputNodeId,
     nodes: sourceManifest.nodes.map((node) => ({
       ...node,
-      ...(node.type === "agent" && preview.modelOverrides[node.id]
+      ...((node.type === "agent" || node.type === "map") &&
+      preview.modelOverrides[node.id]
         ? { model: structuredClone(preview.modelOverrides[node.id]) }
         : {}),
     })),

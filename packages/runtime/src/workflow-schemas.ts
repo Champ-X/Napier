@@ -154,6 +154,33 @@ export function resolveExecutionPlanWorkflowValuePath(
   return structuredClone(value);
 }
 
+export function resolveExecutionPlanWorkflowSchemaPath(
+  source: WorkflowValueSchema,
+  path: ExecutionPlanWorkflowValuePathSegment[] | undefined,
+  label: string,
+): WorkflowValueSchema {
+  if (!path || path.length === 0) return structuredClone(source);
+  let schema = source;
+  for (const segment of path) {
+    if (typeof segment === "number") {
+      if (schema.type !== "array") {
+        throw new Error(`Workflow schema path is unavailable: ${label}`);
+      }
+      schema = schema.items;
+      continue;
+    }
+    if (
+      schema.type !== "object" ||
+      !("properties" in schema) ||
+      !Object.hasOwn(schema.properties, segment)
+    ) {
+      throw new Error(`Workflow schema path is unavailable: ${label}`);
+    }
+    schema = schema.properties[segment]!;
+  }
+  return structuredClone(schema);
+}
+
 export function validateExecutionPlanWorkflowValuePath(
   input: unknown,
   label: string,

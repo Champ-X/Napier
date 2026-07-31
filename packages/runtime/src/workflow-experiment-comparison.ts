@@ -90,8 +90,12 @@ export async function createExecutionPlanWorkflowExperimentComparison(
       return compareNode(
         sourceNode.id,
         rerun.has(sourceNode.id) ? "rerun" : "reused",
-        sourceNode.type === "agent" ? sourceNode.model : undefined,
-        targetNode.type === "agent" ? targetNode.model : undefined,
+        sourceNode.type === "agent" || sourceNode.type === "map"
+          ? sourceNode.model
+          : undefined,
+        targetNode.type === "agent" || targetNode.type === "map"
+          ? targetNode.model
+          : undefined,
         source,
         target,
       );
@@ -215,8 +219,13 @@ async function observeNode(
   const started = nodeEvents.filter(
     (event) => event.type === "workflow.node.started",
   );
+  const itemStarted = nodeEvents.filter(
+    (event) => event.type === "workflow.map.item.started",
+  );
   const runIds = canonicalWorkflowExperimentStrings(
-    started.map((event) => event.runId).filter((runId) => RUN_ID.test(runId)),
+    [...started, ...itemStarted]
+      .map((event) => event.runId)
+      .filter((runId) => RUN_ID.test(runId)),
   );
   const runById = new Map(options.runs.map((run) => [run.id, run]));
   if (runIds.some((runId) => !runById.has(runId))) {

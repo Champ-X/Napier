@@ -70,6 +70,8 @@ function selectExecutionPlanWorkflowReadyBatch(
   const maxConcurrency = executionPlanWorkflowMaxConcurrency(context);
   if (maxConcurrency === 1) return ready.slice(0, 1);
 
+  const mapNode = ready.find((node) => node.type === "map");
+  if (mapNode) return [mapNode];
   const executable = ready.filter((node) => node.type !== "approval");
   if (executable.length > 0) return executable.slice(0, maxConcurrency);
   return ready.slice(0, 1);

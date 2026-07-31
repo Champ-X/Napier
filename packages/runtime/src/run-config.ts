@@ -48,8 +48,9 @@ const SUBAGENT_ROLES = new Set<SubagentRole>([
 const EXECUTION_MODES = new Set<RunExecutionMode>([
   "standard",
   "safe_read_only_recovery",
+  "workflow_map_read_only",
 ]);
-const SAFE_RECOVERY_TOOLS = new Set([
+const READ_ONLY_EXECUTION_TOOLS = new Set([
   "list_files",
   "read_file",
   "search_files",
@@ -175,7 +176,7 @@ export function createRunConfigurationFingerprint(
       "Run configuration Prompt Variable catalog does not match the Agent profile",
     );
   }
-  const safeRecovery = executionMode === "safe_read_only_recovery";
+  const readOnlyExecution = executionMode !== "standard";
   const modelAdvisor = effectiveModelAdvisorPolicy(profile);
   const toolLoopGuard = effectiveToolLoopGuardPolicy(profile);
   const content = {
@@ -189,14 +190,16 @@ export function createRunConfigurationFingerprint(
     agentRevision: profile.revision,
     model: structuredClone(model),
     thinkingLevel: profile.thinkingLevel,
-    toolPolicy: safeRecovery ? "observe" : profile.toolPolicy,
+    toolPolicy: readOnlyExecution ? "observe" : profile.toolPolicy,
     enabledTools: canonicalSet(
-      safeRecovery
-        ? profile.enabledTools.filter((tool) => SAFE_RECOVERY_TOOLS.has(tool))
+      readOnlyExecution
+        ? profile.enabledTools.filter((tool) =>
+            READ_ONLY_EXECUTION_TOOLS.has(tool),
+          )
         : profile.enabledTools,
     ),
     enabledSkills: canonicalSet(profile.enabledSkills),
-    enabledSubagents: safeRecovery
+    enabledSubagents: readOnlyExecution
       ? []
       : (canonicalSet(profile.enabledSubagents ?? []) as SubagentRole[]),
     subagentLimits: normalizeSubagentLimits(
@@ -345,13 +348,13 @@ export function validateRunConfigurationFingerprint(
     "executionMode",
   ) as RunExecutionMode;
   if (
-    executionMode === "safe_read_only_recovery" &&
+    executionMode !== "standard" &&
     (toolPolicy !== "observe" ||
       enabledSubagents.length > 0 ||
-      enabledTools.some((tool) => !SAFE_RECOVERY_TOOLS.has(tool)))
+      enabledTools.some((tool) => !READ_ONLY_EXECUTION_TOOLS.has(tool)))
   ) {
     throw new Error(
-      "Run configuration fingerprint safe recovery boundary is invalid",
+      "Run configuration fingerprint read-only boundary is invalid",
     );
   }
   const modernShared = {

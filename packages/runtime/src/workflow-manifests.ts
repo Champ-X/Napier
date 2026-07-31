@@ -19,6 +19,10 @@ import {
   validateExecutionPlanWorkflowCondition,
 } from "./workflow-condition-model.js";
 import { validateExecutionPlanWorkflowDeterministicTemplate } from "./workflow-deterministic-model.js";
+import {
+  MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
+  MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
+} from "./workflow-map-model.js";
 import { validateExecutionPlanBlueprint } from "./workflow-blueprints.js";
 import {
   assertWorkflowEncodedBytes,
@@ -26,6 +30,7 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_VALUE_BYTES,
   MAX_WORKFLOW_SCHEMA_BYTES,
   MAX_WORKFLOW_SCHEMA_PROPERTIES,
+  resolveExecutionPlanWorkflowSchemaPath,
   validateExecutionPlanWorkflowValuePath,
   validateWorkflowSchema,
   WORKFLOW_BINDING_NAME,
@@ -41,6 +46,10 @@ export {
   workflowNodeBindingContextSha256,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
+export {
+  MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
+  MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
+} from "./workflow-map-model.js";
 
 export const MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES = 1024 * 1024;
 export const MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS = 1_000;
@@ -361,6 +370,27 @@ function validateWorkflowNode(
       label,
       new Set(["when", "skipOutput"]),
     );
+  } else if (type === "map") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "when",
+        "skipOutput",
+        "itemsPath",
+        "model",
+        "maxConcurrency",
+        "itemTimeoutMs",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+      new Set(["model", "when", "skipOutput"]),
+    );
   } else if (type === "tool") {
     assertExactKeys(
       node,
@@ -550,6 +580,66 @@ function validateWorkflowNode(
       `${label} literal binding ${name}`,
     );
   }
+  if (type === "map") {
+    const itemsPath = validateExecutionPlanWorkflowValuePath(
+      node["itemsPath"],
+      `${label} items`,
+    );
+    if (!itemsPath) {
+      throw new Error(`${label} items path is required`);
+    }
+    assertMapItemsPathRequired(inputSchema, itemsPath, label);
+    const itemsSchema = resolveExecutionPlanWorkflowSchemaPath(
+      inputSchema,
+      itemsPath,
+      `${label} items`,
+    );
+    if (
+      itemsSchema.type !== "array" ||
+      itemsSchema.maxItems === undefined ||
+      itemsSchema.maxItems > MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS ||
+      outputSchema.type !== "array" ||
+      outputSchema.maxItems === undefined ||
+      outputSchema.maxItems > MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS ||
+      (outputSchema.minItems ?? 0) > (itemsSchema.minItems ?? 0) ||
+      outputSchema.maxItems < itemsSchema.maxItems
+    ) {
+      throw new Error(`${label} Map array bounds are invalid`);
+    }
+    const maxConcurrency = boundedInteger(
+      node["maxConcurrency"],
+      1,
+      MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
+      `${label} maxConcurrency`,
+    );
+    const itemTimeoutMs = boundedInteger(
+      node["itemTimeoutMs"],
+      MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
+      MAX_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
+      `${label} itemTimeoutMs`,
+    );
+    if (timeoutMs < itemTimeoutMs) {
+      throw new Error(`${label} timeoutMs must cover itemTimeoutMs`);
+    }
+    const model =
+      node["model"] === undefined
+        ? undefined
+        : validateModel(node["model"], `${label} model`);
+    return {
+      id,
+      type,
+      inputBindings,
+      inputSchema: inputSchema as WorkflowObjectSchema,
+      outputSchema,
+      ...(conditional ? conditional : {}),
+      itemsPath,
+      ...(model ? { model } : {}),
+      maxConcurrency,
+      itemTimeoutMs,
+      timeoutMs,
+      maxAttempts,
+    };
+  }
   if (type === "deterministic") {
     return {
       id,
@@ -682,6 +772,31 @@ function validateModel(
     throw new Error(`${label} is invalid`);
   }
   return { provider: model["provider"], id: model["id"] };
+}
+
+function assertMapItemsPathRequired(
+  inputSchema: WorkflowValueSchema,
+  path: Array<string | number>,
+  label: string,
+): void {
+  let schema = inputSchema;
+  for (const segment of path) {
+    if (typeof segment === "number") {
+      if (schema.type !== "array" || (schema.minItems ?? 0) <= segment) {
+        throw new Error(`${label} Map items path is not always available`);
+      }
+      schema = schema.items;
+      continue;
+    }
+    if (
+      schema.type !== "object" ||
+      !schema.required.includes(segment) ||
+      !Object.hasOwn(schema.properties, segment)
+    ) {
+      throw new Error(`${label} Map items path is not always available`);
+    }
+    schema = schema.properties[segment]!;
+  }
 }
 
 function assertExactKeys(

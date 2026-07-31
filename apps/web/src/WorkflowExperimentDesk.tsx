@@ -70,7 +70,8 @@ export default function WorkflowExperimentDesk({
   const activeRequest = useRef<AbortController | undefined>(undefined);
   const operationGeneration = useRef(0);
   const selectedNode = manifest?.nodes.find((node) => node.id === fromNodeId);
-  const canReplaceModel = selectedNode?.type === "agent";
+  const canReplaceModel =
+    selectedNode?.type === "agent" || selectedNode?.type === "map";
 
   const comparison = useMemo(
     () =>
@@ -371,7 +372,9 @@ export default function WorkflowExperimentDesk({
               const node = manifest?.nodes.find(
                 (candidate) => candidate.id === event.target.value,
               );
-              if (node?.type !== "agent") setReplaceModel(false);
+              if (node?.type !== "agent" && node?.type !== "map") {
+                setReplaceModel(false);
+              }
               invalidatePreview();
             }}
           >

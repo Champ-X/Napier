@@ -311,6 +311,17 @@ kernels, Node debugger, background Process Sessions, and preview-bound
 workspace file mutations stay Run-owned Agent tools because a one-shot node
 cannot honestly provide their persistent session lifecycle.
 
+Map nodes add dynamic cardinality without adding a second scheduler. A Map
+selects one required array capped at 16 items from its already constructed
+typed input. One coordinator `source=workflow` Run binds the Plan step and
+launches up to three parent-bound item Runs through the same Agent Runtime.
+Item Runs use the frozen Agent revision, the Map model override when present,
+an independent deadline, and `workflow_map_read_only`: `observe`, the bounded
+read-only tool subset, no extensions, no stateful sessions, no subagents, and
+no Memory expiry/usage mutation. The outer scheduler executes Map exclusively
+so coordinator plus children stay within the Store's four-Run limit. Outputs
+are collected by input index and validated as one bounded array.
+
 Each concurrent node receives an isolated copy of the current Plan, outputs,
 node results, and reused-node lineage. Store transitions and Ledger sequence
 assignment remain serialized authorities; outcomes merge only after the full
@@ -367,7 +378,10 @@ the target Thread. Agent and Deterministic output are reconstructed from bound
 assistant evidence; Deterministic recovery additionally requires one terminal
 event bound to template, attempt, input, output, bytes, and schema. Tool output
 requires a unique terminal tool event bound to
-Plan/node/tool/effect/input/output hashes. Recovery also handles process-exit
+Plan/node/tool/effect/input/output hashes. Map output requires the coordinator
+completion plus a unique started/completed pair for every indexed child,
+parent/Plan/restricted-configuration lineage, per-item input/output/schema
+hashes, and aggregate item/run set hashes. Recovery also handles process-exit
 windows between terminal output, Run settlement, Plan transition, and Workflow
 event commits. `tool.started` without terminal evidence becomes
 `run_interrupted` and is never rerun silently. A valid `tool.completed` can
@@ -487,13 +501,14 @@ target Thread Snapshot. Experiment SSE responses override the streaming
 helper's default cache policy with `Cache-Control: no-store`.
 
 Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
-nodes, stateless built-in Tool nodes, durable binary Approval gates,
-literal/field-path typed bindings, bounded parallel dependency-ready DAG
-scheduling, typed equality guards with schema-valid fallback, cancellation,
-timeout, explicit retry, and restart recovery. It does not yet implement
-general multi-option decision nodes, stateful session Tool nodes, multi-way
-switch, loops, Map/Reduce, compensation, per-node breakpoints, external Agent
-adapters, or artifact settlement.
+nodes, stateless built-in Tool nodes, bounded read-only Agent Map nodes,
+durable binary Approval gates, literal/field-path typed bindings, bounded
+parallel dependency-ready DAG scheduling, typed equality guards with
+schema-valid fallback, cancellation, timeout, explicit retry, and restart
+recovery. It does not yet implement general multi-option decision nodes,
+stateful session Tool nodes, write-capable Map, Reduce, multi-way switch,
+loops, compensation, per-node breakpoints, external Agent adapters, or
+artifact settlement.
 
 ### Coding Outcome Benchmark
 
@@ -4992,7 +5007,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has forty-four parts:
+The current boundary has forty-five parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5156,6 +5171,11 @@ The current boundary has forty-four parts:
     parameterized single statements, SQLite authorizer enforcement, hard
     timeout/cancellation, source drift rejection, Agent/Workflow reuse, and
     hash-only durable results.
+45. Bounded read-only Agent Map execution with typed array cardinality,
+    exclusive four-Run-safe scheduling, Ledger-proved coordinator/child
+    lineage, restricted child configurations, independent item deadlines,
+    ordered aggregate validation, explicit retry, and complete-evidence-only
+    restart reconstruction.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5201,9 +5221,9 @@ deferred until the local P0-P9 product loop is stable.
   multi-node AST transforms, write-linked test/symbol association, and isolated
   subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
-  session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node
-  tests and breakpoints, external Agent adapters, artifact settlement, and a
-  visual builder;
+  session nodes, multi-way switch, loops, write-capable Map, Reduce,
+  compensation, single-node tests and breakpoints, external Agent adapters,
+  artifact settlement, and a visual builder;
 - extend controlled Workflow checkpoint re-execution with model-call/tool-call
   checkpoints, side-effect simulation, dependency replacement, batch
   experiments, interactive root-cause views, and evaluation promotion.

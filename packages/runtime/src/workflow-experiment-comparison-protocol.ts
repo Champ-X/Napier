@@ -284,11 +284,11 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
     const sourceManifestNode = sourceManifest.nodes[index];
     const targetManifestNode = candidateManifest.nodes[index];
     const sourceModel =
-      sourceManifestNode?.type === "agent"
+      sourceManifestNode?.type === "agent" || sourceManifestNode?.type === "map"
         ? sourceManifestNode.model
         : undefined;
     const targetModel =
-      targetManifestNode?.type === "agent"
+      targetManifestNode?.type === "agent" || targetManifestNode?.type === "map"
         ? targetManifestNode.model
         : undefined;
     const expectedRunSource =

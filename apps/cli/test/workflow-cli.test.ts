@@ -332,6 +332,61 @@ describe("Napier Workflow CLI", () => {
     expect(frames.at(-2)?.type).toBe("snapshot");
   });
 
+  it("streams concurrent Map item Runs through ordered JSONL", async () => {
+    const fixture = await createMapFixture();
+    const provider = fauxProvider({ provider: "faux-workflow-cli-map" });
+    const responseForItem = (context: { messages: unknown[] }) => {
+      const prompt = JSON.stringify(context.messages);
+      const item = mapDocuments().find((document) =>
+        prompt.includes(document.id),
+      );
+      if (!item) throw new Error("Unknown CLI Map item");
+      return fauxAssistantMessage(
+        JSON.stringify({ id: item.id, length: item.text.length }),
+      );
+    };
+    provider.setResponses([responseForItem, responseForItem, responseForItem]);
+    const stdout = new CaptureWritable();
+
+    const code = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        JSON.stringify({ documents: mapDocuments() }),
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout),
+      providerDependencies(provider),
+    );
+
+    expect(code).toBe(0);
+    const frames = parseFrames(stdout.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result.result.output).toEqual([
+      { id: "cli_a", length: 5 },
+      { id: "cli_b", length: 4 },
+      { id: "cli_c", length: 5 },
+    ]);
+    const events = frames.filter(
+      (frame): frame is Extract<StreamFrame, { type: "event" }> =>
+        frame.type === "event",
+    );
+    expect(events.map((frame) => frame.event.seq)).toEqual(
+      events.map((_, index) => index + 1),
+    );
+    expect(
+      events.filter(
+        (frame) => frame.event.type === "workflow.map.item.completed",
+      ),
+    ).toHaveLength(3);
+  }, 20_000);
+
   it("streams a model-free Deterministic Workflow through ordered JSONL", async () => {
     const fixture = await createDeterministicFixture();
     const stdout = new CaptureWritable();
@@ -1218,6 +1273,120 @@ async function createParallelFixture(): Promise<{
   );
   await services.shutdown();
   return { root, workspaceRoot, dataRoot };
+}
+
+async function createMapFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-map-workflow-cli-"));
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-map-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Map a bounded CLI document collection.",
+    steps: [
+      {
+        id: "analyze",
+        title: "Analyze documents",
+        description: "Return the ID and length for the current document.",
+        verification: "Every input document has one typed output.",
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const documentSchema = {
+    type: "object" as const,
+    properties: {
+      id: { type: "string" as const, minLength: 1, maxLength: 20 },
+      text: { type: "string" as const, minLength: 1, maxLength: 100 },
+    },
+    required: ["id", "text"],
+    additionalProperties: false as const,
+  };
+  const inputSchema = {
+    type: "object" as const,
+    properties: {
+      documents: {
+        type: "array" as const,
+        items: documentSchema,
+        minItems: 0,
+        maxItems: 3,
+      },
+    },
+    required: ["documents"],
+    additionalProperties: false as const,
+  };
+  const outputSchema = {
+    type: "array" as const,
+    items: {
+      type: "object" as const,
+      properties: {
+        id: { type: "string" as const, minLength: 1, maxLength: 20 },
+        length: { type: "integer" as const, minimum: 0, maximum: 100 },
+      },
+      required: ["id", "length"],
+      additionalProperties: false as const,
+    },
+    minItems: 0,
+    maxItems: 3,
+  };
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI bounded Map",
+    version: 1,
+    description: "Execute read-only Agent items through CLI JSONL.",
+    blueprint,
+    inputSchema,
+    outputSchema,
+    outputNodeId: "analyze",
+    maxConcurrency: 4,
+    nodes: [
+      {
+        id: "analyze",
+        type: "map",
+        inputBindings: {
+          documents: {
+            source: "workflow",
+            path: ["documents"],
+          },
+        },
+        inputSchema,
+        outputSchema,
+        itemsPath: ["documents"],
+        model: { provider: "faux-workflow-cli-map", id: "faux-1" },
+        maxConcurrency: 3,
+        itemTimeoutMs: 5_000,
+        timeoutMs: 15_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
+function mapDocuments() {
+  return [
+    { id: "cli_a", text: "alpha" },
+    { id: "cli_b", text: "beta" },
+    { id: "cli_c", text: "gamma" },
+  ];
 }
 
 async function createDeterministicFixture(): Promise<{

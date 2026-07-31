@@ -130,7 +130,9 @@ export class ExecutionPlanWorkflowRecovery {
           step.status !== "running" &&
           !(
             step.status === "blocked" &&
-            (node.type === "tool" || node.type === "deterministic") &&
+            (node.type === "tool" ||
+              node.type === "deterministic" ||
+              node.type === "map") &&
             step.runId !== undefined
           )
         ) {
@@ -172,7 +174,9 @@ export class ExecutionPlanWorkflowRecovery {
         );
         let knownRecoverableOutput;
         if (
-          (node.type === "tool" || node.type === "deterministic") &&
+          (node.type === "tool" ||
+            node.type === "deterministic" ||
+            node.type === "map") &&
           run.status !== "running" &&
           run.status !== "queued" &&
           (node.type === "tool"
@@ -181,17 +185,24 @@ export class ExecutionPlanWorkflowRecovery {
                 node,
                 run.id,
               )
-            : await this.ledger.hasNodeDeterministicCompletionEvent(
-                context,
-                node,
-                run.id,
-              ))
+            : node.type === "deterministic"
+              ? await this.ledger.hasNodeDeterministicCompletionEvent(
+                  context,
+                  node,
+                  run.id,
+                )
+              : await this.ledger.hasNodeMapCompletionEvent(
+                  context,
+                  node,
+                  run.id,
+                ))
         ) {
           knownRecoverableOutput = await this.ledger.nodeOutput(
             context,
             node,
             run.id,
             inputSha256,
+            input,
           );
         }
         if (step.status === "blocked") {
@@ -241,7 +252,13 @@ export class ExecutionPlanWorkflowRecovery {
         try {
           output =
             knownRecoverableOutput ??
-            (await this.ledger.nodeOutput(context, node, run.id, inputSha256));
+            (await this.ledger.nodeOutput(
+              context,
+              node,
+              run.id,
+              inputSha256,
+              input,
+            ));
         } catch (error) {
           if (step.status !== "running") throw error;
           const blocked = await this.operations.blockNode(context, node, {

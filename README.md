@@ -36,10 +36,10 @@ Version `0.1.0` includes:
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
-  nodes, and durable human Approval gates, strict JSON output, declared tool
-  effects, policy/schema preflight, optional bounded parallel waves, explicit
-  retry, safe pure-node recomputation, restart reconstruction, and shared
-  CLI/HTTP/Web/Trace evidence;
+  nodes, bounded read-only Agent Map nodes, and durable human Approval gates,
+  strict JSON output, declared tool effects, policy/schema preflight, optional
+  bounded parallel waves, explicit retry, safe pure-node recomputation,
+  restart reconstruction, and shared CLI/HTTP/Web/Trace evidence;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -2570,6 +2570,18 @@ Runs for the same active Plan can coexist. `Thread.currentRunId` remains a
 compatibility pointer to one active Run; the Run list and Plan steps are the
 complete projection.
 
+Map nodes select one required, Schema-bounded array from their constructed
+input and run up to three item Agents concurrently, with at most 16 items.
+One coordinator Run owns the Plan step; item Runs are parent-bound, use the
+same frozen Agent revision and optional node model, and execute in the
+`workflow_map_read_only` mode. That mode forces `observe`, admits only bounded
+workspace read/AST-preview/SQLite tools, and disables writes, verification
+processes, stateful sessions, extensions, subagents, and Memory mutation.
+Each item has its own deadline and hash-bound input/output evidence. The
+aggregate preserves input order and must satisfy the declared array Schema.
+Map is exclusive within an outer scheduling wave so its coordinator plus
+three children cannot exceed the four-Run Store bound.
+
 Any node may declare `when: { path, equals }` plus a required `skipOutput`.
 The path is resolved only against that node's already constructed and
 schema-validated input; the comparison is canonical JSON equality with no
@@ -2589,8 +2601,13 @@ not an evaluated template. The generic Agent continuation path rejects
 Workflow-owned decisions.
 
 Resume reconstructs Agent and Deterministic output from bound assistant
-evidence and Tool output from the exact terminal tool event, then verifies
-node/template identity, effect, input/output/schema hashes, and Run ownership.
+evidence, Tool output from the exact terminal tool event, and Map output from
+the coordinator plus every indexed child Run. Map recovery verifies item
+count/order, parent lineage, restricted Run configuration, per-item
+input/output/schema hashes, and aggregate set hashes before accepting output.
+It never silently reruns an interrupted Map; `retryBlocked=true` is required.
+All nodes then verify identity, effect, input/output/schema hashes, and Run
+ownership.
 Approval recovery additionally binds the unique decision request, request
 digest, attempt, expiry, answer, and continuation Run. A restart with only
 `tool.started` becomes one `run_interrupted` blocked attempt and is never
@@ -2663,16 +2680,23 @@ Manifest. Approval checkpoints can be reused after verification or rerun into
 an isolated `waiting` experiment target, and never accept a model override.
 
 Version 1 intentionally supports Agent, bounded Deterministic, stateless
-built-in Tool, and durable Approval nodes with bounded parallel
-dependency-ready DAG scheduling and typed equality guards. Stateful session
-Tool nodes, multi-way switch, Map/Reduce, loops, compensation, per-node
-breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
-open. Checkpoint experiments do not yet provide model-call/tool-call
+built-in Tool, bounded read-only Agent Map, and durable Approval nodes with
+bounded parallel dependency-ready DAG scheduling and typed equality guards.
+Stateful session Tool nodes, write-capable Map, Reduce, multi-way switch,
+loops, compensation, per-node breakpoints, adapter runtimes, artifact
+settlement, and a visual builder remain open. Checkpoint experiments do not
+yet provide model-call/tool-call
 single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
 batch experiments, an interactive root-cause timeline, or Evaluation
 promotion. The opt-in DeepSeek CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
-deterministic providers and perform no network call.
+deterministic providers and perform no network call. The Map-specific live
+smoke executes two real concurrent item calls and verifies ordered typed
+aggregation plus Replay:
+
+```bash
+npm run test:live-map
+```
 
 ## Portable Replay Fixtures
 

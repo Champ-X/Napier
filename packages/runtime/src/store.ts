@@ -11275,6 +11275,43 @@ export class LocalStore {
           "Safe read-only recovery requires an interrupted parent Run",
         );
       }
+    } else if (executionMode === "workflow_map_read_only") {
+      const parent = input.parentRunId
+        ? this.state.runs.find(
+            (candidate) => candidate.id === input.parentRunId,
+          )
+        : undefined;
+      const parentStartedAsMap =
+        parent !== undefined &&
+        this.requireLedger()
+          .listEvents(input.threadId)
+          .some(
+            (event) =>
+              event.runId === parent.id &&
+              event.type === "workflow.node.started" &&
+              isRecord(event.payload) &&
+              event.payload["planId"] === workflowExecution?.planId &&
+              event.payload["nodeType"] === "map",
+          );
+      if (
+        input.source !== "workflow" ||
+        !workflowExecution ||
+        !parent ||
+        parent.threadId !== input.threadId ||
+        parent.agentId !== input.agentId ||
+        parent.source !== "workflow" ||
+        parent.status !== "running" ||
+        parent.workflowPlanId !== workflowExecution.planId ||
+        parent.parentRunId !== undefined ||
+        !parent.configuration ||
+        parent.configuration.schemaVersion === 1 ||
+        parent.configuration.executionMode !== "standard" ||
+        !parentStartedAsMap
+      ) {
+        throw new Error(
+          "Workflow Map read-only execution requires its active coordinator Run",
+        );
+      }
     }
     if (input.triggerId) {
       const triggerId = normalizeTriggerId(input.triggerId);
