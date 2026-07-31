@@ -6,7 +6,7 @@ import type {
   Usage,
 } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
+import { canonicalJson, sha256Text } from "./stable-digest";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
@@ -17,9 +17,9 @@ const TOOL_NAME = /^[A-Za-z][A-Za-z0-9_.:-]{0,127}$/u;
 const STATUSES = new Set(["completed", "failed", "cancelled"]);
 const STOP_REASONS = new Set(["stop", "length", "toolUse", "error", "aborted"]);
 
-export function validateModelInvocationExperimentComparison(
+export async function validateModelInvocationExperimentComparison(
   input: unknown,
-): ModelInvocationExperimentComparison {
+): Promise<ModelInvocationExperimentComparison> {
   const value = record(input, "Model invocation experiment comparison");
   exactKeys(value, [
     "kind",
@@ -80,7 +80,7 @@ export function validateModelInvocationExperimentComparison(
     addedToolNames,
     removedToolNames,
   };
-  if (sha256(canonicalJson(content)) !== value["contentSha256"]) {
+  if ((await sha256Text(canonicalJson(content))) !== value["contentSha256"]) {
     throw new Error("Model invocation experiment comparison hash is invalid");
   }
   return {
@@ -89,10 +89,10 @@ export function validateModelInvocationExperimentComparison(
   } as ModelInvocationExperimentComparison;
 }
 
-export function validateModelInvocationExperimentObservation(
+export function validateModelInvocationExperimentNames(
   input: unknown,
-): ModelInvocationExperimentObservation {
-  return validateObservation(input);
+): string[] {
+  return validateNames(input);
 }
 
 function validateObservation(

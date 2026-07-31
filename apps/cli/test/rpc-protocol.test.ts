@@ -10,6 +10,10 @@ import {
   parseAgentMessageExperimentRunParams,
 } from "../src/rpc-agent-message-experiments.js";
 import {
+  parseModelInvocationExperimentPreviewParams,
+  parseModelInvocationExperimentRunParams,
+} from "../src/rpc-model-invocation-experiments.js";
+import {
   MAX_RPC_LINE_BYTES,
   parseAgentResumeParams,
   parseAgentRunParams,
@@ -144,6 +148,47 @@ describe("Napier JSON-RPC protocol", () => {
         sourceThreadId: "thread_example",
         sourceRunId: "run_abcdefgh",
         sourceMessageSeq: 12,
+      }),
+    ).toThrow("requires expectedPreviewSha256");
+    expect(
+      parseModelInvocationExperimentPreviewParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceTurnIndex: 0,
+        model: { provider: "deepseek", id: "deepseek-chat" },
+      }),
+    ).toEqual({
+      sourceThreadId: "thread_example",
+      sourceRunId: "run_abcdefgh",
+      sourceTurnIndex: 0,
+      model: { provider: "deepseek", id: "deepseek-chat" },
+    });
+    expect(
+      parseModelInvocationExperimentRunParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceTurnIndex: 0,
+        expectedPreviewSha256: "b".repeat(64),
+      }),
+    ).toEqual({
+      sourceThreadId: "thread_example",
+      sourceRunId: "run_abcdefgh",
+      sourceTurnIndex: 0,
+      expectedPreviewSha256: "b".repeat(64),
+    });
+    expect(() =>
+      parseModelInvocationExperimentPreviewParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceTurnIndex: 0,
+        expectedPreviewSha256: "b".repeat(64),
+      }),
+    ).toThrow("cannot include execution confirmation");
+    expect(() =>
+      parseModelInvocationExperimentRunParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceTurnIndex: 0,
       }),
     ).toThrow("requires expectedPreviewSha256");
   });

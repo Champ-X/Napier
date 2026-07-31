@@ -12,14 +12,19 @@ import {
   validateModelInvocationExperimentResultFrame,
   verifyThreadReplayBundle,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
+import {
+  executeModelInvocationExperiment,
+  previewModelInvocationExperiment,
+} from "../../web/src/model-invocation-experiment-api.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   for (const services of openServices.splice(0)) {
     await services.shutdownLocalRuntime();
   }
@@ -138,6 +143,62 @@ describe("Model invocation experiment HTTP path", () => {
         ),
       ).status,
     ).toBe("valid");
+  });
+
+  it("completes the real Web client preview and comparison path", async () => {
+    const fixture = await createFixture();
+    const app = createApp(fixture.services);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const requestPath =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(requestPath, init);
+      }),
+    );
+    const request = {
+      sourceRunId: fixture.sourceRunId,
+      sourceTurnIndex: 0,
+    };
+    const preview = await previewModelInvocationExperiment(
+      fixture.sourceThreadId,
+      request,
+    );
+    fixture.provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("apply_patch", {
+          patch: "*** Begin Patch\n*** End Patch",
+        }),
+      ),
+    ]);
+    const frames: string[] = [];
+    const result = await executeModelInvocationExperiment(
+      fixture.sourceThreadId,
+      {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+      preview,
+      (frame) => frames.push(frame.type),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        sourceThreadId: fixture.sourceThreadId,
+        sourceRunId: fixture.sourceRunId,
+        sourceTurnIndex: 0,
+        status: "completed",
+        experiment: expect.objectContaining({
+          candidateToolCallNames: ["apply_patch"],
+        }),
+      }),
+    );
+    expect(frames.at(-2)).toBe("snapshot");
+    expect(frames.at(-1)).toBe("model_invocation_experiment_result");
   });
 
   it("rejects execution without the exact preview before mutation", async () => {

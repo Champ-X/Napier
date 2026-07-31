@@ -14,6 +14,7 @@ const allowedFetchCallers = new Set([
   "src/api-client.ts",
   "src/api.ts",
   "src/artifact-file-api.ts",
+  "src/model-invocation-experiment-api.ts",
   "src/workflow-experiment-api.ts",
 ]);
 

@@ -708,9 +708,20 @@ Provider failure and active cancellation are call-level outcomes and produce
 comparable terminal Runs. Orchestration failure appends a hash-only failure
 event. Generic and automatic recovery reject model-experiment Runs because a
 retry must create a fresh target from the same source checkpoint. The shared
-Runtime is currently exposed through CLI JSONL, HTTP preview/SSE, and the
-TypeScript SDK. Web Trace provides a privacy-bounded projection; a Web desk and
-stdio RPC method remain unimplemented.
+Runtime is exposed through CLI JSONL, HTTP preview/SSE, TypeScript SDK, local
+stdio RPC, and a lazy Run Lab desk. RPC reuses the existing protocol-version-1
+admission, request-bound event, cancellation, and shutdown machinery.
+Web Trace provides a privacy-bounded projection.
+
+The model-call desk lists only strict capsule-receipt metadata from terminal
+configured Runs. Its browser protocol independently recomputes preview,
+comparison, and result-frame hashes; validates status/stop-reason consistency,
+source/target model and output bindings, metric and tool-set deltas, streamed
+event hashes, final Snapshot identity, and complete event-stream hash; and
+rejects extra prompt-bearing fields before rendering. The desk supports fresh
+preview, configured provider replacement, explicit cancellation, target
+navigation, and deliberate result download. Provider Context, raw thinking,
+source/candidate text, and tool arguments never render.
 
 The browser desk remains inside the lazy Run Lab boundary. Its independent
 protocol parser requires exact fields and recomputes preview, comparison, and
@@ -5617,8 +5628,8 @@ The current boundary has fifty-two parts:
 54. Preview-bound single-model-invocation re-execution with exact local-only
     provider Context capsules, primary/compaction/Goal/Memory capture, one
     isolated provider call, zero candidate tool execution, call-level
-    comparison, CLI/HTTP/SDK delivery, and privacy-bounded Replay/Trace
-    receipts.
+    comparison, CLI/HTTP/SDK/RPC/Web delivery, independently verified browser
+    protocol, and privacy-bounded Replay/Trace receipts.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5670,8 +5681,8 @@ deferred until the local P0-P9 product loop is stable.
   settlement, and a visual builder;
 - extend controlled Workflow, user-message, and model-call re-execution with
   tool-call checkpoints, side-effect result reuse/simulation,
-  Prompt/Skill/Memory/environment replacement, Web/RPC model-call entrances,
-  batch experiments, interactive root-cause views, and evaluation promotion.
+  Prompt/Skill/Memory/environment replacement, batch experiments, interactive
+  root-cause views, and evaluation promotion.
 
 ### Layer 3: Product and outcome proof
 

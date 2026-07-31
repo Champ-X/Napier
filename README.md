@@ -69,12 +69,13 @@ Version `0.1.0` includes:
   calls. Primary turns, compaction, Goal evaluation, and Memory extraction
   capture the exact Pi provider Context plus safe sampling options in a
   permission-restricted, bounded local CAS while the Ledger retains only a
-  hash-bound receipt. `napier model-experiment`, HTTP SSE, and the TypeScript
-  SDK can preview one terminal source turn, optionally replace its model, and
-  execute exactly one isolated provider call. Candidate tool calls are
-  compared but never executed; provider Context, raw thinking, candidate tool
-  arguments, and capsule contents remain absent from portable Replay and Web
-  Trace;
+  hash-bound receipt. CLI JSONL, HTTP SSE, TypeScript SDK, local stdio RPC, and
+  a lazy Run Lab desk can preview one terminal source turn, optionally replace
+  its model, and execute exactly one isolated provider call. Candidate tool
+  calls are compared but never executed; the browser independently validates
+  the complete hash chain while provider Context, raw thinking, candidate
+  text/tool arguments, and capsule contents remain absent from portable Replay,
+  Web Trace, and the rendered desk;
 - a checked product-path performance budget over three cold built-CLI JSONL
   runs, shared Runtime bootstrap, the production `read_file` executor, a
   1,000-event SQLite Thread, observed RSS, and closed-ledger database growth,
@@ -560,8 +561,8 @@ capsule is limited to 8 MiB, and the store is bounded to 256 entries / 128 MiB.
 Only provider-consumed Context fields and safe sampling options are captured;
 credentials, headers, environment, callbacks, and AbortSignals are excluded.
 Portable Replay carries the receipt, not the capsule. This path currently has
-Runtime, CLI, HTTP/SSE, SDK, and privacy-bounded Trace entrances; it does not
-yet have a Web desk or RPC method and does not implement tool-call checkpoint
+Runtime, CLI, HTTP/SSE, SDK, local stdio RPC, lazy Web Run Lab, and
+privacy-bounded Trace entrances. It does not implement tool-call checkpoint
 re-execution.
 
 Run one local Runtime as a line-delimited stdio JSON-RPC 2.0 process for an
@@ -576,8 +577,11 @@ npm run --silent napier -- rpc \
 The client first sends `initialize`, then calls Agent, Workflow, Approval, or
 experiment methods. `napier/agent/experiment/preview` and
 `napier/agent/experiment/run` expose the same preview-bound historical-message
-path as the CLI. `napier/workflow/experiment/preview` projects a source
-Thread/Plan checkpoint without mutation;
+path as the CLI. `napier/model/experiment/preview` and
+`napier/model/experiment/run` expose the same one-provider-call path as
+`napier model-experiment`, including request-bound events and a deliberate
+cancelled result after durable settlement. `napier/workflow/experiment/preview`
+projects a source Thread/Plan checkpoint without mutation;
 `napier/workflow/experiment/run` requires the returned `previewSha256`, creates
 an isolated target Thread, reuses verified ancestors, reruns the selected
 descendants, and returns the candidate Manifest and source/target comparison.
@@ -3097,10 +3101,23 @@ cancellation settle comparable failed/cancelled Runs. Generic recovery rejects
 these Runs because retry must start from the original checkpoint.
 
 The shared Runtime path is exposed through `napier model-experiment`, HTTP
-preview/SSE, and the TypeScript SDK. Web Trace validates and projects only safe
-receipt, status, metric, model, and hash fields. A Web desk, local stdio RPC
-method, tool-call checkpoint execution, tool-result reuse/simulation, batch
-experiments, and experiment promotion remain open.
+preview/SSE, the TypeScript SDK, and local stdio RPC methods
+`napier/model/experiment/preview` and `napier/model/experiment/run`. RPC
+preserves request-bound events, cancellation, admission, and orderly shutdown.
+Web Trace validates and projects only safe receipt, status, metric, model, and
+hash fields.
+
+The lazy Run Lab model-call desk derives eligible call metadata only from
+terminal Runs and strict `context.model_invocation` receipts. It supports an
+optional configured provider replacement, fresh preview, explicit
+cancellation, call-level comparison, target navigation, and deliberate
+CAS-named result download. Its browser protocol independently validates exact
+preview/comparison/frame fields and hashes, status/stop consistency, metric
+deltas, source/target model and output bindings, streamed event hashes, the
+final Snapshot, and complete event-stream hash. Provider Context, raw thinking,
+source/candidate text, and tool arguments never render in the desk. Tool-call
+checkpoint execution, result reuse/simulation, batch experiments, and
+experiment promotion remain open.
 
 The lazy Run Lab message experiment desk consumes these same routes. It lists
 only terminal modern user-message checkpoints by Run/model/sequence metadata,

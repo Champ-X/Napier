@@ -4,6 +4,7 @@ import type {
   AnswerOperatorDecisionRequest,
   CreateAgentMessageExperimentRequest,
   CreateExecutionPlanWorkflowExperimentRequest,
+  CreateModelInvocationExperimentRequest,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResult,
@@ -11,6 +12,8 @@ import type {
   ExecutionPlanWorkflowStatus,
   JsonValue,
   ModelRef,
+  ModelInvocationExperimentPreview,
+  ModelInvocationExperimentResult,
   OperatorDecision,
   RunEvent,
   RunRecord,
@@ -52,6 +55,21 @@ export interface NapierRpcAgentMessageExperimentPreviewParams extends Omit<
 
 export interface NapierRpcAgentMessageExperimentRunParams extends Omit<
   CreateAgentMessageExperimentRequest,
+  "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+  expectedPreviewSha256: string;
+}
+
+export interface NapierRpcModelInvocationExperimentPreviewParams extends Omit<
+  CreateModelInvocationExperimentRequest,
+  "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+}
+
+export interface NapierRpcModelInvocationExperimentRunParams extends Omit<
+  CreateModelInvocationExperimentRequest,
   "expectedPreviewSha256"
 > {
   sourceThreadId: string;
@@ -133,6 +151,18 @@ export type NapierRpcRequest =
   | {
       jsonrpc: "2.0";
       id: NapierRpcId;
+      method: "napier/model/experiment/preview";
+      params: NapierRpcModelInvocationExperimentPreviewParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/model/experiment/run";
+      params: NapierRpcModelInvocationExperimentRunParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
       method: "napier/workflow/run";
       params: NapierRpcWorkflowRunParams;
     }
@@ -198,6 +228,8 @@ export interface NapierRpcInitializeResult {
     agentResume: true;
     agentMessageExperimentPreview: true;
     agentMessageExperimentRun: true;
+    modelInvocationExperimentPreview: true;
+    modelInvocationExperimentRun: true;
     workflowRun: true;
     workflowResume: true;
     workflowApprovalAnswer: true;
@@ -226,6 +258,17 @@ export interface NapierRpcAgentMessageExperimentExecution {
   status: TerminalRunStatus;
   previewSha256: string;
   experiment: AgentMessageExperimentResult;
+}
+
+export interface NapierRpcModelInvocationExperimentExecution {
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceTurnIndex: number;
+  targetThreadId: string;
+  targetRunId: string;
+  status: TerminalRunStatus;
+  previewSha256: string;
+  experiment: ModelInvocationExperimentResult;
 }
 
 export interface NapierRpcWorkflowExecution {
@@ -275,6 +318,8 @@ export type NapierRpcResponse =
   | NapierRpcSuccessResponse<NapierRpcAgentExecution>
   | NapierRpcSuccessResponse<AgentMessageExperimentPreview>
   | NapierRpcSuccessResponse<NapierRpcAgentMessageExperimentExecution>
+  | NapierRpcSuccessResponse<ModelInvocationExperimentPreview>
+  | NapierRpcSuccessResponse<NapierRpcModelInvocationExperimentExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowApprovalExecution>
   | NapierRpcSuccessResponse<ExecutionPlanWorkflowExperimentPreview>

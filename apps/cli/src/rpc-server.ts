@@ -5,6 +5,7 @@ import type {
   EmbeddedAgentService,
   EmbeddedWorkflowService,
   ExecutionPlanWorkflowExperimentRuntime,
+  ModelInvocationExperimentRuntime,
 } from "@napier/runtime";
 
 import {
@@ -39,6 +40,7 @@ export interface NapierRpcServerOptions {
   >;
   experiments: Pick<ExecutionPlanWorkflowExperimentRuntime, "preview" | "run">;
   agentExperiments: Pick<AgentMessageExperimentRuntime, "preview" | "run">;
+  modelExperiments: Pick<ModelInvocationExperimentRuntime, "preview" | "run">;
   input: AsyncIterable<Buffer | string>;
   output: Writable;
   serverVersion: string;
@@ -134,6 +136,8 @@ export async function runNapierRpcServer(
                 agentResume: true,
                 agentMessageExperimentPreview: true,
                 agentMessageExperimentRun: true,
+                modelInvocationExperimentPreview: true,
+                modelInvocationExperimentRun: true,
                 workflowRun: true,
                 workflowResume: true,
                 workflowApprovalAnswer: true,
@@ -205,6 +209,7 @@ export async function runNapierRpcServer(
             workflows: options.workflows,
             experiments: options.experiments,
             agentExperiments: options.agentExperiments,
+            modelExperiments: options.modelExperiments,
           },
           message,
         );

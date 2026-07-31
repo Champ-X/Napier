@@ -435,6 +435,8 @@ class RpcHarness {
       agents: this.agents,
       workflows: this.workflows,
       experiments: unusedExperimentService(),
+      agentExperiments: unusedExperimentService(),
+      modelExperiments: unusedExperimentService(),
       input: this.input,
       output: this.output,
       serverVersion: "test",

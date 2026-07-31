@@ -1,18 +1,16 @@
 import type {
-  CreateModelInvocationExperimentRequest,
   ModelInvocationExperimentPreview,
   ModelInvocationExperimentResult,
   ModelInvocationExperimentResultFrame,
   ModelInvocationPurpose,
   ModelRef,
-  StreamFrame,
 } from "@napier/contracts";
 
-import { canonicalJson, sha256 } from "./ed25519.js";
-import { validateModelInvocationExperimentComparison } from "./model-invocation-experiment-comparison-protocol.js";
-
-export const MAX_MODEL_INVOCATION_EXPERIMENT_REQUEST_BYTES = 16 * 1024;
-export const MAX_MODEL_INVOCATION_EXPERIMENT_RESULT_BYTES = 512 * 1024;
+import {
+  validateModelInvocationExperimentComparison,
+  validateModelInvocationExperimentNames,
+} from "./model-invocation-experiment-comparison-web-protocol";
+import { canonicalJson, sha256Text } from "./stable-digest";
 
 const HASH = /^[a-f0-9]{64}$/u;
 const THREAD_ID = /^thread_[a-z0-9]{8,80}$/u;
@@ -29,42 +27,9 @@ const PURPOSES = new Set<ModelInvocationPurpose>([
 const STATUSES = new Set(["completed", "failed", "cancelled"]);
 const STOP_REASONS = new Set(["stop", "length", "toolUse", "error", "aborted"]);
 
-export function validateCreateModelInvocationExperimentRequest(
+export async function validateModelInvocationExperimentPreview(
   input: unknown,
-): CreateModelInvocationExperimentRequest {
-  const value = record(input, "Model invocation experiment request");
-  exactKeys(
-    value,
-    ["sourceRunId", "sourceTurnIndex"],
-    new Set(["model", "title", "expectedPreviewSha256"]),
-  );
-  if (
-    typeof value["sourceRunId"] !== "string" ||
-    !RUN_ID.test(value["sourceRunId"]) ||
-    !nonNegativeInteger(value["sourceTurnIndex"]) ||
-    (value["expectedPreviewSha256"] !== undefined &&
-      !hash(value["expectedPreviewSha256"]))
-  ) {
-    throw new Error("Model invocation experiment request is invalid");
-  }
-  const title =
-    value["title"] === undefined ? undefined : normalizeTitle(value["title"]);
-  return {
-    sourceRunId: value["sourceRunId"],
-    sourceTurnIndex: value["sourceTurnIndex"],
-    ...(value["model"] !== undefined
-      ? { model: validateModel(value["model"]) }
-      : {}),
-    ...(title ? { title } : {}),
-    ...(typeof value["expectedPreviewSha256"] === "string"
-      ? { expectedPreviewSha256: value["expectedPreviewSha256"] }
-      : {}),
-  };
-}
-
-export function validateModelInvocationExperimentPreview(
-  input: unknown,
-): ModelInvocationExperimentPreview {
+): Promise<ModelInvocationExperimentPreview> {
   const value = record(input, "Model invocation experiment preview");
   exactKeys(value, [
     "kind",
@@ -118,6 +83,7 @@ export function validateModelInvocationExperimentPreview(
       "previewSha256",
     ]) ||
     !positiveInteger(value["sourceCapsuleBytes"]) ||
+    value["sourceCapsuleBytes"] > 8 * 1024 * 1024 ||
     !nonNegativeInteger(value["sourceMessageCount"]) ||
     !nonNegativeInteger(value["sourceToolCount"]) ||
     typeof value["sourceStopReason"] !== "string" ||
@@ -126,21 +92,25 @@ export function validateModelInvocationExperimentPreview(
   ) {
     throw new Error("Model invocation experiment preview is invalid");
   }
-  const content = {
+  const content: Record<string, unknown> = {
     ...value,
     sourceModel,
     targetModel,
-  } as Record<string, unknown>;
+  };
   delete content["previewSha256"];
-  if (sha256(canonicalJson(content)) !== value["previewSha256"]) {
+  if ((await sha256Text(canonicalJson(content))) !== value["previewSha256"]) {
     throw new Error("Model invocation experiment preview hash is invalid");
   }
-  return structuredClone(value) as unknown as ModelInvocationExperimentPreview;
+  return {
+    ...(structuredClone(value) as unknown as ModelInvocationExperimentPreview),
+    sourceModel,
+    targetModel,
+  };
 }
 
-export function validateModelInvocationExperimentResult(
+export async function validateModelInvocationExperimentResult(
   input: unknown,
-): ModelInvocationExperimentResult {
+): Promise<ModelInvocationExperimentResult> {
   const value = record(input, "Model invocation experiment result");
   exactKeys(
     value,
@@ -156,11 +126,15 @@ export function validateModelInvocationExperimentResult(
     ],
     new Set(["assistantText"]),
   );
-  const preview = validateModelInvocationExperimentPreview(value["preview"]);
-  const comparison = validateModelInvocationExperimentComparison(
+  const preview = await validateModelInvocationExperimentPreview(
+    value["preview"],
+  );
+  const comparison = await validateModelInvocationExperimentComparison(
     value["comparison"],
   );
-  const candidateToolCallNames = validateNames(value["candidateToolCallNames"]);
+  const candidateToolCallNames = validateModelInvocationExperimentNames(
+    value["candidateToolCallNames"],
+  );
   const assistantText = value["assistantText"];
   if (
     value["kind"] !== "napier.model-invocation-experiment-result" ||
@@ -174,7 +148,7 @@ export function validateModelInvocationExperimentResult(
     !STATUSES.has(value["status"]) ||
     (assistantText !== undefined &&
       (typeof assistantText !== "string" ||
-        Buffer.byteLength(assistantText, "utf8") > 64 * 1024)) ||
+        new TextEncoder().encode(assistantText).byteLength > 64 * 1024)) ||
     comparison.source.threadId !== preview.sourceThreadId ||
     comparison.source.runId !== preview.sourceRunId ||
     canonicalJson(comparison.source.model) !==
@@ -189,10 +163,11 @@ export function validateModelInvocationExperimentResult(
       canonicalJson(preview.targetModel) ||
     canonicalJson(candidateToolCallNames) !==
       canonicalJson(comparison.target.toolNames) ||
-    sha256(typeof assistantText === "string" ? assistantText : "") !==
-      comparison.target.textSha256
+    (await sha256Text(
+      typeof assistantText === "string" ? assistantText : "",
+    )) !== comparison.target.textSha256
   ) {
-    throw new Error("Model invocation experiment result is invalid");
+    throw new Error("Model invocation experiment result binding is invalid");
   }
   return {
     kind: value["kind"],
@@ -207,45 +182,9 @@ export function validateModelInvocationExperimentResult(
   } as ModelInvocationExperimentResult;
 }
 
-export function createModelInvocationExperimentResultFrame(
-  experiment: ModelInvocationExperimentResult,
-  snapshot: Extract<StreamFrame, { type: "snapshot" }>,
-  eventStreamSha256: string,
-): ModelInvocationExperimentResultFrame {
-  const content = {
-    type: "model_invocation_experiment_result" as const,
-    sourceThreadId: experiment.preview.sourceThreadId,
-    sourceRunId: experiment.preview.sourceRunId,
-    sourceTurnIndex: experiment.preview.sourceTurnIndex,
-    targetThreadId: experiment.targetThreadId,
-    targetRunId: experiment.targetRunId,
-    status: experiment.status,
-    previewSha256: experiment.preview.previewSha256,
-    experiment,
-    snapshotSha256: snapshot.detailSha256,
-    snapshotBytes: snapshot.detailBytes,
-    eventCount: snapshot.detail.thread.eventCount,
-    eventBytes: snapshot.eventBytes,
-    eventStreamSha256,
-  };
-  const frame = {
-    ...content,
-    contentSha256: sha256(canonicalJson(content)),
-  };
-  if (
-    Buffer.byteLength(canonicalJson(frame), "utf8") >
-    MAX_MODEL_INVOCATION_EXPERIMENT_RESULT_BYTES
-  ) {
-    throw new Error(
-      "Model invocation experiment result exceeds its byte limit",
-    );
-  }
-  return validateModelInvocationExperimentResultFrame(frame);
-}
-
-export function validateModelInvocationExperimentResultFrame(
+export async function validateModelInvocationExperimentResultFrame(
   input: unknown,
-): ModelInvocationExperimentResultFrame {
+): Promise<ModelInvocationExperimentResultFrame> {
   const value = record(input, "Model invocation experiment result frame");
   exactKeys(value, [
     "type",
@@ -264,7 +203,7 @@ export function validateModelInvocationExperimentResultFrame(
     "eventStreamSha256",
     "contentSha256",
   ]);
-  const experiment = validateModelInvocationExperimentResult(
+  const experiment = await validateModelInvocationExperimentResult(
     value["experiment"],
   );
   if (
@@ -289,13 +228,15 @@ export function validateModelInvocationExperimentResultFrame(
   }
   const content = { ...value };
   delete content["contentSha256"];
-  if (sha256(canonicalJson(content)) !== value["contentSha256"]) {
+  if ((await sha256Text(canonicalJson(content))) !== value["contentSha256"]) {
     throw new Error("Model invocation experiment result frame hash is invalid");
   }
   return {
-    ...structuredClone(value),
+    ...(structuredClone(
+      value,
+    ) as unknown as ModelInvocationExperimentResultFrame),
     experiment,
-  } as unknown as ModelInvocationExperimentResultFrame;
+  };
 }
 
 function validateModel(input: unknown): ModelRef {
@@ -310,38 +251,6 @@ function validateModel(input: unknown): ModelRef {
     throw new Error("Model invocation experiment model is invalid");
   }
   return { provider: value["provider"], id: value["id"] };
-}
-
-function validateNames(input: unknown): string[] {
-  if (
-    !Array.isArray(input) ||
-    input.length > 256 ||
-    input.some((name) => typeof name !== "string")
-  ) {
-    throw new Error("Model invocation experiment tool names are invalid");
-  }
-  const names = [...new Set(input)].sort((left, right) =>
-    left.localeCompare(right),
-  );
-  if (canonicalJson(input) !== canonicalJson(names)) {
-    throw new Error("Model invocation experiment tool names are invalid");
-  }
-  return names;
-}
-
-function normalizeTitle(input: unknown): string {
-  if (typeof input !== "string") {
-    throw new Error("Model invocation experiment title is invalid");
-  }
-  const title = input.replace(/\s+/gu, " ").trim();
-  if (
-    title.length < 1 ||
-    title.length > 160 ||
-    /[\u0000-\u001f\u007f<>]/u.test(title)
-  ) {
-    throw new Error("Model invocation experiment title is invalid");
-  }
-  return title;
 }
 
 function exactKeys(

@@ -36,6 +36,9 @@ const LazyEvaluationSuitePanel = lazy(() => import("./EvaluationSuitePanel"));
 const LazyAgentMessageExperimentDesk = lazy(
   () => import("./AgentMessageExperimentDesk"),
 );
+const LazyModelInvocationExperimentDesk = lazy(
+  () => import("./ModelInvocationExperimentDesk"),
+);
 
 export default function RunLabPanel({
   detail,
@@ -204,6 +207,15 @@ export default function RunLabPanel({
             running={running}
             selectedModelKey={selectedModelKey}
             selectedModelConfigured={selectedModel.configured}
+            onOpenThread={onOpenThread}
+          />
+          <LazyModelInvocationExperimentDesk
+            detail={detail}
+            running={running}
+            selectedModelKey={selectedModelKey}
+            selectedModelEligible={
+              selectedModel.configured && selectedModelKey !== "napier/demo"
+            }
             onOpenThread={onOpenThread}
           />
         </Suspense>

@@ -11,13 +11,16 @@ All notable changes to Napier are recorded here.
   evaluation, and Memory extraction write an exact provider Context plus safe
   sampling options to a permission-restricted, size-bounded local CAS; the
   Ledger records only the local capsule receipt and never exports the capsule
-  through Replay or Trace. `napier model-experiment`, HTTP SSE, and the
-  TypeScript SDK can preview-bind one terminal source turn, optionally replace
-  its model, and execute exactly one isolated provider call. Returned tool
-  calls are compared but never executed. Call-level status, stop reason,
-  latency, usage, cost, text/output hashes, and tool-name deltas remain
-  inspectable, while tool arguments, raw thinking, provider Context, and
-  candidate text stay out of durable experiment events.
+  through Replay or Trace. CLI JSONL, HTTP SSE, TypeScript SDK, local stdio
+  RPC, and a lazy Run Lab desk can preview-bind one terminal source turn,
+  optionally replace its model, and execute exactly one isolated provider call.
+  Returned tool calls are compared but never executed. The browser independently
+  validates preview/comparison/result hashes, metric deltas, event order,
+  Snapshot and source/target bindings; it supports cancellation, target
+  navigation, and deliberate result download without rendering candidate text.
+  Call-level status, stop reason, latency, usage, cost, text/output hashes, and
+  tool-name deltas remain inspectable, while tool arguments, raw thinking,
+  provider Context, and candidate text stay out of durable experiment events.
 - Added a lazy Run Lab message experiment desk over the controlled
   historical-message Runtime. It lists only terminal modern user-message
   metadata, supports configured model replacement, preview, explicit

@@ -48,6 +48,22 @@ describe("Napier JSON-RPC output failure", () => {
           throw new Error("Unexpected Workflow experiment RPC call");
         },
       },
+      agentExperiments: {
+        async preview() {
+          throw new Error("Unexpected Agent experiment RPC call");
+        },
+        async run() {
+          throw new Error("Unexpected Agent experiment RPC call");
+        },
+      },
+      modelExperiments: {
+        async preview() {
+          throw new Error("Unexpected model experiment RPC call");
+        },
+        async run() {
+          throw new Error("Unexpected model experiment RPC call");
+        },
+      },
       input,
       output,
       serverVersion: "test",

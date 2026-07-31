@@ -2,17 +2,17 @@
   "type": "napier.web-dist-audit",
   "schemaVersion": 1,
   "ok": true,
-  "fileCount": 74,
+  "fileCount": 79,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-vkb-Ccnt.js",
+    "path": "apps/web/dist/assets/index-1zl8ihub.js",
     "sizeBytes": 133248,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "6b016370be7185e681bc749ef557ab809d6de91f889f7c32f55438dac42c605e"
+    "sha256": "a158e4c019a418d83d72a66b7c349dfebc514c2e2602eaf3f4b8357f95729623"
   },
-  "distContentSha256": "6b016370be7185e681bc749ef557ab809d6de91f889f7c32f55438dac42c605e",
+  "distContentSha256": "a158e4c019a418d83d72a66b7c349dfebc514c2e2602eaf3f4b8357f95729623",
   "errors": []
 }

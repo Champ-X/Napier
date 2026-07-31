@@ -182,6 +182,29 @@ describe("Model invocation checkpoint experiments", () => {
     expect(() => validateModelInvocationExperimentResult(drifted)).toThrow(
       "comparison is invalid",
     );
+    const modelDrift = structuredClone(result);
+    modelDrift.comparison.source.model = {
+      provider: "other-provider",
+      id: "other-model",
+    };
+    const modelDriftContent = { ...modelDrift.comparison };
+    delete (modelDriftContent as { contentSha256?: string }).contentSha256;
+    modelDrift.comparison.contentSha256 = sha256(
+      canonicalJson(modelDriftContent),
+    );
+    expect(() => validateModelInvocationExperimentResult(modelDrift)).toThrow(
+      "result is invalid",
+    );
+    const statusDrift = structuredClone(result);
+    statusDrift.comparison.source.stopReason = "error";
+    const statusDriftContent = { ...statusDrift.comparison };
+    delete (statusDriftContent as { contentSha256?: string }).contentSha256;
+    statusDrift.comparison.contentSha256 = sha256(
+      canonicalJson(statusDriftContent),
+    );
+    expect(() => validateModelInvocationExperimentResult(statusDrift)).toThrow(
+      "observation is invalid",
+    );
     expect(fixture.store.listRuns(result.targetThreadId)[0]).toEqual(
       expect.objectContaining({
         source: "model_experiment",
