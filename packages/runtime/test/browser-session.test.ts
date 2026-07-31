@@ -101,6 +101,59 @@ describe("RunBrowserSessionManager", () => {
     ).rejects.toThrow("not active");
   });
 
+  it("captures bounded normalized page text without reopening network access", async () => {
+    const harness = await createHarness({
+      sourceText:
+        "  Research heading  \n\nEvidence\twith   spacing\u001b[31m\nFinal evidence",
+      sourceTitle: "  Research\u001b  title  ",
+    });
+    const owner = { threadId: "thread_capture", runId: "run_capture" };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/research",
+    });
+
+    const capture = await harness.manager.capturePage(owner, 12_000);
+
+    expect(capture).toEqual(
+      expect.objectContaining({
+        url: "https://one.example/research",
+        title: "Research title",
+        lines: [
+          "Research heading",
+          "Evidence with spacing [31m",
+          "Final evidence",
+        ],
+        textChars: 58,
+        truncated: false,
+        sessionOperation: 2,
+      }),
+    );
+    expect(capture.capturedContentSha256).toMatch(/^[a-f0-9]{64}$/u);
+    expect(harness.proxies[0]?.outboundTransitions).toEqual([true, false]);
+    await harness.manager.cancelRun(owner);
+  });
+
+  it("closes an uncertain Session when the page URL drifts during capture", async () => {
+    const harness = await createHarness({ sourceUrlDriftDuringCapture: true });
+    const owner = {
+      threadId: "thread_capture_drift",
+      runId: "run_capture_drift",
+    };
+    await harness.manager.execute(owner, {
+      action: "start",
+      url: "https://one.example/research",
+    });
+
+    await expect(harness.manager.capturePage(owner, 12_000)).rejects.toThrow(
+      "page changed",
+    );
+    expect(harness.browsers[0]?.closed).toBe(true);
+    await expect(
+      harness.manager.execute(owner, { action: "snapshot" }),
+    ).rejects.toThrow("not active");
+  });
+
   it("denies cross-origin redirects unless the current action authorizes them", async () => {
     const redirects = new Map([
       ["https://one.example/redirect", "https://two.example/final"],
@@ -303,7 +356,7 @@ describe("RunBrowserSessionManager", () => {
       ).size,
     ).toBe(MAX_ACTIVE_BROWSER_SESSIONS);
     const first = owners[0]!;
-    harness.pages[0]!.blockClicks = true;
+    for (const page of harness.pages) page.blockClicks = true;
     const controller = new AbortController();
     const operation = harness.manager.execute(
       first,
@@ -313,7 +366,9 @@ describe("RunBrowserSessionManager", () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     controller.abort();
     await expect(operation).rejects.toThrow("cancelled");
-    expect(harness.browsers[0]?.closed).toBe(true);
+    expect(harness.browsers.filter((browser) => browser.closed)).toHaveLength(
+      1,
+    );
 
     await Promise.all(
       owners
@@ -329,6 +384,9 @@ interface HarnessOptions {
     hostname: string,
   ) => Promise<Array<{ address: string; family: 4 | 6 }>>;
   downloadBody?: string;
+  sourceText?: string;
+  sourceTitle?: string;
+  sourceUrlDriftDuringCapture?: boolean;
 }
 
 async function createHarness(options: HarnessOptions = {}) {
@@ -360,6 +418,9 @@ async function createHarness(options: HarnessOptions = {}) {
       const page = new FakePage(
         options.redirects ?? new Map(),
         options.downloadBody ?? "download body",
+        options.sourceText ?? "Default research source text",
+        options.sourceTitle,
+        options.sourceUrlDriftDuringCapture ?? false,
       );
       pages.push(page);
       downloads.push(page.download);
@@ -510,6 +571,9 @@ class FakePage {
   constructor(
     private readonly redirects: Map<string, string>,
     downloadBody: string,
+    private readonly sourceText: string,
+    private readonly sourceTitle: string | undefined,
+    private readonly sourceUrlDriftDuringCapture: boolean,
   ) {
     this.download = new FakeDownload(downloadBody);
   }
@@ -570,6 +634,22 @@ class FakePage {
       },
       async setInputFiles(filePath: string) {
         page.uploaded.push({ selector, path: filePath });
+      },
+      async evaluate(_callback: unknown, limit: number, _options: unknown) {
+        const capturedUrl = page.currentUrl;
+        const extracted = {
+          url: capturedUrl,
+          title:
+            page.sourceTitle ??
+            (capturedUrl === "about:blank"
+              ? ""
+              : `Page ${new URL(capturedUrl).hostname}`),
+          text: page.sourceText.slice(0, limit + 1),
+        };
+        if (page.sourceUrlDriftDuringCapture) {
+          page.currentUrl = "https://two.example/drifted";
+        }
+        return extracted;
       },
     } as unknown as Locator;
   }

@@ -158,6 +158,25 @@ describe("safe automatic recovery", () => {
     });
     expect(process.blockReasons).toContain("unsafe_tool_effect");
 
+    const researchSource = assessAutomaticRecovery({
+      run,
+      events: [
+        event(1, "tool.started", {
+          callId: "research-source-1",
+          toolName: "research_source",
+          status: "started",
+          effect: "read",
+        }),
+        event(2, "tool.completed", {
+          callId: "research-source-1",
+          toolName: "research_source",
+          status: "completed",
+          effect: "read",
+        }),
+      ],
+    });
+    expect(researchSource.blockReasons).toContain("unsafe_tool_effect");
+
     const filePreview = assessAutomaticRecovery({
       run,
       events: [

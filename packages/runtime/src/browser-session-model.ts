@@ -132,6 +132,21 @@ export interface BrowserSessionOperationResult {
   };
 }
 
+export interface BrowserPageSourceCapture {
+  url: string;
+  title: string;
+  lines: string[];
+  textChars: number;
+  truncated: boolean;
+  capturedContentSha256: string;
+  sessionOperation: number;
+  sessionIdSha256: string;
+  browserExecutableSha256: string;
+  browserVersionSha256: string;
+  limitsSha256: string;
+  network: FixedIpProxySnapshot;
+}
+
 export interface BrowserNetworkProxy {
   start(): Promise<FixedIpProxyBinding>;
   setOutboundEnabled(enabled: boolean): void;

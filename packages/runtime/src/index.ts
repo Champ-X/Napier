@@ -85,6 +85,8 @@ export * from "./python-kernel-worker.js";
 export * from "./replan-policies.js";
 export * from "./replan-review.js";
 export * from "./replay.js";
+export * from "./research-source-tool.js";
+export * from "./research-sources.js";
 export * from "./receipt-trust.js";
 export * from "./receipt-trust-directory-subscriptions.js";
 export * from "./recovery-service.js";

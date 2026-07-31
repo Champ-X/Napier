@@ -43,7 +43,7 @@ const PROCESS_TOOLS = new Set([
   "node_debugger",
   "workspace_process",
 ]);
-const BROWSER_TOOLS = new Set(["browser"]);
+const BROWSER_TOOLS = new Set(["browser", "research_source"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
   "update_plan_step",

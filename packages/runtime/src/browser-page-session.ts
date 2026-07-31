@@ -19,12 +19,14 @@ import {
   preflightBrowserDownload,
   writeBrowserDownload,
 } from "./browser-workspace-files.js";
+import { captureBrowserPageSource } from "./browser-source-capture.js";
 import {
   BROWSER_ACTION_TIMEOUT_MS,
   BROWSER_LIMITS_SHA256,
   BROWSER_NAVIGATION_TIMEOUT_MS,
   type BrowserElementTarget,
   type BrowserNetworkProxy,
+  type BrowserPageSourceCapture,
   type BrowserRuntimeBinding,
   type BrowserSessionDetails,
   type BrowserSessionOperationResult,
@@ -175,6 +177,29 @@ export class PersistentBrowserSession {
     this.operationCount += 1;
     return abortable(this.perform(request, reused, signal), signal, async () =>
       this.close(),
+    );
+  }
+
+  async capturePage(
+    maxChars: number,
+    signal?: AbortSignal,
+  ): Promise<BrowserPageSourceCapture> {
+    if (!this.healthy) throw new Error("Browser Session is unavailable");
+    if (
+      !Number.isSafeInteger(maxChars) ||
+      maxChars < 1_000 ||
+      maxChars > MAX_BROWSER_SNAPSHOT_CHARS
+    ) {
+      throw new Error("Browser source capture character limit is invalid");
+    }
+    if (this.operationCount >= MAX_BROWSER_SESSION_OPERATIONS) {
+      throw new Error("Browser Session operation limit reached");
+    }
+    this.operationCount += 1;
+    return abortable(
+      this.captureCurrentPage(maxChars, signal),
+      signal,
+      async () => this.close(),
     );
   }
 
@@ -496,6 +521,23 @@ export class PersistentBrowserSession {
       snapshot,
       snapshotTruncated: raw.length > snapshot.length,
     };
+  }
+
+  private async captureCurrentPage(
+    maxChars: number,
+    signal?: AbortSignal,
+  ): Promise<BrowserPageSourceCapture> {
+    return captureBrowserPageSource({
+      page: this.page,
+      maxChars,
+      ...(signal ? { signal } : {}),
+      sessionOperation: this.operationCount,
+      sessionIdSha256: this.idSha256,
+      browserExecutableSha256: this.runtime.executableSha256,
+      browserVersionSha256: this.browserVersionSha256,
+      limitsSha256: BROWSER_LIMITS_SHA256,
+      network: this.proxy.snapshot(),
+    });
   }
 
   private async pageMetadata(): Promise<PageState> {

@@ -2,6 +2,9 @@ export function builtInToolEffect(
   toolName: string,
   args?: unknown,
 ): "read" | "write" | undefined {
+  if (toolName === "research_source") {
+    return "read";
+  }
   if (toolName === "browser") {
     return record(args) &&
       (args["action"] === "snapshot" || args["action"] === "screenshot")

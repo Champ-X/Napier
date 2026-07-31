@@ -22,7 +22,7 @@ Audit date: 2026-07-31
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                      |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                              |
-| P3 browser/research/data/media    | Partial        | Run-owned persistent Chrome Sessions now support navigation, ARIA snapshots, click/type/select, upload/download, screenshot, cancellation, fixed-IP public-network confinement, and privacy-bounded Ledger/Trace evidence. Unified Source/Artifact, research citation quality, SQL/DataFrame/Notebook, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                            |
+| P3 browser/research/data/media    | Partial        | Run-owned persistent Chrome Sessions now support navigation, interaction, files, screenshots, and fixed-IP public-network confinement. Run-local Research Sources add bounded visible-text capture, exact claim-to-line citation tokens, a research Skill, verified Markdown artifact delivery, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, PDF/SQL/DataFrame/Notebook, browser UX, and media production remain.                                                                                                                                                                                                                                |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                       |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, and a local TypeScript SDK for Agent run/continue/recovery plus Workflow definition/execution/resume exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, remote RPC, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                 |
@@ -2754,15 +2754,11 @@ Observed result:
   durable events;
 - Web Trace validates and renders only bounded Browser Session, network,
   screenshot, and file evidence, rejecting partial or inconsistent receipts;
-- real Chrome dogfood reached `https://example.com` through the action-gated
-  proxy, reused operations 1-4, produced AI ARIA refs and a 17,808-byte PNG,
-  and admitted only one destination plus one CONNECT while rejecting nine
-  startup/authentication attempts. This diagnostic ran without Chrome's inner
-  sandbox only inside the already enforced IDE sandbox and is not release
-  proof;
-- the production-path smoke retains `chromiumSandbox: true`. The current IDE
-  host rejects that nested sandbox before page creation, so its result here is
-  `inconclusive`, not a passed or unsandboxed fallback;
+- the production-path Chrome smoke reached `https://example.com` with
+  `chromiumSandbox: true`, reused one Session through five Browser/Source
+  operations, produced AI ARIA refs and a 17,808-byte PNG, and admitted only
+  one destination plus one CONNECT while rejecting nine startup/background
+  requests;
 - Browser implementation was split across focused network, runtime, page,
   ownership, file, tool, and Trace modules; Store and Server did not grow;
 - the complete repository gate passed 1263 tests with 21 opt-in live tests
@@ -2772,3 +2768,85 @@ Observed result:
   the 150 KiB budget. The 69-file Web dist is bound to
   `330f8a1b3c17e7c1`; the six-artifact release set is bound to
   `bb9c790fd4581836`.
+
+## Completed Slice: Browser Research Sources and Claim-Bound Citations
+
+User scenario: after inspecting a public page in a controlled Browser Session,
+an Agent can freeze the relevant visible text, bind exact line ranges to exact
+report claims, deliver a citation-bearing Markdown brief, and prove the report
+from real workspace bytes without persisting page content in Trace.
+
+Acceptance:
+
+- add `research_source capture`, `cite`, and `list` as one revisioned Agent
+  tool backed only by the active same-Run Browser Session;
+- normalize controls and whitespace into at most 400 lines and 24,000 visible
+  characters; reject empty pages, URL drift, malformed Browser provenance, and
+  inconsistent text/network bounds;
+- bind URL, title, normalized lines, and truncation to an immutable capture
+  SHA-256, then require that exact Source ID/hash for every citation;
+- bind an exact single-line report claim to a recomputed inclusive quote range
+  of at most 40 lines and return an unforgeable citation token;
+- isolate Sources across Runs, serialize concurrent operations, cap 16 Sources
+  and 64 citations, propagate cancellation through active/queued capture, and
+  prevent late completion from repopulating settled state;
+- keep Source text, URL, title, claim, quote, and live tool output out of
+  Ledger, Replay, SSE, and Trace while retaining hashes, range, counts,
+  truncation, Source/citation IDs, and Browser provenance;
+- require `unrestricted` policy, report a read effect, but block automatic
+  recovery because process-local Source text cannot be adopted after restart;
+- upgrade the bundled `research-brief` Skill with primary-source,
+  disconfirming-evidence, exact citation-token, evidence-ledger, Browser-close,
+  and verified-artifact requirements;
+- project only semantically complete capture/cite/list receipts into Web Trace
+  and reject partial, out-of-range, or action-inconsistent evidence;
+- extend the production-sandbox Chrome smoke through real capture, citation,
+  Markdown write/read verification, screenshot, and Session close.
+
+Threat boundary:
+
+- extraction is one fixed `body.innerText` operation with proxy outbound
+  closed. Page text remains untrusted data and cannot change tool policy,
+  network scope, or authorization;
+- a citation proves the immutable capture range and normalized claim hashes.
+  It does not prove source authority, freshness beyond capture time, factual
+  correctness, or logical entailment;
+- Sources are Run-local memory, not durable Source documents. Restart and
+  automatic recovery cannot reconstruct or silently reuse them;
+- a final user-visible report may intentionally contain claims, source URLs,
+  and citation tokens. The privacy boundary applies to tool arguments,
+  receipts, Source text, and quotes, not to content deliberately delivered to
+  the user;
+- this slice covers HTML visible text from the controlled Browser. PDF,
+  spreadsheet, database, image, audio, video, cross-format lineage, and
+  automated source-quality scoring remain future Source/Artifact work.
+
+Observed result:
+
+- Runtime tests cover capture normalization, URL drift, malformed bindings,
+  stale capture hashes, invalid ranges/claims, cross-Run denial, settlement,
+  active and queued cancellation, policy, effects, Ledger redaction, and
+  fail-closed automatic recovery;
+- Agent integration creates a real Plan, starts Browser research, captures and
+  cites a Source, writes `reports/research-brief.md` through `apply_patch`,
+  verifies the artifact from workspace bytes, completes the Plan, and proves
+  Source text/URL/title/quote are absent from tool events;
+- Web tests validate capture/cite/list semantics, generic Trace summaries, and
+  privacy against raw Source fields;
+- production-sandbox real Chrome dogfood reached `https://example.com` through
+  the fixed-IP proxy/SSRF path, captured 3 lines and 127 characters, cited line
+  1, wrote and reread a citation-bearing Markdown report, captured a
+  17,808-byte PNG, completed five Browser operations, and admitted one network
+  destination. The opt-in smoke passed in 1.24 seconds without launcher
+  injection or sandbox fallback;
+- Source capability code is separate from Store and Server. Refactoring left
+  the Browser page module at 685 lines and the Source registry at 459 lines;
+  fixed extraction, capture validation, Agent projection, and Web Trace live
+  in focused modules;
+- the complete repository gate passed 1278 tests with 21 opt-in live tests
+  skipped by default, audited 6 workspaces and 252 packages with 239/239
+  integrity entries, verified 247 current OpenAPI routes against the 244/244
+  compatibility baseline, and kept the Web main entry at 130.08 KiB against
+  the 150 KiB budget. The 69-file Web dist is bound to
+  `97e3bcab97ead381`; the six-artifact release set is bound to
+  `e84f821ec3fe75f7`.

@@ -3076,6 +3076,7 @@ export const AGENT_TOOL_NAMES = [
   "node_debugger",
   "workspace_process",
   "browser",
+  "research_source",
   "verify_workspace",
 ] as const;
 

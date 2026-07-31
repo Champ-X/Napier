@@ -138,6 +138,7 @@ export const contextCopy = {
     node_debugger: "Node debugger",
     workspace_process: "Background process",
     browser: "Browser Session",
+    research_source: "Research Source",
     verify_workspace: "Sandbox verify",
   },
   skills: "Available skills",

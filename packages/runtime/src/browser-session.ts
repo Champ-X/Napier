@@ -1,6 +1,7 @@
 import { PersistentBrowserSession } from "./browser-page-session.js";
 import {
   MAX_ACTIVE_BROWSER_SESSIONS,
+  type BrowserPageSourceCapture,
   type BrowserSessionOperationResult,
   type BrowserSessionOwner,
   type BrowserSessionRequest,
@@ -17,6 +18,32 @@ export class RunBrowserSessionManager {
   private startingSessions = 0;
 
   constructor(private readonly options: RunBrowserSessionManagerOptions) {}
+
+  async capturePage(
+    owner: BrowserSessionOwner,
+    maxChars: number,
+    signal?: AbortSignal,
+  ): Promise<BrowserPageSourceCapture> {
+    const key = ownerKey(owner);
+    return this.serialized(
+      key,
+      async () => {
+        assertNotAborted(signal);
+        const session = this.sessions.get(key);
+        if (!session || !session.healthy) {
+          throw new Error("Browser Session is not active for this Run");
+        }
+        try {
+          return await session.capturePage(maxChars, signal);
+        } catch (error) {
+          this.sessions.delete(key);
+          await session.close();
+          throw error;
+        }
+      },
+      signal,
+    );
+  }
 
   async execute(
     owner: BrowserSessionOwner,

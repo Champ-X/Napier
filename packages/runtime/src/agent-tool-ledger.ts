@@ -16,6 +16,11 @@ import {
   pythonKernelToolOutputLedgerProjection,
 } from "./python-kernel-tool.js";
 import {
+  researchSourceToolCallArgumentsLedgerProjection,
+  researchSourceToolInputLedgerProjection,
+  researchSourceToolOutputLedgerProjection,
+} from "./research-source-tool.js";
+import {
   nodeDebuggerToolCallArgumentsLedgerProjection,
   nodeDebuggerToolInputLedgerProjection,
   nodeDebuggerToolOutputLedgerProjection,
@@ -80,6 +85,9 @@ export function agentToolCallArgumentsLedgerProjection(
   toolName: string,
   args: unknown,
 ): JsonValue {
+  if (toolName === "research_source") {
+    return researchSourceToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "browser") {
     return browserToolCallArgumentsLedgerProjection(args);
   }
@@ -135,6 +143,9 @@ export function agentToolInputLedgerProjection(
   toolName: string,
   args: unknown,
 ): Record<string, JsonValue> {
+  if (toolName === "research_source") {
+    return researchSourceToolInputLedgerProjection(args);
+  }
   if (toolName === "browser") {
     return browserToolInputLedgerProjection(args);
   }
@@ -191,6 +202,9 @@ export function agentToolOutputLedgerProjection(
   output: string,
   result: unknown,
 ): Record<string, JsonValue> {
+  if (toolName === "research_source") {
+    return researchSourceToolOutputLedgerProjection(output, result);
+  }
   if (toolName === "browser") {
     return browserToolOutputLedgerProjection(output, result);
   }

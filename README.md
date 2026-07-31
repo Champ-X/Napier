@@ -125,6 +125,10 @@ Version `0.1.0` includes:
 - preview-bound `workspace_file_preview` / `workspace_file_apply` tools plus a
   lazy Files recovery panel for directory creation, no-overwrite-intent moves,
   reversible trash, and explicit restore without shell access;
+- Run-owned controlled Chrome Sessions plus a `research_source` tool that
+  freezes bounded visible page text, binds exact line ranges to report claims,
+  returns citation tokens to the live Agent, and retains only privacy-bounded
+  hashes, ranges, counts, and Browser provenance in Ledger and Trace;
 - a fail-closed tool policy that blocks host escape and destructive commands;
 - Agent Skills discovery through standard `SKILL.md` packages;
 - frozen Agent Prompt Variables with strict `literal`, `current_date`, and
@@ -2005,6 +2009,34 @@ The smoke never disables Chrome sandboxing. A nested IDE sandbox may reject
 Chrome initialization; that result is reported as inconclusive rather than
 falling back to `--no-sandbox`.
 
+### Research Source Capture and Citations
+
+An Agent profile can enable `research_source` alongside `browser` under the
+`unrestricted` policy. After inspecting the active Browser page, `capture`
+freezes up to 24,000 normalized visible characters as an immutable Run-local
+Source. The result includes numbered lines, a Source ID, and a capture
+SHA-256. `cite` requires that exact Source ID and hash, an inclusive range of
+at most 40 lines, and the exact single-line report claim. It recomputes the
+quote and returns a `[citation:citation_...]` token for placement immediately
+after the claim. `list` recovers the current Run's Source and citation tokens
+during a long task.
+
+Capture happens with Browser network access closed and fails if the page URL
+changes or the page has no visible text. Source and citation operations are
+serialized per Run, isolated across Runs, bounded to 16 Sources and 64
+citations, and cancelled with Run settlement. Source text, title, URL, quote,
+and claim are available to the live Agent only. Durable events retain the
+capture, source-set, claim, quote, Browser executable/Session/network hashes,
+line range, character/line counts, and truncation state. Because Source text
+is deliberately not restart-adopted, automatic recovery treats
+`research_source` as unsafe even though its tool effect is read.
+
+The bundled `research-brief` Skill requires primary-source preference,
+disconfirming evidence, exact claim-to-range binding, adjacent citation
+tokens, an evidence ledger, and a verified workspace artifact when the task
+requests a report. A citation proves the captured range and claim binding; it
+does not prove source authority or logical entailment.
+
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
 optional line number, so small line edits do not require the model to retype
@@ -3595,8 +3627,10 @@ Authorization is checked again immediately before every call.
 
 Selecting `unrestricted` may additionally expose an explicitly enabled
 **Browser Session** through the public-network and workspace-file boundaries
-described above. It does not enable a shell, package installation, arbitrary
-host networking, an existing user browser, or unreviewed local file access.
+described above. **Research Source** can derive bounded Run-local Source text
+and claim-bound citations only from that active Session. Neither enables a
+shell, package installation, arbitrary host networking, an existing user
+browser, or unreviewed local file access.
 
 This in-process policy is defense in depth, not an operating-system sandbox.
 General shell execution remains disabled. Stdio MCP, structured workspace

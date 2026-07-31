@@ -6,6 +6,24 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added Browser-backed Research Sources and claim-bound citations. The
+  `research_source` Agent tool captures bounded normalized visible text from
+  the active same-Run controlled Browser, binds URL/title/line content and
+  truncation to an immutable capture hash, and requires that exact Source
+  identity for a bounded line-range citation tied to a normalized report
+  claim. Sources and citations are serialized, Run-isolated, limited,
+  cancellation-safe, and removed at settlement. The tool requires
+  `unrestricted`, reports a read effect, and remains unsafe for automatic
+  restart recovery because Source bodies are intentionally process-local.
+  Source text, URL, title, claim, quote, and live output stay out of Ledger,
+  Replay, SSE, and Trace; durable projections retain only bounded IDs, hashes,
+  counts, range, truncation, and Browser provenance. The bundled
+  `research-brief` Skill now requires primary and disconfirming evidence,
+  adjacent citation tokens, an evidence ledger, and verified Markdown artifact
+  delivery. Agent integration proves Plan-backed `apply_patch` creation and
+  workspace-byte verification; Web Trace fails closed on partial or
+  inconsistent capture/citation receipts; the opt-in real Chrome smoke now
+  exercises capture, citation, report write/read, screenshot, and close.
 - Added Run-owned controlled Chrome Sessions with navigation, back, AI ARIA
   snapshots and refs, click/type/select, canonical upload, exclusive bounded
   download, live screenshot, and explicit close actions. Sessions use fresh

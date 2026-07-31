@@ -15,6 +15,11 @@ import {
   type PythonKernelToolEventTraceView,
 } from "./python-kernel-event-view";
 import {
+  researchSourceEventEvidence,
+  researchSourceSummaryParts,
+  type ResearchSourceToolEventTraceView,
+} from "./research-source-event-view";
+import {
   nodeDebuggerEventEvidence,
   nodeDebuggerSummaryParts,
   type NodeDebuggerToolEventTraceView,
@@ -47,6 +52,7 @@ export interface ToolEventTraceView
     LspToolEventTraceView,
     JavascriptKernelToolEventTraceView,
     PythonKernelToolEventTraceView,
+    ResearchSourceToolEventTraceView,
     NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView {
   toolName: string;
@@ -237,6 +243,10 @@ export function toolEventTraceView(
     toolName === "browser"
       ? browserEventEvidence(event.payload["details"])
       : undefined;
+  const researchSourceEvidence =
+    toolName === "research_source"
+      ? researchSourceEventEvidence(event.payload["details"])
+      : undefined;
   const javascriptKernelEvidence =
     toolName === "javascript_kernel"
       ? javascriptKernelEventEvidence(event.payload["details"])
@@ -284,6 +294,7 @@ export function toolEventTraceView(
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
     ...(browserEvidence ? browserEvidence : {}),
+    ...(researchSourceEvidence ? researchSourceEvidence : {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
     ...(pythonKernelEvidence ? pythonKernelEvidence : {}),
     ...(nodeDebuggerEvidence ? nodeDebuggerEvidence : {}),
@@ -470,6 +481,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
     ...commandToolEventSummaryParts(view),
     ...browserSummaryParts(view),
+    ...researchSourceSummaryParts(view),
     ...javascriptKernelSummaryParts(view),
     ...pythonKernelSummaryParts(view),
     ...nodeDebuggerSummaryParts(view),

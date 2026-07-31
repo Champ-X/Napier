@@ -2189,6 +2189,54 @@ URLs, selectors, typed values, paths, downloaded names, screenshots, proxy
 credentials, and random Session IDs remain live-only. Portable Replay carries
 only redacted tool arguments plus bounded operation evidence.
 
+### Research Source and Citation Flow
+
+Research Source capture extends the existing Browser Session rather than
+creating another network client or evidence store:
+
+```text
+Agent inspects an active Run-owned Browser page
+  -> research_source capture serializes behind Browser actions
+  -> keep proxy outbound closed and evaluate one fixed visible-text extractor
+  -> reject empty text, URL drift, malformed bounds, or invalid Browser binding
+  -> normalize controls/whitespace into <=400 numbered lines and <=24,000 chars
+  -> bind URL + title + lines + truncation to one capture SHA-256
+  -> retain Source text only in a Run-local registry
+Agent selects an exact line range and exact report claim
+  -> require the current Source ID and capture SHA-256
+  -> recompute the <=40-line quote
+  -> bind quote and normalized single-line claim hashes to a citation ID
+  -> return a citation token to the live Agent
+  -> persist only counts, ranges, hashes, and Browser provenance
+Run settles
+  -> abort current and queued Source operations
+  -> drop Source text, claims, quotes, and citation tokens from process memory
+```
+
+`browser-source-capture.ts` owns fixed page extraction and normalization.
+`research-source-capture.ts` independently validates the returned capture
+contract. `research-sources.ts` owns Run isolation, serialization,
+cancellation, and the ephemeral registry. `research-source-tool.ts` owns the
+Agent schema and redacted call/input/output projections.
+`research-source-event-view.ts` independently validates the bounded Trace
+projection. Browser page capture uses `browser-page-session.ts`, so Source
+extraction inherits the existing public-network, executable freshness,
+Session ownership, operation budget, and uncertain-state closure rules.
+
+The citation is evidence of an immutable capture-range-to-claim binding, not
+an authority or entailment judgment. The `research-brief` Skill therefore
+still requires primary sources, contradicting evidence, caveats, and adjacent
+citation tokens. Raw Source text, URL, title, quote, and claim do not enter
+Ledger, Replay, SSE, or Trace. The final user-visible report may intentionally
+contain the report claim, source URL, and citation token; a verified Plan
+artifact binds that report to actual workspace bytes.
+
+The registry is process-local by design. An interrupted `research_source`
+operation cannot be reconstructed from hash-only evidence, so automatic
+recovery marks it unsafe even though capture, cite, and list have read effects.
+No Source is visible across Runs, and cancellation waits for the serialized
+queue before deleting registry state.
+
 ## TypeScript LSP Code Intelligence Flow
 
 The LSP tools are implemented outside the oversized workspace-tool module.
@@ -5059,6 +5107,10 @@ The current boundary has thirty-nine parts:
     SSRF checks, explicit top-level cross-origin authorization, bounded ARIA
     interaction and screenshots, canonical upload/download confinement,
     settlement cleanup, and hash-only Ledger/Trace evidence.
+42. Run-local Browser Source capture and claim-bound citations with bounded
+    normalized visible text, immutable capture hashes, exact line ranges,
+    cancellation-safe isolation, citation-bearing Markdown delivery, and
+    privacy-bounded Ledger/Trace evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5068,9 +5120,10 @@ rename/quick-fix previews, explicit-argv command execution, persistent
 synchronous JavaScript and restricted Python calculations, Run-owned Node
 launch debugging, and bounded background Process Session lifecycle control.
 `unrestricted` additionally permits an explicitly enabled controlled Browser
-Session. It does not expose a shell, arbitrary host networking, an existing
-user browser profile, or unrestricted local files; known destructive command
-patterns remain denied.
+Session and Research Source citations derived from its active page. It does
+not expose a shell, arbitrary host networking, an existing user browser
+profile, or unrestricted local files; known destructive command patterns
+remain denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and

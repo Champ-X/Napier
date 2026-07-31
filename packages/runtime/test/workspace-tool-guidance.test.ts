@@ -63,4 +63,22 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("Evaluation rejects side effects");
     expect(guidance).toContain("loaded-module drift");
   });
+
+  it("requires exact Browser Source capture and claim-bound citations", () => {
+    const guidance = formatWorkspaceToolGuidance([
+      { name: "browser" } as AgentTool,
+      { name: "research_source" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain(
+      "Use browser for multi-step interaction with a public website",
+    );
+    expect(guidance).toContain(
+      "call research_source capture to freeze bounded visible text",
+    );
+    expect(guidance).toContain(
+      "A citation token proves only the captured range-to-claim binding",
+    );
+    expect(guidance).toContain("capture disconfirming evidence");
+  });
 });

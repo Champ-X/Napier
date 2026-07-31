@@ -51,6 +51,7 @@ const UNSAFE_TOOLS = new Set([
   "node_debugger",
   "workspace_process",
   "browser",
+  "research_source",
   "create_plan",
   "update_plan_step",
   "update_plan_artifact",
