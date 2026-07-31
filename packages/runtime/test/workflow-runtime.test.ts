@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
@@ -17,6 +18,7 @@ import { AgentRuntime } from "../src/agent-runtime.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
 import { createGoal } from "../src/goals.js";
 import { ModelRegistry } from "../src/models.js";
+import { inspectSqliteDatabase } from "../src/sqlite-database-file.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 import { createExecutionPlanBlueprint } from "../src/workflow-blueprints.js";
@@ -775,6 +777,118 @@ describe("Execution Plan Workflow runtime", () => {
     });
     expect(resumed.output).toEqual(result.output);
     expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
+    fixture.store.close();
+  }, 20_000);
+
+  it("executes a hash-bound SQLite query as a typed Tool node", async () => {
+    const fixture = await createFixture();
+    const database = new DatabaseSync(
+      path.join(fixture.workspaceRoot, "workflow-data.db"),
+    );
+    database.exec(`
+      CREATE TABLE metrics (category TEXT NOT NULL, value INTEGER NOT NULL) STRICT;
+      INSERT INTO metrics VALUES ('alpha', 10), ('alpha', 20), ('beta', 30);
+    `);
+    database.close();
+    const snapshot = await inspectSqliteDatabase(
+      fixture.workspaceRoot,
+      "workflow-data.db",
+    );
+    const definition = workflowDefinition(fixture.manifest.blueprint);
+    const manifest = defineExecutionPlanWorkflow({
+      ...definition,
+      nodes: [
+        {
+          id: "inspect",
+          type: "tool",
+          tool: "sqlite_query",
+          effect: "read",
+          inputBindings: {
+            action: { source: "literal", value: "query" },
+            path: { source: "literal", value: "workflow-data.db" },
+            databaseSha256: {
+              source: "literal",
+              value: snapshot.fileSha256,
+            },
+            sql: {
+              source: "literal",
+              value:
+                "SELECT category, SUM(value) AS total FROM metrics GROUP BY category",
+            },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              action: { type: "string", enum: ["query"] },
+              path: { type: "string", minLength: 1, maxLength: 500 },
+              databaseSha256: {
+                type: "string",
+                minLength: 64,
+                maxLength: 64,
+              },
+              sql: { type: "string", minLength: 1, maxLength: 1_000 },
+            },
+            required: ["action", "path", "databaseSha256", "sql"],
+            additionalProperties: false,
+          },
+          outputSchema: sqliteQueryReceiptSchema(),
+          timeoutMs: 5_000,
+          maxAttempts: 1,
+        },
+        {
+          ...definition.nodes[1]!,
+          inputBindings: {
+            analysis: { source: "node", nodeId: "inspect" },
+          },
+          inputSchema: {
+            type: "object",
+            properties: {
+              analysis: sqliteQueryReceiptSchema(),
+            },
+            required: ["analysis"],
+            additionalProperties: false,
+          },
+        },
+      ],
+    });
+    fixture.provider.setResponses([
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain('\\"rowCount\\":2');
+        expect(messages).toContain(snapshot.fileSha256);
+        expect(messages).not.toContain("alpha");
+        return fauxAssistantMessage(
+          '{"report":"SQLite receipt verified","approved":true}',
+        );
+      },
+    ]);
+
+    const result = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Run one SQLite aggregate." },
+      },
+    });
+
+    expect(result.status).toBe("completed");
+    expect(result.nodeResults[0]?.output).toEqual(
+      expect.objectContaining({
+        kind: "napier.sqlite-query",
+        action: "query",
+        databaseSha256: snapshot.fileSha256,
+        rowCount: 2,
+        resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    const completed = (
+      await fixture.store.listEvents(fixture.targetThreadId)
+    ).find(
+      (event) =>
+        event.type === "tool.completed" &&
+        record(event.payload)?.["toolName"] === "sqlite_query",
+    );
+    expect(JSON.stringify(completed)).not.toContain("alpha");
     fixture.store.close();
   }, 20_000);
 
@@ -3172,6 +3286,56 @@ function listFilesReceiptSchema(): WorkflowObjectSchema {
       entrySetSha256: { type: "string", minLength: 64, maxLength: 64 },
     },
     required: ["count", "truncated", "pathSha256", "entrySetSha256"],
+    additionalProperties: false,
+  };
+}
+
+function sqliteQueryReceiptSchema(): WorkflowObjectSchema {
+  const hash = { type: "string" as const, minLength: 64, maxLength: 64 };
+  return {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["napier.sqlite-query"] },
+      schemaVersion: { type: "integer", minimum: 1, maximum: 1 },
+      action: { type: "string", enum: ["query"] },
+      databasePathSha256: hash,
+      databaseSha256: hash,
+      databaseBytes: { type: "integer", minimum: 16 },
+      sqlSha256: hash,
+      parameterCount: { type: "integer", minimum: 0, maximum: 50 },
+      parameterSetSha256: hash,
+      columnCount: { type: "integer", minimum: 0, maximum: 80 },
+      rowCount: { type: "integer", minimum: 0, maximum: 100 },
+      truncated: { type: "boolean" },
+      columnsSha256: hash,
+      rowsSha256: hash,
+      durationMs: { type: "integer", minimum: 0, maximum: 6_000 },
+      workerSha256: hash,
+      runtimeSha256: hash,
+      limitsSha256: hash,
+      resultSha256: hash,
+    },
+    required: [
+      "kind",
+      "schemaVersion",
+      "action",
+      "databasePathSha256",
+      "databaseSha256",
+      "databaseBytes",
+      "sqlSha256",
+      "parameterCount",
+      "parameterSetSha256",
+      "columnCount",
+      "rowCount",
+      "truncated",
+      "columnsSha256",
+      "rowsSha256",
+      "durationMs",
+      "workerSha256",
+      "runtimeSha256",
+      "limitsSha256",
+      "resultSha256",
+    ],
     additionalProperties: false,
   };
 }

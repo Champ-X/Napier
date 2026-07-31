@@ -11,6 +11,7 @@ import { createLspReferencesTool } from "./lsp-references-tool.js";
 import { createLspRenameTool } from "./lsp-rename-tool.js";
 import { createLspSymbolsTool } from "./lsp-symbols-tool.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
+import { createSqliteQueryTool } from "./sqlite-query-tool.js";
 import type { LocalStore } from "./store.js";
 import { createWorkspaceTools } from "./tools.js";
 import { createTypescriptAstTools } from "./typescript-ast-tool.js";
@@ -56,6 +57,9 @@ export function createStatelessAgentTools(
     dataRoot: options.store.dataRoot,
     ...(patchObserver ? { patchObserver } : {}),
   }).filter((tool) => profile.enabledTools.includes(tool.name));
+  if (profile.enabledTools.includes("sqlite_query")) {
+    tools.push(createSqliteQueryTool(options.store.workspaceRoot));
+  }
 
   tools.push(
     ...createTypescriptAstTools(options.store.workspaceRoot).filter((tool) =>

@@ -2014,6 +2014,24 @@ inspect_data
   -> hash the workspace-relative path, complete file, column set, and sample
      rows so Trace can show format, row/column counts, truncation, and hashes
      without rendering column names or sample values
+sqlite_query schema
+  -> resolve one canonical non-symlink .db/.sqlite/.sqlite3 file <=64 MiB
+  -> reject protected paths and active WAL/SHM/journal sidecars
+  -> hash the complete database and copy it into a private read-only snapshot
+  -> inspect bounded table/view columns through fixed worker code
+sqlite_query query
+  -> require the exact database SHA-256 returned by schema
+  -> accept one SELECT/WITH/VALUES statement with bounded positional parameters
+  -> launch a separately killable fixed-source Node process
+  -> confine cwd and TMPDIR to the private snapshot directory
+  -> open only the copied snapshot with SQLite read-only + defensive mode
+  -> authorize only SELECT/READ/RECURSIVE and non-dangerous functions
+  -> deny PRAGMA, ATTACH, DDL, DML, extensions, and trailing statements
+  -> cap deadline, workers, rows, columns, cells, and aggregate output
+  -> rehash the source database after execution and reject drift
+  -> return schema/rows only to the live Agent
+  -> retain database/SQL/parameter/result and Node/SQLite runtime hashes
+     plus bounded metrics in Trace
 inspect_code
   -> resolve TypeScript / JavaScript / Python / Go files through the same
      read-only realpath and UTF-8 boundary as read_file
@@ -2137,6 +2155,16 @@ creation is limited to `create` with an explicit opt-in and uses the same
 workspace, protected-segment, and symlink checks; file deletion, arbitrary
 directory operations, and permission changes remain outside this tool.
 Subagents call the read-only tool factory and never receive `apply_patch`.
+
+SQLite analysis remains outside the oversized workspace-tool module.
+`sqlite-database-file.ts` owns canonical file admission, sidecar denial,
+complete hashing, and freshness. `sqlite-query-worker.ts` owns the fixed child
+source and hard limits; `sqlite-query.ts` owns snapshot copying, process
+admission, timeout/cancellation, protocol validation, and result binding.
+`sqlite-query-tool.ts` owns Agent schema and Ledger redaction, while
+`sqlite-query-event-view.ts` independently validates the Web Trace projection.
+Node.js 24.12+ is required for SQLite authorizer and defensive mode; older
+runtimes fail this tool closed.
 
 ## Controlled Browser Session Flow
 
@@ -4964,7 +4992,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has thirty-nine parts:
+The current boundary has forty-four parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5124,6 +5152,10 @@ The current boundary has thirty-nine parts:
 43. Citation-backed Markdown verification with canonical workspace reads,
     complete-file freshness, one-use current-Run tokens, exact claim-line
     matching, and hash-only report evidence.
+44. Process-isolated read-only SQLite analysis with static database snapshots,
+    parameterized single statements, SQLite authorizer enforcement, hard
+    timeout/cancellation, source drift rejection, Agent/Workflow reuse, and
+    hash-only durable results.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally

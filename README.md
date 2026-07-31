@@ -125,6 +125,9 @@ Version `0.1.0` includes:
 - preview-bound `workspace_file_preview` / `workspace_file_apply` tools plus a
   lazy Files recovery panel for directory creation, no-overwrite-intent moves,
   reversible trash, and explicit restore without shell access;
+- a `sqlite_query` tool for schema inspection and parameterized read-only SQL
+  over canonical static workspace database snapshots, with process-isolated
+  timeout/cancellation and live-only rows;
 - Run-owned controlled Chrome Sessions plus a `research_source` tool that
   freezes bounded visible page text, binds exact line ranges to report claims,
   returns citation tokens to the live Agent, and retains only privacy-bounded
@@ -1744,12 +1747,42 @@ summaries show only file/symbol/skipped counts, line/byte counts, truncation,
 and hashes, never paths, symbol names, or signatures.
 
 `inspect_data` gives the Agent a bounded local preview for UTF-8 JSON, JSONL,
-and CSV files without adding a shell or network dependency. It resolves through
-the same workspace realpath boundary, rejects oversized or malformed input,
-returns only a capped structured sample to the model, and records path/file,
-column-set, and sample SHA-256 receipts. Trace summaries show only format,
-row/column counts, byte size, truncation state, and hashes, never column names
-or sample values.
+CSV, TSV, and Markdown table files without adding a shell or network
+dependency. It resolves through the same workspace realpath boundary, rejects
+oversized or malformed input, returns only a capped structured sample to the
+model, and records path/file, column-set, and sample SHA-256 receipts. Trace
+summaries show only format, row/column counts, byte size, truncation state, and
+hashes, never column names or sample values.
+
+`sqlite_query` adds real SQL analysis without opening a general database or
+shell capability. `schema` accepts a canonical `.db`, `.sqlite`, or `.sqlite3`
+workspace file up to 64 MiB and returns its bounded table/view shape plus
+complete file SHA-256. `query` requires that exact database hash, one
+parameterized `SELECT`, `WITH`, or `VALUES` statement, up to 50 positional
+parameters, 100 rows, and a 100-5,000 ms deadline.
+
+Napier rejects symlinks, protected paths, live WAL/journal sidecars, PRAGMA,
+ATTACH, DDL, DML, extension loading, multiple statements, unsafe functions,
+and database drift. It copies the verified database into a temporary read-only
+snapshot and executes fixed hashed worker code in a separately killable Node
+process whose working directory and only environment variable point at the
+private snapshot directory. This confines SQLite temporary state and allows
+timeout and cancellation to terminate native SQLite work; the source database
+is rehashed before results are accepted. SQLite authorizer/defensive mode
+requires Node.js 24.12 or newer and fails closed on older runtimes.
+
+Schema names and rows are untrusted live tool output. Ledger, Replay, SSE, and
+Trace retain only database/path, SQL, parameter-set, column-set, row-set,
+worker, runtime, limit, and result hashes plus bounded counts and duration. Typed
+Workflow Tool nodes can consume that receipt, including a hash of the actual
+Node/SQLite runtime, while semantic row values remain live-only for the Agent
+to turn into a verified workspace artifact.
+
+Run the real process-isolated smoke:
+
+```bash
+npm run test:live-sqlite
+```
 
 `inspect_code` gives the Agent a bounded local symbol outline for TypeScript,
 JavaScript, Python, and Go files without starting LSP, subprocess, or network

@@ -21,6 +21,11 @@ import {
   researchSourceToolOutputLedgerProjection,
 } from "./research-source-tool.js";
 import {
+  sqliteQueryToolCallArgumentsLedgerProjection,
+  sqliteQueryToolInputLedgerProjection,
+  sqliteQueryToolOutputLedgerProjection,
+} from "./sqlite-query-tool.js";
+import {
   nodeDebuggerToolCallArgumentsLedgerProjection,
   nodeDebuggerToolInputLedgerProjection,
   nodeDebuggerToolOutputLedgerProjection,
@@ -88,6 +93,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "research_source") {
     return researchSourceToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "sqlite_query") {
+    return sqliteQueryToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "browser") {
     return browserToolCallArgumentsLedgerProjection(args);
   }
@@ -145,6 +153,9 @@ export function agentToolInputLedgerProjection(
 ): Record<string, JsonValue> {
   if (toolName === "research_source") {
     return researchSourceToolInputLedgerProjection(args);
+  }
+  if (toolName === "sqlite_query") {
+    return sqliteQueryToolInputLedgerProjection(args);
   }
   if (toolName === "browser") {
     return browserToolInputLedgerProjection(args);
@@ -204,6 +215,9 @@ export function agentToolOutputLedgerProjection(
 ): Record<string, JsonValue> {
   if (toolName === "research_source") {
     return researchSourceToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "sqlite_query") {
+    return sqliteQueryToolOutputLedgerProjection(output, result);
   }
   if (toolName === "browser") {
     return browserToolOutputLedgerProjection(output, result);

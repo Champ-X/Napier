@@ -32,6 +32,7 @@ export function builtInToolEffect(
     toolName === "search_files" ||
     toolName === "list_symbols" ||
     toolName === "inspect_data" ||
+    toolName === "sqlite_query" ||
     toolName === "inspect_code" ||
     toolName === "read_symbol" ||
     toolName === "ast_query" ||

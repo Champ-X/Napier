@@ -17,6 +17,7 @@ const READ_ONLY_TOOLS = new Set([
   "search_files",
   "list_symbols",
   "inspect_data",
+  "sqlite_query",
   "inspect_code",
   "read_symbol",
   "ast_query",
@@ -116,12 +117,38 @@ export function assessToolCall(
   }
   if (READ_ONLY_TOOLS.has(toolName)) {
     const candidate = getStringField(input, "path");
+    if (
+      toolName === "sqlite_query" &&
+      (!candidate || path.isAbsolute(candidate))
+    ) {
+      return {
+        allowed: false,
+        risk: "high",
+        reason: "SQLite queries require a workspace-relative database path",
+      };
+    }
     if (candidate && !isPathInsideWorkspace(candidate, workspaceRoot)) {
       return {
         allowed: false,
         risk: "high",
         reason: "path escapes the configured workspace",
       };
+    }
+    if (toolName === "sqlite_query" && candidate) {
+      const relative = path.relative(
+        path.resolve(workspaceRoot),
+        path.resolve(workspaceRoot, candidate),
+      );
+      const protectedSegment = relative
+        .split(path.sep)
+        .find(isProtectedWorkspacePathSegment);
+      if (protectedSegment) {
+        return {
+          allowed: false,
+          risk: "high",
+          reason: `SQLite queries cannot read protected path segment: ${protectedSegment}`,
+        };
+      }
     }
     return {
       allowed: true,

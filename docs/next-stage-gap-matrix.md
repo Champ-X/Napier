@@ -22,7 +22,7 @@ Audit date: 2026-07-31
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                      |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                              |
-| P3 browser/research/data/media    | Partial        | Run-owned persistent Chrome Sessions support navigation, interaction, files, screenshots, and fixed-IP public-network confinement. Run-local Research Sources add bounded visible-text capture, exact claim-to-line citation tokens, canonical Markdown verification against one-use current-Run tokens, a research Skill, verified artifact delivery, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, PDF/SQL/DataFrame/Notebook, browser UX, and media production remain.                                                                                                                                                                         |
+| P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                            |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                       |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, and a local TypeScript SDK for Agent run/continue/recovery plus Workflow definition/execution/resume exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, remote RPC, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                 |
@@ -2921,3 +2921,84 @@ Observed result:
   the 150 KiB budget. The 69-file Web dist is bound to
   `eb4678720cd2b93e`; the six-artifact release set is bound to
   `00ea2825094e723e`.
+
+## Completed Slice: Process-Isolated Read-Only SQLite Analysis
+
+User scenario: an Agent can inspect a real workspace database, run a bounded
+parameterized aggregate against the exact inspected version, use live rows to
+produce a report, and verify the report artifact without granting SQL write,
+filesystem, network, extension, or shell capabilities.
+
+Acceptance:
+
+- add `sqlite_query schema` and `query` through the shared Agent and typed
+  Workflow Tool runtime, with no new Store or Server state;
+- require canonical workspace-relative `.db`, `.sqlite`, or `.sqlite3` files,
+  reject symlinks/protected roots, cap files at 64 MiB, and reject active
+  journal/WAL/SHM sidecars;
+- hash the complete database, copy it to a private read-only snapshot, verify
+  the copied bytes, query only the copy, then rehash the source before
+  accepting results;
+- require `query` to bind the database SHA-256 returned by `schema`;
+- permit one `SELECT`, `WITH`, or `VALUES` statement with at most 50 typed
+  positional parameters, 100 rows, 80 columns, bounded cells/output, and a
+  100-5,000 ms deadline;
+- execute fixed hashed worker code in a separately killable Node process so
+  timeout and cancellation terminate native SQLite work;
+- confine the child working directory and only environment variable to the
+  private snapshot directory, and bind Node/SQLite/platform/architecture into
+  a runtime hash;
+- require SQLite read-only, defensive mode, and authorizer approval; deny
+  PRAGMA, ATTACH/DETACH, DDL, DML, transactions, extensions, trailing
+  statements, non-main databases, and dangerous file/amplification functions;
+- cap four active query processes globally and fail closed on unsupported Node
+  runtimes, malformed worker evidence, worker failure, output overflow, or
+  source drift;
+- keep database path, SQL, parameters, schema names, and rows live-only;
+  Ledger, Replay, SSE, and Trace retain only hashes, counts, truncation,
+  duration, and worker/runtime/limit identity;
+- expose only hash/count receipts to Workflow nodes, preserving row privacy,
+  while the ordinary Agent can turn live rows into a verified Plan artifact;
+- add a bundled `data-analysis` Skill and enable SQLite analysis for new
+  default workspaces.
+
+Threat boundary:
+
+- this is static-snapshot analytics, not a connection to a live application
+  database. WAL databases must be checkpointed or explicitly copied first;
+- Node.js 24.12+ is required for SQLite authorizer and defensive mode. The tool
+  fails closed on older supported Napier runtimes without affecting other
+  capabilities;
+- process isolation provides hard cancellation and a bounded JS heap, but is
+  not a full OCI memory quota for SQLite native allocations. Query deadlines,
+  output bounds, denied amplification functions, and the 64 MiB snapshot cap
+  constrain the remaining exposure;
+- query results prove what the bound database version returned. They do not
+  establish upstream data quality, business semantics, denominator choices, or
+  completeness when truncation is true;
+- semantic row values remain live-only and therefore are not recoverable by a
+  Workflow Tool node after restart. Durable Workflow output is intentionally a
+  privacy-safe receipt, not a hidden copy of the dataset.
+
+Observed result:
+
+- real SQLite tests cover schema discovery, parameterized grouped aggregates,
+  BigInt/BLOB projection, row truncation, write/PRAGMA/ATTACH/extension and
+  multi-statement denial, stale identity, timeout, cancellation, active-process
+  admission, sidecars, symlinks, protected paths, and source drift;
+- Agent integration builds a real database, runs schema and aggregate calls,
+  writes a Markdown report through `apply_patch`, verifies its Plan artifact,
+  and proves paths, SQL, parameters, table/column names, and rows are absent
+  from durable tool events;
+- a typed Workflow Tool node executes the same query and passes only the
+  hash/count receipt to its downstream Agent;
+- Web Trace validates complete SQLite receipts and renders only bounded
+  metrics and hash prefixes;
+- `npm run test:live-sqlite` completes real process-isolated schema and
+  aggregate queries against a temporary static database;
+- the complete repository gate passes 1,310 tests with 22 opt-in live tests
+  skipped by default, 247 OpenAPI routes, 244/244 compatibility operations,
+  six workspaces, 252 packages, and 239/239 integrity entries. The Web main
+  chunk remains 130.08 KiB under the 150 KiB budget; the 69-file dist is bound
+  to `fa468725276f499d`, and the six-artifact release set is bound to
+  `2498a70a71f84092`.

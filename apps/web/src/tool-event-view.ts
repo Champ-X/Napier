@@ -20,6 +20,11 @@ import {
   type ResearchSourceToolEventTraceView,
 } from "./research-source-event-view";
 import {
+  sqliteQueryEventEvidence,
+  sqliteQuerySummaryParts,
+  type SqliteQueryToolEventTraceView,
+} from "./sqlite-query-event-view";
+import {
   nodeDebuggerEventEvidence,
   nodeDebuggerSummaryParts,
   type NodeDebuggerToolEventTraceView,
@@ -53,6 +58,7 @@ export interface ToolEventTraceView
     JavascriptKernelToolEventTraceView,
     PythonKernelToolEventTraceView,
     ResearchSourceToolEventTraceView,
+    SqliteQueryToolEventTraceView,
     NodeDebuggerToolEventTraceView,
     TypescriptAstToolEventTraceView {
   toolName: string;
@@ -247,6 +253,10 @@ export function toolEventTraceView(
     toolName === "research_source"
       ? researchSourceEventEvidence(event.payload["details"])
       : undefined;
+  const sqliteQueryEvidence =
+    toolName === "sqlite_query"
+      ? sqliteQueryEventEvidence(event.payload["details"])
+      : undefined;
   const javascriptKernelEvidence =
     toolName === "javascript_kernel"
       ? javascriptKernelEventEvidence(event.payload["details"])
@@ -295,6 +305,7 @@ export function toolEventTraceView(
     ...(commandEvidence ? commandEvidence : {}),
     ...(browserEvidence ? browserEvidence : {}),
     ...(researchSourceEvidence ? researchSourceEvidence : {}),
+    ...(sqliteQueryEvidence ? sqliteQueryEvidence : {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
     ...(pythonKernelEvidence ? pythonKernelEvidence : {}),
     ...(nodeDebuggerEvidence ? nodeDebuggerEvidence : {}),
@@ -482,6 +493,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...commandToolEventSummaryParts(view),
     ...browserSummaryParts(view),
     ...researchSourceSummaryParts(view),
+    ...sqliteQuerySummaryParts(view),
     ...javascriptKernelSummaryParts(view),
     ...pythonKernelSummaryParts(view),
     ...nodeDebuggerSummaryParts(view),

@@ -390,6 +390,7 @@ describe("safe automatic recovery", () => {
         "search_files",
         "list_symbols",
         "inspect_data",
+        "sqlite_query",
         "inspect_code",
         "read_symbol",
         "ast_query",
@@ -452,6 +453,7 @@ describe("safe automatic recovery", () => {
           "inspect_data",
           "inspect_code",
           "read_symbol",
+          "sqlite_query",
           "ast_query",
           "ast_edit_preview",
         ]);
@@ -518,6 +520,7 @@ describe("safe automatic recovery", () => {
           "read_file",
           "read_symbol",
           "search_files",
+          "sqlite_query",
         ],
         enabledSubagents: [],
         skillCatalogSha256: expect.stringMatching(/^[a-f0-9]{64}$/),

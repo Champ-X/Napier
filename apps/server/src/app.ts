@@ -274,7 +274,6 @@ import type {
   SetInboundChannelStatusRequest,
   SignedExtensionPackageChannelIndexEnvelope,
   SignedInspectorPackageEnvelope,
-  SkillSummary,
   SkillContentReview,
   SkillPackageInstallation,
   SkillPackageQualification,
@@ -457,6 +456,7 @@ import {
   ReceiptTrustAnchorDirectorySubscriptionService,
   type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
 } from "./receipt-trust-directory-subscriptions.js";
+import { BUNDLED_SKILLS } from "./bundled-skills.js";
 import { executeWorkflowHttp } from "./workflow-http.js";
 import {
   executeWorkflowExperimentHttp,
@@ -485,30 +485,6 @@ export interface NapierServices {
 }
 
 const MAX_RECEIPT_TRUST_CHECKPOINT_SELECTION_COUNT = 1_000;
-
-const BUNDLED_SKILLS: SkillSummary[] = [
-  {
-    name: "research-brief",
-    description:
-      "Turn an open question into a sourced, falsifiable research brief.",
-    source: "bundled",
-    enabled: true,
-  },
-  {
-    name: "software-delivery",
-    description:
-      "Inspect, implement, verify, and document changes in a software workspace.",
-    source: "bundled",
-    enabled: true,
-  },
-  {
-    name: "artifact-studio",
-    description:
-      "Create polished documents, reports, and structured deliverables.",
-    source: "bundled",
-    enabled: true,
-  },
-];
 
 const HEALTH_RUNTIME_COMPONENTS = ["sqlite", "openssl", "uv", "v8"] as const;
 

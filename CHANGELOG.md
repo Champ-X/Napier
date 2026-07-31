@@ -6,6 +6,21 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added process-isolated read-only SQLite analysis. `sqlite_query schema`
+  inspects bounded table/view columns from a canonical checkpointed workspace
+  database; `query` requires that exact database SHA-256 and executes one
+  parameterized `SELECT`, `WITH`, or `VALUES` statement. Napier rejects
+  symlinks, protected paths, active sidecars, PRAGMA, ATTACH, DDL, DML,
+  extension loading, trailing statements, unsafe functions, stale database
+  hashes, and source drift. The complete database is copied into a temporary
+  read-only snapshot before fixed-source child-process execution, so timeout
+  and cancellation can hard-kill native SQLite work. Rows and schema remain
+  live-only; Ledger, Replay, SSE, Workflow receipts, and Web Trace retain
+  hashes, counts, truncation, duration, worker, runtime, and limit evidence.
+  SQLite temporary state is confined to the private snapshot directory. The
+  new `data-analysis` Skill guides schema-first, parameterized,
+  aggregate-oriented analysis. Agent, typed Workflow Tool node, concurrency,
+  drift, privacy, and real SQLite smoke tests cover the complete path.
 - Added semantic verification for citation-backed Markdown reports.
   `research_source verify_report` reads a caller-hash-bound `.md` or
   `.markdown` file through the canonical non-symlink workspace boundary,

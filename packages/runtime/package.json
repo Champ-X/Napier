@@ -20,6 +20,7 @@
     "test:live-files": "NAPIER_LIVE_WORKSPACE_FILE_SMOKE=1 vitest run test/live-workspace-file-smoke.test.ts --testTimeout=30000",
     "test:live-lsp": "NAPIER_LIVE_LSP_SMOKE=1 vitest run test/live-lsp-diagnostics-smoke.test.ts --testTimeout=30000",
     "test:live-process": "NAPIER_LIVE_WORKSPACE_PROCESS_SMOKE=1 vitest run test/live-workspace-process-smoke.test.ts --testTimeout=30000",
+    "test:live-sqlite": "NAPIER_LIVE_SQLITE_SMOKE=1 vitest run test/live-sqlite-query-smoke.test.ts --testTimeout=30000",
     "test:live-deepseek": "NAPIER_LIVE_DEEPSEEK_SMOKE=1 vitest run test/live-deepseek-smoke.test.ts --testTimeout=60000",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

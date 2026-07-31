@@ -55,6 +55,7 @@ const SAFE_RECOVERY_TOOLS = new Set([
   "search_files",
   "list_symbols",
   "inspect_data",
+  "sqlite_query",
   "inspect_code",
   "read_symbol",
   "ast_query",

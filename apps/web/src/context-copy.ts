@@ -119,6 +119,7 @@ export const contextCopy = {
     search_files: "Search files",
     list_symbols: "List symbols",
     inspect_data: "Inspect data",
+    sqlite_query: "SQLite query",
     inspect_code: "Inspect code",
     read_symbol: "Read symbol",
     ast_query: "AST query",
