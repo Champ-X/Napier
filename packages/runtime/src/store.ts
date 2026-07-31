@@ -542,6 +542,10 @@ import {
   WORKFLOW_NODE_EXECUTION,
   type WorkflowNodeExecution,
 } from "./workflow-node-execution.js";
+import {
+  AGENT_MESSAGE_EXPERIMENT_EXECUTION,
+  type AgentMessageExperimentExecution,
+} from "./agent-message-experiment-execution.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
@@ -740,6 +744,7 @@ export interface CreateRunInput {
   source?: RunInvocationSource;
   triggerId?: string;
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
+  [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
 }
 
 export interface RunLeaseOptions {
@@ -11262,7 +11267,113 @@ export class LocalStore {
         );
       }
     }
-    if (executionMode === "safe_read_only_recovery") {
+    const messageExperiment = input[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
+    if (executionMode === "agent_experiment_read_only") {
+      const branchRun = input.parentRunId
+        ? this.state.runs.find(
+            (candidate) => candidate.id === input.parentRunId,
+          )
+        : undefined;
+      const sourceRun = messageExperiment
+        ? this.state.runs.find(
+            (candidate) => candidate.id === messageExperiment.sourceRunId,
+          )
+        : undefined;
+      const sourceEvents = messageExperiment
+        ? this.requireLedger().listEvents(messageExperiment.sourceThreadId)
+        : [];
+      const sourceMessage = sourceEvents.find(
+        (event) =>
+          event.seq === messageExperiment?.sourceMessageSeq &&
+          event.runId === messageExperiment.sourceRunId &&
+          event.type === "message.user",
+      );
+      const sourcePromptVariables = sourceEvents.filter(
+        (event) =>
+          event.runId === messageExperiment?.sourceRunId &&
+          event.type === "context.prompt_variables",
+      );
+      const sourceConfiguration =
+        sourceRun?.configuration &&
+        "promptVariableSnapshotSha256" in sourceRun.configuration
+          ? sourceRun.configuration
+          : undefined;
+      const sourcePromptVariablePayload =
+        sourcePromptVariables.length === 1 &&
+        isRecord(sourcePromptVariables[0]?.payload)
+          ? sourcePromptVariables[0].payload
+          : undefined;
+      const sourcePromptVariableSnapshotSha256 =
+        sourceConfiguration?.promptVariableSnapshotSha256;
+      const sourceMessageText =
+        sourceMessage && isRecord(sourceMessage.payload)
+          ? sourceMessage.payload["text"]
+          : undefined;
+      const branchEvents =
+        branchRun &&
+        this.requireLedger()
+          .listEvents(input.threadId)
+          .filter(
+            (event) =>
+              event.runId === branchRun.id &&
+              event.type === "branch.created" &&
+              event.category === "lifecycle" &&
+              event.visibility === "user" &&
+              isRecord(event.payload) &&
+              Object.keys(event.payload).length === 2 &&
+              event.payload["sourceThreadId"] ===
+                messageExperiment?.sourceThreadId &&
+              event.payload["sourceSeq"] === branchRun.branchFromSeq,
+          );
+      if (
+        input.source !== "user" ||
+        !messageExperiment ||
+        !branchRun ||
+        branchRun.threadId !== input.threadId ||
+        branchRun.agentId !== input.agentId ||
+        branchRun.status !== "completed" ||
+        branchRun.parentRunId !== messageExperiment.sourceRunId ||
+        branchRun.branchFromSeq !== messageExperiment.sourceMessageSeq - 1 ||
+        branchEvents?.length !== 1 ||
+        !sourceRun ||
+        sourceRun.threadId !== messageExperiment.sourceThreadId ||
+        sourceRun.agentId !== input.agentId ||
+        sourceRun.status === "running" ||
+        sourceRun.status === "queued" ||
+        !sourceConfiguration ||
+        sourceConfiguration.contentSha256 !==
+          messageExperiment.sourceRunConfigurationSha256 ||
+        input.skillCatalogSha256 !== sourceConfiguration.skillCatalogSha256 ||
+        input.promptVariables?.catalogSha256 !==
+          sourceConfiguration.promptVariableCatalogSha256 ||
+        input.promptVariables?.snapshotSha256 !==
+          sourceConfiguration.promptVariableSnapshotSha256 ||
+        input.promptVariables?.renderedSystemPromptSha256 !==
+          sourceConfiguration.resolvedSystemPromptSha256 ||
+        sourcePromptVariablePayload?.["resolvedAt"] !==
+          messageExperiment.sourcePromptVariableResolvedAt ||
+        sourcePromptVariablePayload?.["contentSha256"] !==
+          sourcePromptVariableSnapshotSha256 ||
+        !Number.isFinite(
+          Date.parse(messageExperiment.sourcePromptVariableResolvedAt),
+        ) ||
+        sourceRun.agentRevision !== runAgent.revision ||
+        typeof sourceMessageText !== "string" ||
+        sha256(sourceMessageText) !== messageExperiment.sourcePromptSha256 ||
+        !/^[a-f0-9]{64}$/u.test(messageExperiment.previewSha256) ||
+        !/^[a-f0-9]{64}$/u.test(
+          messageExperiment.candidateWorkspaceSnapshotSha256,
+        )
+      ) {
+        throw new Error(
+          "Read-only Agent experiment requires its verified message Branch capability",
+        );
+      }
+    } else if (messageExperiment) {
+      throw new Error(
+        "Agent experiment capability requires read-only experiment execution",
+      );
+    } else if (executionMode === "safe_read_only_recovery") {
       const parent = input.parentRunId
         ? this.state.runs.find(
             (candidate) => candidate.id === input.parentRunId,

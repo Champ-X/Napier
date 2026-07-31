@@ -6,6 +6,21 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added controlled historical user-message re-execution. A preview binds one
+  terminal user Run and exact message to its frozen Agent revision, schema-7/8
+  configuration, Prompt Variable timestamp/snapshot, Skill catalog, reviewed
+  Memory context, complete message history, configured candidate model, and
+  current Workspace snapshot. Execution creates an isolated Branch immediately
+  before the message, proves copied visible and Goal-continuation context, and
+  runs only through `agent_experiment_read_only`: observe policy, read-only
+  tools, no subagents, Sessions, Plan/Memory mutation, or writes. Source and
+  target status, configuration, output hash, latency, usage, cost, tools, and
+  effects are compared through CLI JSONL, HTTP SSE, TypeScript SDK, and local
+  stdio RPC. Cancellation, timeout, Provider failure, safe retry, concurrency,
+  drift, forged-mode, portable Replay, and privacy-bounded Web Trace tests cover
+  the path. The opt-in DeepSeek source-and-rerun smoke is implemented; this
+  environment lacked `DEEPSEEK_API_KEY`, so the attempted live gate failed
+  before network execution and is not claimed as passed.
 - Added typed deterministic Reduce nodes to executable Workflows. A Reduce
   selects one required bounded array and can count, sum, find an extremum, or
   fold Boolean all/any values directly or through a required item field path.

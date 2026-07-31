@@ -1,6 +1,7 @@
 import type { Writable } from "node:stream";
 
 import type {
+  AgentMessageExperimentRuntime,
   EmbeddedAgentService,
   EmbeddedWorkflowService,
   ExecutionPlanWorkflowExperimentRuntime,
@@ -37,6 +38,7 @@ export interface NapierRpcServerOptions {
     "run" | "resume" | "answerAndResume"
   >;
   experiments: Pick<ExecutionPlanWorkflowExperimentRuntime, "preview" | "run">;
+  agentExperiments: Pick<AgentMessageExperimentRuntime, "preview" | "run">;
   input: AsyncIterable<Buffer | string>;
   output: Writable;
   serverVersion: string;
@@ -130,6 +132,8 @@ export async function runNapierRpcServer(
               capabilities: {
                 agentRun: true,
                 agentResume: true,
+                agentMessageExperimentPreview: true,
+                agentMessageExperimentRun: true,
                 workflowRun: true,
                 workflowResume: true,
                 workflowApprovalAnswer: true,
@@ -200,6 +204,7 @@ export async function runNapierRpcServer(
             agents: options.agents,
             workflows: options.workflows,
             experiments: options.experiments,
+            agentExperiments: options.agentExperiments,
           },
           message,
         );

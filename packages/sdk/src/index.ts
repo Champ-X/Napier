@@ -1,4 +1,6 @@
 import type {
+  AgentMessageExperimentPreview,
+  AgentMessageExperimentResult,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResult,
   ExecutionPlanWorkflowManifest,
@@ -19,12 +21,22 @@ import {
 } from "@napier/runtime";
 
 import {
+  previewNapierAgentMessageExperiment,
+  runNapierAgentMessageExperiment,
+  type PreviewNapierAgentMessageExperimentOptions,
+  type RunNapierAgentMessageExperimentOptions,
+} from "./agent-message-experiments.js";
+import {
   previewNapierWorkflowExperiment,
   runNapierWorkflowExperiment,
   type PreviewNapierWorkflowExperimentOptions,
   type RunNapierWorkflowExperimentOptions,
 } from "./workflow-experiments.js";
 
+export type {
+  PreviewNapierAgentMessageExperimentOptions,
+  RunNapierAgentMessageExperimentOptions,
+} from "./agent-message-experiments.js";
 export type {
   PreviewNapierWorkflowExperimentOptions,
   RunNapierWorkflowExperimentOptions,
@@ -142,6 +154,14 @@ export interface NapierClient {
 
   resumeAgent(options: ResumeNapierAgentOptions): Promise<NapierAgentExecution>;
 
+  previewAgentMessageExperiment(
+    options: PreviewNapierAgentMessageExperimentOptions,
+  ): Promise<AgentMessageExperimentPreview>;
+
+  runAgentMessageExperiment(
+    options: RunNapierAgentMessageExperimentOptions,
+  ): Promise<AgentMessageExperimentResult>;
+
   defineWorkflow<TInput extends JsonValue, TOutput extends JsonValue>(
     definition: DefineNapierWorkflowInput<TInput, TOutput>,
   ): Promise<NapierWorkflow<TInput, TOutput>>;
@@ -233,6 +253,30 @@ class LocalNapierClient implements NapierClient {
       execution.threadId,
       execution.run,
       execution.assistantText,
+    );
+  }
+
+  async previewAgentMessageExperiment(
+    options: PreviewNapierAgentMessageExperimentOptions,
+  ): Promise<AgentMessageExperimentPreview> {
+    return this.track(() =>
+      previewNapierAgentMessageExperiment(
+        this.services,
+        options,
+        combinedSignal(options.signal, this.closeController.signal),
+      ),
+    );
+  }
+
+  async runAgentMessageExperiment(
+    options: RunNapierAgentMessageExperimentOptions,
+  ): Promise<AgentMessageExperimentResult> {
+    return this.track(() =>
+      runNapierAgentMessageExperiment(
+        this.services,
+        options,
+        combinedSignal(options.signal, this.closeController.signal),
+      ),
     );
   }
 

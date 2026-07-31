@@ -99,6 +99,8 @@ describe("Napier RPC CLI", () => {
         result: expect.objectContaining({
           serverInfo: { name: "napier", version: "0.1.0" },
           capabilities: expect.objectContaining({
+            agentMessageExperimentPreview: true,
+            agentMessageExperimentRun: true,
             eventNotifications: true,
             requestCancellation: true,
           }),
@@ -158,6 +160,88 @@ describe("Napier RPC CLI", () => {
         sha256(JSON.stringify(params["event"])),
       );
     }
+    const sourceMessage = rpc
+      .messages()
+      .filter(
+        (candidate) =>
+          candidate["method"] === "napier/event" &&
+          record(candidate["params"])?.["requestId"] === 2,
+      )
+      .map((message) => record(record(message["params"])?.["event"]))
+      .find((event) => event?.["type"] === "message.user")!;
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "agent-experiment-preview",
+      method: "napier/agent/experiment/preview",
+      params: {
+        sourceThreadId: threadId,
+        sourceRunId: firstResult!["runId"],
+        sourceMessageSeq: sourceMessage["seq"],
+      },
+    });
+    const experimentPreview = record(
+      (await rpc.waitForId("agent-experiment-preview"))["result"],
+    )!;
+    expect(experimentPreview).toEqual(
+      expect.objectContaining({
+        sourceThreadId: threadId,
+        sourceRunId: firstResult!["runId"],
+        sourceMessageSeq: sourceMessage["seq"],
+        targetExecutionMode: "agent_experiment_read_only",
+        previewSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "agent-experiment-run",
+      method: "napier/agent/experiment/run",
+      params: {
+        sourceThreadId: threadId,
+        sourceRunId: firstResult!["runId"],
+        sourceMessageSeq: sourceMessage["seq"],
+        expectedPreviewSha256: experimentPreview["previewSha256"],
+      },
+    });
+    const agentExperiment = record(
+      (await rpc.waitForId("agent-experiment-run"))["result"],
+    )!;
+    expect(agentExperiment).toEqual(
+      expect.objectContaining({
+        sourceThreadId: threadId,
+        sourceRunId: firstResult!["runId"],
+        sourceMessageSeq: sourceMessage["seq"],
+        targetThreadId: expect.stringMatching(/^thread_/u),
+        targetRunId: expect.stringMatching(/^run_/u),
+        status: "completed",
+        previewSha256: experimentPreview["previewSha256"],
+        experiment: expect.objectContaining({
+          comparison: expect.objectContaining({
+            target: expect.objectContaining({
+              executionMode: "agent_experiment_read_only",
+            }),
+          }),
+        }),
+      }),
+    );
+    expect(
+      rpc
+        .messages()
+        .filter(
+          (candidate) =>
+            candidate["method"] === "napier/event" &&
+            record(candidate["params"])?.["requestId"] ===
+              "agent-experiment-run",
+        )
+        .map(
+          (message) => record(record(message["params"])?.["event"])?.["type"],
+        ),
+    ).toEqual(
+      expect.arrayContaining([
+        "agent.experiment.started",
+        "message.assistant",
+        "agent.experiment.compared",
+      ]),
+    );
 
     rpc.send({
       jsonrpc: "2.0",
@@ -203,6 +287,14 @@ describe("Napier RPC CLI", () => {
     expect(
       verifyThreadReplayBundle(await exportThreadReplayBundle(store, threadId))
         .status,
+    ).toBe("valid");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(
+          store,
+          String(agentExperiment["targetThreadId"]),
+        ),
+      ).status,
     ).toBe("valid");
     store.close();
   }, 20_000);

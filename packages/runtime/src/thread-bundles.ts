@@ -661,16 +661,6 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
   ) {
     throw new Error("Thread replay bundle thread.runIds do not match runs");
   }
-  for (const [index, run] of runRecords.entries()) {
-    if (
-      run["parentRunId"] !== undefined &&
-      !runIds.has(String(run["parentRunId"]))
-    ) {
-      throw new Error(
-        `Thread replay bundle run references unknown parent: runs[${index}]`,
-      );
-    }
-  }
   if (
     thread["currentRunId"] !== undefined &&
     !runIds.has(String(thread["currentRunId"]))
@@ -720,6 +710,17 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
       `Thread replay bundle events[${index}]`,
     );
     typedEvents.push(value as RunEvent);
+  }
+  for (const [index, run] of runRecords.entries()) {
+    if (
+      run["parentRunId"] !== undefined &&
+      !runIds.has(String(run["parentRunId"])) &&
+      !hasExternalBranchParentEvidence(run, typedEvents, threadId)
+    ) {
+      throw new Error(
+        `Thread replay bundle run references unknown parent: runs[${index}]`,
+      );
+    }
   }
   assertThreadImportProvenanceReceipt(threadImportProvenance, typedEvents);
   assertEmbeddedModelContextEnvelopeReceipts(record, "bundle");
@@ -2341,6 +2342,44 @@ function assertJsonValue(value: unknown, label: string, depth = 0): void {
     return;
   }
   throw new Error(`Thread replay bundle ${label} is not JSON`);
+}
+
+function hasExternalBranchParentEvidence(
+  run: Record<string, unknown>,
+  events: RunEvent[],
+  threadId: string,
+): boolean {
+  const branchFromSeq = run["branchFromSeq"];
+  const runId = run["id"];
+  if (
+    !Number.isSafeInteger(branchFromSeq) ||
+    Number(branchFromSeq) < 1 ||
+    typeof runId !== "string"
+  ) {
+    return false;
+  }
+  const matches = events.filter(
+    (event) =>
+      event.runId === runId &&
+      event.type === "branch.created" &&
+      event.category === "lifecycle" &&
+      event.visibility === "user",
+  );
+  const payload =
+    matches.length === 1 &&
+    matches[0]!.payload &&
+    typeof matches[0]!.payload === "object" &&
+    !Array.isArray(matches[0]!.payload)
+      ? matches[0]!.payload
+      : undefined;
+  return Boolean(
+    payload &&
+    Object.keys(payload).length === 2 &&
+    typeof payload["sourceThreadId"] === "string" &&
+    RESOURCE_ID.test(payload["sourceThreadId"]) &&
+    payload["sourceThreadId"] !== threadId &&
+    payload["sourceSeq"] === branchFromSeq,
+  );
 }
 
 function assertStringArray(value: unknown, label: string): string[] {

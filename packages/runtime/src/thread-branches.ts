@@ -23,10 +23,15 @@ export interface ThreadBranchResult {
   detail: ThreadDetail;
 }
 
+export interface ThreadBranchOptions {
+  includeGoalContinuationPrompts?: boolean;
+}
+
 export async function createThreadBranch(
   store: LocalStore,
   sourceThreadId: string,
   request: CreateBranchRequest,
+  options: ThreadBranchOptions = {},
 ): Promise<ThreadBranchResult> {
   if (!Number.isSafeInteger(request.fromSeq) || request.fromSeq < 1) {
     throw new ThreadBranchRequestError("Thread branch sequence is invalid");
@@ -54,7 +59,10 @@ export async function createThreadBranch(
     sourceRunIds.has(event.runId),
   )?.runId;
   const messageEvents = sourceEvents.filter(
-    (event) => event.category === "message",
+    (event) =>
+      event.category === "message" ||
+      (options.includeGoalContinuationPrompts === true &&
+        event.type === "goal.continuation.prompt"),
   );
   const branch = await store.createThread({
     title,

@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 69,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-DveN1ITe.js",
+    "path": "apps/web/dist/assets/index-BZCJMOII.js",
     "sizeBytes": 133200,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "432d5d1e4202cc4b7e71a85a10066609cb12e023147b51ab782469ed0ecef633"
+    "sha256": "de3d6afd3e50eec877f6ff023ac62998e44fc0e46adcb3bf5dbf0f550bcfc8f4"
   },
-  "distContentSha256": "432d5d1e4202cc4b7e71a85a10066609cb12e023147b51ab782469ed0ecef633",
+  "distContentSha256": "de3d6afd3e50eec877f6ff023ac62998e44fc0e46adcb3bf5dbf0f550bcfc8f4",
   "errors": []
 }

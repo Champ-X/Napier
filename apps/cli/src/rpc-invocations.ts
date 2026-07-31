@@ -1,5 +1,8 @@
 import type {
+  AgentMessageExperimentPreview,
+  AgentMessageExperimentResult,
   ExecutionPlanWorkflowExperimentPreview,
+  NapierRpcAgentMessageExperimentExecution,
   NapierRpcAgentExecution,
   NapierRpcWorkflowExperimentExecution,
   NapierRpcWorkflowExecution,
@@ -8,14 +11,20 @@ import type {
 import type {
   EmbeddedAgentService,
   EmbeddedWorkflowService,
+  AgentMessageExperimentRuntime,
   ExecutionPlanWorkflowExperimentRuntime,
 } from "@napier/runtime";
 import {
+  AgentMessageExperimentPreviewChangedError,
   EmbeddedWorkflowApprovalError,
   streamEventFrame,
   WorkflowExperimentConflictError,
 } from "@napier/runtime";
 
+import {
+  parseAgentMessageExperimentPreviewParams,
+  parseAgentMessageExperimentRunParams,
+} from "./rpc-agent-message-experiments.js";
 import {
   parseAgentResumeParams,
   parseAgentRunParams,
@@ -39,6 +48,7 @@ export interface RpcInvocationServices {
     "run" | "resume" | "answerAndResume"
   >;
   experiments: Pick<ExecutionPlanWorkflowExperimentRuntime, "preview" | "run">;
+  agentExperiments: Pick<AgentMessageExperimentRuntime, "preview" | "run">;
 }
 
 interface RpcInvocationOutcome {
@@ -46,6 +56,8 @@ interface RpcInvocationOutcome {
   returnCancelledResult?: boolean;
   result:
     | NapierRpcAgentExecution
+    | AgentMessageExperimentPreview
+    | NapierRpcAgentMessageExperimentExecution
     | NapierRpcWorkflowExecution
     | ExecutionPlanWorkflowExperimentPreview
     | NapierRpcWorkflowExperimentExecution;
@@ -59,6 +71,8 @@ type RpcInvocation = (
 const INVOCATION_METHODS = new Set([
   "napier/agent/run",
   "napier/agent/resume",
+  "napier/agent/experiment/preview",
+  "napier/agent/experiment/run",
   "napier/workflow/run",
   "napier/workflow/resume",
   "napier/workflow/answer",
@@ -115,6 +129,35 @@ export function prepareRpcInvocation(
             : {}),
           run: execution.run,
         },
+      };
+    };
+  }
+  if (request.method === "napier/agent/experiment/preview") {
+    const { sourceThreadId, ...experimentRequest } =
+      parseAgentMessageExperimentPreviewParams(request.params);
+    return async (signal) => ({
+      cancelled: false,
+      result: await services.agentExperiments.preview(
+        sourceThreadId,
+        experimentRequest,
+        signal,
+      ),
+    });
+  }
+  if (request.method === "napier/agent/experiment/run") {
+    const { sourceThreadId, ...experimentRequest } =
+      parseAgentMessageExperimentRunParams(request.params);
+    return async (signal, onEvent) => {
+      const experiment = await services.agentExperiments.run({
+        sourceThreadId,
+        request: experimentRequest,
+        signal,
+        onEvent,
+      });
+      return {
+        cancelled: experiment.status === "cancelled",
+        returnCancelledResult: experiment.status === "cancelled",
+        result: agentMessageExperimentExecution(experiment),
       };
     };
   }
@@ -271,6 +314,21 @@ function workflowOutcome(
   };
 }
 
+function agentMessageExperimentExecution(
+  experiment: AgentMessageExperimentResult,
+): NapierRpcAgentMessageExperimentExecution {
+  return {
+    sourceThreadId: experiment.preview.sourceThreadId,
+    sourceRunId: experiment.preview.sourceRunId,
+    sourceMessageSeq: experiment.preview.sourceMessageSeq,
+    targetThreadId: experiment.targetThreadId,
+    targetRunId: experiment.targetRunId,
+    status: experiment.status,
+    previewSha256: experiment.preview.previewSha256,
+    experiment,
+  };
+}
+
 function invocationError(
   id: JsonRpcRequest["id"],
   error: unknown,
@@ -282,6 +340,9 @@ function invocationError(
   }
   if (error instanceof WorkflowExperimentConflictError) {
     return rpcError(id, -32004, "Workflow experiment conflict", error);
+  }
+  if (error instanceof AgentMessageExperimentPreviewChangedError) {
+    return rpcError(id, -32005, "Agent message experiment conflict", error);
   }
   return rpcError(id, -32603, "Internal error", error);
 }

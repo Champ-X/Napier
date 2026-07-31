@@ -4,10 +4,13 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { AgentMessageExperimentRuntime } from "../src/agent-message-experiments.js";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { CredentialReferenceStore } from "../src/credentials.js";
 import { ModelRegistry } from "../src/models.js";
+import { exportThreadReplayBundle } from "../src/replay.js";
 import { LocalStore } from "../src/store.js";
+import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
 
 const LIVE_DEEPSEEK_ENABLED = process.env.NAPIER_LIVE_DEEPSEEK_SMOKE === "1";
 const describeLive = LIVE_DEEPSEEK_ENABLED ? describe : describe.skip;
@@ -75,5 +78,54 @@ describeLive("live DeepSeek smoke", () => {
     );
     expect(events.some((event) => event.type === "run.completed")).toBe(true);
     expect(JSON.stringify(events)).not.toContain(apiKey);
-  }, 60_000);
+
+    const sourceMessage = events.find(
+      (event) => event.runId === run.id && event.type === "message.user",
+    )!;
+    const experiments = new AgentMessageExperimentRuntime(store, runtime);
+    const preview = await experiments.preview(thread.id, {
+      sourceRunId: run.id,
+      sourceMessageSeq: sourceMessage.seq,
+    });
+    const experiment = await experiments.run({
+      sourceThreadId: thread.id,
+      request: {
+        sourceRunId: run.id,
+        sourceMessageSeq: sourceMessage.seq,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+    });
+    expect(experiment.status).toBe("completed");
+    expect(experiment.comparison).toEqual(
+      expect.objectContaining({
+        source: expect.objectContaining({ status: "completed" }),
+        target: expect.objectContaining({
+          status: "completed",
+          executionMode: "agent_experiment_read_only",
+          toolEffects: expect.objectContaining({
+            writeCount: 0,
+            unknownCount: 0,
+            unresolvedCount: 0,
+          }),
+        }),
+      }),
+    );
+    expect(experiment.targetThreadId).not.toBe(thread.id);
+    const experimentEvents = (
+      await store.listEvents(experiment.targetThreadId)
+    ).filter((event) => event.type.startsWith("agent.experiment."));
+    expect(experimentEvents.map((event) => event.type)).toEqual([
+      "agent.experiment.started",
+      "agent.experiment.compared",
+    ]);
+    expect(JSON.stringify(experimentEvents)).not.toContain(
+      "NAPIER_LIVE_SMOKE_OK",
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(store, experiment.targetThreadId),
+      ).status,
+    ).toBe("valid");
+    store.close();
+  }, 90_000);
 });

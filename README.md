@@ -54,6 +54,14 @@ Version `0.1.0` includes:
   retry, latency, usage, cost, tool, output, Evaluation, and Artifact
   comparison, plus SDK, local RPC, CLI, HTTP, and a lazy Plan Workbench desk
   for the complete preview-confirm-execute-inspect flow;
+- controlled Agent message experiments that select a terminal historical
+  `message.user`, freeze its Agent revision, Prompt Variables, Skill catalog,
+  reviewed Memory context, complete model-message history, and current
+  Workspace snapshot, then rerun it in an isolated read-only Branch with an
+  optional model replacement. CLI JSONL, HTTP SSE, TypeScript SDK, and local
+  stdio RPC return a hash-bound source/target status, configuration, latency,
+  usage, cost, output, and tool comparison while experiment-specific Ledger
+  and Trace evidence remains prompt/result-body-free;
 - a checked product-path performance budget over three cold built-CLI JSONL
   runs, shared Runtime bootstrap, the production `read_file` executor, a
   1,000-event SQLite Thread, observed RSS, and closed-ledger database growth,
@@ -462,6 +470,41 @@ branching, not model/tool checkpoint re-execution or side-effect replay. The
 CLI interactive session is line-oriented; it does not claim a full-screen TUI,
 ACP, or Desktop packaging.
 
+Preview and execute a controlled read-only rerun of one historical user
+message:
+
+```bash
+npm run --silent napier -- experiment \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --run run_example \
+  --message-seq 42 \
+  --preview \
+  --jsonl
+
+npm run --silent napier -- experiment \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --run run_example \
+  --message-seq 42 \
+  --model deepseek/deepseek-v4-flash \
+  --expected-preview <sha256> \
+  --jsonl
+```
+
+Preview performs no mutation and fails closed if the source Run is not a
+terminal user Run with modern configuration evidence, or if its frozen Agent,
+Prompt Variables, Skills, reviewed Memory, candidate model, or complete
+Workspace snapshot are unavailable. Execution reprojects the same inputs,
+creates a Branch immediately before the selected message, proves its copied
+model-message history matches the preview, and runs only the configured
+read-only tool subset with no Sessions, Plan/Memory mutation, write tools, or
+subagents. A cancelled, timed-out, or failed target remains comparable; retry
+creates a new isolated target from the unchanged source rather than resuming
+uncertain model state.
+
 Run one local Runtime as a line-delimited stdio JSON-RPC 2.0 process for an
 editor, desktop shell, or automation host:
 
@@ -472,8 +515,10 @@ npm run --silent napier -- rpc \
 ```
 
 The client first sends `initialize`, then calls Agent, Workflow, Approval, or
-Workflow experiment methods. `napier/workflow/experiment/preview` projects a
-source Thread/Plan checkpoint without mutation;
+experiment methods. `napier/agent/experiment/preview` and
+`napier/agent/experiment/run` expose the same preview-bound historical-message
+path as the CLI. `napier/workflow/experiment/preview` projects a source
+Thread/Plan checkpoint without mutation;
 `napier/workflow/experiment/run` requires the returned `previewSha256`, creates
 an isolated target Thread, reuses verified ancestors, reruns the selected
 descendants, and returns the candidate Manifest and source/target comparison.
@@ -2762,6 +2807,26 @@ try {
     confirmSideEffects: preview.requiresSideEffectConfirmation,
     onEvent,
   });
+  let sourceMessageSeq = 0;
+  const source = await client.runAgent({
+    prompt: "Record an Agent message checkpoint.",
+    onEvent: (event) => {
+      if (event.type === "message.user") sourceMessageSeq = event.seq;
+      onEvent(event);
+    },
+  });
+  const messagePreview = await client.previewAgentMessageExperiment({
+    sourceThreadId: source.threadId,
+    sourceRunId: source.runId,
+    sourceMessageSeq,
+  });
+  await client.runAgentMessageExperiment({
+    sourceThreadId: source.threadId,
+    sourceRunId: source.runId,
+    sourceMessageSeq,
+    expectedPreviewSha256: messagePreview.previewSha256,
+    onEvent,
+  });
 } finally {
   await client.close();
 }
@@ -2778,6 +2843,9 @@ one answer and resuming. `previewWorkflowExperiment()` is read-only;
 write/unknown-effect confirmation fail-closed while returning recovery-ready
 target Thread/Plan and candidate Manifest data. `runAgent()` validates its
 prompt, model, title, and Thread/Agent binding before mutation;
+`previewAgentMessageExperiment()` and `runAgentMessageExperiment()` expose the
+same frozen historical-message source and read-only isolated target as
+CLI/HTTP/RPC, with an exact preview hash required for every execution.
 `resumeAgent()` uses the same interrupted-Run recovery path as CLI. Agent,
 Deterministic, Tool, Approval, condition, parallelism, retry, cancellation,
 recovery, policy, Sandbox, and Ledger behavior remain the existing Runtime
@@ -2920,6 +2988,18 @@ reopened or newly failed node cannot inherit a historical successful output.
 The complete comparison is delivered in the existing JSONL/SSE terminal frame;
 `workflow.experiment.compared` records only bounded counts, deltas, statuses,
 and hashes for Ledger and Web Trace.
+
+`AgentMessageExperimentRuntime` is the corresponding controlled re-execution
+path for a terminal user-message Run. HTTP exposes
+`POST /api/threads/:threadId/agent-experiments/preview` and
+`POST /api/threads/:threadId/agent-experiments`. The second route requires the
+exact preview hash, streams only newly appended target events, then emits the
+authoritative target Snapshot and `agent_message_experiment_result` frame.
+The target always uses `agent_experiment_read_only`; Store validates its
+source Run, exact message, frozen Prompt Variable evidence, internal Branch
+lineage, Agent revision, Skill/Prompt configuration, and parent Run before
+creation. Experiment-specific Trace summaries expose only safe IDs, statuses,
+metric deltas, models, counts, and hash prefixes.
 
 The lazy Plan Workbench experiment desk consumes those same routes rather than
 implementing a browser scheduler. Uploaded Manifest text remains browser-local

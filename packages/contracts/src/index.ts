@@ -1101,6 +1101,87 @@ export type ExecuteExecutionPlanWorkflowRequest =
       input?: never;
     };
 
+export interface AgentMessageExperimentToolEffects {
+  toolCallCount: number;
+  readOnlyCount: number;
+  writeCount: number;
+  unknownCount: number;
+  unresolvedCount: number;
+  writeToolNames: string[];
+  unknownToolNames: string[];
+}
+
+export interface CreateAgentMessageExperimentRequest {
+  sourceRunId: string;
+  sourceMessageSeq: number;
+  model?: ModelRef;
+  title?: string;
+  expectedPreviewSha256?: string;
+}
+
+export interface AgentMessageExperimentPreview {
+  kind: "napier.agent-message-experiment-preview";
+  schemaVersion: 1;
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceMessageSeq: number;
+  branchFromSeq: number;
+  sourceAgentId: string;
+  sourceAgentRevision: number;
+  sourceRunConfigurationSha256: string;
+  sourcePromptVariableResolvedAt: string;
+  sourcePromptSha256: string;
+  sourceHistorySha256: string;
+  sourceHistoryMessageCount: number;
+  sourceMemoryContextSha256: string;
+  sourceSkillCatalogSha256: string;
+  candidateWorkspaceSnapshotSha256: string;
+  candidateWorkspaceFileCount: number;
+  candidateWorkspaceBytes: number;
+  sourceModel: ModelRef;
+  targetModel: ModelRef;
+  targetExecutionMode: "agent_experiment_read_only";
+  targetToolNames: string[];
+  sourceToolEffects: AgentMessageExperimentToolEffects;
+  previewSha256: string;
+}
+
+export interface AgentMessageExperimentRunObservation {
+  threadId: string;
+  runId: string;
+  status: TerminalRunStatus;
+  configurationSha256: string;
+  model: ModelRef;
+  executionMode: RunExecutionMode;
+  metrics: RunMetrics;
+  toolNames: string[];
+  toolEffects: AgentMessageExperimentToolEffects;
+}
+
+export interface AgentMessageExperimentComparison {
+  kind: "napier.agent-message-experiment-comparison";
+  schemaVersion: 1;
+  source: AgentMessageExperimentRunObservation;
+  target: AgentMessageExperimentRunObservation;
+  metricDelta: RunMetricDelta;
+  outputChanged: boolean;
+  addedToolNames: string[];
+  removedToolNames: string[];
+  configurationDelta: RunConfigurationDelta;
+  contentSha256: string;
+}
+
+export interface AgentMessageExperimentResult {
+  kind: "napier.agent-message-experiment-result";
+  schemaVersion: 1;
+  preview: AgentMessageExperimentPreview;
+  targetThreadId: string;
+  targetRunId: string;
+  status: TerminalRunStatus;
+  assistantText?: string;
+  comparison: AgentMessageExperimentComparison;
+}
+
 export interface ExecutionPlanWorkflowExperimentToolEffects {
   nodeId: string;
   attemptCount: number;
@@ -2365,7 +2446,8 @@ export interface AutomaticRecoveryPolicy {
 export type RunExecutionMode =
   | "standard"
   | "safe_read_only_recovery"
-  | "workflow_map_read_only";
+  | "workflow_map_read_only"
+  | "agent_experiment_read_only";
 
 export interface SubagentTask {
   id: string;
@@ -7938,6 +8020,24 @@ export interface ExecutionPlanWorkflowExperimentResultFrame {
   previewSha256: string;
   candidateManifestSha256: string;
   experiment: ExecutionPlanWorkflowExperimentResult;
+  snapshotSha256: string;
+  snapshotBytes: number;
+  eventCount: number;
+  eventBytes: number;
+  eventStreamSha256: string;
+  contentSha256: string;
+}
+
+export interface AgentMessageExperimentResultFrame {
+  type: "agent_message_experiment_result";
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceMessageSeq: number;
+  targetThreadId: string;
+  targetRunId: string;
+  status: TerminalRunStatus;
+  previewSha256: string;
+  experiment: AgentMessageExperimentResult;
   snapshotSha256: string;
   snapshotBytes: number;
   eventCount: number;

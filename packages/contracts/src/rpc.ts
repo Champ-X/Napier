@@ -1,5 +1,8 @@
 import type {
+  AgentMessageExperimentPreview,
+  AgentMessageExperimentResult,
   AnswerOperatorDecisionRequest,
+  CreateAgentMessageExperimentRequest,
   CreateExecutionPlanWorkflowExperimentRequest,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowExperimentPreview,
@@ -12,6 +15,7 @@ import type {
   RunEvent,
   RunRecord,
   RunStatus,
+  TerminalRunStatus,
 } from "./index.js";
 
 export const NAPIER_RPC_PROTOCOL_VERSION = 1;
@@ -37,6 +41,21 @@ export interface NapierRpcAgentResumeParams {
   threadId: string;
   runId?: string;
   model?: ModelRef;
+}
+
+export interface NapierRpcAgentMessageExperimentPreviewParams extends Omit<
+  CreateAgentMessageExperimentRequest,
+  "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+}
+
+export interface NapierRpcAgentMessageExperimentRunParams extends Omit<
+  CreateAgentMessageExperimentRequest,
+  "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+  expectedPreviewSha256: string;
 }
 
 export interface NapierRpcWorkflowRunParams {
@@ -98,6 +117,18 @@ export type NapierRpcRequest =
       id: NapierRpcId;
       method: "napier/agent/resume";
       params: NapierRpcAgentResumeParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/agent/experiment/preview";
+      params: NapierRpcAgentMessageExperimentPreviewParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/agent/experiment/run";
+      params: NapierRpcAgentMessageExperimentRunParams;
     }
   | {
       jsonrpc: "2.0";
@@ -165,6 +196,8 @@ export interface NapierRpcInitializeResult {
   capabilities: {
     agentRun: true;
     agentResume: true;
+    agentMessageExperimentPreview: true;
+    agentMessageExperimentRun: true;
     workflowRun: true;
     workflowResume: true;
     workflowApprovalAnswer: true;
@@ -182,6 +215,17 @@ export interface NapierRpcAgentExecution {
   status: RunStatus;
   assistantText?: string;
   run: RunRecord;
+}
+
+export interface NapierRpcAgentMessageExperimentExecution {
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceMessageSeq: number;
+  targetThreadId: string;
+  targetRunId: string;
+  status: TerminalRunStatus;
+  previewSha256: string;
+  experiment: AgentMessageExperimentResult;
 }
 
 export interface NapierRpcWorkflowExecution {
@@ -229,6 +273,8 @@ export interface NapierRpcErrorResponse {
 export type NapierRpcResponse =
   | NapierRpcSuccessResponse<NapierRpcInitializeResult>
   | NapierRpcSuccessResponse<NapierRpcAgentExecution>
+  | NapierRpcSuccessResponse<AgentMessageExperimentPreview>
+  | NapierRpcSuccessResponse<NapierRpcAgentMessageExperimentExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowApprovalExecution>
   | NapierRpcSuccessResponse<ExecutionPlanWorkflowExperimentPreview>

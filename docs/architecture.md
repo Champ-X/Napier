@@ -298,6 +298,8 @@ TypeScript SDK:
 parent process starts napier rpc with canonical workspace/data roots
   -> initialize JSON-RPC protocol version 1
   -> napier/agent/run, napier/agent/resume,
+     napier/agent/experiment/preview,
+     napier/agent/experiment/run,
      napier/workflow/run, napier/workflow/resume,
      napier/workflow/answer,
      napier/workflow/experiment/preview,
@@ -315,8 +317,9 @@ $/cancelRequest, EOF, SIGINT, SIGTERM, or exit
 
 The serializable protocol types live in `@napier/contracts`.
 `rpc-protocol.ts` owns shared strict message/parameter validation and stable
-public errors; `rpc-workflow-experiments.ts` owns bounded experiment request
-adaptation without expanding that near-limit module; `rpc-transport.ts` owns
+public errors; `rpc-agent-message-experiments.ts` and
+`rpc-workflow-experiments.ts` own bounded experiment request adaptation
+without expanding that near-limit module; `rpc-transport.ts` owns
 bounded UTF-8 line framing and serialized backpressure-aware output;
 `rpc-invocations.ts` adapts public methods to Runtime services; `rpc-server.ts`
 owns initialization, request admission, cancellation, and lifecycle state. No
@@ -344,10 +347,11 @@ The process opens no network listener and accepts no transport credential. It
 inherits the selected local data root's existing credential references and
 tool policy, so stdio does not elevate the Agent or Workflow. RPC supports
 Agent and typed Workflow run/resume, explicit blocked-node retry,
-freshness-bound Approval answer-and-resume, and preview-bound Workflow
-checkpoint experiments. SDK and RPC call the existing interface-neutral
-`ExecutionPlanWorkflowExperimentRuntime`; they do not recreate source
-projection, reuse, comparison, or confirmation logic. Approval deduction and
+freshness-bound Approval answer-and-resume, preview-bound Workflow checkpoint
+experiments, and read-only Agent message experiments. SDK and RPC call the
+existing interface-neutral experiment runtimes; they do not recreate source
+projection, Branch materialization, reuse, comparison, or confirmation logic.
+Approval deduction and
 evidence validation live in split `embedded-workflow-approvals.ts`; CLI, SDK,
 and RPC reuse that service rather than reading Store independently. Remote
 transport/authentication, client reconnection, ACP, TUI, and Desktop packaging
@@ -618,6 +622,44 @@ deltas, and hashes. Prompts, message/output bodies, tool arguments, Evaluation
 reasons/evidence, Artifact paths, and raw diagnostics are excluded. Comparison
 creation rechecks source and target Plan revisions after observation and fails
 closed on source drift or non-Workflow Run bindings.
+
+Agent message experiments add the first controlled model re-execution path
+without reclassifying portable Replay as execution:
+
+```text
+terminal source=user Run + exact message.user sequence
+  -> recover frozen Agent revision and schema-7/8 Run configuration
+  -> verify Prompt Variable timestamp/snapshot, Skill catalog, reviewed Memory,
+     complete model-message history, candidate model, and Workspace snapshot
+  -> bind a stable preview hash
+  -> require that exact hash for execution
+  -> create an isolated Branch immediately before the selected message
+  -> copy visible messages plus hidden Goal continuation prompts in source order
+  -> recompute the materialized history hash before any target model call
+  -> execute through AgentRuntime as agent_experiment_read_only
+  -> compare source/target status, configuration, output hash, latency, usage,
+     cost, tool names, and tool effects
+  -> emit target snapshot + agent_message_experiment_result
+```
+
+The restricted target keeps only the configured read-only built-ins, forces
+`toolPolicy=observe`, disables subagents, Extensions, Process/Kernel/Browser
+Sessions, and Plan/Memory mutation, and reuses the source Prompt Variable
+resolution timestamp. Store requires the package-internal experiment
+capability, exact cross-Thread Branch lineage, source Run/message/configuration,
+Agent revision, and current Skill/Prompt hashes before creating the target
+Run. A caller cannot obtain the mode by submitting its public string.
+
+Preview and execution are shared by `napier experiment`, HTTP SSE, TypeScript
+SDK, and local stdio RPC. Cancellation or external timeout settles a comparable
+cancelled target; Provider failure settles a comparable failed target. Retry
+creates another Branch from the source checkpoint, never a continuation of
+uncertain model state. Durable `agent.experiment.*` evidence contains bounded
+IDs, statuses, models, counts, metric deltas, timestamps, and hashes rather
+than source prompt, source output, target output, tool arguments, Memory text,
+Skill text, Workspace paths, or diagnostics. Portable target Replay accepts an
+external parent only when a unique exact `branch.created` receipt proves the
+cross-Thread lineage.
 
 The Plan Workbench adds a lazy Workflow Experiment Desk over the same HTTP
 boundary. It accepts a browser-local, content-verified Manifest, lets the user
@@ -3572,7 +3614,7 @@ content SHA-256, and mirrors assessment/attempt counts in headers.
 ## Replay And Evaluation Flow
 
 Portable Run Replay remains evidence export, not tool re-execution. Controlled
-Workflow checkpoint experiments are a separate live Runtime path:
+Workflow and Agent-message experiments are separate live Runtime paths:
 
 ```text
 select terminal run
@@ -5503,6 +5545,10 @@ The current boundary has fifty-two parts:
     validation, body-free public evidence, recomputed restart recovery,
     experiment reuse/rerun, and no model, tool, expression, coercion, or
     side-effect path.
+53. Preview-bound historical user-message re-execution with frozen Agent,
+    Prompt Variable, Skill, Memory, history, model, and Workspace bindings;
+    isolated read-only Branch execution; source/target comparison; CLI, SDK,
+    stdio RPC, HTTP SSE, portable Replay, and privacy-bounded Trace.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5552,9 +5598,10 @@ deferred until the local P0-P9 product loop is stable.
   session nodes, multi-way switch, loops, write-capable Map, compensation,
   single-node tests and breakpoints, external Agent adapters, artifact
   settlement, and a visual builder;
-- extend controlled Workflow checkpoint re-execution with model-call/tool-call
-  checkpoints, side-effect simulation, dependency replacement, batch
-  experiments, interactive root-cause views, and evaluation promotion.
+- extend controlled Workflow and user-message re-execution with model-call and
+  tool-call checkpoints, side-effect result reuse/simulation, Prompt/Skill/
+  Memory/environment replacement, batch experiments, interactive root-cause
+  views, and evaluation promotion.
 
 ### Layer 3: Product and outcome proof
 

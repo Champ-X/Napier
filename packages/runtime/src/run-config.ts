@@ -49,6 +49,7 @@ const EXECUTION_MODES = new Set<RunExecutionMode>([
   "standard",
   "safe_read_only_recovery",
   "workflow_map_read_only",
+  "agent_experiment_read_only",
 ]);
 const READ_ONLY_EXECUTION_TOOLS = new Set([
   "list_files",

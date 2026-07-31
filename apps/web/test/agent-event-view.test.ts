@@ -67,6 +67,54 @@ describe("Agent event trace view", () => {
     expect(agentEventTraceSummary(rolledBack)).not.toContain("TOP_SECRET");
   });
 
+  it("projects Agent message experiments without prompt or result bodies", () => {
+    const started = agentEvent("agent.experiment.started", {
+      schemaVersion: 1,
+      sourceThreadId: "thread_source1234",
+      sourceRunId: "run_source1234",
+      sourceMessageSeq: 12,
+      branchFromSeq: 11,
+      previewSha256: "a".repeat(64),
+      sourcePromptSha256: "b".repeat(64),
+      sourceRunConfigurationSha256: "c".repeat(64),
+      sourcePromptVariableResolvedAt: "2026-08-01T01:00:00.000Z",
+      candidateWorkspaceSnapshotSha256: "d".repeat(64),
+      sourceModel: "napier/demo",
+      targetModel: "deepseek/deepseek-chat",
+      targetExecutionMode: "agent_experiment_read_only",
+      prompt: "TOP_SECRET_SOURCE_PROMPT",
+    });
+    const compared = agentEvent("agent.experiment.compared", {
+      schemaVersion: 1,
+      sourceThreadId: "thread_source1234",
+      sourceRunId: "run_source1234",
+      sourceMessageSeq: 12,
+      targetThreadId: "thread_target1234",
+      targetRunId: "run_target1234",
+      previewSha256: "a".repeat(64),
+      comparisonSha256: "e".repeat(64),
+      sourceStatus: "completed",
+      targetStatus: "completed",
+      outputChanged: true,
+      durationMsDelta: 15,
+      inputTokensDelta: -2,
+      outputTokensDelta: 7,
+      costUsdDelta: 0.00012,
+      toolCallCountDelta: -1,
+      changedConfigurationFieldCount: 3,
+      assistantText: "TOP_SECRET_TARGET_RESULT",
+    });
+
+    expect(agentEventTraceSummary(started)).toBe(
+      `agent experiment started / source-run source1234 / message 12 / preview ${"a".repeat(12)} / napier/demo -> deepseek/deepseek-chat / read-only / workspace ${"d".repeat(12)} / configuration ${"c".repeat(12)}`,
+    );
+    expect(agentEventTraceSummary(compared)).toBe(
+      `agent experiment compared / source-run source1234 / message 12 / preview ${"a".repeat(12)} / completed -> completed / output changed / duration +15ms / tokens +5 / tools -1 / cost +0.000120 USD / configuration-fields 3 / comparison ${"e".repeat(12)} / target-run target1234`,
+    );
+    expect(agentEventTraceSummary(started)).not.toContain("TOP_SECRET");
+    expect(agentEventTraceSummary(compared)).not.toContain("TOP_SECRET");
+  });
+
   it("fails closed for malformed and unknown agent receipts", () => {
     expect(
       agentEventTraceSummary(
@@ -78,6 +126,14 @@ describe("Agent event trace view", () => {
         agentEvent("agent.future", { summary: "TOP_SECRET_SUMMARY" }),
       ),
     ).toBe("system");
+    expect(
+      agentEventTraceSummary(
+        agentEvent("agent.experiment.started", {
+          schemaVersion: 1,
+          prompt: "TOP_SECRET_SUMMARY",
+        }),
+      ),
+    ).toBe("agent receipt");
   });
 });
 

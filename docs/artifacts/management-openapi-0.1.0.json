@@ -7206,6 +7206,106 @@
         "x-napier-source-route": "GET /api/threads/:threadId"
       }
     },
+    "/api/threads/{threadId}/agent-experiments": {
+      "post": {
+        "operationId": "post-threads-by-threadId-agent-experiments",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/agent-experiments",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/agent-experiments"
+      }
+    },
+    "/api/threads/{threadId}/agent-experiments/preview": {
+      "post": {
+        "operationId": "post-threads-by-threadId-agent-experiments-preview",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/agent-experiments/preview",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/agent-experiments/preview"
+      }
+    },
     "/api/threads/{threadId}/agent-milestones": {
       "get": {
         "operationId": "get-threads-by-threadId-agent-milestones",
@@ -14124,7 +14224,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "e0a486f0cd8bded3f91f43bb3261071ba568c3b51254c813104ae73b02e814da",
-  "x-napier-route-count": 247,
-  "x-napier-route-set-sha256": "e373e9a40f1b702c43f64b9c8063f73d1bd3e1d81ca4bfbeebde55216a79bf21"
+  "x-napier-source-sha256": "15089a6983bcc21541630ff72184c280326fc70f12b482bcb7880a85e0b864fc",
+  "x-napier-route-count": 249,
+  "x-napier-route-set-sha256": "1a3706f9cc32edb000df2c4e14f6609a71d7ef28d2c3217f84f52d7cb4d009a8"
 }

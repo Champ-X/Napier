@@ -50,6 +50,7 @@ export async function executeRpc(
       agents: services.embeddedAgents,
       workflows: services.embeddedWorkflows,
       experiments: services.workflowExperiments,
+      agentExperiments: services.agentMessageExperiments,
       input: io.stdin,
       output: io.stdout,
       serverVersion: CLI_VERSION,

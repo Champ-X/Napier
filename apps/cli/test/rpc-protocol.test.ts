@@ -6,6 +6,10 @@ import { Readable, Writable } from "node:stream";
 import { describe, expect, it } from "vitest";
 
 import {
+  parseAgentMessageExperimentPreviewParams,
+  parseAgentMessageExperimentRunParams,
+} from "../src/rpc-agent-message-experiments.js";
+import {
   MAX_RPC_LINE_BYTES,
   parseAgentResumeParams,
   parseAgentRunParams,
@@ -101,6 +105,47 @@ describe("Napier JSON-RPC protocol", () => {
     expect(() =>
       parseAgentResumeParams({ threadId: "thread_example", runId: "bad" }),
     ).toThrow("runId is invalid");
+    expect(
+      parseAgentMessageExperimentPreviewParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceMessageSeq: 12,
+        model: { provider: "napier", id: "demo" },
+      }),
+    ).toEqual({
+      sourceThreadId: "thread_example",
+      sourceRunId: "run_abcdefgh",
+      sourceMessageSeq: 12,
+      model: { provider: "napier", id: "demo" },
+    });
+    expect(
+      parseAgentMessageExperimentRunParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceMessageSeq: 12,
+        expectedPreviewSha256: "a".repeat(64),
+      }),
+    ).toEqual({
+      sourceThreadId: "thread_example",
+      sourceRunId: "run_abcdefgh",
+      sourceMessageSeq: 12,
+      expectedPreviewSha256: "a".repeat(64),
+    });
+    expect(() =>
+      parseAgentMessageExperimentPreviewParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceMessageSeq: 12,
+        expectedPreviewSha256: "a".repeat(64),
+      }),
+    ).toThrow("cannot include execution confirmation");
+    expect(() =>
+      parseAgentMessageExperimentRunParams({
+        sourceThreadId: "thread_example",
+        sourceRunId: "run_abcdefgh",
+        sourceMessageSeq: 12,
+      }),
+    ).toThrow("requires expectedPreviewSha256");
   });
 
   it("validates Workflow manifests and typed input before Runtime mutation", async () => {

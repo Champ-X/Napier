@@ -50,6 +50,15 @@ export interface CliBranchOptions extends CliWorkspaceOptions {
   title?: string;
 }
 
+export interface CliAgentMessageExperimentOptions extends CliExecutionOptions {
+  threadId: string;
+  sourceRunId: string;
+  sourceMessageSeq: number;
+  title?: string;
+  expectedPreviewSha256?: string;
+  preview: boolean;
+}
+
 export interface CliRpcOptions {
   workspace: string;
   dataRoot?: string;
@@ -79,6 +88,10 @@ export type CliAction =
   | CliChatAction
   | { kind: "resume"; options: CliResumeOptions }
   | { kind: "branch"; options: CliBranchOptions }
+  | {
+      kind: "experiment";
+      options: CliAgentMessageExperimentOptions;
+    }
   | { kind: "rpc"; options: CliRpcOptions }
   | { kind: "workflow"; options: CliWorkflowOptions };
 
@@ -107,6 +120,18 @@ const BRANCH_VALUE_OPTIONS = new Set([
   "--from-seq",
   "--title",
 ]);
+const EXPERIMENT_VALUE_OPTIONS = new Set([
+  "--workspace",
+  "--data-root",
+  "--thread",
+  "--run",
+  "--message-seq",
+  "--model",
+  "--title",
+  "--expected-preview",
+  "--timeout-ms",
+]);
+const EXPERIMENT_FLAG_OPTIONS = new Set(["--preview"]);
 const RPC_VALUE_OPTIONS = new Set(["--workspace", "--data-root"]);
 const WORKFLOW_VALUE_OPTIONS = new Set([
   "--workspace",
@@ -145,6 +170,7 @@ export function parseCliArgs(argv: string[]): CliAction {
     command !== "chat" &&
     command !== "resume" &&
     command !== "branch" &&
+    command !== "experiment" &&
     command !== "rpc" &&
     command !== "workflow"
   ) {
@@ -163,15 +189,24 @@ export function parseCliArgs(argv: string[]): CliAction {
           ? RESUME_VALUE_OPTIONS
           : command === "branch"
             ? BRANCH_VALUE_OPTIONS
-            : command === "rpc"
-              ? RPC_VALUE_OPTIONS
-              : WORKFLOW_VALUE_OPTIONS,
-    command === "workflow" ? WORKFLOW_FLAG_OPTIONS : new Set(),
+            : command === "experiment"
+              ? EXPERIMENT_VALUE_OPTIONS
+              : command === "rpc"
+                ? RPC_VALUE_OPTIONS
+                : WORKFLOW_VALUE_OPTIONS,
+    command === "workflow"
+      ? WORKFLOW_FLAG_OPTIONS
+      : command === "experiment"
+        ? EXPERIMENT_FLAG_OPTIONS
+        : new Set(),
   );
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "chat") return parseChatOptions(values, jsonl);
   if (command === "resume") return parseResumeOptions(values, jsonl);
   if (command === "branch") return parseBranchOptions(values, jsonl);
+  if (command === "experiment") {
+    return parseAgentMessageExperimentOptions(values, flags, jsonl);
+  }
   if (command === "rpc") return parseRpcOptions(values, jsonl);
   return parseWorkflowOptions(values, flags, jsonl);
 }
@@ -278,6 +313,61 @@ function parseRpcOptions(
       ...(values.has("--data-root")
         ? { dataRoot: requiredValue(values, "--data-root") }
         : {}),
+    },
+  };
+}
+
+function parseAgentMessageExperimentOptions(
+  values: Map<string, string>,
+  flags: ReadonlySet<string>,
+  jsonl: boolean,
+): Extract<CliAction, { kind: "experiment" }> {
+  const preview = flags.has("--preview");
+  const expectedPreviewSha256 = values.get("--expected-preview")?.trim();
+  if (
+    expectedPreviewSha256 !== undefined &&
+    !/^[a-f0-9]{64}$/u.test(expectedPreviewSha256)
+  ) {
+    throw new Error("--expected-preview must be a SHA-256 digest");
+  }
+  if (preview && expectedPreviewSha256) {
+    throw new Error("--preview cannot include --expected-preview");
+  }
+  if (!preview && !expectedPreviewSha256) {
+    throw new Error("Agent experiment execution requires --expected-preview");
+  }
+  const rawTitle = values.get("--title");
+  const title = rawTitle?.replace(/\s+/gu, " ").trim();
+  if (
+    rawTitle !== undefined &&
+    (!title ||
+      title.length > MAX_BRANCH_TITLE_CHARS ||
+      /[\u0000-\u001f\u007f<>]/u.test(title))
+  ) {
+    throw new Error(
+      `--title must be 1-${MAX_BRANCH_TITLE_CHARS} safe characters`,
+    );
+  }
+  const model = optionalModelRef(values);
+  return {
+    kind: "experiment",
+    options: {
+      workspace: requiredValue(values, "--workspace"),
+      threadId: requiredResourceId(values, "--thread"),
+      sourceRunId: requiredResourceId(values, "--run"),
+      sourceMessageSeq: parsePositiveInteger(
+        requiredValue(values, "--message-seq"),
+        "--message-seq",
+      ),
+      timeoutMs: parseTimeout(values.get("--timeout-ms")),
+      jsonl,
+      preview,
+      ...(values.has("--data-root")
+        ? { dataRoot: requiredValue(values, "--data-root") }
+        : {}),
+      ...(model ? { model } : {}),
+      ...(title ? { title } : {}),
+      ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
     },
   };
 }
@@ -484,6 +574,7 @@ Usage:
   napier chat --workspace <path> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
+  napier experiment --workspace <path> --thread <thread-id> --run <run-id> --message-seq <n> [options]
   napier rpc --workspace <path> [options]
   napier workflow --workspace <path> --manifest <path> [options]
 
@@ -492,6 +583,7 @@ Commands:
   chat                   Open a multi-turn interactive Agent session
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
+  experiment             Re-run a historical Agent message read-only
   rpc                    Serve local JSON-RPC 2.0 over stdio
   workflow               Execute or resume a typed Plan/Blueprint Workflow
 
@@ -523,6 +615,16 @@ Branch options:
   --thread <thread-id>   Source Thread
   --from-seq <n>         Existing source Ledger sequence
   --title <text>         Optional branch title
+
+Agent experiment options:
+  --thread <thread-id>   Source Agent Thread
+  --run <run-id>         Terminal source user Run
+  --message-seq <n>      Exact source message Ledger sequence
+  --model <provider/id>  Optional candidate model
+  --title <text>         Optional isolated target title
+  --preview              Preview frozen inputs without mutation
+  --expected-preview     Required preview SHA-256 for execution
+  --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
 
 RPC options:
   --workspace <path>     Workspace served by the long-lived Runtime

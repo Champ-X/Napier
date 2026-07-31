@@ -21,6 +21,7 @@ import {
   createSubagentOutcomeRepairOutcome,
   createSubagentOutcomeRepairRequest,
   createThreadReplayBundle,
+  createThreadBranch,
   exportThreadReplayBundle,
   hashThreadEventStream,
   LEDGER_DATABASE_FILENAME,
@@ -96,6 +97,67 @@ function evaluationCompletedPayload(
 }
 
 describe("thread replay bundles", () => {
+  it("accepts only exact external Branch parent evidence", async () => {
+    const { store } = await createStore();
+    const agent = store.listAgents()[0]!;
+    const sourceThread = await store.createThread({
+      title: "External Branch source",
+      agentId: agent.id,
+    });
+    const sourceRun = await store.createRun({
+      threadId: sourceThread.id,
+      agentId: agent.id,
+      source: "user",
+    });
+    const sourceMessage = await store.appendEvent({
+      threadId: sourceThread.id,
+      runId: sourceRun.id,
+      type: "message.user",
+      category: "message",
+      visibility: "user",
+      payload: { role: "user", text: "Preserve external Branch lineage." },
+    });
+    await store.finishRun(sourceRun.id, "completed");
+
+    const branch = await createThreadBranch(store, sourceThread.id, {
+      fromSeq: sourceMessage.seq,
+    });
+    const bundle = await exportThreadReplayBundle(
+      store,
+      branch.detail.thread.id,
+    );
+    expect(bundle.runs[0]?.parentRunId).toBe(sourceRun.id);
+    expect(validateThreadReplayBundle(bundle)).toEqual(bundle);
+    expect(verifyThreadReplayBundle(bundle).status).toBe("valid");
+
+    const malformedDetail = structuredClone(branch.detail);
+    const branchCreated = malformedDetail.events.find(
+      (event) => event.type === "branch.created",
+    )!;
+    branchCreated.payload = {
+      ...(branchCreated.payload as Record<string, unknown>),
+      unexpected: true,
+    };
+    expect(() =>
+      validateThreadReplayBundle(createThreadReplayBundle(malformedDetail)),
+    ).toThrow("run references unknown parent");
+
+    const unrelatedThread = await store.createThread({
+      title: "Unknown parent without Branch evidence",
+      agentId: agent.id,
+    });
+    const unrelatedRun = await store.createRun({
+      threadId: unrelatedThread.id,
+      agentId: agent.id,
+    });
+    await store.finishRun(unrelatedRun.id, "completed");
+    const unrelatedDetail = await store.getDetail(unrelatedThread.id);
+    unrelatedDetail.runs[0]!.parentRunId = sourceRun.id;
+    expect(() =>
+      validateThreadReplayBundle(createThreadReplayBundle(unrelatedDetail)),
+    ).toThrow("run references unknown parent");
+  });
+
   it("round-trips Agent profiles that enable LSP diagnostics", async () => {
     const { store } = await createStore();
     const current = store.listAgents()[0]!;

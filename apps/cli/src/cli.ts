@@ -37,6 +37,7 @@ import {
   type CliRunOptions,
   type CliWorkflowOptions,
 } from "./cli-options.js";
+import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
 import { writeLine } from "./cli-output.js";
 import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
@@ -102,13 +103,21 @@ export async function runCli(
   if (action.kind === "resume") {
     return executeResume(action.options, io, dependencies, parentSignal);
   }
-  if (action.kind === "workflow") {
-    return executeWorkflow(action.options, io, dependencies, parentSignal);
+  if (action.kind === "branch") {
+    return executeBranch(action.options, io, dependencies, parentSignal);
+  }
+  if (action.kind === "experiment") {
+    return executeAgentMessageExperimentCli(
+      action.options,
+      io,
+      dependencies,
+      parentSignal,
+    );
   }
   if (action.kind === "rpc") {
     return executeRpc(action.options, io, dependencies, parentSignal);
   }
-  return executeBranch(action.options, io, dependencies, parentSignal);
+  return executeWorkflow(action.options, io, dependencies, parentSignal);
 }
 
 async function executeRun(

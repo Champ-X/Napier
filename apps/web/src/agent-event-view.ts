@@ -1,5 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { agentMessageExperimentEventTraceSummary } from "./agent-message-experiment-event-view";
+
 export interface AgentEventTraceView {
   action: string;
   agentId?: string;
@@ -17,8 +19,7 @@ export interface AgentEventTraceView {
   requestSha256?: string;
 }
 
-const AGENT_EVENT =
-  /^agent\.(updated|rolled_back|milestone\.recorded)$/u;
+const AGENT_EVENT = /^agent\.(updated|rolled_back|milestone\.recorded)$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,160}$/u;
 const AGENT_RECEIPT_SUMMARY = "agent receipt";
@@ -63,6 +64,11 @@ export function agentEventTraceView(
 
 export function agentEventTraceSummary(event: RunEvent): string | undefined {
   if (!event.type.startsWith("agent.")) return undefined;
+  if (event.type.startsWith("agent.experiment.")) {
+    return (
+      agentMessageExperimentEventTraceSummary(event) ?? AGENT_RECEIPT_SUMMARY
+    );
+  }
   if (!AGENT_EVENT.test(event.type)) return event.category;
   const view = agentEventTraceView(event);
   if (!view) return AGENT_RECEIPT_SUMMARY;
@@ -135,7 +141,9 @@ function shaField(
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

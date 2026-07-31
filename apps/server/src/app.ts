@@ -424,6 +424,7 @@ import {
   verifyUsagePriceTableCatalog,
   type WorkspaceFileMutationManager,
   type WorkspaceProcessManager,
+  type AgentMessageExperimentRuntime,
   type ExecutionPlanWorkflowExperimentRuntime,
   type ExecutionPlanWorkflowRuntime,
   executionPlanRequestFromBlueprint,
@@ -457,6 +458,10 @@ import {
   type ReceiptTrustAnchorDirectorySubscriptionServiceOptions,
 } from "./receipt-trust-directory-subscriptions.js";
 import { BUNDLED_SKILLS } from "./bundled-skills.js";
+import {
+  executeAgentMessageExperimentHttp,
+  previewAgentMessageExperimentHttp,
+} from "./agent-message-experiment-http.js";
 import { executeWorkflowHttp } from "./workflow-http.js";
 import {
   executeWorkflowExperimentHttp,
@@ -470,6 +475,7 @@ export interface NapierServices {
   runtime: AgentRuntime;
   workflows: ExecutionPlanWorkflowRuntime;
   workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
+  agentMessageExperiments: AgentMessageExperimentRuntime;
   evaluations: RunEvaluationService;
   evaluationCasebookQualifications: EvaluationCasebookQualificationService;
   evaluationSuites: EvaluationSuiteService;
@@ -673,6 +679,7 @@ export async function createServices(options?: {
     runtime,
     workflows,
     workflowExperiments,
+    agentMessageExperiments,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
@@ -704,6 +711,7 @@ export async function createServices(options?: {
     runtime,
     workflows,
     workflowExperiments,
+    agentMessageExperiments,
     evaluations,
     evaluationCasebookQualifications,
     evaluationSuites,
@@ -10977,6 +10985,24 @@ export function createApp(services: NapierServices): Hono {
 
   app.post("/api/threads/:threadId/workflows", (context) =>
     executeWorkflowHttp(context, services, {
+      readJson: readLimitedJson,
+      jsonError: (target, message, status) =>
+        jsonError(target, message, status),
+      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    }),
+  );
+
+  app.post("/api/threads/:threadId/agent-experiments/preview", (context) =>
+    previewAgentMessageExperimentHttp(context, services, {
+      readJson: readLimitedJson,
+      jsonError: (target, message, status) =>
+        jsonError(target, message, status),
+      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    }),
+  );
+
+  app.post("/api/threads/:threadId/agent-experiments", (context) =>
+    executeAgentMessageExperimentHttp(context, services, {
       readJson: readLimitedJson,
       jsonError: (target, message, status) =>
         jsonError(target, message, status),

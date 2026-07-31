@@ -4,6 +4,7 @@ import path from "node:path";
 import type { KeychainSecretStore } from "./credentials.js";
 import { CredentialReferenceStore } from "./credentials.js";
 import { AgentRuntime } from "./agent-runtime.js";
+import { AgentMessageExperimentRuntime } from "./agent-message-experiments.js";
 import { EmbeddedAgentService } from "./embedded-agents.js";
 import { EmbeddedWorkflowService } from "./embedded-workflows.js";
 import { McpExtensionManager } from "./mcp.js";
@@ -38,6 +39,7 @@ export interface LocalAgentRuntimeServices {
   workspaceFileMutations: WorkspaceFileMutationManager;
   runtime: AgentRuntime;
   embeddedAgents: EmbeddedAgentService;
+  agentMessageExperiments: AgentMessageExperimentRuntime;
   workflows: ExecutionPlanWorkflowRuntime;
   embeddedWorkflows: EmbeddedWorkflowService;
   workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
@@ -89,6 +91,10 @@ export async function createLocalAgentRuntime(
       workspaceFileMutations,
     );
     const embeddedAgents = new EmbeddedAgentService(store, runtime);
+    const agentMessageExperiments = new AgentMessageExperimentRuntime(
+      store,
+      runtime,
+    );
     const workflows = new ExecutionPlanWorkflowRuntime(store, runtime);
     const embeddedWorkflows = new EmbeddedWorkflowService(store, workflows);
     const workflowExperiments = new ExecutionPlanWorkflowExperimentRuntime(
@@ -108,6 +114,7 @@ export async function createLocalAgentRuntime(
       workspaceFileMutations,
       runtime,
       embeddedAgents,
+      agentMessageExperiments,
       workflows,
       embeddedWorkflows,
       workflowExperiments,

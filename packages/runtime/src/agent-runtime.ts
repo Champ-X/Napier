@@ -67,6 +67,10 @@ import {
   WORKFLOW_NODE_EXECUTION,
   type WorkflowNodeExecution,
 } from "./workflow-node-execution.js";
+import {
+  AGENT_MESSAGE_EXPERIMENT_EXECUTION,
+  type AgentMessageExperimentExecution,
+} from "./agent-message-experiment-execution.js";
 import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
 import {
   createAgentMilestoneContextProjection,
@@ -165,6 +169,7 @@ export interface RunPromptOptions {
   source?: Exclude<RunInvocationSource, "workflow_reuse">;
   triggerId?: string;
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
+  [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
   recovery?: {
     mode: "manual" | "automatic";
     attemptId?: string;
@@ -270,6 +275,7 @@ export class AgentRuntime {
     const modelRef = options.model ?? agentSnapshot.model;
     const invocationSource = requestedSource ?? "user";
     const workflowInvocation = isWorkflowRunSource(invocationSource);
+    const messageExperiment = options[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
     const skillCatalog = await loadWorkspaceSkills(
       this.store.workspaceRoot,
       agentSnapshot.enabledSkills,
@@ -278,6 +284,13 @@ export class AgentRuntime {
       systemPrompt: agentSnapshot.systemPrompt,
       definitions: agentSnapshot.promptVariables,
       skillCatalogText: formatSkillCatalog(skillCatalog.skills),
+      ...(messageExperiment
+        ? {
+            resolvedAt: new Date(
+              messageExperiment.sourcePromptVariableResolvedAt,
+            ),
+          }
+        : {}),
     });
     const toolLoopGuardContext = createToolLoopGuardContextReceipt(
       agentSnapshot.toolLoopGuard,
@@ -305,6 +318,12 @@ export class AgentRuntime {
         ...(options[WORKFLOW_NODE_EXECUTION]
           ? {
               [WORKFLOW_NODE_EXECUTION]: options[WORKFLOW_NODE_EXECUTION],
+            }
+          : {}),
+        ...(options[AGENT_MESSAGE_EXPERIMENT_EXECUTION]
+          ? {
+              [AGENT_MESSAGE_EXPERIMENT_EXECUTION]:
+                options[AGENT_MESSAGE_EXPERIMENT_EXECUTION],
             }
           : {}),
         ...(options.parentRunId ? { parentRunId: options.parentRunId } : {}),
