@@ -387,6 +387,7 @@ import {
   MAX_THREAD_REPLAY_BUNDLE_BYTES,
   type McpExtensionManager,
   type ModelRegistry,
+  type ModelInvocationExperimentRuntime,
   normalizePromptVariableDefinitions,
   normalizeToolLoopGuardPolicy,
   openTelemetryTraceArtifactEventAnchorSetSha256,
@@ -462,6 +463,10 @@ import {
   executeAgentMessageExperimentHttp,
   previewAgentMessageExperimentHttp,
 } from "./agent-message-experiment-http.js";
+import {
+  executeModelInvocationExperimentHttp,
+  previewModelInvocationExperimentHttp,
+} from "./model-invocation-experiment-http.js";
 import { executeWorkflowHttp } from "./workflow-http.js";
 import {
   executeWorkflowExperimentHttp,
@@ -476,6 +481,7 @@ export interface NapierServices {
   workflows: ExecutionPlanWorkflowRuntime;
   workflowExperiments: ExecutionPlanWorkflowExperimentRuntime;
   agentMessageExperiments: AgentMessageExperimentRuntime;
+  modelInvocationExperiments: ModelInvocationExperimentRuntime;
   evaluations: RunEvaluationService;
   evaluationCasebookQualifications: EvaluationCasebookQualificationService;
   evaluationSuites: EvaluationSuiteService;
@@ -680,6 +686,7 @@ export async function createServices(options?: {
     workflows,
     workflowExperiments,
     agentMessageExperiments,
+    modelInvocationExperiments,
   } = local;
   const evaluations = new RunEvaluationService(store, models);
   const evaluationCasebookQualifications =
@@ -712,6 +719,7 @@ export async function createServices(options?: {
     workflows,
     workflowExperiments,
     agentMessageExperiments,
+    modelInvocationExperiments,
     evaluations,
     evaluationCasebookQualifications,
     evaluationSuites,
@@ -11003,6 +11011,26 @@ export function createApp(services: NapierServices): Hono {
 
   app.post("/api/threads/:threadId/agent-experiments", (context) =>
     executeAgentMessageExperimentHttp(context, services, {
+      readJson: readLimitedJson,
+      jsonError: (target, message, status) =>
+        jsonError(target, message, status),
+      isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    }),
+  );
+
+  app.post(
+    "/api/threads/:threadId/model-invocation-experiments/preview",
+    (context) =>
+      previewModelInvocationExperimentHttp(context, services, {
+        readJson: readLimitedJson,
+        jsonError: (target, message, status) =>
+          jsonError(target, message, status),
+        isBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+      }),
+  );
+
+  app.post("/api/threads/:threadId/model-invocation-experiments", (context) =>
+    executeModelInvocationExperimentHttp(context, services, {
       readJson: readLimitedJson,
       jsonError: (target, message, status) =>
         jsonError(target, message, status),

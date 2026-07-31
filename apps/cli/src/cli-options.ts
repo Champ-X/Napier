@@ -59,6 +59,15 @@ export interface CliAgentMessageExperimentOptions extends CliExecutionOptions {
   preview: boolean;
 }
 
+export interface CliModelInvocationExperimentOptions extends CliExecutionOptions {
+  threadId: string;
+  sourceRunId: string;
+  sourceTurnIndex: number;
+  title?: string;
+  expectedPreviewSha256?: string;
+  preview: boolean;
+}
+
 export interface CliRpcOptions {
   workspace: string;
   dataRoot?: string;
@@ -91,6 +100,10 @@ export type CliAction =
   | {
       kind: "experiment";
       options: CliAgentMessageExperimentOptions;
+    }
+  | {
+      kind: "model-experiment";
+      options: CliModelInvocationExperimentOptions;
     }
   | { kind: "rpc"; options: CliRpcOptions }
   | { kind: "workflow"; options: CliWorkflowOptions };
@@ -132,6 +145,18 @@ const EXPERIMENT_VALUE_OPTIONS = new Set([
   "--timeout-ms",
 ]);
 const EXPERIMENT_FLAG_OPTIONS = new Set(["--preview"]);
+const MODEL_EXPERIMENT_VALUE_OPTIONS = new Set([
+  "--workspace",
+  "--data-root",
+  "--thread",
+  "--run",
+  "--turn-index",
+  "--model",
+  "--title",
+  "--expected-preview",
+  "--timeout-ms",
+]);
+const MODEL_EXPERIMENT_FLAG_OPTIONS = new Set(["--preview"]);
 const RPC_VALUE_OPTIONS = new Set(["--workspace", "--data-root"]);
 const WORKFLOW_VALUE_OPTIONS = new Set([
   "--workspace",
@@ -171,6 +196,7 @@ export function parseCliArgs(argv: string[]): CliAction {
     command !== "resume" &&
     command !== "branch" &&
     command !== "experiment" &&
+    command !== "model-experiment" &&
     command !== "rpc" &&
     command !== "workflow"
   ) {
@@ -191,14 +217,18 @@ export function parseCliArgs(argv: string[]): CliAction {
             ? BRANCH_VALUE_OPTIONS
             : command === "experiment"
               ? EXPERIMENT_VALUE_OPTIONS
-              : command === "rpc"
-                ? RPC_VALUE_OPTIONS
-                : WORKFLOW_VALUE_OPTIONS,
+              : command === "model-experiment"
+                ? MODEL_EXPERIMENT_VALUE_OPTIONS
+                : command === "rpc"
+                  ? RPC_VALUE_OPTIONS
+                  : WORKFLOW_VALUE_OPTIONS,
     command === "workflow"
       ? WORKFLOW_FLAG_OPTIONS
       : command === "experiment"
         ? EXPERIMENT_FLAG_OPTIONS
-        : new Set(),
+        : command === "model-experiment"
+          ? MODEL_EXPERIMENT_FLAG_OPTIONS
+          : new Set(),
   );
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "chat") return parseChatOptions(values, jsonl);
@@ -206,6 +236,9 @@ export function parseCliArgs(argv: string[]): CliAction {
   if (command === "branch") return parseBranchOptions(values, jsonl);
   if (command === "experiment") {
     return parseAgentMessageExperimentOptions(values, flags, jsonl);
+  }
+  if (command === "model-experiment") {
+    return parseModelInvocationExperimentOptions(values, flags, jsonl);
   }
   if (command === "rpc") return parseRpcOptions(values, jsonl);
   return parseWorkflowOptions(values, flags, jsonl);
@@ -358,6 +391,63 @@ function parseAgentMessageExperimentOptions(
       sourceMessageSeq: parsePositiveInteger(
         requiredValue(values, "--message-seq"),
         "--message-seq",
+      ),
+      timeoutMs: parseTimeout(values.get("--timeout-ms")),
+      jsonl,
+      preview,
+      ...(values.has("--data-root")
+        ? { dataRoot: requiredValue(values, "--data-root") }
+        : {}),
+      ...(model ? { model } : {}),
+      ...(title ? { title } : {}),
+      ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
+    },
+  };
+}
+
+function parseModelInvocationExperimentOptions(
+  values: Map<string, string>,
+  flags: ReadonlySet<string>,
+  jsonl: boolean,
+): Extract<CliAction, { kind: "model-experiment" }> {
+  const preview = flags.has("--preview");
+  const expectedPreviewSha256 = values.get("--expected-preview")?.trim();
+  if (
+    expectedPreviewSha256 !== undefined &&
+    !/^[a-f0-9]{64}$/u.test(expectedPreviewSha256)
+  ) {
+    throw new Error("--expected-preview must be a SHA-256 digest");
+  }
+  if (preview && expectedPreviewSha256) {
+    throw new Error("--preview cannot include --expected-preview");
+  }
+  if (!preview && !expectedPreviewSha256) {
+    throw new Error(
+      "Model invocation experiment execution requires --expected-preview",
+    );
+  }
+  const rawTitle = values.get("--title");
+  const title = rawTitle?.replace(/\s+/gu, " ").trim();
+  if (
+    rawTitle !== undefined &&
+    (!title ||
+      title.length > MAX_BRANCH_TITLE_CHARS ||
+      /[\u0000-\u001f\u007f<>]/u.test(title))
+  ) {
+    throw new Error(
+      `--title must be 1-${MAX_BRANCH_TITLE_CHARS} safe characters`,
+    );
+  }
+  const model = optionalModelRef(values);
+  return {
+    kind: "model-experiment",
+    options: {
+      workspace: requiredValue(values, "--workspace"),
+      threadId: requiredResourceId(values, "--thread"),
+      sourceRunId: requiredResourceId(values, "--run"),
+      sourceTurnIndex: parseNonNegativeInteger(
+        requiredValue(values, "--turn-index"),
+        "--turn-index",
       ),
       timeoutMs: parseTimeout(values.get("--timeout-ms")),
       jsonl,
@@ -567,6 +657,15 @@ function parsePositiveInteger(value: string, flag: string): number {
   return parsed;
 }
 
+function parseNonNegativeInteger(value: string, flag: string): number {
+  if (!/^[0-9]+$/u.test(value)) throw new Error(`${flag} is invalid`);
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new Error(`${flag} must be a non-negative integer`);
+  }
+  return parsed;
+}
+
 export const CLI_HELP = `Napier CLI ${CLI_VERSION}
 
 Usage:
@@ -575,6 +674,7 @@ Usage:
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
   napier experiment --workspace <path> --thread <thread-id> --run <run-id> --message-seq <n> [options]
+  napier model-experiment --workspace <path> --thread <thread-id> --run <run-id> --turn-index <n> [options]
   napier rpc --workspace <path> [options]
   napier workflow --workspace <path> --manifest <path> [options]
 
@@ -584,6 +684,7 @@ Commands:
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
   experiment             Re-run a historical Agent message read-only
+  model-experiment       Re-run one captured provider call without tools
   rpc                    Serve local JSON-RPC 2.0 over stdio
   workflow               Execute or resume a typed Plan/Blueprint Workflow
 
@@ -623,6 +724,16 @@ Agent experiment options:
   --model <provider/id>  Optional candidate model
   --title <text>         Optional isolated target title
   --preview              Preview frozen inputs without mutation
+  --expected-preview     Required preview SHA-256 for execution
+  --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
+
+Model invocation experiment options:
+  --thread <thread-id>   Source Agent Thread
+  --run <run-id>         Terminal source Run with a local call capsule
+  --turn-index <n>       Zero-based source model context turn
+  --model <provider/id>  Optional candidate provider-backed model
+  --title <text>         Optional isolated target title
+  --preview              Preview frozen provider context without mutation
   --expected-preview     Required preview SHA-256 for execution
   --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
 

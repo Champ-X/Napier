@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AgentMessageExperimentRuntime } from "../src/agent-message-experiments.js";
 import { AgentRuntime } from "../src/agent-runtime.js";
 import { CredentialReferenceStore } from "../src/credentials.js";
+import { ModelInvocationExperimentRuntime } from "../src/model-invocation-experiments.js";
 import { ModelRegistry } from "../src/models.js";
 import { exportThreadReplayBundle } from "../src/replay.js";
 import { LocalStore } from "../src/store.js";
@@ -126,6 +127,39 @@ describeLive("live DeepSeek smoke", () => {
         await exportThreadReplayBundle(store, experiment.targetThreadId),
       ).status,
     ).toBe("valid");
+
+    const modelExperiments = new ModelInvocationExperimentRuntime(
+      store,
+      registry,
+      runtime.modelInvocationCapsules,
+    );
+    const modelPreview = await modelExperiments.preview(thread.id, {
+      sourceRunId: run.id,
+      sourceTurnIndex: 0,
+    });
+    const modelExperiment = await modelExperiments.run({
+      sourceThreadId: thread.id,
+      request: {
+        sourceRunId: run.id,
+        sourceTurnIndex: 0,
+        expectedPreviewSha256: modelPreview.previewSha256,
+      },
+    });
+    expect(modelExperiment.status).toBe("completed");
+    expect(modelExperiment.comparison.source.model).toEqual({
+      provider: "deepseek",
+      id: modelId,
+    });
+    expect(
+      (await store.listEvents(modelExperiment.targetThreadId)).some((event) =>
+        event.type.startsWith("tool."),
+      ),
+    ).toBe(false);
+    expect(
+      JSON.stringify(
+        await exportThreadReplayBundle(store, modelExperiment.targetThreadId),
+      ),
+    ).not.toContain(apiKey);
     store.close();
   }, 90_000);
 });

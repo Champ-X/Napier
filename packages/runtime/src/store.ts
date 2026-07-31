@@ -546,6 +546,11 @@ import {
   AGENT_MESSAGE_EXPERIMENT_EXECUTION,
   type AgentMessageExperimentExecution,
 } from "./agent-message-experiment-execution.js";
+import {
+  MODEL_INVOCATION_EXPERIMENT_EXECUTION,
+  type ModelInvocationExperimentExecution,
+} from "./model-invocation-experiment-execution.js";
+import { validateModelInvocationExperimentRunGate } from "./model-invocation-experiment-run-gate.js";
 
 export const DEFAULT_INBOUND_RETRY_POLICY: Readonly<InboundRetryPolicy> = {
   maxAttempts: 3,
@@ -745,6 +750,7 @@ export interface CreateRunInput {
   triggerId?: string;
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
+  [MODEL_INVOCATION_EXPERIMENT_EXECUTION]?: ModelInvocationExperimentExecution;
 }
 
 export interface RunLeaseOptions {
@@ -11268,6 +11274,29 @@ export class LocalStore {
       }
     }
     const messageExperiment = input[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
+    const modelInvocationExperiment =
+      input[MODEL_INVOCATION_EXPERIMENT_EXECUTION];
+    if (
+      input.source === "model_experiment" ||
+      executionMode === "model_experiment_single_call" ||
+      modelInvocationExperiment
+    ) {
+      validateModelInvocationExperimentRunGate({
+        source: input.source,
+        executionMode,
+        targetThreadId: input.threadId,
+        targetAgentId: input.agentId,
+        targetAgentRevision: runAgent.revision,
+        targetModel: input.model ?? runAgent.model,
+        execution: modelInvocationExperiment,
+        runs: this.state.runs,
+        sourceEvents: modelInvocationExperiment
+          ? this.requireLedger().listEvents(
+              modelInvocationExperiment.sourceThreadId,
+            )
+          : [],
+      });
+    }
     if (executionMode === "agent_experiment_read_only") {
       const branchRun = input.parentRunId
         ? this.state.runs.find(

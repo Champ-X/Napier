@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 74,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-C6r4-J-U.js",
+    "path": "apps/web/dist/assets/index-vkb-Ccnt.js",
     "sizeBytes": 133248,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "bbde6845a8480f1784816ed84985cb113bd7d13ca2f68d62007927557418649d"
+    "sha256": "6b016370be7185e681bc749ef557ab809d6de91f889f7c32f55438dac42c605e"
   },
-  "distContentSha256": "bbde6845a8480f1784816ed84985cb113bd7d13ca2f68d62007927557418649d",
+  "distContentSha256": "6b016370be7185e681bc749ef557ab809d6de91f889f7c32f55438dac42c605e",
   "errors": []
 }

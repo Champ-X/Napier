@@ -21,7 +21,8 @@ export type RunInvocationSource =
   | "schedule"
   | "channel"
   | "workflow"
-  | "workflow_reuse";
+  | "workflow_reuse"
+  | "model_experiment";
 export type GoalStatus = "active" | "completed" | "blocked";
 export type GoalBlocker =
   | "none"
@@ -1180,6 +1181,114 @@ export interface AgentMessageExperimentResult {
   status: TerminalRunStatus;
   assistantText?: string;
   comparison: AgentMessageExperimentComparison;
+}
+
+export type ModelInvocationPurpose =
+  | "agent_turn"
+  | "context_compaction"
+  | "goal_evaluation"
+  | "memory_extraction";
+
+export interface ModelInvocationCapsuleReceipt {
+  kind: "napier.model-invocation-capsule-receipt";
+  schemaVersion: 1;
+  turnIndex: number;
+  purpose: ModelInvocationPurpose;
+  model: ModelRef;
+  contextEnvelopeSha256: string;
+  contextSha256: string;
+  capsuleSha256: string;
+  capsuleBytes: number;
+  storage: "local_only";
+  contentSha256: string;
+}
+
+export interface CreateModelInvocationExperimentRequest {
+  sourceRunId: string;
+  sourceTurnIndex: number;
+  model?: ModelRef;
+  title?: string;
+  expectedPreviewSha256?: string;
+}
+
+export interface ModelInvocationExperimentPreview {
+  kind: "napier.model-invocation-experiment-preview";
+  schemaVersion: 1;
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceAgentId: string;
+  sourceAgentRevision: number;
+  sourceTurnIndex: number;
+  sourceCapsuleEventSeq: number;
+  sourceResponseEventSeq: number;
+  purpose: ModelInvocationPurpose;
+  sourceModel: ModelRef;
+  targetModel: ModelRef;
+  sourceContextEnvelopeSha256: string;
+  sourceContextSha256: string;
+  sourceCapsuleSha256: string;
+  sourceCapsuleBytes: number;
+  sourceMessageCount: number;
+  sourceToolCount: number;
+  sourceOutputSha256: string;
+  sourceTextSha256: string;
+  sourceStopReason: string;
+  targetExecutionMode: "model_experiment_single_call";
+  previewSha256: string;
+}
+
+export type ModelInvocationExperimentStatus =
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface ModelInvocationExperimentObservation {
+  threadId: string;
+  runId: string;
+  status: ModelInvocationExperimentStatus;
+  model: ModelRef;
+  stopReason: string;
+  durationMs: number;
+  usage: Usage;
+  textSha256: string;
+  outputSha256: string;
+  toolCallCount: number;
+  toolNames: string[];
+}
+
+export interface ModelInvocationExperimentMetricDelta {
+  durationMs: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+  costUsd: number;
+  toolCallCount: number;
+}
+
+export interface ModelInvocationExperimentComparison {
+  kind: "napier.model-invocation-experiment-comparison";
+  schemaVersion: 1;
+  source: ModelInvocationExperimentObservation;
+  target: ModelInvocationExperimentObservation;
+  metricDelta: ModelInvocationExperimentMetricDelta;
+  outputChanged: boolean;
+  textChanged: boolean;
+  addedToolNames: string[];
+  removedToolNames: string[];
+  contentSha256: string;
+}
+
+export interface ModelInvocationExperimentResult {
+  kind: "napier.model-invocation-experiment-result";
+  schemaVersion: 1;
+  preview: ModelInvocationExperimentPreview;
+  targetThreadId: string;
+  targetRunId: string;
+  status: ModelInvocationExperimentStatus;
+  assistantText?: string;
+  candidateToolCallNames: string[];
+  comparison: ModelInvocationExperimentComparison;
 }
 
 export interface ExecutionPlanWorkflowExperimentToolEffects {
@@ -2447,7 +2556,8 @@ export type RunExecutionMode =
   | "standard"
   | "safe_read_only_recovery"
   | "workflow_map_read_only"
-  | "agent_experiment_read_only";
+  | "agent_experiment_read_only"
+  | "model_experiment_single_call";
 
 export interface SubagentTask {
   id: string;
@@ -8038,6 +8148,24 @@ export interface AgentMessageExperimentResultFrame {
   status: TerminalRunStatus;
   previewSha256: string;
   experiment: AgentMessageExperimentResult;
+  snapshotSha256: string;
+  snapshotBytes: number;
+  eventCount: number;
+  eventBytes: number;
+  eventStreamSha256: string;
+  contentSha256: string;
+}
+
+export interface ModelInvocationExperimentResultFrame {
+  type: "model_invocation_experiment_result";
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceTurnIndex: number;
+  targetThreadId: string;
+  targetRunId: string;
+  status: ModelInvocationExperimentStatus;
+  previewSha256: string;
+  experiment: ModelInvocationExperimentResult;
   snapshotSha256: string;
   snapshotBytes: number;
   eventCount: number;

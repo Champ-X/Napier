@@ -6,6 +6,18 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added controlled single-model-invocation re-execution for provider-backed
+  Agent calls. Before dispatch, primary Agent turns, context compaction, Goal
+  evaluation, and Memory extraction write an exact provider Context plus safe
+  sampling options to a permission-restricted, size-bounded local CAS; the
+  Ledger records only the local capsule receipt and never exports the capsule
+  through Replay or Trace. `napier model-experiment`, HTTP SSE, and the
+  TypeScript SDK can preview-bind one terminal source turn, optionally replace
+  its model, and execute exactly one isolated provider call. Returned tool
+  calls are compared but never executed. Call-level status, stop reason,
+  latency, usage, cost, text/output hashes, and tool-name deltas remain
+  inspectable, while tool arguments, raw thinking, provider Context, and
+  candidate text stay out of durable experiment events.
 - Added a lazy Run Lab message experiment desk over the controlled
   historical-message Runtime. It lists only terminal modern user-message
   metadata, supports configured model replacement, preview, explicit

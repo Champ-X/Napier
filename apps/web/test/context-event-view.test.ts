@@ -101,8 +101,35 @@ describe("Context event trace view", () => {
     expect(contextEventTraceSummary(skills)).toBe(
       `context / skills / schema 1 / skills 1 / requested 1 / loaded 1 / missing 1 / skill-catalog ${"2".repeat(12)} / diagnostics ${"3".repeat(12)}`,
     );
-    expect(contextEventTraceSummary(promptVariables)).not.toContain("TOP_SECRET");
+    expect(contextEventTraceSummary(promptVariables)).not.toContain(
+      "TOP_SECRET",
+    );
     expect(contextEventTraceSummary(skills)).not.toContain("TOP_SECRET");
+  });
+
+  it("projects local model invocation capsules without context bodies", () => {
+    const event = contextEvent("context.model_invocation", {
+      kind: "napier.model-invocation-capsule-receipt",
+      schemaVersion: 1,
+      turnIndex: 2,
+      purpose: "agent_turn",
+      model: { provider: "deepseek", id: "deepseek-chat" },
+      contextEnvelopeSha256: "4".repeat(64),
+      contextSha256: "5".repeat(64),
+      capsuleSha256: "6".repeat(64),
+      capsuleBytes: 4096,
+      storage: "local_only",
+      contentSha256: "7".repeat(64),
+      context: "TOP_SECRET_PROVIDER_CONTEXT",
+    });
+
+    expect(contextEventTraceSummary(event)).toContain(
+      "context / model_invocation / schema 1 / purpose agent_turn / model deepseek/deepseek-chat / storage local_only / turn 2 / capsule-bytes 4096",
+    );
+    expect(contextEventTraceSummary(event)).toContain(
+      `context-envelope ${"4".repeat(12)} / context ${"5".repeat(12)} / capsule ${"6".repeat(12)}`,
+    );
+    expect(contextEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
   it("fails closed for malformed and unknown context receipts", () => {

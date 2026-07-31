@@ -65,6 +65,16 @@ Version `0.1.0` includes:
   browser-independent hash validation, explicit cancellation, bounded
   comparison, target navigation, and deliberate result download without
   adding the experiment client to the main Workbench bundle;
+- controlled single-model-invocation experiments for provider-backed Agent
+  calls. Primary turns, compaction, Goal evaluation, and Memory extraction
+  capture the exact Pi provider Context plus safe sampling options in a
+  permission-restricted, bounded local CAS while the Ledger retains only a
+  hash-bound receipt. `napier model-experiment`, HTTP SSE, and the TypeScript
+  SDK can preview one terminal source turn, optionally replace its model, and
+  execute exactly one isolated provider call. Candidate tool calls are
+  compared but never executed; provider Context, raw thinking, candidate tool
+  arguments, and capsule contents remain absent from portable Replay and Web
+  Trace;
 - a checked product-path performance budget over three cold built-CLI JSONL
   runs, shared Runtime bootstrap, the production `read_file` executor, a
   1,000-event SQLite Thread, observed RSS, and closed-ledger database growth,
@@ -507,6 +517,52 @@ read-only tool subset with no Sessions, Plan/Memory mutation, write tools, or
 subagents. A cancelled, timed-out, or failed target remains comparable; retry
 creates a new isolated target from the unchanged source rather than resuming
 uncertain model state.
+
+Preview and execute exactly one captured provider call without entering the
+Agent Loop or executing candidate tool calls:
+
+```bash
+npm run --silent napier -- model-experiment \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --run run_example \
+  --turn-index 0 \
+  --preview \
+  --jsonl
+
+npm run --silent napier -- model-experiment \
+  --workspace . \
+  --data-root .napier \
+  --thread thread_example \
+  --run run_example \
+  --turn-index 0 \
+  --model deepseek/deepseek-v4-flash \
+  --expected-preview <sha256> \
+  --jsonl
+```
+
+The source must be a terminal configured Run with one exact local capsule,
+matching context-envelope receipt, and following model response. Preview is
+mutation-free and binds the capsule, source response, Agent revision, context,
+candidate model, and isolated execution mode. Execution makes one
+`completeSimple` call in a new Thread/Run with no enabled tools, Skills, or
+subagents. The result compares status, stop reason, latency, usage, cost,
+text/output hashes, and tool names; returned tool calls are untrusted output
+and are never dispatched. Cancellation and provider failure settle the target
+as comparable evidence, while orchestration failure is recorded and fails
+closed.
+
+Exact provider Context may contain prior model-visible tool results, so its CAS
+is deliberately local-only: the data-root directory is mode `0700`, capsule
+files are mode `0600`, symbolic links and permission drift are rejected, each
+capsule is limited to 8 MiB, and the store is bounded to 256 entries / 128 MiB.
+Only provider-consumed Context fields and safe sampling options are captured;
+credentials, headers, environment, callbacks, and AbortSignals are excluded.
+Portable Replay carries the receipt, not the capsule. This path currently has
+Runtime, CLI, HTTP/SSE, SDK, and privacy-bounded Trace entrances; it does not
+yet have a Web desk or RPC method and does not implement tool-call checkpoint
+re-execution.
 
 Run one local Runtime as a line-delimited stdio JSON-RPC 2.0 process for an
 editor, desktop shell, or automation host:
@@ -3004,6 +3060,48 @@ lineage, Agent revision, Skill/Prompt configuration, and parent Run before
 creation. Experiment-specific Trace summaries expose only safe IDs, statuses,
 metric deltas, models, counts, and hash prefixes.
 
+`ModelInvocationExperimentRuntime` adds a narrower model-call checkpoint that
+does not enter `AgentRuntime`:
+
+```text
+terminal configured source Run + context turn index
+  -> require one context.model_invocation receipt, its preceding
+     context envelope, and its following model response
+  -> load and revalidate the exact local-only provider Context capsule
+  -> bind source response, Agent revision, context, capsule, and candidate model
+     into a stable preview hash
+  -> require that exact hash for execution
+  -> create an isolated model_experiment_single_call Run
+  -> call the provider exactly once with completeSimple
+  -> project returned text/tool calls without dispatching tools
+  -> compare call status, stop reason, latency, usage, cost, text/output hashes,
+     and tool names
+  -> emit target snapshot + model_invocation_experiment_result
+```
+
+Capture occurs immediately before primary Agent turns, context compaction,
+Goal evaluation, and Memory extraction. The capsule contains only the Pi
+provider fields `systemPrompt`, `messages`, and tool definitions plus safe
+reasoning/token/temperature/cache-retention options; tool executors,
+credentials, headers, environment, callbacks, and AbortSignals are excluded.
+Capture failure does not interrupt the source call and appends only a bounded
+`context.model_invocation_unavailable` receipt.
+
+The local CAS is content-addressed, rejects symlinks and exposed permissions,
+uses `0700`/`0600` modes, limits each capsule to 8 MiB, and bounds the store to
+256 capsules / 128 MiB. Raw capsules never enter portable Replay or Trace.
+Durable `model.experiment.*` events exclude provider Context, raw thinking,
+candidate text, and tool arguments; the deliberate live result may return
+candidate text and canonical tool names. Provider failure and active
+cancellation settle comparable failed/cancelled Runs. Generic recovery rejects
+these Runs because retry must start from the original checkpoint.
+
+The shared Runtime path is exposed through `napier model-experiment`, HTTP
+preview/SSE, and the TypeScript SDK. Web Trace validates and projects only safe
+receipt, status, metric, model, and hash fields. A Web desk, local stdio RPC
+method, tool-call checkpoint execution, tool-result reuse/simulation, batch
+experiments, and experiment promotion remain open.
+
 The lazy Run Lab message experiment desk consumes these same routes. It lists
 only terminal modern user-message checkpoints by Run/model/sequence metadata,
 never prompt text; supports an optional configured-model replacement, fresh
@@ -3044,10 +3142,10 @@ durable Approval nodes with bounded parallel dependency-ready DAG scheduling
 and typed equality guards. Stateful session Tool nodes, write-capable Map,
 multi-way switch, loops, compensation, per-node breakpoints, adapter runtimes,
 artifact settlement, and a visual builder remain open. Checkpoint experiments
-do not yet provide model-call/tool-call
-single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
-batch experiments, an interactive root-cause timeline, or Evaluation
-promotion. The opt-in DeepSeek CLI smoke executes and checkpoint-reruns one
+do not yet provide tool-call single-stepping, side-effect simulation,
+Prompt/Skill/Memory replacement, batch experiments, an interactive root-cause
+timeline, or Evaluation promotion. The opt-in DeepSeek CLI smoke executes and
+checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live
 smoke executes two real concurrent item calls, deterministically reduces their

@@ -8529,6 +8529,106 @@
         "x-napier-source-route": "POST /api/threads/:threadId/messages"
       }
     },
+    "/api/threads/{threadId}/model-invocation-experiments": {
+      "post": {
+        "operationId": "post-threads-by-threadId-model-invocation-experiments",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/model-invocation-experiments",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/model-invocation-experiments"
+      }
+    },
+    "/api/threads/{threadId}/model-invocation-experiments/preview": {
+      "post": {
+        "operationId": "post-threads-by-threadId-model-invocation-experiments-preview",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/model-invocation-experiments/preview",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/model-invocation-experiments/preview"
+      }
+    },
     "/api/threads/{threadId}/operator-decisions": {
       "get": {
         "operationId": "get-threads-by-threadId-operator-decisions",
@@ -14224,7 +14324,7 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "15089a6983bcc21541630ff72184c280326fc70f12b482bcb7880a85e0b864fc",
-  "x-napier-route-count": 249,
-  "x-napier-route-set-sha256": "1a3706f9cc32edb000df2c4e14f6609a71d7ef28d2c3217f84f52d7cb4d009a8"
+  "x-napier-source-sha256": "ecf224927290d9ae9a975bd5f66c4fbd4c79a54138c36b6f11b3a9eda4e70003",
+  "x-napier-route-count": 251,
+  "x-napier-route-set-sha256": "b1eb944fdf2d7febd741ff6f257a834f8a778fcb28b7ec376a425b8db8f2bed1"
 }

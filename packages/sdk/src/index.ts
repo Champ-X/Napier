@@ -6,6 +6,8 @@ import type {
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowResult,
   JsonValue,
+  ModelInvocationExperimentPreview,
+  ModelInvocationExperimentResult,
   ModelRef,
   OperatorDecision,
   RunEvent,
@@ -27,6 +29,12 @@ import {
   type RunNapierAgentMessageExperimentOptions,
 } from "./agent-message-experiments.js";
 import {
+  previewNapierModelInvocationExperiment,
+  runNapierModelInvocationExperiment,
+  type PreviewNapierModelInvocationExperimentOptions,
+  type RunNapierModelInvocationExperimentOptions,
+} from "./model-invocation-experiments.js";
+import {
   previewNapierWorkflowExperiment,
   runNapierWorkflowExperiment,
   type PreviewNapierWorkflowExperimentOptions,
@@ -37,6 +45,10 @@ export type {
   PreviewNapierAgentMessageExperimentOptions,
   RunNapierAgentMessageExperimentOptions,
 } from "./agent-message-experiments.js";
+export type {
+  PreviewNapierModelInvocationExperimentOptions,
+  RunNapierModelInvocationExperimentOptions,
+} from "./model-invocation-experiments.js";
 export type {
   PreviewNapierWorkflowExperimentOptions,
   RunNapierWorkflowExperimentOptions,
@@ -162,6 +174,14 @@ export interface NapierClient {
     options: RunNapierAgentMessageExperimentOptions,
   ): Promise<AgentMessageExperimentResult>;
 
+  previewModelInvocationExperiment(
+    options: PreviewNapierModelInvocationExperimentOptions,
+  ): Promise<ModelInvocationExperimentPreview>;
+
+  runModelInvocationExperiment(
+    options: RunNapierModelInvocationExperimentOptions,
+  ): Promise<ModelInvocationExperimentResult>;
+
   defineWorkflow<TInput extends JsonValue, TOutput extends JsonValue>(
     definition: DefineNapierWorkflowInput<TInput, TOutput>,
   ): Promise<NapierWorkflow<TInput, TOutput>>;
@@ -273,6 +293,30 @@ class LocalNapierClient implements NapierClient {
   ): Promise<AgentMessageExperimentResult> {
     return this.track(() =>
       runNapierAgentMessageExperiment(
+        this.services,
+        options,
+        combinedSignal(options.signal, this.closeController.signal),
+      ),
+    );
+  }
+
+  async previewModelInvocationExperiment(
+    options: PreviewNapierModelInvocationExperimentOptions,
+  ): Promise<ModelInvocationExperimentPreview> {
+    return this.track(() =>
+      previewNapierModelInvocationExperiment(
+        this.services,
+        options,
+        combinedSignal(options.signal, this.closeController.signal),
+      ),
+    );
+  }
+
+  async runModelInvocationExperiment(
+    options: RunNapierModelInvocationExperimentOptions,
+  ): Promise<ModelInvocationExperimentResult> {
+    return this.track(() =>
+      runNapierModelInvocationExperiment(
         this.services,
         options,
         combinedSignal(options.signal, this.closeController.signal),

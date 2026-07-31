@@ -35,11 +35,8 @@ afterEach(async () => {
 describe("Deterministic Workflow Reduce", () => {
   it("reduces real ordered Map outputs, resumes, and reruns from a checkpoint", async () => {
     const fixture = await createFixture();
-    fixture.provider.setResponses([
-      fauxAssistantMessage('{"score":2,"accepted":true}'),
-      fauxAssistantMessage('{"score":3,"accepted":true}'),
-      fauxAssistantMessage('{"score":4,"accepted":false}'),
-    ]);
+    const respond = scoreResponse();
+    fixture.provider.setResponses([respond, respond, respond]);
     const manifest = mapReduceManifest(fixture.blueprint);
     const streamed: RunEvent[] = [];
 
@@ -746,6 +743,29 @@ function documents() {
     { id: "doc_b", text: "PRIVATE_DOCUMENT_BETA" },
     { id: "doc_c", text: "PRIVATE_DOCUMENT_GAMMA" },
   ];
+}
+
+function scoreResponse() {
+  const scores = [
+    { id: "doc_a", score: 2, accepted: true },
+    { id: "doc_b", score: 3, accepted: true },
+    { id: "doc_c", score: 4, accepted: false },
+  ] as const;
+  return (context: { messages: unknown[] }) => {
+    const prompt = JSON.stringify(context.messages);
+    const match = scores.find((candidate) => prompt.includes(candidate.id));
+    if (!match) {
+      throw new Error(
+        "Reduce Map item prompt did not contain a known document",
+      );
+    }
+    return fauxAssistantMessage(
+      JSON.stringify({
+        score: match.score,
+        accepted: match.accepted,
+      }),
+    );
+  };
 }
 
 function record(value: unknown): Record<string, unknown> | undefined {

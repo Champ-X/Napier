@@ -38,6 +38,7 @@ import {
   type CliWorkflowOptions,
 } from "./cli-options.js";
 import { executeAgentMessageExperimentCli } from "./agent-message-experiment-cli.js";
+import { executeModelInvocationExperimentCli } from "./model-invocation-experiment-cli.js";
 import { writeLine } from "./cli-output.js";
 import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
@@ -108,6 +109,14 @@ export async function runCli(
   }
   if (action.kind === "experiment") {
     return executeAgentMessageExperimentCli(
+      action.options,
+      io,
+      dependencies,
+      parentSignal,
+    );
+  }
+  if (action.kind === "model-experiment") {
+    return executeModelInvocationExperimentCli(
       action.options,
       io,
       dependencies,

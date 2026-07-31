@@ -50,6 +50,7 @@ const EXECUTION_MODES = new Set<RunExecutionMode>([
   "safe_read_only_recovery",
   "workflow_map_read_only",
   "agent_experiment_read_only",
+  "model_experiment_single_call",
 ]);
 const READ_ONLY_EXECUTION_TOOLS = new Set([
   "list_files",
@@ -178,6 +179,7 @@ export function createRunConfigurationFingerprint(
     );
   }
   const readOnlyExecution = executionMode !== "standard";
+  const singleModelCall = executionMode === "model_experiment_single_call";
   const modelAdvisor = effectiveModelAdvisorPolicy(profile);
   const toolLoopGuard = effectiveToolLoopGuardPolicy(profile);
   const content = {
@@ -193,13 +195,15 @@ export function createRunConfigurationFingerprint(
     thinkingLevel: profile.thinkingLevel,
     toolPolicy: readOnlyExecution ? "observe" : profile.toolPolicy,
     enabledTools: canonicalSet(
-      readOnlyExecution
-        ? profile.enabledTools.filter((tool) =>
-            READ_ONLY_EXECUTION_TOOLS.has(tool),
-          )
-        : profile.enabledTools,
+      singleModelCall
+        ? []
+        : readOnlyExecution
+          ? profile.enabledTools.filter((tool) =>
+              READ_ONLY_EXECUTION_TOOLS.has(tool),
+            )
+          : profile.enabledTools,
     ),
-    enabledSkills: canonicalSet(profile.enabledSkills),
+    enabledSkills: singleModelCall ? [] : canonicalSet(profile.enabledSkills),
     enabledSubagents: readOnlyExecution
       ? []
       : (canonicalSet(profile.enabledSubagents ?? []) as SubagentRole[]),

@@ -147,7 +147,8 @@ export function assessAutomaticRecovery(
   }
   if (
     options.run.source === "workflow" ||
-    options.run.source === "workflow_reuse"
+    options.run.source === "workflow_reuse" ||
+    options.run.source === "model_experiment"
   ) {
     blockReasons.add("workflow_managed");
   }

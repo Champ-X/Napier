@@ -13,6 +13,7 @@ import {
   type AssistantMessage,
   type Message,
   type Model,
+  type SimpleStreamOptions,
   type ThinkingLevel,
   type Usage as PiUsage,
   type UserMessage,
@@ -99,6 +100,8 @@ import {
   createModelContextEnvelopeReceipt,
   MODEL_CONTEXT_ENVELOPE_EVENT,
 } from "./model-context-envelope.js";
+import { ModelInvocationCapsuleStore } from "./model-invocation-capsule-store.js";
+import { captureModelInvocation } from "./model-invocation-capture.js";
 import { McpExtensionManager } from "./mcp.js";
 import {
   CombinedModelAdvisorBlockedError,
@@ -235,6 +238,9 @@ export class AgentRuntime {
     readonly workspaceProcesses?: WorkspaceProcessManager,
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
     readonly browserSessions?: RunBrowserSessionManager,
+    readonly modelInvocationCapsules = new ModelInvocationCapsuleStore(
+      store.dataRoot,
+    ),
   ) {
     this.sessions = new AgentSessionRuntime(
       workspaceProcesses,
@@ -848,6 +854,11 @@ export class AgentRuntime {
         "Workflow node Runs must be resumed through their Workflow Plan",
       );
     }
+    if (interrupted.source === "model_experiment") {
+      throw new Error(
+        "Model invocation experiment Runs must be retried from their source checkpoint",
+      );
+    }
     const events = (await this.store.listEvents(thread.id)).filter(
       (event) => event.runId === interrupted.id,
     );
@@ -1401,6 +1412,17 @@ export class AgentRuntime {
         requestContext.systemPrompt ?? "",
         requestContext.messages,
         requestContext.tools ?? [],
+      );
+      await captureModelInvocation(
+        this.store,
+        this.modelInvocationCapsules,
+        run,
+        requestModel,
+        requestContext,
+        options,
+        currentModelContextEnvelope,
+        "agent_turn",
+        onEvent,
       );
       return this.modelRegistry.models.streamSimple(
         requestModel,
@@ -2357,12 +2379,28 @@ export class AgentRuntime {
           },
           onEvent,
         );
+        const modelOptions = {
+          signal,
+          maxTokens: 1_200,
+          temperature: 0,
+        } satisfies SimpleStreamOptions;
+        await captureModelInvocation(
+          this.store,
+          this.modelInvocationCapsules,
+          run,
+          model,
+          requestContext,
+          modelOptions,
+          envelope,
+          "context_compaction",
+          onEvent,
+        );
         let response: AssistantMessage;
         try {
           response = await this.modelRegistry.models.completeSimple(
             model,
             requestContext,
-            { signal, maxTokens: 1_200, temperature: 0 },
+            modelOptions,
           );
         } catch (error) {
           const message =
@@ -2713,15 +2751,27 @@ export class AgentRuntime {
       },
       onEvent,
     );
+    const modelOptions = {
+      signal,
+      maxTokens: 512,
+      temperature: 0,
+    } satisfies SimpleStreamOptions;
+    await captureModelInvocation(
+      this.store,
+      this.modelInvocationCapsules,
+      this.requireRun(threadId, runId),
+      model,
+      requestContext,
+      modelOptions,
+      envelope,
+      "goal_evaluation",
+      onEvent,
+    );
     try {
       const response = await this.modelRegistry.models.completeSimple(
         model,
         requestContext,
-        {
-          signal,
-          maxTokens: 512,
-          temperature: 0,
-        },
+        modelOptions,
       );
       const text = contentText(response.content);
       await this.record(
@@ -2873,12 +2923,28 @@ export class AgentRuntime {
         },
         onEvent,
       );
+      const modelOptions = {
+        signal,
+        maxTokens: 700,
+        temperature: 0,
+      } satisfies SimpleStreamOptions;
+      await captureModelInvocation(
+        this.store,
+        this.modelInvocationCapsules,
+        this.requireRun(threadId, runId),
+        model,
+        requestContext,
+        modelOptions,
+        envelope,
+        "memory_extraction",
+        onEvent,
+      );
       let response: AssistantMessage;
       try {
         response = await this.modelRegistry.models.completeSimple(
           model,
           requestContext,
-          { signal, maxTokens: 700, temperature: 0 },
+          modelOptions,
         );
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -3127,6 +3193,14 @@ export class AgentRuntime {
       },
       onEvent,
     );
+  }
+
+  private requireRun(threadId: string, runId: string): RunRecord {
+    const run = this.store
+      .listRuns(threadId)
+      .find((candidate) => candidate.id === runId);
+    if (!run) throw new Error(`Run not found: ${runId}`);
+    return run;
   }
 
   private async buildVisibleConversation(threadId: string): Promise<string> {

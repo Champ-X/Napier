@@ -18,6 +18,8 @@ export interface ContextEventTraceView {
   referenceCount?: number;
   unresolvedReferenceCount?: number;
   systemPromptBytes?: number;
+  turnIndex?: number;
+  capsuleBytes?: number;
   count?: number;
   truncated?: boolean;
   enabled?: boolean;
@@ -42,6 +44,10 @@ export interface ContextEventTraceView {
   milestoneOmittedCount?: number;
   milestoneTextRedacted?: boolean;
   toolPolicy?: string;
+  purpose?: string;
+  model?: string;
+  storage?: string;
+  reason?: string;
   skillCatalogInjected?: boolean;
   contentSha256?: string;
   sourceSha256?: string;
@@ -62,10 +68,13 @@ export interface ContextEventTraceView {
   delegationProjectionSha256?: string;
   milestoneSetSha256?: string;
   milestoneProjectionSha256?: string;
+  contextEnvelopeSha256?: string;
+  contextSha256?: string;
+  capsuleSha256?: string;
 }
 
 const CONTEXT_EVENT =
-  /^context\.(skills|prepared|memory|model_envelope|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
+  /^context\.(skills|prepared|memory|model_envelope|model_invocation(_unavailable)?|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const CONTEXT_RECEIPT_SUMMARY = "context receipt";
@@ -103,11 +112,15 @@ export function contextEventTraceView(
       ? { requestedSkillCount: requestedSkillNames.length }
       : {}),
     ...(loadedSkillNames ? { loadedSkillCount: loadedSkillNames.length } : {}),
-    ...(missingSkillNames ? { missingSkillCount: missingSkillNames.length } : {}),
+    ...(missingSkillNames
+      ? { missingSkillCount: missingSkillNames.length }
+      : {}),
     ...numberField(event.payload, "referencedVariableCount"),
     ...numberField(event.payload, "referenceCount"),
     ...numberField(event.payload, "unresolvedReferenceCount"),
     ...numberField(event.payload, "systemPromptBytes"),
+    ...numberField(event.payload, "turnIndex"),
+    ...numberField(event.payload, "capsuleBytes"),
     ...numberField(event.payload, "count"),
     ...booleanField(event.payload, "truncated"),
     ...booleanField(event.payload, "enabled"),
@@ -132,6 +145,10 @@ export function contextEventTraceView(
     ...numberField(event.payload, "milestoneOmittedCount"),
     ...booleanField(event.payload, "milestoneTextRedacted"),
     ...safeTokenField(event.payload, "toolPolicy"),
+    ...safeTokenField(event.payload, "purpose"),
+    ...modelField(event.payload),
+    ...safeTokenField(event.payload, "storage"),
+    ...safeTokenField(event.payload, "reason"),
     ...booleanField(event.payload, "skillCatalogInjected"),
     ...shaField(event.payload, "contentSha256"),
     ...shaField(event.payload, "sourceSha256"),
@@ -152,6 +169,9 @@ export function contextEventTraceView(
     ...shaField(event.payload, "delegationProjectionSha256"),
     ...shaField(event.payload, "milestoneSetSha256"),
     ...shaField(event.payload, "milestoneProjectionSha256"),
+    ...shaField(event.payload, "contextEnvelopeSha256"),
+    ...shaField(event.payload, "contextSha256"),
+    ...shaField(event.payload, "capsuleSha256"),
   };
 }
 
@@ -166,6 +186,14 @@ export function contextEventTraceSummary(event: RunEvent): string | undefined {
       ? [`schema ${view.schemaVersion}`]
       : []),
     ...(view.toolPolicy ? [`policy ${view.toolPolicy}`] : []),
+    ...(view.purpose ? [`purpose ${view.purpose}`] : []),
+    ...(view.model ? [`model ${view.model}`] : []),
+    ...(view.storage ? [`storage ${view.storage}`] : []),
+    ...(view.reason ? [`reason ${view.reason}`] : []),
+    ...(view.turnIndex !== undefined ? [`turn ${view.turnIndex}`] : []),
+    ...(view.capsuleBytes !== undefined
+      ? [`capsule-bytes ${view.capsuleBytes}`]
+      : []),
     ...(view.enabled !== undefined ? [`enabled ${view.enabled}`] : []),
     ...(view.threshold !== undefined ? [`threshold ${view.threshold}`] : []),
     ...(view.messageCount !== undefined
@@ -224,7 +252,9 @@ export function contextEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.omittedMessageCount !== undefined
       ? [`omitted ${view.omittedMessageCount}`]
       : []),
-    ...(view.checkpointId ? [`checkpoint ${view.checkpointId.slice(-10)}`] : []),
+    ...(view.checkpointId
+      ? [`checkpoint ${view.checkpointId.slice(-10)}`]
+      : []),
     ...(view.parentCheckpointId
       ? [`parent ${view.parentCheckpointId.slice(-10)}`]
       : []),
@@ -302,6 +332,9 @@ function hashSummaries(view: ContextEventTraceView): string[] {
     ...hashSummary("delegation-projection", view.delegationProjectionSha256),
     ...hashSummary("milestone-set", view.milestoneSetSha256),
     ...hashSummary("milestone-projection", view.milestoneProjectionSha256),
+    ...hashSummary("context-envelope", view.contextEnvelopeSha256),
+    ...hashSummary("context", view.contextSha256),
+    ...hashSummary("capsule", view.capsuleSha256),
   ];
 }
 
@@ -341,6 +374,21 @@ function safeTokenField(
   return value ? { [key]: value } : {};
 }
 
+function modelField(
+  payload: Record<string, unknown>,
+): Partial<ContextEventTraceView> {
+  const model = payload["model"];
+  if (typeof model === "string") {
+    const value = safeToken(model);
+    return value ? { model: value } : {};
+  }
+  if (!model || typeof model !== "object" || Array.isArray(model)) return {};
+  const value = model as Record<string, unknown>;
+  const provider = safeToken(value["provider"]);
+  const id = safeToken(value["id"]);
+  return provider && id ? { model: `${provider}/${id}` } : {};
+}
+
 function shaField(
   payload: Record<string, unknown>,
   key: keyof ContextEventTraceView,
@@ -354,7 +402,9 @@ function array(value: unknown): readonly unknown[] | undefined {
 }
 
 function safeToken(value: unknown): string | undefined {
-  return typeof value === "string" && SAFE_TOKEN.test(value) ? value : undefined;
+  return typeof value === "string" && SAFE_TOKEN.test(value)
+    ? value
+    : undefined;
 }
 
 function sha256(value: unknown): string | undefined {

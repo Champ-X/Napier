@@ -623,7 +623,7 @@ reasons/evidence, Artifact paths, and raw diagnostics are excluded. Comparison
 creation rechecks source and target Plan revisions after observation and fails
 closed on source drift or non-Workflow Run bindings.
 
-Agent message experiments add the first controlled model re-execution path
+Agent message experiments add a message-level controlled re-execution path
 without reclassifying portable Replay as execution:
 
 ```text
@@ -660,6 +660,57 @@ metric deltas, timestamps, and hashes rather than source prompt, source output,
 target output, tool arguments, Memory text, Skill text, Workspace paths, or
 diagnostics. Portable target Replay accepts an external parent only when a
 unique exact `branch.created` receipt proves the cross-Thread lineage.
+
+Model invocation experiments add a call-level path that is narrower than an
+Agent rerun:
+
+```text
+before each provider dispatch
+  -> project only Pi provider-consumed Context fields and safe sampling options
+  -> bind the existing Model Context Envelope receipt
+  -> write one content-addressed local capsule
+  -> append context.model_invocation with hashes, purpose, model, size, and turn
+select terminal source Run + captured turn
+  -> require one exact capsule receipt, preceding context envelope, and
+     following model response
+  -> load the local capsule and replay all envelope/context/content validators
+  -> resolve the optional configured replacement model before mutation
+  -> bind source response, Agent revision, capsule, and model to previewSha256
+execute with expectedPreviewSha256
+  -> reproject freshness and create an isolated target Thread
+  -> Store admit only an internal model_experiment_single_call capability
+  -> append run.started and model.experiment.started
+  -> call completeSimple exactly once with target turn index zero
+  -> never resolve or dispatch returned tool calls
+  -> compare status, stop reason, duration, usage, cost, text/output hashes,
+     and canonical tool names
+  -> append model.experiment.compared and settle completed/failed/cancelled
+  -> stream target events, Snapshot, and model_invocation_experiment_result
+```
+
+Capture covers primary Agent turns, context compaction, Goal evaluation, and
+Memory extraction. It does not serialize tool executors or runtime-only Context
+fields, and excludes credentials, headers, environment, callbacks, and
+AbortSignals. Capture storage failure must not change the original provider
+call: the Runtime appends only a bounded, hash-only
+`context.model_invocation_unavailable` event and continues.
+
+Capsules are sensitive local execution state because prior model-visible tool
+results may be present. Their CAS lives under the data root with directory mode
+`0700`, file mode `0600`, fsynced temporary writes plus no-overwrite hard-link
+installation, post-install capacity revalidation, no symlink reads, and
+permission-drift rejection. One capsule is limited to 8 MiB;
+the store is limited to 256 capsules and 128 MiB. Portable Replay contains only
+the validated receipt. Trace and durable `model.experiment.*` events exclude
+provider Context, candidate text, raw thinking, and tool arguments.
+
+Provider failure and active cancellation are call-level outcomes and produce
+comparable terminal Runs. Orchestration failure appends a hash-only failure
+event. Generic and automatic recovery reject model-experiment Runs because a
+retry must create a fresh target from the same source checkpoint. The shared
+Runtime is currently exposed through CLI JSONL, HTTP preview/SSE, and the
+TypeScript SDK. Web Trace provides a privacy-bounded projection; a Web desk and
+stdio RPC method remain unimplemented.
 
 The browser desk remains inside the lazy Run Lab boundary. Its independent
 protocol parser requires exact fields and recomputes preview, comparison, and
@@ -3626,7 +3677,9 @@ content SHA-256, and mirrors assessment/attempt counts in headers.
 ## Replay And Evaluation Flow
 
 Portable Run Replay remains evidence export, not tool re-execution. Controlled
-Workflow and Agent-message experiments are separate live Runtime paths:
+Workflow, Agent-message, and model-invocation experiments are separate live
+Runtime paths. A model-invocation target can be exported and verified, but its
+raw local Context capsule is never portable:
 
 ```text
 select terminal run
@@ -5561,6 +5614,11 @@ The current boundary has fifty-two parts:
     Prompt Variable, Skill, Memory, history, model, and Workspace bindings;
     isolated read-only Branch execution; source/target comparison; CLI, SDK,
     stdio RPC, HTTP SSE, portable Replay, and privacy-bounded Trace.
+54. Preview-bound single-model-invocation re-execution with exact local-only
+    provider Context capsules, primary/compaction/Goal/Memory capture, one
+    isolated provider call, zero candidate tool execution, call-level
+    comparison, CLI/HTTP/SDK delivery, and privacy-bounded Replay/Trace
+    receipts.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5610,10 +5668,10 @@ deferred until the local P0-P9 product loop is stable.
   session nodes, multi-way switch, loops, write-capable Map, compensation,
   single-node tests and breakpoints, external Agent adapters, artifact
   settlement, and a visual builder;
-- extend controlled Workflow and user-message re-execution with model-call and
-  tool-call checkpoints, side-effect result reuse/simulation, Prompt/Skill/
-  Memory/environment replacement, batch experiments, interactive root-cause
-  views, and evaluation promotion.
+- extend controlled Workflow, user-message, and model-call re-execution with
+  tool-call checkpoints, side-effect result reuse/simulation,
+  Prompt/Skill/Memory/environment replacement, Web/RPC model-call entrances,
+  batch experiments, interactive root-cause views, and evaluation promotion.
 
 ### Layer 3: Product and outcome proof
 

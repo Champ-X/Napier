@@ -69,6 +69,35 @@ describe("Model event trace view", () => {
     expect(modelEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects model-call experiment comparison without candidate bodies", () => {
+    const event = modelEvent("model.experiment.compared", {
+      sourceRunId: "run_source_12345678",
+      targetRunId: "run_target_12345678",
+      sourceTurnIndex: 2,
+      status: "completed",
+      outputChanged: true,
+      textChanged: false,
+      toolCallDelta: 1,
+      durationMsDelta: -25,
+      costUsdDelta: 0.0002,
+      comparisonSha256: "2".repeat(64),
+      previewSha256: "3".repeat(64),
+      assistantText: "TOP_SECRET_CANDIDATE_BODY",
+      toolArguments: { token: "TOP_SECRET_TOOL_ARGUMENT" },
+    });
+
+    expect(modelEventTraceSummary(event)).toContain(
+      "model / experiment.compared",
+    );
+    expect(modelEventTraceSummary(event)).toContain(
+      "status completed / output-changed true / text-changed false / tool-delta 1 / duration-delta -25 / cost-delta 0.0002",
+    );
+    expect(modelEventTraceSummary(event)).toContain(
+      `comparison ${"2".repeat(12)} / preview ${"3".repeat(12)}`,
+    );
+    expect(modelEventTraceSummary(event)).not.toContain("TOP_SECRET");
+  });
+
   it("fails closed for malformed and unknown model receipts", () => {
     expect(
       modelEventTraceSummary(modelEvent("model.text.delta", ["TOP_SECRET"])),
