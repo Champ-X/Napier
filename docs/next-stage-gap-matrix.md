@@ -25,7 +25,7 @@ Audit date: 2026-07-31
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                                 |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                                                           |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. RPC supports Agent and typed Workflow run/resume, blocked-node retry, request-bound Ledger notifications, real cancellation, mixed bounded concurrency, and orderly shutdown without exposing Store. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Workflow Approval/experiment RPC, authenticated remote transport, interactive TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                        |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. RPC supports Agent and typed Workflow run/resume, blocked-node retry, freshness-bound Approval answer-and-resume, request-bound Ledger notifications, real cancellation, mixed bounded concurrency, and orderly shutdown without exposing Store. CLI and SDK reuse the same Embedded Approval service; HTTP reuses the generic decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Workflow experiment RPC, authenticated remote transport, interactive TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                    |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -197,6 +197,10 @@ Acceptance:
 - route `napier/workflow/run` and `napier/workflow/resume` through the existing
   `EmbeddedWorkflowService`, preserving Manifest, Schema, Plan, node Run,
   blocked retry, cancellation, and Ledger behavior;
+- return the full pending Decision for waiting Workflows and route
+  `napier/workflow/answer` through a shared Embedded Approval service that
+  verifies Decision content hash, Manifest, Plan, node Run, request evidence,
+  option contract, and expiry before answering and resuming;
 - stream every durable event from the active invocation as a `napier/event`
   notification carrying the originating JSON-RPC request ID and the same event
   SHA-256 used by SSE/JSONL;
@@ -231,11 +235,14 @@ Threat boundary:
   directly;
 - cancellation settles through AgentRuntime or WorkflowRuntime; it does not
   claim rollback of an already completed tool side effect;
+- an answer is durable before resume. Cancellation or output failure in that
+  interval leaves an answered, recoverable Workflow rather than rolling back
+  or repeating the human side effect;
 - the four-request bound is Runtime admission, not multi-tenant scheduling.
   Same-Thread Agent/Workflow rules still fail closed beneath the transport;
-- Workflow Approval answers and checkpoint experiments, remote reconnection,
-  server-initiated replay after client loss, ACP, TUI, and Desktop packaging
-  remain outside this slice.
+- Workflow checkpoint experiments, remote reconnection, server-initiated
+  replay after client loss, ACP, TUI, and Desktop packaging remain outside
+  this slice.
 
 Observed result:
 
@@ -256,11 +263,19 @@ Observed result:
 - a real Runtime cancellation test holds `workflow.node.started` output under
   controlled backpressure, sends `$/cancelRequest`, and verifies both the
   cancelled node Run and terminal `workflow.cancelled` Ledger evidence;
+- SDK tests reject cross-Manifest, stale, expired, duplicate, and losing
+  concurrent answers; prove approve/reject outcomes; and recover after
+  cancellation immediately after the durable answer event without creating a
+  second answer;
+- a built `napier rpc` subprocess executes two real Approval Workflows,
+  rejects stale and repeated answers with a stable conflict, completes approve
+  and reject paths, streams the answer event, and leaves both Replay bundles
+  valid;
 - manual dogfood repeated the built process path against the Napier workspace:
   two completed Runs shared one Thread, emitted contiguous Ledger sequences
   `1..30`, returned distinct Run IDs, and closed through `shutdown` / `exit`
   without stderr output;
-- the complete repository gate passed 1,386 tests with 24 opt-in live tests
+- the complete repository gate passed 1,390 tests with 24 opt-in live tests
   skipped by default, verified 247 OpenAPI routes and 244/244 compatibility
   operations, and kept the Web main entry at 130.08 KiB. The 69-file Web dist
   is bound to `eb8eb48f18f729d0`; the seven-artifact release set is bound to

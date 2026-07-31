@@ -36,7 +36,10 @@ describe("Napier Workflow JSON-RPC server", () => {
     const fixture = await createFixture("execution");
     const manifest = await defineRpcWorkflowManifest(fixture);
     const calls: string[] = [];
-    const workflows: Pick<EmbeddedWorkflowService, "run" | "resume"> = {
+    const workflows: Pick<
+      EmbeddedWorkflowService,
+      "run" | "resume" | "answerAndResume"
+    > = {
       async run(options) {
         calls.push(`run:${String(record(options.input)?.["text"])}`);
         await options.onEvent?.(
@@ -58,6 +61,9 @@ describe("Napier Workflow JSON-RPC server", () => {
           message: "RPC Workflow result",
         });
       },
+      async answerAndResume() {
+        throw new Error("Unexpected Workflow Approval answer");
+      },
     };
     const harness = new RpcWorkflowHarness(unusedAgents(), workflows);
     const server = harness.start();
@@ -68,6 +74,7 @@ describe("Napier Workflow JSON-RPC server", () => {
           capabilities: expect.objectContaining({
             workflowRun: true,
             workflowResume: true,
+            workflowApprovalAnswer: true,
           }),
         }),
       }),
@@ -167,7 +174,10 @@ describe("Napier Workflow JSON-RPC server", () => {
         throw new Error("Unexpected Agent resume");
       },
     };
-    const workflows: Pick<EmbeddedWorkflowService, "run" | "resume"> = {
+    const workflows: Pick<
+      EmbeddedWorkflowService,
+      "run" | "resume" | "answerAndResume"
+    > = {
       async run(options) {
         workflowCalls += 1;
         await waitForAbort(options.signal!);
@@ -179,6 +189,9 @@ describe("Napier Workflow JSON-RPC server", () => {
           undefined,
           "cancelled",
         );
+      },
+      async answerAndResume() {
+        throw new Error("Unexpected Workflow Approval answer");
       },
       async resume() {
         throw new Error("Unexpected Workflow resume");
@@ -312,7 +325,10 @@ class RpcWorkflowHarness {
 
   constructor(
     private readonly agents: Pick<EmbeddedAgentService, "run" | "resume">,
-    private readonly workflows: Pick<EmbeddedWorkflowService, "run" | "resume">,
+    private readonly workflows: Pick<
+      EmbeddedWorkflowService,
+      "run" | "resume" | "answerAndResume"
+    >,
   ) {}
 
   start(): Promise<number> {

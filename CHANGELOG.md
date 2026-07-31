@@ -6,6 +6,17 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added one freshness-bound Workflow Approval answer-and-resume path shared by
+  CLI, TypeScript SDK, and local stdio RPC. Waiting executions expose the
+  pending Decision; answers bind its content hash, Manifest, Thread, Plan,
+  Approval Run, request evidence, option contract, and expiry before the
+  decision is persisted and Workflow recovery starts. Stale, mismatched,
+  expired, repeated, and losing concurrent answers fail closed. If
+  cancellation or output failure follows the durable answer, normal resume
+  completes without a duplicate human side effect. Approval validation lives
+  in a split Runtime module; built RPC approve/reject, SDK concurrency and
+  cancellation recovery, existing CLI JSONL, and portable Replay tests cover
+  the full path.
 - Extended local stdio JSON-RPC protocol v1 with typed Workflow run and resume.
   Clients pass the same hash-bound Manifest used by CLI/SDK plus Schema-checked
   JSON input or an existing Thread/Plan and explicit blocked-node retry.

@@ -3,6 +3,7 @@ import type {
   ExecutionPlanWorkflowResult,
   JsonValue,
   ModelRef,
+  OperatorDecision,
   RunEvent,
   RunRecord,
   WorkflowValueSchema,
@@ -90,12 +91,34 @@ export interface ResumeNapierWorkflowOptions<
   onEvent?: (event: RunEvent) => Promise<void> | void;
 }
 
+export interface AnswerNapierWorkflowApprovalOptions<
+  TInput extends JsonValue,
+  TOutput extends JsonValue,
+> {
+  workflow: NapierWorkflow<TInput, TOutput>;
+  threadId: string;
+  planId: string;
+  decisionId: string;
+  expectedDecisionSha256: string;
+  selectedOptionIds: ["option_1" | "option_2"];
+  customText?: string;
+  signal?: AbortSignal;
+  onEvent?: (event: RunEvent) => Promise<void> | void;
+}
+
 export interface NapierWorkflowExecution<TOutput extends JsonValue> {
   threadId: string;
   planId: string;
   status: ExecutionPlanWorkflowResult["status"];
   output?: TOutput;
   result: ExecutionPlanWorkflowResult;
+  pendingDecision?: OperatorDecision;
+}
+
+export interface NapierWorkflowApprovalExecution<
+  TOutput extends JsonValue,
+> extends NapierWorkflowExecution<TOutput> {
+  decision: OperatorDecision;
 }
 
 export type NapierClientOptions = LocalAgentRuntimeOptions;
@@ -116,6 +139,10 @@ export interface NapierClient {
   resumeWorkflow<TInput extends JsonValue, TOutput extends JsonValue>(
     options: ResumeNapierWorkflowOptions<TInput, TOutput>,
   ): Promise<NapierWorkflowExecution<TOutput>>;
+
+  answerWorkflowApproval<TInput extends JsonValue, TOutput extends JsonValue>(
+    options: AnswerNapierWorkflowApprovalOptions<TInput, TOutput>,
+  ): Promise<NapierWorkflowApprovalExecution<TOutput>>;
 
   close(): Promise<void>;
 }
@@ -207,7 +234,11 @@ class LocalNapierClient implements NapierClient {
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       }),
     );
-    return workflowExecution<TOutput>(execution.threadId, execution.result);
+    return workflowExecution<TOutput>(
+      execution.threadId,
+      execution.result,
+      execution.pendingDecision,
+    );
   }
 
   async resumeWorkflow<TInput extends JsonValue, TOutput extends JsonValue>(
@@ -223,7 +254,44 @@ class LocalNapierClient implements NapierClient {
         ...(options.onEvent ? { onEvent: options.onEvent } : {}),
       }),
     );
-    return workflowExecution<TOutput>(execution.threadId, execution.result);
+    return workflowExecution<TOutput>(
+      execution.threadId,
+      execution.result,
+      execution.pendingDecision,
+    );
+  }
+
+  async answerWorkflowApproval<
+    TInput extends JsonValue,
+    TOutput extends JsonValue,
+  >(
+    options: AnswerNapierWorkflowApprovalOptions<TInput, TOutput>,
+  ): Promise<NapierWorkflowApprovalExecution<TOutput>> {
+    const execution = await this.track(() =>
+      this.services.embeddedWorkflows.answerAndResume({
+        manifest: options.workflow.manifest,
+        threadId: options.threadId,
+        planId: options.planId,
+        decisionId: options.decisionId,
+        expectedDecisionSha256: options.expectedDecisionSha256,
+        answer: {
+          selectedOptionIds: options.selectedOptionIds,
+          ...(options.customText !== undefined
+            ? { customText: options.customText }
+            : {}),
+        },
+        signal: combinedSignal(options.signal, this.closeController.signal),
+        ...(options.onEvent ? { onEvent: options.onEvent } : {}),
+      }),
+    );
+    return {
+      ...workflowExecution<TOutput>(
+        execution.threadId,
+        execution.result,
+        execution.pendingDecision,
+      ),
+      decision: structuredClone(execution.decision),
+    };
   }
 
   close(): Promise<void> {
@@ -280,6 +348,7 @@ function agentExecution(
 function workflowExecution<TOutput extends JsonValue>(
   threadId: string,
   result: ExecutionPlanWorkflowResult,
+  pendingDecision?: OperatorDecision,
 ): NapierWorkflowExecution<TOutput> {
   return {
     threadId,
@@ -289,6 +358,9 @@ function workflowExecution<TOutput extends JsonValue>(
       ? { output: structuredClone(result.output) as TOutput }
       : {}),
     result: structuredClone(result),
+    ...(pendingDecision
+      ? { pendingDecision: structuredClone(pendingDecision) }
+      : {}),
   };
 }
 

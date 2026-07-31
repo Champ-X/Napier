@@ -362,12 +362,16 @@ function agentService(overrides: {
 
 function unusedWorkflowService(): Pick<
   EmbeddedWorkflowService,
-  "run" | "resume"
+  "run" | "resume" | "answerAndResume"
 > {
   const unexpected = async (): Promise<never> => {
     throw new Error("Unexpected Workflow RPC call");
   };
-  return { run: unexpected, resume: unexpected };
+  return {
+    run: unexpected,
+    resume: unexpected,
+    answerAndResume: unexpected,
+  };
 }
 
 function execution(

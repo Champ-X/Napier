@@ -8,6 +8,7 @@ import {
   type NapierRpcErrorResponse,
   type NapierRpcId,
   type NapierRpcSuccessResponse,
+  type NapierRpcWorkflowApprovalAnswerParams,
   type NapierRpcWorkflowResumeParams,
   type NapierRpcWorkflowRunParams,
 } from "@napier/contracts";
@@ -45,6 +46,8 @@ export type RpcAgentRunParams = NapierRpcAgentRunParams;
 export type RpcAgentResumeParams = NapierRpcAgentResumeParams;
 export type RpcWorkflowRunParams = NapierRpcWorkflowRunParams;
 export type RpcWorkflowResumeParams = NapierRpcWorkflowResumeParams;
+export type RpcWorkflowApprovalAnswerParams =
+  NapierRpcWorkflowApprovalAnswerParams;
 
 export class JsonRpcProtocolError extends Error {
   constructor(
@@ -64,7 +67,9 @@ const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
 const RUN_ID = /^run_[a-z0-9_-]{8,80}$/u;
 const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u;
+const SHA256 = /^[a-f0-9]{64}$/u;
 const MAX_PROMPT_BYTES = 64 * 1024;
+const MAX_DECISION_CUSTOM_TEXT_BYTES = 4 * 1024;
 const MAX_RPC_JSON_DEPTH = 64;
 
 export function parseJsonRpcMessage(line: string): JsonRpcMessage {
@@ -217,6 +222,63 @@ export function parseWorkflowResumeParams(
     threadId,
     planId,
     ...(retryBlocked ? { retryBlocked: true } : {}),
+  };
+}
+
+export function parseWorkflowApprovalAnswerParams(
+  input: Record<string, unknown> | undefined,
+): RpcWorkflowApprovalAnswerParams {
+  if (!input) invalidParams("Workflow Approval answer params are required");
+  exactKeys(input, [
+    "manifest",
+    "threadId",
+    "planId",
+    "decisionId",
+    "expectedDecisionSha256",
+    "answer",
+  ]);
+  const manifest = workflowManifest(input["manifest"]);
+  const threadId = resourceId(input["threadId"], "threadId");
+  const planId = resourceId(input["planId"], "planId");
+  const decisionId = resourceId(input["decisionId"], "decisionId");
+  if (
+    typeof input["expectedDecisionSha256"] !== "string" ||
+    !SHA256.test(input["expectedDecisionSha256"])
+  ) {
+    invalidParams("expectedDecisionSha256 is invalid");
+  }
+  if (!record(input["answer"])) invalidParams("answer is invalid");
+  exactKeys(input["answer"], ["selectedOptionIds", "customText"]);
+  const selections = input["answer"]["selectedOptionIds"];
+  const selectedOptionId = Array.isArray(selections)
+    ? selections[0]
+    : undefined;
+  if (
+    !Array.isArray(selections) ||
+    selections.length !== 1 ||
+    (selectedOptionId !== "option_1" && selectedOptionId !== "option_2")
+  ) {
+    invalidParams("selectedOptionIds is invalid");
+  }
+  const customText =
+    input["answer"]["customText"] === undefined
+      ? undefined
+      : boundedText(
+          input["answer"]["customText"],
+          1,
+          MAX_DECISION_CUSTOM_TEXT_BYTES,
+          true,
+        );
+  return {
+    manifest,
+    threadId,
+    planId,
+    decisionId,
+    expectedDecisionSha256: input["expectedDecisionSha256"],
+    answer: {
+      selectedOptionIds: [selectedOptionId],
+      ...(customText !== undefined ? { customText } : {}),
+    },
   };
 }
 

@@ -36,6 +36,9 @@ describe("Napier JSON-RPC output failure", () => {
         async resume() {
           throw new Error("Unexpected Workflow RPC call");
         },
+        async answerAndResume() {
+          throw new Error("Unexpected Workflow RPC call");
+        },
       },
       input,
       output,

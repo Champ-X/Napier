@@ -34,9 +34,10 @@ Version `0.1.0` includes:
   by the same Agent Runtime, model registry, policy, Sandbox, SQLite Ledger,
   and domain services as the HTTP/Web path;
 - a long-lived local `napier rpc` stdio JSON-RPC 2.0 process for Agent and
-  typed Workflow run/resume, request-bound Ledger event notifications,
-  standard cancellation, bounded concurrency, and orderly shutdown over the
-  same embedded Runtime services used by the TypeScript SDK;
+  typed Workflow run/resume plus fresh Approval answer-and-resume,
+  request-bound Ledger event notifications, standard cancellation, bounded
+  concurrency, and orderly shutdown over the same embedded Runtime services
+  used by the TypeScript SDK;
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
@@ -442,12 +443,15 @@ npm run --silent napier -- rpc \
 
 The client first sends `initialize`, then calls `napier/agent/run`,
 `napier/agent/resume`, `napier/workflow/run`, or
-`napier/workflow/resume`. Workflow calls carry the same versioned Manifest
-consumed by the CLI and TypeScript SDK; new executions also carry typed JSON
-input, while resume binds the existing Thread and Plan and can explicitly
-retry blocked nodes. Every durable event produced by a request is streamed as
-a `napier/event` notification carrying the originating request ID and the same
-event SHA-256 used by SSE/JSONL before the terminal result:
+`napier/workflow/resume`. A waiting Workflow response includes its pending
+Decision and `contentSha256`; `napier/workflow/answer` requires that hash plus
+the same Manifest, Thread, Plan, Decision, and selected option before it
+persists the answer and resumes. Workflow calls carry the same versioned
+Manifest consumed by the CLI and TypeScript SDK; new executions also carry
+typed JSON input, while resume binds the existing Thread and Plan and can
+explicitly retry blocked nodes. Every durable event produced by a request is
+streamed as a `napier/event` notification carrying the originating request ID
+and the same event SHA-256 used by SSE/JSONL before the terminal result:
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"my-editor"}}}
@@ -466,8 +470,8 @@ codes; internal diagnostics are hash-only. EOF, SIGINT, SIGTERM, `exit`, and
 Runtime shutdown cancel and await active Runs before SQLite closes. The
 transport is local stdio only: it does not open a socket, accept remote
 credentials, expose Store, or implement a second Agent or Workflow loop.
-Approval answers, Workflow experiments, remote transport/authentication, ACP,
-and TUI remain follow-up work.
+Workflow experiments, remote transport/authentication, ACP, and TUI remain
+follow-up work.
 
 Execute a versioned typed Workflow manifest through the same Runtime:
 
@@ -2631,6 +2635,17 @@ try {
     signal: abortController.signal,
     onEvent,
   });
+  if (execution.pendingDecision) {
+    await client.answerWorkflowApproval({
+      workflow,
+      threadId: execution.threadId,
+      planId: execution.planId,
+      decisionId: execution.pendingDecision.id,
+      expectedDecisionSha256: execution.pendingDecision.contentSha256,
+      selectedOptionIds: ["option_1"],
+      onEvent,
+    });
+  }
   await client.resumeWorkflow({
     workflow,
     threadId: execution.threadId,
@@ -2644,8 +2659,11 @@ try {
 `defineWorkflow()` performs pure Plan/Manifest/Schema preflight before
 persisting a definition Thread and source Plan, then derives the normal
 evidence-bound Blueprint. `runWorkflow()` validates Manifest and input before
-creating an execution Thread. `runAgent()` validates its prompt, model, title,
-and Thread/Agent binding before mutation; `resumeAgent()` uses the same
+creating an execution Thread. Waiting results expose the exact pending
+Decision; `answerWorkflowApproval()` verifies its content hash, Workflow start,
+Manifest, Plan, Approval Run, option contract, and expiry before persisting
+one answer and resuming. `runAgent()` validates its prompt, model, title, and
+Thread/Agent binding before mutation; `resumeAgent()` uses the same
 interrupted-Run recovery path as CLI. Agent, Deterministic, Tool, Approval,
 condition, parallelism, retry, cancellation, recovery, policy, Sandbox, and
 Ledger behavior remain the existing Runtime behavior. Runnable examples are

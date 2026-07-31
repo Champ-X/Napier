@@ -270,7 +270,8 @@ TypeScript SDK:
 parent process starts napier rpc with canonical workspace/data roots
   -> initialize JSON-RPC protocol version 1
   -> napier/agent/run, napier/agent/resume,
-     napier/workflow/run, or napier/workflow/resume
+     napier/workflow/run, napier/workflow/resume,
+     or napier/workflow/answer
   -> Embedded Agent/Workflow preflight
   -> existing AgentRuntime or WorkflowRuntime + policy + Sandbox + Work Ledger
   -> napier/event notification with request ID + shared event SHA-256
@@ -292,21 +293,24 @@ Agent or Workflow loop.
 Input is line-delimited JSON-RPC 2.0, capped at 1 MiB per line and four active
 Agent or Workflow requests. Request IDs are bounded strings or non-negative
 safe integers. Unknown fields, malformed ModelRefs/resource IDs, invalid or
-tampered Workflow Manifests, Schema-invalid Workflow input, duplicate active
-IDs, pre-initialize calls, unknown methods, over-capacity calls, and
-post-shutdown calls fail before Runtime mutation. Internal failures expose
-only a stable JSON-RPC message and diagnostic SHA-256. Ledger event
-notifications and terminal task results are intentional client-visible data.
-A stdout failure aborts the server lifetime and active Runs rather than being
-treated as an ignorable disconnected observer.
+tampered Workflow Manifests, Schema-invalid Workflow input, stale or
+mismatched Approval decisions, duplicate active IDs, pre-initialize calls,
+unknown methods, over-capacity calls, and post-shutdown calls fail before
+unsafe Runtime mutation. Internal failures expose only a stable JSON-RPC
+message and diagnostic SHA-256. Ledger event notifications and terminal task
+results are intentional client-visible data. A stdout failure aborts the
+server lifetime and active Runs rather than being treated as an ignorable
+disconnected observer.
 
 The process opens no network listener and accepts no transport credential. It
 inherits the selected local data root's existing credential references and
 tool policy, so stdio does not elevate the Agent or Workflow. RPC supports
-Agent and typed Workflow run/resume, including explicit blocked-node retry.
-Workflow Approval answers, checkpoint experiments, remote
-transport/authentication, client reconnection, ACP, TUI, and Desktop packaging
-remain explicit gaps.
+Agent and typed Workflow run/resume, explicit blocked-node retry, and
+freshness-bound Approval answer-and-resume. Approval deduction and evidence
+validation live in split `embedded-workflow-approvals.ts`; CLI, SDK, and RPC
+reuse that service rather than reading Store independently. Checkpoint
+experiments, remote transport/authentication, client reconnection, ACP, TUI,
+and Desktop packaging remain explicit gaps.
 
 ### Executable Plan Workflows
 
@@ -5352,9 +5356,10 @@ The current boundary has forty-eight parts:
     freshness, Agent/HTTP/Replay/Trace integration, and path/output-free durable
     evidence.
 48. A versioned local stdio JSON-RPC Agent and typed Workflow entry with strict
-    bounded framing, request-bound Ledger notifications, shared Embedded
-    execution, mixed concurrent admission, standard cancellation, ordered
-    shutdown, built subprocess coverage, and no second execution loop.
+    bounded framing, request-bound Ledger notifications, hash-bound Approval
+    answer-and-resume, shared Embedded execution, mixed concurrent admission,
+    standard cancellation, ordered shutdown, built subprocess coverage, and no
+    second execution loop.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5410,10 +5415,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- extend local RPC to Workflow Approval/experiment methods and authenticated
-  remote transport, then add interactive TUI, ACP, Desktop, persistent browser
-  UX, and broader data/research capability slices over the same Runtime and
-  Ledger;
+- extend local RPC to Workflow experiment methods and authenticated remote
+  transport, then add interactive TUI, ACP, Desktop, persistent browser UX,
+  and broader data/research capability slices over the same Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;
 - fixed Capability & Outcome benchmarks centered on task success, recovery,

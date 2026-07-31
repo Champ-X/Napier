@@ -5,9 +5,16 @@ import {
   type ExecutionPlanWorkflowManifest,
   type ExecutionPlanWorkflowResult,
   type JsonValue,
+  type OperatorDecision,
 } from "@napier/contracts";
 
 import type { EventSink } from "./agent-runtime.js";
+import {
+  EmbeddedWorkflowApprovalService,
+  type AnswerAndResumeEmbeddedWorkflowOptions,
+  type EmbeddedWorkflowApprovalExecution,
+  type PendingEmbeddedWorkflowApprovalOptions,
+} from "./embedded-workflow-approvals.js";
 import { createExecutionPlan } from "./plans.js";
 import {
   hashExecutionPlanArchiveContent,
@@ -26,6 +33,14 @@ import {
 } from "./workflow-manifests.js";
 import { assertWorkflowValue } from "./workflow-schemas.js";
 import type { ExecutionPlanWorkflowRuntime } from "./workflow-runtime.js";
+
+export {
+  EmbeddedWorkflowApprovalError,
+  type AnswerAndResumeEmbeddedWorkflowOptions,
+  type EmbeddedWorkflowApprovalErrorCode,
+  type EmbeddedWorkflowApprovalExecution,
+  type PendingEmbeddedWorkflowApprovalOptions,
+} from "./embedded-workflow-approvals.js";
 
 const PREFLIGHT_THREAD_ID = "thread_embedded_workflow_preflight";
 const PREFLIGHT_GENERATED_AT = "2000-01-01T00:00:00.000Z";
@@ -67,6 +82,7 @@ export interface ResumeEmbeddedWorkflowOptions {
 export interface EmbeddedWorkflowExecution {
   threadId: string;
   result: ExecutionPlanWorkflowResult;
+  pendingDecision?: OperatorDecision;
 }
 
 export function validateRunEmbeddedWorkflowInput(
@@ -79,10 +95,14 @@ export function validateRunEmbeddedWorkflowInput(
 }
 
 export class EmbeddedWorkflowService {
+  private readonly approvals: EmbeddedWorkflowApprovalService;
+
   constructor(
     private readonly store: LocalStore,
     private readonly workflows: ExecutionPlanWorkflowRuntime,
-  ) {}
+  ) {
+    this.approvals = new EmbeddedWorkflowApprovalService(store, workflows);
+  }
 
   async define(
     input: DefineEmbeddedWorkflowInput,
@@ -157,24 +177,37 @@ export class EmbeddedWorkflowService {
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
     });
-    return { threadId, result };
+    return this.approvals.execution(threadId, manifest, result);
   }
 
   async resume(
     options: ResumeEmbeddedWorkflowOptions,
   ): Promise<EmbeddedWorkflowExecution> {
     options.signal?.throwIfAborted();
+    const manifest = validateExecutionPlanWorkflowManifest(options.manifest);
     const result = await this.workflows.run({
       threadId: options.threadId,
       request: {
-        manifest: options.manifest,
+        manifest,
         planId: options.planId,
         ...(options.retryBlocked ? { retryBlocked: true } : {}),
       },
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.onEvent ? { onEvent: options.onEvent } : {}),
     });
-    return { threadId: options.threadId, result };
+    return this.approvals.execution(options.threadId, manifest, result);
+  }
+
+  async pendingApproval(
+    options: PendingEmbeddedWorkflowApprovalOptions,
+  ): Promise<OperatorDecision> {
+    return this.approvals.pendingApproval(options);
+  }
+
+  async answerAndResume(
+    options: AnswerAndResumeEmbeddedWorkflowOptions,
+  ): Promise<EmbeddedWorkflowApprovalExecution> {
+    return this.approvals.answerAndResume(options);
   }
 
   private resolveAgent(agentId: string | undefined) {

@@ -400,29 +400,25 @@ async function executeWorkflow(
     const eventWriter = options.jsonl
       ? new OrderedEventFrameWriter(io.stdout, thread.id, thread.eventCount + 1)
       : undefined;
-    if (options.approval) {
-      const mutation = await answerWorkflowApproval(
-        services,
-        request!,
-        options,
-      );
-      if (eventWriter) {
-        for (const event of mutation.events) {
-          await eventWriter.write(event);
-        }
-      }
-    }
-    const result = await services.workflows.run({
-      threadId,
-      request: request!,
-      signal: controller.signal,
-      ...(eventWriter
-        ? {
-            onEvent: async (event: RunEvent): Promise<void> =>
-              eventWriter.write(event),
-          }
-        : {}),
-    });
+    const onEvent = eventWriter
+      ? async (event: RunEvent): Promise<void> => eventWriter.write(event)
+      : undefined;
+    const result = options.approval
+      ? (
+          await answerAndResumeWorkflowApproval(
+            services,
+            request!,
+            options,
+            controller.signal,
+            onEvent,
+          )
+        ).result
+      : await services.workflows.run({
+          threadId,
+          request: request!,
+          signal: controller.signal,
+          ...(onEvent ? { onEvent } : {}),
+        });
     const detail = await services.store.getDetail(threadId);
     const snapshot = streamSnapshotFrame(detail);
     const resultFrame = createExecutionPlanWorkflowResultFrame(
@@ -469,42 +465,35 @@ async function executeWorkflow(
   }
 }
 
-async function answerWorkflowApproval(
+async function answerAndResumeWorkflowApproval(
   services: LocalAgentRuntimeServices,
   request: ReturnType<typeof validateExecuteExecutionPlanWorkflowRequest>,
   options: CliWorkflowOptions,
+  signal: AbortSignal,
+  onEvent?: (event: RunEvent) => Promise<void>,
 ) {
   if (!options.planId || !options.approval || !("planId" in request)) {
     throw new Error("Workflow Approval answer requires a resume request");
   }
-  const plan = services.store.getPlan(options.planId);
-  if (plan.threadId !== options.threadId) {
-    throw new Error("Workflow Plan does not belong to --thread");
-  }
-  const approvalSteps = plan.steps.filter((step) => {
-    const node = request.manifest.nodes.find(
-      (candidate) => candidate.id === step.id,
-    );
-    return node?.type === "approval" && step.status === "running" && step.runId;
+  const pending = await services.embeddedWorkflows.pendingApproval({
+    manifest: request.manifest,
+    threadId: options.threadId!,
+    planId: options.planId,
   });
-  if (approvalSteps.length !== 1 || !approvalSteps[0]?.runId) {
-    throw new Error("Workflow Plan has no single waiting Approval node");
-  }
-  const decision = (
-    await services.store.listOperatorDecisions(plan.threadId)
-  ).find(
-    (candidate) =>
-      candidate.runId === approvalSteps[0]!.runId &&
-      candidate.status === "pending",
-  );
-  if (!decision) {
-    throw new Error("Workflow Approval decision is not pending");
-  }
-  return services.store.answerOperatorDecision(plan.threadId, decision.id, {
-    selectedOptionIds: [
-      options.approval === "approve" ? "option_1" : "option_2",
-    ],
-    ...(options.decisionNote ? { customText: options.decisionNote } : {}),
+  return services.embeddedWorkflows.answerAndResume({
+    manifest: request.manifest,
+    threadId: options.threadId!,
+    planId: options.planId,
+    decisionId: pending.id,
+    expectedDecisionSha256: pending.contentSha256,
+    answer: {
+      selectedOptionIds: [
+        options.approval === "approve" ? "option_1" : "option_2",
+      ],
+      ...(options.decisionNote ? { customText: options.decisionNote } : {}),
+    },
+    signal,
+    ...(onEvent ? { onEvent } : {}),
   });
 }
 

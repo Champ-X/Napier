@@ -7,11 +7,15 @@ import type {
   EmbeddedAgentService,
   EmbeddedWorkflowService,
 } from "@napier/runtime";
-import { streamEventFrame } from "@napier/runtime";
+import {
+  EmbeddedWorkflowApprovalError,
+  streamEventFrame,
+} from "@napier/runtime";
 
 import {
   parseAgentResumeParams,
   parseAgentRunParams,
+  parseWorkflowApprovalAnswerParams,
   parseWorkflowResumeParams,
   parseWorkflowRunParams,
   rpcError,
@@ -22,7 +26,10 @@ import type { RpcOutputWriter } from "./rpc-transport.js";
 
 export interface RpcInvocationServices {
   agents: Pick<EmbeddedAgentService, "run" | "resume">;
-  workflows: Pick<EmbeddedWorkflowService, "run" | "resume">;
+  workflows: Pick<
+    EmbeddedWorkflowService,
+    "run" | "resume" | "answerAndResume"
+  >;
 }
 
 interface RpcInvocationOutcome {
@@ -40,6 +47,7 @@ const INVOCATION_METHODS = new Set([
   "napier/agent/resume",
   "napier/workflow/run",
   "napier/workflow/resume",
+  "napier/workflow/answer",
 ]);
 
 export function isRpcInvocationMethod(method: string): boolean {
@@ -102,7 +110,11 @@ export function prepareRpcInvocation(
         signal,
         onEvent,
       });
-      return workflowOutcome(execution.threadId, execution.result);
+      return workflowOutcome(
+        execution.threadId,
+        execution.result,
+        execution.pendingDecision,
+      );
     };
   }
   if (request.method === "napier/workflow/resume") {
@@ -113,7 +125,33 @@ export function prepareRpcInvocation(
         signal,
         onEvent,
       });
-      return workflowOutcome(execution.threadId, execution.result);
+      return workflowOutcome(
+        execution.threadId,
+        execution.result,
+        execution.pendingDecision,
+      );
+    };
+  }
+  if (request.method === "napier/workflow/answer") {
+    const params = parseWorkflowApprovalAnswerParams(request.params);
+    return async (signal, onEvent) => {
+      const execution = await services.workflows.answerAndResume({
+        ...params,
+        signal,
+        onEvent,
+      });
+      const outcome = workflowOutcome(
+        execution.threadId,
+        execution.result,
+        execution.pendingDecision,
+      );
+      return {
+        ...outcome,
+        result: {
+          ...outcome.result,
+          decision: execution.decision,
+        },
+      };
     };
   }
   throw new Error("Unsupported RPC invocation method");
@@ -153,7 +191,7 @@ export async function executeRpcInvocation(input: {
     await input.writer.write(
       input.signal.aborted
         ? rpcError(input.request.id, -32800, "Request cancelled")
-        : rpcError(input.request.id, -32603, "Internal error", error),
+        : invocationError(input.request.id, error),
     );
   }
 }
@@ -161,6 +199,7 @@ export async function executeRpcInvocation(input: {
 function workflowOutcome(
   threadId: string,
   result: NapierRpcWorkflowExecution["result"],
+  pendingDecision?: NapierRpcWorkflowExecution["pendingDecision"],
 ): RpcInvocationOutcome {
   return {
     cancelled: result.status === "cancelled",
@@ -170,6 +209,19 @@ function workflowOutcome(
       status: result.status,
       ...(result.output !== undefined ? { output: result.output } : {}),
       result,
+      ...(pendingDecision ? { pendingDecision } : {}),
     },
   };
+}
+
+function invocationError(
+  id: JsonRpcRequest["id"],
+  error: unknown,
+): ReturnType<typeof rpcError> {
+  if (error instanceof EmbeddedWorkflowApprovalError) {
+    return error.code === "invalid_answer"
+      ? rpcError(id, -32602, "Invalid params", error)
+      : rpcError(id, -32003, "Workflow approval conflict", error);
+  }
+  return rpcError(id, -32603, "Internal error", error);
 }

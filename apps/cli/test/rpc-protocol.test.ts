@@ -11,6 +11,7 @@ import {
   parseAgentRunParams,
   parseInitializeParams,
   parseJsonRpcMessage,
+  parseWorkflowApprovalAnswerParams,
   parseWorkflowResumeParams,
   parseWorkflowRunParams,
   rpcError,
@@ -132,6 +133,29 @@ describe("Napier JSON-RPC protocol", () => {
         planId: "plan_example",
         retryBlocked: true,
       });
+      expect(
+        parseWorkflowApprovalAnswerParams({
+          manifest,
+          threadId: "thread_example",
+          planId: "plan_example",
+          decisionId: "decision_example",
+          expectedDecisionSha256: "a".repeat(64),
+          answer: {
+            selectedOptionIds: ["option_1"],
+            customText: "Approve the bounded result.",
+          },
+        }),
+      ).toEqual({
+        manifest,
+        threadId: "thread_example",
+        planId: "plan_example",
+        decisionId: "decision_example",
+        expectedDecisionSha256: "a".repeat(64),
+        answer: {
+          selectedOptionIds: ["option_1"],
+          customText: "Approve the bounded result.",
+        },
+      });
       expect(() =>
         parseWorkflowRunParams({
           manifest,
@@ -145,6 +169,26 @@ describe("Napier JSON-RPC protocol", () => {
           planId: "plan_example",
         }),
       ).toThrow("manifest is invalid");
+      expect(() =>
+        parseWorkflowApprovalAnswerParams({
+          manifest,
+          threadId: "thread_example",
+          planId: "plan_example",
+          decisionId: "decision_example",
+          expectedDecisionSha256: "stale",
+          answer: { selectedOptionIds: ["option_3"] },
+        }),
+      ).toThrow("expectedDecisionSha256 is invalid");
+      expect(() =>
+        parseWorkflowApprovalAnswerParams({
+          manifest,
+          threadId: "thread_example",
+          planId: "plan_example",
+          decisionId: "decision_example",
+          expectedDecisionSha256: "a".repeat(64),
+          answer: { selectedOptionIds: ["option_3"] },
+        }),
+      ).toThrow("selectedOptionIds is invalid");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

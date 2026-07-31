@@ -1,9 +1,11 @@
 import type {
+  AnswerOperatorDecisionRequest,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowResult,
   ExecutionPlanWorkflowStatus,
   JsonValue,
   ModelRef,
+  OperatorDecision,
   RunEvent,
   RunRecord,
   RunStatus,
@@ -49,6 +51,17 @@ export interface NapierRpcWorkflowResumeParams {
   retryBlocked?: boolean;
 }
 
+export interface NapierRpcWorkflowApprovalAnswerParams {
+  manifest: ExecutionPlanWorkflowManifest;
+  threadId: string;
+  planId: string;
+  decisionId: string;
+  expectedDecisionSha256: string;
+  answer: Omit<AnswerOperatorDecisionRequest, "selectedOptionIds"> & {
+    selectedOptionIds: ["option_1" | "option_2"];
+  };
+}
+
 export type NapierRpcRequest =
   | {
       jsonrpc: "2.0";
@@ -79,6 +92,12 @@ export type NapierRpcRequest =
       id: NapierRpcId;
       method: "napier/workflow/resume";
       params: NapierRpcWorkflowResumeParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/workflow/answer";
+      params: NapierRpcWorkflowApprovalAnswerParams;
     }
   | {
       jsonrpc: "2.0";
@@ -118,6 +137,7 @@ export interface NapierRpcInitializeResult {
     agentResume: true;
     workflowRun: true;
     workflowResume: true;
+    workflowApprovalAnswer: true;
     eventNotifications: true;
     requestCancellation: true;
     maxConcurrentRequests: number;
@@ -138,6 +158,11 @@ export interface NapierRpcWorkflowExecution {
   status: ExecutionPlanWorkflowStatus;
   output?: JsonValue;
   result: ExecutionPlanWorkflowResult;
+  pendingDecision?: OperatorDecision;
+}
+
+export interface NapierRpcWorkflowApprovalExecution extends NapierRpcWorkflowExecution {
+  decision: OperatorDecision;
 }
 
 export interface NapierRpcSuccessResponse<TResult> {
@@ -162,5 +187,6 @@ export type NapierRpcResponse =
   | NapierRpcSuccessResponse<NapierRpcInitializeResult>
   | NapierRpcSuccessResponse<NapierRpcAgentExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowExecution>
+  | NapierRpcSuccessResponse<NapierRpcWorkflowApprovalExecution>
   | NapierRpcSuccessResponse<null>
   | NapierRpcErrorResponse;

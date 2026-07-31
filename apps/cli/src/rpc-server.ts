@@ -31,7 +31,10 @@ import {
 
 export interface NapierRpcServerOptions {
   agents: Pick<EmbeddedAgentService, "run" | "resume">;
-  workflows: Pick<EmbeddedWorkflowService, "run" | "resume">;
+  workflows: Pick<
+    EmbeddedWorkflowService,
+    "run" | "resume" | "answerAndResume"
+  >;
   input: AsyncIterable<Buffer | string>;
   output: Writable;
   serverVersion: string;
@@ -127,6 +130,7 @@ export async function runNapierRpcServer(
                 agentResume: true,
                 workflowRun: true,
                 workflowResume: true,
+                workflowApprovalAnswer: true,
                 eventNotifications: true,
                 requestCancellation: true,
                 maxConcurrentRequests: MAX_RPC_ACTIVE_REQUESTS,
