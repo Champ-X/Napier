@@ -132,6 +132,25 @@ describe("Workflow experiment Workbench view model", () => {
     ).rejects.toThrow("Map node");
   });
 
+  it("accepts bounded Loop nodes and rejects excessive iterations", async () => {
+    const manifest = workflowLoopManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const unsafe = structuredClone(manifest);
+    unsafe.nodes[0]!.maxIterations = 9;
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafe)),
+    ).rejects.toThrow("Loop node");
+
+    const unsafePath = structuredClone(manifest);
+    unsafePath.nodes[0]!.until.path = ["constructor"];
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafePath)),
+    ).rejects.toThrow("path segment");
+  });
+
   it("accepts bounded Reduce nodes and rejects unsafe value paths", async () => {
     const manifest = workflowReduceManifest();
     await expect(
@@ -490,6 +509,43 @@ function workflowMapManifest() {
         model: { provider: "faux", id: "map" },
         maxConcurrency: 3,
         itemTimeoutMs: 5_000,
+        timeoutMs: 15_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowLoopManifest() {
+  const base = workflowManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const content = {
+    ...baseContent,
+    nodes: [
+      {
+        id: "report",
+        type: "loop" as const,
+        inputBindings: {
+          workflow: { source: "workflow" as const },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            workflow: base.inputSchema,
+          },
+          required: ["workflow"],
+          additionalProperties: false as const,
+        },
+        outputSchema: base.outputSchema,
+        until: { path: ["report"], equals: "done" },
+        model: { provider: "faux", id: "loop" },
+        maxIterations: 3,
+        iterationTimeoutMs: 5_000,
         timeoutMs: 15_000,
         maxAttempts: 2,
       },

@@ -59,6 +59,7 @@ import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deterministic-node.js";
 import { ExecutionPlanWorkflowMapNodeExecutor } from "./workflow-map-node.js";
+import { ExecutionPlanWorkflowLoopNodeExecutor } from "./workflow-loop-node.js";
 import { ExecutionPlanWorkflowReduceNodeExecutor } from "./workflow-reduce-node.js";
 import {
   DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
@@ -89,6 +90,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly conditionNodeExecutor: ExecutionPlanWorkflowConditionNodeExecutor;
   private readonly deterministicNodeExecutor: ExecutionPlanWorkflowDeterministicNodeExecutor;
   private readonly mapNodeExecutor: ExecutionPlanWorkflowMapNodeExecutor;
+  private readonly loopNodeExecutor: ExecutionPlanWorkflowLoopNodeExecutor;
   private readonly reduceNodeExecutor: ExecutionPlanWorkflowReduceNodeExecutor;
   private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
@@ -119,6 +121,17 @@ export class ExecutionPlanWorkflowRuntime {
           this.completePlanStep(context, nodeId, runId, outputSha256),
       });
     this.mapNodeExecutor = new ExecutionPlanWorkflowMapNodeExecutor(
+      store,
+      agentRuntime,
+      this.ledger,
+      {
+        blockNode: (context, node, failure) =>
+          this.blockNode(context, node, failure),
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      },
+    );
+    this.loopNodeExecutor = new ExecutionPlanWorkflowLoopNodeExecutor(
       store,
       agentRuntime,
       this.ledger,
@@ -494,6 +507,15 @@ export class ExecutionPlanWorkflowRuntime {
     }
     if (node.type === "map") {
       return this.mapNodeExecutor.execute(
+        context,
+        node,
+        input,
+        inputSha256,
+        attempt,
+      );
+    }
+    if (node.type === "loop") {
+      return this.loopNodeExecutor.execute(
         context,
         node,
         input,

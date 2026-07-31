@@ -122,6 +122,7 @@ export async function validateWorkflowManifest(
       (nodeInput["type"] !== "agent" &&
         nodeInput["type"] !== "deterministic" &&
         nodeInput["type"] !== "map" &&
+        nodeInput["type"] !== "loop" &&
         nodeInput["type"] !== "reduce" &&
         nodeInput["type"] !== "tool" &&
         nodeInput["type"] !== "approval") ||
@@ -165,6 +166,31 @@ export async function validateWorkflowManifest(
             typeof nodeInput["model"]["id"] !== "string"))
       ) {
         throw new Error("Workflow manifest Map node is invalid");
+      }
+    }
+    if (nodeInput["type"] === "loop") {
+      const until = nodeInput["until"];
+      const untilPath = record(until)
+        ? validateWorkflowBindingPath(until["path"])
+        : undefined;
+      if (
+        !untilPath ||
+        !record(until) ||
+        !exactKeys(until, ["path", "equals"]) ||
+        !jsonValue(until["equals"], 0) ||
+        !Number.isSafeInteger(nodeInput["maxIterations"]) ||
+        Number(nodeInput["maxIterations"]) < 1 ||
+        Number(nodeInput["maxIterations"]) > 8 ||
+        !Number.isSafeInteger(nodeInput["iterationTimeoutMs"]) ||
+        Number(nodeInput["iterationTimeoutMs"]) < 1_000 ||
+        Number(nodeInput["iterationTimeoutMs"]) >
+          Number(nodeInput["timeoutMs"]) ||
+        (nodeInput["model"] !== undefined &&
+          (!record(nodeInput["model"]) ||
+            typeof nodeInput["model"]["provider"] !== "string" ||
+            typeof nodeInput["model"]["id"] !== "string"))
+      ) {
+        throw new Error("Workflow manifest Loop node is invalid");
       }
     }
     if (nodeInput["type"] === "reduce") {

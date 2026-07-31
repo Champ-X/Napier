@@ -374,7 +374,7 @@ ExecutionPlanBlueprint
   -> defineExecutionPlanWorkflow()
   -> hash-bound napier.execution-plan-workflow manifest
   -> existing ExecutionPlan projection
-  -> source=workflow Run per ready Agent, Deterministic, Tool, or Approval node
+  -> source=workflow Run per ready Agent, Deterministic, Tool, Map, Loop, Reduce, or Approval node
   -> strict typed node result
   -> existing Plan transition and Work Ledger
 ```
@@ -393,6 +393,11 @@ timeouts; `workflow-tool-runtime.ts` owns leased direct execution; and
 `workflow-deterministic-node.ts` coordinates Plan transitions, and
 `workflow-deterministic-evidence.ts` verifies terminal evidence without
 growing the central Ledger coordinator.
+`workflow-loop-node.ts` coordinates Loop Plan state and whole-node timeout;
+`workflow-loop-runtime.ts` owns the leased coordinator;
+`workflow-loop-iteration-runtime.ts` owns sequential read-only Agent turns;
+and `workflow-loop-model.ts` plus `workflow-loop-evidence.ts` define typed
+feedback, termination, checkpoint reconstruction, and fail-closed recovery.
 `workflow-condition-model.ts` validates and evaluates typed equality guards,
 while `workflow-condition-node.ts` owns the no-Run Plan skip transition.
 `workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
@@ -464,6 +469,25 @@ no Memory expiry/usage mutation. The outer scheduler executes Map exclusively
 so coordinator plus children stay within the Store's four-Run limit. Outputs
 are collected by input index and validated as one bounded array.
 
+Loop nodes add bounded sequential feedback without adding a second scheduler
+or a script evaluator. A Loop declares a typed output condition, one to eight
+iterations, independent per-iteration and whole-node deadlines, and an
+optional model override. One leased coordinator owns the Plan step. Each
+parent-bound child receives the immutable initial input plus the previous
+schema-valid output and executes through `workflow_loop_read_only`, which
+shares the Map read-only tool boundary while remaining a distinct Run
+configuration and Store capability. The node completes only when the typed
+condition matches; the hard limit blocks rather than accepting partial output.
+
+Each completed iteration records only bounded IDs, counts, status, byte
+lengths, and hashes in public Workflow evidence. Recovery replays no model or
+tool result blindly: it reconstructs a continuous prefix from child/coordinator
+lineage, frozen Agent revision, model, configuration, recomputed feedback
+input, output Schema/body hash, and termination subject. Explicit retry or
+Store reopen may reuse that proved prefix and starts at the first unproved
+iteration. The shared `workflow-read-only-child-run-gate.ts` now admits both
+Map and Loop children and removes the former Map-specific block from Store.
+
 Each concurrent node receives an isolated copy of the current Plan, outputs,
 node results, and reused-node lineage. Store transitions and Ledger sequence
 assignment remain serialized authorities; outcomes merge only after the full
@@ -523,7 +547,10 @@ requires a unique terminal tool event bound to
 Plan/node/tool/effect/input/output hashes. Map output requires the coordinator
 completion plus a unique started/completed pair for every indexed child,
 parent/Plan/restricted-configuration lineage, per-item input/output/schema
-hashes, and aggregate item/run set hashes. Recovery also handles process-exit
+hashes, and aggregate item/run set hashes. Loop output requires a continuous
+ordered child chain, recomputed previous-output feedback, typed condition
+evaluation, coordinator/model lineage, and exact checkpoint/run-set hashes.
+Recovery also handles process-exit
 windows between terminal output, Run settlement, Plan transition, and Workflow
 event commits. `tool.started` without terminal evidence becomes
 `run_interrupted` and is never rerun silently. A valid `tool.completed` can
@@ -868,14 +895,14 @@ Independent Reduce nodes remain eligible for the normal bounded outer parallel
 wave.
 
 Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
-nodes, stateless built-in Tool nodes, bounded read-only Agent Map nodes, typed
-deterministic Reduce nodes, durable binary Approval gates, literal/field-path
-typed bindings, bounded parallel dependency-ready DAG scheduling, typed
-equality guards with schema-valid fallback, cancellation, timeout, explicit
-retry, and restart recovery. It does not yet implement general multi-option
-decision nodes, stateful session Tool nodes, write-capable Map, multi-way
-switch, loops, compensation, per-node breakpoints, external Agent adapters, or
-artifact settlement.
+nodes, stateless built-in Tool nodes, bounded read-only Agent Map and Loop
+nodes, typed deterministic Reduce nodes, durable binary Approval gates,
+literal/field-path typed bindings, bounded parallel dependency-ready DAG
+scheduling, typed equality guards with schema-valid fallback, cancellation,
+timeout, explicit retry, and restart recovery. It does not yet implement
+general multi-option decision nodes, stateful session Tool nodes,
+write-capable Map/Loop, multi-way switch, compensation, per-node breakpoints,
+external Agent adapters, or artifact settlement.
 
 ### Coding Outcome Benchmark
 
@@ -5785,7 +5812,7 @@ deferred until the local P0-P9 product loop is stable.
   and debugger UX, broader multi-node AST transforms, cross-package/path-alias
   test discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
-  session nodes, multi-way switch, loops, write-capable Map, compensation,
+  session nodes, multi-way switch, write-capable Map/Loop, compensation,
   single-node tests and breakpoints, external Agent adapters, artifact
   settlement, and a visual builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only

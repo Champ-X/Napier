@@ -93,6 +93,87 @@ describe("Execution Plan Workflow manifests", () => {
     ).toEqual({ report: "Ready", approved: true });
   });
 
+  it("validates bounded Loop termination and iteration budgets", async () => {
+    const blueprint = await createBlueprint([
+      {
+        id: "refine",
+        title: "Refine",
+        description: "Refine one typed result until it is complete.",
+        verification: "The final output reports done.",
+      },
+    ]);
+    const loopNode = {
+      id: "refine",
+      type: "loop" as const,
+      inputBindings: {
+        workflow: { source: "workflow" as const },
+      },
+      inputSchema: {
+        type: "object" as const,
+        properties: { workflow: requestSchema() },
+        required: ["workflow"],
+        additionalProperties: false as const,
+      },
+      outputSchema: {
+        type: "object" as const,
+        properties: {
+          done: { type: "boolean" as const },
+          value: { type: "integer" as const, minimum: 0, maximum: 8 },
+        },
+        required: ["done", "value"],
+        additionalProperties: false as const,
+      },
+      until: { path: ["done"], equals: true },
+      model: { provider: "faux-workflow", id: "faux-1" },
+      maxIterations: 3,
+      iterationTimeoutMs: 2_000,
+      timeoutMs: 10_000,
+      maxAttempts: 2,
+    };
+    const definition = {
+      name: "Bounded refinement",
+      version: 1,
+      description: "Iterate one read-only Agent result.",
+      blueprint,
+      inputSchema: requestSchema(),
+      outputSchema: loopNode.outputSchema,
+      outputNodeId: "refine",
+      nodes: [loopNode],
+    };
+    const manifest = defineExecutionPlanWorkflow(definition);
+    expect(validateExecutionPlanWorkflowManifest(manifest)).toEqual(manifest);
+
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [{ ...loopNode, maxIterations: 9 }],
+      }),
+    ).toThrow("maxIterations");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...loopNode,
+            until: { path: ["missing"], equals: true },
+          },
+        ],
+      }),
+    ).toThrow("path does not match");
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        ...definition,
+        nodes: [
+          {
+            ...loopNode,
+            timeoutMs: 1_000,
+            iterationTimeoutMs: 2_000,
+          },
+        ],
+      }),
+    ).toThrow("must cover iterationTimeoutMs");
+  });
+
   it("binds typed conditional paths and fallback output without expressions", async () => {
     const blueprint = await createBlueprint();
     const nodes = workflowNodes();

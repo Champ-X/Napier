@@ -30,6 +30,11 @@ import {
   workflowMapNodeMetadataMatches,
 } from "./workflow-map-evidence.js";
 import {
+  hasWorkflowLoopCompletionEvent,
+  readWorkflowLoopOutputEvidence,
+} from "./workflow-loop-evidence.js";
+import { workflowLoopNodeConfigurationSha256 } from "./workflow-loop-model.js";
+import {
   hasWorkflowReduceCompletionEvent,
   readWorkflowReduceOutputEvidence,
   workflowReduceNodeMetadata,
@@ -209,6 +214,35 @@ export class ExecutionPlanWorkflowLedger {
         ),
       });
     }
+    if (node.type === "loop") {
+      const attempt = await this.attemptForRun(
+        context.threadId,
+        context.plan.id,
+        node.id,
+        runId,
+      );
+      if (!run.configuration || run.agentRevision === undefined) {
+        throw new Error("Workflow Loop coordinator configuration is missing");
+      }
+      return readWorkflowLoopOutputEvidence({
+        events: await this.store.listEvents(context.threadId),
+        runs: this.store.listRuns(context.threadId),
+        node,
+        runId,
+        planId: context.plan.id,
+        manifestSha256: context.manifest.contentSha256,
+        input,
+        inputSha256,
+        agentId: run.agentId,
+        agentRevision: run.agentRevision,
+        model: run.configuration.model,
+        attempt,
+        assistantOutput: await this.nodeAssistantOutput(
+          context.threadId,
+          runId,
+        ),
+      });
+    }
     if (node.type === "reduce") {
       const attempt = await this.attemptForRun(
         context.threadId,
@@ -378,6 +412,20 @@ export class ExecutionPlanWorkflowLedger {
   ): Promise<boolean> {
     if (node.type !== "map") return false;
     return hasWorkflowMapCompletionEvent(
+      await this.store.listEvents(context.threadId),
+      context.plan.id,
+      node.id,
+      runId,
+    );
+  }
+
+  async hasNodeLoopCompletionEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    runId: string,
+  ): Promise<boolean> {
+    if (node.type !== "loop") return false;
+    return hasWorkflowLoopCompletionEvent(
       await this.store.listEvents(context.threadId),
       context.plan.id,
       node.id,
@@ -907,6 +955,13 @@ export function workflowNodeEventMetadataMatches(
   if (node.type === "map") {
     return workflowMapNodeMetadataMatches(node, payload);
   }
+  if (node.type === "loop") {
+    return (
+      payload["nodeType"] === "loop" &&
+      payload["loopConfigurationSha256"] ===
+        workflowLoopNodeConfigurationSha256(node)
+    );
+  }
   if (node.type === "reduce") {
     return workflowReduceNodeMetadataMatches(node, payload);
   }
@@ -937,6 +992,13 @@ export function workflowNodeEventMetadata(
   }
   if (node.type === "map") {
     return { ...workflowMapNodeMetadata(node), ...condition };
+  }
+  if (node.type === "loop") {
+    return {
+      nodeType: "loop",
+      loopConfigurationSha256: workflowLoopNodeConfigurationSha256(node),
+      ...condition,
+    };
   }
   if (node.type === "reduce") {
     return { ...workflowReduceNodeMetadata(node), ...condition };

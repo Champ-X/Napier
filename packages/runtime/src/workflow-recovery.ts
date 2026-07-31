@@ -133,6 +133,7 @@ export class ExecutionPlanWorkflowRecovery {
             (node.type === "tool" ||
               node.type === "deterministic" ||
               node.type === "map" ||
+              node.type === "loop" ||
               node.type === "reduce") &&
             step.runId !== undefined
           )
@@ -178,6 +179,7 @@ export class ExecutionPlanWorkflowRecovery {
           (node.type === "tool" ||
             node.type === "deterministic" ||
             node.type === "map" ||
+            node.type === "loop" ||
             node.type === "reduce") &&
           run.status !== "running" &&
           run.status !== "queued" &&
@@ -199,11 +201,17 @@ export class ExecutionPlanWorkflowRecovery {
                     node,
                     run.id,
                   )
-                : await this.ledger.hasNodeReduceCompletionEvent(
-                    context,
-                    node,
-                    run.id,
-                  ))
+                : node.type === "loop"
+                  ? await this.ledger.hasNodeLoopCompletionEvent(
+                      context,
+                      node,
+                      run.id,
+                    )
+                  : await this.ledger.hasNodeReduceCompletionEvent(
+                      context,
+                      node,
+                      run.id,
+                    ))
         ) {
           knownRecoverableOutput = await this.ledger.nodeOutput(
             context,
@@ -333,7 +341,13 @@ export class ExecutionPlanWorkflowRecovery {
   ): Promise<void> {
     context.plan = this.store.getPlan(context.plan.id);
     for (const node of context.manifest.nodes) {
-      if (node.type !== "deterministic" && node.type !== "reduce") continue;
+      if (
+        node.type !== "deterministic" &&
+        node.type !== "loop" &&
+        node.type !== "reduce"
+      ) {
+        continue;
+      }
       const result = context.nodeResults.get(node.id);
       const step = context.plan.steps.find(
         (candidate) => candidate.id === node.id,

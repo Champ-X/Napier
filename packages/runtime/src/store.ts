@@ -543,6 +543,10 @@ import {
   type WorkflowNodeExecution,
 } from "./workflow-node-execution.js";
 import {
+  isWorkflowReadOnlyChildExecutionMode,
+  validateWorkflowReadOnlyChildRunGate,
+} from "./workflow-read-only-child-run-gate.js";
+import {
   AGENT_MESSAGE_EXPERIMENT_EXECUTION,
   type AgentMessageExperimentExecution,
 } from "./agent-message-experiment-execution.js";
@@ -11455,43 +11459,19 @@ export class LocalStore {
           "Safe read-only recovery requires an interrupted parent Run",
         );
       }
-    } else if (executionMode === "workflow_map_read_only") {
-      const parent = input.parentRunId
-        ? this.state.runs.find(
-            (candidate) => candidate.id === input.parentRunId,
-          )
-        : undefined;
-      const parentStartedAsMap =
-        parent !== undefined &&
-        this.requireLedger()
-          .listEvents(input.threadId)
-          .some(
-            (event) =>
-              event.runId === parent.id &&
-              event.type === "workflow.node.started" &&
-              isRecord(event.payload) &&
-              event.payload["planId"] === workflowExecution?.planId &&
-              event.payload["nodeType"] === "map",
-          );
-      if (
-        input.source !== "workflow" ||
-        !workflowExecution ||
-        !parent ||
-        parent.threadId !== input.threadId ||
-        parent.agentId !== input.agentId ||
-        parent.source !== "workflow" ||
-        parent.status !== "running" ||
-        parent.workflowPlanId !== workflowExecution.planId ||
-        parent.parentRunId !== undefined ||
-        !parent.configuration ||
-        parent.configuration.schemaVersion === 1 ||
-        parent.configuration.executionMode !== "standard" ||
-        !parentStartedAsMap
-      ) {
-        throw new Error(
-          "Workflow Map read-only execution requires its active coordinator Run",
-        );
-      }
+    } else if (isWorkflowReadOnlyChildExecutionMode(executionMode)) {
+      validateWorkflowReadOnlyChildRunGate({
+        executionMode,
+        source: input.source ?? "user",
+        threadId: input.threadId,
+        agentId: input.agentId,
+        ...(input.parentRunId ? { parentRunId: input.parentRunId } : {}),
+        ...(workflowExecution
+          ? { workflowPlanId: workflowExecution.planId }
+          : {}),
+        runs: this.state.runs,
+        events: this.requireLedger().listEvents(input.threadId),
+      });
     }
     if (input.triggerId) {
       const triggerId = normalizeTriggerId(input.triggerId);

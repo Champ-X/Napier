@@ -899,6 +899,22 @@ export interface ExecutionPlanWorkflowMapNode {
   maxAttempts: number;
 }
 
+export interface ExecutionPlanWorkflowLoopNode {
+  id: string;
+  type: "loop";
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowValueSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
+  until: ExecutionPlanWorkflowCondition;
+  model?: ModelRef;
+  maxIterations: number;
+  iterationTimeoutMs: number;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
 export const EXECUTION_PLAN_WORKFLOW_REDUCE_OPERATIONS = [
   "count",
   "sum",
@@ -1014,6 +1030,7 @@ export type ExecutionPlanWorkflowNode =
   | ExecutionPlanWorkflowAgentNode
   | ExecutionPlanWorkflowDeterministicNode
   | ExecutionPlanWorkflowMapNode
+  | ExecutionPlanWorkflowLoopNode
   | ExecutionPlanWorkflowReduceNode
   | ExecutionPlanWorkflowToolNode
   | ExecutionPlanWorkflowApprovalNode;
@@ -2678,6 +2695,7 @@ export type RunExecutionMode =
   | "standard"
   | "safe_read_only_recovery"
   | "workflow_map_read_only"
+  | "workflow_loop_read_only"
   | "agent_experiment_read_only"
   | "model_experiment_single_call"
   | "tool_experiment_read_only";

@@ -6,6 +6,23 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added bounded read-only Agent Loop nodes to executable Plan Workflows. A Loop
+  feeds each schema-validated output into the next Agent turn until a typed
+  `until` condition matches, with independent per-iteration and whole-node
+  deadlines plus a hard eight-iteration ceiling. One leased coordinator owns
+  the Plan step; parent-bound child Runs use the new
+  `workflow_loop_read_only` mode, which preserves the frozen Agent/model while
+  excluding writes, sessions, subagents, Extensions, and Memory mutation.
+  Completed iteration prefixes are reconstructed from exact Run, model,
+  parent, input/output, condition, Schema, and configuration evidence and can
+  be reused after explicit retry or SQLite reopen without replaying completed
+  reads. Iteration limit, invalid output, timeout, cancellation, concurrent
+  Threads, tampering, Store capability bypass, experiment model replacement,
+  CLI JSONL, HTTP SSE, Web Trace, and portable Replay have real coverage. The
+  existing Map-only Store gate moved into a shared Workflow read-only child
+  gate, shrinking the oversized Store while retaining Map behavior. An opt-in
+  `npm run test:live-loop` path exercises two sequential turns through
+  DeepSeek when credentials are available.
 - Added frozen historical tool results to controlled Agent message
   experiments. Eligible source calls now capture their exact model-visible
   result after settlement in a separate permission-restricted local CAS.

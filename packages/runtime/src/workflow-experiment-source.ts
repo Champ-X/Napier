@@ -17,6 +17,7 @@ import {
   executionPlanWorkflowConditionSha256,
 } from "./workflow-condition-model.js";
 import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-deterministic-model.js";
+import { workflowLoopNodeConfigurationSha256 } from "./workflow-loop-model.js";
 import { workflowMapNodeConfigurationSha256 } from "./workflow-map-model.js";
 import { workflowReduceConfigurationSha256 } from "./workflow-reduce-model.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
@@ -86,7 +87,9 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     outputNodeId: manifest.outputNodeId,
     nodes: manifest.nodes.map((node) => ({
       ...node,
-      ...((node.type === "agent" || node.type === "map") &&
+      ...((node.type === "agent" ||
+        node.type === "map" ||
+        node.type === "loop") &&
       modelOverrides[node.id]
         ? { model: structuredClone(modelOverrides[node.id]) }
         : {}),
@@ -266,7 +269,7 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
     const expectedModel =
       run.source === "workflow_reuse"
         ? { provider: "napier", id: "workflow-reuse" }
-        : node.type === "agent" || node.type === "map"
+        : node.type === "agent" || node.type === "map" || node.type === "loop"
           ? (node.model ?? agent.model)
           : agent.model;
     if (
@@ -395,7 +398,7 @@ function normalizedModelOverrides(
         `Workflow experiment cannot override a reused node model: ${node.id}`,
       );
     }
-    if (node.type !== "agent" && node.type !== "map") {
+    if (node.type !== "agent" && node.type !== "map" && node.type !== "loop") {
       throw new Error(
         `Workflow experiment cannot override a non-Agent node model: ${node.id}`,
       );
@@ -428,7 +431,17 @@ function experimentNodeToolEffects(
         record(event.payload)?.["nodeId"] === nodeId,
     )
     .map((event) => event.runId);
-  const observationRunIds = [...new Set([...runIds, ...mapItemRunIds])];
+  const loopIterationRunIds = events
+    .filter(
+      (event) =>
+        event.type === "workflow.loop.iteration.started" &&
+        record(event.payload)?.["planId"] === planId &&
+        record(event.payload)?.["nodeId"] === nodeId,
+    )
+    .map((event) => event.runId);
+  const observationRunIds = [
+    ...new Set([...runIds, ...mapItemRunIds, ...loopIterationRunIds]),
+  ];
   const observations = observationRunIds.flatMap((runId) =>
     collectRunToolEffectObservations(
       events.filter((event) => event.runId === runId),
@@ -640,6 +653,13 @@ function sourceNodeMetadataMatches(
       payload["nodeType"] === "map" &&
       payload["mapConfigurationSha256"] ===
         workflowMapNodeConfigurationSha256(node)
+    );
+  }
+  if (node.type === "loop") {
+    return (
+      payload["nodeType"] === "loop" &&
+      payload["loopConfigurationSha256"] ===
+        workflowLoopNodeConfigurationSha256(node)
     );
   }
   if (node.type === "reduce") {

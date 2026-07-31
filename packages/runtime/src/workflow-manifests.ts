@@ -23,6 +23,7 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
 } from "./workflow-map-model.js";
+import { MAX_EXECUTION_PLAN_WORKFLOW_LOOP_ITERATIONS } from "./workflow-loop-model.js";
 import { validateWorkflowReduceContract } from "./workflow-reduce-manifest.js";
 import { validateExecutionPlanBlueprint } from "./workflow-blueprints.js";
 import {
@@ -51,6 +52,7 @@ export {
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
 } from "./workflow-map-model.js";
+export { MAX_EXECUTION_PLAN_WORKFLOW_LOOP_ITERATIONS } from "./workflow-loop-model.js";
 
 export const MAX_EXECUTION_PLAN_WORKFLOW_MANIFEST_BYTES = 1024 * 1024;
 export const MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS = 1_000;
@@ -392,6 +394,27 @@ function validateWorkflowNode(
       label,
       new Set(["model", "when", "skipOutput"]),
     );
+  } else if (type === "loop") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "when",
+        "skipOutput",
+        "until",
+        "model",
+        "maxIterations",
+        "iterationTimeoutMs",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+      new Set(["model", "when", "skipOutput"]),
+    );
   } else if (type === "reduce") {
     assertExactKeys(
       node,
@@ -657,6 +680,54 @@ function validateWorkflowNode(
       ...(model ? { model } : {}),
       maxConcurrency,
       itemTimeoutMs,
+      timeoutMs,
+      maxAttempts,
+    };
+  }
+  if (type === "loop") {
+    const until = validateExecutionPlanWorkflowCondition(
+      node["until"],
+      `${label} until`,
+    );
+    assertWorkflowValue(
+      executionPlanWorkflowConditionSchema(
+        outputSchema,
+        until,
+        `${label} until`,
+      ),
+      until.equals,
+      `${label} until equals`,
+    );
+    const maxIterations = boundedInteger(
+      node["maxIterations"],
+      1,
+      MAX_EXECUTION_PLAN_WORKFLOW_LOOP_ITERATIONS,
+      `${label} maxIterations`,
+    );
+    const iterationTimeoutMs = boundedInteger(
+      node["iterationTimeoutMs"],
+      MIN_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
+      MAX_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS,
+      `${label} iterationTimeoutMs`,
+    );
+    if (timeoutMs < iterationTimeoutMs) {
+      throw new Error(`${label} timeoutMs must cover iterationTimeoutMs`);
+    }
+    const model =
+      node["model"] === undefined
+        ? undefined
+        : validateModel(node["model"], `${label} model`);
+    return {
+      id,
+      type,
+      inputBindings,
+      inputSchema: inputSchema as WorkflowObjectSchema,
+      outputSchema,
+      ...(conditional ? conditional : {}),
+      until,
+      ...(model ? { model } : {}),
+      maxIterations,
+      iterationTimeoutMs,
       timeoutMs,
       maxAttempts,
     };

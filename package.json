@@ -42,6 +42,7 @@
     "test:live-lsp": "npm run test:live-lsp -w @napier/runtime",
     "test:live-linked-tests": "npm run test:live-linked-tests -w @napier/runtime",
     "test:live-map": "npm run test:live-map -w @napier/runtime",
+    "test:live-loop": "npm run test:live-loop -w @napier/runtime",
     "test:live-process": "npm run test:live-process -w @napier/runtime",
     "test:live-provider": "npm run test:live-provider -w @napier/runtime",
     "test:live-sqlite": "npm run test:live-sqlite -w @napier/runtime",

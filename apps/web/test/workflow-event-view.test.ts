@@ -369,6 +369,91 @@ describe("Workflow event Trace projection", () => {
     ).toBeUndefined();
   });
 
+  it("summarizes Loop iterations and checkpoint reuse without result bodies", () => {
+    const nodeStarted = workflowEvent("workflow.node.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "refine",
+      nodeType: "loop",
+      loopConfigurationSha256: "8".repeat(64),
+      attempt: 2,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      planRevisionBefore: 3,
+      planRevisionAfter: 4,
+      recovered: false,
+    });
+    const iteration = workflowEvent("workflow.loop.iteration.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "refine",
+      coordinatorRunId: "run_abcdefghijklmnopqrst",
+      attempt: 2,
+      manifestSha256: "1".repeat(64),
+      loopConfigurationSha256: "8".repeat(64),
+      iterationIndex: 1,
+      iterationInputSha256: "2".repeat(64),
+      outputSha256: "5".repeat(64),
+      outputBytes: 72,
+      outputSchemaSha256: "4".repeat(64),
+      untilSubjectSha256: "6".repeat(64),
+      matched: true,
+      output: "PRIVATE_LOOP_OUTPUT",
+    });
+    const reused = workflowEvent("workflow.loop.checkpoint.reused", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "refine",
+      attempt: 2,
+      manifestSha256: "1".repeat(64),
+      loopConfigurationSha256: "8".repeat(64),
+      inputSha256: "2".repeat(64),
+      reusedIterationCount: 1,
+      checkpointSha256: "7".repeat(64),
+      sourceCoordinatorSetSha256: "9".repeat(64),
+      lastOutputSha256: "a".repeat(64),
+      matched: false,
+    });
+    const completed = workflowEvent("workflow.loop.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "refine",
+      attempt: 2,
+      manifestSha256: "1".repeat(64),
+      loopConfigurationSha256: "8".repeat(64),
+      inputSha256: "2".repeat(64),
+      outputSha256: "5".repeat(64),
+      outputBytes: 72,
+      outputSchemaSha256: "4".repeat(64),
+      iterationCount: 2,
+      reusedIterationCount: 1,
+      maxIterations: 3,
+      iterationRunSetSha256: "b".repeat(64),
+      checkpointSha256: "c".repeat(64),
+      untilSubjectSha256: "6".repeat(64),
+      termination: "condition_matched",
+      output: "PRIVATE_LOOP_FINAL",
+    });
+
+    expect(workflowEventTraceSummary(nodeStarted)).toContain(
+      `loop ${"8".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(iteration)).toContain(
+      `iteration 2 / input ${"2".repeat(12)} / output ${"5".repeat(12)} / bytes 72 / matched`,
+    );
+    expect(workflowEventTraceSummary(reused)).toContain(
+      `reused 1 / input ${"2".repeat(12)} / output ${"a".repeat(12)} / checkpoint ${"7".repeat(12)} / continuing`,
+    );
+    expect(workflowEventTraceSummary(completed)).toContain(
+      `iterations 2/3 / reused 1 / input ${"2".repeat(12)} / output ${"5".repeat(12)} / bytes 72 / checkpoint ${"c".repeat(12)}`,
+    );
+    expect(
+      `${workflowEventTraceSummary(iteration)} ${workflowEventTraceSummary(completed)}`,
+    ).not.toContain("PRIVATE_LOOP");
+  });
+
   it("summarizes Reduce configuration and output evidence without item bodies", () => {
     const nodeStarted = workflowEvent("workflow.node.started", {
       schemaVersion: 1,

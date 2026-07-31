@@ -44,10 +44,11 @@ Version `0.1.0` includes:
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
-  nodes, bounded read-only Agent Map nodes, and durable human Approval gates,
-  strict JSON output, declared tool effects, policy/schema preflight, optional
-  bounded parallel waves, explicit retry, safe pure-node recomputation,
-  restart reconstruction, and shared CLI/HTTP/Web/Trace evidence;
+  nodes, bounded read-only Agent Map fan-out, bounded sequential read-only
+  Agent Loop refinement, and durable human Approval gates, strict JSON output,
+  declared tool effects, policy/schema preflight, optional bounded parallel
+  waves, explicit retry, safe checkpoint reuse, restart reconstruction, and
+  shared CLI/HTTP/Web/Trace evidence;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -3047,6 +3048,26 @@ aggregate preserves input order and must satisfy the declared array Schema.
 Map is exclusive within an outer scheduling wave so its coordinator plus
 three children cannot exceed the four-Run Store bound.
 
+Loop nodes provide bounded sequential semantic refinement without introducing
+an expression runtime or an unbounded Agent cycle. A Loop declares one typed
+`until: { path, equals }` condition over its output Schema, at most eight
+iterations, an independent iteration deadline, and a whole-node deadline.
+Each child receives the immutable initial input and the previous
+schema-validated output, then runs through `workflow_loop_read_only`: normal
+model resolution and bounded read tools remain available, while writes,
+verification processes, sessions, Extensions, delegation, and Memory mutation
+are excluded. The coordinator completes only when `until` matches; exhausting
+the limit blocks the node rather than accepting a partial result.
+
+Every completed iteration binds its coordinator/child Run lineage, frozen
+Agent revision, model, Loop configuration, iteration input, output Schema,
+output hash/bytes, and condition subject. Explicit retry and SQLite reopen
+reconstruct the longest continuous valid prefix and execute only the first
+unproved iteration. A malformed, reordered, cross-Run, wrong-model, or
+tampered prefix fails closed. Loop checkpoints can be rerun with model
+replacement through the existing Workflow experiment path, and their child
+metrics/tool effects participate in source/target comparison.
+
 Any node may declare `when: { path, equals }` plus a required `skipOutput`.
 The path is resolved only against that node's already constructed and
 schema-validated input; the comparison is canonical JSON equality with no
@@ -3066,13 +3087,15 @@ not an evaluated template. The generic Agent continuation path rejects
 Workflow-owned decisions.
 
 Resume reconstructs Agent and Deterministic output from bound assistant
-evidence, Tool output from the exact terminal tool event, and Map output from
-the coordinator plus every indexed child Run. Map recovery verifies item
-count/order, parent lineage, restricted Run configuration, per-item
-input/output/schema hashes, and aggregate set hashes before accepting output.
-It never silently reruns an interrupted Map; `retryBlocked=true` is required.
-All nodes then verify identity, effect, input/output/schema hashes, and Run
-ownership.
+evidence, Tool output from the exact terminal tool event, Map output from the
+coordinator plus every indexed child Run, and Loop output from one continuous
+typed iteration chain. Map recovery verifies item count/order, parent lineage,
+restricted Run configuration, per-item input/output/schema hashes, and
+aggregate set hashes before accepting output. Loop recovery additionally
+recomputes each feedback input and typed termination condition; completed
+prefixes survive explicit retry and Store reopen. Unknown iterations are never
+claimed as complete. All nodes then verify identity, effect,
+input/output/schema hashes, and Run ownership.
 Approval recovery additionally binds the unique decision request, request
 digest, attempt, expiry, answer, and continuation Run. A restart with only
 `tool.started` becomes one `run_interrupted` blocked attempt and is never
@@ -3257,24 +3280,27 @@ a leased Workflow Run, retry/timeout/cancellation behavior, restart recovery,
 checkpoint experiment reuse, and hash-only public Trace evidence.
 
 Version 1 intentionally supports Agent, bounded Deterministic, stateless
-built-in Tool, bounded read-only Agent Map, typed deterministic Reduce, and
-durable Approval nodes with bounded parallel dependency-ready DAG scheduling
-and typed equality guards. Stateful session Tool nodes, write-capable Map,
-multi-way switch, loops, compensation, per-node breakpoints, adapter runtimes,
-artifact settlement, and a visual builder remain open. Checkpoint experiments
-now provide single-call execution for an explicit stateless read-only built-in
-subset, while message experiments can freeze captured results for that same
-subset. Stateful/write tool stepping or simulation, Prompt/Skill/Memory
-replacement, batch experiments, an interactive root-cause timeline, and
-Evaluation promotion remain open. The opt-in DeepSeek
+built-in Tool, bounded read-only Agent Map, bounded read-only Agent Loop, typed
+deterministic Reduce, and durable Approval nodes with bounded parallel
+dependency-ready DAG scheduling and typed equality guards. Stateful session
+Tool nodes, write-capable Map/Loop, multi-way switch, compensation, per-node
+breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
+open. Checkpoint experiments now provide single-call execution for an explicit
+stateless read-only built-in subset, while message experiments can freeze
+captured results for that same subset. Stateful/write tool stepping or
+simulation, Prompt/Skill/Memory replacement, batch experiments, an interactive
+root-cause timeline, and Evaluation promotion remain open. The opt-in DeepSeek
 CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live
 smoke executes two real concurrent item calls, deterministically reduces their
-typed lengths, and verifies zero Reduce model/tool activity plus Replay:
+typed lengths, and verifies zero Reduce model/tool activity plus Replay. The
+Loop smoke feeds one typed result into a second real model turn and verifies
+the restricted child-Run chain:
 
 ```bash
 npm run test:live-map
+npm run test:live-loop
 ```
 
 ## Portable Replay Fixtures

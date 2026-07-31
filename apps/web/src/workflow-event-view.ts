@@ -1,5 +1,6 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { workflowLoopEventTraceParts } from "./workflow-loop-event-view";
 import { workflowReduceEventTraceParts } from "./workflow-reduce-event-view";
 
 const WORKFLOW_EVENTS = new Set([
@@ -16,6 +17,11 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.map.item.completed",
   "workflow.map.item.failed",
   "workflow.map.completed",
+  "workflow.loop.iteration.started",
+  "workflow.loop.iteration.completed",
+  "workflow.loop.iteration.failed",
+  "workflow.loop.checkpoint.reused",
+  "workflow.loop.completed",
   "workflow.experiment.started",
   "workflow.experiment.compared",
   "workflow.experiment.failed",
@@ -194,6 +200,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const reduceParts = workflowReduceEventTraceParts(payload);
     if (!reduceParts) return undefined;
     parts.push(...reduceParts);
+  } else if (event.type.startsWith("workflow.loop.")) {
+    const loopParts = workflowLoopEventTraceParts(event.type, payload);
+    if (!loopParts) return undefined;
+    parts.push(...loopParts);
   } else if (event.type.startsWith("workflow.map.item.")) {
     const nodeIdValue = nodeId(payload["nodeId"]);
     const coordinatorRunId = runId(payload["coordinatorRunId"]);
@@ -356,6 +366,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       const mapConfigurationSha256 = hash(payload["mapConfigurationSha256"]);
       if (!mapConfigurationSha256) return undefined;
       parts.push(`map ${mapConfigurationSha256.slice(0, 12)}`);
+    } else if (payload["nodeType"] === "loop") {
+      const loopConfigurationSha256 = hash(payload["loopConfigurationSha256"]);
+      if (!loopConfigurationSha256) return undefined;
+      parts.push(`loop ${loopConfigurationSha256.slice(0, 12)}`);
     } else if (payload["nodeType"] === "reduce") {
       const reduceConfigurationSha256 = hash(
         payload["reduceConfigurationSha256"],
