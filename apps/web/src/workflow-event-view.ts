@@ -22,6 +22,8 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.loop.iteration.failed",
   "workflow.loop.checkpoint.reused",
   "workflow.loop.completed",
+  "workflow.artifacts.settled",
+  "workflow.artifacts.failed",
   "workflow.experiment.started",
   "workflow.experiment.compared",
   "workflow.experiment.failed",
@@ -200,6 +202,75 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const reduceParts = workflowReduceEventTraceParts(payload);
     if (!reduceParts) return undefined;
     parts.push(...reduceParts);
+  } else if (event.type.startsWith("workflow.artifacts.")) {
+    const artifactCount = boundedInteger(payload["artifactCount"], 1, 16);
+    const artifactSetSha256 = hash(payload["artifactSetSha256"]);
+    if (artifactCount === undefined || !artifactSetSha256) return undefined;
+    const artifactIdValue = nodeId(payload["artifactId"]);
+    if (payload["artifactId"] !== undefined && !artifactIdValue) {
+      return undefined;
+    }
+    if (artifactIdValue) {
+      const errorCode = safeToken(payload["errorCode"]);
+      const diagnosticSha256 = hash(payload["diagnosticSha256"]);
+      if (
+        event.type !== "workflow.artifacts.failed" ||
+        !errorCode ||
+        !diagnosticSha256
+      ) {
+        return undefined;
+      }
+      parts.push(
+        `artifact ${artifactIdValue}`,
+        `error ${errorCode}`,
+        `diagnostic ${diagnosticSha256.slice(0, 12)}`,
+        `artifacts ${String(artifactCount)}`,
+        `set ${artifactSetSha256.slice(0, 12)}`,
+      );
+    } else {
+      const verifiedCount = boundedInteger(
+        payload["verifiedCount"],
+        0,
+        artifactCount,
+      );
+      const missingCount = boundedInteger(
+        payload["missingCount"],
+        0,
+        artifactCount,
+      );
+      const failedCount = boundedInteger(
+        payload["failedCount"],
+        0,
+        artifactCount,
+      );
+      const planRevision = boundedInteger(
+        payload["planRevision"],
+        1,
+        1_000_000_000,
+      );
+      const expectedComplete = event.type === "workflow.artifacts.settled";
+      if (
+        verifiedCount === undefined ||
+        missingCount === undefined ||
+        failedCount === undefined ||
+        planRevision === undefined ||
+        payload["complete"] !== expectedComplete ||
+        verifiedCount + missingCount > artifactCount ||
+        (expectedComplete &&
+          (verifiedCount !== artifactCount ||
+            missingCount !== 0 ||
+            failedCount !== 0))
+      ) {
+        return undefined;
+      }
+      parts.push(
+        `verified ${String(verifiedCount)}/${String(artifactCount)}`,
+        ...(missingCount > 0 ? [`missing ${String(missingCount)}`] : []),
+        ...(failedCount > 0 ? [`failed ${String(failedCount)}`] : []),
+        `plan-r${String(planRevision)}`,
+        `set ${artifactSetSha256.slice(0, 12)}`,
+      );
+    }
   } else if (event.type.startsWith("workflow.loop.")) {
     const loopParts = workflowLoopEventTraceParts(event.type, payload);
     if (!loopParts) return undefined;

@@ -57,6 +57,7 @@ import {
 import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
+import { ExecutionPlanWorkflowArtifactSettlement } from "./workflow-artifact-settlement.js";
 import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deterministic-node.js";
 import { ExecutionPlanWorkflowMapNodeExecutor } from "./workflow-map-node.js";
 import { ExecutionPlanWorkflowLoopNodeExecutor } from "./workflow-loop-node.js";
@@ -84,6 +85,7 @@ interface NodeExecutionOutcome {
 export class ExecutionPlanWorkflowRuntime {
   private readonly activeThreads = new Set<string>();
   private readonly ledger: ExecutionPlanWorkflowLedger;
+  private readonly artifactSettlement: ExecutionPlanWorkflowArtifactSettlement;
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
   private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
@@ -99,6 +101,9 @@ export class ExecutionPlanWorkflowRuntime {
     private readonly agentRuntime: AgentRuntime,
   ) {
     this.ledger = new ExecutionPlanWorkflowLedger(store);
+    this.artifactSettlement = new ExecutionPlanWorkflowArtifactSettlement(
+      store,
+    );
     this.conditionNodeExecutor = new ExecutionPlanWorkflowConditionNodeExecutor(
       store,
       this.ledger,
@@ -403,10 +408,12 @@ export class ExecutionPlanWorkflowRuntime {
     if (
       context.plan.steps.every(
         (step) => step.status === "completed" || step.status === "skipped",
-      ) &&
-      context.plan.status === "completed"
+      )
     ) {
-      return this.finish(context, "completed");
+      return this.finish(
+        context,
+        await this.artifactSettlement.settleTerminal(context),
+      );
     }
     if (
       [...context.nodeResults.values()].some(

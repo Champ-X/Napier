@@ -48,7 +48,11 @@ Version `0.1.0` includes:
   Agent Loop refinement, and durable human Approval gates, strict JSON output,
   declared tool effects, policy/schema preflight, optional bounded parallel
   waves, explicit retry, safe checkpoint reuse, restart reconstruction, and
-  shared CLI/HTTP/Web/Trace evidence;
+  shared CLI/HTTP/Web/Trace evidence. A Workflow with declared workspace file
+  or directory Artifacts completes only after Napier hashes current bytes and
+  records the existing `produced -> verified` Plan lifecycle; missing, drifted,
+  oversized, escaped, or symlink-backed delivery blocks instead of trusting
+  node output;
 - controlled Workflow checkpoint experiments with verified ancestor reuse,
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
@@ -3068,6 +3072,25 @@ tampered prefix fails closed. Loop checkpoints can be rerun with model
 replacement through the existing Workflow experiment path, and their child
 metrics/tool effects participate in source/target comparison.
 
+Blueprints may declare up to 16 workspace `file` or `directory` Artifacts.
+After every node is completed or skipped, the Runtime inspects the canonical
+workspace target and computes the existing bounded file or recursive directory
+digest. A present `expected` or repaired `missing` Artifact transitions through
+`produced` to `verified`; an already verified Artifact is rehashed before every
+completion claim. Missing bytes or digest drift make the Workflow `blocked`.
+Resume after workspace repair reconstructs completed node output from Ledger,
+settles only the Artifact lifecycle, and does not rerun completed model or Tool
+work. Cancellation is checked between lifecycle transitions, and a durable
+state/event commit gap is repaired by appending the missing standard
+`plan.artifact.*` projection.
+
+`plan.artifact.*` remains the authoritative Artifact state evidence.
+`workflow.artifacts.settled` and `workflow.artifacts.failed` add bounded
+Manifest/Plan/count/set-hash coordination without copying workspace paths,
+contents, or diagnostic text into Workflow Trace. URL and `other` Artifacts,
+workspace escapes, symbolic links, oversized content, and superseded declared
+deliverables cannot satisfy Workflow completion.
+
 Any node may declare `when: { path, equals }` plus a required `skipOutput`.
 The path is resolved only against that node's already constructed and
 schema-validated input; the comparison is canonical JSON equality with no
@@ -3282,10 +3305,11 @@ checkpoint experiment reuse, and hash-only public Trace evidence.
 Version 1 intentionally supports Agent, bounded Deterministic, stateless
 built-in Tool, bounded read-only Agent Map, bounded read-only Agent Loop, typed
 deterministic Reduce, and durable Approval nodes with bounded parallel
-dependency-ready DAG scheduling and typed equality guards. Stateful session
-Tool nodes, write-capable Map/Loop, multi-way switch, compensation, per-node
-breakpoints, adapter runtimes, artifact settlement, and a visual builder remain
-open. Checkpoint experiments now provide single-call execution for an explicit
+dependency-ready DAG scheduling, typed equality guards, and terminal workspace
+file/directory Artifact settlement. Stateful session Tool nodes, write-capable
+Map/Loop, multi-way switch, compensation, per-node breakpoints, adapter
+runtimes, and a visual builder remain open. Checkpoint experiments now provide
+single-call execution for an explicit
 stateless read-only built-in subset, while message experiments can freeze
 captured results for that same subset. Stateful/write tool stepping or
 simulation, Prompt/Skill/Memory replacement, batch experiments, an interactive

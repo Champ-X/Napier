@@ -329,6 +329,13 @@ describe("Napier Workflow CLI", () => {
           event.type === "tool.started" || event.type === "tool.completed",
       ),
     ).toHaveLength(2);
+    expect(events.map((event) => event.type)).toEqual(
+      expect.arrayContaining([
+        "plan.artifact.produced",
+        "plan.artifact.verified",
+        "workflow.artifacts.settled",
+      ]),
+    );
     expect(frames.at(-2)?.type).toBe("snapshot");
   });
 
@@ -1182,6 +1189,14 @@ async function createToolFixture(): Promise<{
         title: "Inventory",
         description: "List the workspace root.",
         verification: "Return a typed list-files receipt.",
+      },
+    ],
+    artifacts: [
+      {
+        id: "workflow-manifest",
+        path: "workflow.json",
+        kind: "file",
+        description: "The exact Workflow Manifest consumed by the CLI.",
       },
     ],
   });

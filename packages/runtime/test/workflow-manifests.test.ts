@@ -652,7 +652,7 @@ describe("Execution Plan Workflow manifests", () => {
     ).toThrow("labels must be distinct");
   });
 
-  it("keeps artifact settlement outside v1 instead of falsely completing it", async () => {
+  it("accepts bounded workspace artifacts and rejects unsupported kinds", async () => {
     const blueprint = await createBlueprint(
       [
         {
@@ -668,21 +668,73 @@ describe("Execution Plan Workflow manifests", () => {
           path: "report.json",
           description: "A report file.",
         },
+        {
+          id: "report-directory",
+          path: "report",
+          kind: "directory",
+          description: "A report directory.",
+        },
       ],
     );
 
-    expect(() =>
+    expect(
       defineExecutionPlanWorkflow({
         name: "Artifact workflow",
         version: 1,
-        description: "Artifact settlement is not implemented in v1.",
+        description: "Settle workspace artifacts from current bytes.",
         blueprint,
         inputSchema: requestSchema(),
         outputSchema: inspectionSchema(),
         outputNodeId: "inspect",
         nodes: [workflowNodes()[0]!],
       }),
-    ).toThrow("without artifact settlement");
+    ).toEqual(
+      expect.objectContaining({
+        blueprint: expect.objectContaining({ artifactCount: 2 }),
+      }),
+    );
+
+    const urlBlueprint = await createBlueprint(undefined, [
+      {
+        id: "report-url",
+        path: "https://example.com/report",
+        kind: "url",
+        description: "An external report URL.",
+      },
+    ]);
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        name: "URL Artifact workflow",
+        version: 1,
+        description: "Reject external Artifact settlement.",
+        blueprint: urlBlueprint,
+        inputSchema: requestSchema(),
+        outputSchema: inspectionSchema(),
+        outputNodeId: "inspect",
+        nodes: [workflowNodes()[0]!],
+      }),
+    ).toThrow("workspace files or directories");
+
+    const oversizedBlueprint = await createBlueprint(
+      undefined,
+      Array.from({ length: 17 }, (_, index) => ({
+        id: `artifact-${String(index)}`,
+        path: `artifacts/${String(index)}.txt`,
+        description: `Artifact ${String(index)}`,
+      })),
+    );
+    expect(() =>
+      defineExecutionPlanWorkflow({
+        name: "Oversized Artifact workflow",
+        version: 1,
+        description: "Reject excessive Artifact settlement.",
+        blueprint: oversizedBlueprint,
+        inputSchema: requestSchema(),
+        outputSchema: inspectionSchema(),
+        outputNodeId: "inspect",
+        nodes: [workflowNodes()[0]!],
+      }),
+    ).toThrow("too many artifacts");
   });
 });
 

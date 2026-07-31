@@ -508,6 +508,74 @@ describe("Workflow event Trace projection", () => {
     ).toBeUndefined();
   });
 
+  it("summarizes Artifact settlement without workspace paths or diagnostics", () => {
+    const settled = workflowEvent("workflow.artifacts.settled", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      artifactCount: 2,
+      verifiedCount: 2,
+      missingCount: 0,
+      failedCount: 0,
+      artifactSetSha256: "2".repeat(64),
+      planRevision: 7,
+      complete: true,
+      path: "PRIVATE_WORKSPACE_PATH",
+    });
+    const failedArtifact = workflowEvent("workflow.artifacts.failed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      artifactId: "report",
+      artifactCount: 2,
+      artifactSetSha256: "3".repeat(64),
+      errorCode: "scope_denied",
+      diagnosticSha256: "4".repeat(64),
+      diagnostic: "PRIVATE_ARTIFACT_DIAGNOSTIC",
+    });
+    const failedSet = workflowEvent("workflow.artifacts.failed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      artifactCount: 2,
+      verifiedCount: 1,
+      missingCount: 1,
+      failedCount: 0,
+      artifactSetSha256: "5".repeat(64),
+      planRevision: 8,
+      complete: false,
+    });
+
+    expect(workflowEventTraceSummary(settled)).toBe(
+      `workflow artifacts settled / verified 2/2 / plan-r7 / set ${"2".repeat(12)} / manifest ${"1".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(failedArtifact)).toBe(
+      `workflow artifacts failed / artifact report / error scope_denied / diagnostic ${"4".repeat(12)} / artifacts 2 / set ${"3".repeat(12)} / manifest ${"1".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(failedSet)).toBe(
+      `workflow artifacts failed / verified 1/2 / missing 1 / plan-r8 / set ${"5".repeat(12)} / manifest ${"1".repeat(12)}`,
+    );
+    expect(
+      `${workflowEventTraceSummary(settled)} ${workflowEventTraceSummary(failedArtifact)}`,
+    ).not.toContain("PRIVATE");
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.artifacts.settled", {
+          ...(settled.payload as Record<string, JsonValue>),
+          verifiedCount: 1,
+        }),
+      ),
+    ).toBeUndefined();
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.artifacts.failed", {
+          ...(failedSet.payload as Record<string, JsonValue>),
+          artifactId: "PRIVATE INVALID ID",
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
   it("rejects malformed Workflow evidence", () => {
     expect(
       workflowEventTraceSummary(

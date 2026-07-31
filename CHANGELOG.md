@@ -6,6 +6,29 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added terminal Artifact settlement to executable Plan Workflows. A Manifest
+  may declare up to 16 workspace files or directories, and Workflow completion
+  now waits until every completed/skipped node is followed by a real bounded
+  workspace digest and the existing `produced -> verified` Plan lifecycle.
+  Already verified bytes are rehashed before each completion claim; missing or
+  drifted targets block, while URL/other kinds, symbolic links, workspace
+  escape, oversized targets, and superseded deliverables fail closed. Resume
+  after workspace repair or SQLite reopen settles only Artifacts and does not
+  rerun completed Agent or Tool nodes. Cancellation is checked between
+  lifecycle transitions, and durable state/event commit gaps repair the exact
+  standard `plan.artifact.*` projection. Current bytes are re-read after the
+  `produced` transition so an external replacement cannot reuse a stale
+  digest. New
+  `workflow.artifacts.settled`/`failed` events and Web Trace summaries expose
+  only bounded IDs, counts, revisions, statuses, and hashes. A real
+  policy-checked `apply_patch` Workflow, CLI JSONL, HTTP SSE, directory digest,
+  missing/drift repair, cancellation, commit-gap, concurrent Thread, symlink
+  denial, privacy, and portable Replay tests cover the complete path without
+  expanding Store or Server. The complete gate passes 1,544 regular tests with
+  27 opt-in live tests skipped, 253 OpenAPI routes, 244/244 compatibility
+  operations, and the product performance budget. The 82-file Web dist keeps
+  its main entry at 130.13 KiB and is bound to `41c7ddf8eb03a0a0`; the
+  seven-artifact release set is bound to `4fa14155779cac50`.
 - Added bounded read-only Agent Loop nodes to executable Plan Workflows. A Loop
   feeds each schema-validated output into the next Agent turn until a typed
   `until` condition matches, with independent per-iteration and whole-node

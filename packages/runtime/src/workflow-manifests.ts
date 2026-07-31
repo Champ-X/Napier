@@ -60,6 +60,7 @@ export const MAX_EXECUTION_PLAN_WORKFLOW_NODE_TIMEOUT_MS = 30 * 60 * 1_000;
 export const MAX_EXECUTION_PLAN_WORKFLOW_APPROVAL_TIMEOUT_MS =
   7 * 24 * 60 * 60 * 1_000;
 export const MAX_EXECUTION_PLAN_WORKFLOW_CONCURRENCY = 4;
+export const MAX_EXECUTION_PLAN_WORKFLOW_ARTIFACTS = 16;
 
 const MAX_WORKFLOW_ATTEMPTS = 3;
 const RESOURCE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
@@ -198,9 +199,21 @@ export function validateExecutionPlanWorkflowManifest(
     throw new Error("Workflow maxConcurrency is invalid");
   }
   const blueprint = validateExecutionPlanBlueprint(manifest["blueprint"]);
-  if ((blueprint.artifacts?.length ?? 0) > 0) {
+  if (
+    (blueprint.artifacts?.length ?? 0) > MAX_EXECUTION_PLAN_WORKFLOW_ARTIFACTS
+  ) {
+    throw new Error("Workflow manifest has too many artifacts");
+  }
+  if (
+    blueprint.artifacts?.some(
+      (artifact) =>
+        artifact.kind !== undefined &&
+        artifact.kind !== "file" &&
+        artifact.kind !== "directory",
+    )
+  ) {
     throw new Error(
-      "Workflow manifest v1 requires a Blueprint without artifact settlement",
+      "Workflow manifest artifacts must be workspace files or directories",
     );
   }
   const schemaBudget = { nodes: 0 };

@@ -172,6 +172,7 @@ export * from "./workspace-write-lock.js";
 export * from "./write-linked-test-selection.js";
 export * from "./write-linked-test-verification.js";
 export * from "./write-linked-workspace-patch.js";
+export * from "./workflow-artifact-settlement.js";
 export * from "./workflow-blueprints.js";
 export * from "./workflow-experiment-comparison.js";
 export * from "./workflow-experiment-comparison-protocol.js";

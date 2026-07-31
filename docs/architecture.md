@@ -376,6 +376,7 @@ ExecutionPlanBlueprint
   -> existing ExecutionPlan projection
   -> source=workflow Run per ready Agent, Deterministic, Tool, Map, Loop, Reduce, or Approval node
   -> strict typed node result
+  -> workspace Artifact digest settlement
   -> existing Plan transition and Work Ledger
 ```
 
@@ -398,6 +399,9 @@ growing the central Ledger coordinator.
 `workflow-loop-iteration-runtime.ts` owns sequential read-only Agent turns;
 and `workflow-loop-model.ts` plus `workflow-loop-evidence.ts` define typed
 feedback, termination, checkpoint reconstruction, and fail-closed recovery.
+`workflow-artifact-settlement.ts` owns terminal file/directory inspection,
+Plan Artifact transitions, commit-gap repair, cancellation boundaries, and
+body-free aggregate evidence instead of adding that logic to Store or Server.
 `workflow-condition-model.ts` validates and evaluates typed equality guards,
 while `workflow-condition-node.ts` owns the no-Run Plan skip transition.
 `workflow-ledger.ts` and `workflow-recovery.ts` own durable evidence
@@ -488,6 +492,26 @@ Store reopen may reuse that proved prefix and starts at the first unproved
 iteration. The shared `workflow-read-only-child-run-gate.ts` now admits both
 Map and Loop children and removes the former Map-specific block from Store.
 
+Workflow completion also settles the Blueprint's declared Artifacts rather
+than accepting model or node claims. Manifests admit at most 16 workspace
+files or directories. After all Plan steps complete or skip, the Runtime uses
+the existing canonical realpath and bounded hashing path to transition present
+or repaired Artifacts through `produced` to `verified`. The target is re-read
+after `produced`, and existing verified Artifacts are rehashed before
+completion. Missing bytes or digest drift transition to `missing` and block;
+unsupported kinds, symlinks, scope escape, size limits, and superseded declared
+outputs fail closed.
+
+Standard `plan.artifact.*` events remain the authoritative lifecycle. The
+Workflow adds only `workflow.artifacts.settled` or
+`workflow.artifacts.failed` coordination with bounded IDs, counts, status,
+Manifest hash, Plan revision, diagnostic hash, and Artifact-set hash. These
+events contain no path, content, or diagnostic prose. Resume reconstructs
+completed nodes first, then retries only settlement. Cancellation checks occur
+between digest observation, `produced`, and `verified`; if a state commit
+survives but its standard event does not, resume appends the current exact
+projection before completion.
+
 Each concurrent node receives an isolated copy of the current Plan, outputs,
 node results, and reused-node lineage. Store transitions and Ledger sequence
 assignment remain serialized authorities; outcomes merge only after the full
@@ -535,6 +559,9 @@ arguments and text are reduced to bytes/hash in Tool-node Ledger evidence,
 while typed structured output remains bound for recovery and delivery.
 Workflow-specific Trace summaries retain only safe identifiers, declared
 effect, status, byte counts, error codes, and hash prefixes.
+Artifact-settlement summaries retain only counts, revision, status, and hash
+prefixes; workspace paths, contents, evidence, and diagnostic text are
+excluded.
 Conditional terminal evidence contains condition, subject, input, fallback,
 output, and schema hashes but no compared value or fallback body.
 
@@ -550,6 +577,9 @@ parent/Plan/restricted-configuration lineage, per-item input/output/schema
 hashes, and aggregate item/run set hashes. Loop output requires a continuous
 ordered child chain, recomputed previous-output feedback, typed condition
 evaluation, coordinator/model lineage, and exact checkpoint/run-set hashes.
+After those outputs recover, terminal Artifact settlement rechecks current
+workspace bytes. A repaired missing Artifact never causes a completed node to
+rerun, while a drifted verified Artifact invalidates a later completion claim.
 Recovery also handles process-exit
 windows between terminal output, Run settlement, Plan transition, and Workflow
 event commits. `tool.started` without terminal evidence becomes
@@ -899,10 +929,11 @@ nodes, stateless built-in Tool nodes, bounded read-only Agent Map and Loop
 nodes, typed deterministic Reduce nodes, durable binary Approval gates,
 literal/field-path typed bindings, bounded parallel dependency-ready DAG
 scheduling, typed equality guards with schema-valid fallback, cancellation,
-timeout, explicit retry, and restart recovery. It does not yet implement
-general multi-option decision nodes, stateful session Tool nodes,
-write-capable Map/Loop, multi-way switch, compensation, per-node breakpoints,
-external Agent adapters, or artifact settlement.
+timeout, explicit retry, restart recovery, and terminal workspace
+file/directory Artifact settlement. It does not yet implement general
+multi-option decision nodes, stateful session Tool nodes, write-capable
+Map/Loop, multi-way switch, compensation, per-node breakpoints, or external
+Agent adapters.
 
 ### Coding Outcome Benchmark
 

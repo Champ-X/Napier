@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -60,6 +60,14 @@ describe("Workflow HTTP path", () => {
           description: "Produce the typed HTTP report.",
           verification: "Return typed report JSON.",
           dependsOn: ["inspect"],
+        },
+      ],
+      artifacts: [
+        {
+          id: "http-report",
+          path: "http-report.txt",
+          kind: "file",
+          description: "The verified HTTP Workflow deliverable.",
         },
       ],
     });
@@ -127,6 +135,10 @@ describe("Workflow HTTP path", () => {
       ),
     ]);
     services.models.registerProvider(provider.provider);
+    await writeFile(
+      path.join(workspaceRoot, "http-report.txt"),
+      "verified HTTP report\n",
+    );
     const app = createApp(services);
 
     const rejectedRevision = await app.request(
@@ -178,6 +190,13 @@ describe("Workflow HTTP path", () => {
         }),
       }),
     );
+    expect(
+      frames.some(
+        (frame) =>
+          frame.type === "event" &&
+          frame.event.type === "workflow.artifacts.settled",
+      ),
+    ).toBe(true);
     const durableWorkflow = JSON.stringify(
       (await services.store.listEvents(targetThread.id)).filter((event) =>
         event.type.startsWith("workflow."),
