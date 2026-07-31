@@ -64,6 +64,14 @@ describe("Napier JSON-RPC output failure", () => {
           throw new Error("Unexpected model experiment RPC call");
         },
       },
+      toolExperiments: {
+        async preview() {
+          throw new Error("Unexpected tool experiment RPC call");
+        },
+        async run() {
+          throw new Error("Unexpected tool experiment RPC call");
+        },
+      },
       input,
       output,
       serverVersion: "test",

@@ -300,6 +300,10 @@ parent process starts napier rpc with canonical workspace/data roots
   -> napier/agent/run, napier/agent/resume,
      napier/agent/experiment/preview,
      napier/agent/experiment/run,
+     napier/model/experiment/preview,
+     napier/model/experiment/run,
+     napier/tool/experiment/preview,
+     napier/tool/experiment/run,
      napier/workflow/run, napier/workflow/resume,
      napier/workflow/answer,
      napier/workflow/experiment/preview,
@@ -318,12 +322,14 @@ $/cancelRequest, EOF, SIGINT, SIGTERM, or exit
 The serializable protocol types live in `@napier/contracts`.
 `rpc-protocol.ts` owns shared strict message/parameter validation and stable
 public errors; `rpc-agent-message-experiments.ts` and
-`rpc-workflow-experiments.ts` own bounded experiment request adaptation
-without expanding that near-limit module; `rpc-transport.ts` owns
-bounded UTF-8 line framing and serialized backpressure-aware output;
-`rpc-invocations.ts` adapts public methods to Runtime services; `rpc-server.ts`
-owns initialization, request admission, cancellation, and lifecycle state. No
-RPC code reads Store or implements an Agent, Workflow, or experiment loop.
+`rpc-model-invocation-experiments.ts`,
+`rpc-tool-invocation-experiments.ts`, and `rpc-workflow-experiments.ts` own
+bounded experiment request adaptation without expanding that near-limit
+module; `rpc-transport.ts` owns bounded UTF-8 line framing and serialized
+backpressure-aware output; `rpc-invocations.ts` adapts public methods to
+Runtime services; `rpc-server.ts` owns initialization, request admission,
+cancellation, and lifecycle state. No RPC code reads Store or implements an
+Agent, Workflow, or experiment loop.
 
 Input is line-delimited JSON-RPC 2.0, capped at 1 MiB per line and four active
 Agent, Workflow, or experiment requests. Request IDs are bounded strings or
@@ -348,10 +354,11 @@ inherits the selected local data root's existing credential references and
 tool policy, so stdio does not elevate the Agent or Workflow. RPC supports
 Agent and typed Workflow run/resume, explicit blocked-node retry,
 freshness-bound Approval answer-and-resume, preview-bound Workflow checkpoint
-experiments, and read-only Agent message experiments. SDK and RPC call the
-existing interface-neutral experiment runtimes; they do not recreate source
-projection, Branch materialization, reuse, comparison, or confirmation logic.
-Approval deduction and
+experiments, read-only Agent message experiments, isolated model calls, and
+single built-in read-only tool calls. SDK and RPC call the existing
+interface-neutral experiment runtimes; they do not recreate source projection,
+Branch materialization, tool resolution, reuse, comparison, or confirmation
+logic. Approval deduction and
 evidence validation live in split `embedded-workflow-approvals.ts`; CLI, SDK,
 and RPC reuse that service rather than reading Store independently. Remote
 transport/authentication, client reconnection, ACP, TUI, and Desktop packaging
@@ -770,28 +777,30 @@ limited to 512 KiB each, 512 objects, and 64 MiB total. Capture failure does
 not change the original tool call and emits only
 `context.tool_invocation_unavailable`. Raw capsules never enter portable
 Replay. Durable experiment events contain hashes, sizes, statuses, safe IDs,
-and deltas; deliberate CLI/HTTP/SDK results can return candidate output.
+and deltas; deliberate CLI/HTTP/SDK/RPC results and Web downloads can return
+candidate output.
 
 Preview snapshots only the argument-selected workspace file or directory and
 rejects truncation. Any preview-to-execution change fails before target
 creation. A race after target creation can only produce a failed read-only
 target, never a workspace mutation. Cancellation settles a cancelled target;
 generic and automatic recovery reject experiment Runs so retry starts from the
-source checkpoint. The first product surface is Runtime, CLI JSONL, HTTP/SSE,
-and TypeScript SDK. Web/RPC, write/session checkpoints, historical result
-reuse, simulation, environment restoration, batch experiments, and promotion
-remain separate work.
+source checkpoint. Runtime, CLI JSONL, HTTP/SSE, TypeScript SDK, local stdio
+RPC, lazy Run Lab, and privacy-bounded Web Trace consume this same path.
+Write/session checkpoints, historical result reuse, simulation, environment
+restoration, batch experiments, and promotion remain separate work.
 
-The browser desk remains inside the lazy Run Lab boundary. Its independent
-protocol parser requires exact fields and recomputes preview, comparison, and
-terminal-frame hashes plus metric deltas, output-hash state, and added/removed
-tool sets. The SSE client binds monotonically increasing target events back to
-the final Snapshot and complete event-stream hash. Switching Thread or
-explicitly cancelling aborts the request and invalidates the operation
-generation, preventing a stale response from repopulating the desk. The UI
-renders only source/candidate status, models, bounded metrics, tools,
-configuration fields, counts, and hash prefixes; complete target text appears
-only in its normal Ledger or deliberate local JSON download.
+The tool-call desk remains inside the lazy Run Lab boundary. Its independent
+protocol parser requires exact fields and recomputes preview, source/target
+observation, comparison, and terminal-frame hashes plus duration/output-byte
+deltas and output-hash state. The SSE client binds monotonically increasing
+target events back to the final Snapshot and complete event-stream hash.
+Switching Thread or explicitly cancelling aborts the request and invalidates
+the operation generation, preventing a stale response from repopulating the
+desk. The UI renders only tool name, source/candidate status, duration, output
+byte counts, and hash prefixes; arguments, Workspace paths, source output, and
+candidate output never render. Candidate output is available only through the
+explicit CAS-named local result download.
 
 The Plan Workbench adds a lazy Workflow Experiment Desk over the same HTTP
 boundary. It accepts a browser-local, content-verified Manifest, lets the user
@@ -3747,9 +3756,9 @@ content SHA-256, and mirrors assessment/attempt counts in headers.
 ## Replay And Evaluation Flow
 
 Portable Run Replay remains evidence export, not tool re-execution. Controlled
-Workflow, Agent-message, and model-invocation experiments are separate live
-Runtime paths. A model-invocation target can be exported and verified, but its
-raw local Context capsule is never portable:
+Workflow, Agent-message, model-invocation, and tool-invocation experiments are
+separate live Runtime paths. Model- and tool-invocation targets can be exported
+and verified, but their raw local Context/argument capsules are never portable:
 
 ```text
 select terminal run
@@ -5477,7 +5486,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has fifty-two parts:
+The current boundary has fifty-five parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5689,6 +5698,12 @@ The current boundary has fifty-two parts:
     isolated provider call, zero candidate tool execution, call-level
     comparison, CLI/HTTP/SDK/RPC/Web delivery, independently verified browser
     protocol, and privacy-bounded Replay/Trace receipts.
+55. Preview-bound single-tool-invocation re-execution for ten built-in
+    stateless read-only tools with exact local-only argument capsules, scoped
+    Workspace freshness, implementation/effect/policy binding, one isolated
+    tool call and zero model calls, source/target comparison,
+    CLI/HTTP/SDK/RPC/Web delivery, independently verified browser protocol,
+    and argument/path/output-body-free Replay/Trace projections.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally

@@ -6,6 +6,7 @@ import type {
   EmbeddedWorkflowService,
   ExecutionPlanWorkflowExperimentRuntime,
   ModelInvocationExperimentRuntime,
+  ToolInvocationExperimentRuntime,
 } from "@napier/runtime";
 
 import {
@@ -41,6 +42,7 @@ export interface NapierRpcServerOptions {
   experiments: Pick<ExecutionPlanWorkflowExperimentRuntime, "preview" | "run">;
   agentExperiments: Pick<AgentMessageExperimentRuntime, "preview" | "run">;
   modelExperiments: Pick<ModelInvocationExperimentRuntime, "preview" | "run">;
+  toolExperiments: Pick<ToolInvocationExperimentRuntime, "preview" | "run">;
   input: AsyncIterable<Buffer | string>;
   output: Writable;
   serverVersion: string;
@@ -138,6 +140,8 @@ export async function runNapierRpcServer(
                 agentMessageExperimentRun: true,
                 modelInvocationExperimentPreview: true,
                 modelInvocationExperimentRun: true,
+                toolInvocationExperimentPreview: true,
+                toolInvocationExperimentRun: true,
                 workflowRun: true,
                 workflowResume: true,
                 workflowApprovalAnswer: true,
@@ -210,6 +214,7 @@ export async function runNapierRpcServer(
             experiments: options.experiments,
             agentExperiments: options.agentExperiments,
             modelExperiments: options.modelExperiments,
+            toolExperiments: options.toolExperiments,
           },
           message,
         );

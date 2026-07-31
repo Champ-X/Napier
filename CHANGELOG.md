@@ -22,8 +22,18 @@ All notable changes to Napier are recorded here.
   or unknown-effect tools. Real read-file and SQLite tests cover unchanged and
   changed output, stale preview, target failure, cancellation, concurrency,
   exposed permissions, direct Store bypass, portable Replay, and SQL/parameter/
-  row privacy. Write/session tool checkpoints, result reuse or simulation, Web,
-  RPC, batch execution, and experiment promotion remain open.
+  row privacy. Local stdio RPC adds capability discovery, preview/run,
+  request-bound events, stale-preview conflicts, and durably settled active
+  cancellation over the same Runtime. A lazy Run Lab read-only tool-call desk
+  independently validates preview/comparison/frame hashes, event order, final
+  Snapshot identity, and the complete event-stream hash; supports explicit
+  cancellation, target navigation, and deliberate CAS-named result download;
+  and never renders arguments, Workspace paths, or source/candidate output.
+  Real Hono and production-browser coverage execute `read_file`, verify only
+  the expected preview/run requests, navigate to the isolated target, and
+  prove private path/output markers stay outside the DOM. Write/session tool
+  checkpoints, result reuse or simulation, batch execution, and experiment
+  promotion remain open.
 - Added controlled single-model-invocation re-execution for provider-backed
   Agent calls. Before dispatch, primary Agent turns, context compaction, Goal
   evaluation, and Memory extraction write an exact provider Context plus safe

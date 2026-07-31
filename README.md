@@ -76,6 +76,15 @@ Version `0.1.0` includes:
   the complete hash chain while provider Context, raw thinking, candidate
   text/tool arguments, and capsule contents remain absent from portable Replay,
   Web Trace, and the rendered desk;
+- controlled single-tool-invocation experiments for ten built-in stateless
+  read-only tools. Exact admitted arguments remain in a bounded local-only
+  capsule while CLI JSONL, HTTP SSE, TypeScript SDK, local stdio RPC, and a
+  lazy Run Lab desk preview-bind the source call, current scoped Workspace,
+  Agent revision, tool implementation, and completed output before executing
+  that tool exactly once with no Agent Loop or model call. The browser
+  independently validates the result stream and renders only status, latency,
+  byte counts, and hashes; arguments, paths, source output, and candidate
+  output remain outside Ledger, portable Replay, Trace, and the desk;
 - a checked product-path performance budget over three cold built-CLI JSONL
   runs, shared Runtime bootstrap, the production `read_file` executor, a
   1,000-event SQLite Thread, observed RSS, and closed-ledger database growth,
@@ -603,16 +612,27 @@ normal Runtime factory, repeats Schema/effect/`observe` policy checks, and calls
 that tool exactly once. It compares status, latency, output SHA-256, and output
 bytes. Failure and cancellation settle inspectable targets; a stale preview
 creates no target. SQL, query parameters, and result rows remain absent from
-Ledger and Replay, while deliberate CLI/HTTP/SDK results may return the live
-candidate output to their caller. The shared private CAS uses `0700`/`0600`
-permissions, atomic no-overwrite installation, serialized capacity admission,
-and post-install validation; tool capsules are limited to 512 KiB each and 512
-objects / 64 MiB total.
+Ledger and Replay, while deliberate CLI/HTTP/SDK/RPC results and Web downloads
+may return the live candidate output to their caller. The shared private CAS
+uses `0700`/`0600` permissions, atomic no-overwrite installation, serialized
+capacity admission, and post-install validation; tool capsules are limited to
+512 KiB each and 512 objects / 64 MiB total.
 
 This slice does not allow Extensions, Browser, shell/Process, Kernel, Debugger,
-stateful Session, write, or unknown-effect tools. It also does not yet provide
-Web/RPC access, historical result reuse, side-effect simulation, write-capable
-experiments, environment restoration, or batch execution.
+stateful Session, write, or unknown-effect tools. It does not yet provide
+historical result reuse, side-effect simulation, write-capable experiments,
+environment restoration, batch execution, or experiment promotion.
+
+Local stdio RPC exposes `napier/tool/experiment/preview` and
+`napier/tool/experiment/run` with the same request-bound events, stale-preview
+conflict, cancellation, admission, and shutdown behavior as the other
+experiment methods. The lazy Run Lab read-only tool-call desk lists only
+strict receipt-plus-terminal-call metadata, requires a fresh preview, supports
+explicit cancellation and target navigation, and offers candidate output only
+through a deliberate CAS-named download. Its independent browser protocol
+recomputes preview, comparison, and result-frame hashes, verifies event order,
+Snapshot identity, and the complete event-stream hash, and rejects raw
+arguments, Workspace paths, or output bodies before rendering.
 
 Run one local Runtime as a line-delimited stdio JSON-RPC 2.0 process for an
 editor, desktop shell, or automation host:
@@ -629,8 +649,10 @@ experiment methods. `napier/agent/experiment/preview` and
 path as the CLI. `napier/model/experiment/preview` and
 `napier/model/experiment/run` expose the same one-provider-call path as
 `napier model-experiment`, including request-bound events and a deliberate
-cancelled result after durable settlement. `napier/workflow/experiment/preview`
-projects a source Thread/Plan checkpoint without mutation;
+cancelled result after durable settlement. `napier/tool/experiment/preview`
+and `napier/tool/experiment/run` provide the corresponding preview-bound
+single read-only tool-call path. `napier/workflow/experiment/preview` projects
+a source Thread/Plan checkpoint without mutation;
 `napier/workflow/experiment/run` requires the returned `previewSha256`, creates
 an isolated target Thread, reuses verified ancestors, reruns the selected
 descendants, and returns the candidate Manifest and source/target comparison.
@@ -3164,9 +3186,10 @@ CAS-named result download. Its browser protocol independently validates exact
 preview/comparison/frame fields and hashes, status/stop consistency, metric
 deltas, source/target model and output bindings, streamed event hashes, the
 final Snapshot, and complete event-stream hash. Provider Context, raw thinking,
-source/candidate text, and tool arguments never render in the desk. Tool-call
-Web/RPC integration, result reuse/simulation, batch experiments, and experiment
-promotion remain open.
+source/candidate text, and tool arguments never render in the desk. Read-only
+tool-call Web/RPC integration uses its own stricter call/output protocol;
+result reuse/simulation, batch experiments, and experiment promotion remain
+open.
 
 The lazy Run Lab message experiment desk consumes these same routes. It lists
 only terminal modern user-message checkpoints by Run/model/sequence metadata,

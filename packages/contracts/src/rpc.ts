@@ -5,6 +5,7 @@ import type {
   CreateAgentMessageExperimentRequest,
   CreateExecutionPlanWorkflowExperimentRequest,
   CreateModelInvocationExperimentRequest,
+  CreateToolInvocationExperimentRequest,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResult,
@@ -19,6 +20,8 @@ import type {
   RunRecord,
   RunStatus,
   TerminalRunStatus,
+  ToolInvocationExperimentPreview,
+  ToolInvocationExperimentResult,
 } from "./index.js";
 
 export const NAPIER_RPC_PROTOCOL_VERSION = 1;
@@ -70,6 +73,21 @@ export interface NapierRpcModelInvocationExperimentPreviewParams extends Omit<
 
 export interface NapierRpcModelInvocationExperimentRunParams extends Omit<
   CreateModelInvocationExperimentRequest,
+  "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+  expectedPreviewSha256: string;
+}
+
+export interface NapierRpcToolInvocationExperimentPreviewParams extends Omit<
+  CreateToolInvocationExperimentRequest,
+  "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+}
+
+export interface NapierRpcToolInvocationExperimentRunParams extends Omit<
+  CreateToolInvocationExperimentRequest,
   "expectedPreviewSha256"
 > {
   sourceThreadId: string;
@@ -163,6 +181,18 @@ export type NapierRpcRequest =
   | {
       jsonrpc: "2.0";
       id: NapierRpcId;
+      method: "napier/tool/experiment/preview";
+      params: NapierRpcToolInvocationExperimentPreviewParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/tool/experiment/run";
+      params: NapierRpcToolInvocationExperimentRunParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
       method: "napier/workflow/run";
       params: NapierRpcWorkflowRunParams;
     }
@@ -230,6 +260,8 @@ export interface NapierRpcInitializeResult {
     agentMessageExperimentRun: true;
     modelInvocationExperimentPreview: true;
     modelInvocationExperimentRun: true;
+    toolInvocationExperimentPreview: true;
+    toolInvocationExperimentRun: true;
     workflowRun: true;
     workflowResume: true;
     workflowApprovalAnswer: true;
@@ -269,6 +301,17 @@ export interface NapierRpcModelInvocationExperimentExecution {
   status: TerminalRunStatus;
   previewSha256: string;
   experiment: ModelInvocationExperimentResult;
+}
+
+export interface NapierRpcToolInvocationExperimentExecution {
+  sourceThreadId: string;
+  sourceRunId: string;
+  sourceCallId: string;
+  targetThreadId: string;
+  targetRunId: string;
+  status: TerminalRunStatus;
+  previewSha256: string;
+  experiment: ToolInvocationExperimentResult;
 }
 
 export interface NapierRpcWorkflowExecution {
@@ -320,6 +363,8 @@ export type NapierRpcResponse =
   | NapierRpcSuccessResponse<NapierRpcAgentMessageExperimentExecution>
   | NapierRpcSuccessResponse<ModelInvocationExperimentPreview>
   | NapierRpcSuccessResponse<NapierRpcModelInvocationExperimentExecution>
+  | NapierRpcSuccessResponse<ToolInvocationExperimentPreview>
+  | NapierRpcSuccessResponse<NapierRpcToolInvocationExperimentExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowApprovalExecution>
   | NapierRpcSuccessResponse<ExecutionPlanWorkflowExperimentPreview>

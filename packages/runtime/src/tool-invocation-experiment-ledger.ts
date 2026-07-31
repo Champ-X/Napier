@@ -31,6 +31,7 @@ export async function appendToolExperimentComparison(
         sourceThreadId: preview.sourceThreadId,
         sourceRunId: preview.sourceRunId,
         sourceCallId: preview.sourceCallId,
+        sourceToolName: preview.sourceToolName,
         previewSha256: preview.previewSha256,
         status: comparison.target.status,
         outputChanged: comparison.outputChanged,

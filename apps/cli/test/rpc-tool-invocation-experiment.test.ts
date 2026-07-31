@@ -1,6 +1,7 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { PassThrough, Writable } from "node:stream";
 
 import {
@@ -10,7 +11,7 @@ import {
 } from "@earendil-works/pi-ai";
 import {
   createLocalAgentRuntime,
-  UnsupportedSandboxAdapter,
+  sha256,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
@@ -31,8 +32,8 @@ afterEach(async () => {
   );
 });
 
-describe("Napier model invocation experiment RPC", () => {
-  it("previews, executes, rejects stale confirmation, and cancels one real call", async () => {
+describe("Napier tool invocation experiment RPC", () => {
+  it("previews, executes, rejects stale confirmation, and cancels a real call", async () => {
     const fixture = await createFixture();
     const input = new PassThrough();
     const output = new CaptureWritable();
@@ -48,39 +49,34 @@ describe("Napier model invocation experiment RPC", () => {
       serverVersion: "test",
     });
 
-    send(input, {
-      jsonrpc: "2.0",
-      id: "initialize",
-      method: "initialize",
-    });
-    expect(await output.waitForId("initialize")).toEqual(
+    send(input, { jsonrpc: "2.0", id: "init", method: "initialize" });
+    expect(await output.waitForId("init")).toEqual(
       expect.objectContaining({
         result: expect.objectContaining({
           capabilities: expect.objectContaining({
-            modelInvocationExperimentPreview: true,
-            modelInvocationExperimentRun: true,
+            toolInvocationExperimentPreview: true,
+            toolInvocationExperimentRun: true,
           }),
         }),
       }),
     );
 
+    const params = {
+      sourceThreadId: fixture.threadId,
+      sourceRunId: fixture.runId,
+      sourceCallId: fixture.callId,
+    };
     send(input, {
       jsonrpc: "2.0",
       id: "preview",
-      method: "napier/model/experiment/preview",
-      params: {
-        sourceThreadId: fixture.sourceThreadId,
-        sourceRunId: fixture.sourceRunId,
-        sourceTurnIndex: 0,
-      },
+      method: "napier/tool/experiment/preview",
+      params,
     });
     const preview = record((await output.waitForId("preview"))["result"])!;
     expect(preview).toEqual(
       expect.objectContaining({
-        sourceThreadId: fixture.sourceThreadId,
-        sourceRunId: fixture.sourceRunId,
-        sourceTurnIndex: 0,
-        targetExecutionMode: "model_experiment_single_call",
+        sourceToolName: "sqlite_query",
+        targetExecutionMode: "tool_experiment_read_only",
         previewSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
@@ -88,80 +84,59 @@ describe("Napier model invocation experiment RPC", () => {
     send(input, {
       jsonrpc: "2.0",
       id: "stale",
-      method: "napier/model/experiment/run",
-      params: {
-        sourceThreadId: fixture.sourceThreadId,
-        sourceRunId: fixture.sourceRunId,
-        sourceTurnIndex: 0,
-        expectedPreviewSha256: "0".repeat(64),
-      },
+      method: "napier/tool/experiment/run",
+      params: { ...params, expectedPreviewSha256: "0".repeat(64) },
     });
     expect(await output.waitForId("stale")).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({
-          code: -32006,
-          message: "Model invocation experiment conflict",
+          code: -32007,
+          message: "Tool invocation experiment conflict",
         }),
       }),
     );
 
-    fixture.provider.setResponses([
-      fauxAssistantMessage(
-        fauxToolCall("apply_patch", {
-          patch: "*** Begin Patch\n*** End Patch",
-        }),
-      ),
-    ]);
     send(input, {
       jsonrpc: "2.0",
       id: "execute",
-      method: "napier/model/experiment/run",
+      method: "napier/tool/experiment/run",
       params: {
-        sourceThreadId: fixture.sourceThreadId,
-        sourceRunId: fixture.sourceRunId,
-        sourceTurnIndex: 0,
+        ...params,
         expectedPreviewSha256: preview["previewSha256"],
       },
     });
     const execution = record((await output.waitForId("execute"))["result"])!;
     expect(execution).toEqual(
       expect.objectContaining({
-        sourceThreadId: fixture.sourceThreadId,
-        sourceRunId: fixture.sourceRunId,
-        sourceTurnIndex: 0,
+        sourceThreadId: fixture.threadId,
+        sourceRunId: fixture.runId,
+        sourceCallId: fixture.callId,
         targetThreadId: expect.stringMatching(/^thread_/u),
         targetRunId: expect.stringMatching(/^run_/u),
         status: "completed",
-        previewSha256: preview["previewSha256"],
         experiment: expect.objectContaining({
-          candidateToolCallNames: ["apply_patch"],
+          candidateOutput: expect.stringContaining("total"),
         }),
       }),
     );
     expect(eventTypes(output.messages(), "execute")).toEqual(
       expect.arrayContaining([
-        "model.experiment.started",
-        "model.experiment.compared",
+        "tool.experiment.started",
+        "tool.started",
+        "tool.completed",
+        "tool.experiment.compared",
       ]),
     );
     expect(eventTypes(output.messages(), "execute")).not.toContain(
-      "tool.started",
+      "model.response",
     );
 
-    fixture.provider.setResponses([
-      async () => {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return fauxAssistantMessage("late candidate");
-      },
-    ]);
     send(input, {
       jsonrpc: "2.0",
       id: "cancel",
-      method: "napier/model/experiment/run",
+      method: "napier/tool/experiment/run",
       params: {
-        sourceThreadId: fixture.sourceThreadId,
-        sourceRunId: fixture.sourceRunId,
-        sourceTurnIndex: 0,
+        ...params,
         expectedPreviewSha256: preview["previewSha256"],
       },
     });
@@ -170,7 +145,7 @@ describe("Napier model invocation experiment RPC", () => {
         message["method"] === "napier/event" &&
         record(message["params"])?.["requestId"] === "cancel" &&
         record(record(message["params"])?.["event"])?.["type"] ===
-          "model.experiment.started",
+          "tool.started",
     );
     send(input, {
       jsonrpc: "2.0",
@@ -196,44 +171,62 @@ describe("Napier model invocation experiment RPC", () => {
 
 async function createFixture(): Promise<{
   services: LocalAgentRuntimeServices;
-  provider: ReturnType<typeof fauxProvider>;
-  sourceThreadId: string;
-  sourceRunId: string;
+  threadId: string;
+  runId: string;
+  callId: string;
 }> {
-  const root = await mkdtemp(path.join(tmpdir(), "napier-rpc-model-call-"));
+  const root = await mkdtemp(path.join(tmpdir(), "napier-rpc-tool-call-"));
   temporaryRoots.push(root);
   const workspaceRoot = path.join(root, "workspace");
   await mkdir(workspaceRoot);
+  const databasePath = path.join(workspaceRoot, "evidence.sqlite");
+  const database = new DatabaseSync(databasePath);
+  database.exec("CREATE TABLE evidence (id INTEGER PRIMARY KEY)");
+  database.close();
+  const databaseSha256 = sha256(await readFile(databasePath));
   const services = await createLocalAgentRuntime({
     workspaceRoot,
     dataRoot: path.join(root, "data"),
-    sandbox: new UnsupportedSandboxAdapter("rpc-model-experiment"),
   });
   openServices.push(services);
-  const provider = fauxProvider({
-    provider: "faux-rpc-model-experiment",
-    tokensPerSecond: 100_000,
+  const original = services.store.listAgents()[0]!;
+  const agent = await services.store.updateAgent(original.id, {
+    enabledTools: ["sqlite_query"],
   });
+  const provider = fauxProvider({ provider: "faux-rpc-tool-experiment" });
   provider.setResponses([
-    fauxAssistantMessage("source RPC model answer"),
+    fauxAssistantMessage(
+      fauxToolCall("sqlite_query", {
+        action: "query",
+        path: "evidence.sqlite",
+        databaseSha256,
+        sql: "WITH RECURSIVE cnt(x) AS (VALUES(1) UNION ALL SELECT x + 1 FROM cnt WHERE x < 250000) SELECT sum(x) AS total FROM cnt",
+        maxRows: 5,
+        timeoutMs: 5_000,
+      }),
+      { stopReason: "toolUse" },
+    ),
+    fauxAssistantMessage("RPC read complete."),
     fauxAssistantMessage('{"facts":[]}'),
   ]);
   services.models.registerProvider(provider.provider);
-  const agent = services.store.listAgents()[0]!;
   const thread = await services.store.createThread({
-    title: "RPC model invocation source",
+    title: "RPC tool invocation source",
     agentId: agent.id,
   });
   const run = await services.runtime.runPrompt({
     threadId: thread.id,
-    text: "Capture one provider call for RPC.",
-    model: { provider: "faux-rpc-model-experiment", id: "faux-1" },
+    text: "Read RPC evidence.",
+    model: { provider: "faux-rpc-tool-experiment", id: "faux-1" },
   });
+  const capture = (await services.store.listEvents(thread.id)).find(
+    (event) => event.type === "context.tool_invocation",
+  )!;
   return {
     services,
-    provider,
-    sourceThreadId: thread.id,
-    sourceRunId: run.id,
+    threadId: thread.id,
+    runId: run.id,
+    callId: (capture.payload as { callId: string }).callId,
   };
 }
 
@@ -290,7 +283,7 @@ class CaptureWritable extends Writable {
       if (match) return match;
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
-    throw new Error("Timed out waiting for model invocation RPC output");
+    throw new Error("Timed out waiting for tool invocation RPC output");
   }
 }
 

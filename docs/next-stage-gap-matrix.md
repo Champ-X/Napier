@@ -24,8 +24,8 @@ Audit date: 2026-08-01
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                     |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                      |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, typed model-free Reduce aggregation, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
-| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC. Captured provider calls execute exactly once without dispatching returned tools. Ten built-in stateless read-only tools now capture exact local-only argument capsules and can be preview-bound and executed exactly once through CLI, HTTP, and SDK with scoped Workspace freshness and source/target output comparison. Web/RPC tool-call access, stateful or write tool checkpoints, Prompt/Skill/Memory/environment replacement, historical result reuse or simulation, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                       |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. Run Lab, CLI, HTTP, SDK, and RPC expose historical-message and isolated provider-call experiments; CLI, HTTP, and SDK also expose built-in read-only tool-call experiments. RPC supports Agent and typed Workflow run/resume, Approval answer-and-resume, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Tool-call Web/RPC parity, authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                         |
+| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC. Captured provider calls execute exactly once without dispatching returned tools. Ten built-in stateless read-only tools capture exact local-only argument capsules and can be preview-bound and executed exactly once through Web/CLI/HTTP/SDK/RPC with scoped Workspace freshness, independent browser validation, and source/target output comparison. Stateful or write tool checkpoints, Prompt/Skill/Memory/environment replacement, historical result reuse or simulation, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                  |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. Run Lab, CLI, HTTP, SDK, and RPC expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. RPC supports Agent and typed Workflow run/resume, Approval answer-and-resume, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                             |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -71,7 +71,14 @@ Acceptance:
   as isolated terminal targets; isolate concurrent candidates and require retry
   from the source checkpoint rather than generic recovery;
 - expose the same Runtime through `napier tool-experiment` human/JSONL, HTTP
-  preview/SSE, and the local TypeScript SDK;
+  preview/SSE, the local TypeScript SDK, local stdio RPC preview/run methods,
+  and a lazy Run Lab read-only tool-call desk;
+- require the browser to independently validate exact preview, comparison, and
+  terminal-frame fields and hashes, target event ordering, final Snapshot
+  identity, and the complete event-stream hash before rendering or navigating;
+- render no exact arguments, Workspace paths, source output, or candidate
+  output; make candidate output available only through a deliberate CAS-named
+  local result download;
 - preserve portable target Replay while excluding every raw local capsule.
 
 Threat boundary:
@@ -88,7 +95,7 @@ Threat boundary:
   not source-environment restoration. A changed current scope intentionally
   produces a different preview;
 - this slice does not claim historical result reuse, side-effect simulation,
-  write-capable replay, Web/RPC access, batch experiments, or promotion.
+  write-capable replay, batch experiments, or promotion.
 
 Observed result:
 
@@ -107,16 +114,30 @@ Observed result:
   512-object bound and rejects overflow rather than deleting the whole batch;
 - real CLI JSONL, Hono HTTP/SSE, and SDK tests each create a source Agent call,
   execute the candidate through the shared Runtime, and validate target events,
-  Snapshot/result binding, comparison, and portable Replay.
-- `npm run check` passed 1,498 regular tests with 26 opt-in live tests skipped,
-  253 generated OpenAPI routes, and 244/244 compatibility operations. The
-  checked product path measured 571.3 ms to first CLI event, 720.6 ms to first
-  token, 1,026.1 ms to completion, 0.3 ms read p95, 6.8 ms for 1,000-event
-  projection, and 749.568 closed SQLite bytes/event; all checked latency,
-  projection, RSS, bundle, and database budgets passed;
-- the unchanged 79-file Web dist keeps the main entry at 130.13 KiB under its
-  150 KiB budget and remains bound to `a158e4c019a418d8`; the refreshed
-  seven-artifact release set is bound to `0205a1769a3472d1`.
+  Snapshot/result binding, comparison, and portable Replay;
+- a real line-delimited stdio RPC process discovers the two tool-experiment
+  capabilities, previews and executes a source call, rejects a stale preview,
+  emits only request-bound target events, and returns a durably settled
+  cancelled result from an actively interrupted recursive SQLite query;
+- Web tests independently validate protocol hashes and reject tampering, bind
+  a real Hono SSE stream, project only strict terminal source calls, and keep
+  argument/path/output bodies out of Trace and desk state;
+- a production-dist browser smoke selected a real `read_file` source call,
+  previewed and executed it through the lazy desk, observed
+  `completed -> completed` and `Output unchanged`, performed only the expected
+  preview/execute POSTs, reported zero console errors, kept the private path
+  and output marker out of the DOM, and navigated to the isolated target
+  Thread;
+- `npm run check` passed 1,510 regular tests with 26 opt-in live tests skipped,
+  253 generated OpenAPI routes, 244/244 compatibility operations, six
+  workspaces, 254 packages, and 241/241 integrity entries. The checked product
+  path measured 641.0 ms to first CLI event, 790.7 ms to first token, 1,095.4
+  ms to completion, 0.5 ms read p95, 6.9 ms for 1,000-event projection, and
+  749.568 closed SQLite bytes/event; all checked latency, projection, RSS,
+  bundle, and database budgets passed;
+- the 82-file Web dist keeps the main entry at 130.13 KiB under its 150 KiB
+  budget and is bound to `dcb1b563ef44ff5f`; the refreshed seven-artifact
+  release set is bound to `35daff413c4cae91`.
 
 ## Implemented Slice: Single-Model-Invocation Re-execution
 

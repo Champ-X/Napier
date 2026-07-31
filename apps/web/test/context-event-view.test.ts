@@ -132,6 +132,32 @@ describe("Context event trace view", () => {
     expect(contextEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects local tool invocation capsules without arguments", () => {
+    const event = contextEvent("context.tool_invocation", {
+      kind: "napier.tool-invocation-capsule-receipt",
+      schemaVersion: 1,
+      callId: "call_1234567890",
+      toolName: "sqlite_query",
+      effect: "read",
+      toolDefinitionSha256: "1".repeat(64),
+      argumentsSha256: "2".repeat(64),
+      workspaceScopeSha256: "3".repeat(64),
+      capsuleSha256: "4".repeat(64),
+      capsuleBytes: 512,
+      storage: "local_only",
+      contentSha256: "5".repeat(64),
+      arguments: { sql: "TOP_SECRET_SQL" },
+    });
+    const summary = contextEventTraceSummary(event);
+    expect(summary).toContain(
+      "context / tool_invocation / schema 1 / call 1234567890 / tool sqlite_query / effect read / storage local_only / capsule-bytes 512",
+    );
+    expect(summary).toContain(
+      `capsule ${"4".repeat(12)} / tool-definition ${"1".repeat(12)} / arguments ${"2".repeat(12)} / workspace-scope ${"3".repeat(12)}`,
+    );
+    expect(summary).not.toContain("TOP_SECRET");
+  });
+
   it("fails closed for malformed and unknown context receipts", () => {
     expect(
       contextEventTraceSummary(

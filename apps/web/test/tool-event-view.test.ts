@@ -50,6 +50,36 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("projects tool experiment evidence without arguments or output", () => {
+    const started = toolEvent("tool.experiment.started", {
+      sourceRunId: "run_source_12345678",
+      sourceCallId: "call_source_12345678",
+      sourceToolName: "sqlite_query",
+      targetExecutionMode: "tool_experiment_read_only",
+      previewSha256: "a".repeat(64),
+      arguments: { sql: "TOP_SECRET_SQL" },
+    });
+    const compared = toolEvent("tool.experiment.compared", {
+      sourceRunId: "run_source_12345678",
+      sourceCallId: "call_source_12345678",
+      sourceToolName: "sqlite_query",
+      status: "completed",
+      outputChanged: false,
+      durationMsDelta: -4,
+      previewSha256: "a".repeat(64),
+      comparisonSha256: "b".repeat(64),
+      candidateOutput: "TOP_SECRET_ROW",
+    });
+    expect(toolEventTraceSummary(started)).toContain(
+      `tool / sqlite_query / started / source e_12345678 / call e_12345678 / mode tool_experiment_read_only / preview ${"a".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(compared)).toContain(
+      `tool / sqlite_query / completed / source e_12345678 / call e_12345678 / output-changed false / duration-delta -4 / preview ${"a".repeat(12)} / comparison ${"b".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(started)).not.toContain("TOP_SECRET");
+    expect(toolEventTraceSummary(compared)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes list_files entry evidence without listed paths", () => {
     const event = toolEvent("tool.completed", {
       toolName: "list_files",

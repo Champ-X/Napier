@@ -5,10 +5,13 @@ import type {
   NapierRpcAgentMessageExperimentExecution,
   NapierRpcAgentExecution,
   NapierRpcModelInvocationExperimentExecution,
+  NapierRpcToolInvocationExperimentExecution,
   NapierRpcWorkflowExperimentExecution,
   NapierRpcWorkflowExecution,
   ModelInvocationExperimentPreview,
   ModelInvocationExperimentResult,
+  ToolInvocationExperimentPreview,
+  ToolInvocationExperimentResult,
   RunEvent,
 } from "@napier/contracts";
 import type {
@@ -17,11 +20,13 @@ import type {
   AgentMessageExperimentRuntime,
   ExecutionPlanWorkflowExperimentRuntime,
   ModelInvocationExperimentRuntime,
+  ToolInvocationExperimentRuntime,
 } from "@napier/runtime";
 import {
   AgentMessageExperimentPreviewChangedError,
   EmbeddedWorkflowApprovalError,
   ModelInvocationExperimentPreviewChangedError,
+  ToolInvocationExperimentPreviewChangedError,
   streamEventFrame,
   WorkflowExperimentConflictError,
 } from "@napier/runtime";
@@ -34,6 +39,10 @@ import {
   parseModelInvocationExperimentPreviewParams,
   parseModelInvocationExperimentRunParams,
 } from "./rpc-model-invocation-experiments.js";
+import {
+  parseToolInvocationExperimentPreviewParams,
+  parseToolInvocationExperimentRunParams,
+} from "./rpc-tool-invocation-experiments.js";
 import {
   parseAgentResumeParams,
   parseAgentRunParams,
@@ -59,6 +68,7 @@ export interface RpcInvocationServices {
   experiments: Pick<ExecutionPlanWorkflowExperimentRuntime, "preview" | "run">;
   agentExperiments: Pick<AgentMessageExperimentRuntime, "preview" | "run">;
   modelExperiments: Pick<ModelInvocationExperimentRuntime, "preview" | "run">;
+  toolExperiments: Pick<ToolInvocationExperimentRuntime, "preview" | "run">;
 }
 
 interface RpcInvocationOutcome {
@@ -70,6 +80,8 @@ interface RpcInvocationOutcome {
     | NapierRpcAgentMessageExperimentExecution
     | ModelInvocationExperimentPreview
     | NapierRpcModelInvocationExperimentExecution
+    | ToolInvocationExperimentPreview
+    | NapierRpcToolInvocationExperimentExecution
     | NapierRpcWorkflowExecution
     | ExecutionPlanWorkflowExperimentPreview
     | NapierRpcWorkflowExperimentExecution;
@@ -87,6 +99,8 @@ const INVOCATION_METHODS = new Set([
   "napier/agent/experiment/run",
   "napier/model/experiment/preview",
   "napier/model/experiment/run",
+  "napier/tool/experiment/preview",
+  "napier/tool/experiment/run",
   "napier/workflow/run",
   "napier/workflow/resume",
   "napier/workflow/answer",
@@ -201,6 +215,35 @@ export function prepareRpcInvocation(
         cancelled: experiment.status === "cancelled",
         returnCancelledResult: experiment.status === "cancelled",
         result: modelInvocationExperimentExecution(experiment),
+      };
+    };
+  }
+  if (request.method === "napier/tool/experiment/preview") {
+    const { sourceThreadId, ...experimentRequest } =
+      parseToolInvocationExperimentPreviewParams(request.params);
+    return async (signal) => ({
+      cancelled: false,
+      result: await services.toolExperiments.preview(
+        sourceThreadId,
+        experimentRequest,
+        signal,
+      ),
+    });
+  }
+  if (request.method === "napier/tool/experiment/run") {
+    const { sourceThreadId, ...experimentRequest } =
+      parseToolInvocationExperimentRunParams(request.params);
+    return async (signal, onEvent) => {
+      const experiment = await services.toolExperiments.run({
+        sourceThreadId,
+        request: experimentRequest,
+        signal,
+        onEvent,
+      });
+      return {
+        cancelled: experiment.status === "cancelled",
+        returnCancelledResult: experiment.status === "cancelled",
+        result: toolInvocationExperimentExecution(experiment),
       };
     };
   }
@@ -387,6 +430,21 @@ function modelInvocationExperimentExecution(
   };
 }
 
+function toolInvocationExperimentExecution(
+  experiment: ToolInvocationExperimentResult,
+): NapierRpcToolInvocationExperimentExecution {
+  return {
+    sourceThreadId: experiment.preview.sourceThreadId,
+    sourceRunId: experiment.preview.sourceRunId,
+    sourceCallId: experiment.preview.sourceCallId,
+    targetThreadId: experiment.targetThreadId,
+    targetRunId: experiment.targetRunId,
+    status: experiment.status,
+    previewSha256: experiment.preview.previewSha256,
+    experiment,
+  };
+}
+
 function invocationError(
   id: JsonRpcRequest["id"],
   error: unknown,
@@ -404,6 +462,9 @@ function invocationError(
   }
   if (error instanceof ModelInvocationExperimentPreviewChangedError) {
     return rpcError(id, -32006, "Model invocation experiment conflict", error);
+  }
+  if (error instanceof ToolInvocationExperimentPreviewChangedError) {
+    return rpcError(id, -32007, "Tool invocation experiment conflict", error);
   }
   return rpcError(id, -32603, "Internal error", error);
 }

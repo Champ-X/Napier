@@ -46,6 +46,9 @@ export interface ContextEventTraceView {
   toolPolicy?: string;
   purpose?: string;
   model?: string;
+  callId?: string;
+  toolName?: string;
+  effect?: string;
   storage?: string;
   reason?: string;
   skillCatalogInjected?: boolean;
@@ -71,10 +74,13 @@ export interface ContextEventTraceView {
   contextEnvelopeSha256?: string;
   contextSha256?: string;
   capsuleSha256?: string;
+  toolDefinitionSha256?: string;
+  argumentsSha256?: string;
+  workspaceScopeSha256?: string;
 }
 
 const CONTEXT_EVENT =
-  /^context\.(skills|prepared|memory|model_envelope|model_invocation(_unavailable)?|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
+  /^context\.(skills|prepared|memory|model_envelope|model_invocation(_unavailable)?|tool_invocation(_unavailable)?|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const CONTEXT_RECEIPT_SUMMARY = "context receipt";
@@ -147,6 +153,9 @@ export function contextEventTraceView(
     ...safeTokenField(event.payload, "toolPolicy"),
     ...safeTokenField(event.payload, "purpose"),
     ...modelField(event.payload),
+    ...safeIdField(event.payload, "callId"),
+    ...safeTokenField(event.payload, "toolName"),
+    ...safeTokenField(event.payload, "effect"),
     ...safeTokenField(event.payload, "storage"),
     ...safeTokenField(event.payload, "reason"),
     ...booleanField(event.payload, "skillCatalogInjected"),
@@ -172,6 +181,9 @@ export function contextEventTraceView(
     ...shaField(event.payload, "contextEnvelopeSha256"),
     ...shaField(event.payload, "contextSha256"),
     ...shaField(event.payload, "capsuleSha256"),
+    ...shaField(event.payload, "toolDefinitionSha256"),
+    ...shaField(event.payload, "argumentsSha256"),
+    ...shaField(event.payload, "workspaceScopeSha256"),
   };
 }
 
@@ -188,6 +200,9 @@ export function contextEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.toolPolicy ? [`policy ${view.toolPolicy}`] : []),
     ...(view.purpose ? [`purpose ${view.purpose}`] : []),
     ...(view.model ? [`model ${view.model}`] : []),
+    ...(view.callId ? [`call ${view.callId.slice(-10)}`] : []),
+    ...(view.toolName ? [`tool ${view.toolName}`] : []),
+    ...(view.effect ? [`effect ${view.effect}`] : []),
     ...(view.storage ? [`storage ${view.storage}`] : []),
     ...(view.reason ? [`reason ${view.reason}`] : []),
     ...(view.turnIndex !== undefined ? [`turn ${view.turnIndex}`] : []),
@@ -335,6 +350,9 @@ function hashSummaries(view: ContextEventTraceView): string[] {
     ...hashSummary("context-envelope", view.contextEnvelopeSha256),
     ...hashSummary("context", view.contextSha256),
     ...hashSummary("capsule", view.capsuleSha256),
+    ...hashSummary("tool-definition", view.toolDefinitionSha256),
+    ...hashSummary("arguments", view.argumentsSha256),
+    ...hashSummary("workspace-scope", view.workspaceScopeSha256),
   ];
 }
 

@@ -12,14 +12,19 @@ import {
   validateToolInvocationExperimentResultFrame,
   verifyThreadReplayBundle,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
+import {
+  executeToolInvocationExperiment,
+  previewToolInvocationExperiment,
+} from "../../web/src/tool-invocation-experiment-api.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   for (const services of openServices.splice(0)) {
     await services.shutdownLocalRuntime();
   }
@@ -136,6 +141,54 @@ describe("Tool invocation experiment HTTP path", () => {
       expect(response.status).toBe(409);
     }
     expect(fixture.services.store.listThreads()).toHaveLength(threadCount);
+  });
+
+  it("completes the real Web client preview and comparison path", async () => {
+    const fixture = await createFixture();
+    const app = createApp(fixture.services);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const requestPath =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(requestPath, init);
+      }),
+    );
+    const request = {
+      sourceRunId: fixture.sourceRunId,
+      sourceCallId: fixture.sourceCallId,
+    };
+    const preview = await previewToolInvocationExperiment(
+      fixture.sourceThreadId,
+      request,
+    );
+    const frames: string[] = [];
+    const result = await executeToolInvocationExperiment(
+      fixture.sourceThreadId,
+      {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+      preview,
+      (frame) => frames.push(frame.type),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        sourceThreadId: fixture.sourceThreadId,
+        sourceRunId: fixture.sourceRunId,
+        sourceCallId: fixture.sourceCallId,
+        status: "completed",
+        experiment: expect.objectContaining({
+          comparison: expect.objectContaining({ outputChanged: false }),
+        }),
+      }),
+    );
+    expect(frames.at(-2)).toBe("snapshot");
+    expect(frames.at(-1)).toBe("tool_invocation_experiment_result");
   });
 });
 
