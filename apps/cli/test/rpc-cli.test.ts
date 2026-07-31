@@ -16,6 +16,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { parseCliArgs } from "../src/cli-options.js";
 import {
   defineRpcBlockedWorkflowManifest,
+  defineRpcExperimentWorkflowManifest,
   defineRpcWorkflowManifest,
 } from "./rpc-workflow-fixture.js";
 
@@ -209,6 +210,8 @@ describe("Napier RPC CLI", () => {
     const fixture = await createFixture();
     const manifest = await defineRpcWorkflowManifest(fixture);
     const blockedManifest = await defineRpcBlockedWorkflowManifest(fixture);
+    const experimentManifest =
+      await defineRpcExperimentWorkflowManifest(fixture);
     const child = spawn(
       process.execPath,
       [
@@ -241,6 +244,8 @@ describe("Napier RPC CLI", () => {
           capabilities: expect.objectContaining({
             workflowRun: true,
             workflowResume: true,
+            workflowExperimentPreview: true,
+            workflowExperimentRun: true,
           }),
         }),
       }),
@@ -310,6 +315,134 @@ describe("Napier RPC CLI", () => {
         }),
       }),
     );
+
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-source",
+      method: "napier/workflow/run",
+      params: {
+        manifest: experimentManifest,
+        input: { text: "Evidence-native RPC experiment" },
+      },
+    });
+    const experimentSource = record(
+      (await rpc.waitForId("experiment-source"))["result"],
+    )!;
+    const experimentSourceThreadId = String(experimentSource["threadId"]);
+    const experimentSourcePlanId = String(experimentSource["planId"]);
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-preview",
+      method: "napier/workflow/experiment/preview",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "deliver",
+      },
+    });
+    const experimentPreview = record(
+      (await rpc.waitForId("experiment-preview"))["result"],
+    )!;
+    expect(experimentPreview).toEqual(
+      expect.objectContaining({
+        sourceThreadId: experimentSourceThreadId,
+        sourcePlanId: experimentSourcePlanId,
+        fromNodeId: "deliver",
+        reusedNodeIds: ["prepare"],
+        rerunNodeIds: ["deliver"],
+        requiresSideEffectConfirmation: false,
+        previewSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-stale",
+      method: "napier/workflow/experiment/run",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "deliver",
+        expectedPreviewSha256: "0".repeat(64),
+      },
+    });
+    expect(await rpc.waitForId("experiment-stale")).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          code: -32004,
+          message: "Workflow experiment conflict",
+        }),
+      }),
+    );
+
+    for (const id of ["experiment-left", "experiment-right"]) {
+      rpc.send({
+        jsonrpc: "2.0",
+        id,
+        method: "napier/workflow/experiment/run",
+        params: {
+          sourceThreadId: experimentSourceThreadId,
+          manifest: experimentManifest,
+          planId: experimentSourcePlanId,
+          fromNodeId: "deliver",
+          expectedPreviewSha256: experimentPreview["previewSha256"],
+        },
+      });
+    }
+    const [leftExperiment, rightExperiment] = await Promise.all(
+      ["experiment-left", "experiment-right"].map(async (id) =>
+        record((await rpc.waitForId(id))["result"]),
+      ),
+    );
+    for (const experiment of [leftExperiment, rightExperiment]) {
+      expect(experiment).toEqual(
+        expect.objectContaining({
+          sourceThreadId: experimentSourceThreadId,
+          sourcePlanId: experimentSourcePlanId,
+          targetThreadId: expect.stringMatching(/^thread_/u),
+          targetPlanId: expect.stringMatching(/^plan_/u),
+          status: "completed",
+          previewSha256: experimentPreview["previewSha256"],
+          candidateManifestSha256: experimentManifest.contentSha256,
+          experiment: expect.objectContaining({
+            result: expect.objectContaining({
+              output: { message: "Evidence-native RPC experiment" },
+            }),
+            comparison: expect.objectContaining({
+              reusedNodeCount: 1,
+              rerunNodeCount: 1,
+              outputChange: "unchanged",
+            }),
+          }),
+        }),
+      );
+    }
+    const experimentTargetThreadIds = [
+      String(leftExperiment!["targetThreadId"]),
+      String(rightExperiment!["targetThreadId"]),
+    ];
+    expect(experimentTargetThreadIds[0]).not.toBe(experimentTargetThreadIds[1]);
+    for (const id of ["experiment-left", "experiment-right"]) {
+      const eventTypes = rpc
+        .messages()
+        .filter(
+          (candidate) =>
+            candidate["method"] === "napier/event" &&
+            record(candidate["params"])?.["requestId"] === id,
+        )
+        .map(
+          (message) => record(record(message["params"])?.["event"])?.["type"],
+        );
+      expect(eventTypes).toEqual(
+        expect.arrayContaining([
+          "workflow.experiment.started",
+          "workflow.node.reused",
+          "workflow.experiment.compared",
+        ]),
+      );
+    }
 
     rpc.send({
       jsonrpc: "2.0",
@@ -393,8 +526,15 @@ describe("Napier RPC CLI", () => {
       verifyThreadReplayBundle(await exportThreadReplayBundle(store, threadId))
         .status,
     ).toBe("valid");
+    for (const experimentTargetThreadId of experimentTargetThreadIds) {
+      expect(
+        verifyThreadReplayBundle(
+          await exportThreadReplayBundle(store, experimentTargetThreadId),
+        ).status,
+      ).toBe("valid");
+    }
     store.close();
-  }, 20_000);
+  }, 30_000);
 });
 
 class RpcChild {

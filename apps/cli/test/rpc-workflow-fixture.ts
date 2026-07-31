@@ -69,6 +69,94 @@ export async function defineRpcWorkflowManifest(input: {
   }
 }
 
+export async function defineRpcExperimentWorkflowManifest(input: {
+  workspaceRoot: string;
+  dataRoot: string;
+}): Promise<ExecutionPlanWorkflowManifest> {
+  const services = await createLocalAgentRuntime({
+    ...input,
+    sandbox: new UnsupportedSandboxAdapter("rpc-experiment-workflow-fixture"),
+  });
+  try {
+    const requestSchema = objectSchema({
+      text: { type: "string", minLength: 1, maxLength: 200 },
+    });
+    const preparedSchema = objectSchema({
+      normalized: { type: "string", minLength: 1, maxLength: 200 },
+    });
+    const resultSchema = objectSchema({
+      message: { type: "string", minLength: 1, maxLength: 200 },
+    });
+    return (
+      await services.embeddedWorkflows.define({
+        name: "RPC checkpoint experiment",
+        version: 1,
+        description:
+          "Reuse one deterministic ancestor and rerun its descendant.",
+        plan: {
+          objective: "Deliver one typed checkpoint experiment.",
+          steps: [
+            {
+              id: "prepare",
+              title: "Prepare request",
+              description: "Normalize the typed request.",
+              verification: "Return the normalized value.",
+            },
+            {
+              id: "deliver",
+              title: "Deliver result",
+              description: "Project the normalized value into the result.",
+              verification: "Return the typed result.",
+              dependsOn: ["prepare"],
+            },
+          ],
+        },
+        inputSchema: requestSchema,
+        outputSchema: resultSchema,
+        outputNodeId: "deliver",
+        nodes: [
+          {
+            id: "prepare",
+            type: "deterministic",
+            inputBindings: {
+              workflow: { source: "workflow" },
+            },
+            inputSchema: objectSchema({ workflow: requestSchema }),
+            outputSchema: preparedSchema,
+            template: {
+              kind: "object",
+              properties: {
+                normalized: { kind: "input", path: ["workflow", "text"] },
+              },
+            },
+            timeoutMs: 5_000,
+            maxAttempts: 2,
+          },
+          {
+            id: "deliver",
+            type: "deterministic",
+            inputBindings: {
+              prepared: { source: "node", nodeId: "prepare" },
+            },
+            inputSchema: objectSchema({ prepared: preparedSchema }),
+            outputSchema: resultSchema,
+            template: {
+              kind: "object",
+              properties: {
+                message: { kind: "input", path: ["prepared", "normalized"] },
+              },
+            },
+            timeoutMs: 5_000,
+            maxAttempts: 2,
+          },
+        ],
+      })
+    ).manifest;
+  } finally {
+    await services.shutdown();
+  }
+}
+
 export async function defineRpcBlockedWorkflowManifest(input: {
   workspaceRoot: string;
   dataRoot: string;

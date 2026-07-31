@@ -374,6 +374,13 @@ function unusedWorkflowService(): Pick<
   };
 }
 
+function unusedExperimentService() {
+  const unexpected = async (): Promise<never> => {
+    throw new Error("Unexpected Workflow experiment RPC call");
+  };
+  return { preview: unexpected, run: unexpected };
+}
+
 function execution(
   threadId: string,
   runId: string,
@@ -427,6 +434,7 @@ class RpcHarness {
     this.server = runNapierRpcServer({
       agents: this.agents,
       workflows: this.workflows,
+      experiments: unusedExperimentService(),
       input: this.input,
       output: this.output,
       serverVersion: "test",

@@ -49,6 +49,7 @@ export async function executeRpc(
     return await runNapierRpcServer({
       agents: services.embeddedAgents,
       workflows: services.embeddedWorkflows,
+      experiments: services.workflowExperiments,
       input: io.stdin,
       output: io.stdout,
       serverVersion: CLI_VERSION,

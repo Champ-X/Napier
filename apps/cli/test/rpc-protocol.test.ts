@@ -17,6 +17,10 @@ import {
   rpcError,
 } from "../src/rpc-protocol.js";
 import { readRpcLines, RpcOutputWriter } from "../src/rpc-transport.js";
+import {
+  parseWorkflowExperimentPreviewParams,
+  parseWorkflowExperimentRunParams,
+} from "../src/rpc-workflow-experiments.js";
 import { defineRpcWorkflowManifest } from "./rpc-workflow-fixture.js";
 
 describe("Napier JSON-RPC protocol", () => {
@@ -156,6 +160,34 @@ describe("Napier JSON-RPC protocol", () => {
           customText: "Approve the bounded result.",
         },
       });
+      expect(
+        parseWorkflowExperimentPreviewParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          fromNodeId: "deliver",
+        }),
+      ).toEqual({
+        sourceThreadId: "thread_example",
+        manifest,
+        planId: "plan_abcdefgh",
+        fromNodeId: "deliver",
+      });
+      expect(
+        parseWorkflowExperimentRunParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          fromNodeId: "deliver",
+          expectedPreviewSha256: "b".repeat(64),
+        }),
+      ).toEqual({
+        sourceThreadId: "thread_example",
+        manifest,
+        planId: "plan_abcdefgh",
+        fromNodeId: "deliver",
+        expectedPreviewSha256: "b".repeat(64),
+      });
       expect(() =>
         parseWorkflowRunParams({
           manifest,
@@ -189,6 +221,23 @@ describe("Napier JSON-RPC protocol", () => {
           answer: { selectedOptionIds: ["option_3"] },
         }),
       ).toThrow("selectedOptionIds is invalid");
+      expect(() =>
+        parseWorkflowExperimentPreviewParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          fromNodeId: "deliver",
+          expectedPreviewSha256: "b".repeat(64),
+        }),
+      ).toThrow("cannot include execution confirmation");
+      expect(() =>
+        parseWorkflowExperimentRunParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          fromNodeId: "deliver",
+        }),
+      ).toThrow("requires expectedPreviewSha256");
     } finally {
       await rm(root, { recursive: true, force: true });
     }

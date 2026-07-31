@@ -1,4 +1,6 @@
 import type {
+  ExecutionPlanWorkflowExperimentPreview,
+  ExecutionPlanWorkflowExperimentResult,
   ExecutionPlanWorkflowManifest,
   ExecutionPlanWorkflowResult,
   JsonValue,
@@ -15,6 +17,18 @@ import {
   type LocalAgentRuntimeOptions,
   type LocalAgentRuntimeServices,
 } from "@napier/runtime";
+
+import {
+  previewNapierWorkflowExperiment,
+  runNapierWorkflowExperiment,
+  type PreviewNapierWorkflowExperimentOptions,
+  type RunNapierWorkflowExperimentOptions,
+} from "./workflow-experiments.js";
+
+export type {
+  PreviewNapierWorkflowExperimentOptions,
+  RunNapierWorkflowExperimentOptions,
+} from "./workflow-experiments.js";
 
 declare const workflowInputType: unique symbol;
 declare const workflowOutputType: unique symbol;
@@ -143,6 +157,17 @@ export interface NapierClient {
   answerWorkflowApproval<TInput extends JsonValue, TOutput extends JsonValue>(
     options: AnswerNapierWorkflowApprovalOptions<TInput, TOutput>,
   ): Promise<NapierWorkflowApprovalExecution<TOutput>>;
+
+  previewWorkflowExperiment<
+    TInput extends JsonValue,
+    TOutput extends JsonValue,
+  >(
+    options: PreviewNapierWorkflowExperimentOptions<TInput, TOutput>,
+  ): Promise<ExecutionPlanWorkflowExperimentPreview>;
+
+  runWorkflowExperiment<TInput extends JsonValue, TOutput extends JsonValue>(
+    options: RunNapierWorkflowExperimentOptions<TInput, TOutput>,
+  ): Promise<ExecutionPlanWorkflowExperimentResult>;
 
   close(): Promise<void>;
 }
@@ -292,6 +317,36 @@ class LocalNapierClient implements NapierClient {
       ),
       decision: structuredClone(execution.decision),
     };
+  }
+
+  async previewWorkflowExperiment<
+    TInput extends JsonValue,
+    TOutput extends JsonValue,
+  >(
+    options: PreviewNapierWorkflowExperimentOptions<TInput, TOutput>,
+  ): Promise<ExecutionPlanWorkflowExperimentPreview> {
+    return this.track(() =>
+      previewNapierWorkflowExperiment(
+        this.services,
+        options,
+        combinedSignal(options.signal, this.closeController.signal),
+      ),
+    );
+  }
+
+  async runWorkflowExperiment<
+    TInput extends JsonValue,
+    TOutput extends JsonValue,
+  >(
+    options: RunNapierWorkflowExperimentOptions<TInput, TOutput>,
+  ): Promise<ExecutionPlanWorkflowExperimentResult> {
+    return this.track(() =>
+      runNapierWorkflowExperiment(
+        this.services,
+        options,
+        combinedSignal(options.signal, this.closeController.signal),
+      ),
+    );
   }
 
   close(): Promise<void> {

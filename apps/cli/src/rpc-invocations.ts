@@ -1,15 +1,19 @@
 import type {
+  ExecutionPlanWorkflowExperimentPreview,
   NapierRpcAgentExecution,
+  NapierRpcWorkflowExperimentExecution,
   NapierRpcWorkflowExecution,
   RunEvent,
 } from "@napier/contracts";
 import type {
   EmbeddedAgentService,
   EmbeddedWorkflowService,
+  ExecutionPlanWorkflowExperimentRuntime,
 } from "@napier/runtime";
 import {
   EmbeddedWorkflowApprovalError,
   streamEventFrame,
+  WorkflowExperimentConflictError,
 } from "@napier/runtime";
 
 import {
@@ -22,6 +26,10 @@ import {
   rpcSuccess,
   type JsonRpcRequest,
 } from "./rpc-protocol.js";
+import {
+  parseWorkflowExperimentPreviewParams,
+  parseWorkflowExperimentRunParams,
+} from "./rpc-workflow-experiments.js";
 import type { RpcOutputWriter } from "./rpc-transport.js";
 
 export interface RpcInvocationServices {
@@ -30,11 +38,17 @@ export interface RpcInvocationServices {
     EmbeddedWorkflowService,
     "run" | "resume" | "answerAndResume"
   >;
+  experiments: Pick<ExecutionPlanWorkflowExperimentRuntime, "preview" | "run">;
 }
 
 interface RpcInvocationOutcome {
   cancelled: boolean;
-  result: NapierRpcAgentExecution | NapierRpcWorkflowExecution;
+  returnCancelledResult?: boolean;
+  result:
+    | NapierRpcAgentExecution
+    | NapierRpcWorkflowExecution
+    | ExecutionPlanWorkflowExperimentPreview
+    | NapierRpcWorkflowExperimentExecution;
 }
 
 type RpcInvocation = (
@@ -48,6 +62,8 @@ const INVOCATION_METHODS = new Set([
   "napier/workflow/run",
   "napier/workflow/resume",
   "napier/workflow/answer",
+  "napier/workflow/experiment/preview",
+  "napier/workflow/experiment/run",
 ]);
 
 export function isRpcInvocationMethod(method: string): boolean {
@@ -154,6 +170,44 @@ export function prepareRpcInvocation(
       };
     };
   }
+  if (request.method === "napier/workflow/experiment/preview") {
+    const { sourceThreadId, ...experimentRequest } =
+      parseWorkflowExperimentPreviewParams(request.params);
+    return async (signal) => ({
+      cancelled: false,
+      result: await services.experiments.preview(
+        sourceThreadId,
+        experimentRequest,
+        signal,
+      ),
+    });
+  }
+  if (request.method === "napier/workflow/experiment/run") {
+    const { sourceThreadId, ...experimentRequest } =
+      parseWorkflowExperimentRunParams(request.params);
+    return async (signal, onEvent) => {
+      const experiment = await services.experiments.run({
+        sourceThreadId,
+        request: experimentRequest,
+        signal,
+        onEvent,
+      });
+      return {
+        cancelled: experiment.result.status === "cancelled",
+        returnCancelledResult: experiment.result.status === "cancelled",
+        result: {
+          sourceThreadId: experiment.preview.sourceThreadId,
+          sourcePlanId: experiment.preview.sourcePlanId,
+          targetThreadId: experiment.targetThreadId,
+          targetPlanId: experiment.result.planId,
+          status: experiment.result.status,
+          previewSha256: experiment.preview.previewSha256,
+          candidateManifestSha256: experiment.candidateManifest.contentSha256,
+          experiment,
+        },
+      };
+    };
+  }
   throw new Error("Unsupported RPC invocation method");
 }
 
@@ -179,7 +233,10 @@ export async function executeRpcInvocation(input: {
       });
     });
     if (!input.shouldWrite()) return;
-    if (input.signal.aborted || outcome.cancelled) {
+    if (
+      (input.signal.aborted || outcome.cancelled) &&
+      outcome.returnCancelledResult !== true
+    ) {
       await input.writer.write(
         rpcError(input.request.id, -32800, "Request cancelled"),
       );
@@ -222,6 +279,9 @@ function invocationError(
     return error.code === "invalid_answer"
       ? rpcError(id, -32602, "Invalid params", error)
       : rpcError(id, -32003, "Workflow approval conflict", error);
+  }
+  if (error instanceof WorkflowExperimentConflictError) {
+    return rpcError(id, -32004, "Workflow experiment conflict", error);
   }
   return rpcError(id, -32603, "Internal error", error);
 }

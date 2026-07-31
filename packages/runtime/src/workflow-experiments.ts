@@ -23,12 +23,37 @@ import {
 } from "./workflow-experiment-source.js";
 import type { ExecutionPlanWorkflowRuntime } from "./workflow-runtime.js";
 
-export class WorkflowExperimentConfirmationRequiredError extends Error {
+export type WorkflowExperimentConflictCode =
+  | "confirmation_required"
+  | "stale_preview";
+
+export class WorkflowExperimentConflictError extends Error {
+  constructor(
+    readonly code: WorkflowExperimentConflictCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "WorkflowExperimentConflictError";
+  }
+}
+
+export class WorkflowExperimentConfirmationRequiredError extends WorkflowExperimentConflictError {
   constructor(readonly preview: ExecutionPlanWorkflowExperimentPreview) {
     super(
+      "confirmation_required",
       "Workflow experiment requires explicit confirmation of current side-effect evidence",
     );
     this.name = "WorkflowExperimentConfirmationRequiredError";
+  }
+}
+
+export class WorkflowExperimentPreviewChangedError extends WorkflowExperimentConflictError {
+  constructor() {
+    super(
+      "stale_preview",
+      "Workflow experiment preview changed before execution",
+    );
+    this.name = "WorkflowExperimentPreviewChangedError";
   }
 }
 
@@ -46,15 +71,17 @@ export class ExecutionPlanWorkflowExperimentRuntime {
     private readonly workflows: ExecutionPlanWorkflowRuntime,
   ) {}
 
-  preview(
+  async preview(
     sourceThreadId: string,
     request: CreateExecutionPlanWorkflowExperimentRequest,
+    signal?: AbortSignal,
   ): Promise<ExecutionPlanWorkflowExperimentPreview> {
+    signal?.throwIfAborted();
     const validated =
       validateCreateExecutionPlanWorkflowExperimentRequest(request);
-    return this.project(sourceThreadId, validated).then((source) =>
-      validateExecutionPlanWorkflowExperimentPreview(source.preview),
-    );
+    const source = await this.project(sourceThreadId, validated);
+    signal?.throwIfAborted();
+    return validateExecutionPlanWorkflowExperimentPreview(source.preview);
   }
 
   async run(
@@ -72,7 +99,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
       request.expectedPreviewSha256 !== undefined &&
       request.expectedPreviewSha256 !== preview.previewSha256
     ) {
-      throw new Error("Workflow experiment preview changed before execution");
+      throw new WorkflowExperimentPreviewChangedError();
     }
     if (
       preview.requiresSideEffectConfirmation &&

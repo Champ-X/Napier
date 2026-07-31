@@ -1,6 +1,9 @@
 import type {
   AnswerOperatorDecisionRequest,
+  CreateExecutionPlanWorkflowExperimentRequest,
   ExecutionPlanWorkflowManifest,
+  ExecutionPlanWorkflowExperimentPreview,
+  ExecutionPlanWorkflowExperimentResult,
   ExecutionPlanWorkflowResult,
   ExecutionPlanWorkflowStatus,
   JsonValue,
@@ -62,6 +65,21 @@ export interface NapierRpcWorkflowApprovalAnswerParams {
   };
 }
 
+export interface NapierRpcWorkflowExperimentPreviewParams extends Omit<
+  CreateExecutionPlanWorkflowExperimentRequest,
+  "confirmSideEffects" | "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+}
+
+export interface NapierRpcWorkflowExperimentRunParams extends Omit<
+  CreateExecutionPlanWorkflowExperimentRequest,
+  "expectedPreviewSha256"
+> {
+  sourceThreadId: string;
+  expectedPreviewSha256: string;
+}
+
 export type NapierRpcRequest =
   | {
       jsonrpc: "2.0";
@@ -102,6 +120,18 @@ export type NapierRpcRequest =
   | {
       jsonrpc: "2.0";
       id: NapierRpcId;
+      method: "napier/workflow/experiment/preview";
+      params: NapierRpcWorkflowExperimentPreviewParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/workflow/experiment/run";
+      params: NapierRpcWorkflowExperimentRunParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
       method: "shutdown";
     };
 
@@ -138,6 +168,8 @@ export interface NapierRpcInitializeResult {
     workflowRun: true;
     workflowResume: true;
     workflowApprovalAnswer: true;
+    workflowExperimentPreview: true;
+    workflowExperimentRun: true;
     eventNotifications: true;
     requestCancellation: true;
     maxConcurrentRequests: number;
@@ -165,6 +197,17 @@ export interface NapierRpcWorkflowApprovalExecution extends NapierRpcWorkflowExe
   decision: OperatorDecision;
 }
 
+export interface NapierRpcWorkflowExperimentExecution {
+  sourceThreadId: string;
+  sourcePlanId: string;
+  targetThreadId: string;
+  targetPlanId: string;
+  status: ExecutionPlanWorkflowStatus;
+  previewSha256: string;
+  candidateManifestSha256: string;
+  experiment: ExecutionPlanWorkflowExperimentResult;
+}
+
 export interface NapierRpcSuccessResponse<TResult> {
   jsonrpc: "2.0";
   id: NapierRpcId;
@@ -188,5 +231,7 @@ export type NapierRpcResponse =
   | NapierRpcSuccessResponse<NapierRpcAgentExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowExecution>
   | NapierRpcSuccessResponse<NapierRpcWorkflowApprovalExecution>
+  | NapierRpcSuccessResponse<ExecutionPlanWorkflowExperimentPreview>
+  | NapierRpcSuccessResponse<NapierRpcWorkflowExperimentExecution>
   | NapierRpcSuccessResponse<null>
   | NapierRpcErrorResponse;

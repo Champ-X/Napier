@@ -35,9 +35,9 @@ Version `0.1.0` includes:
   and domain services as the HTTP/Web path;
 - a long-lived local `napier rpc` stdio JSON-RPC 2.0 process for Agent and
   typed Workflow run/resume plus fresh Approval answer-and-resume,
-  request-bound Ledger event notifications, standard cancellation, bounded
-  concurrency, and orderly shutdown over the same embedded Runtime services
-  used by the TypeScript SDK;
+  preview-bound checkpoint experiments, request-bound Ledger event
+  notifications, standard cancellation, bounded concurrency, and orderly
+  shutdown over the same Runtime services used by the TypeScript SDK;
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
@@ -49,8 +49,8 @@ Version `0.1.0` includes:
   isolated descendant reruns, per-node model replacement, preview-bound
   side-effect confirmation, and source-versus-target status, Run, model,
   retry, latency, usage, cost, tool, output, Evaluation, and Artifact
-  comparison, plus a lazy Plan Workbench experiment desk for the complete
-  preview-confirm-execute-inspect flow;
+  comparison, plus SDK, local RPC, CLI, HTTP, and a lazy Plan Workbench desk
+  for the complete preview-confirm-execute-inspect flow;
 - a checked product-path performance budget over three cold built-CLI JSONL
   runs, shared Runtime bootstrap, the production `read_file` executor, a
   1,000-event SQLite Thread, observed RSS, and closed-ledger database growth,
@@ -441,15 +441,17 @@ npm run --silent napier -- rpc \
   --data-root .napier
 ```
 
-The client first sends `initialize`, then calls `napier/agent/run`,
-`napier/agent/resume`, `napier/workflow/run`, or
-`napier/workflow/resume`. A waiting Workflow response includes its pending
+The client first sends `initialize`, then calls Agent, Workflow, Approval, or
+Workflow experiment methods. `napier/workflow/experiment/preview` projects a
+source Thread/Plan checkpoint without mutation;
+`napier/workflow/experiment/run` requires the returned `previewSha256`, creates
+an isolated target Thread, reuses verified ancestors, reruns the selected
+descendants, and returns the candidate Manifest and source/target comparison.
+Write or unknown historical tool effects also require explicit
+`confirmSideEffects`. A waiting Workflow response includes its pending
 Decision and `contentSha256`; `napier/workflow/answer` requires that hash plus
 the same Manifest, Thread, Plan, Decision, and selected option before it
-persists the answer and resumes. Workflow calls carry the same versioned
-Manifest consumed by the CLI and TypeScript SDK; new executions also carry
-typed JSON input, while resume binds the existing Thread and Plan and can
-explicitly retry blocked nodes. Every durable event produced by a request is
+persists the answer and resumes. Every durable event produced by a request is
 streamed as a `napier/event` notification carrying the originating request ID
 and the same event SHA-256 used by SSE/JSONL before the terminal result:
 
@@ -462,15 +464,17 @@ and the same event SHA-256 used by SSE/JSONL before the terminal result:
 ```
 
 The protocol is exported by `@napier/contracts` at version `1`. Input is strict
-UTF-8 JSON with a 1 MiB line cap and at most four active Agent or Workflow
-requests. Workflow Manifest hashes and input Schemas are validated before
-creating a Thread or Plan. Malformed, unknown, pre-initialize, duplicate,
-over-capacity, cancelled, and post-shutdown requests use stable JSON-RPC error
-codes; internal diagnostics are hash-only. EOF, SIGINT, SIGTERM, `exit`, and
-Runtime shutdown cancel and await active Runs before SQLite closes. The
-transport is local stdio only: it does not open a socket, accept remote
-credentials, expose Store, or implement a second Agent or Workflow loop.
-Workflow experiments, remote transport/authentication, ACP, and TUI remain
+UTF-8 JSON with a 1 MiB line cap and at most four active Agent, Workflow, or
+experiment requests. Workflow Manifest hashes, input Schemas, experiment
+source evidence, preview freshness, and side-effect confirmation are validated
+before target mutation. Malformed, unknown, stale, pre-initialize, duplicate,
+over-capacity, pre-settlement cancellation, and post-shutdown requests use
+stable JSON-RPC error codes; a durably settled cancelled experiment instead
+returns its recovery-ready target result. Internal diagnostics are hash-only.
+EOF, SIGINT, SIGTERM, `exit`, and Runtime shutdown cancel and await active Runs
+before SQLite closes. The transport is local stdio only: it does not open a
+socket, accept remote credentials, expose Store, or implement a second Agent
+or Workflow loop. Remote transport/authentication, ACP, and TUI remain
 follow-up work.
 
 Execute a versioned typed Workflow manifest through the same Runtime:
@@ -2599,11 +2603,12 @@ and divergence count as part of the selection/backtest/override receipts.
 
 `@napier/sdk` is the first supported local embedding entry point for Node
 applications. It owns one `LocalAgentRuntime` lifecycle but exposes no Store,
-credential registry, scheduler internals, or experiment-reuse capability.
+credential registry, or scheduler internals.
 TypeScript code can run or continue a normal Agent task, recover an interrupted
 Run, define a Workflow from a Plan shape plus typed nodes,
 serialize the resulting stable Manifest as JSON, load it again with full hash
-validation, execute it in a new or selected Thread, and resume the exact Plan:
+validation, execute it in a new or selected Thread, resume the exact Plan, and
+run a preview-bound checkpoint experiment:
 
 ```ts
 import { createNapierClient, loadNapierWorkflow } from "@napier/sdk";
@@ -2651,6 +2656,21 @@ try {
     threadId: execution.threadId,
     planId: execution.planId,
   });
+  const preview = await client.previewWorkflowExperiment({
+    workflow,
+    sourceThreadId: execution.threadId,
+    sourcePlanId: execution.planId,
+    fromNodeId: "report",
+  });
+  const experiment = await client.runWorkflowExperiment({
+    workflow,
+    sourceThreadId: execution.threadId,
+    sourcePlanId: execution.planId,
+    fromNodeId: "report",
+    expectedPreviewSha256: preview.previewSha256,
+    confirmSideEffects: preview.requiresSideEffectConfirmation,
+    onEvent,
+  });
 } finally {
   await client.close();
 }
@@ -2662,17 +2682,21 @@ evidence-bound Blueprint. `runWorkflow()` validates Manifest and input before
 creating an execution Thread. Waiting results expose the exact pending
 Decision; `answerWorkflowApproval()` verifies its content hash, Workflow start,
 Manifest, Plan, Approval Run, option contract, and expiry before persisting
-one answer and resuming. `runAgent()` validates its prompt, model, title, and
-Thread/Agent binding before mutation; `resumeAgent()` uses the same
-interrupted-Run recovery path as CLI. Agent, Deterministic, Tool, Approval,
-condition, parallelism, retry, cancellation, recovery, policy, Sandbox, and
-Ledger behavior remain the existing Runtime behavior. Runnable examples are
+one answer and resuming. `previewWorkflowExperiment()` is read-only;
+`runWorkflowExperiment()` always requires its current preview hash and keeps
+write/unknown-effect confirmation fail-closed while returning recovery-ready
+target Thread/Plan and candidate Manifest data. `runAgent()` validates its
+prompt, model, title, and Thread/Agent binding before mutation;
+`resumeAgent()` uses the same interrupted-Run recovery path as CLI. Agent,
+Deterministic, Tool, Approval, condition, parallelism, retry, cancellation,
+recovery, policy, Sandbox, and Ledger behavior remain the existing Runtime
+behavior. Runnable examples are
 [`packages/sdk/examples/agent-run.mjs`](packages/sdk/examples/agent-run.mjs)
 and
 [`packages/sdk/examples/typed-workflow.mjs`](packages/sdk/examples/typed-workflow.mjs).
-`close()` rejects new calls, aborts and waits for active Agent or Workflow
-calls to settle their terminal evidence, then shuts down shared services
-idempotently.
+`close()` rejects new calls, aborts and waits for active Agent, Workflow, or
+experiment calls to settle their terminal evidence, then shuts down shared
+services idempotently.
 This SDK does not yet claim remote RPC, ACP, Desktop, or a browser-safe client.
 
 ## Executable Plan Workflows

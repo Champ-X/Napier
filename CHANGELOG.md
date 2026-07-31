@@ -6,6 +6,18 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added preview-bound Workflow checkpoint experiments to the TypeScript SDK and
+  local stdio RPC. Both entries reuse the existing Experiment Runtime, require
+  the current preview hash for every execution, preserve explicit confirmation
+  for historical write/unknown effects, stream target Ledger events, and
+  return the candidate Manifest, target Thread/Plan, and privacy-bounded
+  source/target comparison needed for inspection and recovery. Stable RPC
+  conflicts cover stale previews; pre-settlement cancellation and four-request
+  admission remain shared with Agent/Workflow calls, while a durable cancelled
+  experiment returns its recovery-ready target result. Real SDK and
+  built-process tests prove strict preflight, concurrent isolated targets,
+  verified ancestor reuse, comparison, explicit retry recovery, and portable
+  Replay without exposing Store or adding a second execution loop.
 - Added one freshness-bound Workflow Approval answer-and-resume path shared by
   CLI, TypeScript SDK, and local stdio RPC. Waiting executions expose the
   pending Decision; answers bind its content hash, Manifest, Thread, Plan,

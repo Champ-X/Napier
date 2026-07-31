@@ -4,6 +4,7 @@ import path from "node:path";
 import { PassThrough, Writable } from "node:stream";
 
 import type {
+  ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowResult,
   JsonValue,
   RunEvent,
@@ -14,6 +15,11 @@ import type {
   EmbeddedAgentService,
   EmbeddedWorkflowExecution,
   EmbeddedWorkflowService,
+  ExecutionPlanWorkflowExperimentRuntime,
+} from "@napier/runtime";
+import {
+  WorkflowExperimentConfirmationRequiredError,
+  WorkflowExperimentPreviewChangedError,
 } from "@napier/runtime";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -255,6 +261,105 @@ describe("Napier Workflow JSON-RPC server", () => {
     await harness.shutdown();
     expect(await server).toBe(0);
   });
+
+  it("maps stale experiment previews and cancels experiment execution", async () => {
+    const fixture = await createFixture("experiment-control");
+    const manifest = await defineRpcWorkflowManifest(fixture);
+    let mode: "stale" | "confirmation" | "cancel" = "stale";
+    let runCalls = 0;
+    const experiments: Pick<
+      ExecutionPlanWorkflowExperimentRuntime,
+      "preview" | "run"
+    > = {
+      async preview() {
+        throw new Error("Unexpected Workflow experiment preview");
+      },
+      async run(options) {
+        runCalls += 1;
+        if (mode === "stale") {
+          throw new WorkflowExperimentPreviewChangedError();
+        }
+        if (mode === "confirmation") {
+          throw new WorkflowExperimentConfirmationRequiredError({
+            previewSha256: "a".repeat(64),
+          } as ExecutionPlanWorkflowExperimentPreview);
+        }
+        await waitForAbort(options.signal!);
+        throw new Error("Workflow experiment cancelled");
+      },
+    };
+    const harness = new RpcWorkflowHarness(
+      unusedAgents(),
+      unusedWorkflowService(),
+      experiments,
+    );
+    const server = harness.start();
+    await harness.initialize();
+    const params = {
+      sourceThreadId: "thread_example",
+      manifest,
+      planId: "plan_abcdefgh",
+      fromNodeId: "deliver",
+      expectedPreviewSha256: "a".repeat(64),
+    };
+    harness.send({
+      jsonrpc: "2.0",
+      id: "experiment-stale",
+      method: "napier/workflow/experiment/run",
+      params,
+    });
+    expect(await harness.waitForId("experiment-stale")).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          code: -32004,
+          message: "Workflow experiment conflict",
+        }),
+      }),
+    );
+
+    mode = "confirmation";
+    harness.send({
+      jsonrpc: "2.0",
+      id: "experiment-confirmation",
+      method: "napier/workflow/experiment/run",
+      params,
+    });
+    expect(await harness.waitForId("experiment-confirmation")).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({
+          code: -32004,
+          message: "Workflow experiment conflict",
+        }),
+      }),
+    );
+    expect(harness.output.text()).not.toContain(
+      "explicit confirmation of current side-effect evidence",
+    );
+    expect(harness.output.text()).not.toContain(
+      "preview changed before execution",
+    );
+
+    mode = "cancel";
+    harness.send({
+      jsonrpc: "2.0",
+      id: "experiment-cancel",
+      method: "napier/workflow/experiment/run",
+      params,
+    });
+    harness.send({
+      jsonrpc: "2.0",
+      method: "$/cancelRequest",
+      params: { id: "experiment-cancel" },
+    });
+    expect(await harness.waitForId("experiment-cancel")).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: -32800 }),
+      }),
+    );
+    expect(runCalls).toBe(3);
+    await harness.shutdown();
+    expect(await server).toBe(0);
+  });
 });
 
 function unusedAgents(): Pick<EmbeddedAgentService, "run" | "resume"> {
@@ -262,6 +367,20 @@ function unusedAgents(): Pick<EmbeddedAgentService, "run" | "resume"> {
     throw new Error("Unexpected Agent RPC call");
   };
   return { run: unexpected, resume: unexpected };
+}
+
+function unusedWorkflowService(): Pick<
+  EmbeddedWorkflowService,
+  "run" | "resume" | "answerAndResume"
+> {
+  const unexpected = async (): Promise<never> => {
+    throw new Error("Unexpected Workflow RPC call");
+  };
+  return {
+    run: unexpected,
+    resume: unexpected,
+    answerAndResume: unexpected,
+  };
 }
 
 function agentExecution(threadId: string): EmbeddedAgentExecution {
@@ -319,6 +438,16 @@ async function waitForAbort(signal: AbortSignal): Promise<void> {
   );
 }
 
+function unusedExperimentService(): Pick<
+  ExecutionPlanWorkflowExperimentRuntime,
+  "preview" | "run"
+> {
+  const unexpected = async (): Promise<never> => {
+    throw new Error("Unexpected Workflow experiment RPC call");
+  };
+  return { preview: unexpected, run: unexpected };
+}
+
 class RpcWorkflowHarness {
   readonly input = new PassThrough();
   readonly output = new CaptureWritable();
@@ -329,12 +458,17 @@ class RpcWorkflowHarness {
       EmbeddedWorkflowService,
       "run" | "resume" | "answerAndResume"
     >,
+    private readonly experiments: Pick<
+      ExecutionPlanWorkflowExperimentRuntime,
+      "preview" | "run"
+    > = unusedExperimentService(),
   ) {}
 
   start(): Promise<number> {
     return runNapierRpcServer({
       agents: this.agents,
       workflows: this.workflows,
+      experiments: this.experiments,
       input: this.input,
       output: this.output,
       serverVersion: "test",

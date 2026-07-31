@@ -271,9 +271,12 @@ parent process starts napier rpc with canonical workspace/data roots
   -> initialize JSON-RPC protocol version 1
   -> napier/agent/run, napier/agent/resume,
      napier/workflow/run, napier/workflow/resume,
-     or napier/workflow/answer
-  -> Embedded Agent/Workflow preflight
-  -> existing AgentRuntime or WorkflowRuntime + policy + Sandbox + Work Ledger
+     napier/workflow/answer,
+     napier/workflow/experiment/preview,
+     or napier/workflow/experiment/run
+  -> Embedded Agent/Workflow or Workflow Experiment preflight
+  -> existing AgentRuntime, WorkflowRuntime, or ExperimentRuntime
+     + policy + Sandbox + Work Ledger
   -> napier/event notification with request ID + shared event SHA-256
   -> terminal Agent or Workflow execution response
 $/cancelRequest, EOF, SIGINT, SIGTERM, or exit
@@ -283,34 +286,44 @@ $/cancelRequest, EOF, SIGINT, SIGTERM, or exit
 ```
 
 The serializable protocol types live in `@napier/contracts`.
-`rpc-protocol.ts` owns strict message/parameter validation and stable public
-error codes; `rpc-transport.ts` owns bounded UTF-8 line framing and serialized
-backpressure-aware output; `rpc-invocations.ts` adapts public methods to the
-embedded services; `rpc-server.ts` owns initialization, request admission,
-cancellation, and lifecycle state. No RPC code reads Store or implements an
-Agent or Workflow loop.
+`rpc-protocol.ts` owns shared strict message/parameter validation and stable
+public errors; `rpc-workflow-experiments.ts` owns bounded experiment request
+adaptation without expanding that near-limit module; `rpc-transport.ts` owns
+bounded UTF-8 line framing and serialized backpressure-aware output;
+`rpc-invocations.ts` adapts public methods to Runtime services; `rpc-server.ts`
+owns initialization, request admission, cancellation, and lifecycle state. No
+RPC code reads Store or implements an Agent, Workflow, or experiment loop.
 
 Input is line-delimited JSON-RPC 2.0, capped at 1 MiB per line and four active
-Agent or Workflow requests. Request IDs are bounded strings or non-negative
-safe integers. Unknown fields, malformed ModelRefs/resource IDs, invalid or
-tampered Workflow Manifests, Schema-invalid Workflow input, stale or
-mismatched Approval decisions, duplicate active IDs, pre-initialize calls,
-unknown methods, over-capacity calls, and post-shutdown calls fail before
-unsafe Runtime mutation. Internal failures expose only a stable JSON-RPC
-message and diagnostic SHA-256. Ledger event notifications and terminal task
-results are intentional client-visible data. A stdout failure aborts the
-server lifetime and active Runs rather than being treated as an ignorable
-disconnected observer.
+Agent, Workflow, or experiment requests. Request IDs are bounded strings or
+non-negative safe integers. Unknown fields, malformed ModelRefs/resource IDs,
+invalid or tampered Workflow Manifests, Schema-invalid Workflow input, stale
+or mismatched Approval decisions, missing or stale experiment preview hashes,
+duplicate active IDs, pre-initialize calls, unknown methods, over-capacity
+calls, and post-shutdown calls fail before unsafe Runtime mutation. Experiment
+execution reprojects source evidence and preserves the existing explicit
+confirmation barrier for historical write or unknown tool effects. Internal
+failures expose only a stable JSON-RPC message and diagnostic SHA-256. Ledger
+event notifications and terminal task results are intentional client-visible
+data. A stdout failure aborts the server lifetime and active Runs rather than
+being treated as an ignorable disconnected observer.
+Cancellation before experiment target settlement returns the standard
+JSON-RPC cancellation error. If the Experiment Runtime has already produced a
+durable cancelled result, RPC returns that result instead so the caller retains
+the candidate Manifest and target Thread/Plan required for explicit retry.
 
 The process opens no network listener and accepts no transport credential. It
 inherits the selected local data root's existing credential references and
 tool policy, so stdio does not elevate the Agent or Workflow. RPC supports
-Agent and typed Workflow run/resume, explicit blocked-node retry, and
-freshness-bound Approval answer-and-resume. Approval deduction and evidence
-validation live in split `embedded-workflow-approvals.ts`; CLI, SDK, and RPC
-reuse that service rather than reading Store independently. Checkpoint
-experiments, remote transport/authentication, client reconnection, ACP, TUI,
-and Desktop packaging remain explicit gaps.
+Agent and typed Workflow run/resume, explicit blocked-node retry,
+freshness-bound Approval answer-and-resume, and preview-bound Workflow
+checkpoint experiments. SDK and RPC call the existing interface-neutral
+`ExecutionPlanWorkflowExperimentRuntime`; they do not recreate source
+projection, reuse, comparison, or confirmation logic. Approval deduction and
+evidence validation live in split `embedded-workflow-approvals.ts`; CLI, SDK,
+and RPC reuse that service rather than reading Store independently. Remote
+transport/authentication, client reconnection, ACP, TUI, and Desktop packaging
+remain explicit gaps.
 
 ### Executable Plan Workflows
 
@@ -524,6 +537,13 @@ source Thread + Plan + source Manifest
   -> append privacy-bounded workflow.experiment.compared evidence
   -> emit target snapshot + workflow_experiment_result
 ```
+
+CLI JSONL, HTTP SSE, Web, TypeScript SDK, and local stdio RPC all call this
+same Runtime. SDK and RPC require `expectedPreviewSha256` for every execution,
+including read-only reruns, so automation cannot silently execute a different
+source projection than it previewed. RPC emits only target Ledger events under
+the owning request ID and returns the candidate Manifest plus target
+Thread/Plan required for normal Workflow retry or Approval recovery.
 
 The source Plan is read-only. Reused outputs are accepted only when source
 Plan/Run ownership, frozen Agent revision, model, node input/output/schema
@@ -5357,9 +5377,9 @@ The current boundary has forty-eight parts:
     evidence.
 48. A versioned local stdio JSON-RPC Agent and typed Workflow entry with strict
     bounded framing, request-bound Ledger notifications, hash-bound Approval
-    answer-and-resume, shared Embedded execution, mixed concurrent admission,
-    standard cancellation, ordered shutdown, built subprocess coverage, and no
-    second execution loop.
+    answer-and-resume, preview-bound Workflow checkpoint experiments, shared
+    Runtime execution, mixed concurrent admission, standard cancellation,
+    ordered shutdown, built subprocess coverage, and no second execution loop.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5415,9 +5435,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- extend local RPC to Workflow experiment methods and authenticated remote
-  transport, then add interactive TUI, ACP, Desktop, persistent browser UX,
-  and broader data/research capability slices over the same Runtime and Ledger;
+- add authenticated remote transport, interactive TUI, ACP, Desktop,
+  persistent browser UX, and broader data/research capability slices over the
+  same Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;
 - fixed Capability & Outcome benchmarks centered on task success, recovery,

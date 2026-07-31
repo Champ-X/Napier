@@ -24,8 +24,8 @@ Audit date: 2026-07-31
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                        |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                                 |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
-| P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                                                           |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. RPC supports Agent and typed Workflow run/resume, blocked-node retry, freshness-bound Approval answer-and-resume, request-bound Ledger notifications, real cancellation, mixed bounded concurrency, and orderly shutdown without exposing Store. CLI and SDK reuse the same Embedded Approval service; HTTP reuses the generic decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Workflow experiment RPC, authenticated remote transport, interactive TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                    |
+| P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, TypeScript SDK, local stdio RPC, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                          |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. RPC supports Agent and typed Workflow run/resume, blocked-node retry, freshness-bound Approval answer-and-resume, preview-bound checkpoint experiments, request-bound Ledger notifications, real cancellation, mixed bounded concurrency, and orderly shutdown without exposing Store. SDK and RPC reuse the existing Experiment Runtime; CLI and SDK reuse the same Embedded Approval service. Authenticated remote transport, interactive TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                            |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -280,6 +280,74 @@ Observed result:
   operations, and kept the Web main entry at 130.08 KiB. The 69-file Web dist
   is bound to `eb8eb48f18f729d0`; the seven-artifact release set is bound to
   `a469310dbff20b25`.
+
+## Completed Slice: Workflow Experiment SDK And RPC
+
+User scenario: a Node application, editor, or automation host can preview a
+checkpoint fork of an existing Workflow, execute exactly that reviewed
+projection in an isolated target Thread, observe its Ledger events, inspect the
+source/target comparison, and recover a cancelled target without embedding
+Store or parsing human CLI output.
+
+Acceptance:
+
+- add SDK and JSON-RPC preview/execute methods over the existing
+  `ExecutionPlanWorkflowExperimentRuntime`, without a second source projector,
+  reuse engine, comparison path, or Workflow loop;
+- require source Thread, source Plan, versioned Manifest, checkpoint node, and
+  optional per-node ModelRef overrides to pass the existing strict Runtime
+  contract before mutation;
+- require `expectedPreviewSha256` for every SDK/RPC execution, including
+  read-only reruns, and reject malformed or stale hashes before creating a
+  target Thread;
+- retain the existing explicit confirmation barrier whenever historical tool
+  evidence contains write, unknown, or unresolved effects;
+- create an isolated target Thread, stream target Ledger events under the
+  owning RPC request ID, and return candidate Manifest, target Thread/Plan,
+  status, preview hash, and privacy-bounded source/target comparison;
+- share the existing four-request RPC admission, standard cancellation,
+  stdout backpressure, lifecycle settlement, and hash-only error diagnostics;
+- let a cancelled or blocked target recover only through the existing explicit
+  Workflow resume/retry contract; do not silently rerun or manufacture a
+  second experiment;
+- prove strict params, preview conflict, cancellation, concurrent target
+  isolation, ancestor reuse, comparison, SDK recovery, and portable Replay
+  through real Runtime and built-process tests.
+
+Threat boundary:
+
+- preview is read-only source projection, not an authorization token by itself;
+  execute reprojects current evidence and binds the exact current preview hash;
+- `confirmSideEffects` confirms only the summarized historical effect set
+  bound into that preview. It does not grant new tool capabilities or bypass
+  Workflow/Agent policy and Sandbox checks in the target;
+- experiment results intentionally expose versioned Manifests, typed Workflow
+  output, and privacy-bounded comparison data to the local caller. Raw tool
+  arguments, tool output, credentials, and internal errors remain governed by
+  Ledger projection and hash-only RPC errors;
+- RPC cancellation before a target settles returns the standard cancellation
+  error. Once a cancelled experiment result is durable, RPC returns that
+  terminal result with candidate Manifest and target identifiers so explicit
+  recovery remains possible;
+- this remains local stdio/Node embedding, not authenticated remote execution,
+  reconnection, server-initiated replay, ACP, TUI, or Desktop packaging.
+
+Observed result:
+
+- focused protocol and server tests pass strict preview/run parsing, required
+  preview hashes, stable stale-preview conflicts, and standard cancellation;
+- a built `napier rpc` process runs a two-node deterministic source Workflow,
+  previews from the descendant checkpoint, rejects a stale execution, executes
+  two concurrent isolated targets, reuses the verified ancestor, compares both
+  results, and leaves valid Replay bundles;
+- SDK integration rejects malformed and stale preview hashes without events,
+  executes a verified checkpoint comparison, cancels an in-flight target, and
+  recovers it only through explicit `retryBlocked`;
+- the complete repository gate passed 1,394 tests with 24 opt-in live tests
+  skipped by default, verified 247 OpenAPI routes and 244/244 compatibility
+  operations, and kept the Web main entry at 130.08 KiB. The 69-file Web dist
+  remains bound to `eb8eb48f18f729d0`; the seven-artifact release set remains
+  bound to `a469310dbff20b25`.
 
 ## Completed Slice: Read-Only Sandboxed Commands
 

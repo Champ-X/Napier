@@ -325,7 +325,7 @@ function optionalResourceId(value: unknown, label: string): string | undefined {
   return value === undefined ? undefined : resourceId(value, label);
 }
 
-function resourceId(value: unknown, label: string): string {
+export function resourceId(value: unknown, label: string): string {
   if (typeof value !== "string" || !RESOURCE_ID.test(value)) {
     invalidParams(`${label} is invalid`);
   }
@@ -436,7 +436,7 @@ function invalidRequest(
   return new JsonRpcProtocolError(-32600, "Invalid Request", id, message);
 }
 
-function invalidParams(message: string): never {
+export function invalidParams(message: string): never {
   throw new JsonRpcProtocolError(-32602, "Invalid params", null, message);
 }
 
