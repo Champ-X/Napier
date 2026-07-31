@@ -1,5 +1,6 @@
 import type { JsonValue } from "@napier/contracts";
 
+import { canonicalJson, sha256 } from "./ed25519.js";
 import {
   browserToolCallArgumentsLedgerProjection,
   browserToolInputLedgerProjection,
@@ -91,6 +92,16 @@ import {
   workspacePatchToolOutputLedgerProjection,
 } from "./workspace-patch-tool.js";
 
+const PRIVATE_WORKSPACE_READ_TOOLS = new Set([
+  "list_files",
+  "read_file",
+  "search_files",
+  "list_symbols",
+  "inspect_data",
+  "inspect_code",
+  "read_symbol",
+]);
+
 export function agentToolCallArgumentsLedgerProjection(
   toolName: string,
   args: unknown,
@@ -151,6 +162,9 @@ export function agentToolCallArgumentsLedgerProjection(
     toolName === "workspace_file_apply"
   ) {
     return workspaceFileToolCallArgumentsLedgerProjection(toolName, args);
+  }
+  if (PRIVATE_WORKSPACE_READ_TOOLS.has(toolName)) {
+    return privateWorkspaceReadArguments(toolName, args);
   }
   return toJsonValue(args);
 }
@@ -215,6 +229,13 @@ export function agentToolInputLedgerProjection(
     toolName === "workspace_file_apply"
   ) {
     return workspaceFileToolInputLedgerProjection(toolName, args);
+  }
+  if (PRIVATE_WORKSPACE_READ_TOOLS.has(toolName)) {
+    return {
+      inputSha256: sha256(canonicalJson(toJsonValue(args))),
+      inputBytes: Buffer.byteLength(canonicalJson(toJsonValue(args)), "utf8"),
+      inputRedacted: true,
+    };
   }
   return { input: toJsonValue(args) };
 }
@@ -281,7 +302,123 @@ export function agentToolOutputLedgerProjection(
   ) {
     return workspaceFileToolOutputLedgerProjection(output, result);
   }
+  if (PRIVATE_WORKSPACE_READ_TOOLS.has(toolName)) {
+    return {
+      outputSha256: sha256(output),
+      outputBytes: Buffer.byteLength(output, "utf8"),
+      outputRedacted: true,
+      ...privateWorkspaceReadDetails(toolName, result),
+    };
+  }
   return { output };
+}
+
+function privateWorkspaceReadArguments(
+  toolName: string,
+  args: unknown,
+): JsonValue {
+  const value = toJsonValue(args);
+  const serialized = canonicalJson(value);
+  return {
+    kind: "napier.private-workspace-read-arguments",
+    schemaVersion: 1,
+    redacted: true,
+    inputSha256: sha256(canonicalJson({ toolName, args: value })),
+    argumentsSha256: sha256(serialized),
+    argumentsBytes: Buffer.byteLength(serialized, "utf8"),
+  };
+}
+
+function privateWorkspaceReadDetails(
+  toolName: string,
+  result: unknown,
+): Record<string, JsonValue> {
+  const details = record(result)?.["details"];
+  const value = record(details);
+  if (!value) return {};
+  const keys =
+    toolName === "list_files"
+      ? ["count", "truncated", "pathSha256", "entrySetSha256"]
+      : toolName === "read_file"
+        ? [
+            "startLine",
+            "endLine",
+            "totalLines",
+            "pathSha256",
+            "sha256",
+            "sizeBytes",
+            "truncated",
+            "lineAnchorsTruncated",
+            "lineAnchorSetSha256",
+          ]
+        : toolName === "search_files"
+          ? ["count", "truncated", "matchSetSha256"]
+          : toolName === "list_symbols"
+            ? [
+                "pathSha256",
+                "fileCount",
+                "skippedFileCount",
+                "symbolCount",
+                "totalLines",
+                "sizeBytes",
+                "truncated",
+                "languageCountsSha256",
+                "fileSetSha256",
+                "symbolSetSha256",
+              ]
+            : toolName === "inspect_data"
+              ? [
+                  "pathSha256",
+                  "format",
+                  "sha256",
+                  "sizeBytes",
+                  "rowCount",
+                  "columnCount",
+                  "truncated",
+                  "columnSetSha256",
+                  "sampleSha256",
+                ]
+              : toolName === "inspect_code"
+                ? [
+                    "pathSha256",
+                    "language",
+                    "sha256",
+                    "sizeBytes",
+                    "totalLines",
+                    "symbolCount",
+                    "truncated",
+                    "symbolSetSha256",
+                  ]
+                : [
+                    "pathSha256",
+                    "language",
+                    "sha256",
+                    "sizeBytes",
+                    "totalLines",
+                    "startLine",
+                    "endLine",
+                    "symbolLine",
+                    "symbolKind",
+                    "symbolNameSha256",
+                    "lineSha256",
+                    "signatureSha256",
+                    "rangeSha256",
+                    "observedLineCount",
+                    "truncated",
+                    "lineAnchorsTruncated",
+                    "lineAnchorSetSha256",
+                  ];
+  const projected = Object.fromEntries(
+    keys.flatMap((key) => {
+      const candidate = value[key];
+      return typeof candidate === "string" ||
+        typeof candidate === "number" ||
+        typeof candidate === "boolean"
+        ? [[key, candidate]]
+        : [];
+    }),
+  ) as Record<string, JsonValue>;
+  return Object.keys(projected).length > 0 ? { details: projected } : {};
 }
 
 function toJsonValue(value: unknown): JsonValue {
@@ -291,4 +428,10 @@ function toJsonValue(value: unknown): JsonValue {
   } catch {
     return String(value);
   }
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }

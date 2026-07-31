@@ -65,6 +65,7 @@ export async function previewAgentMessageExperiment(
     preview.sourceThreadId !== threadId ||
     preview.sourceRunId !== body.sourceRunId ||
     preview.sourceMessageSeq !== body.sourceMessageSeq ||
+    preview.toolResultMode !== (body.toolResultMode ?? "live") ||
     canonicalJson(preview.targetModel) !==
       canonicalJson(body.model ?? preview.sourceModel)
   ) {
@@ -88,6 +89,7 @@ export async function executeAgentMessageExperiment(
     body.expectedPreviewSha256 !== expectedPreview.previewSha256 ||
     body.sourceRunId !== expectedPreview.sourceRunId ||
     body.sourceMessageSeq !== expectedPreview.sourceMessageSeq ||
+    (body.toolResultMode ?? "live") !== expectedPreview.toolResultMode ||
     canonicalJson(body.model ?? expectedPreview.sourceModel) !==
       canonicalJson(expectedPreview.targetModel)
   ) {

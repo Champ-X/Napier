@@ -6,6 +6,34 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added frozen historical tool results to controlled Agent message
+  experiments. Eligible source calls now capture their exact model-visible
+  result after settlement in a separate permission-restricted local CAS.
+  `toolResultMode=reuse_source` binds the complete ordered result set into
+  preview schema 2, then requires each candidate call to match the next source
+  tool name, current implementation, and normalized arguments before returning
+  the capsule result through Pi without invoking the real tool body. Source
+  failures retain `isError`; changed, reordered, missing, extra, tampered,
+  exposed, or unconsumed results fail the isolated target with no live
+  fallback. Web, CLI/JSONL, HTTP/SSE, SDK, and local RPC share the same request
+  and result contract; Run Lab shows live/frozen mode plus reusable, reused,
+  and divergent counts. Real Runtime and Hono tests reuse old `read_file`
+  content after the workspace changes, preserve failed reads, isolate
+  concurrent candidates, verify Replay privacy, and enforce the 512-result
+  capsule bound. Production-browser dogfood observed `1/1` reused and zero
+  divergence, made only preview/run POSTs, reported no console errors, kept
+  source/current/candidate bodies out of the desk DOM, and navigated to the
+  isolated target. The implementation is split into focused capture,
+  lifecycle, capsule, replay-controller, and Store-gate modules. Result
+  metadata must be exact JSON; lossy values such as non-finite numbers or
+  `undefined` fail capture instead of changing the frozen result.
+- Made the seven generic workspace read tools use hash-only public input and
+  output projections instead of the raw fallback. Ledger/Replay/Trace retain
+  safe counts, ranges, formats, languages, truncation states, and hashes while
+  excluding paths, queries, matches, rows, symbols, source, and output text.
+  Existing Tool Loop Guard now consumes the uniform output/call hashes, and
+  Workflow Tool events retain their compatibility aliases without restoring
+  raw bodies.
 - Added controlled single-tool-invocation re-execution for ten built-in,
   stateless, workspace-read-only tools. Eligible Agent calls capture exact
   validated arguments and their tool-definition hash in the same

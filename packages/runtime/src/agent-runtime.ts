@@ -58,6 +58,7 @@ import {
   agentToolOutputLedgerProjection as toolOutputLedgerProjection,
 } from "./agent-tool-ledger.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
+import { AgentToolResultLifecycle } from "./agent-tool-result-lifecycle.js";
 import { AgentSessionRuntime } from "./agent-sessions.js";
 import type { RunBrowserSessionManager } from "./browser-session.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
@@ -72,6 +73,10 @@ import {
   AGENT_MESSAGE_EXPERIMENT_EXECUTION,
   type AgentMessageExperimentExecution,
 } from "./agent-message-experiment-execution.js";
+import {
+  AGENT_MESSAGE_TOOL_RESULT_REPLAY,
+  type FrozenToolResultReplayController,
+} from "./agent-message-tool-result-replay.js";
 import { createAgentMilestoneTool } from "./agent-milestone-tool.js";
 import {
   createAgentMilestoneContextProjection,
@@ -155,8 +160,8 @@ import {
   TOOL_LOOP_GUARD_TRIGGERED_EVENT,
   toolLoopGuardBlockReason,
 } from "./tool-loop-guard.js";
-import { captureToolInvocation } from "./tool-invocation-capture.js";
 import { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
+import { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 
 export type EventSink = (event: RunEvent) => Promise<void> | void;
 
@@ -175,6 +180,7 @@ export interface RunPromptOptions {
   triggerId?: string;
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
+  [AGENT_MESSAGE_TOOL_RESULT_REPLAY]?: FrozenToolResultReplayController;
   recovery?: {
     mode: "manual" | "automatic";
     attemptId?: string;
@@ -246,6 +252,9 @@ export class AgentRuntime {
     readonly toolInvocationCapsules = new ToolInvocationCapsuleStore(
       store.dataRoot,
     ),
+    readonly toolInvocationResultCapsules = new ToolInvocationResultCapsuleStore(
+      store.dataRoot,
+    ),
   ) {
     this.sessions = new AgentSessionRuntime(
       workspaceProcesses,
@@ -287,6 +296,21 @@ export class AgentRuntime {
     const invocationSource = requestedSource ?? "user";
     const workflowInvocation = isWorkflowRunSource(invocationSource);
     const messageExperiment = options[AGENT_MESSAGE_EXPERIMENT_EXECUTION];
+    const toolResultReplay = options[AGENT_MESSAGE_TOOL_RESULT_REPLAY];
+    if (
+      (messageExperiment?.toolResultMode === "reuse_source") !==
+        Boolean(toolResultReplay) ||
+      (toolResultReplay &&
+        (toolResultReplay.sourceThreadId !==
+          messageExperiment?.sourceThreadId ||
+          toolResultReplay.sourceRunId !== messageExperiment.sourceRunId ||
+          toolResultReplay.plan.entries.length !==
+            messageExperiment.sourceReusableToolResultCount ||
+          toolResultReplay.plan.sourceResultSetSha256 !==
+            messageExperiment.sourceToolResultSetSha256))
+    ) {
+      throw new Error("Agent message experiment tool result replay is invalid");
+    }
     const skillCatalog = await loadWorkspaceSkills(
       this.store.workspaceRoot,
       agentSnapshot.enabledSkills,
@@ -532,6 +556,7 @@ export class AgentRuntime {
               abortController.signal,
               budget,
               nextModelContextEnvelopeTurnIndex,
+              toolResultReplay,
               options.onEvent,
             )
           : this.runDemo(
@@ -618,6 +643,7 @@ export class AgentRuntime {
       };
 
       let assistantText = await runTurn(prompt, invocationSource);
+      toolResultReplay?.assertComplete();
       budget.throwIfExhausted();
       let goal = workflowInvocation
         ? undefined
@@ -867,6 +893,14 @@ export class AgentRuntime {
     if (interrupted.source === "tool_experiment") {
       throw new Error(
         "Tool invocation experiment Runs must be retried from their source checkpoint",
+      );
+    }
+    if (
+      modernRunConfiguration(interrupted.configuration) &&
+      interrupted.configuration.executionMode === "agent_experiment_read_only"
+    ) {
+      throw new Error(
+        "Agent message experiment Runs must be retried from their source checkpoint",
       );
     }
     const events = (await this.store.listEvents(thread.id)).filter(
@@ -1174,6 +1208,7 @@ export class AgentRuntime {
     signal: AbortSignal,
     budget: RunBudgetTracker,
     nextModelContextEnvelopeTurnIndex: () => number,
+    toolResultReplay?: FrozenToolResultReplayController,
     onEvent?: EventSink,
   ): Promise<string> {
     const workflowInvocation = isWorkflowRunSource(run.source);
@@ -1345,6 +1380,15 @@ export class AgentRuntime {
     ) {
       tools.push(subagents.createTool());
     }
+    const toolResultLifecycle = new AgentToolResultLifecycle({
+      store: this.store,
+      run,
+      tools,
+      invocationCapsules: this.toolInvocationCapsules,
+      resultCapsules: this.toolInvocationResultCapsules,
+      ...(toolResultReplay ? { replay: toolResultReplay } : {}),
+      ...(onEvent ? { onEvent } : {}),
+    });
     const baseSystemPromptSections = [
       skillPrompt,
       formatWorkspaceToolGuidance(tools),
@@ -1564,18 +1608,17 @@ export class AgentRuntime {
         );
         return { block: true, reason: decision.reason };
       }
-      await captureToolInvocation(
-        this.store,
-        this.toolInvocationCapsules,
-        run,
-        tools.find((tool) => tool.name === toolCall.name),
-        toolCall.id,
-        toolCall.name,
-        args,
-        onEvent,
-      );
-      return undefined;
+      return toolResultLifecycle.preflight(toolCall.id, toolCall.name, args);
     };
+    const afterToolCall = async ({
+      toolCall,
+      result,
+      isError,
+    }: {
+      toolCall: { id: string; name: string };
+      result: Parameters<AgentToolResultLifecycle["finalize"]>[0]["result"];
+      isError: boolean;
+    }) => toolResultLifecycle.finalize({ toolCall, result, isError });
     const preRecordedControlMessages = new Map<string, number>();
     const hasQueuedControlMessage = async (
       mode?: RunControlMessageMode,
@@ -1709,6 +1752,7 @@ export class AgentRuntime {
         toolExecution: "parallel",
         convertToLlm: (messages) => messages.filter(isProviderMessage),
         beforeToolCall,
+        afterToolCall,
         getSteeringMessages: () => drainControlMessage("steering"),
         getFollowUpMessages: () => drainControlMessage("follow_up"),
         prepareNextTurn: async ({ context, toolResults }) => {
@@ -1888,6 +1932,7 @@ export class AgentRuntime {
           };
         },
         shouldStopAfterTurn: async ({ toolResults }) => {
+          if (toolResultLifecycle.shouldStopAfterTurn()) return true;
           budget.syncSubagentUsage(
             this.store.listSubagentTasks(run.threadId, run.id),
           );
@@ -1912,6 +1957,7 @@ export class AgentRuntime {
           signal,
           preRecordedControlMessages,
           currentModelContextEnvelope,
+          toolResultLifecycle,
           onEvent,
         );
         if (text !== undefined) finalText = text;
@@ -1939,6 +1985,7 @@ export class AgentRuntime {
     signal: AbortSignal,
     preRecordedControlMessages: Map<string, number>,
     modelContextEnvelope: ModelContextEnvelopeReceipt | undefined,
+    toolResultLifecycle: AgentToolResultLifecycle,
     onEvent?: EventSink,
   ): Promise<string | undefined> {
     if (event.type === "turn_start" || event.type === "turn_end") {
@@ -2021,9 +2068,9 @@ export class AgentRuntime {
           .map((block) => ({
             id: block.id,
             name: block.name,
-            arguments: toolCallArgumentsLedgerProjection(
-              block.name,
+            arguments: toolResultLifecycle.toolCallArguments(
               block.arguments,
+              toolCallArgumentsLedgerProjection(block.name, block.arguments),
             ),
           }));
         const hasToolCalls = toolCalls.length > 0;
@@ -2142,7 +2189,10 @@ export class AgentRuntime {
             ...(builtInToolEffect(event.toolName, event.args)
               ? { effect: builtInToolEffect(event.toolName, event.args)! }
               : {}),
-            ...toolInputLedgerProjection(event.toolName, event.args),
+            ...toolResultLifecycle.toolInput(
+              event.args,
+              toolInputLedgerProjection(event.toolName, event.args),
+            ),
           },
         },
         onEvent,
@@ -2151,6 +2201,12 @@ export class AgentRuntime {
     }
     if (event.type === "tool_execution_end") {
       const output = resultText(event.result);
+      const reusedProjection = toolResultLifecycle.reusedTerminalProjection(
+        event.toolCallId,
+      );
+      const outputProjection = reusedProjection
+        ? {}
+        : toolOutputLedgerProjection(event.toolName, output, event.result);
       await this.record(
         {
           threadId: run.threadId,
@@ -2164,10 +2220,15 @@ export class AgentRuntime {
             status: event.isError ? "failed" : "completed",
             outputTextSha256: sha256Text(output),
             outputTextBytes: Buffer.byteLength(output, "utf8"),
-            ...toolOutputLedgerProjection(event.toolName, output, event.result),
-            ...(event.result.details !== undefined
-              ? { details: toJsonValue(event.result.details) }
-              : {}),
+            ...(reusedProjection
+              ? reusedProjection
+              : {
+                  ...outputProjection,
+                  ...(!Object.hasOwn(outputProjection, "details") &&
+                  event.result.details !== undefined
+                    ? { details: toJsonValue(event.result.details) }
+                    : {}),
+                }),
           },
         },
         onEvent,

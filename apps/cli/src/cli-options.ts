@@ -1,4 +1,7 @@
-import type { ModelRef } from "@napier/contracts";
+import type {
+  AgentMessageExperimentToolResultMode,
+  ModelRef,
+} from "@napier/contracts";
 
 import {
   CHAT_VALUE_OPTIONS,
@@ -55,6 +58,7 @@ export interface CliAgentMessageExperimentOptions extends CliExecutionOptions {
   sourceRunId: string;
   sourceMessageSeq: number;
   title?: string;
+  toolResultMode?: AgentMessageExperimentToolResultMode;
   expectedPreviewSha256?: string;
   preview: boolean;
 }
@@ -155,6 +159,7 @@ const EXPERIMENT_VALUE_OPTIONS = new Set([
   "--message-seq",
   "--model",
   "--title",
+  "--tool-results",
   "--expected-preview",
   "--timeout-ms",
 ]);
@@ -415,6 +420,7 @@ function parseAgentMessageExperimentOptions(
     );
   }
   const model = optionalModelRef(values);
+  const toolResultMode = parseToolResultMode(values.get("--tool-results"));
   return {
     kind: "experiment",
     options: {
@@ -433,6 +439,7 @@ function parseAgentMessageExperimentOptions(
         : {}),
       ...(model ? { model } : {}),
       ...(title ? { title } : {}),
+      ...(toolResultMode ? { toolResultMode } : {}),
       ...(expectedPreviewSha256 ? { expectedPreviewSha256 } : {}),
     },
   };
@@ -758,6 +765,16 @@ function parseNonNegativeInteger(value: string, flag: string): number {
   return parsed;
 }
 
+function parseToolResultMode(
+  value: string | undefined,
+): AgentMessageExperimentToolResultMode | undefined {
+  if (value === undefined || value === "live") {
+    return value === undefined ? undefined : "live";
+  }
+  if (value === "reuse-source") return "reuse_source";
+  throw new Error("--tool-results must be live or reuse-source");
+}
+
 export const CLI_HELP = `Napier CLI ${CLI_VERSION}
 
 Usage:
@@ -817,6 +834,7 @@ Agent experiment options:
   --message-seq <n>      Exact source message Ledger sequence
   --model <provider/id>  Optional candidate model
   --title <text>         Optional isolated target title
+  --tool-results <mode>  live (default) or reuse-source
   --preview              Preview frozen inputs without mutation
   --expected-preview     Required preview SHA-256 for execution
   --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})

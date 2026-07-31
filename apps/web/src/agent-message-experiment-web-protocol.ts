@@ -52,6 +52,9 @@ export async function validateAgentMessageExperimentPreview(
     "targetExecutionMode",
     "targetToolNames",
     "sourceToolEffects",
+    "toolResultMode",
+    "sourceReusableToolResultCount",
+    "sourceToolResultSetSha256",
     "previewSha256",
   ]);
   const sourceModel = validateModel(preview["sourceModel"], "source model");
@@ -65,7 +68,7 @@ export async function validateAgentMessageExperimentPreview(
   );
   if (
     preview["kind"] !== "napier.agent-message-experiment-preview" ||
-    preview["schemaVersion"] !== 1 ||
+    preview["schemaVersion"] !== 2 ||
     !threadId(preview["sourceThreadId"]) ||
     !runId(preview["sourceRunId"]) ||
     !positiveInteger(preview["sourceMessageSeq"]) ||
@@ -83,11 +86,17 @@ export async function validateAgentMessageExperimentPreview(
       "sourceMemoryContextSha256",
       "sourceSkillCatalogSha256",
       "candidateWorkspaceSnapshotSha256",
+      "sourceToolResultSetSha256",
       "previewSha256",
     ]) ||
     !nonNegativeInteger(preview["sourceHistoryMessageCount"]) ||
     !nonNegativeInteger(preview["candidateWorkspaceFileCount"]) ||
     !nonNegativeInteger(preview["candidateWorkspaceBytes"]) ||
+    !nonNegativeInteger(preview["sourceReusableToolResultCount"]) ||
+    (preview["toolResultMode"] !== "live" &&
+      preview["toolResultMode"] !== "reuse_source") ||
+    (preview["toolResultMode"] === "reuse_source" &&
+      Number(preview["sourceReusableToolResultCount"]) < 1) ||
     preview["targetExecutionMode"] !== "agent_experiment_read_only"
   ) {
     throw new Error("Agent message experiment preview is invalid");
@@ -119,6 +128,7 @@ export async function validateAgentMessageExperimentResult(
       "targetRunId",
       "status",
       "assistantText",
+      "toolResultReuse",
       "comparison",
     ],
     new Set(["assistantText"]),
@@ -129,10 +139,11 @@ export async function validateAgentMessageExperimentResult(
   const comparison = await validateAgentMessageExperimentComparison(
     result["comparison"],
   );
+  const toolResultReuse = validateToolResultReuse(result["toolResultReuse"]);
   const assistantText = result["assistantText"];
   if (
     result["kind"] !== "napier.agent-message-experiment-result" ||
-    result["schemaVersion"] !== 1 ||
+    result["schemaVersion"] !== 2 ||
     !threadId(result["targetThreadId"]) ||
     result["targetThreadId"] === preview.sourceThreadId ||
     !runId(result["targetRunId"]) ||
@@ -145,7 +156,13 @@ export async function validateAgentMessageExperimentResult(
     comparison.target.threadId !== result["targetThreadId"] ||
     comparison.target.runId !== result["targetRunId"] ||
     comparison.target.status !== result["status"] ||
-    comparison.target.executionMode !== "agent_experiment_read_only"
+    comparison.target.executionMode !== "agent_experiment_read_only" ||
+    toolResultReuse.mode !== preview.toolResultMode ||
+    toolResultReuse.sourceResultCount !==
+      preview.sourceReusableToolResultCount ||
+    toolResultReuse.sourceResultSetSha256 !==
+      preview.sourceToolResultSetSha256 ||
+    (result["status"] === "completed" && !toolResultReuse.complete)
   ) {
     throw new Error("Agent message experiment result binding is invalid");
   }
@@ -161,7 +178,46 @@ export async function validateAgentMessageExperimentResult(
     ...(structuredClone(result) as unknown as AgentMessageExperimentResult),
     preview,
     comparison,
+    toolResultReuse,
   };
+}
+
+function validateToolResultReuse(
+  input: unknown,
+): AgentMessageExperimentResult["toolResultReuse"] {
+  const value = record(input, "Agent message experiment tool result reuse");
+  exactKeys(value, [
+    "mode",
+    "sourceResultCount",
+    "reusedResultCount",
+    "divergenceCount",
+    "complete",
+    "sourceResultSetSha256",
+    "targetReuseSetSha256",
+  ]);
+  if (
+    (value["mode"] !== "live" && value["mode"] !== "reuse_source") ||
+    !nonNegativeInteger(value["sourceResultCount"]) ||
+    !nonNegativeInteger(value["reusedResultCount"]) ||
+    Number(value["reusedResultCount"]) > Number(value["sourceResultCount"]) ||
+    !nonNegativeInteger(value["divergenceCount"]) ||
+    typeof value["complete"] !== "boolean" ||
+    !hash(value["sourceResultSetSha256"]) ||
+    !hash(value["targetReuseSetSha256"]) ||
+    (value["mode"] === "live" &&
+      (value["reusedResultCount"] !== 0 ||
+        value["divergenceCount"] !== 0 ||
+        value["complete"] !== true)) ||
+    (value["mode"] === "reuse_source" &&
+      value["complete"] !==
+        (value["divergenceCount"] === 0 &&
+          value["reusedResultCount"] === value["sourceResultCount"]))
+  ) {
+    throw new Error("Agent message experiment tool result reuse is invalid");
+  }
+  return structuredClone(
+    value,
+  ) as unknown as AgentMessageExperimentResult["toolResultReuse"];
 }
 
 export async function validateAgentMessageExperimentResultFrame(

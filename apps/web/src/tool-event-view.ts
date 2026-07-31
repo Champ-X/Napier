@@ -197,15 +197,21 @@ export interface ToolEventTraceView
   readLineAnchorSetSha256?: string;
   sourceRunId?: string;
   sourceCallId?: string;
+  targetCallId?: string;
   targetExecutionMode?: string;
   outputChanged?: boolean;
   durationMsDelta?: number;
   previewSha256?: string;
   comparisonSha256?: string;
+  resultSha256?: string;
+  resultCapsuleSha256?: string;
+  sourceToolResultSetSha256?: string;
+  resultReused?: boolean;
+  resultError?: boolean;
 }
 
 const TOOL_EVENT_PATTERN =
-  /^tool\.(started|completed|failed|blocked|experiment\.(started|compared))$/u;
+  /^tool\.(started|completed|failed|blocked|experiment\.(started|compared)|result_reused|result_reuse\.blocked)$/u;
 const TOOL_NAME = /^[A-Za-z0-9_.:-]{1,160}$/u;
 const STATUS = /^[A-Za-z0-9_.:-]{1,64}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
@@ -332,6 +338,7 @@ export function toolEventTraceView(
     ...(readEvidence ? readEvidence : {}),
     ...safeStatusField(event.payload, "sourceRunId"),
     ...safeStatusField(event.payload, "sourceCallId"),
+    ...safeStatusField(event.payload, "targetCallId"),
     ...safeStatusField(event.payload, "targetExecutionMode"),
     ...(typeof event.payload["outputChanged"] === "boolean"
       ? { outputChanged: event.payload["outputChanged"] }
@@ -339,6 +346,13 @@ export function toolEventTraceView(
     ...signedIntegerField(event.payload, "durationMsDelta"),
     ...shaViewField(event.payload, "previewSha256"),
     ...shaViewField(event.payload, "comparisonSha256"),
+    ...shaViewField(event.payload, "resultSha256"),
+    ...shaViewField(event.payload, "resultCapsuleSha256"),
+    ...shaViewField(event.payload, "sourceToolResultSetSha256"),
+    ...(event.payload["resultReused"] === true ? { resultReused: true } : {}),
+    ...(typeof event.payload["isError"] === "boolean"
+      ? { resultError: event.payload["isError"] }
+      : {}),
   };
 }
 
@@ -637,6 +651,9 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
       : []),
     ...(view.sourceRunId ? [`source ${view.sourceRunId.slice(-10)}`] : []),
     ...(view.sourceCallId ? [`call ${view.sourceCallId.slice(-10)}`] : []),
+    ...(view.targetCallId
+      ? [`target-call ${view.targetCallId.slice(-10)}`]
+      : []),
     ...(view.targetExecutionMode ? [`mode ${view.targetExecutionMode}`] : []),
     ...(view.outputChanged !== undefined
       ? [`output-changed ${view.outputChanged}`]
@@ -650,6 +667,17 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.comparisonSha256
       ? [`comparison ${view.comparisonSha256.slice(0, 12)}`]
       : []),
+    ...(view.resultSha256 ? [`result ${view.resultSha256.slice(0, 12)}`] : []),
+    ...(view.resultCapsuleSha256
+      ? [`result-capsule ${view.resultCapsuleSha256.slice(0, 12)}`]
+      : []),
+    ...(view.sourceToolResultSetSha256
+      ? [`result-set ${view.sourceToolResultSetSha256.slice(0, 12)}`]
+      : []),
+    ...(view.resultReused ? ["reused"] : []),
+    ...(view.resultError !== undefined
+      ? [`result-error ${view.resultError}`]
+      : []),
   ].join(" / ");
 }
 
@@ -659,6 +687,8 @@ function statusFromEvent(event: RunEvent): string | undefined {
   if (event.type === "tool.failed") return "failed";
   if (event.type === "tool.blocked") return "blocked";
   if (event.type === "tool.experiment.started") return "started";
+  if (event.type === "tool.result_reused") return "reused";
+  if (event.type === "tool.result_reuse.blocked") return "blocked";
   return undefined;
 }
 

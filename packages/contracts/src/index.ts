@@ -1113,17 +1113,20 @@ export interface AgentMessageExperimentToolEffects {
   unknownToolNames: string[];
 }
 
+export type AgentMessageExperimentToolResultMode = "live" | "reuse_source";
+
 export interface CreateAgentMessageExperimentRequest {
   sourceRunId: string;
   sourceMessageSeq: number;
   model?: ModelRef;
   title?: string;
+  toolResultMode?: AgentMessageExperimentToolResultMode;
   expectedPreviewSha256?: string;
 }
 
 export interface AgentMessageExperimentPreview {
   kind: "napier.agent-message-experiment-preview";
-  schemaVersion: 1;
+  schemaVersion: 2;
   sourceThreadId: string;
   sourceRunId: string;
   sourceMessageSeq: number;
@@ -1145,6 +1148,9 @@ export interface AgentMessageExperimentPreview {
   targetExecutionMode: "agent_experiment_read_only";
   targetToolNames: string[];
   sourceToolEffects: AgentMessageExperimentToolEffects;
+  toolResultMode: AgentMessageExperimentToolResultMode;
+  sourceReusableToolResultCount: number;
+  sourceToolResultSetSha256: string;
   previewSha256: string;
 }
 
@@ -1175,13 +1181,24 @@ export interface AgentMessageExperimentComparison {
 
 export interface AgentMessageExperimentResult {
   kind: "napier.agent-message-experiment-result";
-  schemaVersion: 1;
+  schemaVersion: 2;
   preview: AgentMessageExperimentPreview;
   targetThreadId: string;
   targetRunId: string;
   status: TerminalRunStatus;
   assistantText?: string;
+  toolResultReuse: AgentMessageExperimentToolResultReuse;
   comparison: AgentMessageExperimentComparison;
+}
+
+export interface AgentMessageExperimentToolResultReuse {
+  mode: AgentMessageExperimentToolResultMode;
+  sourceResultCount: number;
+  reusedResultCount: number;
+  divergenceCount: number;
+  complete: boolean;
+  sourceResultSetSha256: string;
+  targetReuseSetSha256: string;
 }
 
 export type ModelInvocationPurpose =
@@ -1301,6 +1318,24 @@ export interface ToolInvocationCapsuleReceipt {
   toolDefinitionSha256: string;
   argumentsSha256: string;
   workspaceScopeSha256: string;
+  capsuleSha256: string;
+  capsuleBytes: number;
+  storage: "local_only";
+  contentSha256: string;
+}
+
+export interface ToolInvocationResultCapsuleReceipt {
+  kind: "napier.tool-invocation-result-capsule-receipt";
+  schemaVersion: 1;
+  callId: string;
+  toolName: string;
+  invocationCapsuleSha256: string;
+  toolDefinitionSha256: string;
+  argumentsSha256: string;
+  isError: boolean;
+  resultSha256: string;
+  outputTextSha256: string;
+  outputTextBytes: number;
   capsuleSha256: string;
   capsuleBytes: number;
   storage: "local_only";

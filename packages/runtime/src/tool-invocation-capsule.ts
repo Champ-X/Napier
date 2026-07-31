@@ -248,6 +248,10 @@ export function toolDefinitionSha256(
   );
 }
 
+export function toolInvocationArgumentsSha256(argumentsValue: unknown): string {
+  return sha256(canonicalJson(normalizeJson(argumentsValue)));
+}
+
 function workspaceScopeFromArguments(argumentsValue: JsonValue): string {
   const value = record(argumentsValue, "Tool invocation arguments");
   const scope = value["path"] === undefined ? "." : value["path"];

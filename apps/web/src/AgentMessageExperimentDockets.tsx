@@ -89,6 +89,11 @@ export function AgentMessageExperimentPreviewDocket({
           label={copy.configurationBinding}
           hash={preview.sourceRunConfigurationSha256}
         />
+        <EvidenceReceipt
+          label={copy.toolResultBinding}
+          value={`${preview.toolResultMode} / ${preview.sourceReusableToolResultCount} ${copy.reusableResults}`}
+          hash={preview.sourceToolResultSetSha256}
+        />
       </dl>
       <footer>
         <code title={preview.previewSha256}>
@@ -151,6 +156,10 @@ export function AgentMessageExperimentComparisonDocket({
         <Metric
           label={copy.cost}
           value={`${signed(comparison.costUsdDelta, undefined, 6)} USD`}
+        />
+        <Metric
+          label={copy.reusedResults}
+          value={`${result.experiment.toolResultReuse.reusedResultCount}/${result.experiment.toolResultReuse.sourceResultCount} / ${result.experiment.toolResultReuse.divergenceCount} ${copy.divergence}`}
         />
       </div>
       <div className="agent-experiment-model-delta">

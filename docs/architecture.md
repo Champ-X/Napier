@@ -643,7 +643,11 @@ terminal source=user Run + exact message.user sequence
   -> create an isolated Branch immediately before the selected message
   -> copy visible messages plus hidden Goal continuation prompts in source order
   -> recompute the materialized history hash before any target model call
+  -> optionally require a complete ordered local-only source tool-result set
   -> execute through AgentRuntime as agent_experiment_read_only
+  -> in reuse_source mode, match tool implementation + arguments in source order
+  -> return the captured result through Pi without invoking the real tool body
+  -> fail the target on divergence, missing results, or incomplete consumption
   -> compare source/target status, configuration, output hash, latency, usage,
      cost, tool names, and tool effects
   -> emit target snapshot + agent_message_experiment_result
@@ -656,6 +660,29 @@ resolution timestamp. Store requires the package-internal experiment
 capability, exact cross-Thread Branch lineage, source Run/message/configuration,
 Agent revision, and current Skill/Prompt hashes before creating the target
 Run. A caller cannot obtain the mode by submitting its public string.
+
+Normal eligible tool calls write exact arguments before execution and exact
+model-visible results after settlement to separate local private stores.
+`AgentToolResultLifecycle` owns capture, replay wrapping, and result evidence
+outside the oversized Agent Runtime. Result capsules contain only text content,
+JSON details, optional tool usage/additions, and source error state; images,
+functions, non-JSON values, and runtime-only termination hints are rejected.
+They use `0700`/`0600` confinement, atomic no-overwrite installation,
+serialized capacity admission, a 1 MiB object limit, and a 512-object /
+128 MiB store bound. Capture failure emits a bounded
+`context.tool_result_unavailable` receipt and never alters the live call.
+
+`reuse_source` preview requires every source tool observation to be one of the
+ten eligible stateless reads with a matching input receipt, result receipt,
+terminal event, and readable local result capsule. The ordered result set is
+bound into preview schema 2 and the Store run gate. Pi preflights parallel
+batches sequentially, so `FrozenToolResultReplayController` reserves exact
+tool/implementation/argument matches in model source order before wrapped
+executors run. Reused results preserve the source `isError` state and append
+`tool.result_reused`; candidate arguments and terminal results stay hash-only
+in the target Ledger. Any mismatch blocks the current call, stops before a
+follow-up provider request, and fails the Run when the complete result set
+cannot be proven consumed. No mismatch can fall back to the real tool.
 
 Preview and execution are shared by `napier experiment`, HTTP SSE, the lazy
 Run Lab experiment desk, TypeScript SDK, and local stdio RPC. Cancellation or
@@ -740,7 +767,9 @@ admitted built-in read-only Agent tool call
   -> bind Agent revision, tool name/Schema, arguments, and workspace scope
   -> write one permission-restricted local capsule
   -> append context.tool_invocation with receipt hashes and size only
-  -> execute the original tool and append result hash/bytes
+  -> execute the original tool
+  -> write its exact model-visible result to a separate local-only capsule
+  -> append context.tool_result plus terminal result hashes/bytes
 select terminal source Run + exact call ID
   -> require one receipt, one preceding start, and one following completion
   -> load and revalidate the local capsule
@@ -787,8 +816,9 @@ target, never a workspace mutation. Cancellation settles a cancelled target;
 generic and automatic recovery reject experiment Runs so retry starts from the
 source checkpoint. Runtime, CLI JSONL, HTTP/SSE, TypeScript SDK, local stdio
 RPC, lazy Run Lab, and privacy-bounded Web Trace consume this same path.
-Write/session checkpoints, historical result reuse, simulation, environment
-restoration, batch experiments, and promotion remain separate work.
+Message experiments can reuse exact historical results for this stateless
+read-only subset. Write/session result simulation, environment restoration,
+batch experiments, and promotion remain separate work.
 
 The tool-call desk remains inside the lazy Run Lab boundary. Its independent
 protocol parser requires exact fields and recomputes preview, source/target
@@ -5486,7 +5516,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has fifty-five parts:
+The current boundary has fifty-six parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5704,6 +5734,11 @@ The current boundary has fifty-five parts:
     tool call and zero model calls, source/target comparison,
     CLI/HTTP/SDK/RPC/Web delivery, independently verified browser protocol,
     and argument/path/output-body-free Replay/Trace projections.
+56. Frozen historical results inside Agent message experiments for the same
+    ten stateless read-only tools, with post-settlement local result capsules,
+    exact ordered implementation/argument matching, zero live-tool fallback,
+    preserved source error state, divergence failure, shared
+    Web/CLI/HTTP/SDK/RPC delivery, and body-free Ledger/Replay/Trace evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5754,10 +5789,9 @@ deferred until the local P0-P9 product loop is stable.
   single-node tests and breakpoints, external Agent adapters, artifact
   settlement, and a visual builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only
-  tool-call re-execution with Web/RPC tool access, stateful/write checkpoints,
-  side-effect result reuse/simulation, Prompt/Skill/Memory/environment
-  replacement, batch experiments, interactive root-cause views, and evaluation
-  promotion.
+  tool-call re-execution with stateful/write checkpoints and result simulation,
+  Prompt/Skill/Memory/environment replacement, batch experiments, interactive
+  root-cause views, and evaluation promotion.
 
 ### Layer 3: Product and outcome proof
 

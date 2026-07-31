@@ -46,9 +46,10 @@ export function validateCreateAgentMessageExperimentRequest(
       "sourceMessageSeq",
       "model",
       "title",
+      "toolResultMode",
       "expectedPreviewSha256",
     ],
-    new Set(["model", "title", "expectedPreviewSha256"]),
+    new Set(["model", "title", "toolResultMode", "expectedPreviewSha256"]),
   );
   if (
     typeof request["sourceRunId"] !== "string" ||
@@ -63,6 +64,14 @@ export function validateCreateAgentMessageExperimentRequest(
       : validateModel(request["model"], "Agent message experiment model");
   const title =
     request["title"] === undefined ? undefined : boundedTitle(request["title"]);
+  const toolResultMode = request["toolResultMode"];
+  if (
+    toolResultMode !== undefined &&
+    toolResultMode !== "live" &&
+    toolResultMode !== "reuse_source"
+  ) {
+    throw new Error("Agent message experiment tool result mode is invalid");
+  }
   const expectedPreviewSha256 = request["expectedPreviewSha256"];
   if (
     expectedPreviewSha256 !== undefined &&
@@ -76,6 +85,7 @@ export function validateCreateAgentMessageExperimentRequest(
     sourceMessageSeq: Number(request["sourceMessageSeq"]),
     ...(model ? { model } : {}),
     ...(title ? { title } : {}),
+    ...(toolResultMode ? { toolResultMode } : {}),
     ...(typeof expectedPreviewSha256 === "string"
       ? { expectedPreviewSha256 }
       : {}),
@@ -110,11 +120,14 @@ export function validateAgentMessageExperimentPreview(
     "targetExecutionMode",
     "targetToolNames",
     "sourceToolEffects",
+    "toolResultMode",
+    "sourceReusableToolResultCount",
+    "sourceToolResultSetSha256",
     "previewSha256",
   ]);
   if (
     preview["kind"] !== "napier.agent-message-experiment-preview" ||
-    preview["schemaVersion"] !== 1 ||
+    preview["schemaVersion"] !== 2 ||
     !threadId(preview["sourceThreadId"]) ||
     !runId(preview["sourceRunId"]) ||
     !positiveInteger(preview["sourceMessageSeq"]) ||
@@ -135,11 +148,17 @@ export function validateAgentMessageExperimentPreview(
       "sourceMemoryContextSha256",
       "sourceSkillCatalogSha256",
       "candidateWorkspaceSnapshotSha256",
+      "sourceToolResultSetSha256",
       "previewSha256",
     ]) ||
     !nonNegativeInteger(preview["sourceHistoryMessageCount"]) ||
     !nonNegativeInteger(preview["candidateWorkspaceFileCount"]) ||
     !nonNegativeInteger(preview["candidateWorkspaceBytes"]) ||
+    !nonNegativeInteger(preview["sourceReusableToolResultCount"]) ||
+    (preview["toolResultMode"] !== "live" &&
+      preview["toolResultMode"] !== "reuse_source") ||
+    (preview["toolResultMode"] === "reuse_source" &&
+      Number(preview["sourceReusableToolResultCount"]) < 1) ||
     preview["targetExecutionMode"] !== "agent_experiment_read_only"
   ) {
     throw new Error("Agent message experiment preview is invalid");
@@ -183,6 +202,7 @@ export function validateAgentMessageExperimentResult(
       "targetRunId",
       "status",
       "assistantText",
+      "toolResultReuse",
       "comparison",
     ],
     new Set(["assistantText"]),
@@ -191,9 +211,10 @@ export function validateAgentMessageExperimentResult(
   const comparison = validateAgentMessageExperimentComparison(
     result["comparison"],
   );
+  const toolResultReuse = validateToolResultReuse(result["toolResultReuse"]);
   if (
     result["kind"] !== "napier.agent-message-experiment-result" ||
-    result["schemaVersion"] !== 1 ||
+    result["schemaVersion"] !== 2 ||
     !threadId(result["targetThreadId"]) ||
     !runId(result["targetRunId"]) ||
     !TERMINAL_RUN_STATUSES.has(String(result["status"])) ||
@@ -205,11 +226,58 @@ export function validateAgentMessageExperimentResult(
     comparison.target.threadId !== result["targetThreadId"] ||
     comparison.target.runId !== result["targetRunId"] ||
     comparison.target.status !== result["status"] ||
-    comparison.target.executionMode !== "agent_experiment_read_only"
+    comparison.target.executionMode !== "agent_experiment_read_only" ||
+    toolResultReuse.mode !== preview.toolResultMode ||
+    toolResultReuse.sourceResultCount !==
+      preview.sourceReusableToolResultCount ||
+    toolResultReuse.sourceResultSetSha256 !==
+      preview.sourceToolResultSetSha256 ||
+    (result["status"] === "completed" && !toolResultReuse.complete)
   ) {
     throw new Error("Agent message experiment result binding is invalid");
   }
-  return structuredClone(input) as AgentMessageExperimentResult;
+  return {
+    ...(structuredClone(input) as AgentMessageExperimentResult),
+    toolResultReuse,
+  };
+}
+
+function validateToolResultReuse(
+  input: unknown,
+): AgentMessageExperimentResult["toolResultReuse"] {
+  const value = record(input, "Agent message experiment tool result reuse");
+  exactKeys(value, [
+    "mode",
+    "sourceResultCount",
+    "reusedResultCount",
+    "divergenceCount",
+    "complete",
+    "sourceResultSetSha256",
+    "targetReuseSetSha256",
+  ]);
+  if (
+    (value["mode"] !== "live" && value["mode"] !== "reuse_source") ||
+    !nonNegativeInteger(value["sourceResultCount"]) ||
+    !nonNegativeInteger(value["reusedResultCount"]) ||
+    Number(value["reusedResultCount"]) > Number(value["sourceResultCount"]) ||
+    !nonNegativeInteger(value["divergenceCount"]) ||
+    typeof value["complete"] !== "boolean" ||
+    !hash(value["sourceResultSetSha256"]) ||
+    !hash(value["targetReuseSetSha256"]) ||
+    (value["mode"] === "live" &&
+      (value["reusedResultCount"] !== 0 ||
+        value["divergenceCount"] !== 0 ||
+        value["complete"] !== true)) ||
+    (value["mode"] === "reuse_source" &&
+      value["complete"] !==
+        (value["divergenceCount"] === 0 &&
+          value["reusedResultCount"] === value["sourceResultCount"]))
+  ) {
+    throw new Error("Agent message experiment tool result reuse is invalid");
+  }
+  return structuredClone(
+    value,
+  ) as unknown as AgentMessageExperimentResult["toolResultReuse"];
 }
 
 export function createAgentMessageExperimentResultFrame(
@@ -346,6 +414,10 @@ function hashFields(value: Record<string, unknown>, fields: string[]): boolean {
   return fields.every(
     (field) => typeof value[field] === "string" && HASH.test(value[field]),
   );
+}
+
+function hash(value: unknown): value is string {
+  return typeof value === "string" && HASH.test(value);
 }
 
 function threadId(value: unknown): value is string {

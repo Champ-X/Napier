@@ -362,7 +362,8 @@ function toolCallSha256FromLedger(
 ): string | undefined {
   if (
     record(args) &&
-    args["kind"] === "napier.redacted-tool-arguments" &&
+    (args["kind"] === "napier.redacted-tool-arguments" ||
+      args["kind"] === "napier.private-workspace-read-arguments") &&
     args["schemaVersion"] === 1 &&
     args["redacted"] === true &&
     typeof args["inputSha256"] === "string" &&

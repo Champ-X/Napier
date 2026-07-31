@@ -115,12 +115,14 @@ describe("Napier JSON-RPC protocol", () => {
         sourceRunId: "run_abcdefgh",
         sourceMessageSeq: 12,
         model: { provider: "napier", id: "demo" },
+        toolResultMode: "reuse_source",
       }),
     ).toEqual({
       sourceThreadId: "thread_example",
       sourceRunId: "run_abcdefgh",
       sourceMessageSeq: 12,
       model: { provider: "napier", id: "demo" },
+      toolResultMode: "reuse_source",
     });
     expect(
       parseAgentMessageExperimentRunParams({

@@ -61,10 +61,14 @@ Version `0.1.0` includes:
   optional model replacement. CLI JSONL, HTTP SSE, TypeScript SDK, and local
   stdio RPC return a hash-bound source/target status, configuration, latency,
   usage, cost, output, and tool comparison while experiment-specific Ledger
-  and Trace evidence remains prompt/result-body-free. A lazy Run Lab desk adds
-  browser-independent hash validation, explicit cancellation, bounded
-  comparison, target navigation, and deliberate result download without
-  adding the experiment client to the main Workbench bundle;
+  and Trace evidence remains prompt/result-body-free. An optional
+  `reuse_source` mode supplies exact captured results for the source Run's
+  stateless read-only tools without executing their bodies; any changed,
+  reordered, missing, extra, or partially consumed call fails the isolated
+  target. A lazy Run Lab desk adds browser-independent hash validation,
+  explicit cancellation, bounded comparison, target navigation, and deliberate
+  result download without adding the experiment client to the main Workbench
+  bundle;
 - controlled single-model-invocation experiments for provider-backed Agent
   calls. Primary turns, compaction, Goal evaluation, and Memory extraction
   capture the exact Pi provider Context plus safe sampling options in a
@@ -618,10 +622,11 @@ uses `0700`/`0600` permissions, atomic no-overwrite installation, serialized
 capacity admission, and post-install validation; tool capsules are limited to
 512 KiB each and 512 objects / 64 MiB total.
 
-This slice does not allow Extensions, Browser, shell/Process, Kernel, Debugger,
-stateful Session, write, or unknown-effect tools. It does not yet provide
-historical result reuse, side-effect simulation, write-capable experiments,
-environment restoration, batch execution, or experiment promotion.
+This standalone tool-call slice does not allow Extensions, Browser,
+shell/Process, Kernel, Debugger, stateful Session, write, or unknown-effect
+tools. Historical result reuse is available only inside controlled Agent
+message experiments; write/session result simulation, environment restoration,
+batch execution, and experiment promotion remain open.
 
 Local stdio RPC exposes `napier/tool/experiment/preview` and
 `napier/tool/experiment/run` with the same request-bound events, stale-preview
@@ -3135,6 +3140,29 @@ lineage, Agent revision, Skill/Prompt configuration, and parent Run before
 creation. Experiment-specific Trace summaries expose only safe IDs, statuses,
 metric deltas, models, counts, and hash prefixes.
 
+Every eligible source call now captures its exact model-visible result after
+tool settlement into a second local-only CAS. `context.tool_result` contains
+only the input-capsule, implementation, argument, result, output, and capsule
+hashes plus bounded byte/status metadata. Result capsules use `0700`/`0600`
+permissions, reject symlinks and permission drift, cap each object at 1 MiB,
+and bound storage to 512 objects / 128 MiB. Capture failure never changes the
+original tool outcome. The public Ledger projection for all ten eligible tools
+also redacts arguments, paths, rows, source, matches, symbols, and output text
+while preserving safe counts, ranges, formats, truncation state, and hashes.
+
+Message experiments accept `toolResultMode=live` by default or
+`reuse_source`. Frozen mode requires complete local result coverage for every
+source tool call and binds the ordered set into preview schema 2. Candidate
+preflight is sequential even when Pi executes the approved batch in parallel:
+tool name, current implementation hash, and normalized arguments must match the
+next source result exactly. The wrapped tool returns that capsule result
+without invoking its real body, preserves source error state, and records
+`tool.result_reused` before the normal hash-only terminal event. Divergence,
+missing/exposed/tampered capsules, extra calls, or unconsumed source results
+settle the target as failed; there is no live fallback. Interrupted experiment
+Runs must start a new Branch from the source checkpoint rather than generic
+resume.
+
 `ModelInvocationExperimentRuntime` adds a narrower model-call checkpoint that
 does not enter `AgentRuntime`:
 
@@ -3188,17 +3216,20 @@ deltas, source/target model and output bindings, streamed event hashes, the
 final Snapshot, and complete event-stream hash. Provider Context, raw thinking,
 source/candidate text, and tool arguments never render in the desk. Read-only
 tool-call Web/RPC integration uses its own stricter call/output protocol;
-result reuse/simulation, batch experiments, and experiment promotion remain
-open.
+standalone model/tool result reuse, write/session simulation, batch
+experiments, and experiment promotion remain open.
 
 The lazy Run Lab message experiment desk consumes these same routes. It lists
 only terminal modern user-message checkpoints by Run/model/sequence metadata,
-never prompt text; supports an optional configured-model replacement, fresh
-preview, explicit in-flight cancellation, comparison, target navigation, and
-CAS-named result download. The browser independently rechecks exact protocol
-fields, preview/comparison/frame hashes, metric deltas, output-hash state, tool
-set changes, streamed event hashes, final Snapshot binding, and complete event
-stream hash. Self-consistently rehashed semantic drift still fails closed.
+never prompt text; supports an optional configured-model replacement, live or
+frozen source-tool results, fresh preview, explicit in-flight cancellation,
+comparison, target navigation, and CAS-named result download. Preview and
+comparison show reusable/reused/divergent counts and result-set hashes without
+result bodies. The browser independently rechecks exact protocol fields,
+preview/comparison/frame hashes, metric and reuse consistency, output-hash
+state, tool-set changes, streamed event hashes, final Snapshot binding, and
+complete event-stream hash. Self-consistently rehashed semantic drift still
+fails closed.
 
 The lazy Plan Workbench experiment desk consumes those same routes rather than
 implementing a browser scheduler. Uploaded Manifest text remains browser-local
@@ -3232,9 +3263,10 @@ and typed equality guards. Stateful session Tool nodes, write-capable Map,
 multi-way switch, loops, compensation, per-node breakpoints, adapter runtimes,
 artifact settlement, and a visual builder remain open. Checkpoint experiments
 now provide single-call execution for an explicit stateless read-only built-in
-subset, but do not provide stateful/write tool stepping, result reuse,
-side-effect simulation, Prompt/Skill/Memory replacement, batch experiments, an
-interactive root-cause timeline, or Evaluation promotion. The opt-in DeepSeek
+subset, while message experiments can freeze captured results for that same
+subset. Stateful/write tool stepping or simulation, Prompt/Skill/Memory
+replacement, batch experiments, an interactive root-cause timeline, and
+Evaluation promotion remain open. The opt-in DeepSeek
 CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live

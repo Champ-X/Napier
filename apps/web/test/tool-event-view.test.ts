@@ -80,6 +80,38 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(compared)).not.toContain("TOP_SECRET");
   });
 
+  it("projects frozen tool result reuse without result bodies", () => {
+    const reused = toolEvent("tool.result_reused", {
+      sourceThreadId: "thread_source12345678",
+      sourceRunId: "run_source_12345678",
+      sourceCallId: "call_source_12345678",
+      targetCallId: "call_target_12345678",
+      toolName: "read_file",
+      resultReused: true,
+      isError: false,
+      resultSha256: "1".repeat(64),
+      resultCapsuleSha256: "2".repeat(64),
+      sourceToolResultSetSha256: "3".repeat(64),
+      result: "TOP_SECRET_RESULT",
+    });
+    const blocked = toolEvent("tool.result_reuse.blocked", {
+      sourceRunId: "run_source_12345678",
+      callId: "call_target_12345678",
+      toolName: "search_files",
+      status: "blocked",
+      sourceToolResultSetSha256: "3".repeat(64),
+      arguments: { query: "TOP_SECRET_QUERY" },
+    });
+    expect(toolEventTraceSummary(reused)).toContain(
+      `tool / read_file / reused / source e_12345678 / call e_12345678 / target-call t_12345678 / result ${"1".repeat(12)} / result-capsule ${"2".repeat(12)} / result-set ${"3".repeat(12)} / reused / result-error false`,
+    );
+    expect(toolEventTraceSummary(blocked)).toContain(
+      `tool / search_files / blocked / source e_12345678 / result-set ${"3".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(reused)).not.toContain("TOP_SECRET");
+    expect(toolEventTraceSummary(blocked)).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes list_files entry evidence without listed paths", () => {
     const event = toolEvent("tool.completed", {
       toolName: "list_files",

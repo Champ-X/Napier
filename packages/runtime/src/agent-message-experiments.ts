@@ -8,6 +8,11 @@ import type {
 } from "@napier/contracts";
 
 import type { AgentRuntime, EventSink } from "./agent-runtime.js";
+import {
+  AGENT_MESSAGE_TOOL_RESULT_REPLAY,
+  FrozenToolResultReplayController,
+  liveToolResultReuseSummary,
+} from "./agent-message-tool-result-replay.js";
 import { AGENT_MESSAGE_EXPERIMENT_EXECUTION } from "./agent-message-experiment-execution.js";
 import {
   agentMessageExperimentHistoryBinding,
@@ -82,6 +87,14 @@ export class AgentMessageExperimentRuntime {
     }
     await this.agents.modelRegistry.resolveConfigured(preview.targetModel);
     options.signal?.throwIfAborted();
+    const toolResultReplay =
+      preview.toolResultMode === "reuse_source"
+        ? new FrozenToolResultReplayController(
+            preview.sourceThreadId,
+            preview.sourceRunId,
+            source.frozenToolResults,
+          )
+        : undefined;
     const branch = await createThreadBranch(
       this.store,
       options.sourceThreadId,
@@ -131,7 +144,13 @@ export class AgentMessageExperimentRuntime {
           sourcePromptSha256: preview.sourcePromptSha256,
           candidateWorkspaceSnapshotSha256:
             preview.candidateWorkspaceSnapshotSha256,
+          toolResultMode: preview.toolResultMode,
+          sourceReusableToolResultCount: preview.sourceReusableToolResultCount,
+          sourceToolResultSetSha256: preview.sourceToolResultSetSha256,
         },
+        ...(toolResultReplay
+          ? { [AGENT_MESSAGE_TOOL_RESULT_REPLAY]: toolResultReplay }
+          : {}),
         ...(options.signal ? { signal: options.signal } : {}),
         onRunCreated: async (run) => {
           targetRun = run;
@@ -158,6 +177,10 @@ export class AgentMessageExperimentRuntime {
               sourceModel: `${preview.sourceModel.provider}/${preview.sourceModel.id}`,
               targetModel: `${preview.targetModel.provider}/${preview.targetModel.id}`,
               targetExecutionMode: preview.targetExecutionMode,
+              toolResultMode: preview.toolResultMode,
+              sourceReusableToolResultCount:
+                preview.sourceReusableToolResultCount,
+              sourceToolResultSetSha256: preview.sourceToolResultSetSha256,
             },
           });
           await emit(options.onEvent, event);
@@ -169,6 +192,9 @@ export class AgentMessageExperimentRuntime {
         sourceRun: source.sourceRun,
         targetRun,
       });
+      const toolResultReuse =
+        toolResultReplay?.summary() ??
+        liveToolResultReuseSummary(source.frozenToolResults);
       if (
         comparison.target.executionMode !== "agent_experiment_read_only" ||
         comparison.target.toolEffects.writeCount > 0 ||
@@ -204,12 +230,19 @@ export class AgentMessageExperimentRuntime {
           toolCallCountDelta: comparison.metricDelta.toolCallCount,
           changedConfigurationFieldCount:
             comparison.configurationDelta.changedFields.length,
+          toolResultMode: toolResultReuse.mode,
+          sourceReusableToolResultCount: toolResultReuse.sourceResultCount,
+          reusedToolResultCount: toolResultReuse.reusedResultCount,
+          toolResultDivergenceCount: toolResultReuse.divergenceCount,
+          toolResultReuseComplete: toolResultReuse.complete,
+          sourceToolResultSetSha256: toolResultReuse.sourceResultSetSha256,
+          targetToolResultReuseSetSha256: toolResultReuse.targetReuseSetSha256,
         },
       });
       await emit(options.onEvent, compared);
       return validateAgentMessageExperimentResult({
         kind: "napier.agent-message-experiment-result",
-        schemaVersion: 1,
+        schemaVersion: 2,
         preview,
         targetThreadId: targetRun.threadId,
         targetRunId: targetRun.id,
@@ -218,6 +251,7 @@ export class AgentMessageExperimentRuntime {
           await this.store.listEvents(targetRun.threadId),
           targetRun,
         ),
+        toolResultReuse,
         comparison,
       });
     } catch (error) {
@@ -249,6 +283,7 @@ export class AgentMessageExperimentRuntime {
   ): Promise<AgentMessageExperimentSource> {
     return projectAgentMessageExperimentSource(
       this.store,
+      this.agents.toolInvocationResultCapsules,
       sourceThreadId,
       request,
     );

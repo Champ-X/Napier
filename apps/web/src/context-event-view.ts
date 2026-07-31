@@ -20,9 +20,11 @@ export interface ContextEventTraceView {
   systemPromptBytes?: number;
   turnIndex?: number;
   capsuleBytes?: number;
+  outputTextBytes?: number;
   count?: number;
   truncated?: boolean;
   enabled?: boolean;
+  isError?: boolean;
   threshold?: number;
   exemptToolCount?: number;
   fromSeq?: number;
@@ -74,13 +76,16 @@ export interface ContextEventTraceView {
   contextEnvelopeSha256?: string;
   contextSha256?: string;
   capsuleSha256?: string;
+  invocationCapsuleSha256?: string;
+  resultSha256?: string;
+  outputTextSha256?: string;
   toolDefinitionSha256?: string;
   argumentsSha256?: string;
   workspaceScopeSha256?: string;
 }
 
 const CONTEXT_EVENT =
-  /^context\.(skills|prepared|memory|model_envelope|model_invocation(_unavailable)?|tool_invocation(_unavailable)?|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
+  /^context\.(skills|prepared|memory|model_envelope|model_invocation(_unavailable)?|tool_invocation(_unavailable)?|tool_result(_unavailable)?|prompt_variables|tool_loop_guard|delegation\.updated|milestones\.updated|compaction\.(started|completed|failed))$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 const SAFE_TOKEN = /^[A-Za-z0-9_.:-]{1,120}$/u;
 const CONTEXT_RECEIPT_SUMMARY = "context receipt";
@@ -127,9 +132,11 @@ export function contextEventTraceView(
     ...numberField(event.payload, "systemPromptBytes"),
     ...numberField(event.payload, "turnIndex"),
     ...numberField(event.payload, "capsuleBytes"),
+    ...numberField(event.payload, "outputTextBytes"),
     ...numberField(event.payload, "count"),
     ...booleanField(event.payload, "truncated"),
     ...booleanField(event.payload, "enabled"),
+    ...booleanField(event.payload, "isError"),
     ...numberField(event.payload, "threshold"),
     ...numberField(event.payload, "exemptToolCount"),
     ...numberField(event.payload, "fromSeq"),
@@ -181,6 +188,9 @@ export function contextEventTraceView(
     ...shaField(event.payload, "contextEnvelopeSha256"),
     ...shaField(event.payload, "contextSha256"),
     ...shaField(event.payload, "capsuleSha256"),
+    ...shaField(event.payload, "invocationCapsuleSha256"),
+    ...shaField(event.payload, "resultSha256"),
+    ...shaField(event.payload, "outputTextSha256"),
     ...shaField(event.payload, "toolDefinitionSha256"),
     ...shaField(event.payload, "argumentsSha256"),
     ...shaField(event.payload, "workspaceScopeSha256"),
@@ -209,6 +219,10 @@ export function contextEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.capsuleBytes !== undefined
       ? [`capsule-bytes ${view.capsuleBytes}`]
       : []),
+    ...(view.outputTextBytes !== undefined
+      ? [`output-bytes ${view.outputTextBytes}`]
+      : []),
+    ...(view.isError !== undefined ? [`error ${view.isError}`] : []),
     ...(view.enabled !== undefined ? [`enabled ${view.enabled}`] : []),
     ...(view.threshold !== undefined ? [`threshold ${view.threshold}`] : []),
     ...(view.messageCount !== undefined
@@ -350,6 +364,9 @@ function hashSummaries(view: ContextEventTraceView): string[] {
     ...hashSummary("context-envelope", view.contextEnvelopeSha256),
     ...hashSummary("context", view.contextSha256),
     ...hashSummary("capsule", view.capsuleSha256),
+    ...hashSummary("invocation-capsule", view.invocationCapsuleSha256),
+    ...hashSummary("result", view.resultSha256),
+    ...hashSummary("output", view.outputTextSha256),
     ...hashSummary("tool-definition", view.toolDefinitionSha256),
     ...hashSummary("arguments", view.argumentsSha256),
     ...hashSummary("workspace-scope", view.workspaceScopeSha256),

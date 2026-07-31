@@ -58,6 +58,7 @@ export default function AgentMessageExperimentDesk({
     checkpoints.at(-1)?.key ?? "",
   );
   const [replaceModel, setReplaceModel] = useState(false);
+  const [reuseToolResults, setReuseToolResults] = useState(false);
   const [title, setTitle] = useState("");
   const [previewState, setPreviewState] = useState<PreviewState>();
   const [result, setResult] = useState<AgentMessageExperimentResultFrame>();
@@ -79,6 +80,7 @@ export default function AgentMessageExperimentDesk({
     operationGeneration.current += 1;
     setCheckpointKey(checkpoints.at(-1)?.key ?? "");
     setReplaceModel(false);
+    setReuseToolResults(false);
     setTitle("");
     setPreviewState(undefined);
     setResult(undefined);
@@ -158,6 +160,7 @@ export default function AgentMessageExperimentDesk({
       ...(replaceModel
         ? { model: parseAgentExperimentModelKey(selectedModelKey) }
         : {}),
+      ...(reuseToolResults ? { toolResultMode: "reuse_source" as const } : {}),
       ...(normalizedTitle ? { title: normalizedTitle } : {}),
     };
   };
@@ -239,6 +242,7 @@ export default function AgentMessageExperimentDesk({
   const reset = (): void => {
     invalidatePreview();
     setReplaceModel(false);
+    setReuseToolResults(false);
     setTitle("");
     setError(undefined);
   };
@@ -313,6 +317,24 @@ export default function AgentMessageExperimentDesk({
             <small>{copy.modelOverride}</small>
             <strong>
               {replaceModel ? selectedModelKey : copy.modelOriginal}
+            </strong>
+          </span>
+        </label>
+
+        <label className="agent-experiment-model">
+          <input
+            type="checkbox"
+            checked={reuseToolResults}
+            disabled={!checkpoint || Boolean(busy)}
+            onChange={(event) => {
+              setReuseToolResults(event.target.checked);
+              invalidatePreview();
+            }}
+          />
+          <span>
+            <small>{copy.toolResults}</small>
+            <strong>
+              {reuseToolResults ? copy.toolResultsFrozen : copy.toolResultsLive}
             </strong>
           </span>
         </label>

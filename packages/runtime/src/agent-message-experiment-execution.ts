@@ -11,4 +11,7 @@ export interface AgentMessageExperimentExecution {
   previewSha256: string;
   sourcePromptSha256: string;
   candidateWorkspaceSnapshotSha256: string;
+  toolResultMode: "live" | "reuse_source";
+  sourceReusableToolResultCount: number;
+  sourceToolResultSetSha256: string;
 }

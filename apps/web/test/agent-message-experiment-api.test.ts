@@ -65,6 +65,31 @@ describe("Agent message experiment Web API", () => {
     ).rejects.toThrow("preview binding is invalid");
   });
 
+  it("rejects a valid preview rebound to another tool result mode", async () => {
+    const preview = await previewFixture();
+    const { previewSha256: _previewSha256, ...content } = preview;
+    const driftedContent = {
+      ...content,
+      toolResultMode: "reuse_source" as const,
+      sourceReusableToolResultCount: 1,
+    };
+    const drifted = {
+      ...driftedContent,
+      previewSha256: await sha256Text(canonicalJson(driftedContent)),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse(drifted)),
+    );
+
+    await expect(
+      previewAgentMessageExperiment(preview.sourceThreadId, {
+        sourceRunId: preview.sourceRunId,
+        sourceMessageSeq: preview.sourceMessageSeq,
+      }),
+    ).rejects.toThrow("preview binding is invalid");
+  });
+
   it("rejects stale execution before network mutation", async () => {
     const preview = await previewFixture();
     const fetchMock = vi.fn();
@@ -88,7 +113,7 @@ describe("Agent message experiment Web API", () => {
 async function previewFixture(): Promise<AgentMessageExperimentPreview> {
   const content = {
     kind: "napier.agent-message-experiment-preview" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     sourceThreadId: "thread_source12345678",
     sourceRunId: "run_source_12345678",
     sourceMessageSeq: 8,
@@ -118,6 +143,9 @@ async function previewFixture(): Promise<AgentMessageExperimentPreview> {
       writeToolNames: [],
       unknownToolNames: [],
     },
+    toolResultMode: "live" as const,
+    sourceReusableToolResultCount: 0,
+    sourceToolResultSetSha256: "8".repeat(64),
   };
   return {
     ...content,

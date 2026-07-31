@@ -440,6 +440,18 @@ function workflowToolOutputLedgerProjection(
   result: unknown,
 ): Record<string, JsonValue> {
   const projection = agentToolOutputLedgerProjection(toolName, output, result);
+  if (
+    projection["outputRedacted"] === true &&
+    typeof projection["outputSha256"] === "string" &&
+    typeof projection["outputBytes"] === "number"
+  ) {
+    return {
+      ...projection,
+      toolOutputRedacted: true,
+      toolOutputBytes: projection["outputBytes"],
+      toolOutputSha256: projection["outputSha256"],
+    };
+  }
   if (typeof projection["output"] !== "string") return projection;
   const { output: _output, ...rest } = projection;
   return {

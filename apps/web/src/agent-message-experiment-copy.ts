@@ -8,6 +8,9 @@ export const agentMessageExperimentCopy = {
   modelOverride: "Replace model",
   modelOriginal: "Reuse source model",
   modelUnavailable: "The selected candidate model is not configured.",
+  toolResults: "Tool results",
+  toolResultsLive: "Execute live reads",
+  toolResultsFrozen: "Reuse frozen source results",
   titleLabel: "Target title",
   titlePlaceholder: "Optional experiment title",
   preview: "Preview experiment",
@@ -38,6 +41,8 @@ export const agentMessageExperimentCopy = {
   memoryBinding: "Memory",
   skillBinding: "Skills",
   configurationBinding: "Configuration",
+  toolResultBinding: "Tool result set",
+  reusableResults: "reusable",
   previewBinding: "Preview",
   frames: "stream frames",
   comparison: "Run comparison",
@@ -47,6 +52,8 @@ export const agentMessageExperimentCopy = {
   tokens: "Tokens",
   tools: "Tool calls",
   cost: "Cost",
+  reusedResults: "Reused results",
+  divergence: "diverged",
   configuration: "Configuration fields",
   noConfigurationChanges: "No configuration changes",
   addedTools: "Added tools",
@@ -55,7 +62,7 @@ export const agentMessageExperimentCopy = {
   openTarget: "Open target Thread",
   download: "Download result",
   safety:
-    "The candidate cannot write, mutate Plan or Memory, start Sessions, or delegate. A failed or cancelled target remains inspectable and retry creates a new Branch.",
+    "The candidate cannot write, mutate Plan or Memory, start Sessions, or delegate. Frozen mode never falls back to a live tool call; missing or divergent results fail the isolated target.",
   sourceRunning:
     "Wait for the current source Thread Run to settle before creating an experiment.",
   errors: {

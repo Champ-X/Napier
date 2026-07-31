@@ -24,12 +24,93 @@ Audit date: 2026-08-01
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                     |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                      |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, typed model-free Reduce aggregation, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
-| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC. Captured provider calls execute exactly once without dispatching returned tools. Ten built-in stateless read-only tools capture exact local-only argument capsules and can be preview-bound and executed exactly once through Web/CLI/HTTP/SDK/RPC with scoped Workspace freshness, independent browser validation, and source/target output comparison. Stateful or write tool checkpoints, Prompt/Skill/Memory/environment replacement, historical result reuse or simulation, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                  |
+| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools also support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target output comparison. Stateful or write tool checkpoints/result simulation, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                   |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC share one Runtime. Run Lab, CLI, HTTP, SDK, and RPC expose historical-message, isolated provider-call, and built-in read-only tool-call experiments. RPC supports Agent and typed Workflow run/resume, Approval answer-and-resume, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                             |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+
+## Implemented Slice: Frozen Read-Only Tool Results
+
+User scenario: rerun one historical user message while freezing the exact
+successful or failed results of its captured built-in read-only tool calls, so
+the operator can compare model behavior without re-reading a changed workspace
+or repeating an external/process-backed read.
+
+Acceptance:
+
+- after every eligible source tool settles, store its exact model-visible text,
+  details, usage, and error state in a bounded permission-restricted local
+  capsule without changing the original call on capture failure;
+- reject non-finite, cyclic, class-backed, undefined, or otherwise non-exact
+  JSON result metadata instead of silently changing what the model observed;
+- keep result bodies out of Ledger, Trace, Replay, HTTP history, and portable
+  experiment artifacts; durable evidence carries only bounded identity,
+  status, count, byte, and hash projections;
+- add an explicit message-experiment tool-result mode. Existing live execution
+  remains the default; `reuse_source` requires at least one result and complete
+  capsule coverage for every source tool call;
+- bind the source ordered result set into preview freshness and the internal
+  Store capability before target creation;
+- preflight candidate calls sequentially in model source order and require the
+  exact source tool name, current implementation hash, and normalized argument
+  hash. Any missing, extra, reordered, ineligible, or changed call fails closed;
+- return the captured result through the normal Pi tool-result path while
+  proving the real tool body did not execute; preserve the original error state
+  and append explicit reuse evidence before the normal terminal tool event;
+- require the complete ordered source result set to be consumed. Divergence or
+  unused results settle the isolated target as failed and never fall back to a
+  live tool call;
+- expose preview, execution, reuse counts, divergence, and comparison through
+  the shared Runtime, CLI/JSONL, SDK, HTTP/SSE, local RPC, and lazy Run Lab;
+- cover real changed-workspace reuse, source failure reuse, live-mode
+  compatibility, divergence, missing/tampered/exposed capsules, cancellation,
+  concurrency, Store bypass, Replay privacy, and browser protocol validation.
+
+Threat boundary:
+
+- this slice reuses only the same ten stateless built-in read-only tools already
+  eligible for tool-invocation experiments. It does not simulate writes,
+  Browser/Process/Kernel/Debugger/LSP Sessions, Extensions, or unknown effects;
+- captured output is sensitive local execution state and is not portable. A
+  missing local capsule makes reuse unavailable rather than reconstructing
+  output from summaries or current workspace state;
+- reuse proves which historical bytes were supplied to the candidate model. It
+  does not prove those bytes remain true, fresh, or complete for the current
+  environment;
+- a candidate may deliberately choose a different tool strategy. In frozen
+  mode that is an experiment divergence, not permission to execute a new tool.
+
+Observed result:
+
+- a real faux-provider source Run read `fixture.txt`, captured exact arguments
+  and result locally, then the workspace file changed before preview. A frozen
+  candidate received the old result, while the default live candidate received
+  the new bytes;
+- source and target Ledger/Replay contained neither file path nor old/current
+  body. `tool.result_reused` preceded a hash-only terminal event, and the target
+  contained no new invocation/result capsule because no real tool executed;
+- a source read failure was reused after the missing file became available,
+  preserving `isError=true` without reading the new file;
+- changed arguments produced one divergence, no reused result, no live
+  fallback, and a failed target. Pre-abort created no Branch; missing,
+  permission-exposed, and tampered result capsules made preview unavailable;
+- two concurrent candidates using different models consumed independent
+  controllers and the same immutable source capsule into distinct completed
+  target Threads;
+- 520 concurrent result-capsule writes retained exactly 512 private `0600`
+  objects under a `0700` root and rejected the eight overflow writes;
+- lossy JSON metadata such as `NaN` and `undefined` failed capture rather than
+  being normalized to a different frozen result;
+- real Hono plus the production Web client previewed and executed frozen reuse
+  through HTTP/SSE, validated the complete browser hash chain, and preserved a
+  valid portable target Replay;
+- production-browser dogfood selected the source message, enabled
+  `Reuse frozen source results`, previewed `reuse_source / 1 reusable`, executed
+  `completed -> completed`, displayed `1/1 / 0 diverged`, made only the
+  preview/run POSTs, reported zero console errors, kept source/current/candidate
+  bodies out of the desk DOM, and navigated to the isolated target Thread.
 
 ## Implemented Slice: Read-Only Tool-Invocation Re-execution
 
@@ -94,8 +175,10 @@ Threat boundary:
 - a complete current scoped snapshot binds the candidate environment; this is
   not source-environment restoration. A changed current scope intentionally
   produces a different preview;
-- this slice does not claim historical result reuse, side-effect simulation,
-  write-capable replay, batch experiments, or promotion.
+- standalone tool-call experiments do not reuse historical results. Agent
+  message experiments can freeze results for this same read-only subset;
+  side-effect simulation, write-capable replay, batch experiments, and
+  promotion remain open.
 
 Observed result:
 
@@ -128,16 +211,16 @@ Observed result:
   preview/execute POSTs, reported zero console errors, kept the private path
   and output marker out of the DOM, and navigated to the isolated target
   Thread;
-- `npm run check` passed 1,510 regular tests with 26 opt-in live tests skipped,
+- `npm run check` passed 1,520 regular tests with 26 opt-in live tests skipped,
   253 generated OpenAPI routes, 244/244 compatibility operations, six
   workspaces, 254 packages, and 241/241 integrity entries. The checked product
-  path measured 641.0 ms to first CLI event, 790.7 ms to first token, 1,095.4
-  ms to completion, 0.5 ms read p95, 6.9 ms for 1,000-event projection, and
-  749.568 closed SQLite bytes/event; all checked latency, projection, RSS,
+  path measured 577.2 ms to first CLI event, 723.6 ms to first token, 1,032.1
+  ms to completion, 0.3 ms read p95, 6.9 ms for 1,000-event projection, and
+  753.664 closed SQLite bytes/event; all checked latency, projection, RSS,
   bundle, and database budgets passed;
 - the 82-file Web dist keeps the main entry at 130.13 KiB under its 150 KiB
-  budget and is bound to `dcb1b563ef44ff5f`; the refreshed seven-artifact
-  release set is bound to `35daff413c4cae91`.
+  budget and is bound to `2e528134dafd1e69`; the refreshed seven-artifact
+  release set is bound to `479505d4654415a7`.
 
 ## Implemented Slice: Single-Model-Invocation Re-execution
 
@@ -282,9 +365,10 @@ Threat boundary:
   their model executions. Experiment-specific events and Trace do not duplicate
   source prompt, source result, target result, Memory text, Skill text, tool
   bodies, paths, credentials, or raw diagnostics;
-- this slice does not claim model-call or tool-call checkpoints, result reuse,
-  side-effect simulation, Prompt/Skill/Memory replacement, single-step or
-  batch debugging, or promotion.
+- later slices add model/tool-call checkpoints and frozen captured results for
+  the ten stateless read-only tools. Write/session side-effect simulation,
+  Prompt/Skill/Memory replacement, single-step or batch debugging, and
+  promotion remain open.
 
 Observed result:
 

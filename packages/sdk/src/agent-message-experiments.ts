@@ -1,6 +1,7 @@
 import type {
   AgentMessageExperimentPreview,
   AgentMessageExperimentResult,
+  AgentMessageExperimentToolResultMode,
   ModelRef,
   RunEvent,
 } from "@napier/contracts";
@@ -12,6 +13,7 @@ export interface PreviewNapierAgentMessageExperimentOptions {
   sourceMessageSeq: number;
   model?: ModelRef;
   title?: string;
+  toolResultMode?: AgentMessageExperimentToolResultMode;
   signal?: AbortSignal;
 }
 
@@ -65,5 +67,8 @@ function experimentRequest(
     sourceMessageSeq: options.sourceMessageSeq,
     ...(options.model ? { model: options.model } : {}),
     ...(options.title ? { title: options.title } : {}),
+    ...(options.toolResultMode
+      ? { toolResultMode: options.toolResultMode }
+      : {}),
   };
 }

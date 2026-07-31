@@ -546,6 +546,7 @@ import {
   AGENT_MESSAGE_EXPERIMENT_EXECUTION,
   type AgentMessageExperimentExecution,
 } from "./agent-message-experiment-execution.js";
+import { validateAgentMessageExperimentToolResultRunGate } from "./agent-message-experiment-run-gate.js";
 import {
   MODEL_INVOCATION_EXPERIMENT_EXECUTION,
   type ModelInvocationExperimentExecution,
@@ -11340,6 +11341,12 @@ export class LocalStore {
       const sourceEvents = messageExperiment
         ? this.requireLedger().listEvents(messageExperiment.sourceThreadId)
         : [];
+      if (messageExperiment) {
+        validateAgentMessageExperimentToolResultRunGate({
+          execution: messageExperiment,
+          sourceEvents,
+        });
+      }
       const sourceMessage = sourceEvents.find(
         (event) =>
           event.seq === messageExperiment?.sourceMessageSeq &&

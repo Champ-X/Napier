@@ -65,6 +65,13 @@ describe("Agent message experiment Web protocol", () => {
     await expect(
       validateAgentMessageExperimentResultFrame(outputTampered),
     ).rejects.toThrow("output hash is invalid");
+
+    const reuseTampered = structuredClone(fixture.frame);
+    reuseTampered.experiment.toolResultReuse.reusedResultCount = 1;
+    reuseTampered.contentSha256 = await frameHash(reuseTampered);
+    await expect(
+      validateAgentMessageExperimentResultFrame(reuseTampered),
+    ).rejects.toThrow("tool result reuse is invalid");
   });
 
   it("fails closed for unknown prompt-bearing fields and nonterminal observations", async () => {
@@ -200,7 +207,7 @@ async function experimentFixture(): Promise<{
   };
   const previewContent = {
     kind: "napier.agent-message-experiment-preview" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     sourceThreadId: source.threadId,
     sourceRunId: source.runId,
     sourceMessageSeq: 8,
@@ -222,6 +229,9 @@ async function experimentFixture(): Promise<{
     targetExecutionMode: "agent_experiment_read_only" as const,
     targetToolNames: [],
     sourceToolEffects: source.toolEffects,
+    toolResultMode: "live" as const,
+    sourceReusableToolResultCount: 0,
+    sourceToolResultSetSha256: "a".repeat(64),
   };
   const preview: AgentMessageExperimentPreview = {
     ...previewContent,
@@ -229,12 +239,21 @@ async function experimentFixture(): Promise<{
   };
   const experiment = {
     kind: "napier.agent-message-experiment-result" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     preview,
     targetThreadId: target.threadId,
     targetRunId: target.runId,
     status: "completed" as const,
     assistantText: targetText,
+    toolResultReuse: {
+      mode: "live" as const,
+      sourceResultCount: 0,
+      reusedResultCount: 0,
+      divergenceCount: 0,
+      complete: true,
+      sourceResultSetSha256: preview.sourceToolResultSetSha256,
+      targetReuseSetSha256: "b".repeat(64),
+    },
     comparison,
   };
   const frameContent = {

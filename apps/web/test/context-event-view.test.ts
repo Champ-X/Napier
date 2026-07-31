@@ -158,6 +158,35 @@ describe("Context event trace view", () => {
     expect(summary).not.toContain("TOP_SECRET");
   });
 
+  it("projects local tool result capsules without result bodies", () => {
+    const event = contextEvent("context.tool_result", {
+      kind: "napier.tool-invocation-result-capsule-receipt",
+      schemaVersion: 1,
+      callId: "call_1234567890",
+      toolName: "read_file",
+      invocationCapsuleSha256: "1".repeat(64),
+      toolDefinitionSha256: "2".repeat(64),
+      argumentsSha256: "3".repeat(64),
+      isError: false,
+      resultSha256: "4".repeat(64),
+      outputTextSha256: "5".repeat(64),
+      outputTextBytes: 240,
+      capsuleSha256: "6".repeat(64),
+      capsuleBytes: 512,
+      storage: "local_only",
+      contentSha256: "7".repeat(64),
+      result: "TOP_SECRET_RESULT",
+    });
+    const summary = contextEventTraceSummary(event);
+    expect(summary).toContain(
+      "context / tool_result / schema 1 / call 1234567890 / tool read_file / storage local_only / capsule-bytes 512 / output-bytes 240 / error false",
+    );
+    expect(summary).toContain(
+      `capsule ${"6".repeat(12)} / invocation-capsule ${"1".repeat(12)} / result ${"4".repeat(12)} / output ${"5".repeat(12)} / tool-definition ${"2".repeat(12)} / arguments ${"3".repeat(12)}`,
+    );
+    expect(summary).not.toContain("TOP_SECRET");
+  });
+
   it("fails closed for malformed and unknown context receipts", () => {
     expect(
       contextEventTraceSummary(

@@ -10,6 +10,10 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  projectFrozenToolResultPlan,
+  type FrozenToolResultPlan,
+} from "./agent-message-tool-result-replay.js";
 import { formatMemoryContext } from "./memory.js";
 import {
   agentMessageExperimentHistoryBinding,
@@ -22,17 +26,20 @@ import {
 import { createRunConfigurationFingerprint } from "./run-config.js";
 import { formatSkillCatalog, loadWorkspaceSkills } from "./skills.js";
 import type { LocalStore } from "./store.js";
+import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 import { createWorkspacePathSnapshot } from "./workspace-snapshot.js";
 
 export interface AgentMessageExperimentSource {
   preview: AgentMessageExperimentPreview;
   prompt: string;
   sourceRun: RunRecord;
+  frozenToolResults: FrozenToolResultPlan;
   title: string;
 }
 
 export async function projectAgentMessageExperimentSource(
   store: LocalStore,
+  resultCapsules: ToolInvocationResultCapsuleStore,
   sourceThreadId: string,
   request: CreateAgentMessageExperimentRequest,
 ): Promise<AgentMessageExperimentSource> {
@@ -158,9 +165,30 @@ export async function projectAgentMessageExperimentSource(
     sourceEvents,
     request.sourceMessageSeq,
   );
+  const sourceToolEffects = agentMessageExperimentToolEffects(sourceRunEvents);
+  const frozenToolResults = await projectFrozenToolResultPlan(
+    sourceEvents,
+    sourceThreadId,
+    sourceRun.id,
+    resultCapsules,
+  );
+  const toolResultMode = request.toolResultMode ?? "live";
+  if (
+    toolResultMode === "reuse_source" &&
+    (sourceToolEffects.toolCallCount < 1 ||
+      sourceToolEffects.writeCount > 0 ||
+      sourceToolEffects.unknownCount > 0 ||
+      sourceToolEffects.unresolvedCount > 0 ||
+      frozenToolResults.unavailableCount > 0 ||
+      frozenToolResults.entries.length !== sourceToolEffects.toolCallCount)
+  ) {
+    throw new Error(
+      "Agent message experiment source tool results are not completely reusable",
+    );
+  }
   const content = {
     kind: "napier.agent-message-experiment-preview" as const,
-    schemaVersion: 1 as const,
+    schemaVersion: 2 as const,
     sourceThreadId,
     sourceRunId: sourceRun.id,
     sourceMessageSeq: request.sourceMessageSeq,
@@ -181,7 +209,10 @@ export async function projectAgentMessageExperimentSource(
     targetModel: structuredClone(targetModel),
     targetExecutionMode: "agent_experiment_read_only" as const,
     targetToolNames: [...candidateConfiguration.enabledTools],
-    sourceToolEffects: agentMessageExperimentToolEffects(sourceRunEvents),
+    sourceToolEffects,
+    toolResultMode,
+    sourceReusableToolResultCount: frozenToolResults.entries.length,
+    sourceToolResultSetSha256: frozenToolResults.sourceResultSetSha256,
   };
   return {
     preview: {
@@ -190,6 +221,7 @@ export async function projectAgentMessageExperimentSource(
     },
     prompt,
     sourceRun: structuredClone(sourceRun),
+    frozenToolResults,
     title: experimentTitle(
       request.title,
       sourceThread.title,

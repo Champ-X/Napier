@@ -65,7 +65,7 @@ export async function executeAgentMessageExperimentCli(
       if (!options.jsonl) {
         await writeLine(
           io.stderr,
-          `Napier Agent experiment preview ${preview.previewSha256.slice(0, 12)} (read-only)`,
+          `Napier Agent experiment preview ${preview.previewSha256.slice(0, 12)} (read-only, tool-results=${preview.toolResultMode}, reusable=${String(preview.sourceReusableToolResultCount)})`,
         );
       }
       return 0;
@@ -132,6 +132,10 @@ export async function executeAgentMessageExperimentCli(
         io.stderr,
         `Delta (target-source): ${signed(delta.durationMs)}ms, ${signed(delta.inputTokens + delta.outputTokens)} tokens, ${signed(delta.toolCallCount)} tools, ${signed(delta.costUsd, 6)} USD`,
       );
+      await writeLine(
+        io.stderr,
+        `Tool results: ${experiment.toolResultReuse.mode}, reused ${String(experiment.toolResultReuse.reusedResultCount)}/${String(experiment.toolResultReuse.sourceResultCount)}, divergence ${String(experiment.toolResultReuse.divergenceCount)}`,
+      );
     }
     return experiment.status === "completed" ? 0 : 1;
   } catch (error) {
@@ -158,6 +162,9 @@ function experimentRequest(options: CliAgentMessageExperimentOptions) {
     sourceMessageSeq: options.sourceMessageSeq,
     ...(options.model ? { model: options.model } : {}),
     ...(options.title ? { title: options.title } : {}),
+    ...(options.toolResultMode
+      ? { toolResultMode: options.toolResultMode }
+      : {}),
   };
 }
 

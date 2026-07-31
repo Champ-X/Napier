@@ -249,6 +249,11 @@ export class ToolInvocationExperimentRuntime {
         startedAtMs,
         finishedAtMs,
       });
+      const outputProjection = agentToolOutputLedgerProjection(
+        preview.sourceToolName,
+        output,
+        toolResult,
+      );
       await this.append(
         {
           threadId: input.targetThread.id,
@@ -264,12 +269,9 @@ export class ToolInvocationExperimentRuntime {
             sourceCallId: preview.sourceCallId,
             outputTextSha256: targetObservation.outputSha256,
             outputTextBytes: targetObservation.outputBytes,
-            ...agentToolOutputLedgerProjection(
-              preview.sourceToolName,
-              output,
-              toolResult,
-            ),
-            ...(toolResultDetails(toolResult) !== undefined
+            ...outputProjection,
+            ...(!Object.hasOwn(outputProjection, "details") &&
+            toolResultDetails(toolResult) !== undefined
               ? { details: toolResultDetails(toolResult)! }
               : {}),
           },

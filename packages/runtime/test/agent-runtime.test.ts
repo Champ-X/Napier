@@ -3626,8 +3626,9 @@ describe("AgentRuntime demo path", () => {
     );
     expect(toolEvent?.payload).toEqual(
       expect.objectContaining({
+        outputRedacted: true,
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         details: expect.objectContaining({
-          path: "scores.csv",
           pathSha256: createHash("sha256").update("scores.csv").digest("hex"),
           format: "csv",
           sha256: csvSha256,
@@ -3640,6 +3641,8 @@ describe("AgentRuntime demo path", () => {
         }),
       }),
     );
+    expect(JSON.stringify(toolEvent)).not.toContain("scores.csv");
+    expect(JSON.stringify(toolEvent)).not.toContain("Ada");
     expect(
       verifyThreadReplayBundle(
         await exportThreadReplayBundle(store, thread.id),
@@ -3734,8 +3737,9 @@ describe("AgentRuntime demo path", () => {
     );
     expect(toolEvent?.payload).toEqual(
       expect.objectContaining({
+        outputRedacted: true,
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         details: expect.objectContaining({
-          path: "src/worker.ts",
           pathSha256: createHash("sha256")
             .update("src/worker.ts")
             .digest("hex"),
@@ -3749,6 +3753,8 @@ describe("AgentRuntime demo path", () => {
         }),
       }),
     );
+    expect(JSON.stringify(toolEvent)).not.toContain("src/worker.ts");
+    expect(JSON.stringify(toolEvent)).not.toContain("createWorker");
     expect(
       verifyThreadReplayBundle(
         await exportThreadReplayBundle(store, thread.id),
@@ -3860,8 +3866,9 @@ describe("AgentRuntime demo path", () => {
     );
     expect(toolEvent?.payload).toEqual(
       expect.objectContaining({
+        outputRedacted: true,
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         details: expect.objectContaining({
-          path: "src",
           pathSha256: createHash("sha256").update("src").digest("hex"),
           fileCount: 2,
           skippedFileCount: 0,
@@ -3876,6 +3883,8 @@ describe("AgentRuntime demo path", () => {
         }),
       }),
     );
+    expect(JSON.stringify(toolEvent)).not.toContain('"path":"src"');
+    expect(JSON.stringify(toolEvent)).not.toContain("createWorker");
     expect(
       verifyThreadReplayBundle(
         await exportThreadReplayBundle(store, thread.id),
@@ -3971,8 +3980,9 @@ describe("AgentRuntime demo path", () => {
     );
     expect(toolEvent?.payload).toEqual(
       expect.objectContaining({
+        outputRedacted: true,
+        outputSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         details: expect.objectContaining({
-          path: "src/worker.ts",
           pathSha256: createHash("sha256")
             .update("src/worker.ts")
             .digest("hex"),
@@ -3991,6 +4001,8 @@ describe("AgentRuntime demo path", () => {
         }),
       }),
     );
+    expect(JSON.stringify(toolEvent)).not.toContain("src/worker.ts");
+    expect(JSON.stringify(toolEvent)).not.toContain("run(input: string)");
     expect(
       verifyThreadReplayBundle(
         await exportThreadReplayBundle(store, thread.id),

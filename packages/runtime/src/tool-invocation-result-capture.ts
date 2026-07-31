@@ -1,47 +1,39 @@
-import type { AgentTool } from "@earendil-works/pi-agent-core";
+import type { AgentToolResult } from "@earendil-works/pi-agent-core";
 import type {
   RunRecord,
   ToolInvocationCapsuleReceipt,
+  ToolInvocationResultCapsuleReceipt,
 } from "@napier/contracts";
 
 import type { EventSink } from "./agent-runtime.js";
 import { sha256 } from "./ed25519.js";
 import type { LocalStore } from "./store.js";
-import {
-  TOOL_INVOCATION_EXPERIMENT_TOOLS,
-  toolDefinitionSha256,
-} from "./tool-invocation-capsule.js";
-import type { ToolInvocationCapsuleStore } from "./tool-invocation-capsule-store.js";
+import type { ToolInvocationResultCapsuleStore } from "./tool-invocation-result-capsule-store.js";
 
-export async function captureToolInvocation(
+export async function captureToolInvocationResult(
   store: LocalStore,
-  capsules: ToolInvocationCapsuleStore,
+  capsules: ToolInvocationResultCapsuleStore,
   run: RunRecord,
-  tool: AgentTool | undefined,
-  callId: string,
-  toolName: string,
-  args: unknown,
+  invocation: ToolInvocationCapsuleReceipt | undefined,
+  result: AgentToolResult<unknown>,
+  isError: boolean,
   onEvent?: EventSink,
-): Promise<ToolInvocationCapsuleReceipt | undefined> {
-  if (!TOOL_INVOCATION_EXPERIMENT_TOOLS.has(toolName)) return undefined;
+): Promise<ToolInvocationResultCapsuleReceipt | undefined> {
+  if (!invocation) return undefined;
   try {
-    if (!tool || tool.name !== toolName) {
-      throw new Error("Tool definition is unavailable");
-    }
     const receipt = await capsules.put({
       sourceThreadId: run.threadId,
       sourceRunId: run.id,
-      callId,
-      toolName,
-      toolDefinitionSha256: toolDefinitionSha256(tool),
-      arguments: args,
+      invocation,
+      result,
+      isError,
     });
     await append(
       store,
       {
         threadId: run.threadId,
         runId: run.id,
-        type: "context.tool_invocation",
+        type: "context.tool_result",
         category: "tool",
         visibility: "debug",
         payload: JSON.parse(JSON.stringify(receipt)),
@@ -55,13 +47,14 @@ export async function captureToolInvocation(
       {
         threadId: run.threadId,
         runId: run.id,
-        type: "context.tool_invocation_unavailable",
+        type: "context.tool_result_unavailable",
         category: "tool",
         visibility: "debug",
         payload: {
           schemaVersion: 1,
-          callId,
-          toolName,
+          callId: invocation.callId,
+          toolName: invocation.toolName,
+          invocationCapsuleSha256: invocation.capsuleSha256,
           reason: captureFailureReason(error),
           diagnosticSha256: sha256(errorMessage(error)),
         },
