@@ -33,6 +33,32 @@ describe("Workspace Process event view", () => {
     expect(summary).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes bounded PTY resize evidence", () => {
+    const event: RunEvent = {
+      id: "event_1234567890abcdef1234",
+      threadId: "thread_1234567890abcdef1234",
+      runId: "run_1234567890abcdef1234",
+      seq: 4,
+      type: "workspace.process.resized",
+      category: "tool",
+      visibility: "user",
+      createdAt: "2026-07-29T00:00:00.000Z",
+      payload: {
+        processId: "process_1234567890abcdef1234",
+        initiatedBy: "agent",
+        sequence: 2,
+        columns: 111,
+        rows: 43,
+        rawTerminalInput: "TOP_SECRET_TERMINAL_INPUT",
+      },
+    };
+    const summary = workspaceProcessEventTraceSummary(event);
+    expect(summary).toBe(
+      "process / resized / id abcdef1234 / sequence 2 / by agent / size 111x43",
+    );
+    expect(summary).not.toContain("TOP_SECRET");
+  });
+
   it("summarizes bounded lifecycle evidence without output or arguments", () => {
     const event: RunEvent = {
       id: "event_1234567890abcdef1234",
@@ -51,6 +77,10 @@ describe("Workspace Process event view", () => {
         stdoutChars: 12,
         stderrChars: 0,
         nextCursor: 1,
+        ioMode: "pty",
+        terminalColumns: 111,
+        terminalRows: 43,
+        terminalResizeCount: 2,
         commandSha256: "a".repeat(64),
         stdoutSha256: "b".repeat(64),
         stderrSha256: "c".repeat(64),
@@ -64,7 +94,7 @@ describe("Workspace Process event view", () => {
     };
     const summary = workspaceProcessEventTraceSummary(event);
     expect(summary).toBe(
-      `process / settled / id abcdef1234 / status succeeded / runtime node / args 2 / stdout-chars 12 / stderr-chars 0 / cursor 1 / command ${"a".repeat(12)} / stdout ${"b".repeat(12)} / stderr ${"c".repeat(12)} / workspace changed / changed-files 2 / changed-paths ${"d".repeat(12)}`,
+      `process / settled / id abcdef1234 / status succeeded / runtime node / args 2 / stdout-chars 12 / stderr-chars 0 / cursor 1 / io pty / terminal 111x43 / resizes 2 / command ${"a".repeat(12)} / stdout ${"b".repeat(12)} / stderr ${"c".repeat(12)} / workspace changed / changed-files 2 / changed-paths ${"d".repeat(12)}`,
     );
     expect(summary).not.toContain("TOP_SECRET");
     expect(

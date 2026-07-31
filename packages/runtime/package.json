@@ -30,6 +30,7 @@
     "@earendil-works/pi-agent-core": "0.82.0",
     "@earendil-works/pi-ai": "0.82.0",
     "@napier/contracts": "*",
+    "node-pty": "1.1.0",
     "playwright-core": "1.62.1",
     "typebox": "1.1.38",
     "typescript": "5.9.3",

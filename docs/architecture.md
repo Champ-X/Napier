@@ -2807,13 +2807,15 @@ Local command execution currently supports macOS sandbox-exec and Linux
 Bubblewrap. It fails closed on unsupported adapters and OCI until host/image
 runtime identity binding exists. Wall time, output, and process-group
 termination are enforced; hard per-command CPU/memory quotas require an OCI or
-managed session backend and remain an explicit gap. PTY, writes, package
-installation, and inherited environment variables are not part of this slice.
-The public generic command/process runtime remains Node-only. Restricted
-Python uses a separate typed private protocol that binds a recognized system
-interpreter and a bounded no-site bootstrap dependency set proven to cover the
-worker's loaded module files, without granting models an arbitrary Python argv
-surface. Git remains outside the runtime enum.
+managed session backend and remain an explicit gap. Foreground
+`run_command` remains pipe-only; PTY is available through the managed Process
+Session below. Writes, package installation, and inherited environment
+variables are not part of either surface. The public generic command/process
+runtime remains Node-only. Restricted Python uses a separate typed private
+protocol that binds a recognized system interpreter and a bounded no-site
+bootstrap dependency set proven to cover the worker's loaded module files,
+without granting models an arbitrary Python argv surface. Git remains outside
+the runtime enum.
 
 ## Workspace Process Session Flow
 
@@ -2827,14 +2829,18 @@ Agent selects start + node + literal argv
      before async preparation
   -> reuse command cwd, executable, environment, and capability preparation
   -> capture a bounded deterministic workspace snapshot
-  -> launch through macOS sandbox-exec or Linux Bubblewrap
+  -> choose closed/interactive pipes or explicit bounded PTY
+  -> for PTY, allocate node-pty around the sandbox wrapper, never the target
+  -> launch the fixed Node target through macOS sandbox-exec or Linux Bubblewrap
   -> append workspace.process.started with metadata and hashes only
   -> return a Napier process ID, never a host PID
-  -> close stdin by default, or retain it only for an explicit interactive start
+  -> close pipe stdin by default, or retain explicit interactive/PTY input
   -> serialize at most 64 UTF-8 input actions, 32 KiB each and 256 KiB total
-  -> optionally append a newline and close stdin after a write
+  -> optionally append a newline; only a pipe can close stdin after a write
   -> append workspace.process.input with byte counts and hashes, never text
+  -> serialize at most 64 PTY resizes and append workspace.process.resized
   -> collect at most 32,000 chars per stream and 256 ordered chunks in memory
+     (PTY stdout/stderr are one merged terminal stream)
   -> Agent or Workbench polls chunks after a monotonic cursor
   -> cancel on Agent/operator request, parent abort, timeout, or output cap
   -> verify the runtime executable remained stable
@@ -2865,6 +2871,13 @@ through one per-session chain and resolve only after the Node Writable
 callback, so backpressure delays the caller instead of dropping data. If
 accepted bytes cannot be bound to the Ledger, Napier terminates the session and
 reports an unknown outcome rather than inviting a blind retry.
+PTY input and resize share the same per-session serialization chain. PTY input
+cannot request pipe close semantics; callers send literal control bytes, wait
+for settlement, or cancel. A native PTY write proves synchronous adapter
+acceptance rather than target consumption. A resize binds sequence, current
+columns/rows, owning Run, and resulting session hash. If the adapter accepted a
+resize but the Ledger append fails, Napier terminates the session and records
+an unknown interruption rather than silently retrying.
 The similarly Thread-scoped `GET .../processes/{processId}/delta` returns at
 most 256 relative-path entries with before/after file metadata from the current
 Runtime. The Ledger retains only pre/post snapshot digests, truncation state,
@@ -2872,24 +2885,39 @@ comparison status, changed-file count, and a changed-path-set digest. The lazy
 Processes panel exposes output availability, status, limits, settlement
 evidence, cancellation, and workspace-window drift under the owning Thread.
 For running interactive sessions it also exposes bounded input and explicit
-stdin close; request-sequence and Process-selection guards discard stale
-responses. It explicitly does not attribute concurrent external changes to the
-read-only session. Path details disappear after Runtime restart while the
-summary evidence remains. Schema v1 sessions continue to project as
+stdin close for pipes. PTY cards instead show the fixed terminal type, current
+size, resize count, and merged output, and hide the invalid close action.
+Request-sequence and Process-selection guards discard stale responses. It
+explicitly does not attribute concurrent external changes to the read-only
+session. Path details disappear after Runtime restart while the summary
+evidence remains. Schema v1 sessions continue to project as
 delta-unavailable, schema v2 sessions retain snapshot evidence without input
-metadata, and new sessions use schema v3.
+metadata, schema v3 retains pipe input evidence, and new pipe/PTY sessions use
+schema v4.
+
+`sandbox-terminal.ts` is the only adapter from `node-pty` into Napier's stream
+contract. It dynamically loads the native dependency only for a PTY request,
+wraps `sandbox-exec` or Bubblewrap in the terminal, merges native output,
+supports resize, and terminates the PTY process group. The target executable
+still runs inside the existing OS Sandbox profile. `workspace-process-terminal.ts`
+owns initial terminal binding and resize state; resize receipt parsing is split
+into `workspace-process-resize-events.ts` rather than expanding the Process
+Manager or Store. `scripts/prepare-node-pty.mjs` corrects the locked macOS
+prebuild's missing user execute bit only for a regular current-platform helper;
+symlinks and missing helpers fail installation.
 
 Graceful Server shutdown stops active process groups before closing the Store.
 An abrupt host or Runtime loss cannot prove that a macOS sandbox wrapper died,
 because `sandbox-exec` has no parent-death contract; startup therefore records
 unknown interruption rather than completion or reattachment. A guardian or OCI
 identity is required for proved cleanup of abrupt or deliberately detached
-descendants and cross-restart reattachment. PTY, workspace writes, hard total
-RSS quotas, package-backed Python, and remote sandboxes remain outside this
-slice. Interactive stdin is a pipe protocol and does not imply terminal resize,
-job control, foreground process groups, attach semantics, or a persistent
-language kernel. The JavaScript/Python kernels and Node debugger below are
-separate typed protocols over the same Process Session service.
+descendants and cross-restart reattachment. Workspace writes, hard total RSS
+quotas, package-backed Python, and remote sandboxes remain outside this slice.
+PTY mode supplies real terminal stdin/stdout, sizing, control bytes, and
+process-group cancellation, but does not grant shell access, cross-restart
+attach, a durable screen buffer, or Napier job-control commands. The
+JavaScript/Python kernels and Node debugger below are separate typed protocols
+over the same Process Session service.
 
 ## Persistent JavaScript Kernel Flow
 
@@ -5410,8 +5438,8 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 1: Local execution and architecture
 
-- extend bounded Workspace Process Sessions with PTY, a managed guardian,
-  proved orphan cleanup, and cross-restart reattachment;
+- extend bounded Workspace Process Sessions with a managed guardian, proved
+  orphan cleanup, cross-restart reattachment, and write sessions;
 - extend restricted Python into package-backed data/Notebook sessions and add
   managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;

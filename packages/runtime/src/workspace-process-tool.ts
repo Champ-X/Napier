@@ -4,6 +4,7 @@ import type {
   WorkspaceProcessDeltaStatus,
   WorkspaceProcessInputReceipt,
   WorkspaceProcessOutputChunk,
+  WorkspaceProcessResizeReceipt,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
 } from "@napier/contracts";
@@ -15,6 +16,13 @@ import {
   MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
   type WorkspaceProcessManager,
 } from "./workspace-processes.js";
+import { MAX_WORKSPACE_PROCESS_RESIZES } from "./workspace-process-terminal.js";
+import {
+  MAX_TERMINAL_COLUMNS,
+  MAX_TERMINAL_ROWS,
+  MIN_TERMINAL_COLUMNS,
+  MIN_TERMINAL_ROWS,
+} from "./sandbox-terminal.js";
 
 const workspaceProcessSchema = Type.Union([
   Type.Object(
@@ -39,6 +47,60 @@ const workspaceProcessSchema = Type.Union([
         Type.Integer({ minimum: 1_000, maximum: 120_000 }),
       ),
       interactive: Type.Optional(Type.Boolean()),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      action: Type.Literal("start"),
+      runtime: Type.Literal("node"),
+      args: Type.Array(
+        Type.String({
+          maxLength: 2_048,
+          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+        }),
+        { maxItems: 64 },
+      ),
+      cwd: Type.Optional(
+        Type.String({
+          minLength: 1,
+          maxLength: 500,
+          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+        }),
+      ),
+      timeoutMs: Type.Optional(
+        Type.Integer({ minimum: 1_000, maximum: 120_000 }),
+      ),
+      terminal: Type.Object(
+        {
+          columns: Type.Integer({
+            minimum: MIN_TERMINAL_COLUMNS,
+            maximum: MAX_TERMINAL_COLUMNS,
+          }),
+          rows: Type.Integer({
+            minimum: MIN_TERMINAL_ROWS,
+            maximum: MAX_TERMINAL_ROWS,
+          }),
+        },
+        { additionalProperties: false },
+      ),
+    },
+    { additionalProperties: false },
+  ),
+  Type.Object(
+    {
+      action: Type.Literal("resize"),
+      processId: Type.String({
+        pattern: "^process_[a-z0-9]{8,80}$",
+      }),
+      columns: Type.Integer({
+        minimum: MIN_TERMINAL_COLUMNS,
+        maximum: MAX_TERMINAL_COLUMNS,
+      }),
+      rows: Type.Integer({
+        minimum: MIN_TERMINAL_ROWS,
+        maximum: MAX_TERMINAL_ROWS,
+      }),
     },
     { additionalProperties: false },
   ),
@@ -84,7 +146,7 @@ const workspaceProcessSchema = Type.Union([
 ]);
 
 export interface WorkspaceProcessToolDetails {
-  action: "start" | "input" | "poll" | "cancel";
+  action: "start" | "input" | "poll" | "resize" | "cancel";
   processId: string;
   status: WorkspaceProcessStatus;
   nextCursor: number;
@@ -96,6 +158,11 @@ export interface WorkspaceProcessToolDetails {
   stdinWriteCount?: number;
   stdinBytes?: number;
   inputReceiptSha256?: string;
+  resizeReceiptSha256?: string;
+  ioMode?: "pipe" | "pty";
+  terminalColumns?: number;
+  terminalRows?: number;
+  terminalResizeCount?: number;
   resultSha256: string;
 }
 
@@ -107,7 +174,7 @@ export function createWorkspaceProcessTool(
     name: "workspace_process",
     label: "Workspace process",
     description:
-      "Start, send bounded input to, poll, or cancel a background Node Process Session. Starts use explicit argv, a read-only workspace, denied network access, and a fixed environment. Input requires explicit interactive mode. Input and output text are ephemeral and redacted from Ledger evidence.",
+      "Start, send bounded input to, poll, resize, or cancel a background Node Process Session. Starts use explicit argv, a read-only workspace, denied network access, and a fixed environment. Choose either pipe interactive mode or a bounded PTY. PTY output is merged and PTY input cannot use pipe close semantics. Input and output text are ephemeral and redacted from Ledger evidence.",
     parameters: workspaceProcessSchema,
     async execute(_toolCallId, input, signal) {
       if (input.action === "start") {
@@ -119,7 +186,10 @@ export function createWorkspaceProcessTool(
             ...(input.cwd ? { cwd: input.cwd } : {}),
             ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {}),
           },
-          ...(input.interactive === true ? { interactive: true } : {}),
+          ...("terminal" in input ? { terminal: input.terminal } : {}),
+          ...("interactive" in input && input.interactive === true
+            ? { interactive: true }
+            : {}),
           ...(signal ? { signal } : {}),
         });
         return toolResult("start", session, []);
@@ -152,6 +222,21 @@ export function createWorkspaceProcessTool(
         if (!session) throw new Error("Workspace Process Session not found");
         return toolResult("poll", session, output.chunks);
       }
+      if (input.action === "resize") {
+        const receipt = await manager.resize({
+          ...context,
+          processId: input.processId,
+          columns: input.columns,
+          rows: input.rows,
+          initiatedBy: "agent",
+          ...(signal ? { signal } : {}),
+        });
+        const session = (await manager.list(context.threadId)).find(
+          (candidate) => candidate.id === input.processId,
+        );
+        if (!session) throw new Error("Workspace Process Session not found");
+        return toolResult("resize", session, [], undefined, receipt);
+      }
       const session = await manager.cancel(context.threadId, input.processId);
       return toolResult("cancel", session, []);
     },
@@ -164,7 +249,9 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
   const value = record(args) ? args : {};
   const action =
     value["action"] === "start" ||
+    value["action"] === "input" ||
     value["action"] === "poll" ||
+    value["action"] === "resize" ||
     value["action"] === "cancel"
       ? value["action"]
       : "unknown";
@@ -189,6 +276,22 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
     ...(value["appendNewline"] === true ? { appendNewline: true } : {}),
     ...(value["close"] === true ? { close: true } : {}),
     ...(value["interactive"] === true ? { interactive: true } : {}),
+    ...(record(value["terminal"]) &&
+    Number.isSafeInteger(value["terminal"]["columns"]) &&
+    Number.isSafeInteger(value["terminal"]["rows"])
+      ? {
+          terminalColumns: Number(value["terminal"]["columns"]),
+          terminalRows: Number(value["terminal"]["rows"]),
+        }
+      : {}),
+    ...(value["action"] === "resize" &&
+    Number.isSafeInteger(value["columns"]) &&
+    Number.isSafeInteger(value["rows"])
+      ? {
+          terminalColumns: Number(value["columns"]),
+          terminalRows: Number(value["rows"]),
+        }
+      : {}),
     cwdPathSha256: sha256(cwd),
     inputSha256: workspaceProcessCallSha256(args),
   };
@@ -227,6 +330,7 @@ function toolResult(
   session: WorkspaceProcessSession,
   chunks: WorkspaceProcessOutputChunk[],
   inputReceipt?: WorkspaceProcessInputReceipt,
+  resizeReceipt?: WorkspaceProcessResizeReceipt,
 ) {
   const chunkSetSha256 = sha256(
     canonicalJson(
@@ -260,6 +364,19 @@ function toolResult(
       ? { stdinBytes: session.stdinBytes }
       : {}),
     ...(inputReceipt ? { inputReceiptSha256: inputReceipt.contentSha256 } : {}),
+    ...(resizeReceipt
+      ? { resizeReceiptSha256: resizeReceipt.contentSha256 }
+      : {}),
+    ...(session.ioMode ? { ioMode: session.ioMode } : {}),
+    ...(session.terminalColumns !== undefined
+      ? { terminalColumns: session.terminalColumns }
+      : {}),
+    ...(session.terminalRows !== undefined
+      ? { terminalRows: session.terminalRows }
+      : {}),
+    ...(session.terminalResizeCount !== undefined
+      ? { terminalResizeCount: session.terminalResizeCount }
+      : {}),
     resultSha256: sha256(
       canonicalJson({
         action,
@@ -275,6 +392,11 @@ function toolResult(
         stdinWriteCount: session.stdinWriteCount ?? null,
         stdinBytes: session.stdinBytes ?? null,
         inputReceiptSha256: inputReceipt?.contentSha256 ?? null,
+        resizeReceiptSha256: resizeReceipt?.contentSha256 ?? null,
+        ioMode: session.ioMode ?? null,
+        terminalColumns: session.terminalColumns ?? null,
+        terminalRows: session.terminalRows ?? null,
+        terminalResizeCount: session.terminalResizeCount ?? null,
       }),
     ),
   };
@@ -282,12 +404,19 @@ function toolResult(
     `Process ${session.id}: ${session.status}`,
     `Cursor: ${details.nextCursor}`,
     `Output available: ${String(session.outputAvailable)}`,
+    `I/O mode: ${session.ioMode ?? "legacy-pipe"}`,
     `Stdin: ${session.stdinMode ?? "closed"} / ${
       session.stdinOpen ? "open" : "closed"
     }`,
     `Input: ${session.stdinWriteCount ?? 0} writes / ${
       session.stdinBytes ?? 0
     } bytes`,
+    ...(session.ioMode === "pty"
+      ? [
+          `Terminal: ${session.terminalType} / ${session.terminalColumns}x${session.terminalRows}`,
+          `Terminal resizes: ${session.terminalResizeCount ?? 0} / ${MAX_WORKSPACE_PROCESS_RESIZES}`,
+        ]
+      : []),
     `Workspace delta: ${session.workspaceDeltaStatus ?? "pending"}`,
     `Workspace changed files: ${
       session.workspaceDeltaStatus === "indeterminate"
@@ -297,6 +426,9 @@ function toolResult(
     `Session SHA-256: ${session.contentSha256}`,
     ...(inputReceipt
       ? [`Input receipt SHA-256: ${inputReceipt.contentSha256}`]
+      : []),
+    ...(resizeReceipt
+      ? [`Resize receipt SHA-256: ${resizeReceipt.contentSha256}`]
       : []),
   ];
   if (chunks.length > 0) {

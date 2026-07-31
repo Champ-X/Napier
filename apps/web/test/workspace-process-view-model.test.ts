@@ -28,6 +28,7 @@ describe("Workspace Process view model", () => {
       outputLabel: "12 stdout · 3 stderr · cursor 2",
       outputAvailable: true,
       stdinState: "unavailable",
+      stdinCanClose: false,
       stdinLabel: "Input metadata unavailable for this session version",
       workspaceDeltaState: "unchanged",
       workspaceDeltaLabel: "No workspace drift observed",
@@ -55,6 +56,7 @@ describe("Workspace Process view model", () => {
     ).toEqual(
       expect.objectContaining({
         stdinState: "open",
+        stdinCanClose: true,
         stdinLabel: "2 writes · 128 bytes · open",
         stdinHash: "999999999999",
       }),
@@ -90,6 +92,32 @@ describe("Workspace Process view model", () => {
         4,
       ),
     ).toBe(false);
+  });
+
+  it("projects PTY dimensions, merged output, and truthful close controls", () => {
+    expect(
+      workspaceProcessCardView({
+        ...fixture(),
+        schemaVersion: 4,
+        ioMode: "pty",
+        stdinMode: "interactive",
+        stdinOpen: true,
+        stdinWriteCount: 1,
+        stdinBytes: 6,
+        stdinSha256: "9".repeat(64),
+        terminalType: "xterm-256color",
+        terminalColumns: 111,
+        terminalRows: 43,
+        terminalResizeCount: 1,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        runtimeLabel: "node · macos-sandbox-exec · PTY 111×43 · 1 resize",
+        outputLabel: "12 merged terminal chars · cursor 2",
+        stdinState: "open",
+        stdinCanClose: false,
+      }),
+    );
   });
 
   it("distinguishes observed drift, indeterminate comparison, and unavailable legacy evidence", () => {

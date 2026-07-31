@@ -1,6 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 
-const EVENT = /^workspace\.process\.(started|input|settled|interrupted)$/u;
+const EVENT =
+  /^workspace\.process\.(started|input|resized|settled|interrupted)$/u;
 const PROCESS_ID = /^process_[a-z0-9]{8,80}$/u;
 const STATUS =
   /^(running|succeeded|failed|timed_out|output_capped|cancelled|interrupted)$/u;
@@ -48,6 +49,24 @@ export function workspaceProcessEventTraceSummary(
       ...(event.payload["stdinClosed"] === true ? ["stdin-closed"] : []),
     ].join(" / ");
   }
+  if (event.type === "workspace.process.resized") {
+    const processId = stringMatch(event.payload["processId"], PROCESS_ID);
+    const sequence = integer(event.payload["sequence"]);
+    const columns = integer(event.payload["columns"]);
+    const rows = integer(event.payload["rows"]);
+    return [
+      "process / resized",
+      ...(processId ? [`id ${processId.slice(-10)}`] : []),
+      ...(sequence !== undefined ? [`sequence ${sequence}`] : []),
+      ...(event.payload["initiatedBy"] === "agent" ||
+      event.payload["initiatedBy"] === "operator"
+        ? [`by ${event.payload["initiatedBy"]}`]
+        : []),
+      ...(columns !== undefined && rows !== undefined
+        ? [`size ${columns}x${rows}`]
+        : []),
+    ].join(" / ");
+  }
   const processId = stringMatch(event.payload["id"], PROCESS_ID);
   const status = stringMatch(event.payload["status"], STATUS);
   const runtime =
@@ -61,6 +80,9 @@ export function workspaceProcessEventTraceSummary(
   const stdinWriteCount = integer(event.payload["stdinWriteCount"]);
   const stdinBytes = integer(event.payload["stdinBytes"]);
   const stdinSha256 = stringMatch(event.payload["stdinSha256"], SHA256);
+  const terminalColumns = integer(event.payload["terminalColumns"]);
+  const terminalRows = integer(event.payload["terminalRows"]);
+  const terminalResizeCount = integer(event.payload["terminalResizeCount"]);
   const commandSha256 = stringMatch(event.payload["commandSha256"], SHA256);
   const stdoutSha256 = stringMatch(event.payload["stdoutSha256"], SHA256);
   const stderrSha256 = stringMatch(event.payload["stderrSha256"], SHA256);
@@ -93,6 +115,13 @@ export function workspaceProcessEventTraceSummary(
     ...(stdinBytes !== undefined ? [`stdin-bytes ${stdinBytes}`] : []),
     ...(stdinSha256 ? [`stdin ${stdinSha256.slice(0, 12)}`] : []),
     ...(event.payload["stdinOpen"] === true ? ["stdin-open"] : []),
+    ...(event.payload["ioMode"] === "pty" ? ["io pty"] : []),
+    ...(terminalColumns !== undefined && terminalRows !== undefined
+      ? [`terminal ${terminalColumns}x${terminalRows}`]
+      : []),
+    ...(terminalResizeCount !== undefined
+      ? [`resizes ${terminalResizeCount}`]
+      : []),
     ...(commandSha256 ? [`command ${commandSha256.slice(0, 12)}`] : []),
     ...(stdoutSha256 ? [`stdout ${stdoutSha256.slice(0, 12)}`] : []),
     ...(stderrSha256 ? [`stderr ${stderrSha256.slice(0, 12)}`] : []),

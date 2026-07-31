@@ -6,6 +6,11 @@ import type { Readable, Writable } from "node:stream";
 
 import type { ExtensionCapability } from "@napier/contracts";
 
+import {
+  launchTerminalSandboxWrapper,
+  validateTerminalDimensions,
+} from "./sandbox-terminal.js";
+
 const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
 const BUBBLEWRAP_EXEC = "/usr/bin/bwrap";
 const CONTAINER_EXEC = "/usr/bin/docker";
@@ -31,6 +36,10 @@ export interface SandboxLaunchRequest {
   workspaceRoot: string;
   approvedCapabilities: ExtensionCapability[];
   runtimeReadPaths?: string[];
+  terminal?: {
+    columns: number;
+    rows: number;
+  };
 }
 
 export interface SandboxedProcess {
@@ -38,6 +47,7 @@ export interface SandboxedProcess {
   stdout: Readable;
   stderr: Readable;
   exit: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
+  resize?(columns: number, rows: number): Promise<void>;
   terminate(): Promise<void>;
 }
 
@@ -103,6 +113,21 @@ export class MacOsSandboxAdapter implements OsSandboxAdapter {
       path.join(tmpdir(), "napier-process-sandbox-"),
     );
     const profile = buildMacOsSandboxProfile(request, sandboxHome);
+    if (request.terminal) {
+      return launchTerminalSandboxWrapper({
+        command: this.executable,
+        args: ["-p", profile, "--", request.command, ...request.args],
+        cwd: request.cwd,
+        env: {
+          ...request.env,
+          HOME: sandboxHome,
+          TMPDIR: sandboxHome,
+        },
+        columns: request.terminal.columns,
+        rows: request.terminal.rows,
+        sandboxHome,
+      });
+    }
     let child: ChildProcessWithoutNullStreams;
     try {
       child = this.spawnProcess(
@@ -182,6 +207,21 @@ export class LinuxBubblewrapSandboxAdapter implements OsSandboxAdapter {
       path.join(tmpdir(), "napier-process-sandbox-"),
     );
     const args = buildLinuxBubblewrapArgs(request, sandboxHome);
+    if (request.terminal) {
+      return launchTerminalSandboxWrapper({
+        command: this.executable,
+        args,
+        cwd: "/",
+        env: {
+          ...request.env,
+          HOME: "/tmp",
+          TMPDIR: "/tmp",
+        },
+        columns: request.terminal.columns,
+        rows: request.terminal.rows,
+        sandboxHome,
+      });
+    }
     let child: ChildProcessWithoutNullStreams;
     try {
       child = this.spawnProcess(this.executable, args, {
@@ -252,6 +292,11 @@ export class OciContainerSandboxAdapter implements OsSandboxAdapter {
 
   async launch(request: SandboxLaunchRequest): Promise<SandboxedProcess> {
     validateLaunchRequest(request);
+    if (request.terminal) {
+      throw new Error(
+        "OCI PTY launch requires image-bound terminal runtime support",
+      );
+    }
     validateContainerImage(this.image);
     try {
       await access(this.executable);
@@ -526,6 +571,7 @@ function validateLaunchRequest(request: SandboxLaunchRequest): void {
       `Sandbox runtime read paths must contain at most ${MAX_RUNTIME_READ_PATHS} absolute non-root paths`,
     );
   }
+  validateTerminalDimensions(request.terminal);
 }
 
 function validateContainerImage(image: string): void {

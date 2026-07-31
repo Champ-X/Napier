@@ -17,6 +17,7 @@ export interface WorkspaceProcessCardView {
   outputLabel: string;
   outputAvailable: boolean;
   stdinState: "unavailable" | "closed" | "open";
+  stdinCanClose: boolean;
   stdinLabel: string;
   stdinHash?: string;
   workspaceDeltaState:
@@ -36,6 +37,10 @@ export interface WorkspaceProcessCardView {
 export function workspaceProcessCardView(
   session: WorkspaceProcessSession,
 ): WorkspaceProcessCardView {
+  const terminalLabel =
+    session.ioMode === "pty"
+      ? ` · PTY ${session.terminalColumns}×${session.terminalRows} · ${session.terminalResizeCount ?? 0} resize${session.terminalResizeCount === 1 ? "" : "s"}`
+      : "";
   return {
     id: session.id,
     status: session.status,
@@ -47,10 +52,13 @@ export function workspaceProcessCardView(
       session.durationMs === undefined
         ? "In progress"
         : `${session.durationMs.toLocaleString()} ms`,
-    runtimeLabel: `${session.runtime} · ${session.sandbox}`,
+    runtimeLabel: `${session.runtime} · ${session.sandbox}${terminalLabel}`,
     scopeLabel: "Workspace read-only · Network denied",
     limitLabel: `${Math.round(session.timeoutMs / 1_000)}s · ${session.outputLimitChars.toLocaleString()} chars/stream`,
-    outputLabel: `${session.stdoutChars.toLocaleString()} stdout · ${session.stderrChars.toLocaleString()} stderr · cursor ${session.nextCursor}`,
+    outputLabel:
+      session.ioMode === "pty"
+        ? `${session.stdoutChars.toLocaleString()} merged terminal chars · cursor ${session.nextCursor}`
+        : `${session.stdoutChars.toLocaleString()} stdout · ${session.stderrChars.toLocaleString()} stderr · cursor ${session.nextCursor}`,
     outputAvailable: session.outputAvailable,
     ...stdinView(session),
     ...workspaceDeltaView(session),
@@ -88,15 +96,20 @@ export function workspaceProcessSelectionRequestIsCurrent(
 
 function stdinView(
   session: WorkspaceProcessSession,
-): Pick<WorkspaceProcessCardView, "stdinState" | "stdinLabel" | "stdinHash"> {
+): Pick<
+  WorkspaceProcessCardView,
+  "stdinState" | "stdinCanClose" | "stdinLabel" | "stdinHash"
+> {
   if (session.stdinMode === undefined) {
     return {
       stdinState: "unavailable",
+      stdinCanClose: false,
       stdinLabel: "Input metadata unavailable for this session version",
     };
   }
   return {
     stdinState: session.stdinOpen ? "open" : "closed",
+    stdinCanClose: session.ioMode !== "pty" && session.stdinOpen === true,
     stdinLabel:
       session.stdinMode === "interactive"
         ? `${session.stdinWriteCount ?? 0} writes · ${(session.stdinBytes ?? 0).toLocaleString()} bytes · ${session.stdinOpen ? "open" : "closed"}`

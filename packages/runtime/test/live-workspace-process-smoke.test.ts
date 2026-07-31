@@ -166,7 +166,14 @@ describeLive("live Workspace Process smoke", () => {
       model: { provider: "live-process-smoke", id: "faux-1" },
     });
 
-    expect(run.status).toBe("completed");
+    expect(
+      run.status,
+      JSON.stringify({
+        run,
+        sessions: await processes.list(thread.id),
+        events: await store.listEvents(thread.id),
+      }),
+    ).toBe("completed");
     const [session] = await processes.list(thread.id);
     expect(session).toBeDefined();
     const settled = await processes.waitForSettlement(thread.id, session!.id);
@@ -185,6 +192,186 @@ describeLive("live Workspace Process smoke", () => {
     expect(JSON.stringify(events)).not.toContain(commandSource);
     expect(JSON.stringify(events)).not.toContain("alpha");
     expect(JSON.stringify(events)).not.toContain("beta");
+    await processes.shutdown();
+    store.close();
+  }, 30_000);
+
+  it("runs and resizes a real PTY through the Agent and OS sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-pty-workspace-"),
+    );
+    const dataRoot = await mkdtemp(path.join(tmpdir(), "napier-live-pty-"));
+    temporaryRoots.push(workspaceRoot, dataRoot);
+    const store = new LocalStore({ workspaceRoot, dataRoot });
+    await store.initialize();
+    const sandbox = createPlatformSandboxAdapter();
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      sandbox,
+    });
+    await processes.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["workspace_process"],
+    });
+    const thread = await store.createThread({
+      title: "Live PTY Process smoke",
+      agentId: agent.id,
+    });
+    const commandSource = [
+      "process.stdin.setEncoding('utf8');",
+      "process.stdout.write(`PTY_READY:${process.stdin.isTTY}:${process.stdout.isTTY}:${process.stdout.columns}x${process.stdout.rows}:${process.env.TERM}\\n`);",
+      "process.stdin.once('data', data => {",
+      "  process.stderr.write(`PTY_INPUT:${process.stdout.columns}x${process.stdout.rows}:${JSON.stringify(data)}\\n`);",
+      "  process.exit(0);",
+      "});",
+    ].join(" ");
+    const provider = fauxProvider({ provider: "live-pty-smoke" });
+    let initialTerminalOutput = "";
+    let resizedTerminalOutput = "";
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("workspace_process", {
+          action: "start",
+          runtime: "node",
+          args: ["-e", commandSource],
+          timeoutMs: 10_000,
+          terminal: { columns: 91, rows: 37 },
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "poll",
+            processId,
+            afterCursor: 0,
+            waitMs: 2_000,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        const processId = messages.match(/process_[a-z0-9]{20}/u)?.[0];
+        initialTerminalOutput = messages;
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "resize",
+            processId,
+            columns: 111,
+            rows: 43,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "input",
+            processId,
+            text: "PTY_PRIVATE_INPUT",
+            appendNewline: true,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "poll",
+            processId,
+            afterCursor: 0,
+            waitMs: 2_000,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        resizedTerminalOutput = messages;
+        const processId = messages.match(/process_[a-z0-9]{20}/u)?.[0];
+        const cursors = [...messages.matchAll(/"nextCursor":(\d+)/gu)];
+        const afterCursor = Number(cursors.at(-1)?.[1] ?? "0");
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "poll",
+            processId,
+            afterCursor,
+            waitMs: 2_000,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        resizedTerminalOutput = JSON.stringify(context.messages);
+        return fauxAssistantMessage("The sandboxed PTY completed.");
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      sandbox,
+      processes,
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Run and resize a real terminal-aware process.",
+      model: { provider: "live-pty-smoke", id: "faux-1" },
+    });
+
+    expect(
+      run.status,
+      JSON.stringify({
+        run,
+        sessions: await processes.list(thread.id),
+        events: await store.listEvents(thread.id),
+      }),
+    ).toBe("completed");
+    expect(initialTerminalOutput, initialTerminalOutput).toContain(
+      "PTY_READY:true:true:91x37:xterm-256color",
+    );
+    expect(resizedTerminalOutput, resizedTerminalOutput).toContain(
+      "PTY_INPUT:111x43",
+    );
+    expect(resizedTerminalOutput).toContain("PTY_PRIVATE_INPUT");
+    const [session] = await processes.list(thread.id);
+    expect(session).toBeDefined();
+    const settled = await processes.waitForSettlement(thread.id, session!.id);
+    expect(settled).toEqual(
+      expect.objectContaining({
+        ioMode: "pty",
+        status: "succeeded",
+        terminalType: "xterm-256color",
+        terminalColumns: 111,
+        terminalRows: 43,
+        terminalResizeCount: 1,
+        stdinWriteCount: 1,
+        stdinOpen: false,
+        stderrChars: 0,
+        workspaceDeltaStatus: "unchanged",
+      }),
+    );
+    const durable = JSON.stringify(await store.listEvents(thread.id));
+    expect(durable).not.toContain(commandSource);
+    expect(durable).not.toContain("PTY_PRIVATE_INPUT");
+    expect(durable).not.toContain("PTY_INPUT:111x43");
     await processes.shutdown();
     store.close();
   }, 30_000);

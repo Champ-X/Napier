@@ -20,7 +20,7 @@ Audit date: 2026-07-31
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | --------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | A checked local product-path budget now covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Split Server and Store by domain; extend budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded pipe input, sandboxed PTY with resize and merged terminal output, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                     |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                        |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                                 |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
@@ -30,6 +30,82 @@ Audit date: 2026-07-31
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+## Completed Slice: Sandboxed PTY Process Sessions
+
+User scenario: an Agent can run a terminal-aware Node program through the
+existing managed Process Session, send bounded terminal input, resize the
+pseudo-terminal, observe ordered merged output, and settle or cancel it without
+receiving shell access or escaping the existing OS Sandbox.
+
+Acceptance:
+
+- add an explicit PTY start mode to `workspace_process` while retaining the
+  existing closed or interactive pipe modes unchanged;
+- launch only the already prepared, hash-bound Node argv through the existing
+  macOS Sandbox or Linux Bubblewrap wrapper; never evaluate a shell string or
+  let the model select the host executable;
+- use a fixed terminal type and bounded initial columns/rows, support
+  Run-owned bounded resize actions, and make merged terminal output explicit;
+- preserve Process admission, wall-time, output, input, cancellation,
+  executable-drift, workspace-snapshot, and shutdown controls;
+- reject pipe close semantics for a PTY because a pseudo-terminal cannot be
+  truthfully half-closed; callers may send explicit control bytes and must
+  inspect settlement before retrying an uncertain input;
+- record PTY mode, dimensions, resize count, terminal environment binding, and
+  input/output hashes without persisting argv, terminal input, or terminal
+  output text;
+- project PTY start, resize, settlement, interruption, and Replay through the
+  existing Process and Work Ledger model rather than introducing a second
+  terminal session store;
+- cover normal I/O, resize, merged output, invalid dimensions, unsupported
+  resize, close rejection, timeout, cancellation, output cap, concurrent
+  sessions, Runtime restart, privacy, and legacy schema compatibility;
+- prove a real macOS Sandbox session observes TTY stdin/stdout, the fixed
+  terminal type, an initial size, a later resize, interactive input, and
+  terminal settlement.
+
+Threat boundary:
+
+- `node-pty` may allocate the host pseudo-terminal only to launch the existing
+  Sandbox wrapper. The target remains inside the same read-only Workspace,
+  denied-network, fixed-environment capability boundary as pipe sessions.
+- PTY output can contain control sequences and untrusted text. It remains
+  bounded live data and must never be interpreted as HTML, a command, or
+  durable evidence text.
+- Native PTY writes do not provide the same kernel callback as Node pipe
+  writes. A successful action proves synchronous acceptance by the PTY
+  adapter, not target consumption; cancellation and retry remain fail-closed.
+- A PTY does not by itself provide a shell, package installation, Workspace
+  writes, cross-restart attachment, hard total-RSS quotas, or a remote
+  Sandbox. Those remain separate capabilities.
+
+Observed result:
+
+- a real external Terminal dogfood drove the complete Agent tool path through
+  macOS `sandbox-exec`, observed TTY stdin/stdout,
+  `TERM=xterm-256color`, `91x37` initial size, `111x43` resized input/output,
+  terminal long-poll settlement, unchanged Workspace evidence, and no durable
+  command/input/output text in 487 ms;
+- focused Runtime tests cover real native PTY allocation, merged streams,
+  resize, process-group termination, bounds, ownership, unsupported backends,
+  pipe-close rejection, timeout, cancellation, output cap, parent abort,
+  concurrency, restart interruption, unknown Ledger settlement, tampering,
+  Replay, and private pipe protocol compatibility;
+- Server integration returns a conflict for PTY pipe-close requests, while the
+  Workbench labels merged terminal output, current size and resize count and
+  hides the invalid close action;
+- PTY launch, terminal state, and resize receipt logic live in split modules;
+  `node-pty` is dynamically loaded and ordinary Runtime startup remains on the
+  existing non-native path;
+- the complete repository gate passed 1,405 regular tests with 25 opt-in live
+  tests skipped by default, verified 247 OpenAPI routes and 244/244 locked
+  compatibility operations, and passed the product budget at 670.0 ms CLI
+  first event, 817.4 ms first token, 1,183.0 ms completion, 0.4 ms read p95,
+  7.2 ms 1,000-event projection, and 749.568 SQLite bytes/event;
+- the 69-file Web dist remains within budget at 130.08 KiB for the main entry,
+  is bound to `e7c6d40a17797a71`, and the seven-artifact release set is bound to
+  `b12a1b1e02d487b8`.
 
 ## Completed Slice: Product-Path Performance Budget
 

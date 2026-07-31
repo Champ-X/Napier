@@ -23,13 +23,16 @@ import {
   createWorkspaceProcessInputReceipt,
   createWorkspaceProcessSession,
   createWorkspaceProcessTool,
+  exportThreadReplayBundle,
   parseWorkspaceProcessInputReceipt,
+  parseWorkspaceProcessResizeReceipt,
   projectWorkspaceProcessSessions,
   type OsSandboxAdapter,
   type SandboxedProcess,
   type SandboxLaunchRequest,
   workspaceProcessToolCallArgumentsLedgerProjection,
   workspaceProcessSessionPayload,
+  verifyThreadReplayBundle,
 } from "../src/index.js";
 
 const temporaryRoots: string[] = [];
@@ -48,6 +51,7 @@ interface ControlledProcess {
   stdin: PassThrough;
   stdout: PassThrough;
   stderr: PassThrough;
+  resize: ReturnType<typeof vi.fn>;
   terminate: ReturnType<typeof vi.fn>;
   settle(code: number | null, signal?: NodeJS.Signals | null): void;
 }
@@ -84,11 +88,13 @@ function createControlledSandbox() {
         resolveExit?.({ code, signal });
       };
       const terminate = vi.fn(async () => settle(null, "SIGTERM"));
+      const resize = vi.fn(async () => undefined);
       processes.push({
         request: structuredClone(request),
         stdin,
         stdout,
         stderr,
+        resize,
         terminate,
         settle,
       });
@@ -97,6 +103,7 @@ function createControlledSandbox() {
         stdout,
         stderr,
         exit,
+        ...(request.terminal ? { resize } : {}),
         terminate,
       } satisfies SandboxedProcess;
     },
@@ -154,6 +161,24 @@ async function startProcess(
   });
 }
 
+async function startTerminalProcess(
+  harness: Awaited<ReturnType<typeof createHarness>>,
+  timeoutMs = 30_000,
+  signal?: AbortSignal,
+) {
+  return harness.manager.start({
+    threadId: harness.thread.id,
+    runId: harness.run.id,
+    command: {
+      runtime: "node",
+      args: ["-e", "setInterval(() => {}, 1000)"],
+      timeoutMs,
+    },
+    terminal: { columns: 80, rows: 24 },
+    ...(signal ? { signal } : {}),
+  });
+}
+
 describe("Workspace Process Manager", () => {
   it("starts, streams cursor output, and settles without persisting text", async () => {
     const harness = await createHarness();
@@ -166,6 +191,8 @@ describe("Workspace Process Manager", () => {
         nextCursor: 0,
         workspaceAccess: "read_only",
         networkAccess: "denied",
+        schemaVersion: 4,
+        ioMode: "pipe",
         stdinMode: "closed",
         stdinOpen: false,
         stdinWriteCount: 0,
@@ -261,7 +288,8 @@ describe("Workspace Process Manager", () => {
     );
     expect(session).toEqual(
       expect.objectContaining({
-        schemaVersion: 3,
+        schemaVersion: 4,
+        ioMode: "pipe",
         stdinMode: "interactive",
         stdinOpen: true,
         stdinWriteCount: 0,
@@ -339,6 +367,226 @@ describe("Workspace Process Manager", () => {
       (await harness.manager.waitForSettlement(harness.thread.id, session.id))
         .stdinOpen,
     ).toBe(false);
+    harness.store.close();
+  });
+
+  it("runs a bounded PTY, serializes resize and input, and persists no terminal text", async () => {
+    const harness = await createHarness();
+    const session = await harness.manager.start({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "process.stdin.resume()"],
+        timeoutMs: 30_000,
+      },
+      terminal: { columns: 83, rows: 29 },
+    });
+    expect(session).toEqual(
+      expect.objectContaining({
+        schemaVersion: 4,
+        ioMode: "pty",
+        stdinMode: "interactive",
+        stdinOpen: true,
+        terminalType: "xterm-256color",
+        terminalColumns: 83,
+        terminalRows: 29,
+        terminalResizeCount: 0,
+      }),
+    );
+    expect(harness.controlled.processes[0]?.request).toEqual(
+      expect.objectContaining({
+        terminal: { columns: 83, rows: 29 },
+        env: expect.objectContaining({ TERM: "xterm-256color" }),
+      }),
+    );
+    harness.controlled.processes[0]!.stdin.resume();
+    await harness.manager.writeInput({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      processId: session.id,
+      text: "PTY_SECRET_INPUT",
+      appendNewline: true,
+      initiatedBy: "agent",
+    });
+    const resized = await Promise.all([
+      harness.manager.resize({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        processId: session.id,
+        columns: 100,
+        rows: 40,
+        initiatedBy: "agent",
+      }),
+      harness.manager.resize({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        processId: session.id,
+        columns: 120,
+        rows: 50,
+        initiatedBy: "agent",
+      }),
+    ]);
+    expect(resized.map((receipt) => receipt.sequence)).toEqual([1, 2]);
+    expect(
+      parseWorkspaceProcessResizeReceipt({
+        ...resized[1],
+        columns: 121,
+      }),
+    ).toBeUndefined();
+    expect(harness.controlled.processes[0]?.resize.mock.calls).toEqual([
+      [100, 40],
+      [120, 50],
+    ]);
+    await expect(
+      harness.manager.writeInput({
+        threadId: harness.thread.id,
+        processId: session.id,
+        text: "",
+        close: true,
+        initiatedBy: "operator",
+      }),
+    ).rejects.toThrow("cannot use pipe close semantics");
+    harness.controlled.processes[0]!.stdout.write(
+      "\u001b[32mPTY_SECRET_OUTPUT\u001b[0m\r\n",
+    );
+    harness.controlled.processes[0]!.settle(0);
+    const settled = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        status: "succeeded",
+        ioMode: "pty",
+        stdinOpen: false,
+        terminalColumns: 120,
+        terminalRows: 50,
+        terminalResizeCount: 2,
+        stderrChars: 0,
+      }),
+    );
+    const events = await harness.store.listEvents(harness.thread.id);
+    expect(
+      events
+        .filter((event) => event.type === "workspace.process.resized")
+        .map((event) => [
+          event.payload["sequence"],
+          event.payload["columns"],
+          event.payload["rows"],
+        ]),
+    ).toEqual([
+      [1, 100, 40],
+      [2, 120, 50],
+    ]);
+    expect(projectWorkspaceProcessSessions(events)[0]).toEqual(
+      expect.objectContaining({
+        id: session.id,
+        status: "succeeded",
+        terminalColumns: 120,
+        terminalRows: 50,
+        terminalResizeCount: 2,
+      }),
+    );
+    expect(JSON.stringify(events)).not.toContain("PTY_SECRET_INPUT");
+    expect(JSON.stringify(events)).not.toContain("PTY_SECRET_OUTPUT");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(harness.store, harness.thread.id),
+      ).status,
+    ).toBe("valid");
+    harness.store.close();
+  });
+
+  it("rejects invalid or unsupported PTY starts before durable evidence", async () => {
+    const harness = await createHarness();
+    await expect(
+      harness.manager.start({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        command: {
+          runtime: "node",
+          args: ["-e", "setInterval(() => {}, 1000)"],
+        },
+        terminal: { columns: 19, rows: 24 },
+      }),
+    ).rejects.toThrow("terminal size");
+    expect(harness.controlled.processes).toHaveLength(0);
+    harness.store.close();
+
+    const controlled = createControlledSandbox();
+    const unsupported: OsSandboxAdapter = {
+      id: "no-pty-resize",
+      async launch(request) {
+        const child = await controlled.sandbox.launch(request);
+        const { resize: _resize, ...withoutResize } = child;
+        return withoutResize;
+      },
+    };
+    const unsupportedHarness = await createHarness({ sandbox: unsupported });
+    await expect(
+      unsupportedHarness.manager.start({
+        threadId: unsupportedHarness.thread.id,
+        runId: unsupportedHarness.run.id,
+        command: {
+          runtime: "node",
+          args: ["-e", "setInterval(() => {}, 1000)"],
+        },
+        terminal: { columns: 80, rows: 24 },
+      }),
+    ).rejects.toThrow("does not support PTY resize");
+    expect(controlled.processes[0]?.terminate).toHaveBeenCalledOnce();
+    expect(
+      (
+        await unsupportedHarness.store.listEvents(unsupportedHarness.thread.id)
+      ).some((event) => event.type === "workspace.process.started"),
+    ).toBe(false);
+    unsupportedHarness.store.close();
+  });
+
+  it("bounds PTY resize ownership, dimensions, and action count", async () => {
+    const harness = await createHarness();
+    const session = await startTerminalProcess(harness);
+    await expect(
+      harness.manager.resize({
+        threadId: harness.thread.id,
+        runId: "run_1234567890abcdef1234",
+        processId: session.id,
+        columns: 80,
+        rows: 24,
+        initiatedBy: "agent",
+      }),
+    ).rejects.toThrow("does not belong");
+    await expect(
+      harness.manager.resize({
+        threadId: harness.thread.id,
+        processId: session.id,
+        columns: 401,
+        rows: 24,
+        initiatedBy: "operator",
+      }),
+    ).rejects.toThrow("terminal size");
+    for (let sequence = 1; sequence <= 64; sequence += 1) {
+      const receipt = await harness.manager.resize({
+        threadId: harness.thread.id,
+        processId: session.id,
+        columns: 80 + (sequence % 2),
+        rows: 24,
+        initiatedBy: "operator",
+      });
+      expect(receipt.sequence).toBe(sequence);
+    }
+    await expect(
+      harness.manager.resize({
+        threadId: harness.thread.id,
+        processId: session.id,
+        columns: 80,
+        rows: 24,
+        initiatedBy: "operator",
+      }),
+    ).rejects.toThrow("resize-count limit");
+    expect(harness.controlled.processes[0]?.resize).toHaveBeenCalledTimes(64);
+    await harness.manager.cancel(harness.thread.id, session.id);
     harness.store.close();
   });
 
@@ -491,6 +739,11 @@ describe("Workspace Process Manager", () => {
       workspaceDeltaAvailable: _workspaceDeltaAvailable,
       workspaceBeforeSha256: _workspaceBeforeSha256,
       workspaceBeforeTruncated: _workspaceBeforeTruncated,
+      ioMode: _ioMode,
+      terminalType: _terminalType,
+      terminalColumns: _terminalColumns,
+      terminalRows: _terminalRows,
+      terminalResizeCount: _terminalResizeCount,
       stdinMode: _stdinMode,
       stdinOpen: _stdinOpen,
       stdinWriteCount: _stdinWriteCount,
@@ -550,6 +803,11 @@ describe("Workspace Process Manager", () => {
       schemaVersion: _schemaVersion,
       outputAvailable: _outputAvailable,
       workspaceDeltaAvailable: _workspaceDeltaAvailable,
+      ioMode: _ioMode,
+      terminalType: _terminalType,
+      terminalColumns: _terminalColumns,
+      terminalRows: _terminalRows,
+      terminalResizeCount: _terminalResizeCount,
       stdinMode: _stdinMode,
       stdinOpen: _stdinOpen,
       stdinWriteCount: _stdinWriteCount,
@@ -710,7 +968,7 @@ describe("Workspace Process Manager", () => {
     failedHarness.store.close();
 
     const cancelledHarness = await createHarness();
-    const cancelled = await startProcess(cancelledHarness);
+    const cancelled = await startTerminalProcess(cancelledHarness);
     expect(
       (
         await cancelledHarness.manager.cancel(
@@ -726,7 +984,7 @@ describe("Workspace Process Manager", () => {
 
     vi.useFakeTimers();
     const timeoutHarness = await createHarness();
-    const timed = await startProcess(timeoutHarness, "hang", 1_000);
+    const timed = await startTerminalProcess(timeoutHarness, 1_000);
     await vi.advanceTimersByTimeAsync(1_001);
     expect(
       (
@@ -740,7 +998,7 @@ describe("Workspace Process Manager", () => {
     vi.useRealTimers();
 
     const capHarness = await createHarness();
-    const capped = await startProcess(capHarness);
+    const capped = await startTerminalProcess(capHarness);
     capHarness.controlled.processes[0]!.stdout.write("x".repeat(40_000));
     expect(
       (
@@ -754,12 +1012,11 @@ describe("Workspace Process Manager", () => {
 
     const abortHarness = await createHarness();
     const controller = new AbortController();
-    const aborted = await abortHarness.manager.start({
-      threadId: abortHarness.thread.id,
-      runId: abortHarness.run.id,
-      command: { runtime: "node", args: ["-e", "hang"] },
-      signal: controller.signal,
-    });
+    const aborted = await startTerminalProcess(
+      abortHarness,
+      30_000,
+      controller.signal,
+    );
     controller.abort();
     expect(
       (
@@ -781,7 +1038,10 @@ describe("Workspace Process Manager", () => {
     const starts = await Promise.allSettled(
       Array.from(
         { length: MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD + 1 },
-        () => startProcess(harness),
+        (_, index) =>
+          index % 2 === 0
+            ? startTerminalProcess(harness)
+            : startProcess(harness),
       ),
     );
     expect(
@@ -836,6 +1096,7 @@ describe("Workspace Process Manager", () => {
           threadId: owner.thread.id,
           runId: owner.run.id,
           command: { runtime: "node", args: ["-e", "hang"] },
+          ...(index % 2 === 0 ? { terminal: { columns: 80, rows: 24 } } : {}),
         });
       }),
     );
@@ -856,17 +1117,20 @@ describe("Workspace Process Manager", () => {
 
   it("interrupts active evidence on restart and exposes no stale output", async () => {
     const harness = await createHarness();
-    const session = await startProcess(
-      harness,
-      "process.stdin.resume()",
-      30_000,
-      true,
-    );
+    const session = await startTerminalProcess(harness);
     harness.controlled.processes[0]!.stdin.resume();
     await harness.manager.writeInput({
       threadId: harness.thread.id,
       processId: session.id,
       text: "RESTART_SECRET_INPUT",
+      initiatedBy: "operator",
+    });
+    await harness.manager.resize({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      processId: session.id,
+      columns: 101,
+      rows: 39,
       initiatedBy: "operator",
     });
     harness.controlled.processes[0]!.stdout.write("ephemeral\n");
@@ -898,6 +1162,10 @@ describe("Workspace Process Manager", () => {
         stdinOpen: false,
         stdinWriteCount: 1,
         stdinBytes: Buffer.byteLength("RESTART_SECRET_INPUT"),
+        ioMode: "pty",
+        terminalColumns: 101,
+        terminalRows: 39,
+        terminalResizeCount: 1,
         interruptionReason: expect.stringContaining("outcome is unknown"),
       }),
     );
@@ -1042,6 +1310,46 @@ describe("Workspace Process Manager", () => {
     harness.store.close();
   });
 
+  it("terminates after an accepted PTY resize cannot be bound to the Ledger", async () => {
+    const harness = await createHarness();
+    const session = await startTerminalProcess(harness);
+    const appendEvent = harness.store.appendEvent.bind(harness.store);
+    vi.spyOn(harness.store, "appendEvent").mockImplementation(async (input) => {
+      if (input.type === "workspace.process.resized") {
+        throw new Error("TOP_SECRET_RESIZE_LEDGER_FAILURE");
+      }
+      return appendEvent(input);
+    });
+    await expect(
+      harness.manager.resize({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        processId: session.id,
+        columns: 99,
+        rows: 33,
+        initiatedBy: "agent",
+      }),
+    ).rejects.toThrow("outcome is unknown");
+    const interrupted = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(interrupted).toEqual(
+      expect.objectContaining({
+        status: "interrupted",
+        terminalColumns: 99,
+        terminalRows: 33,
+        terminalResizeCount: 1,
+        interruptionReason: expect.stringContaining("outcome is unknown"),
+      }),
+    );
+    expect(JSON.stringify(interrupted)).not.toContain("TOP_SECRET");
+    expect(
+      JSON.stringify(await harness.store.listEvents(harness.thread.id)),
+    ).not.toContain("TOP_SECRET");
+    harness.store.close();
+  });
+
   it("fails closed when no supported sandbox backend is available", async () => {
     const harness = await createHarness({
       sandbox: new UnsupportedSandboxAdapter("test-platform"),
@@ -1110,6 +1418,63 @@ describe("Workspace Process Manager", () => {
     expect(cancelled.details.status).toBe("cancelled");
     expect(cancelled.details.workspaceDeltaStatus).toBe("unchanged");
     expect(cancelled.content[0]?.text).toContain("Workspace delta: unchanged");
+    harness.store.close();
+  });
+
+  it("exposes bounded PTY start and resize through the Agent tool", async () => {
+    const harness = await createHarness();
+    const tool = createWorkspaceProcessTool(harness.manager, {
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+    });
+    const started = await tool.execute("call-start-pty", {
+      action: "start",
+      runtime: "node",
+      args: ["-e", "setInterval(() => {}, 1000)"],
+      terminal: { columns: 90, rows: 30 },
+    });
+    expect(started.details).toEqual(
+      expect.objectContaining({
+        action: "start",
+        ioMode: "pty",
+        terminalColumns: 90,
+        terminalRows: 30,
+        terminalResizeCount: 0,
+      }),
+    );
+    const resized = await tool.execute("call-resize-pty", {
+      action: "resize",
+      processId: started.details.processId,
+      columns: 110,
+      rows: 44,
+    });
+    expect(resized.details).toEqual(
+      expect.objectContaining({
+        action: "resize",
+        terminalColumns: 110,
+        terminalRows: 44,
+        terminalResizeCount: 1,
+        resizeReceiptSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      }),
+    );
+    expect(
+      workspaceProcessToolCallArgumentsLedgerProjection({
+        action: "resize",
+        processId: started.details.processId,
+        columns: 110,
+        rows: 44,
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        action: "resize",
+        terminalColumns: 110,
+        terminalRows: 44,
+      }),
+    );
+    await tool.execute("call-cancel-pty", {
+      action: "cancel",
+      processId: started.details.processId,
+    });
     harness.store.close();
   });
 });

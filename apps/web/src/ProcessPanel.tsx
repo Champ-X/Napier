@@ -544,7 +544,11 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                         }))
                       }
                     />
-                    <small>{copy.inputSafety}</small>
+                    <small>
+                      {session.ioMode === "pty"
+                        ? copy.ptyInputSafety
+                        : copy.inputSafety}
+                    </small>
                     <div>
                       <button
                         type="submit"
@@ -559,17 +563,19 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                           ? copy.sendingInput
                           : copy.sendInput}
                       </button>
-                      <button
-                        type="button"
-                        className="secondary-button danger"
-                        disabled={inputBusy?.processId === card.id}
-                        onClick={() => void sendInput(card.id, "close")}
-                      >
-                        {inputBusy?.processId === card.id &&
-                        inputBusy.action === "close"
-                          ? copy.closingInput
-                          : copy.closeInput}
-                      </button>
+                      {card.stdinCanClose ? (
+                        <button
+                          type="button"
+                          className="secondary-button danger"
+                          disabled={inputBusy?.processId === card.id}
+                          onClick={() => void sendInput(card.id, "close")}
+                        >
+                          {inputBusy?.processId === card.id &&
+                          inputBusy.action === "close"
+                            ? copy.closingInput
+                            : copy.closeInput}
+                        </button>
+                      ) : null}
                     </div>
                   </form>
                 ) : null}

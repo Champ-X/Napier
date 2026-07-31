@@ -7,6 +7,7 @@ import type {
   WorkspaceProcessInputReceipt,
   WorkspaceProcessOutput,
   WorkspaceProcessOutputChunk,
+  WorkspaceProcessResizeReceipt,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
 } from "@napier/contracts";
@@ -19,7 +20,7 @@ import {
   type CommandRunnerOptions,
   type PreparedCommandExecution,
 } from "./command-execution.js";
-import { canonicalJson, sha256 } from "./ed25519.js";
+import { sha256 } from "./ed25519.js";
 import { createId, nowIso } from "./ids.js";
 import type { SandboxedProcess } from "./sandbox.js";
 import type { LocalStore } from "./store.js";
@@ -28,6 +29,7 @@ import {
   projectWorkspaceProcessSessions,
   WORKSPACE_PROCESS_INPUT_EVENT,
   WORKSPACE_PROCESS_INTERRUPTED_EVENT,
+  WORKSPACE_PROCESS_RESIZED_EVENT,
   WORKSPACE_PROCESS_SETTLED_EVENT,
   WORKSPACE_PROCESS_STARTED_EVENT,
   workspaceProcessInputReceiptPayload,
@@ -35,9 +37,11 @@ import {
   workspaceProcessSessionWithRuntimeState,
 } from "./workspace-process-events.js";
 import {
-  type WorkspaceProcessInput,
-  writeWorkspaceProcessInput,
-} from "./workspace-process-input.js";
+  type ResizeWorkspaceProcessRequest,
+  type WorkspaceProcessControlEntry,
+  WorkspaceProcessControl,
+  type WriteWorkspaceProcessInputRequest,
+} from "./workspace-process-control.js";
 import {
   createWorkspacePathSnapshot,
   diffWorkspaceSnapshots,
@@ -45,6 +49,12 @@ import {
   type WorkspaceSnapshotDelta,
   unavailableWorkspacePathSnapshot,
 } from "./workspace-snapshot.js";
+import {
+  bindWorkspaceProcessIo,
+  type WorkspaceProcessTerminalSize,
+  validateWorkspaceProcessTerminalSize,
+} from "./workspace-process-terminal.js";
+import { workspaceProcessResizeReceiptPayload } from "./workspace-process-resize-events.js";
 
 export const MAX_ACTIVE_WORKSPACE_PROCESSES_PER_THREAD = 4;
 export const MAX_ACTIVE_WORKSPACE_PROCESSES = 8;
@@ -72,11 +82,8 @@ interface StreamCollector {
   truncated: boolean;
 }
 
-interface ActiveWorkspaceProcess {
-  session: WorkspaceProcessSession;
+interface ActiveWorkspaceProcess extends WorkspaceProcessControlEntry {
   prepared: PreparedCommandExecution;
-  child: SandboxedProcess;
-  privateProtocol: boolean;
   beforeSnapshot: WorkspacePathSnapshot;
   workspaceDelta?: WorkspaceSnapshotDelta;
   chunks: WorkspaceProcessOutputChunk[];
@@ -92,8 +99,6 @@ interface ActiveWorkspaceProcess {
   changeWaiters: Set<() => void>;
   parentSignal?: AbortSignal;
   parentAbort?: () => void;
-  stdinHash: Hash;
-  inputTail: Promise<void>;
 }
 
 export interface WorkspaceProcessManagerOptions extends CommandRunnerOptions {
@@ -105,13 +110,7 @@ export interface StartWorkspaceProcessRequest {
   runId: string;
   command: CommandExecutionRequest;
   interactive?: boolean;
-  signal?: AbortSignal;
-}
-
-export interface WriteWorkspaceProcessInputRequest extends WorkspaceProcessInput {
-  threadId: string;
-  processId: string;
-  runId?: string;
+  terminal?: WorkspaceProcessTerminalSize;
   signal?: AbortSignal;
 }
 
@@ -128,10 +127,24 @@ export class WorkspaceProcessManager {
     Map<string, WorkspaceProcessSession>
   >();
   private readonly startingByThread = new Map<string, number>();
+  private readonly control: WorkspaceProcessControl<ActiveWorkspaceProcess>;
   private initialized = false;
   private shuttingDown = false;
 
-  constructor(private readonly options: WorkspaceProcessManagerOptions) {}
+  constructor(private readonly options: WorkspaceProcessManagerOptions) {
+    this.control = new WorkspaceProcessControl({
+      requireSession: (threadId, processId) =>
+        this.requireSession(threadId, processId),
+      entry: (processId) => this.entries.get(processId),
+      notify: (entry) => this.notifyChange(entry),
+      interruptUnknown: (entry, reason) =>
+        this.forceStop(entry, "interrupted", reason),
+      appendInput: (receipt, session) =>
+        this.appendInputReceipt(receipt, session),
+      appendResize: (receipt, session) =>
+        this.appendResizeReceipt(receipt, session),
+    });
+  }
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -151,7 +164,7 @@ export class WorkspaceProcessManager {
           schemaVersion: session.schemaVersion,
           ...stableSessionInput(session),
           status: "interrupted",
-          ...(session.schemaVersion === 3 ? { stdinOpen: false } : {}),
+          ...(session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
           settledAt: nowIso(),
           stdoutChars: session.stdoutChars,
           stderrChars: session.stderrChars,
@@ -192,6 +205,15 @@ export class WorkspaceProcessManager {
     if (request.signal?.aborted) {
       throw new Error("workspace process start was aborted");
     }
+    if (request.terminal !== undefined && request.interactive !== undefined) {
+      throw new Error(
+        "Workspace Process PTY mode cannot be combined with pipe interactive mode",
+      );
+    }
+    if (privateProtocol && request.terminal !== undefined) {
+      throw new Error("Private Process protocols cannot use PTY mode");
+    }
+    validateWorkspaceProcessTerminalSize(request.terminal);
     this.options.store.getThread(request.threadId);
     if (
       !this.options.store
@@ -233,8 +255,10 @@ export class WorkspaceProcessManager {
     let prepared: PreparedCommandExecution;
     let beforeSnapshot: WorkspacePathSnapshot;
     let child: SandboxedProcess;
+    let io: ReturnType<typeof bindWorkspaceProcessIo>;
     try {
       prepared = await prepareCommandExecution(this.options, request.command);
+      io = bindWorkspaceProcessIo(prepared, request.terminal);
       beforeSnapshot = await createWorkspacePathSnapshot(
         prepared.workspaceRoot,
         prepared.workspaceRoot,
@@ -245,7 +269,7 @@ export class WorkspaceProcessManager {
       if (request.signal?.aborted) {
         throw new Error("workspace process start was aborted");
       }
-      child = await this.options.sandbox.launch(prepared.launch);
+      child = await this.options.sandbox.launch(io.launch);
     } finally {
       const remaining = (this.startingByThread.get(request.threadId) ?? 1) - 1;
       if (remaining > 0) {
@@ -258,10 +282,15 @@ export class WorkspaceProcessManager {
       await child.terminate().catch(() => undefined);
       throw new Error("Workspace Process Manager is shutting down");
     }
-    if (request.interactive !== true) child.stdin.end();
+    if (request.terminal && !child.resize) {
+      await child.terminate().catch(() => undefined);
+      throw new Error("The selected Sandbox does not support PTY resize");
+    }
+    if (request.interactive !== true && !request.terminal) child.stdin.end();
     const processId = createId("process");
     const startedAt = nowIso();
     const session = createWorkspaceProcessSession({
+      schemaVersion: 4,
       id: processId,
       threadId: request.threadId,
       runId: request.runId,
@@ -271,15 +300,17 @@ export class WorkspaceProcessManager {
       workspaceAccess: "read_only",
       networkAccess: "denied",
       argumentCount: prepared.receipt.argumentCount,
-      commandSha256: sha256(canonicalJson(prepared.receipt)),
+      commandSha256: io.commandSha256,
       executableSha256: prepared.executableSha256,
-      environmentSha256: prepared.receipt.environmentSha256,
-      resourceLimitsSha256: prepared.receipt.resourceLimitsSha256,
+      environmentSha256: io.environmentSha256,
+      resourceLimitsSha256: io.resourceLimitsSha256,
       cwdPathSha256: prepared.receipt.cwdPathSha256,
       timeoutMs: prepared.timeoutMs,
       outputLimitChars: MAX_COMMAND_OUTPUT_CHARS,
-      stdinMode: request.interactive === true ? "interactive" : "closed",
-      stdinOpen: request.interactive === true,
+      ...io.session,
+      ...(request.interactive === true
+        ? { stdinMode: "interactive" as const, stdinOpen: true }
+        : {}),
       stdinWriteCount: 0,
       stdinBytes: 0,
       stdinSha256: sha256(""),
@@ -489,52 +520,20 @@ export class WorkspaceProcessManager {
   async writeInput(
     request: WriteWorkspaceProcessInputRequest,
   ): Promise<WorkspaceProcessInputReceipt> {
-    return this.writeInputWithProtocolAccess(request, false);
+    return this.control.writeInput(request, false);
   }
 
   async writePrivateProtocolInput(
     request: WriteWorkspaceProcessInputRequest,
   ): Promise<WorkspaceProcessInputReceipt> {
-    return this.writeInputWithProtocolAccess(request, true);
+    return this.control.writeInput(request, true);
   }
 
-  private async writeInputWithProtocolAccess(
-    request: WriteWorkspaceProcessInputRequest,
-    privateProtocolAccess: boolean,
-  ): Promise<WorkspaceProcessInputReceipt> {
+  async resize(
+    request: ResizeWorkspaceProcessRequest,
+  ): Promise<WorkspaceProcessResizeReceipt> {
     this.assertReady();
-    if (request.signal?.aborted) {
-      throw new Error("workspace process input was aborted");
-    }
-    const session = await this.requireSession(
-      request.threadId,
-      request.processId,
-    );
-    if (request.runId && request.runId !== session.runId) {
-      throw new Error("Workspace Process Session does not belong to the Run");
-    }
-    const entry = this.entries.get(request.processId);
-    if (!entry || entry.session.threadId !== request.threadId) {
-      throw new Error("Workspace Process input is unavailable after restart");
-    }
-    if (entry.privateProtocol !== privateProtocolAccess) {
-      throw new Error(
-        privateProtocolAccess
-          ? "Workspace Process Session is not a private protocol session"
-          : "Workspace Process input is unavailable for a private protocol session",
-      );
-    }
-    const operation = entry.inputTail.then(async () => {
-      if (request.signal?.aborted) {
-        throw new Error("workspace process input was aborted");
-      }
-      return this.writeInputNow(entry, request);
-    });
-    entry.inputTail = operation.then(
-      () => undefined,
-      () => undefined,
-    );
-    return operation;
+    return this.control.resize(request);
   }
 
   async cancel(
@@ -610,7 +609,7 @@ export class WorkspaceProcessManager {
       changeVersion: 0,
       changeWaiters: new Set<() => void>(),
       stdinHash: createHash("sha256"),
-      inputTail: Promise.resolve(),
+      controlTail: Promise.resolve(),
       ...(parentSignal ? { parentSignal } : {}),
     };
     child.stdin.on("error", () => undefined);
@@ -709,37 +708,10 @@ export class WorkspaceProcessManager {
     }
   }
 
-  private async writeInputNow(
-    entry: ActiveWorkspaceProcess,
-    request: WriteWorkspaceProcessInputRequest,
-  ): Promise<WorkspaceProcessInputReceipt> {
-    const { session, receipt } = await writeWorkspaceProcessInput(
-      entry.session,
-      entry.child.stdin,
-      entry.stdinHash,
-      request,
-    );
-    entry.session = session;
-    this.notifyChange(entry);
-    try {
-      await this.appendInputReceipt(receipt, session);
-    } catch {
-      this.forceStop(
-        entry,
-        "interrupted",
-        "Process input may have been accepted but its Ledger evidence could not be persisted; the outcome is unknown.",
-      );
-      throw new Error(
-        "Workspace Process input outcome is unknown because Ledger evidence could not be persisted",
-      );
-    }
-    return receipt;
-  }
-
   private async monitor(entry: ActiveWorkspaceProcess): Promise<void> {
     const exit = await entry.child.exit;
     await entry.termination;
-    await entry.inputTail;
+    await entry.controlTail;
     await Promise.all([entry.stdout.completion, entry.stderr.completion]);
     clearTimeout(entry.timeout);
     entry.parentSignal?.removeEventListener("abort", entry.parentAbort!);
@@ -768,7 +740,7 @@ export class WorkspaceProcessManager {
     const session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
       status,
-      ...(entry.session.schemaVersion === 3 ? { stdinOpen: false } : {}),
+      ...(entry.session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
       settledAt,
       durationMs: Math.max(
         0,
@@ -814,7 +786,7 @@ export class WorkspaceProcessManager {
     }
     entry.forcedStatus = status;
     entry.interruptionReason = reason;
-    if (entry.session.schemaVersion === 3 && entry.session.stdinOpen === true) {
+    if (entry.session.schemaVersion >= 3 && entry.session.stdinOpen === true) {
       entry.session = createWorkspaceProcessSession({
         ...stableSessionInput(entry.session),
         status: entry.session.status,
@@ -832,7 +804,7 @@ export class WorkspaceProcessManager {
     entry.session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
       status: "interrupted",
-      ...(entry.session.schemaVersion === 3 ? { stdinOpen: false } : {}),
+      ...(entry.session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
       settledAt: nowIso(),
       stdoutChars: entry.stdout.chars,
       stderrChars: entry.stderr.chars,
@@ -883,6 +855,25 @@ export class WorkspaceProcessManager {
     this.projectedSessions.set(session.threadId, projection);
   }
 
+  private async appendResizeReceipt(
+    receipt: WorkspaceProcessResizeReceipt,
+    session: WorkspaceProcessSession,
+  ): Promise<void> {
+    await this.options.store.appendEvent({
+      threadId: receipt.threadId,
+      runId: receipt.runId,
+      type: WORKSPACE_PROCESS_RESIZED_EVENT,
+      category: "tool",
+      visibility: "user",
+      payload: workspaceProcessResizeReceiptPayload(receipt),
+    });
+    const projection =
+      this.projectedSessions.get(session.threadId) ??
+      new Map<string, WorkspaceProcessSession>();
+    projection.set(session.id, session);
+    this.projectedSessions.set(session.threadId, projection);
+  }
+
   private async requireSession(
     threadId: string,
     processId: string,
@@ -902,7 +893,7 @@ export class WorkspaceProcessManager {
       outputAvailable: !entry.privateProtocol,
       workspaceDeltaAvailable: Boolean(entry.workspaceDelta),
       ...(entry.privateProtocol &&
-      entry.session.schemaVersion === 3 &&
+      entry.session.schemaVersion >= 3 &&
       entry.session.stdinMode === "interactive"
         ? { stdinOpen: false }
         : {}),

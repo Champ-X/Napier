@@ -7,9 +7,16 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
+import {
+  applyWorkspaceProcessResizeReceipt,
+  parseWorkspaceProcessResizeReceipt,
+  validWorkspaceProcessTerminalFields,
+  WORKSPACE_PROCESS_TERMINAL_FIELDS,
+} from "./workspace-process-resize-events.js";
 
 export const WORKSPACE_PROCESS_STARTED_EVENT = "workspace.process.started";
 export const WORKSPACE_PROCESS_INPUT_EVENT = "workspace.process.input";
+export const WORKSPACE_PROCESS_RESIZED_EVENT = "workspace.process.resized";
 export const WORKSPACE_PROCESS_SETTLED_EVENT = "workspace.process.settled";
 export const WORKSPACE_PROCESS_INTERRUPTED_EVENT =
   "workspace.process.interrupted";
@@ -35,15 +42,18 @@ export type WorkspaceProcessSessionInput = Omit<
   | "outputAvailable"
   | "workspaceDeltaAvailable"
   | "contentSha256"
-> & { schemaVersion?: 1 | 2 | 3 };
+> & { schemaVersion?: 1 | 2 | 3 | 4 };
 
 export function createWorkspaceProcessSession(
   input: WorkspaceProcessSessionInput,
 ): WorkspaceProcessSession {
-  const { schemaVersion = 3, ...session } = input;
+  const { schemaVersion = 4, ...session } = input;
   const base = {
     kind: "napier.workspace-process-session" as const,
     ...session,
+    ...(schemaVersion === 4 && session.ioMode === undefined
+      ? { ioMode: "pipe" as const }
+      : {}),
     outputAvailable: false,
   };
   const content = {
@@ -110,6 +120,27 @@ export function projectWorkspaceProcessSessions(
       }
       continue;
     }
+    if (event.type === WORKSPACE_PROCESS_RESIZED_EVENT) {
+      const receipt = parseWorkspaceProcessResizeReceipt(event.payload);
+      const current = receipt ? sessions.get(receipt.processId) : undefined;
+      const updated =
+        receipt && current
+          ? applyWorkspaceProcessResizeReceipt(
+              current,
+              receipt,
+              createWorkspaceProcessSession,
+            )
+          : undefined;
+      if (
+        updated &&
+        receipt &&
+        receipt.threadId === event.threadId &&
+        receipt.runId === event.runId
+      ) {
+        sessions.set(updated.id, updated);
+      }
+      continue;
+    }
     if (
       event.type !== WORKSPACE_PROCESS_STARTED_EVENT &&
       event.type !== WORKSPACE_PROCESS_SETTLED_EVENT &&
@@ -124,12 +155,15 @@ export function projectWorkspaceProcessSessions(
       session.runId !== event.runId ||
       (event.type === WORKSPACE_PROCESS_STARTED_EVENT
         ? session.status !== "running" ||
-          (session.schemaVersion === 3 &&
+          (session.schemaVersion >= 3 &&
             session.stdinMode === "interactive" &&
             (session.stdinOpen !== true ||
               session.stdinWriteCount !== 0 ||
               session.stdinBytes !== 0 ||
-              session.stdinSha256 !== EMPTY_SHA256))
+              session.stdinSha256 !== EMPTY_SHA256)) ||
+          (session.schemaVersion === 4 &&
+            session.ioMode === "pty" &&
+            session.terminalResizeCount !== 0)
         : session.status === "running")
     ) {
       continue;
@@ -212,7 +246,8 @@ function parseWorkspaceProcessSession(
     value["kind"] !== "napier.workspace-process-session" ||
     (value["schemaVersion"] !== 1 &&
       value["schemaVersion"] !== 2 &&
-      value["schemaVersion"] !== 3) ||
+      value["schemaVersion"] !== 3 &&
+      value["schemaVersion"] !== 4) ||
     typeof status !== "string" ||
     !STATUSES.has(status as WorkspaceProcessStatus) ||
     typeof value["id"] !== "string" ||
@@ -264,7 +299,10 @@ function parseWorkspaceProcessSession(
   if (value["schemaVersion"] === 1) {
     if (
       workspaceFields.some((field) => value[field] !== undefined) ||
-      stdinFields.some((field) => value[field] !== undefined)
+      stdinFields.some((field) => value[field] !== undefined) ||
+      WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
+        (field) => value[field] !== undefined,
+      )
     ) {
       return undefined;
     }
@@ -277,8 +315,15 @@ function parseWorkspaceProcessSession(
   }
   if (
     (value["schemaVersion"] === 2 &&
-      stdinFields.some((field) => value[field] !== undefined)) ||
+      (stdinFields.some((field) => value[field] !== undefined) ||
+        WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
+          (field) => value[field] !== undefined,
+        ))) ||
     (value["schemaVersion"] === 3 &&
+      WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
+        (field) => value[field] !== undefined,
+      )) ||
+    ((value["schemaVersion"] === 3 || value["schemaVersion"] === 4) &&
       ((value["stdinMode"] !== "closed" &&
         value["stdinMode"] !== "interactive") ||
         typeof value["stdinOpen"] !== "boolean" ||
@@ -289,7 +334,7 @@ function parseWorkspaceProcessSession(
     return undefined;
   }
   if (
-    value["schemaVersion"] === 3 &&
+    value["schemaVersion"] >= 3 &&
     ((value["stdinMode"] === "closed" &&
       (value["stdinOpen"] !== false ||
         value["stdinWriteCount"] !== 0 ||
@@ -300,6 +345,12 @@ function parseWorkspaceProcessSession(
       (value["stdinBytes"] === 0 && value["stdinSha256"] !== EMPTY_SHA256) ||
       (value["stdinBytes"] !== 0 && value["stdinSha256"] === EMPTY_SHA256) ||
       (status !== "running" && value["stdinOpen"] !== false))
+  ) {
+    return undefined;
+  }
+  if (
+    value["schemaVersion"] === 4 &&
+    !validWorkspaceProcessTerminalFields(value)
   ) {
     return undefined;
   }
@@ -382,7 +433,7 @@ function applyWorkspaceProcessInputReceipt(
   receipt: WorkspaceProcessInputReceipt,
 ): WorkspaceProcessSession | undefined {
   if (
-    session.schemaVersion !== 3 ||
+    session.schemaVersion < 3 ||
     session.status !== "running" ||
     session.stdinMode !== "interactive" ||
     session.stdinOpen !== true ||
@@ -408,7 +459,7 @@ function applyWorkspaceProcessInputReceipt(
   } = session;
   const updated = createWorkspaceProcessSession({
     ...input,
-    schemaVersion: 3,
+    schemaVersion: session.schemaVersion,
     stdinOpen: !receipt.stdinClosed,
     stdinWriteCount: receipt.sequence,
     stdinBytes: receipt.totalInputBytes,

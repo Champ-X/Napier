@@ -4607,6 +4607,7 @@ export function createApp(services: NapierServices): Hono {
                 message.includes("input is empty")
               ? 400
               : message.includes("not open") ||
+                  message.includes("pipe close semantics") ||
                   message.includes("unavailable") ||
                   message.includes("unknown")
                 ? 409

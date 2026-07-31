@@ -64,7 +64,7 @@ describe("Workspace Process HTTP API", () => {
         runtime: "node",
         args: ["-e", "process.stdout.write('HTTP_SECRET_OUTPUT')"],
       },
-      interactive: true,
+      terminal: { columns: 80, rows: 24 },
     });
     const stdin: string[] = [];
     controlled.stdin.setEncoding("utf8");
@@ -87,6 +87,7 @@ describe("Workspace Process HTTP API", () => {
         id: session.id,
         status: "running",
         outputAvailable: true,
+        ioMode: "pty",
       }),
     ]);
 
@@ -145,6 +146,15 @@ describe("Workspace Process HTTP API", () => {
     );
     expect(newlineInputResponse.status).toBe(200);
     expect(stdin.join("")).toBe("HTTP_SECRET_INPUT\n\n");
+    const closePtyResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${session.id}/input`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "", close: true }),
+      },
+    );
+    expect(closePtyResponse.status).toBe(409);
 
     const invalidResponse = await app.request(
       `/api/threads/${thread.id}/processes/${session.id}/output?after=-1`,
@@ -238,12 +248,13 @@ function createControlledSandbox() {
   const terminate = vi.fn(async () => settle(null, "SIGTERM"));
   const sandbox: OsSandboxAdapter = {
     id: "server-process-sandbox",
-    async launch() {
+    async launch(request) {
       return {
         stdin,
         stdout,
         stderr,
         exit,
+        ...(request.terminal ? { resize: async () => undefined } : {}),
         terminate,
       } satisfies SandboxedProcess;
     },

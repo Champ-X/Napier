@@ -3839,10 +3839,11 @@ export type WorkspaceProcessDeltaStatus =
   | "indeterminate";
 
 export type WorkspaceProcessStdinMode = "closed" | "interactive";
+export type WorkspaceProcessIoMode = "pipe" | "pty";
 
 export interface WorkspaceProcessSession {
   kind: "napier.workspace-process-session";
-  schemaVersion: 1 | 2 | 3;
+  schemaVersion: 1 | 2 | 3 | 4;
   id: string;
   threadId: string;
   runId: string;
@@ -3859,11 +3860,16 @@ export interface WorkspaceProcessSession {
   cwdPathSha256: string;
   timeoutMs: number;
   outputLimitChars: number;
+  ioMode?: WorkspaceProcessIoMode;
   stdinMode?: WorkspaceProcessStdinMode;
   stdinOpen?: boolean;
   stdinWriteCount?: number;
   stdinBytes?: number;
   stdinSha256?: string;
+  terminalType?: "xterm-256color";
+  terminalColumns?: number;
+  terminalRows?: number;
+  terminalResizeCount?: number;
   workspaceBeforeSha256?: string;
   workspaceBeforeTruncated?: boolean;
   workspaceAfterSha256?: string;
@@ -3886,6 +3892,22 @@ export interface WorkspaceProcessSession {
   nextCursor: number;
   outputAvailable: boolean;
   interruptionReason?: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceProcessResizeReceipt {
+  kind: "napier.workspace-process-resize";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  processId: string;
+  initiatedBy: "agent" | "operator";
+  sequence: number;
+  columns: number;
+  rows: number;
+  resizedAt: string;
+  sessionSha256: string;
   contentSha256: string;
 }
 

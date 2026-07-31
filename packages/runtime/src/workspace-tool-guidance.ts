@@ -194,7 +194,8 @@ export function formatWorkspaceToolGuidance(
   }
   if (hasProcess) {
     lines.push(
-      "Use workspace_process to start, poll, send bounded input to, or cancel a background Node session. Retain stdin only with explicit interactive mode, close it when the worker should settle, poll with the returned cursor, and cancel sessions that are no longer needed.",
+      "Use workspace_process to start, poll, send bounded input to, resize, or cancel a background Node session. Choose ordinary interactive pipe mode for protocols that need closeable stdin, or explicit PTY mode for terminal-aware programs. Poll with the returned cursor and cancel sessions that are no longer needed.",
+      "PTY sessions use merged terminal output and a fixed terminal type. Resize only the returned PTY Process ID. A PTY cannot truthfully use pipe close semantics; send explicit terminal control bytes when required and wait for settlement or cancel.",
       "Process input text is live-only. Never send secrets, and never blindly retry an input action after an unknown outcome; refresh the session and Trace first.",
       "Process Sessions are read-only and offline, but starting or cancelling one is a lifecycle side effect. Never claim completion until polling returns a terminal status.",
       "When a terminal Process Session reports workspace drift or an indeterminate comparison, surface that result without claiming the Process Session caused an external concurrent change.",

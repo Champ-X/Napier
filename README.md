@@ -1525,10 +1525,11 @@ npm run test:live-command
 macOS rejects nested `sandbox-exec`, so the smoke fails closed when launched
 from an IDE process that is itself sandboxed. OCI command execution is also
 fail-closed until runtime executable identity can be bound across the host and
-image. Hard per-command CPU/memory quotas, PTY, and write-capable sessions
-remain explicit next-stage work. Python and Git are not advertised by this
-slice because their macOS Developer Tools shims require a broader managed
-Runtime boundary than the Node smoke.
+image. Foreground `run_command` remains pipe-only; terminal-aware work uses the
+separately managed `workspace_process` PTY below. Hard per-command CPU/memory
+quotas and write-capable sessions remain explicit next-stage work. Python and
+Git are not advertised by this slice because their macOS Developer Tools shims
+require a broader managed Runtime boundary than the Node smoke.
 
 ## Workspace Process Sessions
 
@@ -1539,6 +1540,16 @@ workspace, and denied-network OS Sandbox as `run_command`; there is still no
 command string, shell, inherited provider credential, or user-selected
 executable. Stdin closes at launch unless the start explicitly opts into
 interactive mode.
+
+An alternative explicit `terminal` start allocates a real pseudo-terminal with
+bounded initial columns and rows. `node-pty` launches only the existing
+`sandbox-exec` or Bubblewrap wrapper; the selected Node target remains inside
+that wrapper. The child observes TTY stdin/stdout and fixed
+`TERM=xterm-256color`. PTY stdout and stderr are one merged, ordered terminal
+stream, and the Agent can perform up to 64 Run-owned bounded resizes. The
+Workspace Processes panel labels merged output, displays the current size and
+resize count, and retains plain-text rendering for untrusted control
+sequences.
 
 Each Thread may have at most four active sessions and one Runtime at most eight
 in total. A session retains at most 32,000 characters per stream and 256
@@ -1560,6 +1571,13 @@ queued write prevents it; once a write starts, a disconnected caller cannot
 prove whether kernel-buffered bytes reached the child and must inspect the
 session and Trace rather than retry blindly.
 
+PTY input uses the same message, total-byte, action, ownership, and redaction
+limits, but it cannot use pipe close semantics because a pseudo-terminal cannot
+be truthfully half-closed. The Agent or operator may send literal terminal
+control bytes, wait for terminal settlement, or cancel. Native PTY writes prove
+synchronous adapter acceptance rather than target consumption, so an unknown
+outcome must still be inspected instead of retried.
+
 Each new session also captures a deterministic workspace snapshot before
 launch and another after settlement. Complete snapshots classify the observed
 execution window as `unchanged` or `changed`; a snapshot that exceeds 2,000
@@ -1568,19 +1586,19 @@ does not claim the read-only session wrote a changed file: another local
 process may have changed the workspace concurrently.
 
 Input and output text plus argv never enter the Ledger, Trace, Replay, or
-exported fixtures. Durable `workspace.process.started`, `.input`, `.settled`,
-and `.interrupted` events bind the Napier Process ID, owning Thread and Run,
-status, executable, command/environment/limit hashes, input sequence/counts
-and cumulative digest, output hashes/counts, cursor, and truncation state. They
-also bind pre/post workspace digests, comparison status, changed-file count,
-and a changed-path-set digest without storing paths.
+exported fixtures. Durable `workspace.process.started`, `.input`, `.resized`,
+`.settled`, and `.interrupted` events bind the Napier Process ID, owning Thread
+and Run, status, executable, command/environment/limit hashes, input
+sequence/counts and cumulative digest, output hashes/counts, cursor, truncation
+state, I/O mode, terminal dimensions, and resize sequence. They also bind
+pre/post workspace digests, comparison status, changed-file count, and a
+changed-path-set digest without storing paths.
 Relative paths and before/after file metadata are bounded to 256 entries and
 available only from the current local Runtime through the owning Thread's
 Processes panel. After restart, an unclosed session becomes `interrupted` with
 unknown outcome and no output or path details; Napier does not silently rerun
-it or claim the old host process was reattached. Existing schema v1 and v2
-Process receipts remain readable, while new input-aware sessions use schema
-v3.
+it or claim the old host process was reattached. Existing schema v1-v3 Process
+receipts remain readable, while new pipe and PTY sessions use schema v4.
 
 Run the complete Agent-to-Sandbox smoke from a non-sandboxed Terminal:
 
@@ -1592,13 +1610,14 @@ Graceful shutdown terminates active process groups before Store close. Abrupt
 host or Runtime loss can leave a macOS sandbox wrapper outcome unknown because
 `sandbox-exec` has no parent-death guarantee; deliberately detached descendants
 also require a stronger guardian boundary for proved cleanup. Proved orphan
-cleanup, cross-restart reattachment, PTY, hard CPU/memory/process quotas, and
+cleanup, cross-restart reattachment, hard CPU/memory/process quotas, and
 write-capable sessions require a managed guardian or OCI backend and are not
-claimed by this implementation. Interactive stdin is a pipe protocol; it does
-not provide terminal resize, foreground process groups, job control, attach
-semantics. The separate JavaScript kernel below builds on this Process Session
-boundary. The restricted Python kernel below shares the same Process service;
-full package-backed Python and Notebook execution remain future work.
+claimed by this implementation. Pipe interaction remains distinct from PTY;
+the PTY provides terminal sizing and control bytes but not shell access,
+cross-restart attach, a durable screen buffer, or Napier job-control commands.
+The separate JavaScript kernel below builds on this Process Session boundary.
+The restricted Python kernel below shares the same Process service; full
+package-backed Python and Notebook execution remain future work.
 
 ## Persistent JavaScript Kernel
 

@@ -14,6 +14,8 @@ export const workspaceProcessCopy = {
   inputPlaceholder: "UTF-8 input for this sandboxed process",
   inputSafety:
     "Input text is sent to the live process and is not stored in the Ledger. Do not send secrets.",
+  ptyInputSafety:
+    "Terminal input is live-only. Control bytes are sent literally; a PTY cannot use pipe close semantics.",
   inputReceipt: "Input receipt",
   stdin: "Stdin",
   showOutput: "Show output",

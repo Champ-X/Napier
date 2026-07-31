@@ -6,6 +6,23 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added sandboxed PTY mode to managed Workspace Process Sessions. An Agent can
+  launch the same fixed Node argv through a real pseudo-terminal, observe TTY
+  stdin/stdout and fixed `TERM=xterm-256color`, send bounded live-only input,
+  perform up to 64 Run-owned resizes, poll ordered merged terminal output, and
+  settle or cancel through the existing Process lifecycle. `node-pty` wraps
+  only the macOS Sandbox or Linux Bubblewrap launcher; it does not add a shell,
+  Workspace write, network, inherited environment, or host executable choice.
+  Process schema v4 and `workspace.process.resized` bind I/O mode, size,
+  sequence, environment, limits, and resulting session while raw argv, input,
+  output, and control sequences remain outside Ledger, Trace, and Replay.
+  Pipe close semantics are rejected for PTYs, uncertain resize evidence
+  terminates fail-closed, and legacy v1-v3 sessions remain readable. The
+  Workbench labels merged output and terminal dimensions and hides the invalid
+  close action. Native adapter, Runtime, Agent tool, HTTP, Web projection,
+  restart, concurrency, timeout, cancellation, output-cap, privacy, tampering,
+  Replay, private-protocol regression, and real external macOS Sandbox dogfood
+  cover the complete path.
 - Added preview-bound Workflow checkpoint experiments to the TypeScript SDK and
   local stdio RPC. Both entries reuse the existing Experiment Runtime, require
   the current preview hash for every execution, preserve explicit confirmation

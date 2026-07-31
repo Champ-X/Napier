@@ -37,11 +37,20 @@ export async function writeWorkspaceProcessInput(
 ): Promise<WorkspaceProcessInputResult> {
   if (
     session.status !== "running" ||
-    session.schemaVersion !== 3 ||
+    session.schemaVersion < 3 ||
     session.stdinMode !== "interactive" ||
     session.stdinOpen !== true
   ) {
     throw new Error("Workspace Process stdin is not open");
+  }
+  if (
+    session.schemaVersion === 4 &&
+    session.ioMode === "pty" &&
+    request.close
+  ) {
+    throw new Error(
+      "PTY input cannot use pipe close semantics; send an explicit terminal control byte or cancel the session",
+    );
   }
   if (Buffer.from(request.text, "utf8").toString("utf8") !== request.text) {
     throw new Error("Workspace Process input must be valid UTF-8 text");
@@ -78,7 +87,7 @@ export async function writeWorkspaceProcessInput(
   } = session;
   const updated = createWorkspaceProcessSession({
     ...sessionInput,
-    schemaVersion: 3,
+    schemaVersion: session.schemaVersion,
     stdinOpen: request.close !== true,
     stdinWriteCount: nextWriteCount,
     stdinBytes: nextInputBytes,
