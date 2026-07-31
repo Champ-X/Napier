@@ -22,7 +22,7 @@ Audit date: 2026-07-31
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                      |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                              |
-| P3 browser/research/data/media    | Partial        | Run-owned persistent Chrome Sessions now support navigation, interaction, files, screenshots, and fixed-IP public-network confinement. Run-local Research Sources add bounded visible-text capture, exact claim-to-line citation tokens, a research Skill, verified Markdown artifact delivery, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, PDF/SQL/DataFrame/Notebook, browser UX, and media production remain.                                                                                                                                                                                                                                |
+| P3 browser/research/data/media    | Partial        | Run-owned persistent Chrome Sessions support navigation, interaction, files, screenshots, and fixed-IP public-network confinement. Run-local Research Sources add bounded visible-text capture, exact claim-to-line citation tokens, canonical Markdown verification against one-use current-Run tokens, a research Skill, verified artifact delivery, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, PDF/SQL/DataFrame/Notebook, browser UX, and media production remain.                                                                                                                                                                         |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                       |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, and a local TypeScript SDK for Agent run/continue/recovery plus Workflow definition/execution/resume exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, remote RPC, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                 |
@@ -2850,3 +2850,74 @@ Observed result:
   the 150 KiB budget. The 69-file Web dist is bound to
   `97e3bcab97ead381`; the six-artifact release set is bound to
   `e84f821ec3fe75f7`.
+
+## Completed Slice: Citation-Backed Markdown Verification
+
+User scenario: after an Agent writes a research brief, Napier can prove that
+the actual workspace file contains only current-Run citation tokens, each
+placed once at the end of the exact claim originally bound to its Source
+range, before the Agent or Plan claims delivery.
+
+Acceptance:
+
+- add `research_source verify_report` without introducing a second artifact
+  store, report database, or report-writing tool;
+- require a workspace-relative `.md`/`.markdown` path and the actual complete
+  file SHA-256 produced by the existing write/read path;
+- load at most 256 KiB through the shared canonical non-symlink workspace
+  boundary, reject protected roots and path escape, and recheck file freshness
+  before returning;
+- require at least one citation token, reject malformed or unknown tokens, and
+  require every token to belong to the current Run;
+- require each token exactly once at the end of its exact claim line, allowing
+  only a standard Markdown list prefix before the claim;
+- reject claim drift, duplicate token reuse, stale file identity, unsupported
+  extensions, cross-Run citations, cancellation, and impossible Trace
+  receipts;
+- retain only report path/file/citation-set hashes, byte/citation counts, and
+  existing Source-set evidence in Ledger, Replay, SSE, and Trace;
+- keep the action read-only but unsafe for automatic restart recovery because
+  validation depends on the Run-local Source/citation registry;
+- update Agent guidance and `research-brief` so Evidence Ledgers list citation
+  IDs rather than duplicating the one-use report tokens.
+
+Threat boundary:
+
+- verification proves file identity, token ownership, uniqueness, and exact
+  claim-line text. It still does not prove source authority, factual
+  correctness, citation sufficiency, or logical entailment;
+- only canonical UTF-8 Markdown files are accepted. HTML, PDF, office
+  documents, generated sites, and other artifact formats remain outside this
+  verifier;
+- the report body and relative path are live workspace data. Durable events
+  receive only bounded hashes and counts;
+- expected SHA-256 plus a post-read recheck narrows concurrent file drift.
+  Later external mutation remains artifact drift and is independently covered
+  by Plan artifact verification;
+- one citation token supports one exact claim line. Reports must use citation
+  IDs, not duplicate tokens, in their Evidence Ledger.
+
+Observed result:
+
+- pure verification tests cover exact paragraphs and Markdown list claims,
+  unknown/malformed/duplicate tokens, claim drift, non-exact prefixes, stale
+  file hash, unsupported extension, path escape, and cancellation;
+- Agent integration now creates a Plan, captures and cites Browser evidence,
+  writes the Markdown through `apply_patch`, verifies token semantics against
+  the real file, independently verifies the Plan artifact bytes, and completes
+  only after both checks;
+- Policy rejects report escape before execution; tool projections redact the
+  path and Markdown; Web Trace rejects partial, impossible-count, source-mixed,
+  and over-cited report receipts;
+- the production-sandbox Chrome smoke captures `example.com`, writes a real
+  report, verifies its current-Run citation and file SHA, captures a screenshot,
+  and closes the Session in 1.31 seconds;
+- report verification lives in a focused 124-line module and reuses the shared
+  workspace source boundary; Store and Server remain unchanged;
+- the complete repository gate passed 1290 tests with 21 opt-in live tests
+  skipped by default, audited 6 workspaces and 252 packages with 239/239
+  integrity entries, verified 247 current OpenAPI routes against the 244/244
+  compatibility baseline, and kept the Web main entry at 130.08 KiB against
+  the 150 KiB budget. The 69-file Web dist is bound to
+  `eb4678720cd2b93e`; the six-artifact release set is bound to
+  `00ea2825094e723e`.

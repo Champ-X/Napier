@@ -2208,6 +2208,12 @@ Agent selects an exact line range and exact report claim
   -> bind quote and normalized single-line claim hashes to a citation ID
   -> return a citation token to the live Agent
   -> persist only counts, ranges, hashes, and Browser provenance
+Agent writes a Markdown report
+  -> verify_report requires the actual complete-file SHA-256
+  -> read canonical non-symlink workspace bytes <=256 KiB
+  -> require each current-Run token once at the end of its exact claim line
+  -> reject unknown, malformed, duplicate, claim-drifted, or stale evidence
+  -> recheck file freshness and retain only path/file/citation-set hashes
 Run settles
   -> abort current and queued Source operations
   -> drop Source text, claims, quotes, and citation tokens from process memory
@@ -2218,6 +2224,8 @@ Run settles
 contract. `research-sources.ts` owns Run isolation, serialization,
 cancellation, and the ephemeral registry. `research-source-tool.ts` owns the
 Agent schema and redacted call/input/output projections.
+`research-report-verification.ts` owns canonical Markdown loading, exact
+claim-line parsing, current-Run token validation, and post-read freshness.
 `research-source-event-view.ts` independently validates the bounded Trace
 projection. Browser page capture uses `browser-page-session.ts`, so Source
 extraction inherits the existing public-network, executable freshness,
@@ -2226,10 +2234,12 @@ Session ownership, operation budget, and uncertain-state closure rules.
 The citation is evidence of an immutable capture-range-to-claim binding, not
 an authority or entailment judgment. The `research-brief` Skill therefore
 still requires primary sources, contradicting evidence, caveats, and adjacent
-citation tokens. Raw Source text, URL, title, quote, and claim do not enter
-Ledger, Replay, SSE, or Trace. The final user-visible report may intentionally
-contain the report claim, source URL, and citation token; a verified Plan
-artifact binds that report to actual workspace bytes.
+citation tokens. Raw Source text, URL, title, quote, claim, report path, and
+report Markdown do not enter Ledger, Replay, SSE, or Trace. The final
+user-visible report may intentionally contain the report claim, source URL,
+and citation token. `verify_report` proves the token/claim/current-Run binding
+against actual workspace bytes; a verified Plan artifact independently binds
+the delivered artifact lifecycle.
 
 The registry is process-local by design. An interrupted `research_source`
 operation cannot be reconstructed from hash-only evidence, so automatic
@@ -5111,6 +5121,9 @@ The current boundary has thirty-nine parts:
     normalized visible text, immutable capture hashes, exact line ranges,
     cancellation-safe isolation, citation-bearing Markdown delivery, and
     privacy-bounded Ledger/Trace evidence.
+43. Citation-backed Markdown verification with canonical workspace reads,
+    complete-file freshness, one-use current-Run tokens, exact claim-line
+    matching, and hash-only report evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally

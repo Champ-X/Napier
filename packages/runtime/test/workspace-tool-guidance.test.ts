@@ -80,5 +80,8 @@ describe("workspace tool guidance", () => {
       "A citation token proves only the captured range-to-claim binding",
     );
     expect(guidance).toContain("capture disconfirming evidence");
+    expect(guidance).toContain(
+      "call research_source verify_report with its actual complete-file SHA-256",
+    );
   });
 });

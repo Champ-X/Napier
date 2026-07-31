@@ -4,6 +4,7 @@ import type {
 } from "./browser-session-model.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
+import { verifyResearchReport } from "./research-report-verification.js";
 import { validateResearchBrowserCapture } from "./research-source-capture.js";
 
 export const MAX_RESEARCH_SOURCES_PER_RUN = 16;
@@ -33,6 +34,7 @@ export type ResearchSourceRequest =
       endLine: number;
       claim: string;
     }
+  | { action: "verify_report"; path: string; expectedSha256: string }
   | { action: "list" };
 
 export interface ResearchSourceToolDetails {
@@ -54,6 +56,11 @@ export interface ResearchSourceToolDetails {
   citationEndLine?: number;
   citationQuoteSha256?: string;
   citationClaimSha256?: string;
+  reportPathSha256?: string;
+  reportFileSha256?: string;
+  reportFileBytes?: number;
+  reportCitationCount?: number;
+  reportCitationSetSha256?: string;
   sourceCount: number;
   citationCount: number;
   sourceSetSha256: string;
@@ -98,7 +105,10 @@ export class RunResearchSourceManager {
   private readonly tails = new Map<string, Promise<void>>();
   private readonly cancellations = new Map<string, AbortController>();
 
-  constructor(private readonly browser: BrowserSourceCaptureProvider) {}
+  constructor(
+    private readonly browser: BrowserSourceCaptureProvider,
+    private readonly workspaceRoot?: string,
+  ) {}
 
   async execute(
     owner: BrowserSessionOwner,
@@ -120,6 +130,9 @@ export class RunResearchSourceManager {
           }
           if (request.action === "cite") {
             return this.cite(key, request);
+          }
+          if (request.action === "verify_report") {
+            return this.verifyReport(key, request, operationSignal);
           }
           return this.list(key);
         },
@@ -231,6 +244,45 @@ export class RunResearchSourceManager {
         schemaVersion: 1,
         action: "list",
         ...runCounts(run),
+      },
+    };
+  }
+
+  private async verifyReport(
+    key: string,
+    request: Extract<ResearchSourceRequest, { action: "verify_report" }>,
+    signal?: AbortSignal,
+  ): Promise<ResearchSourceResult> {
+    const run = this.runs.get(key);
+    if (!run || run.citations.length === 0) {
+      throw new Error("Research citations not found for this Run");
+    }
+    if (!this.workspaceRoot) {
+      throw new Error("Research report workspace is unavailable");
+    }
+    const verification = await verifyResearchReport({
+      workspaceRoot: this.workspaceRoot,
+      path: request.path,
+      expectedSha256: request.expectedSha256,
+      citations: run.citations,
+      ...(signal ? { signal } : {}),
+    });
+    return {
+      output: [
+        `Research report verified: ${verification.path}`,
+        `File SHA-256: ${verification.fileSha256}`,
+        `Citations: ${verification.citationCount}`,
+      ].join("\n"),
+      details: {
+        kind: "napier.research-source",
+        schemaVersion: 1,
+        action: "verify_report",
+        ...runCounts(run),
+        reportPathSha256: verification.pathSha256,
+        reportFileSha256: verification.fileSha256,
+        reportFileBytes: verification.fileBytes,
+        reportCitationCount: verification.citationCount,
+        reportCitationSetSha256: verification.citationSetSha256,
       },
     };
   }

@@ -171,6 +171,13 @@ describe("RunResearchSourceManager", () => {
         claim: "Cross-Run claim.",
       }),
     ).rejects.toThrow("not found for this Run");
+    await expect(
+      manager.execute(otherOwner, {
+        action: "verify_report",
+        path: "brief.md",
+        expectedSha256: "a".repeat(64),
+      }),
+    ).rejects.toThrow("citations not found for this Run");
 
     await manager.cancelRun(OWNER);
     await expect(

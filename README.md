@@ -2021,6 +2021,15 @@ quote and returns a `[citation:citation_...]` token for placement immediately
 after the claim. `list` recovers the current Run's Source and citation tokens
 during a long task.
 
+After the Agent writes a report, `verify_report` accepts a workspace-relative
+`.md` or `.markdown` path plus the actual complete-file SHA-256. It reads at
+most 256 KiB through the canonical non-symlink workspace boundary, requires
+every citation token to belong to the current Run, and requires each token to
+appear exactly once at the end of its exact claim line. It then rechecks the
+file before returning. Unknown, malformed, duplicated, moved, stale-hash, or
+claim-drifted citations fail closed. Evidence ledgers list citation IDs rather
+than repeating tokens.
+
 Capture happens with Browser network access closed and fails if the page URL
 changes or the page has no visible text. Source and citation operations are
 serialized per Run, isolated across Runs, bounded to 16 Sources and 64
@@ -2032,10 +2041,11 @@ is deliberately not restart-adopted, automatic recovery treats
 `research_source` as unsafe even though its tool effect is read.
 
 The bundled `research-brief` Skill requires primary-source preference,
-disconfirming evidence, exact claim-to-range binding, adjacent citation
-tokens, an evidence ledger, and a verified workspace artifact when the task
-requests a report. A citation proves the captured range and claim binding; it
-does not prove source authority or logical entailment.
+disconfirming evidence, exact claim-to-range binding, adjacent one-use
+citation tokens, runtime report verification, an evidence ledger, and a
+verified workspace artifact when the task requests a report. A citation proves
+the captured range and claim binding; it does not prove source authority or
+logical entailment.
 
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and

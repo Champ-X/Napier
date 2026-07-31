@@ -5,6 +5,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { RunBrowserSessionManager } from "../src/browser-session.js";
+import { sha256 } from "../src/ed25519.js";
 import { RunResearchSourceManager } from "../src/research-sources.js";
 
 const describeLive =
@@ -26,7 +27,7 @@ describeLive("live controlled Browser Session smoke", () => {
     );
     roots.push(workspaceRoot);
     const manager = new RunBrowserSessionManager({ workspaceRoot });
-    const research = new RunResearchSourceManager(manager);
+    const research = new RunResearchSourceManager(manager, workspaceRoot);
     const owner = {
       threadId: "thread_live_browser",
       runId: "run_live_browser",
@@ -57,23 +58,26 @@ describeLive("live controlled Browser Session smoke", () => {
       });
       const citationToken = `[citation:${citation.details.citationId!}]`;
       const reportPath = path.join(workspaceRoot, "research-brief.md");
-      await writeFile(
-        reportPath,
-        [
-          "# Research Brief",
-          "",
-          `The page identifies itself as Example Domain. ${citationToken}`,
-          "",
-          "## Evidence Ledger",
-          "",
-          `- Source: ${captured.details.sourceId!}`,
-          `- Capture SHA-256: ${captured.details.sourceContentSha256!}`,
-          `- Lines: ${String(lineNumber)}-${String(lineNumber)}`,
-          `- Citation: ${citationToken}`,
-          "- URL: https://example.com/",
-          "",
-        ].join("\n"),
-      );
+      const report = [
+        "# Research Brief",
+        "",
+        `The page identifies itself as Example Domain. ${citationToken}`,
+        "",
+        "## Evidence Ledger",
+        "",
+        `- Source: ${captured.details.sourceId!}`,
+        `- Capture SHA-256: ${captured.details.sourceContentSha256!}`,
+        `- Lines: ${String(lineNumber)}-${String(lineNumber)}`,
+        `- Citation ID: ${citation.details.citationId!}`,
+        "- URL: https://example.com/",
+        "",
+      ].join("\n");
+      await writeFile(reportPath, report);
+      const verified = await research.execute(owner, {
+        action: "verify_report",
+        path: "research-brief.md",
+        expectedSha256: sha256(report),
+      });
       const screenshot = await manager.execute(owner, {
         action: "screenshot",
       });
@@ -105,6 +109,13 @@ describeLive("live controlled Browser Session smoke", () => {
           citationCount: 1,
           citationStartLine: lineNumber,
           citationEndLine: lineNumber,
+        }),
+      );
+      expect(verified.details).toEqual(
+        expect.objectContaining({
+          action: "verify_report",
+          reportFileSha256: sha256(report),
+          reportCitationCount: 1,
         }),
       );
       expect(await readFile(reportPath, "utf8")).toContain(citationToken);

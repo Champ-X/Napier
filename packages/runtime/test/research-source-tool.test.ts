@@ -44,6 +44,35 @@ describe("research_source Agent tool", () => {
         risk: "high",
       }),
     );
+    expect(
+      assessToolCall(
+        "unrestricted",
+        "research_source",
+        {
+          action: "verify_report",
+          path: "reports/brief.md",
+          expectedSha256: "a".repeat(64),
+        },
+        workspace,
+      ),
+    ).toEqual(expect.objectContaining({ allowed: true, risk: "high" }));
+    expect(
+      assessToolCall(
+        "unrestricted",
+        "research_source",
+        {
+          action: "verify_report",
+          path: "../brief.md",
+          expectedSha256: "a".repeat(64),
+        },
+        workspace,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: false,
+        reason: "research reports must be inside the workspace",
+      }),
+    );
     expect(builtInToolEffect("research_source", { action: "capture" })).toBe(
       "read",
     );
@@ -116,6 +145,24 @@ describe("research_source Agent tool", () => {
       { threadId: "thread_research", runId: "run_research" },
       { action: "capture", maxChars: 12_000 },
       undefined,
+    );
+  });
+
+  it("redacts report paths while retaining expected file identity", () => {
+    const projection = researchSourceToolCallArgumentsLedgerProjection({
+      action: "verify_report",
+      path: "PRIVATE_REPORT_PATH/brief.md",
+      expectedSha256: "a".repeat(64),
+    });
+
+    expect(JSON.stringify(projection)).not.toContain("PRIVATE_REPORT_PATH");
+    expect(projection).toEqual(
+      expect.objectContaining({
+        action: "verify_report",
+        reportPathSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        reportPathBytes: 28,
+        expectedSha256: "a".repeat(64),
+      }),
     );
   });
 });

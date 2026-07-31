@@ -22,9 +22,13 @@ authoritative web research path.
    exact Source ID and capture SHA-256, the smallest sufficient line range, and
    the exact claim that will appear in the brief.
 7. Put the returned `[citation:citation_...]` token immediately after that exact
-   claim. Never invent, edit, or reuse a token for a different claim.
+   claim on its own Markdown line. Use each token exactly once. Never invent,
+   edit, or reuse a token for a different claim.
 8. Compare competing evidence and mark unresolved uncertainty explicitly.
-9. Close the Browser Session after the evidence set is complete.
+9. Write the Markdown report, then call `research_source verify_report` with its
+   workspace-relative path and actual complete-file SHA-256. Do not claim
+   delivery if verification rejects a token, claim line, path, or file hash.
+10. Close the Browser Session after the evidence set is complete.
 
 A citation proves that Napier bound a report claim to an exact range in an
 immutable Run-local capture. It does not prove that the source is authoritative
@@ -39,7 +43,8 @@ must contain:
 - contradictions or material caveats;
 - the recommended next action;
 - an evidence ledger listing each Source ID, capture SHA-256, cited line range,
-  citation token, and source URL actually inspected.
+  citation ID, and source URL actually inspected. Do not repeat citation tokens
+  in the evidence ledger.
 
 Never imply that a source was read or an action was performed unless the run
 contains corresponding Browser and Research Source evidence. Do not cite a

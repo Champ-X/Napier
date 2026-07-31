@@ -56,7 +56,7 @@ describe("Agent Research Source integration", () => {
       "- Source: source_fixture0001",
       `- Capture SHA-256: ${capture.capturedContentSha256}`,
       "- Lines: 2-2",
-      `- Citation: ${citationToken}`,
+      "- Citation ID: citation_fixture0001",
       "- URL: https://example.com/",
       "",
     ].join("\n");
@@ -146,6 +146,14 @@ describe("Agent Research Source integration", () => {
         }),
         { stopReason: "toolUse" },
       ),
+      fauxAssistantMessage(
+        fauxToolCall("research_source", {
+          action: "verify_report",
+          path: reportPath,
+          expectedSha256: sha256(report),
+        }),
+        { stopReason: "toolUse" },
+      ),
       () =>
         fauxAssistantMessage(
           fauxToolCall("update_plan_artifact", {
@@ -178,9 +186,7 @@ describe("Agent Research Source integration", () => {
           }),
           { stopReason: "toolUse" },
         ),
-      fauxAssistantMessage(
-        `The verified report is at ${reportPath}. ${citationToken}`,
-      ),
+      fauxAssistantMessage(`The verified report is at ${reportPath}.`),
       fauxAssistantMessage('{"facts":[]}'),
     ]);
     fixture.registry.registerProvider(provider.provider);
@@ -238,7 +244,7 @@ describe("Agent Research Source integration", () => {
       toolEvents
         .filter((event) => event.type === "tool.started")
         .map((event) => record(event.payload)?.["effect"]),
-    ).toEqual(["write", "read", "read"]);
+    ).toEqual(["write", "read", "read", "read"]);
     expect(
       toolEvents
         .filter(
@@ -247,13 +253,14 @@ describe("Agent Research Source integration", () => {
             record(event.payload)?.["toolName"] === "research_source",
         )
         .map((event) => record(record(event.payload)?.["details"])?.["action"]),
-    ).toEqual(["capture", "cite"]);
+    ).toEqual(["capture", "cite", "verify_report"]);
     const durableTools = JSON.stringify(toolEvents);
     for (const secret of [
       "URL_SECRET",
       "TITLE_SECRET",
       "SOURCE_BODY_SECRET",
       "QUOTE_SECRET",
+      reportPath,
     ]) {
       expect(durableTools).not.toContain(secret);
     }
@@ -261,7 +268,9 @@ describe("Agent Research Source integration", () => {
       events.find(
         (event) =>
           event.type === "message.assistant" &&
-          String(record(event.payload)?.["text"]).includes(citationToken),
+          String(record(event.payload)?.["text"]).includes(
+            `The verified report is at ${reportPath}.`,
+          ),
       ),
     ).toBeDefined();
   });

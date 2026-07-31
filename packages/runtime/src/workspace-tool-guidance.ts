@@ -192,6 +192,7 @@ export function formatWorkspaceToolGuidance(
     lines.push(
       "After inspecting a relevant Browser page, call research_source capture to freeze bounded visible text for this Run. Use cite with the exact Source ID, capture SHA-256, smallest sufficient line range, and the precise claim it supports.",
       "A citation token proves only the captured range-to-claim binding. It does not establish source authority or logical sufficiency. Prefer primary sources, capture disconfirming evidence, and place each returned citation token immediately after its supported claim.",
+      "After writing a Markdown report, call research_source verify_report with its actual complete-file SHA-256. Put each token once at the end of its exact claim line; list citation IDs rather than repeating tokens in the evidence ledger.",
     );
   }
   lines.push("</workspace_tool_protocol>");

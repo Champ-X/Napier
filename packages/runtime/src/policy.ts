@@ -273,6 +273,34 @@ export function assessToolCall(
         };
       }
     }
+    if (toolName === "research_source" && action === "verify_report") {
+      const candidate = getStringField(input, "path");
+      if (
+        !candidate ||
+        path.isAbsolute(candidate) ||
+        !isPathInsideWorkspace(candidate, workspaceRoot)
+      ) {
+        return {
+          allowed: false,
+          risk: "high",
+          reason: "research reports must be inside the workspace",
+        };
+      }
+      const relative = path.relative(
+        path.resolve(workspaceRoot),
+        path.resolve(workspaceRoot, candidate),
+      );
+      const protectedSegment = relative
+        .split(path.sep)
+        .find(isProtectedWorkspacePathSegment);
+      if (protectedSegment) {
+        return {
+          allowed: false,
+          risk: "high",
+          reason: `research reports cannot read protected path segment: ${protectedSegment}`,
+        };
+      }
+    }
     if (action === "upload" || action === "download") {
       const candidate = getStringField(input, "path");
       if (!candidate) {
@@ -288,7 +316,10 @@ export function assessToolCall(
     return {
       allowed: true,
       risk: "high",
-      reason: "isolated public-network Browser Session",
+      reason:
+        toolName === "research_source"
+          ? "Run-local Browser Source and report verification"
+          : "isolated public-network Browser Session",
     };
   }
 

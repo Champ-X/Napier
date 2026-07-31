@@ -29,7 +29,10 @@ export class AgentSessionRuntime {
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
     this.browsers =
       browserSessions ?? new RunBrowserSessionManager({ workspaceRoot });
-    this.researchSources = new RunResearchSourceManager(this.browsers);
+    this.researchSources = new RunResearchSourceManager(
+      this.browsers,
+      workspaceRoot,
+    );
     this.debuggerManager = processes
       ? new NodeDebuggerManager(processes, workspaceRoot)
       : undefined;

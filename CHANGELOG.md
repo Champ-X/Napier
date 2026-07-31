@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added semantic verification for citation-backed Markdown reports.
+  `research_source verify_report` reads a caller-hash-bound `.md` or
+  `.markdown` file through the canonical non-symlink workspace boundary,
+  requires every citation token to belong to the current Run, and requires
+  each token exactly once at the end of its exact claim line. Unknown,
+  malformed, duplicated, claim-drifted, stale, escaping, protected,
+  unsupported, or oversized reports fail closed; file freshness is rechecked
+  before success. Ledger, Replay, SSE, and Web Trace retain only report
+  path/file/citation-set hashes plus byte/citation counts. Agent guidance and
+  `research-brief` now require report verification and use citation IDs rather
+  than duplicate tokens in the Evidence Ledger. Agent integration proves
+  Browser capture through `apply_patch`, runtime citation verification, Plan
+  artifact verification, and completion against one file; the production
+  Chrome smoke exercises the same report verifier.
 - Added Browser-backed Research Sources and claim-bound citations. The
   `research_source` Agent tool captures bounded normalized visible text from
   the active same-Run controlled Browser, binds URL/title/line content and

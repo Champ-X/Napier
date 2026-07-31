@@ -1,5 +1,5 @@
 export interface ResearchSourceToolEventTraceView {
-  researchSourceAction?: "capture" | "cite" | "list";
+  researchSourceAction?: "capture" | "cite" | "verify_report" | "list";
   researchSourceId?: string;
   researchCitationId?: string;
   researchCitationTokenSha256?: string;
@@ -15,6 +15,11 @@ export interface ResearchSourceToolEventTraceView {
   researchCitationEndLine?: number;
   researchCitationQuoteSha256?: string;
   researchCitationClaimSha256?: string;
+  researchReportPathSha256?: string;
+  researchReportFileSha256?: string;
+  researchReportFileBytes?: number;
+  researchReportCitationCount?: number;
+  researchReportCitationSetSha256?: string;
   researchSourceCount?: number;
   researchCitationCount?: number;
   researchSourceSetSha256?: string;
@@ -28,7 +33,7 @@ export interface ResearchSourceToolEventTraceView {
 
 const ACTIONS = new Set<
   ResearchSourceToolEventTraceView["researchSourceAction"]
->(["capture", "cite", "list"]);
+>(["capture", "cite", "verify_report", "list"]);
 const SOURCE_ID = /^source_[a-z0-9]{8,80}$/u;
 const CITATION_ID = /^citation_[a-z0-9]{8,80}$/u;
 const SOURCE_FIELDS = [
@@ -55,6 +60,13 @@ const CITATION_FIELDS = [
   "citationEndLine",
   "citationQuoteSha256",
   "citationClaimSha256",
+] as const;
+const REPORT_FIELDS = [
+  "reportPathSha256",
+  "reportFileSha256",
+  "reportFileBytes",
+  "reportCitationCount",
+  "reportCitationSetSha256",
 ] as const;
 
 export function researchSourceEventEvidence(
@@ -84,7 +96,8 @@ export function researchSourceEventEvidence(
   if (action === "list") {
     if (
       SOURCE_FIELDS.some((field) => value[field] !== undefined) ||
-      CITATION_FIELDS.some((field) => value[field] !== undefined)
+      CITATION_FIELDS.some((field) => value[field] !== undefined) ||
+      REPORT_FIELDS.some((field) => value[field] !== undefined)
     ) {
       return undefined;
     }
@@ -93,6 +106,35 @@ export function researchSourceEventEvidence(
       researchSourceCount: sourceCount,
       researchCitationCount: citationCount,
       researchSourceSetSha256: value["sourceSetSha256"],
+    };
+  }
+  if (action === "verify_report") {
+    const reportFileBytes = integer(value["reportFileBytes"], 1, 256 * 1024);
+    const reportCitationCount = integer(value["reportCitationCount"], 1, 64);
+    if (
+      SOURCE_FIELDS.some((field) => value[field] !== undefined) ||
+      CITATION_FIELDS.some((field) => value[field] !== undefined) ||
+      sourceCount < 1 ||
+      citationCount < 1 ||
+      !sha256(value["reportPathSha256"]) ||
+      !sha256(value["reportFileSha256"]) ||
+      reportFileBytes === undefined ||
+      reportCitationCount === undefined ||
+      reportCitationCount > citationCount ||
+      !sha256(value["reportCitationSetSha256"])
+    ) {
+      return undefined;
+    }
+    return {
+      researchSourceAction: action,
+      researchSourceCount: sourceCount,
+      researchCitationCount: citationCount,
+      researchSourceSetSha256: value["sourceSetSha256"],
+      researchReportPathSha256: value["reportPathSha256"],
+      researchReportFileSha256: value["reportFileSha256"],
+      researchReportFileBytes: reportFileBytes,
+      researchReportCitationCount: reportCitationCount,
+      researchReportCitationSetSha256: value["reportCitationSetSha256"],
     };
   }
 
@@ -151,7 +193,8 @@ export function researchSourceEventEvidence(
       value["browserNetworkDestinationsSha256"],
   };
   if (action === "capture") {
-    return CITATION_FIELDS.some((field) => value[field] !== undefined)
+    return CITATION_FIELDS.some((field) => value[field] !== undefined) ||
+      REPORT_FIELDS.some((field) => value[field] !== undefined)
       ? undefined
       : sourceEvidence;
   }
@@ -173,7 +216,8 @@ export function researchSourceEventEvidence(
     endLine - startLine + 1 > 40 ||
     !sha256(value["citationQuoteSha256"]) ||
     !sha256(value["citationClaimSha256"]) ||
-    citationCount < 1
+    citationCount < 1 ||
+    REPORT_FIELDS.some((field) => value[field] !== undefined)
   ) {
     return undefined;
   }
@@ -214,6 +258,12 @@ export function researchSourceSummaryParts(
           `citation-range ${view.researchCitationStartLine}-${view.researchCitationEndLine}`,
         ]
       : []),
+    ...(view.researchReportFileBytes !== undefined
+      ? [`report-bytes ${view.researchReportFileBytes}`]
+      : []),
+    ...(view.researchReportCitationCount !== undefined
+      ? [`report-citations ${view.researchReportCitationCount}`]
+      : []),
     ...(view.researchBrowserSessionOperation !== undefined
       ? [`browser-operation ${view.researchBrowserSessionOperation}`]
       : []),
@@ -221,6 +271,9 @@ export function researchSourceSummaryParts(
     ...hash("source-set", view.researchSourceSetSha256),
     ...hash("citation-quote", view.researchCitationQuoteSha256),
     ...hash("citation-claim", view.researchCitationClaimSha256),
+    ...hash("report-path", view.researchReportPathSha256),
+    ...hash("report-file", view.researchReportFileSha256),
+    ...hash("report-citation-set", view.researchReportCitationSetSha256),
     ...hash("browser-session", view.researchBrowserSessionIdSha256),
     ...hash(
       "browser-destinations",

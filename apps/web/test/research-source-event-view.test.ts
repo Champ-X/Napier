@@ -128,6 +128,40 @@ describe("Research Source Trace projection", () => {
       }),
     ).toBeUndefined();
   });
+
+  it("projects verified report bytes without paths or Markdown", () => {
+    const view = researchSourceEventEvidence(reportDetails());
+
+    expect(view).toEqual(
+      expect.objectContaining({
+        researchSourceAction: "verify_report",
+        researchSourceCount: 2,
+        researchCitationCount: 3,
+        researchReportFileBytes: 2_048,
+        researchReportCitationCount: 2,
+        researchReportPathSha256: "1".repeat(64),
+        researchReportFileSha256: "2".repeat(64),
+      }),
+    );
+    expect(researchSourceSummaryParts(view!)).toContain(
+      "research-source verify_report",
+    );
+    expect(researchSourceSummaryParts(view!)).toContain("report-citations 2");
+    expect(JSON.stringify(view)).not.toContain("PRIVATE_REPORT");
+
+    expect(
+      researchSourceEventEvidence({
+        ...reportDetails(),
+        reportCitationCount: 4,
+      }),
+    ).toBeUndefined();
+    expect(
+      researchSourceEventEvidence({
+        ...reportDetails(),
+        sourceId: "source_fixture0001",
+      }),
+    ).toBeUndefined();
+  });
 });
 
 function citationDetails() {
@@ -162,5 +196,23 @@ function citationDetails() {
     sourceText: "PRIVATE_RESEARCH_SOURCE_TEXT",
     sourceUrl: "https://private-research.example/",
     quote: "PRIVATE_RESEARCH_QUOTE",
+  };
+}
+
+function reportDetails() {
+  return {
+    kind: "napier.research-source",
+    schemaVersion: 1,
+    action: "verify_report",
+    sourceCount: 2,
+    citationCount: 3,
+    sourceSetSha256: "9".repeat(64),
+    reportPathSha256: "1".repeat(64),
+    reportFileSha256: "2".repeat(64),
+    reportFileBytes: 2_048,
+    reportCitationCount: 2,
+    reportCitationSetSha256: "3".repeat(64),
+    path: "PRIVATE_REPORT_PATH",
+    markdown: "PRIVATE_REPORT_MARKDOWN",
   };
 }
