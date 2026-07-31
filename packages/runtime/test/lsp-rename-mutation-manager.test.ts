@@ -28,6 +28,19 @@ describe("LSP rename mutation manager", () => {
     const manager = new LspRenameMutationManager({
       workspaceRoot: fixture.workspaceRoot,
       dataRoot: fixture.dataRoot,
+      tests: {
+        async captureBefore() {
+          calls.push("test-before");
+          return { files: [] };
+        },
+        async run() {
+          calls.push("test-run");
+          return {
+            details: linkedTestDetails(),
+            summary: "Write-linked tests: passed",
+          };
+        },
+      },
       diagnostics: {
         async observeBefore() {
           calls.push("before");
@@ -50,12 +63,19 @@ describe("LSP rename mutation manager", () => {
 
     const applied = await manager.apply(preview.id);
 
-    expect(calls).toEqual(["before", "commit", "after"]);
+    expect(calls).toEqual([
+      "test-before",
+      "before",
+      "commit",
+      "after",
+      "test-run",
+    ]);
     expect(applied.details).toEqual(
       expect.objectContaining({
         status: "applied",
         postcondition: "verified",
         diagnostics: expect.objectContaining({ status: "clean" }),
+        tests: expect.objectContaining({ status: "passed" }),
         resultSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       }),
     );
@@ -309,5 +329,36 @@ function diagnosticsDetails(): NonNullable<
     deltaSetSha256: "3".repeat(64),
     durationMs: 20,
     resultSha256: "4".repeat(64),
+  };
+}
+
+function linkedTestDetails(): NonNullable<LspRenameApplyDetails["tests"]> {
+  return {
+    kind: "napier.write-linked-test-verification",
+    schemaVersion: 1,
+    status: "passed",
+    changedFileCount: 1,
+    changedSymbolCount: 1,
+    changedSymbolsTruncated: false,
+    scannedFileCount: 2,
+    candidateTestCount: 1,
+    selectedTestCount: 1,
+    omittedTestCount: 0,
+    unresolvedImportCount: 0,
+    graphTruncated: false,
+    changedFileSetSha256: "1".repeat(64),
+    changedSymbolSetSha256: "2".repeat(64),
+    dependencyGraphSha256: "3".repeat(64),
+    selectedTestSetSha256: "4".repeat(64),
+    selectionSnapshotSha256: "5".repeat(64),
+    observedSnapshotSha256: "5".repeat(64),
+    verifierSha256: "6".repeat(64),
+    durationMs: 10,
+    exitCode: 0,
+    stdoutSha256: "7".repeat(64),
+    stderrSha256: "8".repeat(64),
+    stdoutTruncated: false,
+    stderrTruncated: false,
+    resultSha256: "9".repeat(64),
   };
 }

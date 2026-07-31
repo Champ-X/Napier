@@ -6,6 +6,22 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added write-linked relevant-test verification for TypeScript and JavaScript
+  changes. When a non-observe Agent explicitly enables a write tool and
+  `verify_workspace`, `apply_patch` and verified `lsp_rename_apply` commits bind
+  changed declaration hashes, scan each changed file's nearest package through
+  a bounded static relative-import graph, and execute up to eight exact
+  reverse-dependent `.test`/`.spec` Vitest files in the existing read-only,
+  offline OS Sandbox. Helper modules are not mistaken for test targets, and
+  declaration caps surface explicit truncation. Incomplete selection never
+  executes; pass, failure, timeout, output cap, no match, drift, cancellation,
+  and unavailable execution remain distinct. A post-run package snapshot
+  prevents stale success evidence, and same-event passes satisfy only
+  test-specific Model Advisor claims. Agent output retains
+  bounded live paths, symbols, and test output while Ledger, Replay, public
+  SSE, and Web Trace receive only status/count/hash evidence. Runtime, policy,
+  HTTP, Replay, Trace, and opt-in real macOS Sandbox tests cover the vertical
+  path.
 - Added a checked local product-path performance budget. Three fresh built CLI
   JSONL processes measure median first Run event, first demo token, and terminal
   completion; the same isolated benchmark measures shared Runtime bootstrap,

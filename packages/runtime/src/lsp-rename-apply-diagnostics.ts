@@ -96,14 +96,18 @@ export class LspRenameApplyDiagnostics {
           path: entry.path,
           ...(signal && !signal.aborted ? { signal } : {}),
         });
+        const details = createLspPatchObservation(
+          expected.expectedSha256,
+          entry.result,
+          after,
+        ).details;
+        if (!details) {
+          throw new Error("Rename diagnostics result is unavailable");
+        }
         observations.push({
           path: entry.path,
           pathSha256: entry.pathSha256,
-          details: createLspPatchObservation(
-            expected.expectedSha256,
-            entry.result,
-            after,
-          ).details,
+          details,
         });
       } catch (error) {
         observations.push({

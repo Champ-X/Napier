@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 69,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-CrEYaNVo.js",
+    "path": "apps/web/dist/assets/index-CWV0mxet.js",
     "sizeBytes": 133200,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "02f54d96cf7316922bf3a68e17509c6c2a32c8a70a11d2f72dc26194954e8a86"
+    "sha256": "2dca2d2cca3bd695e65d6ad3237a34d53fa81135b7c2a760d783cd1c514b99bd"
   },
-  "distContentSha256": "02f54d96cf7316922bf3a68e17509c6c2a32c8a70a11d2f72dc26194954e8a86",
+  "distContentSha256": "2dca2d2cca3bd695e65d6ad3237a34d53fa81135b7c2a760d783cd1c514b99bd",
   "errors": []
 }

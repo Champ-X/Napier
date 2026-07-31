@@ -1142,6 +1142,36 @@ describe("Tool event trace view", () => {
           resultSha256: "6".repeat(64),
           message: "TOP_SECRET_DIAGNOSTIC",
         },
+        tests: {
+          kind: "napier.write-linked-test-verification",
+          schemaVersion: 1,
+          status: "passed",
+          changedFileCount: 1,
+          changedSymbolCount: 2,
+          changedSymbolsTruncated: false,
+          scannedFileCount: 4,
+          candidateTestCount: 1,
+          selectedTestCount: 1,
+          omittedTestCount: 0,
+          unresolvedImportCount: 0,
+          graphTruncated: false,
+          changedFileSetSha256: "7".repeat(64),
+          changedSymbolSetSha256: "8".repeat(64),
+          dependencyGraphSha256: "9".repeat(64),
+          selectedTestSetSha256: "a".repeat(64),
+          selectionSnapshotSha256: "b".repeat(64),
+          observedSnapshotSha256: "b".repeat(64),
+          verifierSha256: "c".repeat(64),
+          durationMs: 12,
+          exitCode: 0,
+          stdoutSha256: "d".repeat(64),
+          stderrSha256: "e".repeat(64),
+          stdoutTruncated: false,
+          stderrTruncated: false,
+          resultSha256: "f".repeat(64),
+          path: "TOP_SECRET_TEST_PATH",
+          output: "TOP_SECRET_TEST_OUTPUT",
+        },
       },
     });
 
@@ -1165,11 +1195,49 @@ describe("Tool event trace view", () => {
       patchDiagnosticsDurationMs: 850,
       patchDiagnosticsDeltaSetSha256: "5".repeat(64),
       patchDiagnosticsResultSha256: "6".repeat(64),
+      writeLinkedTestStatus: "passed",
+      writeLinkedChangedFileCount: 1,
+      writeLinkedChangedSymbolCount: 2,
+      writeLinkedChangedSymbolsTruncated: false,
+      writeLinkedScannedFileCount: 4,
+      writeLinkedCandidateTestCount: 1,
+      writeLinkedSelectedTestCount: 1,
+      writeLinkedOmittedTestCount: 0,
+      writeLinkedUnresolvedImportCount: 0,
+      writeLinkedGraphTruncated: false,
+      writeLinkedDurationMs: 12,
+      writeLinkedExitCode: 0,
+      writeLinkedChangedFileSetSha256: "7".repeat(64),
+      writeLinkedChangedSymbolSetSha256: "8".repeat(64),
+      writeLinkedDependencyGraphSha256: "9".repeat(64),
+      writeLinkedSelectedTestSetSha256: "a".repeat(64),
+      writeLinkedSelectionSnapshotSha256: "b".repeat(64),
+      writeLinkedObservedSnapshotSha256: "b".repeat(64),
+      writeLinkedVerifierSha256: "c".repeat(64),
+      writeLinkedStdoutSha256: "d".repeat(64),
+      writeLinkedStderrSha256: "e".repeat(64),
+      writeLinkedResultSha256: "f".repeat(64),
     });
     expect(toolEventTraceSummary(event)).toBe(
-      `tool / apply_patch / completed / patch hashrange_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)} / created-dirs 2 / created-dir-set ${"4".repeat(12)} / diagnostics improved / diagnostic-count 2->1 / introduced 0 / resolved 1 / diagnostic-ms 850 / diagnostic-delta ${"5".repeat(12)} / diagnostic-result ${"6".repeat(12)}`,
+      `tool / apply_patch / completed / patch hashrange_replace / edits 1 / bytes 42->45 / path ${"1".repeat(12)} / before ${"2".repeat(12)} / after ${"3".repeat(12)} / created-dirs 2 / created-dir-set ${"4".repeat(12)} / diagnostics improved / diagnostic-count 2->1 / introduced 0 / resolved 1 / diagnostic-ms 850 / diagnostic-delta ${"5".repeat(12)} / diagnostic-result ${"6".repeat(12)} / linked-tests passed / selected-tests 1 / candidate-tests 1 / changed-symbols 2 / scanned-files 4 / linked-test-ms 12 / test-files ${"7".repeat(12)} / test-symbols ${"8".repeat(12)} / test-graph ${"9".repeat(12)} / selected-test-set ${"a".repeat(12)} / linked-test-result ${"f".repeat(12)}`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
+    const malformedTests = structuredClone(event);
+    if (
+      malformedTests.payload &&
+      !Array.isArray(malformedTests.payload) &&
+      typeof malformedTests.payload === "object" &&
+      malformedTests.payload["details"] &&
+      !Array.isArray(malformedTests.payload["details"]) &&
+      typeof malformedTests.payload["details"] === "object" &&
+      malformedTests.payload["details"]["tests"] &&
+      !Array.isArray(malformedTests.payload["details"]["tests"]) &&
+      typeof malformedTests.payload["details"]["tests"] === "object"
+    ) {
+      malformedTests.payload["details"]["tests"]["selectedTestCount"] = 2;
+    }
+    expect(toolEventTraceSummary(malformedTests)).not.toContain("linked-tests");
+    expect(toolEventTraceSummary(malformedTests)).not.toContain("TOP_SECRET");
   });
 
   it("summarizes coordinated LSP rename application without source bodies", () => {
@@ -1220,6 +1288,27 @@ describe("Tool event trace view", () => {
           resultSha256: "9".repeat(64),
           source: "PRIVATE_RENAME_SOURCE",
         },
+        tests: {
+          kind: "napier.write-linked-test-verification",
+          schemaVersion: 1,
+          status: "no_match",
+          changedFileCount: 3,
+          changedSymbolCount: 1,
+          changedSymbolsTruncated: false,
+          scannedFileCount: 4,
+          candidateTestCount: 0,
+          selectedTestCount: 0,
+          omittedTestCount: 0,
+          unresolvedImportCount: 0,
+          graphTruncated: false,
+          changedFileSetSha256: "b".repeat(64),
+          changedSymbolSetSha256: "c".repeat(64),
+          dependencyGraphSha256: "d".repeat(64),
+          selectedTestSetSha256: "e".repeat(64),
+          selectionSnapshotSha256: "f".repeat(64),
+          durationMs: 8,
+          resultSha256: "0".repeat(64),
+        },
         resultSha256: "a".repeat(64),
         edits: "PRIVATE_RENAME_EDITS",
       },
@@ -1227,6 +1316,9 @@ describe("Tool event trace view", () => {
 
     expect(toolEventTraceSummary(event)).toContain(
       `rename-apply applied / rename-postcondition verified / rename-files 3 / rename-edits 6 / rename-committed 3 / rename-restored 0 / rename-recovery-artifacts 0 / rename-durable / rename-diagnostics clean / rename-plan ${"2".repeat(12)} / rename-expected ${"4".repeat(12)} / rename-observed ${"4".repeat(12)} / rename-apply-result ${"a".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).toContain(
+      `linked-tests no_match / selected-tests 0 / candidate-tests 0 / changed-symbols 1 / scanned-files 4 / linked-test-ms 8`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("PRIVATE_RENAME");
     const malformed = structuredClone(event);

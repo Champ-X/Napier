@@ -21,7 +21,7 @@ Audit date: 2026-07-31
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | A checked local product-path budget now covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Split Server and Store by domain; extend budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                   |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                          |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test selection/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                      |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                       |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                                          |
@@ -97,6 +97,84 @@ Observed result:
   and kept the Web main entry at 130.08 KiB. The final shared-host run bounded
   Vitest to four workers after unrelated concurrent benchmark load made the
   default Server fan-out timing-unstable; no tests or assertions were skipped.
+
+## Completed Slice: Write-Linked Relevant Test Verification
+
+User scenario: after an Agent changes TypeScript or JavaScript, it receives
+fresh evidence from the most relevant tests without guessing test paths or
+running a full suite, and the operator can inspect that evidence through the
+same write event.
+
+Acceptance:
+
+- activate only when a non-observe, non-restricted Agent explicitly enables
+  both the write tool and `verify_workspace`;
+- bind pre-write and post-write declarations to the existing hash-preconditioned
+  `apply_patch` or verified coordinated LSP rename;
+- select each changed file's nearest package scope, scan at most 1,000 files /
+  32 MiB / 5,000 relative-import edges, and never follow protected, generated,
+  or symlink roots;
+- identify transitive reverse-dependent test files through static relative
+  imports, execute only `.test`/`.spec` Vitest targets rather than helper
+  modules, select at most eight exact targets, and refuse execution when the
+  graph is incomplete;
+- execute only the fixed workspace-local Vitest entrypoint in the existing
+  read-only, offline process Sandbox with two workers, bounded output,
+  cancellation, and a 60-second deadline;
+- rescan the complete selected package scopes after execution and accept a pass
+  only when the source snapshot remains identical;
+- distinguish pass, test failure, timeout, output cap, no match, incomplete
+  selection, drift, cancellation, and unavailable verifier/Sandbox outcomes;
+- attach status/count/hash evidence to the existing write receipt and expose it
+  through Agent output, Model Advisor freshness, public HTTP SSE, portable
+  Replay, and Web Trace;
+- keep changed paths, test paths, symbol names, source, output, and errors out
+  of durable evidence; mark declaration association truncated when a changed
+  file exceeds the 512-symbol snapshot bound.
+
+Threat boundary:
+
+- static selection covers relative TS/JS imports inside the nearest package
+  scope. Package aliases, project references, runtime-generated imports, root
+  integration tests, and semantic behavior not represented by that graph
+  require explicit broader verification;
+- `no_match` means no test was reachable in the complete bounded graph, not
+  that the project is tested. Any unresolved relative code import, parse error,
+  cap, or omitted test is `selection_incomplete` and does not execute;
+- Vitest configuration and test code are untrusted workspace code. They run
+  with process spawn and workspace read only, no network or write capability,
+  fixed environment, bounded workers, output, and wall time;
+- a pre/post snapshot detects workspace drift during the execution window but
+  cannot attribute an external writer or prove the absence of a transient
+  change restored to identical bytes;
+- a committed patch is not hidden when post-write test execution fails,
+  cancels, drifts, or is unavailable. Only fresh `passed` evidence satisfies
+  Model Advisor verification freshness.
+
+Observed result:
+
+- selector tests cover transitive dependency reachability, changed declarations,
+  nearest-package scoping, no match, unresolved imports, selection cap, and
+  source drift;
+- verifier tests cover pass, failure, timeout, output cap, cancellation,
+  post-run drift, unavailable execution, and nested macOS Sandbox rejection;
+- Agent integration proves automatic patch selection, same-event Advisor
+  freshness, valid portable Replay, live-only paths/symbols/output, and explicit
+  capability/read-only policy denial;
+- public HTTP SSE executes one selected target through the shared Runtime while
+  keeping source, test path, symbol, and output out of the stream and Ledger;
+- Web Trace validates status/count/hash consistency for both `apply_patch` and
+  `lsp_rename_apply` and rejects impossible or partial nested evidence;
+- the opt-in `npm run test:live-linked-tests` smoke passed from an independent
+  macOS Terminal through real `AgentRuntime`, workspace-local Vitest, and the
+  production OS Sandbox. The same command inside the already sandboxed IDE
+  selects the exact test but is correctly classified `unavailable` when macOS
+  rejects nested `sandbox-exec` with exit 71;
+- the complete repository gate passed 1,367 tests with 24 opt-in live tests
+  skipped by default, verified 247 OpenAPI routes and 244/244 compatibility
+  operations, and kept the Web main entry at 130.08 KiB. The 69-file Web dist
+  is bound to `2dca2d2cca3bd695`; the seven-artifact release set is bound to
+  `c36d425569c74247`.
 
 ## Completed Slice: Read-Only Sandboxed Commands
 

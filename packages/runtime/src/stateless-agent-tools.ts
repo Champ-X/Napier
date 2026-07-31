@@ -24,6 +24,8 @@ import {
   createWorkspaceFilePreviewTool,
 } from "./workspace-file-tools.js";
 import { createVerificationTool } from "./verification.js";
+import { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
+import { WriteLinkedWorkspacePatchObserver } from "./write-linked-workspace-patch.js";
 
 export interface CreateStatelessAgentToolsOptions {
   store: LocalStore;
@@ -49,11 +51,27 @@ export function createStatelessAgentTools(
     sandbox: options.sandbox,
     ...(options.lspSession ? { session: options.lspSession } : {}),
   };
-  const patchObserver =
+  const lspPatchObserver =
     processAllowed &&
     profile.enabledTools.includes("apply_patch") &&
     profile.enabledTools.includes("lsp_diagnostics")
       ? new LspWorkspacePatchObserver(lspOptions)
+      : undefined;
+  const writeLinkedTests =
+    processAllowed &&
+    profile.enabledTools.includes("apply_patch") &&
+    profile.enabledTools.includes("verify_workspace")
+      ? new WriteLinkedTestVerificationRunner({
+          workspaceRoot: options.store.workspaceRoot,
+          sandbox: options.sandbox,
+        })
+      : undefined;
+  const patchObserver =
+    lspPatchObserver || writeLinkedTests
+      ? new WriteLinkedWorkspacePatchObserver({
+          ...(lspPatchObserver ? { diagnostics: lspPatchObserver } : {}),
+          ...(writeLinkedTests ? { tests: writeLinkedTests } : {}),
+        })
       : undefined;
   const renameMutationManager =
     processAllowed &&
@@ -63,10 +81,18 @@ export function createStatelessAgentTools(
           workspaceRoot: options.store.workspaceRoot,
           dataRoot: options.store.dataRoot,
           diagnostics: new LspRenameApplyDiagnostics(lspOptions),
+          ...(profile.enabledTools.includes("verify_workspace")
+            ? {
+                tests: new WriteLinkedTestVerificationRunner({
+                  workspaceRoot: options.store.workspaceRoot,
+                  sandbox: options.sandbox,
+                }),
+              }
+            : {}),
         })
       : undefined;
   const tools = createWorkspaceTools(options.store.workspaceRoot, {
-    includeWriteTools: profile.toolPolicy !== "observe",
+    includeWriteTools: processAllowed,
     dataRoot: options.store.dataRoot,
     ...(patchObserver ? { patchObserver } : {}),
   }).filter((tool) => profile.enabledTools.includes(tool.name));
@@ -102,10 +128,7 @@ export function createStatelessAgentTools(
       }),
     );
   }
-  if (
-    profile.toolPolicy !== "observe" &&
-    profile.enabledTools.includes("verify_workspace")
-  ) {
+  if (processAllowed && profile.enabledTools.includes("verify_workspace")) {
     tools.push(
       createVerificationTool({
         workspaceRoot: options.store.workspaceRoot,

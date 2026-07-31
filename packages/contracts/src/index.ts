@@ -3698,6 +3698,7 @@ export interface LspRenameApplyDetails {
   resourceLimitsSha256: string;
   errorSha256?: string;
   diagnostics?: LspRenameApplyDiagnosticsDetails;
+  tests?: WriteLinkedTestVerificationDetails;
   resultSha256: string;
 }
 
@@ -3779,6 +3780,47 @@ export interface WorkspacePatchDiagnosticsDetails {
   observedFileSha256?: string;
   errorSha256?: string;
   durationMs: number;
+  resultSha256: string;
+}
+
+export type WriteLinkedTestVerificationStatus =
+  | "passed"
+  | "failed"
+  | "timed_out"
+  | "output_capped"
+  | "no_match"
+  | "selection_incomplete"
+  | "drifted"
+  | "cancelled"
+  | "unavailable";
+
+export interface WriteLinkedTestVerificationDetails {
+  kind: "napier.write-linked-test-verification";
+  schemaVersion: 1;
+  status: WriteLinkedTestVerificationStatus;
+  changedFileCount: number;
+  changedSymbolCount: number;
+  changedSymbolsTruncated: boolean;
+  scannedFileCount: number;
+  candidateTestCount: number;
+  selectedTestCount: number;
+  omittedTestCount: number;
+  unresolvedImportCount: number;
+  graphTruncated: boolean;
+  changedFileSetSha256: string;
+  changedSymbolSetSha256: string;
+  dependencyGraphSha256: string;
+  selectedTestSetSha256: string;
+  selectionSnapshotSha256: string;
+  observedSnapshotSha256?: string;
+  verifierSha256?: string;
+  durationMs: number;
+  exitCode?: number | null;
+  stdoutSha256?: string;
+  stderrSha256?: string;
+  stdoutTruncated?: boolean;
+  stderrTruncated?: boolean;
+  errorSha256?: string;
   resultSha256: string;
 }
 

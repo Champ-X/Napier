@@ -2,6 +2,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   JsonValue,
   WorkspacePatchDiagnosticsDetails,
+  WriteLinkedTestVerificationDetails,
 } from "@napier/contracts";
 import { Type } from "typebox";
 
@@ -164,7 +165,8 @@ export interface WorkspacePatchObservationState {
 
 export interface WorkspacePatchObservation {
   summary: string;
-  details: WorkspacePatchDiagnosticsDetails;
+  details?: WorkspacePatchDiagnosticsDetails;
+  tests?: WriteLinkedTestVerificationDetails;
 }
 
 export interface WorkspacePatchObserver {
@@ -189,6 +191,7 @@ export interface WorkspacePatchToolDetails extends Omit<
   kind: "napier.workspace-patch";
   schemaVersion: 1;
   diagnostics?: WorkspacePatchDiagnosticsDetails;
+  tests?: WriteLinkedTestVerificationDetails;
   resultSha256: string;
 }
 
@@ -210,7 +213,7 @@ export function createWorkspacePatchTool(
     name: "apply_patch",
     label: "Apply patch",
     description:
-      "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file or read_symbol. When LSP diagnostics are enabled, supported files are diagnosed automatically before and after the write.",
+      "Atomically create or edit one UTF-8 workspace file. Existing files require the complete SHA-256 from read_file or read_symbol. Enabled LSP diagnostics run before and after supported writes; enabled verification automatically selects and runs bounded reverse-dependent tests.",
     parameters: applyPatchSchema,
     async execute(_toolCallId, rawInput, signal) {
       const input = rawInput as WorkspacePatchInput;
@@ -248,7 +251,7 @@ export function createWorkspacePatchTool(
             ...(signal ? { signal } : {}),
           });
         } catch (error) {
-          observation = unavailableObservation(
+          observation = unavailableWorkspacePatchObservation(
             result.afterSha256,
             error,
             Math.max(0, Date.now() - observationStartedAt),
@@ -256,7 +259,11 @@ export function createWorkspacePatchTool(
         }
       }
 
-      const details = workspacePatchToolDetails(result, observation?.details);
+      const details = workspacePatchToolDetails(
+        result,
+        observation?.details,
+        observation?.tests,
+      );
       return {
         content: [
           {
@@ -340,6 +347,7 @@ export function workspacePatchToolOutputLedgerProjection(
 function workspacePatchToolDetails(
   result: WorkspacePatchResult,
   diagnostics?: WorkspacePatchDiagnosticsDetails,
+  tests?: WriteLinkedTestVerificationDetails,
 ): WorkspacePatchToolDetails {
   const base = {
     kind: "napier.workspace-patch" as const,
@@ -363,6 +371,7 @@ function workspacePatchToolDetails(
         }
       : {}),
     ...(diagnostics ? { diagnostics } : {}),
+    ...(tests ? { tests } : {}),
   };
   return {
     ...base,
@@ -370,7 +379,7 @@ function workspacePatchToolDetails(
   };
 }
 
-function unavailableObservation(
+export function unavailableWorkspacePatchObservation(
   expectedFileSha256: string,
   error: unknown,
   durationMs: number,

@@ -128,7 +128,7 @@ export function formatWorkspaceToolGuidance(
   }
   if (hasLspRenameApply) {
     lines.push(
-      "lsp_rename_apply coordinates one same-Run preview across all target files, rechecks every hash under locks, and automatically records bounded before/after diagnostics. Never retry rolled-back or indeterminate results without a fresh preview and workspace inspection.",
+      `lsp_rename_apply coordinates one same-Run preview across all target files, rechecks every hash under locks, and automatically records bounded before/after diagnostics.${hasVerification ? " When the commit is verified, it also selects and runs bounded reverse-dependent TypeScript or JavaScript tests." : ""} Never retry rolled-back or indeterminate results without a fresh preview and workspace inspection.`,
     );
   }
   if (hasLspCodeActions) {
@@ -160,7 +160,8 @@ export function formatWorkspaceToolGuidance(
   }
   if (hasPatch && hasVerification) {
     lines.push(
-      "After apply_patch, run verify_workspace when the change has a relevant typecheck, test, or format check before saying verification passed.",
+      "TypeScript and JavaScript apply_patch calls automatically select up to eight reverse-dependent tests from a bounded static relative-import graph and run them through the read-only Sandbox. Treat no_match as no statically related test, selection_incomplete as unknown coverage, and unavailable, drifted, failed, timed-out, or capped results as unverified behavior.",
+      "Use verify_workspace for broader typecheck, format, full-suite, non-relative import, or unsupported-language evidence before making claims beyond the automatically selected tests.",
     );
   } else if (hasVerification) {
     lines.push(

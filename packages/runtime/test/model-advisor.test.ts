@@ -39,7 +39,7 @@ describe("model advisor stream lint", () => {
           expect.objectContaining({
             ruleId: "unverified_verification_claim",
             severity: "warning",
-            matchCount: 1,
+            matchCount: 2,
             evidenceSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
           }),
         ],
@@ -186,6 +186,103 @@ describe("model advisor stream lint", () => {
     });
 
     expect(notice).toBeUndefined();
+  });
+
+  it("accepts passing write-linked tests on the write event itself", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The relevant tests passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        toolCompleted(1, {
+          callId: "tool_1",
+          toolName: "apply_patch",
+          status: "completed",
+          details: {
+            operation: "replace",
+            afterSha256: "a".repeat(64),
+            tests: {
+              kind: "napier.write-linked-test-verification",
+              status: "passed",
+            },
+          },
+        }),
+      ],
+    });
+
+    expect(notice).toBeUndefined();
+  });
+
+  it("does not treat passing write-linked tests as typecheck evidence", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The typecheck passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        toolCompleted(1, {
+          callId: "tool_1",
+          toolName: "apply_patch",
+          status: "completed",
+          details: {
+            operation: "replace",
+            afterSha256: "a".repeat(64),
+            tests: {
+              kind: "napier.write-linked-test-verification",
+              status: "passed",
+            },
+          },
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          verificationToolCompleted: false,
+          verificationToolPassed: false,
+          workspaceWriteCompleted: true,
+          verificationToolPassedAfterWorkspaceWrite: false,
+        }),
+        diagnostics: [
+          expect.objectContaining({
+            ruleId: "unverified_verification_claim",
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("does not accept failed write-linked tests as fresh verification", () => {
+    const notice = createModelAdvisorNotice({
+      assistantText: "The relevant tests passed.",
+      turnSource: "user",
+      policy: DEFAULT_POLICY,
+      runEvents: [
+        toolCompleted(1, {
+          callId: "tool_1",
+          toolName: "lsp_rename_apply",
+          status: "completed",
+          details: {
+            status: "applied",
+            tests: {
+              kind: "napier.write-linked-test-verification",
+              status: "failed",
+            },
+          },
+        }),
+      ],
+    });
+
+    expect(notice).toEqual(
+      expect.objectContaining({
+        evidence: expect.objectContaining({
+          verificationToolCompleted: false,
+          verificationToolPassed: false,
+          workspaceWriteCompleted: true,
+          verificationToolPassedAfterWorkspaceWrite: false,
+        }),
+      }),
+    );
   });
 
   it("flags plan completion and artifact verification claims without ledger evidence", () => {

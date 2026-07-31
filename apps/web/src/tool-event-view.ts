@@ -49,6 +49,11 @@ import {
   lspToolEventSummaryParts,
   type LspToolEventTraceView,
 } from "./lsp-tool-event-view";
+import {
+  writeLinkedTestEventEvidence,
+  writeLinkedTestSummaryParts,
+  type WriteLinkedTestEventTraceView,
+} from "./write-linked-test-event-view";
 
 export interface ToolEventTraceView
   extends
@@ -60,7 +65,8 @@ export interface ToolEventTraceView
     ResearchSourceToolEventTraceView,
     SqliteQueryToolEventTraceView,
     NodeDebuggerToolEventTraceView,
-    TypescriptAstToolEventTraceView {
+    TypescriptAstToolEventTraceView,
+    WriteLinkedTestEventTraceView {
   toolName: string;
   status: string;
   effect?: "read" | "write";
@@ -549,6 +555,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.patchDiagnosticsResultSha256
       ? [`diagnostic-result ${view.patchDiagnosticsResultSha256.slice(0, 12)}`]
       : []),
+    ...writeLinkedTestSummaryParts(view),
     ...(view.fileMutationAction
       ? [`file-action ${view.fileMutationAction}`]
       : []),
@@ -1081,6 +1088,8 @@ function applyPatchEvidence(value: unknown):
     record["createdParentDirectorySetSha256"],
   );
   const diagnostics = patchDiagnosticsEvidence(record["diagnostics"]);
+  const tests = writeLinkedTestEventEvidence(record["tests"]);
+  if (record["tests"] !== undefined && !tests) return undefined;
   return {
     patchOperation: operation,
     ...(pathSha256 ? { patchPathSha256: pathSha256 } : {}),
@@ -1098,6 +1107,7 @@ function applyPatchEvidence(value: unknown):
         }
       : {}),
     ...(diagnostics ?? {}),
+    ...(tests ?? {}),
   };
 }
 

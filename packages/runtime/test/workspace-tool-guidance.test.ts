@@ -43,6 +43,7 @@ describe("workspace tool guidance", () => {
     const guidance = formatWorkspaceToolGuidance([
       { name: "lsp_rename" } as AgentTool,
       { name: "lsp_rename_apply" } as AgentTool,
+      { name: "verify_workspace" } as AgentTool,
     ]);
 
     expect(guidance).toContain(
@@ -50,8 +51,24 @@ describe("workspace tool guidance", () => {
     );
     expect(guidance).toContain("rechecks every hash under locks");
     expect(guidance).toContain(
+      "selects and runs bounded reverse-dependent TypeScript",
+    );
+    expect(guidance).toContain(
       "Never retry rolled-back or indeterminate results",
     );
+  });
+
+  it("describes automatic write-linked tests without overstating coverage", () => {
+    const guidance = formatWorkspaceToolGuidance([
+      { name: "apply_patch" } as AgentTool,
+      { name: "verify_workspace" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain(
+      "automatically select up to eight reverse-dependent tests",
+    );
+    expect(guidance).toContain("selection_incomplete as unknown coverage");
+    expect(guidance).toContain("Use verify_workspace for broader typecheck");
   });
 
   it("describes the restricted Python state boundary", () => {

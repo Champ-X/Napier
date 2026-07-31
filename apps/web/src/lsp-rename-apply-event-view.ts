@@ -1,3 +1,8 @@
+import {
+  writeLinkedTestEventEvidence,
+  type WriteLinkedTestEventTraceView,
+} from "./write-linked-test-event-view";
+
 type ApplyStatus = "applied" | "rolled_back" | "indeterminate";
 type Postcondition = "verified" | "drifted" | "indeterminate";
 type DiagnosticStatus =
@@ -10,7 +15,7 @@ type DiagnosticStatus =
   | "unavailable"
   | "drifted";
 
-export interface LspRenameApplyToolEventTraceView {
+export interface LspRenameApplyToolEventTraceView extends WriteLinkedTestEventTraceView {
   lspRenameApplyStatus?: ApplyStatus;
   lspRenameApplyPostcondition?: Postcondition;
   lspRenameApplyFileCount?: number;
@@ -99,6 +104,8 @@ export function lspRenameApplyEventEvidence(
   }
   const diagnostics = renameDiagnostics(value["diagnostics"]);
   if (value["diagnostics"] !== undefined && !diagnostics) return undefined;
+  const tests = writeLinkedTestEventEvidence(value["tests"]);
+  if (value["tests"] !== undefined && !tests) return undefined;
   return {
     lspRenameApplyStatus: status,
     lspRenameApplyPostcondition: postcondition,
@@ -113,6 +120,7 @@ export function lspRenameApplyEventEvidence(
     lspRenameApplyCancellationObserved: value["cancellationObserved"],
     ...hashes,
     ...(diagnostics ? diagnostics : {}),
+    ...(tests ? tests : {}),
   };
 }
 

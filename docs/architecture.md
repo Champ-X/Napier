@@ -47,8 +47,9 @@ removal is a versioned contract change.
 - conversion from Pi events to Napier events;
 - tool assembly, canonical workspace-path checks, hash-aware literal search,
   bounded TypeScript AST query/edit previews, hash-bound atomic editing with
-  Hashline-style line anchors, sandboxed structured verification,
-  explicit-argv read-only Node command execution, and
+  Hashline-style line anchors, write-linked bounded relevant-test selection,
+  sandboxed structured verification, explicit-argv read-only Node command
+  execution, and
   last-moment policy checks;
 - configurable Model Advisor gates that combine deterministic output checks
   with an optional distinct zero-tool review model before the user-visible
@@ -2603,6 +2604,47 @@ introduced/resolved/unchanged counts, delta/result hashes, and latency. Raw
 paths, patch text, source, compiler messages, and server errors are live-only.
 Unsupported files and Agents without both explicitly enabled tools bypass the
 observer and preserve existing patch latency.
+
+## Write-linked Test Verification Flow
+
+Relevant-test verification extends the existing patch and coordinated-rename
+receipts; it is not a second write or event system:
+
+```text
+frozen Agent enables apply_patch or lsp_rename_apply + verify_workspace
+  -> capture declaration hashes from the source bytes bound to the write
+  -> commit through the existing single-file CAS or coordinated rename path
+  -> choose each changed file's nearest package.json scope
+  -> scan at most 1,000 TS/JS files and 32 MiB, excluding protected/generated roots
+  -> parse static relative imports and bind the bounded reverse-dependency graph
+  -> associate up to 512 declarations per file by before/after content hash
+     and mark declaration evidence truncated above that bound
+  -> select at most eight reverse-reachable .test/.spec files
+  -> require a complete graph before execution
+  -> run exact targets through fixed workspace-local Vitest with
+     process.spawn + workspace.read only
+  -> rescan the same package scopes after execution
+  -> accept passed only when selection and observed source snapshots match
+  -> attach one privacy-bounded nested receipt to the existing write event
+```
+
+The scan caps at 5,000 import edges and 1 MiB per source file. Parse failure,
+an unresolved relative code import, scan/byte/edge truncation, or more than
+eight related tests becomes `selection_incomplete`; tests do not run and the
+write remains visible. A complete graph with no reachable test becomes
+`no_match`, which is not a project-wide verification claim. Executed outcomes
+remain `passed`, `failed`, `timed_out`, or `output_capped`; cancellation,
+source drift, and unavailable Sandbox/verifier state remain distinct.
+
+The child process receives fixed Vitest arguments, a 60-second timeout, two
+workers, no network, no workspace writes, and no inherited environment. This
+capability exists only when the write and `verify_workspace` tools are both
+enabled under a non-observe, non-restricted execution policy. The live Agent
+sees selected paths, changed symbol identities, and bounded test output.
+Durable Ledger, Replay, SSE, and Trace evidence contains only statuses, counts,
+exit state, truncation, latency, and hashes of the changed file/symbol sets,
+dependency graph, selected test set, verifier, output, errors, and pre/post
+snapshots.
 
 ## Workspace File Lifecycle Flow
 
@@ -5256,6 +5298,11 @@ The current boundary has forty-six parts:
     capabilities, complete target locking and hash revalidation,
     same-filesystem staging/backups, verified rollback, bounded before/after
     diagnostics, explicit indeterminate outcomes, and body-free Trace evidence.
+47. Write-linked TypeScript/JavaScript relevant-test verification with
+    nearest-package bounded static dependency graphs, changed-declaration
+    association, exact read-only/offline Vitest targets, post-run source
+    freshness, Agent/HTTP/Replay/Trace integration, and path/output-free durable
+    evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5299,8 +5346,8 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 2: Coding and workflow
 
 - Code Action resolve/command policy, Node attach/source-map/multi-thread DAP
-  and debugger UX, broader multi-node AST transforms, write-linked test
-  selection/symbol association, and isolated subagent worktrees;
+  and debugger UX, broader multi-node AST transforms, cross-package/path-alias
+  test discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, multi-way switch, loops, write-capable Map, Reduce,
   compensation, single-node tests and breakpoints, external Agent adapters,

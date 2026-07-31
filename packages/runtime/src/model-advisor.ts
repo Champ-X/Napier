@@ -12,7 +12,10 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { IndependentModelAdvisorGuidance } from "./independent-model-advisor.js";
-import { createModelAdvisorVerificationEvidence } from "./model-advisor-evidence.js";
+import {
+  createModelAdvisorVerificationEvidence,
+  hasPassedWriteLinkedTestsAfterWorkspaceWrite,
+} from "./model-advisor-evidence.js";
 
 export interface CreateModelAdvisorNoticeInput {
   assistantText: string;
@@ -52,10 +55,16 @@ export class CombinedModelAdvisorBlockedError extends Error {
   }
 }
 
-const VERIFICATION_CLAIM_PATTERNS = [
-  /\b(?:tests?|test suite|typecheck|type-check|build|lint|checks?|verification|verify_workspace)\b.{0,40}\b(?:passed|pass|green|succeeded|successful|clean)\b/iu,
-  /\b(?:passed|green|succeeded|successful|clean)\b.{0,40}\b(?:tests?|test suite|typecheck|type-check|build|lint|checks?|verification|verify_workspace)\b/iu,
-  /(?:测试|构建|类型检查|检查|校验).{0,16}(?:通过|成功|全绿)/u,
+const TEST_VERIFICATION_CLAIM_PATTERNS = [
+  /\b(?:tests?|test suite)\b.{0,40}\b(?:passed|pass|green|succeeded|successful|clean)\b/iu,
+  /\b(?:passed|green|succeeded|successful|clean)\b.{0,40}\b(?:tests?|test suite)\b/iu,
+  /测试.{0,16}(?:通过|成功|全绿)/u,
+];
+
+const NON_TEST_VERIFICATION_CLAIM_PATTERNS = [
+  /\b(?:typecheck|type-check|build|lint|checks?|verification|verify_workspace)\b.{0,40}\b(?:passed|pass|green|succeeded|successful|clean)\b/iu,
+  /\b(?:passed|green|succeeded|successful|clean)\b.{0,40}\b(?:typecheck|type-check|build|lint|checks?|verification|verify_workspace)\b/iu,
+  /(?:构建|类型检查|检查|校验).{0,16}(?:通过|成功|全绿)/u,
 ];
 
 const PLAN_COMPLETION_CLAIM_PATTERNS = [
@@ -112,9 +121,15 @@ export function createModelAdvisorNotice(
   }
   const textSha256 = sha256(input.assistantText);
   const evidence = createAdvisorEvidence(input.assistantText, input.runEvents);
+  const writeLinkedTestsPassedAfterWorkspaceWrite =
+    hasPassedWriteLinkedTestsAfterWorkspaceWrite(input.runEvents);
   const diagnostics = [
     input.policy.enabledRules.includes("unverified_verification_claim")
-      ? createVerificationClaimDiagnostic(input.assistantText, evidence)
+      ? createVerificationClaimDiagnostic(
+          input.assistantText,
+          evidence,
+          writeLinkedTestsPassedAfterWorkspaceWrite,
+        )
       : undefined,
     input.policy.enabledRules.includes("destructive_command_reference")
       ? createDestructiveCommandDiagnostic(input.assistantText)
@@ -354,11 +369,18 @@ function createAdvisorEvidence(
 function createVerificationClaimDiagnostic(
   assistantText: string,
   evidence: ModelAdvisorNoticePayload["evidence"],
+  writeLinkedTestsPassedAfterWorkspaceWrite: boolean,
 ): ModelAdvisorDiagnostic | undefined {
-  const verificationClaimCount = countPatternHits(
+  const testVerificationClaimCount = countPatternHits(
     assistantText,
-    VERIFICATION_CLAIM_PATTERNS,
+    TEST_VERIFICATION_CLAIM_PATTERNS,
   );
+  const nonTestVerificationClaimCount = countPatternHits(
+    assistantText,
+    NON_TEST_VERIFICATION_CLAIM_PATTERNS,
+  );
+  const verificationClaimCount =
+    testVerificationClaimCount + nonTestVerificationClaimCount;
   const planCompletionClaimCount = countPatternHits(
     assistantText,
     PLAN_COMPLETION_CLAIM_PATTERNS,
@@ -383,10 +405,18 @@ function createVerificationClaimDiagnostic(
     assistantText,
     EVALUATION_PASS_CLAIM_PATTERNS,
   );
-  const unsupportedVerificationClaimCount =
+  const unsupportedTestVerificationClaimCount =
+    evidence.verificationToolPassedAfterWorkspaceWrite ||
+    writeLinkedTestsPassedAfterWorkspaceWrite
+      ? 0
+      : testVerificationClaimCount;
+  const unsupportedNonTestVerificationClaimCount =
     evidence.verificationToolPassedAfterWorkspaceWrite
       ? 0
-      : verificationClaimCount;
+      : nonTestVerificationClaimCount;
+  const unsupportedVerificationClaimCount =
+    unsupportedTestVerificationClaimCount +
+    unsupportedNonTestVerificationClaimCount;
   const unsupportedPlanCompletionClaimCount =
     evidence.planCompletedAfterWorkspaceWrite ? 0 : planCompletionClaimCount;
   const unsupportedArtifactVerificationClaimCount =
@@ -404,9 +434,7 @@ function createVerificationClaimDiagnostic(
       ? 0
       : evaluationCompletionClaimCount;
   const unsupportedEvaluationPassClaimCount =
-    evidence.evaluationPassedAfterWorkspaceWrite
-      ? 0
-      : evaluationPassClaimCount;
+    evidence.evaluationPassedAfterWorkspaceWrite ? 0 : evaluationPassClaimCount;
   const matchCount =
     unsupportedVerificationClaimCount +
     unsupportedPlanCompletionClaimCount +
@@ -425,6 +453,8 @@ function createVerificationClaimDiagnostic(
     {
       matchCount,
       verificationClaimCount,
+      testVerificationClaimCount,
+      nonTestVerificationClaimCount,
       planCompletionClaimCount,
       artifactVerificationClaimCount,
       goalCompletionClaimCount,
@@ -432,6 +462,8 @@ function createVerificationClaimDiagnostic(
       evaluationCompletionClaimCount,
       evaluationPassClaimCount,
       unsupportedVerificationClaimCount,
+      unsupportedTestVerificationClaimCount,
+      unsupportedNonTestVerificationClaimCount,
       unsupportedPlanCompletionClaimCount,
       unsupportedArtifactVerificationClaimCount,
       unsupportedGoalCompletionClaimCount,

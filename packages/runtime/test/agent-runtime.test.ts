@@ -3420,7 +3420,7 @@ describe("AgentRuntime demo path", () => {
       (context) => {
         expect(context.systemPrompt).toContain("<workspace_tool_protocol>");
         expect(context.systemPrompt).toContain(
-          "After apply_patch, run verify_workspace",
+          "Use verify_workspace for broader typecheck",
         );
         expect(context.tools?.map((tool) => tool.name)).toEqual(
           expect.arrayContaining([

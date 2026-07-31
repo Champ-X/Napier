@@ -12,6 +12,8 @@ import {
 } from "./lsp-rename-apply-diagnostics.js";
 import type { LspRenameResult } from "./lsp-rename.js";
 import { createId } from "./ids.js";
+import type { WriteLinkedTestBeforeState } from "./write-linked-test-selection.js";
+import type { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 
 export const MAX_LSP_RENAME_APPLY_PREVIEWS = 32;
 export const LSP_RENAME_APPLY_PREVIEW_TTL_MS = 5 * 60_000;
@@ -36,6 +38,7 @@ export interface LspRenameMutationManagerOptions {
     LspRenameApplyDiagnostics,
     "observeBefore" | "observeAfter"
   >;
+  tests?: Pick<WriteLinkedTestVerificationRunner, "captureBefore" | "run">;
   now?: () => Date;
   commit?: typeof commitLspRename;
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
@@ -94,6 +97,7 @@ export class LspRenameMutationManager {
     this.previews.delete(previewId);
     this.prune();
     signal?.throwIfAborted();
+    const testBefore = await this.captureTestsBefore(preview.result, signal);
     const diagnostics = await this.options.diagnostics.observeBefore(
       preview.result.files,
       signal,
@@ -111,6 +115,19 @@ export class LspRenameMutationManager {
       outcome.status === "applied"
         ? await this.observeAfter(diagnostics, outcome.expectedFiles, signal)
         : undefined;
+    const testObservation =
+      outcome.status === "applied" &&
+      outcome.postcondition === "verified" &&
+      this.options.tests
+        ? await this.options.tests.run(
+            outcome.expectedFiles.map((file) => ({
+              path: file.path,
+              expectedSha256: file.expectedSha256,
+            })),
+            testBefore,
+            signal,
+          )
+        : undefined;
     const { expectedFiles: _expectedFiles, ...durableOutcome } = outcome;
     const base = {
       kind: "napier.lsp-rename-apply" as const,
@@ -119,6 +136,7 @@ export class LspRenameMutationManager {
       ...(diagnosticObservation
         ? { diagnostics: diagnosticObservation.details }
         : {}),
+      ...(testObservation ? { tests: testObservation.details } : {}),
     };
     const details: LspRenameApplyDetails = {
       ...base,
@@ -144,6 +162,7 @@ export class LspRenameMutationManager {
           ? [`Error SHA-256: ${details.errorSha256}`]
           : []),
         ...(diagnosticObservation ? ["", diagnosticObservation.summary] : []),
+        ...(testObservation ? ["", testObservation.summary] : []),
         "",
         details.status === "applied" && details.postcondition === "verified"
           ? "The coordinated rename is committed. Run relevant behavior verification before claiming completion."
@@ -152,6 +171,20 @@ export class LspRenameMutationManager {
             : "Workspace state is indeterminate. Inspect every target before any retry.",
       ].join("\n"),
     };
+  }
+
+  private async captureTestsBefore(
+    preview: LspRenameResult,
+    signal?: AbortSignal,
+  ): Promise<WriteLinkedTestBeforeState | undefined> {
+    if (!this.options.tests) return undefined;
+    signal?.throwIfAborted();
+    return this.options.tests.captureBefore(
+      preview.files.map((file) => ({
+        path: file.path,
+        expectedSha256: file.fileSha256,
+      })),
+    );
   }
 
   private async observeAfter(

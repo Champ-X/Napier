@@ -49,6 +49,20 @@ export function isPassedVerifyWorkspaceCompletion(event: RunEvent): boolean {
   return isRecord(details) && details["status"] === "passed";
 }
 
+export function hasPassedWriteLinkedTestsAfterWorkspaceWrite(
+  events: RunEvent[],
+): boolean {
+  const latestWriteSeq = latestSeq(events, isWorkspaceWriteCompletion);
+  const latestPassedTestsSeq = latestSeq(
+    events,
+    isPassedWriteLinkedTestCompletion,
+  );
+  return (
+    latestPassedTestsSeq !== undefined &&
+    (latestWriteSeq === undefined || latestPassedTestsSeq >= latestWriteSeq)
+  );
+}
+
 export function isWorkspaceWriteCompletion(event: RunEvent): boolean {
   if (
     event.type !== "tool.completed" ||
@@ -57,7 +71,11 @@ export function isWorkspaceWriteCompletion(event: RunEvent): boolean {
   ) {
     return false;
   }
-  return event.payload["toolName"] === "apply_patch";
+  return (
+    event.payload["toolName"] === "apply_patch" ||
+    event.payload["toolName"] === "lsp_rename_apply" ||
+    event.payload["toolName"] === "workspace_file_apply"
+  );
 }
 
 export function isPlanCompletionEvent(event: RunEvent): boolean {
@@ -243,7 +261,7 @@ export function createModelAdvisorVerificationEvidence(
   const verificationToolPassedAfterWorkspaceWrite =
     latestPassedVerificationSeq !== undefined &&
     (latestWorkspaceWriteSeq === undefined ||
-      latestPassedVerificationSeq > latestWorkspaceWriteSeq);
+      latestPassedVerificationSeq >= latestWorkspaceWriteSeq);
   const planCompletedAfterWorkspaceWrite =
     latestPlanCompletedSeq !== undefined &&
     (latestPlanInvalidatedSeq === undefined ||
@@ -334,6 +352,29 @@ export function createModelAdvisorVerificationEvidence(
       ? { latestEvaluationPassInvalidatedSeq }
       : {}),
   };
+}
+
+export function isWriteLinkedTestCompletion(event: RunEvent): boolean {
+  if (
+    event.type !== "tool.completed" ||
+    !isRecord(event.payload) ||
+    (event.payload["toolName"] !== "apply_patch" &&
+      event.payload["toolName"] !== "lsp_rename_apply")
+  ) {
+    return false;
+  }
+  const details = event.payload["details"];
+  return isRecord(details) && isRecord(details["tests"]);
+}
+
+export function isPassedWriteLinkedTestCompletion(event: RunEvent): boolean {
+  if (!isWriteLinkedTestCompletion(event) || !isRecord(event.payload)) {
+    return false;
+  }
+  const details = event.payload["details"];
+  if (!isRecord(details)) return false;
+  const tests = details["tests"];
+  return isRecord(tests) && tests["status"] === "passed";
 }
 
 function latestSeq(

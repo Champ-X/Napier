@@ -103,6 +103,12 @@ Version `0.1.0` includes:
 - a `verify_workspace` tool for bounded TypeScript, Vitest, and Prettier checks
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
+- automatic write-linked TypeScript/JavaScript test verification for
+  `apply_patch` and verified `lsp_rename_apply` writes when
+  `verify_workspace` is explicitly enabled: Napier scans the nearest package,
+  binds changed declarations and a bounded static relative-import graph,
+  executes up to eight reverse-dependent Vitest files in the same read-only,
+  offline Sandbox, and rejects stale post-run evidence;
 - `lsp_diagnostics`, semantic `lsp_symbols`, `lsp_definition`,
   `lsp_references`, preview-bound `lsp_rename` / `lsp_rename_apply`, and
   quick-fix-only `lsp_code_actions` tools that drive the standard TypeScript
@@ -2035,10 +2041,32 @@ completed projections also redact raw paths and patch/output text. Non-code
 files and profiles without the explicit LSP tool retain the previous patch
 behavior and launch no hidden process.
 
+When the same non-observe Agent also explicitly enables `verify_workspace`,
+`apply_patch` and a successfully committed, postcondition-verified
+`lsp_rename_apply` automatically select related TypeScript/JavaScript tests.
+Napier scans at most 1,000 files and 32 MiB under each changed file's nearest
+`package.json`, builds a bounded static graph from relative imports, associates
+before/after declaration hashes, and runs at most eight reverse-dependent
+`.test`/`.spec` files through the fixed workspace-local Vitest entrypoint.
+Declaration association is capped and reports truncation rather than silently
+claiming completeness. The Sandbox remains read-only and offline with a
+60-second timeout and bounded output.
+
+Only a complete selection, a zero Vitest exit, and an unchanged post-run source
+snapshot produce `passed`. Unresolved relative imports, parse/scan/edge limits,
+or omitted tests produce `selection_incomplete` and do not execute. `no_match`
+means only that the complete bounded relative-import graph found no dependent
+test; it is not project-wide verification. Cancellation, verifier
+unavailability, output limits, test failure, and external source drift remain
+distinct. Test paths, symbol names, output, and errors are live-only; Ledger,
+Replay, SSE, and Trace retain statuses, counts, latency, exit state, and
+hash-bound file/symbol/graph/test/snapshot evidence.
+
 Run the real local-Sandbox smoke from a non-sandboxed Terminal:
 
 ```bash
 npm run test:live-lsp
+npm run test:live-linked-tests
 ```
 
 The repository includes `examples/lsp-diagnostics/semantic-error.ts` as a

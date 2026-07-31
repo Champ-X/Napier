@@ -257,6 +257,49 @@ describe("sandboxed workspace verification", () => {
     expect(result.content[0]?.text).toContain("error TS1000");
   });
 
+  it("runs an exact bounded selected-test set through the fixed verifier", async () => {
+    const { workspaceRoot } = await createWorkspace();
+    const fake = createFakeSandbox({ stdout: "selected tests passed\n" });
+    const runner = new VerificationRunner({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+    });
+
+    const result = await runner.runSelectedTests(
+      ["packages/example/test/example.test.ts"],
+      5_000,
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "passed",
+        verifierSha256: createHash("sha256")
+          .update("// fixture\n")
+          .digest("hex"),
+        stdoutSha256: createHash("sha256")
+          .update("selected tests passed\n")
+          .digest("hex"),
+      }),
+    );
+    expect(fake.launchRequests[0]?.args).toEqual([
+      await realpath(
+        path.join(workspaceRoot, "node_modules/vitest/vitest.mjs"),
+      ),
+      "run",
+      "--pool=threads",
+      "--maxWorkers=2",
+      await realpath(
+        path.join(workspaceRoot, "packages/example/test/example.test.ts"),
+      ),
+    ]);
+    await expect(
+      runner.runSelectedTests([
+        "packages/example/test/example.test.ts",
+        "packages/example/test/example.test.ts",
+      ]),
+    ).rejects.toThrow("request is invalid");
+  });
+
   it("terminates a verifier that exceeds its time budget", async () => {
     const { workspaceRoot } = await createWorkspace();
     const fake = createFakeSandbox({ hang: true });

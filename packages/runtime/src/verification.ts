@@ -105,6 +105,21 @@ export interface VerificationResult {
   stderr: string;
 }
 
+export interface SelectedTestExecutionResult {
+  status: VerificationStatus;
+  sandbox: string;
+  verifierSha256: string;
+  durationMs: number;
+  exitCode: number | null;
+  signal: NodeJS.Signals | null;
+  stdout: string;
+  stderr: string;
+  stdoutSha256: string;
+  stderrSha256: string;
+  stdoutTruncated: boolean;
+  stderrTruncated: boolean;
+}
+
 export interface VerificationRunnerOptions {
   workspaceRoot: string;
   sandbox: OsSandboxAdapter;
@@ -238,6 +253,100 @@ export class VerificationRunner {
       },
       stdout: execution.stdout,
       stderr: execution.stderr,
+    };
+  }
+
+  async runSelectedTests(
+    targets: string[],
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    signal?: AbortSignal,
+  ): Promise<SelectedTestExecutionResult> {
+    if (
+      targets.length < 1 ||
+      targets.length > 8 ||
+      new Set(targets).size !== targets.length ||
+      targets.some(
+        (target) =>
+          !target ||
+          target.length > 500 ||
+          path.isAbsolute(target) ||
+          /[\u0000-\u001f\u007f]/u.test(target),
+      ) ||
+      !Number.isInteger(timeoutMs) ||
+      timeoutMs < MIN_TIMEOUT_MS ||
+      timeoutMs > MAX_TIMEOUT_MS
+    ) {
+      throw new Error("Selected test verification request is invalid");
+    }
+    const workspaceRoot = await realpath(this.workspaceRoot);
+    const cli = await resolveExistingPath(
+      workspaceRoot,
+      VERIFICATION_CLIS.test,
+      "test verifier",
+    );
+    if (!(await stat(cli)).isFile()) {
+      throw new Error("test verifier must be a file");
+    }
+    const resolvedTargets = [];
+    for (const target of targets) {
+      const resolved = await resolveExistingPath(
+        workspaceRoot,
+        target,
+        "selected test target",
+      );
+      if (!(await stat(resolved)).isFile()) {
+        throw new Error("selected test target must be a file");
+      }
+      resolvedTargets.push(resolved);
+    }
+    const nodeExecutable = await realpath(
+      path.resolve(this.options.nodeExecutable ?? process.execPath),
+    );
+    const verifierSha256 = sha256(await readFile(cli));
+    const execution = await runSandboxedProcess({
+      sandbox: this.options.sandbox,
+      launch: {
+        command: nodeExecutable,
+        args: [
+          cli,
+          "run",
+          "--pool=threads",
+          "--maxWorkers=2",
+          ...resolvedTargets,
+        ],
+        cwd: workspaceRoot,
+        env: {
+          CI: "1",
+          FORCE_COLOR: "0",
+          NO_COLOR: "1",
+        },
+        workspaceRoot,
+        approvedCapabilities: ["process.spawn", "workspace.read"],
+      },
+      timeoutMs,
+      maxOutputChars: MAX_OUTPUT_CHARS,
+      ...(signal ? { signal } : {}),
+      abortedMessage: "selected test verification was aborted",
+    });
+    const status: VerificationStatus =
+      execution.status === "exited"
+        ? execution.exitCode === 0
+          ? "passed"
+          : "failed"
+        : execution.status;
+    return {
+      status,
+      sandbox: this.options.sandbox.id,
+      verifierSha256,
+      durationMs: execution.durationMs,
+      exitCode: execution.exitCode,
+      signal: execution.signal,
+      stdout: execution.stdout,
+      stderr: execution.stderr,
+      stdoutSha256: sha256(execution.stdout),
+      stderrSha256: sha256(execution.stderr),
+      stdoutTruncated: execution.stdoutTruncated,
+      stderrTruncated: execution.stderrTruncated,
     };
   }
 }
