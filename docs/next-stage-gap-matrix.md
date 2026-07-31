@@ -21,7 +21,7 @@ Audit date: 2026-07-31
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                          |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                                                                                  |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test selection/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                      |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                                          |
@@ -3078,3 +3078,88 @@ Observed result:
   chunk remains 130.08 KiB under the 150 KiB budget; the 69-file dist is bound
   to `cc2eb758e009e6e0`, and the six-artifact release set is bound to
   `4cbe98eccf1827d0`.
+
+## Completed Slice: Preview-Bound Coordinated LSP Rename Apply
+
+User scenario: a Coding Agent can inspect one real language-server rename,
+apply the complete bounded multi-file edit with one tool call, receive linked
+before/after diagnostics, and distinguish committed, rolled-back, and unknown
+workspace outcomes.
+
+Acceptance:
+
+- preserve `lsp_rename` as a read-only language-server preview and keep
+  `workspace/applyEdit` rejected;
+- expose `lsp_rename_apply` only when explicitly enabled beside
+  `lsp_rename` under a non-observe Agent policy;
+- create one random, same-Run, one-use preview capability with a five-minute
+  deadline; apply accepts no path or replacement body;
+- revalidate the complete source preview receipt, 1-32 unique canonical files,
+  1-256 non-overlapping edits, every path/file/range/old/new hash, UTF-8, size,
+  symlink, and protected-path boundary before writing;
+- diagnose up to eight TypeScript/JavaScript targets before commit and require
+  every diagnostic file hash to match the preview;
+- acquire all target locks deterministically, rehash under lock, stage and
+  fsync every output beside its target, then create same-filesystem hard-link
+  backups before the first rename;
+- on a later target failure, restore committed files in reverse order and call
+  the result `rolled_back` only after the complete original file set rehashes;
+- preserve and count a local recovery backup when rollback itself fails, return
+  `indeterminate`, and prohibit automatic recovery;
+- settle a commit or rollback already in progress after cancellation rather
+  than abandoning a partially renamed workspace;
+- launch post-write diagnostics from fresh workspace state; postflight failure
+  must retain the committed write and become `diagnostics=unavailable`;
+- project only bounded statuses, counts, file/plan/result hashes, rollback,
+  durability, and diagnostic deltas through Ledger, Replay, SSE, and Trace.
+
+Threat boundary:
+
+- the TypeScript language server remains read-only and network-denied. Its
+  WorkspaceEdit is untrusted data until every target and edit binding passes
+  Napier validation;
+- multi-file visibility is not portable atomicity. Napier serializes its own
+  writers, stages all bytes, and can restore originals, but unrelated external
+  processes neither honor the locks nor lose visibility between target
+  renames;
+- hard-link backup creation must succeed for every target before commit.
+  Cross-filesystem or unsupported filesystems fail before the first write;
+- incomplete rollback is not silently retried. The counted local recovery
+  artifact and current target bytes require operator inspection;
+- paths, symbol names, old/new source, preview IDs, compiler messages, errors,
+  temporary names, and backup names remain live-only;
+- automatic diagnostics cover at most eight supported files and do not replace
+  task-specific tests or behavior verification.
+
+Observed result:
+
+- commit tests cover successful two-file application, forged preview binding,
+  stale bytes, cancellation before commit, cancellation during commit,
+  concurrent writer exclusion, second-file failure with verified rollback, and
+  rollback failure with an indeterminate result and retained recovery artifact;
+- manager and tool tests cover one-use and expired capabilities, diagnostic
+  preflight timeout, postflight failure after commit, policy, write-effect,
+  automatic-recovery denial, prompt guidance, and preview-ID redaction;
+- Agent integration replaces four model tool turns (`lsp_rename` plus two
+  `apply_patch` calls and follow-up) with one preview and one coordinated apply,
+  while preserving a valid portable Replay;
+- the public HTTP/SSE path runs the real TypeScript language server over two
+  temporary workspace files, applies both edits, restarts stale LSP state,
+  reports clean post-write diagnostics, and keeps paths/names/source/capability
+  bodies out of durable events;
+- Web Trace rejects impossible commit counts and renders only bounded rename,
+  rollback, diagnostic, and hash evidence;
+- the opt-in `npm run test:live-lsp` smoke now applies the real fixed
+  three-file rename inside the production OS Sandbox when launched from an
+  unsandboxed Terminal. This IDE host also blocks the unchanged baseline LSP
+  smoke at nested `sandbox-exec`, so the local failure is classified as an
+  environment limitation rather than product evidence;
+- full-gate review exposed and fixed nondeterministic `Thread.currentRunId`
+  replacement when concurrent Workflow Runs shared one millisecond start time;
+  the compatibility pointer now follows persisted Thread Run order;
+- the complete repository gate passes 1,340 tests with 23 opt-in live tests
+  skipped by default, 247 OpenAPI routes, 244/244 compatibility operations,
+  six workspaces, 252 packages, and 239/239 integrity entries. The Web main
+  chunk remains 130.08 KiB under the 150 KiB budget; the 69-file dist is bound
+  to `02f54d96cf731692`, and the six-artifact release set is bound to
+  `d077e93e7ce2a80b`.

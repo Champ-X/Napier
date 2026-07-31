@@ -2328,10 +2328,10 @@ Agent selects lsp_diagnostics + workspace-relative source path
 ```
 
 For ordinary Agent Runs, `AgentSessionRuntime` injects one Run-bound protocol
-executor into all six LSP tools and the write-linked diagnostics observer. The
-executor performs no filesystem work until an LSP operation is requested. The
-first operation canonicalizes the workspace and launches one server; later
-operations reuse it only when
+executor into the six read-side LSP tools, rename-apply diagnostics, and the
+write-linked patch observer. The executor performs no filesystem work until an
+LSP operation is requested. The first operation canonicalizes the workspace
+and launches one server; later operations reuse it only when
 Runtime identity and a 10,000-file/64 MiB workspace snapshot still match.
 Every operation closes/reopens its target from freshly preflighted bytes.
 Workspace change replaces the Session before the next operation; in-flight
@@ -2486,10 +2486,49 @@ package/plugin installation or network access is available.
 Symbol names/details/signatures and definition/reference URIs/previews receive
 the same treatment and cannot expand read/write scope. Flat symbol results must
 target the opened URI; hierarchical children cannot escape parent/source
-ranges. Rename and quick-fix WorkspaceEdits are previews only; Code Action
-commands, resolve requests, and opaque data remain unavailable. The
-implementation remains one-shot and does not expose persistent synchronization,
-external dependency navigation, or project-wide indexing.
+ranges. Rename and quick-fix WorkspaceEdits originate as previews only; the
+optional rename apply coordinator runs outside the language-server process and
+accepts only a Run-local preview capability. Code Action commands, resolve
+requests, and opaque data remain unavailable. The implementation does not
+expose external dependency navigation or project-wide indexing.
+
+## Coordinated LSP Rename Apply Flow
+
+The language server never receives workspace-write capability:
+
+```text
+lsp_rename (read effect)
+  -> materialize one complete bounded WorkspaceEdit
+  -> store a one-use, five-minute preview inside the current Agent Run
+  -> return edits plus an opaque apply preview ID to the live model
+lsp_rename_apply (write effect)
+  -> accept only that same-Run preview ID
+  -> run bounded pre-write diagnostics on up to eight target files
+  -> revalidate canonical paths, edit receipts, and complete file hashes
+  -> acquire every target lock in deterministic order
+  -> stage and fsync every new file beside its target
+  -> create same-filesystem hard-link backups
+  -> commit each target with a same-directory rename
+  -> on failure, restore committed files in reverse order and verify hashes
+  -> run post-write diagnostics from a fresh LSP Session
+  -> emit one privacy-bounded write receipt
+```
+
+The commit is coordinated, not portable multi-file atomic visibility. External
+processes do not honor Napier locks and may observe intermediate target
+renames. A fully applied set therefore reports a separately verified,
+drifted, or indeterminate postcondition. A failed commit is `rolled_back` only
+when the complete original file set is rehashed successfully. Failed rollback
+is `indeterminate`; unrecovered hard-link backups remain counted local recovery
+artifacts and automatic recovery treats the tool as unsafe.
+
+Cancellation before commit removes staging and backups without changing a
+target. Cancellation after the first target rename cannot abandon partial
+state: the coordinator settles the complete commit or rollback, marks
+`cancellationObserved`, then lets the parent Run cancel. Post-write diagnostic
+failure similarly cannot turn a committed write into a generic tool failure;
+it becomes an `unavailable` diagnostic receipt. Paths, symbol names, preview
+IDs, old/new text, diagnostics, and recovery filenames remain live-only.
 
 ## Write-linked Diagnostics Flow
 
@@ -5007,7 +5046,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has forty-five parts:
+The current boundary has forty-six parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5176,14 +5215,19 @@ The current boundary has forty-five parts:
     lineage, restricted child configurations, independent item deadlines,
     ordered aggregate validation, explicit retry, and complete-evidence-only
     restart reconstruction.
+46. Preview-bound coordinated LSP rename application with same-Run one-use
+    capabilities, complete target locking and hash revalidation,
+    same-filesystem staging/backups, verified rollback, bounded before/after
+    diagnostics, explicit indeterminate outcomes, and body-free Trace evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
 permits individually enabled hash-bound edits, read-only structured
 verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
-rename/quick-fix previews, explicit-argv command execution, persistent
-synchronous JavaScript and restricted Python calculations, Run-owned Node
-launch debugging, and bounded background Process Session lifecycle control.
+rename/quick-fix previews, preview-bound coordinated rename application,
+explicit-argv command execution, persistent synchronous JavaScript and
+restricted Python calculations, Run-owned Node launch debugging, and bounded
+background Process Session lifecycle control.
 `unrestricted` additionally permits an explicitly enabled controlled Browser
 Session and Research Source citations derived from its active page. It does
 not expose a shell, arbitrary host networking, an existing user browser
@@ -5216,10 +5260,9 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- direct rename application, Code Action resolve/command policy, Node
-  attach/source-map/multi-thread DAP and debugger UX, broader
-  multi-node AST transforms, write-linked test/symbol association, and isolated
-  subagent worktrees;
+- Code Action resolve/command policy, Node attach/source-map/multi-thread DAP
+  and debugger UX, broader multi-node AST transforms, write-linked test
+  selection/symbol association, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, multi-way switch, loops, write-capable Map, Reduce,
   compensation, single-node tests and breakpoints, external Agent adapters,

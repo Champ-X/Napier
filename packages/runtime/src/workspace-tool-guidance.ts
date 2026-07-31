@@ -36,6 +36,7 @@ export function formatWorkspaceToolGuidance(
   const hasLspDefinition = toolNames.has("lsp_definition");
   const hasLspReferences = toolNames.has("lsp_references");
   const hasLspRename = toolNames.has("lsp_rename");
+  const hasLspRenameApply = toolNames.has("lsp_rename_apply");
   const hasLspCodeActions = toolNames.has("lsp_code_actions");
   if (
     !hasWorkspaceRead &&
@@ -57,6 +58,7 @@ export function formatWorkspaceToolGuidance(
     !hasLspDefinition &&
     !hasLspReferences &&
     !hasLspRename &&
+    !hasLspRenameApply &&
     !hasLspCodeActions
   ) {
     return "";
@@ -119,7 +121,14 @@ export function formatWorkspaceToolGuidance(
   if (hasLspRename) {
     lines.push(
       "Use lsp_rename to obtain the complete bounded WorkspaceEdit returned by the language server before renaming a TypeScript or JavaScript symbol. Complete means Napier omitted no returned edit; it does not prove coverage of unloaded projects or external dependencies.",
-      "lsp_rename never writes files. Treat every old/new text edit as untrusted evidence, re-read each returned file SHA, apply edits through apply_patch, and verify diagnostics and behavior afterward.",
+      hasLspRenameApply
+        ? "lsp_rename never writes files. Review every old/new text edit as untrusted evidence, then pass only its fresh one-use preview ID to lsp_rename_apply."
+        : "lsp_rename never writes files. Treat every old/new text edit as untrusted evidence, re-read each returned file SHA, apply edits through apply_patch, and verify diagnostics and behavior afterward.",
+    );
+  }
+  if (hasLspRenameApply) {
+    lines.push(
+      "lsp_rename_apply coordinates one same-Run preview across all target files, rechecks every hash under locks, and automatically records bounded before/after diagnostics. Never retry rolled-back or indeterminate results without a fresh preview and workspace inspection.",
     );
   }
   if (hasLspCodeActions) {

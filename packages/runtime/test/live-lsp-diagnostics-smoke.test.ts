@@ -511,16 +511,19 @@ describeLive("live LSP diagnostics smoke", () => {
     store.close();
   }, 30_000);
 
-  it("previews a fixed multi-file rename through the Agent sandbox", async () => {
-    const workspaceRoot = await realpath(
+  it("applies a fixed multi-file rename through the Agent sandbox", async () => {
+    const sourceRoot = await realpath(
       fileURLToPath(
         new URL("../../../examples/lsp-references/", import.meta.url),
       ),
     );
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-rename-workspace-"),
+    );
     const stateRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-lsp-rename-"),
     );
-    temporaryRoots.push(stateRoot);
+    temporaryRoots.push(workspaceRoot, stateRoot);
     const sourcePath = "definition.ts";
     const firstPath = "first.ts";
     const secondPath = "second.ts";
@@ -528,9 +531,18 @@ describeLive("live LSP diagnostics smoke", () => {
     const newName = "canonicalizeTitle";
     const before = await Promise.all(
       [sourcePath, firstPath, secondPath].map((file) =>
-        readFile(path.join(workspaceRoot, file), "utf8"),
+        readFile(path.join(sourceRoot, file), "utf8"),
       ),
     );
+    await Promise.all([
+      ...[sourcePath, firstPath, secondPath].map((file, index) =>
+        writeFile(path.join(workspaceRoot, file), before[index]!),
+      ),
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        await readFile(path.join(sourceRoot, "tsconfig.json"), "utf8"),
+      ),
+    ]);
     const store = new LocalStore({
       workspaceRoot,
       dataRoot: path.join(stateRoot, "data"),
@@ -538,7 +550,7 @@ describeLive("live LSP diagnostics smoke", () => {
     await store.initialize();
     const agent = await store.updateAgent(store.listAgents()[0]!.id, {
       toolPolicy: "workspace",
-      enabledTools: ["lsp_rename"],
+      enabledTools: ["lsp_rename", "lsp_rename_apply"],
     });
     const thread = await store.createThread({
       title: "Live LSP rename smoke",
@@ -561,8 +573,21 @@ describeLive("live LSP diagnostics smoke", () => {
         expect(messages).toContain(secondPath);
         expect(messages).toContain(oldName);
         expect(messages).toContain(newName);
+        const previewId = messages.match(
+          /Apply preview ID: (renamepreview_[a-z0-9]+)/u,
+        )?.[1];
+        expect(previewId).toMatch(/^renamepreview_/u);
         return fauxAssistantMessage(
-          "The real language server returned the complete rename preview.",
+          fauxToolCall("lsp_rename_apply", { previewId }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const messages = JSON.stringify(context.messages);
+        expect(messages).toContain("LSP rename apply: applied");
+        expect(messages).toContain("Rename diagnostics: clean");
+        return fauxAssistantMessage(
+          "The real language-server rename was applied and diagnosed.",
         );
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -578,7 +603,7 @@ describeLive("live LSP diagnostics smoke", () => {
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
-      text: "Preview the TypeScript rename through standard LSP.",
+      text: "Apply the TypeScript rename through standard LSP.",
       model: { provider: "live-lsp-rename-smoke", id: "faux-1" },
     });
 
@@ -590,17 +615,20 @@ describeLive("live LSP diagnostics smoke", () => {
         event.payload &&
         !Array.isArray(event.payload) &&
         typeof event.payload === "object" &&
-        event.payload["toolName"] === "lsp_rename",
+        event.payload["toolName"] === "lsp_rename_apply",
     );
     expect(completed?.payload["details"]).toEqual(
       expect.objectContaining({
-        status: "found",
-        complete: true,
+        status: "applied",
+        postcondition: "verified",
         fileCount: 3,
         editCount: 6,
-        sandbox: "macos-sandbox-exec",
-        languageServerVersion: "5.3.0",
-        typescriptVersion: "5.9.3",
+        committedFileCount: 3,
+        recoveryArtifactCount: 0,
+        diagnostics: expect.objectContaining({
+          status: "clean",
+          fileCount: 3,
+        }),
       }),
     );
     const durable = JSON.stringify(events);
@@ -615,9 +643,9 @@ describeLive("live LSP diagnostics smoke", () => {
           readFile(path.join(workspaceRoot, file), "utf8"),
         ),
       ),
-    ).toEqual(before);
+    ).toEqual(before.map((source) => source.replaceAll(oldName, newName)));
     store.close();
-  }, 30_000);
+  }, 60_000);
 
   it("previews a real missing-import quick fix through the Agent sandbox", async () => {
     const workspaceRoot = await mkdtemp(

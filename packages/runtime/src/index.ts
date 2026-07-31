@@ -52,6 +52,8 @@ export * from "./lsp-protocol-session.js";
 export * from "./lsp-references.js";
 export * from "./lsp-references-tool.js";
 export * from "./lsp-rename.js";
+export * from "./lsp-rename-apply-tool.js";
+export * from "./lsp-rename-mutation-manager.js";
 export * from "./lsp-rename-tool.js";
 export * from "./lsp-rename-workspace-edit.js";
 export * from "./lsp-symbol-parser.js";

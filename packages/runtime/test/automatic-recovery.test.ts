@@ -213,6 +213,25 @@ describe("safe automatic recovery", () => {
     });
     expect(fileApply.blockReasons).toContain("unsafe_tool_effect");
 
+    const renameApply = assessAutomaticRecovery({
+      run,
+      events: [
+        event(1, "tool.started", {
+          callId: "rename-apply-1",
+          toolName: "lsp_rename_apply",
+          status: "started",
+          effect: "write",
+        }),
+        event(2, "tool.completed", {
+          callId: "rename-apply-1",
+          toolName: "lsp_rename_apply",
+          status: "completed",
+          effect: "write",
+        }),
+      ],
+    });
+    expect(renameApply.blockReasons).toContain("unsafe_tool_effect");
+
     const unknown = assessAutomaticRecovery({
       run,
       events: [

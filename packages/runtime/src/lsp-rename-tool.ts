@@ -14,6 +14,10 @@ import {
   MAX_LSP_RENAME_TOOL_OUTPUT_BYTES,
   type LspRenameResult,
 } from "./lsp-rename.js";
+import type {
+  LspRenameApplyPreview,
+  LspRenameMutationManager,
+} from "./lsp-rename-mutation-manager.js";
 
 const lspRenameSchema = Type.Object(
   {
@@ -50,13 +54,14 @@ const lspRenameSchema = Type.Object(
 
 export function createLspRenameTool(
   options: LspDiagnosticsRunnerOptions,
+  mutationManager?: LspRenameMutationManager,
 ): AgentTool<typeof lspRenameSchema, LspRenameDetails> {
   const runner = new LspRenameRunner(options);
   return {
     name: "lsp_rename",
     label: "LSP rename",
     description:
-      "Preview the complete bounded WorkspaceEdit returned for a TypeScript or JavaScript symbol by the real language server in a read-only, offline OS sandbox. Complete means Napier omitted no returned edit, not that unloaded projects or external dependencies were searched. This tool never writes files. Inspect every edit, then apply each file through hash-bound apply_patch and verify the result.",
+      "Preview the complete bounded WorkspaceEdit returned for a TypeScript or JavaScript symbol by the real language server in a read-only, offline OS sandbox. Complete means Napier omitted no returned edit, not that unloaded projects or external dependencies were searched. This tool never writes files. When lsp_rename_apply is enabled, a found result includes one fresh same-Run apply preview ID.",
     parameters: lspRenameSchema,
     async execute(_toolCallId, input, signal) {
       const result = await runner.run({
@@ -67,7 +72,8 @@ export function createLspRenameTool(
         timeoutMs: input.timeoutMs ?? DEFAULT_LSP_DIAGNOSTICS_TIMEOUT_MS,
         ...(signal ? { signal } : {}),
       });
-      const text = formatLspRename(result);
+      const applyPreview = mutationManager?.storePreview(result);
+      const text = formatLspRename(result, applyPreview);
       assertLspRenameToolOutputBytes(text);
       return {
         content: [{ type: "text", text }],
@@ -136,7 +142,10 @@ export function lspRenameToolOutputLedgerProjection(
   };
 }
 
-function formatLspRename(result: LspRenameResult): string {
+function formatLspRename(
+  result: LspRenameResult,
+  applyPreview?: LspRenameApplyPreview,
+): string {
   const lines = [
     `LSP rename preview: ${result.details.status}`,
     `Source: ${result.relativePath}`,
@@ -166,7 +175,15 @@ function formatLspRename(result: LspRenameResult): string {
     }
     lines.push(
       "",
-      "No files were changed. Re-read each file SHA, apply the preview with apply_patch, then run diagnostics and relevant verification.",
+      ...(applyPreview
+        ? [
+            `Apply preview ID: ${applyPreview.id}`,
+            `Apply preview expires at: ${applyPreview.expiresAt}`,
+            "No files were changed. Review the complete edit set, then pass only this one-use ID to lsp_rename_apply.",
+          ]
+        : [
+            "No files were changed. Re-read each file SHA, apply the preview with apply_patch, then run diagnostics and relevant verification.",
+          ]),
     );
   }
   return lines.join("\n");

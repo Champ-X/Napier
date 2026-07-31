@@ -4,15 +4,15 @@
   "ok": true,
   "fileCount": 69,
   "mainEntry": {
-    "path": "apps/web/dist/assets/index-B-Hg-Bsi.js",
+    "path": "apps/web/dist/assets/index-CrEYaNVo.js",
     "sizeBytes": 133200,
     "budgetBytes": 153600,
     "withinBudget": true
   },
   "manifest": {
     "path": "docs/artifacts/web-dist-0.1.0.sha256",
-    "sha256": "cc2eb758e009e6e044e6d024359e9a64353e2a9422bd90c0c5f7f07e18c500f3"
+    "sha256": "02f54d96cf7316922bf3a68e17509c6c2a32c8a70a11d2f72dc26194954e8a86"
   },
-  "distContentSha256": "cc2eb758e009e6e044e6d024359e9a64353e2a9422bd90c0c5f7f07e18c500f3",
+  "distContentSha256": "02f54d96cf7316922bf3a68e17509c6c2a32c8a70a11d2f72dc26194954e8a86",
   "errors": []
 }

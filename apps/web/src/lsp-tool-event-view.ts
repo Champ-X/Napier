@@ -9,6 +9,11 @@ import {
   type LspRenameToolEventTraceView,
 } from "./lsp-rename-event-view";
 import {
+  lspRenameApplyEventEvidence,
+  lspRenameApplySummaryParts,
+  type LspRenameApplyToolEventTraceView,
+} from "./lsp-rename-apply-event-view";
+import {
   lspSessionEventEvidence,
   lspSessionSummaryParts,
   type LspSessionToolEventTraceView,
@@ -28,6 +33,7 @@ type LspLanguage =
 export interface LspToolEventTraceView
   extends
     LspRenameToolEventTraceView,
+    LspRenameApplyToolEventTraceView,
     LspCodeActionsToolEventTraceView,
     LspSymbolsToolEventTraceView,
     LspSessionToolEventTraceView {
@@ -80,6 +86,8 @@ export function lspToolEventEvidence(
   if (toolName === "lsp_definition") return definitionEvidence(value);
   if (toolName === "lsp_references") return referencesEvidence(value);
   if (toolName === "lsp_rename") return lspRenameEventEvidence(value);
+  if (toolName === "lsp_rename_apply")
+    return lspRenameApplyEventEvidence(value);
   if (toolName === "lsp_code_actions")
     return lspCodeActionsEventEvidence(value);
   return undefined;
@@ -212,6 +220,7 @@ export function lspToolEventSummaryParts(
       ? [`reference-result ${view.lspReferencesResultSha256.slice(0, 12)}`]
       : []),
     ...lspRenameSummaryParts(view),
+    ...lspRenameApplySummaryParts(view),
     ...lspCodeActionsSummaryParts(view),
   ];
 }

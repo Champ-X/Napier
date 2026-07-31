@@ -9190,6 +9190,9 @@ export class LocalStore {
       delete run.lease;
       delete run.leaseTokenSha256;
       thread.updatedAt = run.finishedAt;
+      const runOrder = new Map(
+        thread.runIds.map((candidateRunId, index) => [candidateRunId, index]),
+      );
       const remainingActiveRuns = this.state.runs
         .filter(
           (candidate) =>
@@ -9200,7 +9203,8 @@ export class LocalStore {
         .sort(
           (left, right) =>
             left.startedAt.localeCompare(right.startedAt) ||
-            left.id.localeCompare(right.id),
+            (runOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+              (runOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER),
         );
       if (thread.currentRunId === run.id) {
         const replacement = remainingActiveRuns[0];

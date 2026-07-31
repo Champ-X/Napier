@@ -22,7 +22,6 @@ import {
   exportThreadReplayBundle,
   LocalStore,
   ModelRegistry,
-  sha256,
   verifyThreadReplayBundle,
 } from "../src/index.js";
 import {
@@ -42,7 +41,7 @@ afterEach(async () => {
 });
 
 describe("Agent LSP rename integration", () => {
-  it("previews a semantic rename and applies every file through hash-bound patches", async () => {
+  it("previews and directly applies a coordinated semantic rename", async () => {
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-agent-rename-test-"),
     );
@@ -92,7 +91,7 @@ describe("Agent LSP rename integration", () => {
     await store.initialize();
     const agent = await store.updateAgent(store.listAgents()[0]!.id, {
       toolPolicy: "workspace",
-      enabledTools: ["lsp_rename", "apply_patch"],
+      enabledTools: ["lsp_rename", "lsp_rename_apply"],
     });
     const thread = await store.createThread({
       title: "Agent LSP rename",
@@ -125,6 +124,7 @@ describe("Agent LSP rename integration", () => {
         };
       },
     }).sandbox;
+    let applyPreviewId = "";
     const provider = fauxProvider({ provider: "faux-lsp-rename" });
     provider.setResponses([
       fauxAssistantMessage(
@@ -142,31 +142,23 @@ describe("Agent LSP rename integration", () => {
         expect(messages).toContain(consumerPath);
         expect(messages).toContain(`OLD \\"${oldName}\\"`);
         expect(messages).toContain(`NEW \\"${newName}\\"`);
+        const previewId = messages.match(
+          /Apply preview ID: (renamepreview_[a-z0-9]+)/u,
+        )?.[1];
+        expect(previewId).toMatch(/^renamepreview_/u);
+        applyPreviewId = previewId ?? "";
         return fauxAssistantMessage(
-          fauxToolCall("apply_patch", {
-            operation: "replace",
-            path: sourcePath,
-            expectedSha256: sha256(sourceBefore),
-            edits: [{ oldText: sourceBefore, newText: sourceAfter }],
-          }),
+          fauxToolCall("lsp_rename_apply", { previewId }),
           { stopReason: "toolUse" },
         );
       },
-      fauxAssistantMessage(
-        fauxToolCall("apply_patch", {
-          operation: "replace",
-          path: consumerPath,
-          expectedSha256: sha256(consumerBefore),
-          edits: [{ oldText: consumerBefore, newText: consumerAfter }],
-        }),
-        { stopReason: "toolUse" },
-      ),
       (context) => {
         const messages = JSON.stringify(context.messages);
-        expect(messages).toContain(sha256(sourceAfter));
-        expect(messages).toContain(sha256(consumerAfter));
+        expect(messages).toContain("LSP rename apply: applied");
+        expect(messages).toContain("Postcondition: verified");
+        expect(messages).toContain("Rename diagnostics: clean");
         return fauxAssistantMessage(
-          "The semantic rename preview was applied to every file.",
+          "The coordinated semantic rename was applied to every file.",
         );
       },
       fauxAssistantMessage('{"facts":[]}'),
@@ -200,9 +192,28 @@ describe("Agent LSP rename integration", () => {
         })),
     ).toEqual([
       { toolName: "lsp_rename", effect: "read" },
-      { toolName: "apply_patch", effect: "write" },
-      { toolName: "apply_patch", effect: "write" },
+      { toolName: "lsp_rename_apply", effect: "write" },
     ]);
+    const apply = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        record(event.payload)?.["toolName"] === "lsp_rename_apply",
+    );
+    expect(record(apply?.payload)?.["details"]).toEqual(
+      expect.objectContaining({
+        kind: "napier.lsp-rename-apply",
+        status: "applied",
+        postcondition: "verified",
+        fileCount: 2,
+        editCount: 4,
+        committedFileCount: 2,
+        recoveryArtifactCount: 0,
+        diagnostics: expect.objectContaining({
+          status: "clean",
+          fileCount: 2,
+        }),
+      }),
+    );
     const durable = JSON.stringify(
       events.filter(
         (event) =>
@@ -218,6 +229,7 @@ describe("Agent LSP rename integration", () => {
       sourceAfter,
       consumerBefore,
       consumerAfter,
+      applyPreviewId,
     ]) {
       expect(durable).not.toContain(secret);
     }

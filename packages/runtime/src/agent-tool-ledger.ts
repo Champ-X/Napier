@@ -56,6 +56,11 @@ import {
   lspRenameToolOutputLedgerProjection,
 } from "./lsp-rename-tool.js";
 import {
+  lspRenameApplyToolCallArgumentsLedgerProjection,
+  lspRenameApplyToolInputLedgerProjection,
+  lspRenameApplyToolOutputLedgerProjection,
+} from "./lsp-rename-apply-tool.js";
+import {
   lspSymbolsToolCallArgumentsLedgerProjection,
   lspSymbolsToolInputLedgerProjection,
   lspSymbolsToolOutputLedgerProjection,
@@ -129,6 +134,9 @@ export function agentToolCallArgumentsLedgerProjection(
   if (toolName === "lsp_rename") {
     return lspRenameToolCallArgumentsLedgerProjection(args);
   }
+  if (toolName === "lsp_rename_apply") {
+    return lspRenameApplyToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "lsp_code_actions") {
     return lspCodeActionsToolCallArgumentsLedgerProjection(args);
   }
@@ -189,6 +197,9 @@ export function agentToolInputLedgerProjection(
   }
   if (toolName === "lsp_rename") {
     return lspRenameToolInputLedgerProjection(args);
+  }
+  if (toolName === "lsp_rename_apply") {
+    return lspRenameApplyToolInputLedgerProjection(args);
   }
   if (toolName === "lsp_code_actions") {
     return lspCodeActionsToolInputLedgerProjection(args);
@@ -251,6 +262,9 @@ export function agentToolOutputLedgerProjection(
   }
   if (toolName === "lsp_rename") {
     return lspRenameToolOutputLedgerProjection(output, result);
+  }
+  if (toolName === "lsp_rename_apply") {
+    return lspRenameApplyToolOutputLedgerProjection(output, result);
   }
   if (toolName === "lsp_code_actions") {
     return lspCodeActionsToolOutputLedgerProjection(output, result);

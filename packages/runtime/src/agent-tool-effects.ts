@@ -53,6 +53,7 @@ export function builtInToolEffect(
   }
   if (
     toolName === "apply_patch" ||
+    toolName === "lsp_rename_apply" ||
     toolName === "workspace_file_apply" ||
     toolName === "bash" ||
     toolName === "create_plan" ||

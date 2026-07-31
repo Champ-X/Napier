@@ -39,6 +39,21 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain("Apply it through apply_patch");
   });
 
+  it("binds direct LSP rename application to one fresh preview", () => {
+    const guidance = formatWorkspaceToolGuidance([
+      { name: "lsp_rename" } as AgentTool,
+      { name: "lsp_rename_apply" } as AgentTool,
+    ]);
+
+    expect(guidance).toContain(
+      "pass only its fresh one-use preview ID to lsp_rename_apply",
+    );
+    expect(guidance).toContain("rechecks every hash under locks");
+    expect(guidance).toContain(
+      "Never retry rolled-back or indeterminate results",
+    );
+  });
+
   it("describes the restricted Python state boundary", () => {
     const guidance = formatWorkspaceToolGuidance([
       { name: "python_kernel" } as AgentTool,

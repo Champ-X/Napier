@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added preview-bound direct LSP rename application. `lsp_rename` remains a
+  read-only, offline language-server preview, while explicitly enabled
+  `lsp_rename_apply` accepts only a fresh same-Run one-use capability. Napier
+  revalidates up to 32 files and 256 edits, runs bounded preflight diagnostics,
+  acquires every target lock, rehashes all source bytes, stages and fsyncs all
+  outputs, and creates same-filesystem hard-link backups before committing.
+  Later target failure restores earlier files in reverse order and reports
+  `rolled_back` only after complete hash verification; incomplete rollback is
+  `indeterminate` with a counted local recovery artifact and no automatic
+  retry. Cancellation after commit begins settles the complete commit or
+  rollback. Postflight diagnostics restart stale LSP state and cannot hide an
+  already committed write. Agent, real HTTP/SSE, policy, concurrency, timeout,
+  rollback fault-injection, Replay, Web Trace privacy, and opt-in production
+  Sandbox smoke tests cover the path.
 - Added bounded read-only Agent Map nodes to typed Plan Workflows. A Map selects
   one Schema-bounded runtime array, uses one coordinator Run, and fans out at
   most 16 items through up to three parent-bound Agent Runs at the frozen Agent
@@ -2989,6 +3003,9 @@ write:management-openapi-compatibility` now emits
 
 ### Changed
 
+- Made the compatibility `Thread.currentRunId` projection deterministic for
+  same-millisecond concurrent Workflow Runs by using persisted Thread Run order
+  after start time instead of random Run ID ordering.
 - Recovered Web main-entry budget by moving the large Plan Workbench copy block
   into the lazy Plan chunk. The checked Web dist audit now reports the main
   entry at 140.15 KiB while keeping Plan tests and release receipts current.

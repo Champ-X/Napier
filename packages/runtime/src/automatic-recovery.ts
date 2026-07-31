@@ -45,6 +45,7 @@ const SAFE_READ_ONLY_TOOLS = new Set([
 ]);
 const UNSAFE_TOOLS = new Set([
   "apply_patch",
+  "lsp_rename_apply",
   "workspace_file_apply",
   "bash",
   "javascript_kernel",

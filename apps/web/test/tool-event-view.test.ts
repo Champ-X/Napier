@@ -1172,6 +1172,78 @@ describe("Tool event trace view", () => {
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });
 
+  it("summarizes coordinated LSP rename application without source bodies", () => {
+    const event = toolEvent("tool.completed", {
+      toolName: "lsp_rename_apply",
+      status: "completed",
+      effect: "write",
+      details: {
+        kind: "napier.lsp-rename-apply",
+        schemaVersion: 1,
+        status: "applied",
+        postcondition: "verified",
+        sourcePreviewResultSha256: "1".repeat(64),
+        planSha256: "2".repeat(64),
+        fileCount: 3,
+        editCount: 6,
+        committedFileCount: 3,
+        restoredFileCount: 0,
+        recoveryArtifactCount: 0,
+        rollbackAttempted: false,
+        rollbackVerified: false,
+        durable: true,
+        cancellationObserved: false,
+        beforeFileSetSha256: "3".repeat(64),
+        expectedFileSetSha256: "4".repeat(64),
+        observedFileSetSha256: "4".repeat(64),
+        resourceLimitsSha256: "5".repeat(64),
+        diagnostics: {
+          kind: "napier.lsp-rename-apply-diagnostics",
+          schemaVersion: 1,
+          status: "clean",
+          fileCount: 3,
+          omittedFileCount: 0,
+          beforeDiagnosticCount: 0,
+          afterDiagnosticCount: 0,
+          beforeErrorCount: 0,
+          afterErrorCount: 0,
+          beforeWarningCount: 0,
+          afterWarningCount: 0,
+          introducedCount: 0,
+          resolvedCount: 0,
+          unchangedCount: 0,
+          truncated: false,
+          beforeResultSetSha256: "6".repeat(64),
+          afterResultSetSha256: "7".repeat(64),
+          deltaSetSha256: "8".repeat(64),
+          durationMs: 120,
+          resultSha256: "9".repeat(64),
+          source: "PRIVATE_RENAME_SOURCE",
+        },
+        resultSha256: "a".repeat(64),
+        edits: "PRIVATE_RENAME_EDITS",
+      },
+    });
+
+    expect(toolEventTraceSummary(event)).toContain(
+      `rename-apply applied / rename-postcondition verified / rename-files 3 / rename-edits 6 / rename-committed 3 / rename-restored 0 / rename-recovery-artifacts 0 / rename-durable / rename-diagnostics clean / rename-plan ${"2".repeat(12)} / rename-expected ${"4".repeat(12)} / rename-observed ${"4".repeat(12)} / rename-apply-result ${"a".repeat(12)}`,
+    );
+    expect(toolEventTraceSummary(event)).not.toContain("PRIVATE_RENAME");
+    const malformed = structuredClone(event);
+    if (
+      malformed.payload &&
+      !Array.isArray(malformed.payload) &&
+      typeof malformed.payload === "object" &&
+      malformed.payload["details"] &&
+      !Array.isArray(malformed.payload["details"]) &&
+      typeof malformed.payload["details"] === "object"
+    ) {
+      malformed.payload["details"]["committedFileCount"] = 2;
+    }
+    expect(toolEventTraceSummary(malformed)).not.toContain("rename-apply");
+    expect(toolEventTraceSummary(malformed)).not.toContain("PRIVATE_RENAME");
+  });
+
   it("fails closed to a fixed summary for malformed tool receipts", () => {
     const event = toolEvent("tool.failed", {
       toolName: "bad tool name",

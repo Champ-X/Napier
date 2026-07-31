@@ -3088,6 +3088,7 @@ export const AGENT_TOOL_NAMES = [
   "lsp_definition",
   "lsp_references",
   "lsp_rename",
+  "lsp_rename_apply",
   "lsp_code_actions",
   "apply_patch",
   "workspace_file_preview",
@@ -3648,6 +3649,55 @@ export interface LspRenameDetails extends LspSessionEvidenceDetails {
   stderrChars: number;
   stderrSha256: string;
   stderrTruncated: boolean;
+  resultSha256: string;
+}
+
+export interface LspRenameApplyDiagnosticsDetails {
+  kind: "napier.lsp-rename-apply-diagnostics";
+  schemaVersion: 1;
+  status: WorkspacePatchDiagnosticsStatus;
+  fileCount: number;
+  omittedFileCount: number;
+  beforeDiagnosticCount: number;
+  afterDiagnosticCount?: number;
+  beforeErrorCount: number;
+  afterErrorCount?: number;
+  beforeWarningCount: number;
+  afterWarningCount?: number;
+  introducedCount?: number;
+  resolvedCount?: number;
+  unchangedCount?: number;
+  truncated: boolean;
+  beforeResultSetSha256: string;
+  afterResultSetSha256?: string;
+  deltaSetSha256?: string;
+  errorSha256?: string;
+  durationMs: number;
+  resultSha256: string;
+}
+
+export interface LspRenameApplyDetails {
+  kind: "napier.lsp-rename-apply";
+  schemaVersion: 1;
+  status: "applied" | "rolled_back" | "indeterminate";
+  postcondition: "verified" | "drifted" | "indeterminate";
+  sourcePreviewResultSha256: string;
+  planSha256: string;
+  fileCount: number;
+  editCount: number;
+  committedFileCount: number;
+  restoredFileCount: number;
+  recoveryArtifactCount: number;
+  rollbackAttempted: boolean;
+  rollbackVerified: boolean;
+  durable: boolean;
+  cancellationObserved: boolean;
+  beforeFileSetSha256: string;
+  expectedFileSetSha256: string;
+  observedFileSetSha256?: string;
+  resourceLimitsSha256: string;
+  errorSha256?: string;
+  diagnostics?: LspRenameApplyDiagnosticsDetails;
   resultSha256: string;
 }
 

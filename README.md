@@ -100,12 +100,12 @@ Version `0.1.0` includes:
   through the OS sandbox with a read-only workspace, no network, no shell, and
   fixed local CLI entrypoints;
 - `lsp_diagnostics`, semantic `lsp_symbols`, `lsp_definition`,
-  `lsp_references`, preview-only `lsp_rename`, and quick-fix-only
-  `lsp_code_actions` tools that drive the standard TypeScript language server
-  against TypeScript or JavaScript workspace files through the same read-only,
-  offline OS sandbox, reuse one Run-owned Session while the bounded workspace
-  remains unchanged, and retain bounded live compiler/edit evidence with
-  hash-only durable projections;
+  `lsp_references`, preview-bound `lsp_rename` / `lsp_rename_apply`, and
+  quick-fix-only `lsp_code_actions` tools that drive the standard TypeScript
+  language server against TypeScript or JavaScript workspace files through the
+  same read-only, offline OS sandbox, reuse one Run-owned Session while the
+  bounded workspace remains unchanged, and retain bounded live compiler/edit
+  evidence with hash-only durable projections;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -1895,18 +1895,37 @@ empty-range, overlapping, and over-limit results fail the whole request rather
 than producing a partial rename. When a server sends both WorkspaceEdit
 representations, standard `documentChanges` takes precedence over `changes`.
 Relative paths, current file hashes, exact ranges, old text, and replacement
-text are available only to the live Agent. Ledger, Replay, Trace, and model-call evidence retain only
-completeness, counts, preview bytes, versions, latency, and
-source/name/prepare/edit/file/result hashes. `complete` means Napier omitted no
-edit returned by the current language-server project; it does not prove
-coverage of unloaded projects or external dependencies.
+text are available only to the live Agent. Ledger, Replay, Trace, and
+model-call evidence retain only completeness, counts, preview bytes, versions,
+latency, and source/name/prepare/edit/file/result hashes. `complete` means
+Napier omitted no edit returned by the current language-server project; it
+does not prove coverage of unloaded projects or external dependencies.
 
-Rename is deliberately preview-only. The language server process remains
-read-only and cannot call `workspace/applyEdit`. The Agent must re-read every
-returned file SHA, apply each file through the existing hash-bound
-`apply_patch`, and run diagnostics plus relevant tests. This preserves
-per-file atomicity and stale-write rejection without falsely claiming a
-portable atomic transaction across multiple files.
+`lsp_rename` remains read-only and the language server cannot call
+`workspace/applyEdit`. When the Agent profile also enables
+`lsp_rename_apply`, a found preview returns one random, same-Run, one-use
+capability that expires after five minutes. Apply accepts only that capability,
+not paths or replacement text. Napier revalidates the complete preview,
+acquires all canonical target locks, rehashes every file, stages and fsyncs all
+new bytes in the target directories, creates same-filesystem hard-link
+backups, then commits each target. A later commit failure restores prior files
+in reverse order and verifies the original file set. Incomplete rollback is
+`indeterminate` and retains a counted local recovery artifact; it is never
+reported as a successful rename or automatically retried.
+
+This is a coordinated local commit, not portable atomic visibility across
+multiple files. External processes can observe intermediate renames and do not
+honor Napier's locks. The postcondition therefore distinguishes `verified`,
+`drifted`, and `indeterminate`. Cancellation before the commit point changes
+nothing; cancellation observed after commit begins settles the complete commit
+or rollback before returning evidence.
+
+Up to eight TypeScript/JavaScript targets receive automatic pre-write and
+post-write LSP diagnostics. Preflight timeout, failure, or file-hash mismatch
+prevents every write. Postflight failure cannot hide committed files and is
+reported as `diagnostics.status=unavailable`; omitted files and truncated
+diagnostics remain explicit. Relevant behavior verification is still required
+before claiming task completion.
 
 `lsp_code_actions` waits for the opened file's current diagnostics, selects
 only diagnostics intersecting the requested 1-based UTF-16 position, and
@@ -1940,7 +1959,7 @@ alternative, re-read every selected file SHA, apply it through `apply_patch`,
 then run diagnostics and relevant behavior checks. Napier does not
 automatically combine mutually exclusive alternatives.
 
-Within one Agent Run, all six LSP tools and write-linked diagnostics share one
+Within one Agent Run, all seven LSP tools and write-linked diagnostics share one
 serialized language-server Session while a bounded workspace snapshot remains
 unchanged. Every operation reopens the selected document from freshly
 preflighted bytes, rechecks target and Runtime-asset hashes, and compares
@@ -1957,10 +1976,11 @@ not a package-install synchronization claim.
 
 Ledger, Replay, SSE, and Trace bind only Session mode, reuse state, operation
 number, and Session/workspace/limit hashes. The random Session identity,
-paths, source, diagnostics, edits, and stderr remain absent. This is Run-owned
-process reuse, not a cross-Run editor, direct LSP write surface, atomic
-multi-file rename, Code Action resolve/command execution, complete
-project/dependency synchronization, or test selection.
+paths, source, diagnostics, edits, preview capability, and stderr remain
+absent. This is Run-owned process reuse, not a cross-Run editor,
+language-server write access, portable atomic multi-file visibility, Code
+Action resolve/command execution, complete project/dependency synchronization,
+or test selection.
 
 When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
 TypeScript and JavaScript writes automatically run LSP diagnostics before and

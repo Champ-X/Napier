@@ -111,6 +111,28 @@ describe("workspace policy", () => {
     );
     expect(
       assessToolCall(
+        "observe",
+        "lsp_rename_apply",
+        { previewId: "renamepreview_12345678" },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "lsp_rename_apply",
+        { previewId: "renamepreview_12345678" },
+        "/workspace",
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        allowed: true,
+        risk: "medium",
+        reason: "fresh preview-bound coordinated LSP rename",
+      }),
+    );
+    expect(
+      assessToolCall(
         "workspace",
         "workspace_file_preview",
         {

@@ -8,6 +8,9 @@ import { createLspDefinitionTool } from "./lsp-definition-tool.js";
 import { LspWorkspacePatchObserver } from "./lsp-patch-diagnostics.js";
 import type { LspProtocolExecutor } from "./lsp-protocol-session.js";
 import { createLspReferencesTool } from "./lsp-references-tool.js";
+import { LspRenameApplyDiagnostics } from "./lsp-rename-apply-diagnostics.js";
+import { createLspRenameApplyTool } from "./lsp-rename-apply-tool.js";
+import { LspRenameMutationManager } from "./lsp-rename-mutation-manager.js";
 import { createLspRenameTool } from "./lsp-rename-tool.js";
 import { createLspSymbolsTool } from "./lsp-symbols-tool.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
@@ -51,6 +54,16 @@ export function createStatelessAgentTools(
     profile.enabledTools.includes("apply_patch") &&
     profile.enabledTools.includes("lsp_diagnostics")
       ? new LspWorkspacePatchObserver(lspOptions)
+      : undefined;
+  const renameMutationManager =
+    processAllowed &&
+    profile.enabledTools.includes("lsp_rename") &&
+    profile.enabledTools.includes("lsp_rename_apply")
+      ? new LspRenameMutationManager({
+          workspaceRoot: options.store.workspaceRoot,
+          dataRoot: options.store.dataRoot,
+          diagnostics: new LspRenameApplyDiagnostics(lspOptions),
+        })
       : undefined;
   const tools = createWorkspaceTools(options.store.workspaceRoot, {
     includeWriteTools: profile.toolPolicy !== "observe",
@@ -113,7 +126,14 @@ export function createStatelessAgentTools(
     tools.push(createLspReferencesTool(lspOptions));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_rename")) {
-    tools.push(createLspRenameTool(lspOptions));
+    tools.push(createLspRenameTool(lspOptions, renameMutationManager));
+  }
+  if (
+    processAllowed &&
+    profile.enabledTools.includes("lsp_rename_apply") &&
+    renameMutationManager
+  ) {
+    tools.push(createLspRenameApplyTool(renameMutationManager));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_code_actions")) {
     tools.push(createLspCodeActionsTool(lspOptions));
