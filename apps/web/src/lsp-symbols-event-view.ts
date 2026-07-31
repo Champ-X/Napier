@@ -1,3 +1,8 @@
+import {
+  lspSessionEventEvidence,
+  type LspSessionToolEventTraceView,
+} from "./lsp-session-event-view";
+
 type LspLanguage =
   | "typescript"
   | "typescriptreact"
@@ -6,7 +11,7 @@ type LspLanguage =
 
 type LspSymbolResponseShape = "empty" | "hierarchical" | "flat";
 
-export interface LspSymbolsToolEventTraceView {
+export interface LspSymbolsToolEventTraceView extends LspSessionToolEventTraceView {
   lspSymbolsStatus?: "found" | "not_found";
   lspSymbolsLanguage?: LspLanguage;
   lspSymbolsComplete?: boolean;
@@ -31,6 +36,8 @@ export function lspSymbolsEventEvidence(
   value: unknown,
 ): LspSymbolsToolEventTraceView | undefined {
   if (!record(value)) return undefined;
+  const session = lspSessionEventEvidence(value);
+  if (!session) return undefined;
   const status = value["status"];
   const language = value["language"];
   const responseShape = value["responseShape"];
@@ -87,6 +94,7 @@ export function lspSymbolsEventEvidence(
     2 * 1024 * 1024,
   );
   return {
+    ...session,
     lspSymbolsStatus: status,
     lspSymbolsLanguage: language,
     lspSymbolsComplete: value["complete"],

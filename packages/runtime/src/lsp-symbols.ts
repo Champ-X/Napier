@@ -11,9 +11,9 @@ import {
   runBoundLspSourceSession,
 } from "./lsp-diagnostics.js";
 import {
+  lspSessionEvidence,
   MAX_LSP_PROTOCOL_BYTES,
   MAX_LSP_STDERR_CHARS,
-  runLspProtocolSession,
 } from "./lsp-protocol-session.js";
 import {
   DEFAULT_LSP_SYMBOLS,
@@ -61,21 +61,15 @@ export class LspSymbolsRunner {
         label: "LSP symbols",
         abortedMessage: "LSP symbols were aborted",
       },
-      (child, protocolRequest, signal) =>
-        runLspProtocolSession(
-          child,
-          protocolRequest,
-          (connection, targetUri) => {
-            const ready = waitForLspTargetReady(connection, targetUri);
-            return async () => {
-              await ready;
-              return connection.sendRequest("textDocument/documentSymbol", {
-                textDocument: { uri: targetUri },
-              });
-            };
-          },
-          signal,
-        ),
+      (connection, targetUri) => {
+        const ready = waitForLspTargetReady(connection, targetUri);
+        return async () => {
+          await ready;
+          return connection.sendRequest("textDocument/documentSymbol", {
+            textDocument: { uri: targetUri },
+          });
+        };
+      },
     );
     const { prepared, execution, durationMs } = bound;
     const parsed = parseLspDocumentSymbols(execution.value, {
@@ -138,6 +132,7 @@ export class LspSymbolsRunner {
           processGroupTermination: true,
         }),
       ),
+      ...lspSessionEvidence(execution),
       timeoutMs: prepared.timeoutMs,
       durationMs,
       protocolBytes: execution.protocolBytes,

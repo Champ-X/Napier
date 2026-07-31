@@ -1,10 +1,15 @@
+import {
+  lspSessionEventEvidence,
+  type LspSessionToolEventTraceView,
+} from "./lsp-session-event-view";
+
 type LspLanguage =
   | "typescript"
   | "typescriptreact"
   | "javascript"
   | "javascriptreact";
 
-export interface LspRenameToolEventTraceView {
+export interface LspRenameToolEventTraceView extends LspSessionToolEventTraceView {
   lspRenameStatus?: "found" | "not_found";
   lspRenameLanguage?: LspLanguage;
   lspRenameComplete?: boolean;
@@ -26,6 +31,8 @@ export function lspRenameEventEvidence(
   value: unknown,
 ): LspRenameToolEventTraceView | undefined {
   if (!record(value)) return undefined;
+  const session = lspSessionEventEvidence(value);
+  if (!session) return undefined;
   const status = value["status"];
   const language = value["language"];
   if (
@@ -59,6 +66,7 @@ export function lspRenameEventEvidence(
     2 * 1024 * 1024,
   );
   return {
+    ...session,
     lspRenameStatus: status,
     lspRenameLanguage: language,
     lspRenameComplete: true,

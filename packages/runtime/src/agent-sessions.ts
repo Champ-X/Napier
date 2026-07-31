@@ -1,20 +1,32 @@
 import { AgentKernelRuntime } from "./agent-kernels.js";
+import {
+  type LspSessionOwner,
+  RunLspSessionManager,
+} from "./lsp-persistent-session.js";
 import { NodeDebuggerManager } from "./node-debugger.js";
 import { createNodeDebuggerTool } from "./node-debugger-tool.js";
+import type { OsSandboxAdapter } from "./sandbox.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
 
 export class AgentSessionRuntime {
   private readonly kernels: AgentKernelRuntime;
   private readonly debuggerManager: NodeDebuggerManager | undefined;
+  private readonly languageServers: RunLspSessionManager;
 
   constructor(
     processes: WorkspaceProcessManager | undefined,
     workspaceRoot: string,
+    sandbox: OsSandboxAdapter,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
+    this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
     this.debuggerManager = processes
       ? new NodeDebuggerManager(processes, workspaceRoot)
       : undefined;
+  }
+
+  lspSession(owner: LspSessionOwner) {
+    return this.languageServers.forRun(owner);
   }
 
   createTools(
@@ -37,6 +49,7 @@ export class AgentSessionRuntime {
   async cancelRun(request: { threadId: string; runId: string }): Promise<void> {
     const settlements = await Promise.allSettled([
       this.kernels.cancelRun(request),
+      this.languageServers.cancelRun(request),
       ...(this.debuggerManager
         ? [this.debuggerManager.cancelRun(request)]
         : []),

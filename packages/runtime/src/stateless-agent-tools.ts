@@ -6,6 +6,7 @@ import { createLspCodeActionsTool } from "./lsp-code-actions-tool.js";
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import { createLspDefinitionTool } from "./lsp-definition-tool.js";
 import { LspWorkspacePatchObserver } from "./lsp-patch-diagnostics.js";
+import type { LspProtocolExecutor } from "./lsp-protocol-session.js";
 import { createLspReferencesTool } from "./lsp-references-tool.js";
 import { createLspRenameTool } from "./lsp-rename-tool.js";
 import { createLspSymbolsTool } from "./lsp-symbols-tool.js";
@@ -26,6 +27,7 @@ export interface CreateStatelessAgentToolsOptions {
   threadId: string;
   runId: string;
   sandbox: OsSandboxAdapter;
+  lspSession?: LspProtocolExecutor;
   workspaceFileMutations?: WorkspaceFileMutationManager;
   safeReadOnlyRecovery?: boolean;
   advisorCorrection?: boolean;
@@ -38,14 +40,16 @@ export function createStatelessAgentTools(
   const { profile } = options;
   const processAllowed =
     !options.safeReadOnlyRecovery && profile.toolPolicy !== "observe";
+  const lspOptions = {
+    workspaceRoot: options.store.workspaceRoot,
+    sandbox: options.sandbox,
+    ...(options.lspSession ? { session: options.lspSession } : {}),
+  };
   const patchObserver =
     processAllowed &&
     profile.enabledTools.includes("apply_patch") &&
     profile.enabledTools.includes("lsp_diagnostics")
-      ? new LspWorkspacePatchObserver({
-          workspaceRoot: options.store.workspaceRoot,
-          sandbox: options.sandbox,
-        })
+      ? new LspWorkspacePatchObserver(lspOptions)
       : undefined;
   const tools = createWorkspaceTools(options.store.workspaceRoot, {
     includeWriteTools: profile.toolPolicy !== "observe",
@@ -93,52 +97,22 @@ export function createStatelessAgentTools(
     );
   }
   if (processAllowed && profile.enabledTools.includes("lsp_diagnostics")) {
-    tools.push(
-      createLspDiagnosticsTool({
-        workspaceRoot: options.store.workspaceRoot,
-        sandbox: options.sandbox,
-      }),
-    );
+    tools.push(createLspDiagnosticsTool(lspOptions));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_symbols")) {
-    tools.push(
-      createLspSymbolsTool({
-        workspaceRoot: options.store.workspaceRoot,
-        sandbox: options.sandbox,
-      }),
-    );
+    tools.push(createLspSymbolsTool(lspOptions));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_definition")) {
-    tools.push(
-      createLspDefinitionTool({
-        workspaceRoot: options.store.workspaceRoot,
-        sandbox: options.sandbox,
-      }),
-    );
+    tools.push(createLspDefinitionTool(lspOptions));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_references")) {
-    tools.push(
-      createLspReferencesTool({
-        workspaceRoot: options.store.workspaceRoot,
-        sandbox: options.sandbox,
-      }),
-    );
+    tools.push(createLspReferencesTool(lspOptions));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_rename")) {
-    tools.push(
-      createLspRenameTool({
-        workspaceRoot: options.store.workspaceRoot,
-        sandbox: options.sandbox,
-      }),
-    );
+    tools.push(createLspRenameTool(lspOptions));
   }
   if (processAllowed && profile.enabledTools.includes("lsp_code_actions")) {
-    tools.push(
-      createLspCodeActionsTool({
-        workspaceRoot: options.store.workspaceRoot,
-        sandbox: options.sandbox,
-      }),
-    );
+    tools.push(createLspCodeActionsTool(lspOptions));
   }
   if (processAllowed && profile.enabledTools.includes("run_command")) {
     tools.push(

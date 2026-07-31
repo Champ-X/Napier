@@ -248,6 +248,41 @@ describe("LSP diagnostics runner", () => {
     );
   });
 
+  it("rejects partial evidence from an injected Session executor", async () => {
+    const root = await createWorkspace();
+    await writeFile(path.join(root, "target.ts"), "const value = 1;\n");
+    let launches = 0;
+    const runner = new LspDiagnosticsRunner({
+      workspaceRoot: root,
+      sandbox: {
+        id: "injected-session-test",
+        async launch() {
+          launches += 1;
+          throw new Error("Sandbox launch must not be reached");
+        },
+      },
+      session: {
+        async execute<T>() {
+          return {
+            value: {
+              diagnostics: [],
+              truncated: false,
+            } as T,
+            protocolBytes: 0,
+            stderr: "",
+            stderrTruncated: false,
+            sessionMode: "run_persistent" as const,
+          };
+        },
+      },
+    });
+
+    await expect(runner.run({ path: "target.ts" })).rejects.toThrow(
+      "LSP Session evidence is invalid",
+    );
+    expect(launches).toBe(0);
+  });
+
   it("fails when bound language-server or TypeScript library assets drift", async () => {
     const root = await createWorkspace();
     await writeFile(path.join(root, "target.ts"), "const value = 1;\n");

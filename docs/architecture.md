@@ -2141,9 +2141,13 @@ Subagents call the read-only tool factory and never receive `apply_patch`.
 ## TypeScript LSP Code Intelligence Flow
 
 The LSP tools are implemented outside the oversized workspace-tool module.
-`lsp-diagnostics.ts` owns shared target/runtime preparation plus diagnostic
-projection, `lsp-protocol-session.ts` owns the generic bounded JSON-RPC
-lifecycle, `lsp-locations.ts` owns position/Location confinement,
+`lsp-source-session.ts` owns shared target/runtime preparation, one-shot or
+injected execution, and post-operation freshness checks;
+`lsp-diagnostics.ts` owns only diagnostic result projection;
+`lsp-protocol-session.ts` owns standard initialize/document-sync operations and
+the bounded one-shot JSON-RPC lifecycle; `lsp-persistent-session.ts` owns
+Run-scoped admission, serialization, workspace freshness, reuse, and
+settlement. `lsp-locations.ts` owns position/Location confinement,
 `lsp-symbol-parser.ts` and `lsp-symbol-model.ts` separate strict protocol
 parsing from range materialization/receipts, and the diagnostic/navigation tool
 adapters own Agent schemas plus Ledger redaction:
@@ -2156,21 +2160,35 @@ Agent selects lsp_diagnostics + workspace-relative source path
   -> resolve and hash the current Node executable
   -> resolve versioned typescript-language-server and TypeScript assets
   -> bind those assets as Napier-managed read-only Sandbox runtime paths
-  -> launch Node with the bundled language-server entrypoint and fixed env
-  -> initialize LSP with explicit tsserver path and automatic typing disabled
-  -> didOpen exactly the preflighted source bytes
+  -> reuse the healthy Run-owned server when workspace/runtime hashes match,
+     otherwise launch Node with the bundled entrypoint and fixed environment
+  -> initialize once with explicit tsserver path and automatic typing disabled
+  -> didClose/didOpen exactly the freshly preflighted source bytes per operation
   -> accept only diagnostics for the target URI
   -> cap 64 diagnostics, 1,000 chars/message, 2 MiB protocol, 16,000 stderr
      chars, and 1-30 seconds total wall time
   -> reject server-initiated workspace/applyEdit and terminate on timeout,
-     cancellation, malformed protocol, output overflow, early exit, or failed
-     shutdown
-  -> rehash runtime assets after settlement
+     cancellation, malformed protocol, output overflow, early exit, drift, or
+     failed shutdown
+  -> rehash runtime assets and compare workspace snapshots after the operation
   -> return diagnostic locations/codes/messages to the current Agent only
   -> retain counts, versions, latency, and hashes in tool.completed and Trace
 ```
 
-Document symbols reuse the same one-shot lifecycle without heuristic source
+For ordinary Agent Runs, `AgentSessionRuntime` injects one Run-bound protocol
+executor into all six LSP tools and the write-linked diagnostics observer. The
+executor performs no filesystem work until an LSP operation is requested. The
+first operation canonicalizes the workspace and launches one server; later
+operations reuse it only when
+Runtime identity and a 10,000-file/64 MiB workspace snapshot still match.
+Every operation closes/reopens its target from freshly preflighted bytes.
+Workspace change replaces the Session before the next operation; in-flight
+drift rejects the result. Cancellation, timeout, protocol failure, output
+overflow, idle exit, operation exhaustion, and Run settlement terminate the
+Session. Direct Runners and stateless Workflow Tool nodes receive no executor
+and retain the one-shot path.
+
+Document symbols reuse the same protocol lifecycle without heuristic source
 parsing:
 
 ```text
@@ -4980,6 +4998,11 @@ The current boundary has thirty-nine parts:
     protocol, canonical source and loaded-module freshness, read-only/offline
     Sandbox execution, bounded stack/value/output projection, terminal unknown
     outcomes, and hash-only Agent/Server/Trace evidence.
+40. Run-owned TypeScript language-server Sessions shared across diagnostics,
+    symbols, definition, references, rename, Code Actions, and write-linked
+    diagnostics, with bounded workspace freshness, operation/global admission,
+    terminal uncertain-state handling, one-shot fallback, and hash-only
+    reuse evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5017,8 +5040,8 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- persistent LSP sessions with rename application, Code Action resolve/command
-  policy, Node attach/source-map/multi-thread DAP and debugger UX, broader
+- direct rename application, Code Action resolve/command policy, Node
+  attach/source-map/multi-thread DAP and debugger UX, broader
   multi-node AST transforms, write-linked test/symbol association, and isolated
   subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful

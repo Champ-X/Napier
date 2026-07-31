@@ -21,9 +21,9 @@ import {
   workspaceLspLocation,
 } from "./lsp-locations.js";
 import {
+  lspSessionEvidence,
   MAX_LSP_PROTOCOL_BYTES,
   MAX_LSP_STDERR_CHARS,
-  runLspProtocolSession,
 } from "./lsp-protocol-session.js";
 
 export const MAX_LSP_REFERENCES = 64;
@@ -65,26 +65,20 @@ export class LspReferencesRunner {
         label: "LSP references",
         abortedMessage: "LSP references were aborted",
       },
-      (child, protocolRequest, signal) =>
-        runLspProtocolSession(
-          child,
-          protocolRequest,
-          (connection, targetUri) => {
-            const ready = waitForLspTargetReady(connection, targetUri);
-            return async () => {
-              await ready;
-              return connection.sendRequest("textDocument/references", {
-                textDocument: { uri: targetUri },
-                position: {
-                  line: request.line - 1,
-                  character: request.character - 1,
-                },
-                context: { includeDeclaration },
-              });
-            };
-          },
-          signal,
-        ),
+      (connection, targetUri) => {
+        const ready = waitForLspTargetReady(connection, targetUri);
+        return async () => {
+          await ready;
+          return connection.sendRequest("textDocument/references", {
+            textDocument: { uri: targetUri },
+            position: {
+              line: request.line - 1,
+              character: request.character - 1,
+            },
+            context: { includeDeclaration },
+          });
+        };
+      },
       (prepared) =>
         validateLspSourcePosition(prepared.source, request, "LSP references"),
     );
@@ -153,6 +147,7 @@ export class LspReferencesRunner {
           processGroupTermination: true,
         }),
       ),
+      ...lspSessionEvidence(execution),
       timeoutMs: prepared.timeoutMs,
       durationMs,
       protocolBytes: execution.protocolBytes,

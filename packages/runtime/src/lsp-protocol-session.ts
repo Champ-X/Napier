@@ -1,7 +1,10 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import type { LspDiagnosticLanguage } from "@napier/contracts";
+import type {
+  LspDiagnosticLanguage,
+  LspSessionEvidenceDetails,
+} from "@napier/contracts";
 import {
   createMessageConnection,
   StreamMessageReader,
@@ -39,6 +42,11 @@ export interface LspProtocolSessionRequest {
   source: string;
   timeoutMs: number;
   typescriptServerPath: string;
+  nodeExecutable?: string;
+  languageServerPath?: string;
+  languageServerRoot?: string;
+  typescriptRoot?: string;
+  runtimeIdentitySha256?: string;
 }
 
 export interface LspProtocolSessionResult<T> {
@@ -46,12 +54,54 @@ export interface LspProtocolSessionResult<T> {
   protocolBytes: number;
   stderr: string;
   stderrTruncated: boolean;
+  sessionMode?: "one_shot" | "run_persistent";
+  sessionReused?: boolean;
+  sessionOperation?: number;
+  sessionIdSha256?: string;
+  sessionWorkspaceSha256?: string;
+  sessionLimitsSha256?: string;
 }
 
 export type PrepareLspProtocolOperation<T> = (
   connection: MessageConnection,
   targetUri: string,
 ) => () => Promise<T>;
+
+export interface LspProtocolExecutor {
+  execute<T>(
+    request: LspProtocolSessionRequest,
+    prepareOperation: PrepareLspProtocolOperation<T>,
+    signal?: AbortSignal,
+  ): Promise<LspProtocolSessionResult<T>>;
+}
+
+export function lspSessionEvidence(
+  result: LspProtocolSessionResult<unknown>,
+): LspSessionEvidenceDetails {
+  if (result.sessionMode === undefined) return {};
+  if (
+    (result.sessionMode !== "one_shot" &&
+      result.sessionMode !== "run_persistent") ||
+    typeof result.sessionReused !== "boolean" ||
+    !Number.isSafeInteger(result.sessionOperation) ||
+    Number(result.sessionOperation) < 1 ||
+    Number(result.sessionOperation) > 32 ||
+    result.sessionReused !== Number(result.sessionOperation) > 1 ||
+    !hash(result.sessionIdSha256) ||
+    !hash(result.sessionWorkspaceSha256) ||
+    !hash(result.sessionLimitsSha256)
+  ) {
+    throw new Error("LSP Session evidence is invalid");
+  }
+  return {
+    sessionMode: result.sessionMode,
+    sessionReused: result.sessionReused,
+    sessionOperation: Number(result.sessionOperation),
+    sessionIdSha256: result.sessionIdSha256,
+    sessionWorkspaceSha256: result.sessionWorkspaceSha256,
+    sessionLimitsSha256: result.sessionLimitsSha256,
+  };
+}
 
 export async function runLspProtocolSession<T>(
   child: SandboxedProcess,
@@ -100,7 +150,7 @@ export async function runLspProtocolSession<T>(
   connection.onClose(() => {
     if (!shuttingDown) fail(`${request.label} server closed unexpectedly`);
   });
-  registerClientHandlers(connection, request.workspaceRoot);
+  registerLspClientHandlers(connection, request.workspaceRoot);
   const collect = prepareOperation(
     connection,
     pathToFileURL(request.target).href,
@@ -123,63 +173,8 @@ export async function runLspProtocolSession<T>(
     }
   });
   try {
-    await raceFailure(
-      connection.sendRequest("initialize", {
-        processId: null,
-        clientInfo: { name: "napier", version: "0.1.0" },
-        rootUri: pathToFileURL(request.workspaceRoot).href,
-        capabilities: {
-          workspace: { configuration: false, workspaceFolders: true },
-          textDocument: {
-            codeAction: {
-              codeActionLiteralSupport: {
-                codeActionKind: { valueSet: ["quickfix"] },
-              },
-              dataSupport: false,
-              disabledSupport: true,
-              isPreferredSupport: true,
-            },
-            definition: { linkSupport: true },
-            documentSymbol: {
-              hierarchicalDocumentSymbolSupport: true,
-              labelSupport: true,
-              symbolKind: {
-                valueSet: Array.from({ length: 26 }, (_, index) => index + 1),
-              },
-              tagSupport: { valueSet: [1] },
-            },
-            references: {},
-            rename: { prepareSupport: true },
-            publishDiagnostics: {
-              relatedInformation: false,
-              tagSupport: { valueSet: [1, 2] },
-              versionSupport: true,
-            },
-          },
-        },
-        initializationOptions: {
-          disableAutomaticTypingAcquisition: true,
-          tsserver: { path: request.typescriptServerPath },
-        },
-        workspaceFolders: [
-          {
-            uri: pathToFileURL(request.workspaceRoot).href,
-            name: path.basename(request.workspaceRoot),
-          },
-        ],
-        trace: "off",
-      }),
-      failure,
-    );
-    await connection.sendNotification("initialized", {});
-    await connection.sendNotification("textDocument/didOpen", {
-      textDocument: {
-        uri: pathToFileURL(request.target).href,
-        languageId: request.language,
-        version: 1,
-        text: request.source,
-      },
-    });
+    await raceFailure(initializeLspConnection(connection, request), failure);
+    await syncLspDocument(connection, request, undefined);
     const value = await raceFailure(collect(), failure);
     shuttingDown = true;
     await raceFailure(connection.sendRequest("shutdown"), failure);
@@ -227,10 +222,7 @@ export async function runLspDiagnosticsSession(
   const result = await runLspProtocolSession(
     child,
     request,
-    (connection, targetUri) => {
-      const diagnostics = diagnosticsNotification(connection, targetUri);
-      return () => diagnostics;
-    },
+    prepareLspDiagnosticsOperation,
     signal,
   );
   return {
@@ -241,7 +233,102 @@ export async function runLspDiagnosticsSession(
   };
 }
 
-function registerClientHandlers(
+export function prepareLspDiagnosticsOperation(
+  connection: MessageConnection,
+  targetUri: string,
+): () => Promise<{ diagnostics: LspDiagnostic[]; truncated: boolean }> {
+  const diagnostics = diagnosticsNotification(connection, targetUri);
+  return () => diagnostics;
+}
+
+export async function initializeLspConnection(
+  connection: MessageConnection,
+  request: Pick<
+    LspProtocolSessionRequest,
+    "workspaceRoot" | "typescriptServerPath"
+  >,
+): Promise<void> {
+  await connection.sendRequest("initialize", {
+    processId: null,
+    clientInfo: { name: "napier", version: "0.1.0" },
+    rootUri: pathToFileURL(request.workspaceRoot).href,
+    capabilities: {
+      workspace: { configuration: false, workspaceFolders: true },
+      textDocument: {
+        codeAction: {
+          codeActionLiteralSupport: {
+            codeActionKind: { valueSet: ["quickfix"] },
+          },
+          dataSupport: false,
+          disabledSupport: true,
+          isPreferredSupport: true,
+        },
+        definition: { linkSupport: true },
+        documentSymbol: {
+          hierarchicalDocumentSymbolSupport: true,
+          labelSupport: true,
+          symbolKind: {
+            valueSet: Array.from({ length: 26 }, (_, index) => index + 1),
+          },
+          tagSupport: { valueSet: [1] },
+        },
+        references: {},
+        rename: { prepareSupport: true },
+        publishDiagnostics: {
+          relatedInformation: false,
+          tagSupport: { valueSet: [1, 2] },
+          versionSupport: true,
+        },
+      },
+    },
+    initializationOptions: {
+      disableAutomaticTypingAcquisition: true,
+      tsserver: { path: request.typescriptServerPath },
+    },
+    workspaceFolders: [
+      {
+        uri: pathToFileURL(request.workspaceRoot).href,
+        name: path.basename(request.workspaceRoot),
+      },
+    ],
+    trace: "off",
+  });
+  await connection.sendNotification("initialized", {});
+}
+
+export async function syncLspDocument(
+  connection: MessageConnection,
+  request: Pick<LspProtocolSessionRequest, "target" | "language" | "source">,
+  previousVersion: number | undefined,
+): Promise<number> {
+  const uri = pathToFileURL(request.target).href;
+  const version = (previousVersion ?? 0) + 1;
+  if (previousVersion === undefined) {
+    await connection.sendNotification("textDocument/didOpen", {
+      textDocument: {
+        uri,
+        languageId: request.language,
+        version,
+        text: request.source,
+      },
+    });
+  } else {
+    await connection.sendNotification("textDocument/didClose", {
+      textDocument: { uri },
+    });
+    await connection.sendNotification("textDocument/didOpen", {
+      textDocument: {
+        uri,
+        languageId: request.language,
+        version,
+        text: request.source,
+      },
+    });
+  }
+  return version;
+}
+
+export function registerLspClientHandlers(
   connection: MessageConnection,
   workspaceRoot: string,
 ): void {
@@ -365,4 +452,8 @@ function record(value: unknown): value is Record<string, unknown> {
 
 function nonNegativeInteger(value: unknown): value is number {
   return Number.isSafeInteger(value) && Number(value) >= 0;
+}
+
+function hash(value: unknown): value is string {
+  return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value);
 }

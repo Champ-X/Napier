@@ -9,6 +9,11 @@ import {
   type LspRenameToolEventTraceView,
 } from "./lsp-rename-event-view";
 import {
+  lspSessionEventEvidence,
+  lspSessionSummaryParts,
+  type LspSessionToolEventTraceView,
+} from "./lsp-session-event-view";
+import {
   lspSymbolsEventEvidence,
   lspSymbolsSummaryParts,
   type LspSymbolsToolEventTraceView,
@@ -24,7 +29,8 @@ export interface LspToolEventTraceView
   extends
     LspRenameToolEventTraceView,
     LspCodeActionsToolEventTraceView,
-    LspSymbolsToolEventTraceView {
+    LspSymbolsToolEventTraceView,
+    LspSessionToolEventTraceView {
   lspStatus?: "clean" | "diagnostics";
   lspLanguage?: LspLanguage;
   lspDiagnosticCount?: number;
@@ -83,6 +89,7 @@ export function lspToolEventSummaryParts(
   view: LspToolEventTraceView,
 ): string[] {
   return [
+    ...lspSessionSummaryParts(view),
     ...(view.lspStatus ? [`lsp ${view.lspStatus}`] : []),
     ...(view.lspLanguage ? [`language ${view.lspLanguage}`] : []),
     ...(view.lspDiagnosticCount !== undefined
@@ -217,6 +224,8 @@ function diagnosticsEvidence(
     "diagnostics",
   ]);
   if (!record) return undefined;
+  const session = lspSessionEventEvidence(record);
+  if (!session) return undefined;
   const diagnosticCount = integerInRange(record["diagnosticCount"], 0, 64);
   const errorCount = integerInRange(record["errorCount"], 0, 64);
   const warningCount = integerInRange(record["warningCount"], 0, 64);
@@ -230,6 +239,7 @@ function diagnosticsEvidence(
   }
   const bounded = commonEvidence(record);
   return {
+    ...session,
     lspStatus: record["status"] as "clean" | "diagnostics",
     lspLanguage: record["language"] as LspLanguage,
     lspDiagnosticCount: diagnosticCount,
@@ -258,11 +268,14 @@ function definitionEvidence(value: unknown): LspToolEventTraceView | undefined {
     "not_found",
   ]);
   if (!record) return undefined;
+  const session = lspSessionEventEvidence(record);
+  if (!session) return undefined;
   const count = integerInRange(record["definitionCount"], 0, 32);
   const omitted = integerInRange(record["omittedDefinitionCount"], 0, 100_000);
   if (count === undefined || omitted === undefined) return undefined;
   const bounded = commonEvidence(record);
   return {
+    ...session,
     lspDefinitionStatus: record["status"] as "found" | "not_found",
     lspDefinitionLanguage: record["language"] as LspLanguage,
     lspDefinitionCount: count,
@@ -292,11 +305,14 @@ function referencesEvidence(value: unknown): LspToolEventTraceView | undefined {
   if (!record || typeof record["includeDeclaration"] !== "boolean") {
     return undefined;
   }
+  const session = lspSessionEventEvidence(record);
+  if (!session) return undefined;
   const count = integerInRange(record["referenceCount"], 0, 64);
   const omitted = integerInRange(record["omittedReferenceCount"], 0, 100_000);
   if (count === undefined || omitted === undefined) return undefined;
   const bounded = commonEvidence(record);
   return {
+    ...session,
     lspReferencesStatus: record["status"] as "found" | "not_found",
     lspReferencesLanguage: record["language"] as LspLanguage,
     lspReferencesIncludeDeclaration: record["includeDeclaration"],

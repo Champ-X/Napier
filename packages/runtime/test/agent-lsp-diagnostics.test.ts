@@ -59,15 +59,14 @@ describe("Agent LSP diagnostics integration", () => {
       agentId: agent.id,
     });
     const provider = fauxProvider({ provider: "faux-lsp" });
+    let toolContext = "";
     provider.setResponses([
       fauxAssistantMessage(
         fauxToolCall("lsp_diagnostics", { path: targetPath }),
         { stopReason: "toolUse" },
       ),
       (context) => {
-        const messages = JSON.stringify(context.messages);
-        expect(messages).toContain("TS2322");
-        expect(messages).toContain("TOP_SECRET_DIAGNOSTIC_MESSAGE");
+        toolContext = JSON.stringify(context.messages);
         return fauxAssistantMessage(
           "The language server reported one type error.",
         );
@@ -89,8 +88,11 @@ describe("Agent LSP diagnostics integration", () => {
       model: { provider: "faux-lsp", id: "faux-1" },
     });
 
-    expect(run.status).toBe("completed");
-    const toolEvents = (await store.listEvents(thread.id)).filter(
+    const events = await store.listEvents(thread.id);
+    expect(run.status, toolContext).toBe("completed");
+    expect(toolContext).toContain("TS2322");
+    expect(toolContext).toContain("TOP_SECRET_DIAGNOSTIC_MESSAGE");
+    const toolEvents = events.filter(
       (event) =>
         event.type.startsWith("tool.") &&
         event.payload &&

@@ -43,6 +43,8 @@ export * from "./lsp-definition.js";
 export * from "./lsp-definition-tool.js";
 export * from "./lsp-locations.js";
 export * from "./lsp-patch-diagnostics.js";
+export * from "./lsp-persistent-session.js";
+export * from "./lsp-protocol-session.js";
 export * from "./lsp-references.js";
 export * from "./lsp-references-tool.js";
 export * from "./lsp-rename.js";

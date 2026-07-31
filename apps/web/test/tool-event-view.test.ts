@@ -487,6 +487,13 @@ describe("Tool event trace view", () => {
         truncated: true,
         durationMs: 612,
         protocolBytes: 2400,
+        sessionMode: "run_persistent",
+        sessionReused: true,
+        sessionOperation: 2,
+        sessionIdSha256: "f".repeat(64),
+        sessionWorkspaceSha256: "9".repeat(64),
+        sessionLimitsSha256: "8".repeat(64),
+        sessionPath: "TOP_SECRET_SESSION_PATH",
         path: "TOP_SECRET_PATH",
         pathSha256: "a".repeat(64),
         fileSha256: "b".repeat(64),
@@ -500,6 +507,12 @@ describe("Tool event trace view", () => {
       toolName: "lsp_diagnostics",
       status: "completed",
       effect: "read",
+      lspSessionMode: "run_persistent",
+      lspSessionReused: true,
+      lspSessionOperation: 2,
+      lspSessionIdSha256: "f".repeat(64),
+      lspSessionWorkspaceSha256: "9".repeat(64),
+      lspSessionLimitsSha256: "8".repeat(64),
       lspStatus: "diagnostics",
       lspLanguage: "typescript",
       lspDiagnosticCount: 2,
@@ -515,7 +528,7 @@ describe("Tool event trace view", () => {
       lspResultSha256: "e".repeat(64),
     });
     expect(toolEventTraceSummary(event)).toBe(
-      `tool / lsp_diagnostics / completed / effect read / lsp diagnostics / language typescript / diagnostics 2 / errors 1 / warnings 1 / duration-ms 612 / protocol-bytes 2400 / lsp-truncated / lsp-path ${"a".repeat(12)} / lsp-file ${"b".repeat(12)} / diagnostic-set ${"c".repeat(12)} / code-set ${"d".repeat(12)} / lsp-result ${"e".repeat(12)}`,
+      `tool / lsp_diagnostics / completed / effect read / lsp-session run_persistent / lsp-session-reused / lsp-session-operation 2 / lsp-session-id ${"f".repeat(12)} / lsp-session-workspace ${"9".repeat(12)} / lsp-session-limits ${"8".repeat(12)} / lsp diagnostics / language typescript / diagnostics 2 / errors 1 / warnings 1 / duration-ms 612 / protocol-bytes 2400 / lsp-truncated / lsp-path ${"a".repeat(12)} / lsp-file ${"b".repeat(12)} / diagnostic-set ${"c".repeat(12)} / code-set ${"d".repeat(12)} / lsp-result ${"e".repeat(12)}`,
     );
     expect(toolEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

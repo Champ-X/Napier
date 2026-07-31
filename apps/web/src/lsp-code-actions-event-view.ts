@@ -1,10 +1,15 @@
+import {
+  lspSessionEventEvidence,
+  type LspSessionToolEventTraceView,
+} from "./lsp-session-event-view";
+
 type LspLanguage =
   | "typescript"
   | "typescriptreact"
   | "javascript"
   | "javascriptreact";
 
-export interface LspCodeActionsToolEventTraceView {
+export interface LspCodeActionsToolEventTraceView extends LspSessionToolEventTraceView {
   lspCodeActionsStatus?: "found" | "not_found";
   lspCodeActionsLanguage?: LspLanguage;
   lspCodeActionsComplete?: boolean;
@@ -31,6 +36,8 @@ export function lspCodeActionsEventEvidence(
   value: unknown,
 ): LspCodeActionsToolEventTraceView | undefined {
   if (!record(value)) return undefined;
+  const session = lspSessionEventEvidence(value);
+  if (!session) return undefined;
   const status = value["status"];
   const language = value["language"];
   if (
@@ -92,6 +99,7 @@ export function lspCodeActionsEventEvidence(
     2 * 1024 * 1024,
   );
   return {
+    ...session,
     lspCodeActionsStatus: status,
     lspCodeActionsLanguage: language,
     lspCodeActionsComplete: value["complete"],

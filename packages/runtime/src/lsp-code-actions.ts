@@ -28,9 +28,9 @@ import {
   validateLspSourcePosition,
 } from "./lsp-locations.js";
 import {
+  lspSessionEvidence,
   MAX_LSP_PROTOCOL_BYTES,
   MAX_LSP_STDERR_CHARS,
-  runLspProtocolSession,
 } from "./lsp-protocol-session.js";
 import {
   MAX_LSP_RENAME_EDITS,
@@ -69,13 +69,7 @@ export class LspCodeActionsRunner {
         label: "LSP code action",
         abortedMessage: "LSP code action was aborted",
       },
-      (child, protocolRequest, signal) =>
-        runLspProtocolSession(
-          child,
-          protocolRequest,
-          prepareLspCodeActionOperation(request),
-          signal,
-        ),
+      prepareLspCodeActionOperation(request),
       (prepared) =>
         validateLspSourcePosition(prepared.source, request, "LSP code action"),
     );
@@ -170,6 +164,7 @@ export class LspCodeActionsRunner {
           processGroupTermination: true,
         }),
       ),
+      ...lspSessionEvidence(execution),
       timeoutMs: prepared.timeoutMs,
       durationMs,
       protocolBytes: execution.protocolBytes,

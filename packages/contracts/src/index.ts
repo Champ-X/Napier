@@ -3437,7 +3437,16 @@ export type LspDiagnosticLanguage =
   | "javascript"
   | "javascriptreact";
 
-export interface LspDiagnosticsDetails {
+export interface LspSessionEvidenceDetails {
+  sessionMode?: "one_shot" | "run_persistent";
+  sessionReused?: boolean;
+  sessionOperation?: number;
+  sessionIdSha256?: string;
+  sessionWorkspaceSha256?: string;
+  sessionLimitsSha256?: string;
+}
+
+export interface LspDiagnosticsDetails extends LspSessionEvidenceDetails {
   kind: "napier.lsp-diagnostics";
   schemaVersion: 1;
   status: "clean" | "diagnostics";
@@ -3473,7 +3482,7 @@ export interface LspDiagnosticsDetails {
   resultSha256: string;
 }
 
-export interface LspSymbolsDetails {
+export interface LspSymbolsDetails extends LspSessionEvidenceDetails {
   kind: "napier.lsp-symbols";
   schemaVersion: 1;
   status: "found" | "not_found";
@@ -3512,7 +3521,7 @@ export interface LspSymbolsDetails {
   resultSha256: string;
 }
 
-export interface LspDefinitionDetails {
+export interface LspDefinitionDetails extends LspSessionEvidenceDetails {
   kind: "napier.lsp-definition";
   schemaVersion: 1;
   status: "found" | "not_found";
@@ -3546,7 +3555,7 @@ export interface LspDefinitionDetails {
   resultSha256: string;
 }
 
-export interface LspReferencesDetails {
+export interface LspReferencesDetails extends LspSessionEvidenceDetails {
   kind: "napier.lsp-references";
   schemaVersion: 1;
   status: "found" | "not_found";
@@ -3581,7 +3590,7 @@ export interface LspReferencesDetails {
   resultSha256: string;
 }
 
-export interface LspRenameDetails {
+export interface LspRenameDetails extends LspSessionEvidenceDetails {
   kind: "napier.lsp-rename";
   schemaVersion: 1;
   status: "found" | "not_found";
@@ -3618,7 +3627,7 @@ export interface LspRenameDetails {
   resultSha256: string;
 }
 
-export interface LspCodeActionsDetails {
+export interface LspCodeActionsDetails extends LspSessionEvidenceDetails {
   kind: "napier.lsp-code-actions";
   schemaVersion: 1;
   status: "found" | "not_found";

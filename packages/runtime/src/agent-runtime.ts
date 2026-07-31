@@ -232,6 +232,7 @@ export class AgentRuntime {
     this.sessions = new AgentSessionRuntime(
       workspaceProcesses,
       store.workspaceRoot,
+      verificationSandbox,
     );
   }
 
@@ -1207,6 +1208,10 @@ export class AgentRuntime {
       threadId: run.threadId,
       runId: run.id,
       sandbox: this.verificationSandbox,
+      lspSession: this.sessions.lspSession({
+        threadId: run.threadId,
+        runId: run.id,
+      }),
       ...(this.workspaceFileMutations
         ? { workspaceFileMutations: this.workspaceFileMutations }
         : {}),

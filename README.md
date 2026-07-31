@@ -103,8 +103,9 @@ Version `0.1.0` includes:
   `lsp_references`, preview-only `lsp_rename`, and quick-fix-only
   `lsp_code_actions` tools that drive the standard TypeScript language server
   against TypeScript or JavaScript workspace files through the same read-only,
-  offline OS sandbox, with bounded live compiler/edit evidence and hash-only
-  durable projections;
+  offline OS sandbox, reuse one Run-owned Session while the bounded workspace
+  remains unchanged, and retain bounded live compiler/edit evidence with
+  hash-only durable projections;
 - a `run_command` tool for foreground Node diagnostics with
   explicit argv, a canonical workspace cwd, read-only/offline OS sandbox
   capabilities, a fixed secret-free environment, bounded output and wall time,
@@ -1790,7 +1791,9 @@ text.
 `lsp_diagnostics` establishes the semantic IDE runtime. It launches
 `typescript-language-server` 5.3.0 with TypeScript 5.9.3 over standard framed
 JSON-RPC, opens one current TypeScript, TSX, JavaScript, JSX, MTS, CTS, MJS, or
-CJS file, waits for bounded published diagnostics, and shuts the server down.
+CJS file, and waits for bounded published diagnostics. An ordinary Agent Run
+keeps that read-only, offline server available for later LSP tools; direct
+Runner calls and stateless Workflow Tool nodes retain the one-shot lifecycle.
 The selected file is canonicalized inside the workspace, symlinks and
 protected roots are rejected, UTF-8 and 1 MiB limits are enforced, and the
 process runs read-only and offline with a fixed secret-free environment. The
@@ -1900,10 +1903,27 @@ alternative, re-read every selected file SHA, apply it through `apply_patch`,
 then run diagnostics and relevant behavior checks. Napier does not
 automatically combine mutually exclusive alternatives.
 
-These are one-shot operations rather than a persistent editor session. Napier
-does not yet claim direct LSP writes, atomic multi-file rename, Code Action
-resolve or command execution, project-wide synchronization/indexing, external
-dependency navigation, or test selection.
+Within one Agent Run, all six LSP tools and write-linked diagnostics share one
+serialized language-server Session while a bounded workspace snapshot remains
+unchanged. Every operation reopens the selected document from freshly
+preflighted bytes, rechecks target and Runtime-asset hashes, and compares
+before/after workspace snapshots. A write, external drift, timeout,
+cancellation, protocol failure, output overflow, idle server exit, operation
+limit, or Run settlement closes the Session. The next safe read starts a new
+server rather than adopting uncertain state. Limits are four active Sessions
+per Runtime, 32 operations per Session, 2 MiB protocol and 16,000 stderr
+characters per operation, 8 MiB protocol and 64 KiB stderr per Session, and a
+10,000-file/64 MiB workspace freshness snapshot. Truncated snapshots permit
+the current operation but disable reuse. The snapshot follows the existing
+workspace-delta exclusions for `.git`, `.napier`, and `node_modules`; this is
+not a package-install synchronization claim.
+
+Ledger, Replay, SSE, and Trace bind only Session mode, reuse state, operation
+number, and Session/workspace/limit hashes. The random Session identity,
+paths, source, diagnostics, edits, and stderr remain absent. This is Run-owned
+process reuse, not a cross-Run editor, direct LSP write surface, atomic
+multi-file rename, Code Action resolve/command execution, complete
+project/dependency synchronization, or test selection.
 
 When an Agent profile enables both `apply_patch` and `lsp_diagnostics`,
 TypeScript and JavaScript writes automatically run LSP diagnostics before and

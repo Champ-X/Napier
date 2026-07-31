@@ -21,7 +21,7 @@ Audit date: 2026-07-31
 | --------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                      |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, semantic LSP document symbols, diagnostics/definitions/references/rename and diagnostic-driven quick-fix previews, write-linked diagnostic deltas, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; persistent LSP, direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                                                                     |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                              |
 | P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                       |
@@ -2601,3 +2601,85 @@ Observed result:
   the Web main entry at 130.08 KiB against the 150 KiB budget. The Web dist
   remains `de3b8577b2455f9a`; the six-artifact release set remains
   `47cd400884c9da87`.
+
+## Completed Slice: Run-Owned Persistent LSP Sessions
+
+User scenario: a Coding Agent can inspect symbols, navigate definitions and
+references, preview rename or quick fixes, patch code, and rerun diagnostics
+without paying a fresh language-server startup for every semantic operation or
+trusting stale project state after a write.
+
+Acceptance:
+
+- share one TypeScript language-server process across all six LSP Agent tools
+  and write-linked diagnostics within one Run;
+- perform no LSP workspace I/O or process work for a Run that never invokes an
+  LSP tool;
+- keep direct Runners and stateless Workflow Tool nodes on the existing
+  one-shot path;
+- serialize same-Run operations and isolate different Runs;
+- re-preflight target bytes and Runtime assets for every operation;
+- bind reuse to a complete bounded workspace snapshot and replace the Session
+  after any observed write or external drift;
+- reject in-flight workspace drift rather than returning stale semantic data;
+- terminate Session state on timeout, cancellation, protocol failure, output
+  overflow, idle server exit, operation exhaustion, or Run settlement;
+- cap four active Sessions, 32 operations per Session, per-operation and
+  cumulative protocol/stderr output, and workspace freshness inventory;
+- project only Session mode, reuse, operation number, and Session/workspace/
+  limit hashes through Ledger, Replay, SSE, and Web Trace;
+- provide an opt-in real OS-Sandbox smoke that executes two different LSP
+  tools through one Agent Run and proves Session reuse.
+
+Threat boundary:
+
+- the language server retains only the existing read-only workspace,
+  read-only Runtime assets, denied network, fixed environment, and rejected
+  `workspace/applyEdit` capability;
+- every selected document is closed and reopened from freshly canonicalized
+  source bytes; the persistent process does not authorize a stale caller path
+  or source buffer;
+- the freshness snapshot excludes `.git`, `.napier`, and `node_modules` under
+  the existing workspace snapshot policy. Package installation is not
+  authorized in the LSP Sandbox; this slice does not claim complete external
+  dependency synchronization;
+- a truncated 10,000-file or 64 MiB snapshot permits the current operation but
+  disables reuse;
+- writes never reuse the pre-write Session. Unknown in-flight change rejects
+  the result and closes the process;
+- the random Session identifier, paths, source, diagnostics, edits, stderr,
+  protocol frames, and process identity remain live-only;
+- Session reuse is Run-local and process-local. It is not cross-Run adoption,
+  restart recovery, a user-profile editor connection, or direct LSP write
+  access.
+
+Observed result:
+
+- Manager contract tests prove lazy non-LSP construction, same-Run reuse,
+  serialized queued cancellation, two-Run isolation, active-Session admission,
+  idle-exit replacement, in-flight drift rejection, timeout, cancellation, and
+  safe restart after uncertain state;
+- all 38 existing direct diagnostics/symbols/definition/references/rename/
+  Code Action Runner tests remain on and pass the unchanged one-shot path;
+- an additional injected-executor regression rejects partial or
+  self-inconsistent Session evidence before it can become a tool receipt;
+- real TypeScript language-server Agent dogfood performs symbols, write-linked
+  before/after diagnostics, and final diagnostics with two process launches
+  instead of four; the post-write tool reuses only the replacement Session;
+- portable Replay remains valid, while durable events omit source paths,
+  symbol names, diagnostic prose, patch text, stderr, and raw Session IDs;
+- Web projection accepts legacy receipts, renders bounded Session metadata and
+  hash prefixes, and rejects partial or out-of-range Session evidence;
+- review found and fixed eager workspace `realpath` during every AgentRuntime
+  construction. Final behavior performs no async filesystem work for non-LSP
+  Runs, eliminating 32 temporary-workspace ENOENT rejections from the
+  high-parallel Runtime suite;
+- `lsp-diagnostics.ts` fell from 578 to 141 lines. Shared source/runtime
+  preflight moved to `lsp-source-session.ts`, while persistent ownership lives
+  in `lsp-persistent-session.ts`; Store and Server remain unchanged;
+- the complete repository gate passed 1230 tests with 20 opt-in live tests
+  skipped by default, audited 6 workspaces and 251 packages, verified 247
+  current OpenAPI routes against the 244/244 compatibility baseline, and kept
+  the Web main entry at 130.08 KiB against the 150 KiB budget. The 69-file Web
+  dist is bound to `ed39eefd3756ee12`; the six-artifact release set is bound
+  to `d9c673660d3a94e7`.

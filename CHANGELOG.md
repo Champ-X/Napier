@@ -6,6 +6,18 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added Run-owned persistent TypeScript language-server Sessions across
+  diagnostics, semantic symbols, definition, references, rename, Code Action,
+  and write-linked diagnostic flows. Same-Run operations serialize through one
+  read-only, offline Sandbox process while target/runtime hashes and bounded
+  workspace snapshots remain fresh; writes, drift, timeout, cancellation,
+  protocol failure, output exhaustion, idle exit, operation limits, and Run
+  settlement close the Session. Direct Runners and stateless Workflow Tool
+  nodes retain one-shot execution. Ledger, Replay, SSE, and Trace expose only
+  mode, reuse, operation count, and Session/workspace/limit hashes. Tests cover
+  reuse, write replacement, queued cancellation, concurrent Run isolation,
+  active-session admission, uncertain-state replacement, privacy, and an
+  opt-in real OS-Sandbox two-tool smoke.
 - Extended `@napier/sdk` with ordinary Agent execution and recovery.
   `runAgent()` starts a new Thread or continues an explicit existing Thread,
   while `resumeAgent()` creates the same evidence-bound recovery child as CLI.

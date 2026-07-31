@@ -144,12 +144,15 @@ describe("Agent LSP symbols integration", () => {
     ]);
     const registry = new ModelRegistry();
     registry.registerProvider(provider.provider);
-    const runtime = new AgentRuntime(
-      store,
-      registry,
-      undefined,
-      directLspSandbox(),
-    );
+    const baseSandbox = directLspSandbox();
+    let lspLaunchCount = 0;
+    const runtime = new AgentRuntime(store, registry, undefined, {
+      ...baseSandbox,
+      async launch(request) {
+        lspLaunchCount += 1;
+        return baseSandbox.launch(request);
+      },
+    });
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -159,6 +162,7 @@ describe("Agent LSP symbols integration", () => {
 
     expect(run.status, run.error).toBe("completed");
     const events = await store.listEvents(thread.id);
+    expect(lspLaunchCount).toBe(2);
     expect(await readFile(absoluteTarget, "utf8")).toBe(sourceAfter);
     expect(symbolContext).toContain('class \\"PrivateFormatter\\"');
     expect(symbolContext).toContain('method \\"format\\"');
@@ -196,8 +200,33 @@ describe("Agent LSP symbols integration", () => {
           responseShape: "hierarchical",
           symbolCount: 2,
           omittedSymbolCount: 0,
+          sessionMode: "run_persistent",
+          sessionReused: false,
+          sessionOperation: 1,
+          sessionIdSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         }),
       }),
+    );
+    const diagnosticsEvent = events.find(
+      (event) =>
+        event.type === "tool.completed" &&
+        record(event.payload)?.["toolName"] === "lsp_diagnostics",
+    );
+    expect(diagnosticsEvent?.payload).toEqual(
+      expect.objectContaining({
+        details: expect.objectContaining({
+          kind: "napier.lsp-diagnostics",
+          sessionMode: "run_persistent",
+          sessionReused: true,
+          sessionOperation: 2,
+          sessionIdSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        }),
+      }),
+    );
+    const symbolsDetails = record(symbolsEvent?.payload)?.["details"];
+    const diagnosticsDetails = record(diagnosticsEvent?.payload)?.["details"];
+    expect(record(diagnosticsDetails)?.["sessionIdSha256"]).not.toBe(
+      record(symbolsDetails)?.["sessionIdSha256"],
     );
     const durableSymbols = JSON.stringify(
       events.filter(

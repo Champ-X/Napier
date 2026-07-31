@@ -9,9 +9,9 @@ import {
   runBoundLspSourceSession,
 } from "./lsp-diagnostics.js";
 import {
+  lspSessionEvidence,
   MAX_LSP_PROTOCOL_BYTES,
   MAX_LSP_STDERR_CHARS,
-  runLspProtocolSession,
 } from "./lsp-protocol-session.js";
 import {
   canonicalLspLocations,
@@ -57,25 +57,19 @@ export class LspDefinitionRunner {
         label: "LSP definition",
         abortedMessage: "LSP definition was aborted",
       },
-      (child, protocolRequest, signal) =>
-        runLspProtocolSession(
-          child,
-          protocolRequest,
-          (connection, targetUri) => {
-            const ready = waitForLspTargetReady(connection, targetUri);
-            return async () => {
-              await ready;
-              return connection.sendRequest("textDocument/definition", {
-                textDocument: { uri: targetUri },
-                position: {
-                  line: request.line - 1,
-                  character: request.character - 1,
-                },
-              });
-            };
-          },
-          signal,
-        ),
+      (connection, targetUri) => {
+        const ready = waitForLspTargetReady(connection, targetUri);
+        return async () => {
+          await ready;
+          return connection.sendRequest("textDocument/definition", {
+            textDocument: { uri: targetUri },
+            position: {
+              line: request.line - 1,
+              character: request.character - 1,
+            },
+          });
+        };
+      },
       (prepared) =>
         validateLspSourcePosition(prepared.source, request, "LSP definition"),
     );
@@ -143,6 +137,7 @@ export class LspDefinitionRunner {
           processGroupTermination: true,
         }),
       ),
+      ...lspSessionEvidence(execution),
       timeoutMs: prepared.timeoutMs,
       durationMs,
       protocolBytes: execution.protocolBytes,

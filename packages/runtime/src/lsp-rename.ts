@@ -17,9 +17,9 @@ import {
   workspaceLspLocation,
 } from "./lsp-locations.js";
 import {
+  lspSessionEvidence,
   MAX_LSP_PROTOCOL_BYTES,
   MAX_LSP_STDERR_CHARS,
-  runLspProtocolSession,
 } from "./lsp-protocol-session.js";
 import {
   assertLspRenamePreviewBytes,
@@ -84,41 +84,35 @@ export class LspRenameRunner {
         label: "LSP rename",
         abortedMessage: "LSP rename was aborted",
       },
-      (child, protocolRequest, signal) =>
-        runLspProtocolSession(
-          child,
-          protocolRequest,
-          (connection, targetUri) => {
-            const ready = waitForLspTargetReady(connection, targetUri);
-            return async (): Promise<ProtocolRenameResult> => {
-              await ready;
-              const position = {
-                line: request.line - 1,
-                character: request.character - 1,
-              };
-              const prepare = await connection.sendRequest(
-                "textDocument/prepareRename",
-                {
-                  textDocument: { uri: targetUri },
-                  position,
-                },
-              );
-              if (prepare === null || prepare === undefined) {
-                return { prepare: null, workspaceEdit: null };
-              }
-              const workspaceEdit = await connection.sendRequest(
-                "textDocument/rename",
-                {
-                  textDocument: { uri: targetUri },
-                  position,
-                  newName: request.newName,
-                },
-              );
-              return { prepare, workspaceEdit };
-            };
-          },
-          signal,
-        ),
+      (connection, targetUri) => {
+        const ready = waitForLspTargetReady(connection, targetUri);
+        return async (): Promise<ProtocolRenameResult> => {
+          await ready;
+          const position = {
+            line: request.line - 1,
+            character: request.character - 1,
+          };
+          const prepare = await connection.sendRequest(
+            "textDocument/prepareRename",
+            {
+              textDocument: { uri: targetUri },
+              position,
+            },
+          );
+          if (prepare === null || prepare === undefined) {
+            return { prepare: null, workspaceEdit: null };
+          }
+          const workspaceEdit = await connection.sendRequest(
+            "textDocument/rename",
+            {
+              textDocument: { uri: targetUri },
+              position,
+              newName: request.newName,
+            },
+          );
+          return { prepare, workspaceEdit };
+        };
+      },
       (prepared) =>
         validateLspSourcePosition(prepared.source, request, "LSP rename"),
     );
@@ -232,6 +226,7 @@ export class LspRenameRunner {
           processGroupTermination: true,
         }),
       ),
+      ...lspSessionEvidence(execution),
       timeoutMs: prepared.timeoutMs,
       durationMs,
       protocolBytes: execution.protocolBytes,

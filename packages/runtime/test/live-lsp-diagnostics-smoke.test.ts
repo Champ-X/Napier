@@ -119,6 +119,119 @@ describeLive("live LSP diagnostics smoke", () => {
     store.close();
   }, 30_000);
 
+  it("reuses one real sandboxed language server across Agent tools", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-lsp-session-workspace-"),
+    );
+    temporaryRoots.push(workspaceRoot);
+    const targetPath = "persistent-session.ts";
+    const source = [
+      "export class PersistentSession {",
+      "  value(): number {",
+      "    return 1;",
+      "  }",
+      "}",
+      "",
+    ].join("\n");
+    await Promise.all([
+      writeFile(
+        path.join(workspaceRoot, "tsconfig.json"),
+        JSON.stringify({ compilerOptions: { strict: true, noEmit: true } }),
+      ),
+      writeFile(path.join(workspaceRoot, targetPath), source),
+    ]);
+    const store = new LocalStore({
+      workspaceRoot,
+      dataRoot: path.join(workspaceRoot, ".napier"),
+    });
+    await store.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["lsp_symbols", "lsp_diagnostics"],
+    });
+    const thread = await store.createThread({
+      title: "Live persistent LSP Session",
+      agentId: agent.id,
+    });
+    const provider = fauxProvider({ provider: "live-lsp-session-smoke" });
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("lsp_symbols", { path: targetPath, maxSymbols: 20 }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("lsp_diagnostics", { path: targetPath }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        "The same sandboxed language server inspected symbols and diagnostics.",
+      ),
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      createPlatformSandboxAdapter(),
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Inspect symbols and diagnostics through one LSP Session.",
+      model: { provider: "live-lsp-session-smoke", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    const completed = (await store.listEvents(thread.id)).filter(
+      (event) =>
+        event.type === "tool.completed" &&
+        event.payload &&
+        !Array.isArray(event.payload) &&
+        typeof event.payload === "object" &&
+        (event.payload["toolName"] === "lsp_symbols" ||
+          event.payload["toolName"] === "lsp_diagnostics"),
+    );
+    expect(completed).toHaveLength(2);
+    const firstDetails =
+      completed[0]?.payload &&
+      !Array.isArray(completed[0].payload) &&
+      typeof completed[0].payload === "object" &&
+      completed[0].payload["details"] &&
+      !Array.isArray(completed[0].payload["details"]) &&
+      typeof completed[0].payload["details"] === "object"
+        ? completed[0].payload["details"]
+        : {};
+    const secondDetails =
+      completed[1]?.payload &&
+      !Array.isArray(completed[1].payload) &&
+      typeof completed[1].payload === "object" &&
+      completed[1].payload["details"] &&
+      !Array.isArray(completed[1].payload["details"]) &&
+      typeof completed[1].payload["details"] === "object"
+        ? completed[1].payload["details"]
+        : {};
+    expect(firstDetails).toEqual(
+      expect.objectContaining({
+        sessionMode: "run_persistent",
+        sessionReused: false,
+        sessionOperation: 1,
+      }),
+    );
+    expect(secondDetails).toEqual(
+      expect.objectContaining({
+        sessionMode: "run_persistent",
+        sessionReused: true,
+        sessionOperation: 2,
+        sessionIdSha256: firstDetails["sessionIdSha256"],
+      }),
+    );
+    expect(JSON.stringify(completed)).not.toContain(targetPath);
+    expect(JSON.stringify(completed)).not.toContain("PersistentSession");
+    store.close();
+  }, 30_000);
+
   it("returns real semantic document symbols through the Agent sandbox", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-lsp-symbols-workspace-"),
