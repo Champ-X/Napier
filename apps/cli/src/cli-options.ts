@@ -39,6 +39,11 @@ export interface CliBranchOptions extends CliWorkspaceOptions {
   title?: string;
 }
 
+export interface CliRpcOptions {
+  workspace: string;
+  dataRoot?: string;
+}
+
 export interface CliWorkflowOptions extends CliExecutionOptions {
   manifestPath: string;
   inputJson?: string;
@@ -62,6 +67,7 @@ export type CliAction =
   | { kind: "run"; options: CliRunOptions }
   | { kind: "resume"; options: CliResumeOptions }
   | { kind: "branch"; options: CliBranchOptions }
+  | { kind: "rpc"; options: CliRpcOptions }
   | { kind: "workflow"; options: CliWorkflowOptions };
 
 const RUN_VALUE_OPTIONS = new Set([
@@ -89,6 +95,7 @@ const BRANCH_VALUE_OPTIONS = new Set([
   "--from-seq",
   "--title",
 ]);
+const RPC_VALUE_OPTIONS = new Set(["--workspace", "--data-root"]);
 const WORKFLOW_VALUE_OPTIONS = new Set([
   "--workspace",
   "--data-root",
@@ -125,6 +132,7 @@ export function parseCliArgs(argv: string[]): CliAction {
     command !== "run" &&
     command !== "resume" &&
     command !== "branch" &&
+    command !== "rpc" &&
     command !== "workflow"
   ) {
     throw new Error("Unknown command");
@@ -140,12 +148,15 @@ export function parseCliArgs(argv: string[]): CliAction {
         ? RESUME_VALUE_OPTIONS
         : command === "branch"
           ? BRANCH_VALUE_OPTIONS
-          : WORKFLOW_VALUE_OPTIONS,
+          : command === "rpc"
+            ? RPC_VALUE_OPTIONS
+            : WORKFLOW_VALUE_OPTIONS,
     command === "workflow" ? WORKFLOW_FLAG_OPTIONS : new Set(),
   );
   if (command === "run") return parseRunOptions(values, jsonl);
   if (command === "resume") return parseResumeOptions(values, jsonl);
   if (command === "branch") return parseBranchOptions(values, jsonl);
+  if (command === "rpc") return parseRpcOptions(values, jsonl);
   return parseWorkflowOptions(values, flags, jsonl);
 }
 
@@ -235,6 +246,22 @@ function parseBranchOptions(
         ? { dataRoot: requiredValue(values, "--data-root") }
         : {}),
       ...(title ? { title } : {}),
+    },
+  };
+}
+
+function parseRpcOptions(
+  values: Map<string, string>,
+  jsonl: boolean,
+): Extract<CliAction, { kind: "rpc" }> {
+  if (jsonl) throw new Error("--jsonl cannot be used with rpc");
+  return {
+    kind: "rpc",
+    options: {
+      workspace: requiredValue(values, "--workspace"),
+      ...(values.has("--data-root")
+        ? { dataRoot: requiredValue(values, "--data-root") }
+        : {}),
     },
   };
 }
@@ -494,12 +521,14 @@ Usage:
   napier run --workspace <path> --prompt <text> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
+  napier rpc --workspace <path> [options]
   napier workflow --workspace <path> --manifest <path> [options]
 
 Commands:
   run                    Start a new Run on a new or existing Thread
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
+  rpc                    Serve local JSON-RPC 2.0 over stdio
   workflow               Execute or resume a typed Plan/Blueprint Workflow
 
 Workspace options:
@@ -524,6 +553,10 @@ Branch options:
   --thread <thread-id>   Source Thread
   --from-seq <n>         Existing source Ledger sequence
   --title <text>         Optional branch title
+
+RPC options:
+  --workspace <path>     Workspace served by the long-lived Runtime
+  --data-root <path>     Napier state directory (default: <workspace>/.napier)
 
 Workflow options:
   --manifest <path>      Workspace-relative Workflow manifest JSON

@@ -6,6 +6,19 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a versioned local stdio JSON-RPC 2.0 Agent entry. `napier rpc` keeps one
+  `LocalAgentRuntime` open and routes Agent run, continuation, and interrupted
+  recovery through the existing `EmbeddedAgentService`. Request-bound durable
+  events stream as hash-bound `napier/event` notifications;
+  `$/cancelRequest`, EOF, SIGINT, SIGTERM, `shutdown`, `exit`, and stdout
+  failure cancel and await active Runs before Process/MCP/SQLite shutdown.
+  Strict protocol-v1 contracts, UTF-8 and 1 MiB line bounds, exact fields,
+  ModelRef/resource validation, four-request admission, duplicate-ID rejection,
+  serialized stdout backpressure, stable errors, and hash-only internal
+  diagnostics protect the process boundary.
+  Protocol, lifecycle, cancellation, concurrency, privacy, built subprocess,
+  portable Replay, and two-Run manual dogfood coverage prove the path without
+  adding a network listener, Store access, or another Agent Loop.
 - Added write-linked relevant-test verification for TypeScript and JavaScript
   changes. When a non-observe Agent explicitly enables a write tool and
   `verify_workspace`, `apply_patch` and verified `lsp_rename_apply` commits bind

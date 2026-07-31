@@ -1,7 +1,5 @@
-import { once } from "node:events";
-import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
-import type { Writable } from "node:stream";
+import type { Readable, Writable } from "node:stream";
 
 import type {
   ExecutionPlanWorkflowExperimentResultFrame,
@@ -39,13 +37,17 @@ import {
   type CliRunOptions,
   type CliWorkflowOptions,
 } from "./cli-options.js";
+import { writeLine } from "./cli-output.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
+import { executeRpc } from "./rpc-cli.js";
+import { canonicalWorkspace } from "./workspace-path.js";
 
 export { CLI_HELP, CLI_VERSION, parseCliArgs };
 
 export interface CliIo {
   cwd: string;
   env: Readonly<Record<string, string | undefined>>;
+  stdin?: Readable;
   stdout: Writable;
   stderr: Writable;
 }
@@ -97,6 +99,9 @@ export async function runCli(
   }
   if (action.kind === "workflow") {
     return executeWorkflow(action.options, io, dependencies, parentSignal);
+  }
+  if (action.kind === "rpc") {
+    return executeRpc(action.options, io, dependencies, parentSignal);
   }
   return executeBranch(action.options, io, dependencies, parentSignal);
 }
@@ -631,16 +636,6 @@ async function newThread(
   });
 }
 
-async function canonicalWorkspace(
-  candidate: string,
-  cwd: string,
-): Promise<string> {
-  const workspaceRoot = await realpath(path.resolve(cwd, candidate));
-  const info = await stat(workspaceRoot);
-  if (!info.isDirectory()) throw new Error("CLI workspace must be a directory");
-  return workspaceRoot;
-}
-
 function latestAssistantText(events: RunEvent[], runId: string): string {
   for (let index = events.length - 1; index >= 0; index -= 1) {
     const event = events[index]!;
@@ -674,11 +669,6 @@ function signedNumber(value: number, fractionDigits?: number): string {
       ? String(value)
       : value.toFixed(fractionDigits);
   return value > 0 ? `+${text}` : text;
-}
-
-async function writeLine(stream: Writable, text: string): Promise<void> {
-  if (stream.write(`${text}\n`)) return;
-  await once(stream, "drain");
 }
 
 function errorMessage(error: unknown): string {

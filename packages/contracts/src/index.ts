@@ -7833,6 +7833,8 @@ export interface CreateBranchRequest {
   title?: string;
 }
 
+export * from "./rpc.js";
+
 export type StreamFrame =
   | { type: "event"; event: RunEvent; eventSha256: string }
   | {

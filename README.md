@@ -33,6 +33,10 @@ Version `0.1.0` includes:
   `napier workflow` CLI commands with human output or hash-bound JSONL, backed
   by the same Agent Runtime, model registry, policy, Sandbox, SQLite Ledger,
   and domain services as the HTTP/Web path;
+- a long-lived local `napier rpc` stdio JSON-RPC 2.0 process for Agent run,
+  continuation, interrupted-Run recovery, request-bound Ledger event
+  notifications, standard cancellation, bounded concurrency, and orderly
+  shutdown over the same embedded Runtime service used by the TypeScript SDK;
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
@@ -425,7 +429,39 @@ done frame. A future or missing source sequence fails before creating a
 Thread. The new ID can be passed to `napier run --thread` to continue through
 the normal Agent Runtime. The `branch` command itself is message-history
 branching, not model/tool checkpoint re-execution or side-effect replay. The
-CLI still does not claim an interactive TUI, RPC, ACP, or Desktop packaging.
+CLI still does not claim an interactive TUI, ACP, or Desktop packaging.
+
+Run one local Runtime as a line-delimited stdio JSON-RPC 2.0 process for an
+editor, desktop shell, or automation host:
+
+```bash
+npm run --silent napier -- rpc \
+  --workspace . \
+  --data-root .napier
+```
+
+The client first sends `initialize`, then calls `napier/agent/run` or
+`napier/agent/resume`. Every durable event produced by that request is streamed
+as a `napier/event` notification carrying the originating request ID and the
+same event SHA-256 used by SSE/JSONL before the terminal result:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"my-editor"}}}
+{"jsonrpc":"2.0","id":2,"method":"napier/agent/run","params":{"prompt":"Inspect this workspace.","model":{"provider":"napier","id":"demo"}}}
+{"jsonrpc":"2.0","method":"$/cancelRequest","params":{"id":2}}
+{"jsonrpc":"2.0","id":3,"method":"shutdown"}
+{"jsonrpc":"2.0","method":"exit"}
+```
+
+The protocol is exported by `@napier/contracts` at version `1`. Input is strict
+UTF-8 JSON with a 1 MiB line cap and at most four active Agent requests.
+Malformed, unknown, pre-initialize, duplicate, over-capacity, cancelled, and
+post-shutdown requests use stable JSON-RPC error codes; internal diagnostics
+are hash-only. EOF, SIGINT, SIGTERM, `exit`, and Runtime shutdown cancel and
+await active Runs before SQLite closes. The transport is local stdio only: it
+does not open a socket, accept remote credentials, expose Store, or implement a
+second Agent Loop. Workflow RPC, remote transport/authentication, ACP, and TUI
+remain follow-up work.
 
 Execute a versioned typed Workflow manifest through the same Runtime:
 

@@ -25,7 +25,7 @@ Audit date: 2026-07-31
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                                          |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, and a local TypeScript SDK for Agent run/continue/recovery plus Workflow definition/execution/resume exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, remote RPC, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                                                                     |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, local TypeScript SDK, and a versioned local stdio JSON-RPC Agent entry now share one Runtime. RPC supports run/continue/recovery, request-bound Ledger notifications, cancellation, bounded concurrency, and orderly shutdown without exposing Store. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Workflow RPC, authenticated remote transport, interactive TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                          |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -175,6 +175,82 @@ Observed result:
   operations, and kept the Web main entry at 130.08 KiB. The 69-file Web dist
   is bound to `2dca2d2cca3bd695`; the seven-artifact release set is bound to
   `c36d425569c74247`.
+
+## Completed Slice: Local stdio Agent RPC
+
+User scenario: an editor, desktop shell, or automation host can keep one local
+Napier Runtime open, start or continue Agent work, observe request-bound Ledger
+events, cancel in-flight work, and shut down without parsing human CLI output
+or embedding Store.
+
+Acceptance:
+
+- add `napier rpc --workspace <path> [--data-root <path>]` as a long-lived
+  line-delimited stdio JSON-RPC 2.0 process with no banner on stdout;
+- publish protocol version 1 request, notification, result, capability, and
+  error types from `@napier/contracts`;
+- require one successful `initialize` before Agent calls and enforce standard
+  `shutdown` then `exit` lifecycle semantics;
+- route `napier/agent/run` and `napier/agent/resume` through the existing
+  `EmbeddedAgentService`, preserving Agent profile, credential, policy,
+  Sandbox, Run lease, cancellation, and Ledger behavior;
+- stream every durable event from the active invocation as a `napier/event`
+  notification carrying the originating JSON-RPC request ID and the same event
+  SHA-256 used by SSE/JSONL;
+- support `$/cancelRequest`, stdin EOF, SIGINT, SIGTERM, and `exit`, aborting
+  affected work and waiting for terminal Run evidence before service shutdown;
+- validate strict UTF-8 JSON, exact fields, bounded request IDs, ModelRefs,
+  resource IDs, prompt/title sizes, a 1 MiB line limit, duplicate active IDs,
+  and at most four active Agent requests;
+- return standard parse/request/method/params errors plus stable Napier
+  lifecycle/capacity/cancellation codes; retain internal error text only as a
+  diagnostic SHA-256;
+- serialize concurrent notifications and responses with stdout backpressure;
+  never write protocol diagnostics or status banners to stdout; treat stdout
+  failure as a server failure that cancels active work and returns non-zero;
+- prove the built process can initialize, execute and continue a real demo
+  Agent Thread, shut down with code zero, and leave a valid portable Replay.
+
+Threat boundary:
+
+- this is local stdio process isolation, not a network service. It opens no
+  listener and adds no transport authentication, TLS, remote credential
+  forwarding, or multi-user boundary;
+- the parent process intentionally receives user/assistant messages and other
+  durable Run events for the requests it started. Tool-private live values,
+  credential values, and raw internal errors remain subject to existing Ledger
+  projection and RPC error redaction;
+- RPC cannot select a different workspace or data root after startup and
+  cannot access Store, extension internals, credentials, or model registries
+  directly;
+- cancellation settles through AgentRuntime; it does not claim rollback of an
+  already completed tool side effect;
+- the four-request bound is Runtime admission, not multi-tenant scheduling.
+  Same-Thread Run rules still fail closed beneath the transport;
+- Workflow RPC, remote reconnection, server-initiated replay after client loss,
+  ACP, TUI, and Desktop packaging remain outside this slice.
+
+Observed result:
+
+- protocol tests cover strict requests/notifications, initialization, Agent
+  params, unknown fields, invalid models/IDs, split CRLF input, invalid UTF-8,
+  oversized lines, serialized backpressure, and private-error hashing;
+- server tests cover initialize/method/shutdown state, run/resume event
+  routing, standard cancellation, invalid params, duplicate/capacity
+  admission, EOF cancellation, parent abort while stdin remains open, and
+  stdout failure propagation;
+- the built subprocess test recovers from one parse error, initializes,
+  performs two real demo Agent Runs on one Thread, observes lifecycle/message
+  events, shuts down with code zero, and verifies the resulting Replay bundle;
+- manual dogfood repeated the built process path against the Napier workspace:
+  two completed Runs shared one Thread, emitted contiguous Ledger sequences
+  `1..30`, returned distinct Run IDs, and closed through `shutdown` / `exit`
+  without stderr output;
+- the complete repository gate passed 1,381 tests with 24 opt-in live tests
+  skipped by default, verified 247 OpenAPI routes and 244/244 compatibility
+  operations, and kept the Web main entry at 130.08 KiB. The 69-file Web dist
+  is bound to `eb8eb48f18f729d0`; the seven-artifact release set is bound to
+  `a469310dbff20b25`.
 
 ## Completed Slice: Read-Only Sandboxed Commands
 
