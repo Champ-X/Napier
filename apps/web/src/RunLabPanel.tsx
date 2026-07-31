@@ -33,6 +33,9 @@ import {
 } from "./trace-event-summary-view";
 
 const LazyEvaluationSuitePanel = lazy(() => import("./EvaluationSuitePanel"));
+const LazyAgentMessageExperimentDesk = lazy(
+  () => import("./AgentMessageExperimentDesk"),
+);
 
 export default function RunLabPanel({
   detail,
@@ -43,6 +46,7 @@ export default function RunLabPanel({
   rightRunId,
   selectedModelKey,
   models,
+  running,
   busyAction,
   fixtureReceipt,
   replayVerificationReceipt,
@@ -55,6 +59,7 @@ export default function RunLabPanel({
   onExportFixture,
   onVerifyFixture,
   onImportFixture,
+  onOpenThread,
   onRefresh,
 }: {
   detail: WebThreadDetail | undefined;
@@ -65,6 +70,7 @@ export default function RunLabPanel({
   rightRunId: string;
   selectedModelKey: string;
   models: ModelSummary[];
+  running: boolean;
   busyAction: string | undefined;
   fixtureReceipt: FixtureTransferReceipt | undefined;
   replayVerificationReceipt: RunReplayVerificationReceipt | undefined;
@@ -77,6 +83,7 @@ export default function RunLabPanel({
   onExportFixture: () => void;
   onVerifyFixture: (file: File) => void;
   onImportFixture: (file: File) => void;
+  onOpenThread: (threadId: string) => void | Promise<void>;
   onRefresh: () => Promise<void>;
 }) {
   const canCompare =
@@ -183,6 +190,24 @@ export default function RunLabPanel({
         receipt={replayVerificationReceipt}
         onVerify={onVerifyReplay}
       />
+
+      {detail ? (
+        <Suspense
+          fallback={
+            <div className="context-loading" role="status">
+              {copy.lab.title}
+            </div>
+          }
+        >
+          <LazyAgentMessageExperimentDesk
+            detail={detail}
+            running={running}
+            selectedModelKey={selectedModelKey}
+            selectedModelConfigured={selectedModel.configured}
+            onOpenThread={onOpenThread}
+          />
+        </Suspense>
+      ) : null}
 
       {runs.length < 2 ? (
         <p className="empty-panel">{copy.lab.empty}</p>
@@ -804,8 +829,7 @@ function FixtureLedgerCard({
             {provenance.sourceEventCount.toLocaleString()}{" "}
             {copy.lab.fixture.sourceEvents} ·{" "}
             {(
-              provenance.localImportedThroughSeq ??
-              provenance.sourceEventCount
+              provenance.localImportedThroughSeq ?? provenance.sourceEventCount
             ).toLocaleString()}{" "}
             {copy.lab.fixture.localImportedCutoff}
           </small>

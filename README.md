@@ -61,7 +61,10 @@ Version `0.1.0` includes:
   optional model replacement. CLI JSONL, HTTP SSE, TypeScript SDK, and local
   stdio RPC return a hash-bound source/target status, configuration, latency,
   usage, cost, output, and tool comparison while experiment-specific Ledger
-  and Trace evidence remains prompt/result-body-free;
+  and Trace evidence remains prompt/result-body-free. A lazy Run Lab desk adds
+  browser-independent hash validation, explicit cancellation, bounded
+  comparison, target navigation, and deliberate result download without
+  adding the experiment client to the main Workbench bundle;
 - a checked product-path performance budget over three cold built-CLI JSONL
   runs, shared Runtime bootstrap, the production `read_file` executor, a
   1,000-event SQLite Thread, observed RSS, and closed-ledger database growth,
@@ -3000,6 +3003,15 @@ source Run, exact message, frozen Prompt Variable evidence, internal Branch
 lineage, Agent revision, Skill/Prompt configuration, and parent Run before
 creation. Experiment-specific Trace summaries expose only safe IDs, statuses,
 metric deltas, models, counts, and hash prefixes.
+
+The lazy Run Lab message experiment desk consumes these same routes. It lists
+only terminal modern user-message checkpoints by Run/model/sequence metadata,
+never prompt text; supports an optional configured-model replacement, fresh
+preview, explicit in-flight cancellation, comparison, target navigation, and
+CAS-named result download. The browser independently rechecks exact protocol
+fields, preview/comparison/frame hashes, metric deltas, output-hash state, tool
+set changes, streamed event hashes, final Snapshot binding, and complete event
+stream hash. Self-consistently rehashed semantic drift still fails closed.
 
 The lazy Plan Workbench experiment desk consumes those same routes rather than
 implementing a browser scheduler. Uploaded Manifest text remains browser-local

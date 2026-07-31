@@ -7,14 +7,19 @@ import {
   verifyThreadReplayBundle,
   exportThreadReplayBundle,
 } from "@napier/runtime";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createApp, createServices } from "../src/app.js";
+import {
+  executeAgentMessageExperiment,
+  previewAgentMessageExperiment,
+} from "../../web/src/agent-message-experiment-api.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
 
 afterEach(async () => {
+  vi.unstubAllGlobals();
   for (const services of openServices.splice(0)) {
     await services.shutdownLocalRuntime();
   }
@@ -102,6 +107,58 @@ describe("Agent message experiment HTTP path", () => {
         ),
       ).status,
     ).toBe("valid");
+  });
+
+  it("completes the real Web client preview and comparison path", async () => {
+    const fixture = await createFixture();
+    const app = createApp(fixture.services);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const requestPath =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(requestPath, init);
+      }),
+    );
+    const request = {
+      sourceRunId: fixture.sourceRunId,
+      sourceMessageSeq: fixture.sourceMessageSeq,
+    };
+    const preview = await previewAgentMessageExperiment(
+      fixture.sourceThreadId,
+      request,
+    );
+    const frames: string[] = [];
+    const result = await executeAgentMessageExperiment(
+      fixture.sourceThreadId,
+      {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+      preview,
+      (frame) => frames.push(frame.type),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        sourceThreadId: fixture.sourceThreadId,
+        sourceRunId: fixture.sourceRunId,
+        status: "completed",
+        experiment: expect.objectContaining({
+          comparison: expect.objectContaining({
+            target: expect.objectContaining({
+              executionMode: "agent_experiment_read_only",
+            }),
+          }),
+        }),
+      }),
+    );
+    expect(frames.at(-2)).toBe("snapshot");
+    expect(frames.at(-1)).toBe("agent_message_experiment_result");
   });
 
   it("rejects missing and stale preview bindings without creating a Branch", async () => {

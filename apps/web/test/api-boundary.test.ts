@@ -10,6 +10,7 @@ const webRoot = path.resolve(
 );
 const sourceRoot = path.join(webRoot, "src");
 const allowedFetchCallers = new Set([
+  "src/agent-message-experiment-api.ts",
   "src/api-client.ts",
   "src/api.ts",
   "src/artifact-file-api.ts",

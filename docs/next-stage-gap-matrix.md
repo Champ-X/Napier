@@ -24,8 +24,8 @@ Audit date: 2026-08-01
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and diagnostics, nearest-package write-linked relevant-test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                     |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                      |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, typed model-free Reduce aggregation, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
-| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user-message checkpoints now freeze Agent, Prompt Variable, Skill, Memory, model-history, model, and Workspace bindings, then execute in an isolated read-only Branch with source/target comparison through CLI, HTTP, SDK, RPC, Replay, and Trace. Model-call/tool-call checkpoints, Prompt/Skill/Memory/environment replacement, historical tool-result reuse or simulation, write-capable experiments, single-step/batch experiments, root-cause views, evaluation promotion, and a user-message Web desk remain.                                                                                                                                                                                                              |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. `napier experiment`, HTTP, SDK, and RPC expose the same preview-bound read-only historical-message rerun; RPC also supports Agent and typed Workflow run/resume, Approval answer-and-resume, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Authenticated remote transport, full-screen TUI, ACP, Desktop, a user-message experiment Web desk, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                        |
+| P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation. Historical user-message checkpoints now freeze Agent, Prompt Variable, Skill, Memory, model-history, model, and Workspace bindings, then execute in an isolated read-only Branch with source/target comparison through Web Run Lab, CLI, HTTP, SDK, RPC, Replay, and Trace. Model-call/tool-call checkpoints, Prompt/Skill/Memory/environment replacement, historical tool-result reuse or simulation, write-capable experiments, single-step/batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                                                                                                                                   |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. Run Lab, `napier experiment`, HTTP, SDK, and RPC expose the same preview-bound read-only historical-message rerun; RPC also supports Agent and typed Workflow run/resume, Approval answer-and-resume, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                   |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -55,8 +55,8 @@ Acceptance:
 - compare actual source and target status, configuration, model, output hash,
   latency, usage, cost, tool names, and resolved tool effects;
 - expose the same Runtime through `napier experiment`, hash-bound CLI JSONL,
-  HTTP SSE, TypeScript SDK, and local stdio RPC, with privacy-bounded Web Trace
-  and portable target Replay;
+  HTTP SSE, lazy Run Lab desk, TypeScript SDK, and local stdio RPC, with
+  privacy-bounded Web Trace and portable target Replay;
 - make pre-abort mutation-free, settle active cancellation and timeout as
   comparable cancelled targets, preserve failed targets for comparison, allow
   a new safe retry from the same source, and isolate concurrent candidates;
@@ -78,7 +78,7 @@ Threat boundary:
   bodies, paths, credentials, or raw diagnostics;
 - this slice does not claim model-call or tool-call checkpoints, result reuse,
   side-effect simulation, Prompt/Skill/Memory replacement, single-step or
-  batch debugging, promotion, or a dedicated Web experiment desk.
+  batch debugging, or promotion.
 
 Observed result:
 
@@ -92,8 +92,17 @@ Observed result:
   only with one exact `branch.created` receipt;
 - built CLI JSONL and built stdio RPC subprocesses, HTTP SSE over Hono, and the
   TypeScript SDK each execute a real local source Run and isolated target Run.
-  SDK passed 18 tests, CLI passed 86, Server passed 89, and Web passed 379 in
+  SDK passed 18 tests, CLI passed 86, Server passed 90, and Web passed 387 in
   their complete package suites;
+- the lazy Run Lab desk lists only terminal modern user-message metadata,
+  supports configured model replacement, explicit cancellation, fresh preview,
+  bounded comparison, target navigation, and CAS-named result download. Its
+  independent parser rejects prompt-bearing fields, nonterminal observations,
+  stale preview bindings, and self-consistently rehashed metric/output drift.
+  A production-dist browser smoke created a real source Run through the built
+  CLI, previewed and executed it through the desk, observed only the two
+  expected HTTP requests with no console error, confirmed the source prompt was
+  absent from the desk DOM, and navigated to the isolated completed target;
 - Web Trace renders only bounded experiment identifiers, statuses, model
   changes, metric deltas, counts, and hash prefixes and fails closed to a fixed
   receipt summary for malformed payloads;
@@ -102,14 +111,14 @@ Observed result:
   persistence. It could not execute in this environment because
   `DEEPSEEK_API_KEY` was unavailable; the attempted live gate failed before any
   network call rather than being reported as a pass;
-- `npm run check` passed 1,456 regular tests with 26 opt-in live tests skipped,
+- `npm run check` passed 1,465 regular tests with 26 opt-in live tests skipped,
   249 generated OpenAPI routes, and 244/244 compatibility operations. The
-  checked product path measured 708.0 ms to first CLI event, 855.6 ms to first
-  token, 1,167.0 ms to completion, 0.4 ms read p95, 19.3 ms for 1,000-event
+  checked product path measured 644.7 ms to first CLI event, 793.7 ms to first
+  token, 1,106.8 ms to completion, 0.3 ms read p95, 7.2 ms for 1,000-event
   projection, and 749.568 closed SQLite bytes/event;
-- the 69-file Web dist keeps the main entry at 130.08 KiB under its 150 KiB
-  budget and is bound to `de3d6afd3e50eec8`; the refreshed seven-artifact
-  release set is bound to `e777a39e1c35f332`.
+- the 74-file Web dist keeps the main entry at 130.13 KiB under its 150 KiB
+  budget and is bound to `bbde6845a8480f17`; the refreshed seven-artifact
+  release set is bound to `2d0fb184ec05ba6c`.
 
 ## Implemented Slice: Deterministic Workflow Reduce
 

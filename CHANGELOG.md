@@ -6,6 +6,16 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a lazy Run Lab message experiment desk over the controlled
+  historical-message Runtime. It lists only terminal modern user-message
+  metadata, supports configured model replacement, preview, explicit
+  cancellation, read-only execution, bounded comparison, target navigation,
+  and CAS-named result download without rendering source or target bodies.
+  The browser independently validates exact preview/comparison/frame fields and
+  hashes, recomputes metric and tool-set deltas, binds streamed event hashes to
+  the final Snapshot and complete event stream, and rejects self-consistently
+  rehashed semantic drift. The desk and its paper-ledger styles remain a
+  separate lazy chunk; the main Workbench entry stays under its release budget.
 - Added controlled historical user-message re-execution. A preview binds one
   terminal user Run and exact message to its frozen Agent revision, schema-7/8
   configuration, Prompt Variable timestamp/snapshot, Skill catalog, reviewed

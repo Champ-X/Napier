@@ -63,9 +63,9 @@ export function App() {
   const activeModel = vm.selectedModel;
   const canStartRun = Boolean(
     vm.composer.trim() &&
-      vm.detail &&
-      !vm.openOperatorDecision &&
-      activeModel.configured,
+    vm.detail &&
+    !vm.openOperatorDecision &&
+    activeModel.configured,
   );
   const modelWarningId = "composer-model-unavailable";
 
@@ -161,8 +161,8 @@ export function App() {
                   {!activeModel.configured
                     ? copy.modelUnavailable
                     : activeModel.provider === "napier"
-                    ? copy.context.demoProvider
-                    : copy.context.liveProvider}
+                      ? copy.context.demoProvider
+                      : copy.context.liveProvider}
                 </small>
                 <strong>{activeModel.id}</strong>
               </span>
@@ -505,6 +505,7 @@ export function App() {
                 rightRunId={vm.labRightRunId}
                 selectedModelKey={vm.selectedModelKey}
                 models={vm.bootstrap.models}
+                running={vm.isRunning}
                 busyAction={vm.labBusyAction}
                 fixtureReceipt={vm.labFixtureReceipt}
                 replayVerificationReceipt={vm.runReplayVerificationReceipt}
@@ -519,6 +520,7 @@ export function App() {
                 onExportFixture={() => void vm.exportThreadFixture()}
                 onVerifyFixture={(file) => void vm.verifyThreadFixture(file)}
                 onImportFixture={(file) => void vm.importThreadFixture(file)}
+                onOpenThread={vm.selectThread}
                 onRefresh={vm.refreshActiveThread}
               />
             </Suspense>

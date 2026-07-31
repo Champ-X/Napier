@@ -650,16 +650,27 @@ capability, exact cross-Thread Branch lineage, source Run/message/configuration,
 Agent revision, and current Skill/Prompt hashes before creating the target
 Run. A caller cannot obtain the mode by submitting its public string.
 
-Preview and execution are shared by `napier experiment`, HTTP SSE, TypeScript
-SDK, and local stdio RPC. Cancellation or external timeout settles a comparable
-cancelled target; Provider failure settles a comparable failed target. Retry
-creates another Branch from the source checkpoint, never a continuation of
-uncertain model state. Durable `agent.experiment.*` evidence contains bounded
-IDs, statuses, models, counts, metric deltas, timestamps, and hashes rather
-than source prompt, source output, target output, tool arguments, Memory text,
-Skill text, Workspace paths, or diagnostics. Portable target Replay accepts an
-external parent only when a unique exact `branch.created` receipt proves the
-cross-Thread lineage.
+Preview and execution are shared by `napier experiment`, HTTP SSE, the lazy
+Run Lab experiment desk, TypeScript SDK, and local stdio RPC. Cancellation or
+external timeout settles a comparable cancelled target; Provider failure
+settles a comparable failed target. Retry creates another Branch from the
+source checkpoint, never a continuation of uncertain model state. Durable
+`agent.experiment.*` evidence contains bounded IDs, statuses, models, counts,
+metric deltas, timestamps, and hashes rather than source prompt, source output,
+target output, tool arguments, Memory text, Skill text, Workspace paths, or
+diagnostics. Portable target Replay accepts an external parent only when a
+unique exact `branch.created` receipt proves the cross-Thread lineage.
+
+The browser desk remains inside the lazy Run Lab boundary. Its independent
+protocol parser requires exact fields and recomputes preview, comparison, and
+terminal-frame hashes plus metric deltas, output-hash state, and added/removed
+tool sets. The SSE client binds monotonically increasing target events back to
+the final Snapshot and complete event-stream hash. Switching Thread or
+explicitly cancelling aborts the request and invalidates the operation
+generation, preventing a stale response from repopulating the desk. The UI
+renders only source/candidate status, models, bounded metrics, tools,
+configuration fields, counts, and hash prefixes; complete target text appears
+only in its normal Ledger or deliberate local JSON download.
 
 The Plan Workbench adds a lazy Workflow Experiment Desk over the same HTTP
 boundary. It accepts a browser-local, content-verified Manifest, lets the user
@@ -799,12 +810,13 @@ The UI has ten primary projections:
   hash-only Model Context Envelope registers, plus metadata-only OpenTelemetry
   export and archived-artifact verification for a complete Thread or one Run;
 - **Run Lab**: immutable per-run replay, portable full-thread fixtures,
-  configuration drift, run deltas, snapshot-bound verdicts, and revisioned
-  multi-candidate quality gates with case evidence, append-only human truth,
-  independent reviewer panels, evaluator/rubric calibration matrices,
-  workspace-wide gold-set Casebooks, source-verified evaluator qualification,
-  execution history, portable gate receipts, trust anchors, signed envelopes,
-  public verifier anchor directories, and qualification baselines;
+  configuration drift, run deltas, preview-bound read-only user-message
+  experiments, snapshot-bound verdicts, and revisioned multi-candidate quality
+  gates with case evidence, append-only human truth, independent reviewer
+  panels, evaluator/rubric calibration matrices, workspace-wide gold-set
+  Casebooks, source-verified evaluator qualification, execution history,
+  portable gate receipts, trust anchors, signed envelopes, public verifier
+  anchor directories, and qualification baselines;
 - **Plan**: dependency DAG, step evidence, blockers, artifact manifests,
   portable Plan archive verification, reusable blueprint export/upload
   verification, and a local template shelf for saving, archiving, restoring,

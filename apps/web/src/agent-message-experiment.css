@@ -1,0 +1,484 @@
+.agent-experiment-desk {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 14px 14px 13px 19px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgb(250 247 239 / 94%), rgb(250 247 239 / 94%)),
+    repeating-linear-gradient(0deg, transparent 0 22px, rgb(70 91 78 / 9%) 23px);
+  border: 1px solid var(--rule-strong);
+  border-top: 3px double var(--ledger);
+  box-shadow:
+    3px 4px 0 rgb(59 51 38 / 7%),
+    inset 5px 0 0 rgb(168 71 50 / 78%);
+  animation: entry-rise 240ms ease-out both;
+}
+
+.agent-experiment-desk::before {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  bottom: 0;
+  width: 1px;
+  content: "";
+  background: rgb(168 71 50 / 22%);
+}
+
+.agent-experiment-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: start;
+}
+
+.agent-experiment-seal {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--vermilion);
+  background: rgb(164 75 56 / 9%);
+  border: 1px solid rgb(164 75 56 / 35%);
+  border-radius: 50%;
+  transform: rotate(5deg);
+}
+
+.agent-experiment-heading > div:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+
+.agent-experiment-heading span,
+.agent-experiment-controls > label > span,
+.agent-experiment-controls small,
+.agent-experiment-preview header span,
+.agent-experiment-sides span,
+.agent-experiment-register dt,
+.agent-experiment-comparison header span,
+.agent-experiment-metrics span,
+.agent-experiment-model-delta span,
+.agent-experiment-change-grid > div > span {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.agent-experiment-heading > div:nth-child(2) > span {
+  color: var(--vermilion);
+}
+
+.agent-experiment-heading h3,
+.agent-experiment-preview h4,
+.agent-experiment-comparison h4 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.agent-experiment-heading h3 {
+  font-size: 15px;
+}
+
+.agent-experiment-heading p {
+  max-width: 44em;
+  margin: 2px 0 0;
+  font-family: var(--serif);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.agent-experiment-folio {
+  min-width: 34px;
+  padding: 4px 5px;
+  text-align: center;
+  color: var(--vermilion) !important;
+  background: rgb(164 75 56 / 7%);
+  border: 1px solid rgb(164 75 56 / 22%);
+}
+
+.agent-experiment-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.agent-experiment-controls > label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.agent-experiment-controls select,
+.agent-experiment-title-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 8px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink);
+  background: rgb(255 253 247 / 88%);
+  border: 1px solid var(--rule-strong);
+  border-radius: 0;
+}
+
+.agent-experiment-controls select:focus-visible,
+.agent-experiment-title-field input:focus-visible,
+.agent-experiment-model:has(input:focus-visible) {
+  outline: 2px solid rgb(164 75 56 / 34%);
+  outline-offset: 1px;
+}
+
+.agent-experiment-model {
+  position: relative;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px !important;
+  align-items: center;
+  padding: 7px 8px;
+  background: rgb(255 253 247 / 72%);
+  border: 1px solid var(--rule);
+}
+
+.agent-experiment-model input {
+  width: 13px;
+  height: 13px;
+  accent-color: var(--vermilion);
+}
+
+.agent-experiment-model > span {
+  display: grid;
+  gap: 2px;
+}
+
+.agent-experiment-model strong {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-experiment-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.agent-experiment-actions button,
+.agent-experiment-preview button,
+.agent-experiment-comparison button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  min-height: 27px;
+  padding: 0 9px;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--paper-bright);
+  background: var(--ledger);
+  border: 1px solid var(--ledger);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.agent-experiment-actions button.is-secondary,
+.agent-experiment-preview button.is-secondary,
+.agent-experiment-comparison button.is-secondary {
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--rule-strong);
+}
+
+.agent-experiment-actions button:disabled,
+.agent-experiment-preview button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.agent-experiment-empty,
+.agent-experiment-error,
+.agent-experiment-safety {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.agent-experiment-empty {
+  padding: 12px;
+  text-align: center;
+  border: 1px dashed var(--rule);
+}
+
+.agent-experiment-preview,
+.agent-experiment-comparison {
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  background: rgb(255 253 247 / 80%);
+  border: 1px solid var(--rule-strong);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 42%);
+}
+
+.agent-experiment-preview > header,
+.agent-experiment-comparison > header {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.agent-experiment-preview h4,
+.agent-experiment-comparison h4 {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.agent-experiment-readonly {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 5px;
+  color: var(--ledger) !important;
+  background: var(--ledger-soft);
+  border: 1px solid rgb(92 118 101 / 28%);
+}
+
+.agent-experiment-sides {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.agent-experiment-sides::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 17px;
+  height: 17px;
+  content: "↔";
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--vermilion);
+  background: var(--paper-bright);
+  border: 1px solid var(--rule-strong);
+  transform: translate(-50%, -50%) rotate(-4deg);
+}
+
+.agent-experiment-sides > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 11px;
+  background: rgb(250 247 239 / 96%);
+}
+
+.agent-experiment-sides > div:last-child {
+  text-align: right;
+}
+
+.agent-experiment-sides strong,
+.agent-experiment-model-delta strong {
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink);
+}
+
+.agent-experiment-sides small {
+  font-family: var(--mono);
+  font-size: 6px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+.agent-experiment-register,
+.agent-experiment-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+
+.agent-experiment-register > div,
+.agent-experiment-metrics > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 8px;
+  background: rgb(250 247 239 / 96%);
+}
+
+.agent-experiment-register dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: 7px;
+  color: var(--ink);
+}
+
+.agent-experiment-register code,
+.agent-experiment-preview footer code,
+.agent-experiment-comparison footer code {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+}
+
+.agent-experiment-preview footer,
+.agent-experiment-comparison footer {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px dotted var(--rule-strong);
+}
+
+.agent-experiment-preview footer code,
+.agent-experiment-comparison footer code {
+  margin-right: auto;
+}
+
+.agent-experiment-preview footer > span {
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-faint);
+}
+
+.agent-experiment-comparison > header > span {
+  padding: 4px 5px;
+  border: 1px solid var(--rule);
+}
+
+.agent-experiment-comparison > header > span.is-changed {
+  color: var(--vermilion);
+  background: rgb(164 75 56 / 8%);
+  border-color: rgb(164 75 56 / 27%);
+}
+
+.agent-experiment-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.agent-experiment-metrics strong {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ledger);
+}
+
+.agent-experiment-model-delta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 7px,
+      rgb(91 104 95 / 5%) 7px 8px
+    ),
+    rgb(250 247 239 / 92%);
+  border: 1px solid var(--rule);
+}
+
+.agent-experiment-model-delta > div {
+  display: grid;
+  gap: 3px;
+}
+
+.agent-experiment-model-delta > div:last-child {
+  text-align: right;
+}
+
+.agent-experiment-change-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.agent-experiment-change-grid > div {
+  min-width: 0;
+  padding: 7px;
+  border-left: 2px solid var(--rule-strong);
+}
+
+.agent-experiment-change-grid ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 0;
+  margin: 5px 0 0;
+  list-style: none;
+}
+
+.agent-experiment-change-grid li {
+  padding: 2px 4px;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+  font-size: 6px;
+  color: var(--ink-soft);
+  background: var(--paper-deep);
+}
+
+.agent-experiment-change-grid p {
+  margin: 5px 0 0;
+  font-family: var(--serif);
+  font-size: 7px;
+  color: var(--ink-faint);
+}
+
+.agent-experiment-error {
+  padding: 7px 8px;
+  color: var(--vermilion);
+  background: rgb(164 75 56 / 7%);
+  border-left: 2px solid var(--vermilion);
+}
+
+.agent-experiment-safety {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding-top: 8px;
+  border-top: 1px dotted var(--rule-strong);
+}
+
+@media (max-width: 760px) {
+  .agent-experiment-controls,
+  .agent-experiment-sides,
+  .agent-experiment-change-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-experiment-sides::after {
+    display: none;
+  }
+
+  .agent-experiment-sides > div:last-child,
+  .agent-experiment-model-delta > div:last-child {
+    text-align: left;
+  }
+
+  .agent-experiment-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
