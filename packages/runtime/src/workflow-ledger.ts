@@ -29,6 +29,12 @@ import {
   workflowMapNodeMetadata,
   workflowMapNodeMetadataMatches,
 } from "./workflow-map-evidence.js";
+import {
+  hasWorkflowReduceCompletionEvent,
+  readWorkflowReduceOutputEvidence,
+  workflowReduceNodeMetadata,
+  workflowReduceNodeMetadataMatches,
+} from "./workflow-reduce-evidence.js";
 import { workflowPlanStepPayload } from "./workflow-runtime-model.js";
 import {
   assertWorkflowValue,
@@ -203,6 +209,28 @@ export class ExecutionPlanWorkflowLedger {
         ),
       });
     }
+    if (node.type === "reduce") {
+      const attempt = await this.attemptForRun(
+        context.threadId,
+        context.plan.id,
+        node.id,
+        runId,
+      );
+      return readWorkflowReduceOutputEvidence({
+        events: await this.store.listEvents(context.threadId),
+        node,
+        runId,
+        planId: context.plan.id,
+        manifestSha256: context.manifest.contentSha256,
+        input,
+        inputSha256,
+        attempt,
+        assistantOutput: await this.nodeAssistantOutput(
+          context.threadId,
+          runId,
+        ),
+      });
+    }
     const completions = (await this.store.listEvents(context.threadId)).filter(
       (event) =>
         event.runId === runId &&
@@ -350,6 +378,20 @@ export class ExecutionPlanWorkflowLedger {
   ): Promise<boolean> {
     if (node.type !== "map") return false;
     return hasWorkflowMapCompletionEvent(
+      await this.store.listEvents(context.threadId),
+      context.plan.id,
+      node.id,
+      runId,
+    );
+  }
+
+  async hasNodeReduceCompletionEvent(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    runId: string,
+  ): Promise<boolean> {
+    if (node.type !== "reduce") return false;
+    return hasWorkflowReduceCompletionEvent(
       await this.store.listEvents(context.threadId),
       context.plan.id,
       node.id,
@@ -865,6 +907,9 @@ export function workflowNodeEventMetadataMatches(
   if (node.type === "map") {
     return workflowMapNodeMetadataMatches(node, payload);
   }
+  if (node.type === "reduce") {
+    return workflowReduceNodeMetadataMatches(node, payload);
+  }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";
 }
 
@@ -892,6 +937,9 @@ export function workflowNodeEventMetadata(
   }
   if (node.type === "map") {
     return { ...workflowMapNodeMetadata(node), ...condition };
+  }
+  if (node.type === "reduce") {
+    return { ...workflowReduceNodeMetadata(node), ...condition };
   }
   return { nodeType: "agent", ...condition };
 }

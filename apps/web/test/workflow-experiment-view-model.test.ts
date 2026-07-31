@@ -132,6 +132,29 @@ describe("Workflow experiment Workbench view model", () => {
     ).rejects.toThrow("Map node");
   });
 
+  it("accepts bounded Reduce nodes and rejects unsafe value paths", async () => {
+    const manifest = workflowReduceManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const unsafe = structuredClone(manifest);
+    unsafe.nodes[0]!.valuePath = ["__proto__"];
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(unsafe)),
+    ).rejects.toThrow("path segment");
+
+    const invalidCount = structuredClone(manifest);
+    (
+      invalidCount.nodes[0] as {
+        operation: string;
+      }
+    ).operation = "count";
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(invalidCount)),
+    ).rejects.toThrow("Reduce node");
+  });
+
   it("projects bounded comparison data without output bodies", () => {
     const comparison = workflowComparison();
     const view = projectWorkflowExperimentComparison(comparison);
@@ -468,6 +491,63 @@ function workflowMapManifest() {
         maxConcurrency: 3,
         itemTimeoutMs: 5_000,
         timeoutMs: 15_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowReduceManifest() {
+  const base = workflowManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const itemsSchema = {
+    type: "array" as const,
+    items: {
+      type: "object" as const,
+      properties: {
+        score: { type: "integer" as const },
+      },
+      required: ["score"],
+      additionalProperties: false as const,
+    },
+    minItems: 0,
+    maxItems: 4,
+  };
+  const content = {
+    ...baseContent,
+    inputSchema: {
+      type: "object" as const,
+      properties: { items: itemsSchema },
+      required: ["items"],
+      additionalProperties: false as const,
+    },
+    outputSchema: { type: "integer" as const },
+    nodes: [
+      {
+        id: "report",
+        type: "reduce" as const,
+        inputBindings: {
+          items: {
+            source: "workflow" as const,
+            path: ["items"],
+          },
+        },
+        inputSchema: {
+          type: "object" as const,
+          properties: { items: itemsSchema },
+          required: ["items"],
+          additionalProperties: false as const,
+        },
+        outputSchema: { type: "integer" as const },
+        itemsPath: ["items"],
+        valuePath: ["score"],
+        operation: "sum" as const,
+        timeoutMs: 5_000,
         maxAttempts: 2,
       },
     ],

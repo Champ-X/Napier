@@ -2,7 +2,10 @@ import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import type { ExecutionPlanWorkflowMapNode } from "@napier/contracts";
+import type {
+  ExecutionPlanWorkflowMapNode,
+  ExecutionPlanWorkflowReduceNode,
+} from "@napier/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AgentRuntime } from "../src/agent-runtime.js";
@@ -75,6 +78,15 @@ describeLive("live bounded read-only Workflow Map smoke", () => {
             verification:
               "The object contains only id and length and satisfies the declared schema.",
           },
+          {
+            id: "total_length",
+            title: "Total document lengths",
+            description:
+              "Deterministically sum the typed length from every Map result.",
+            verification:
+              "The output equals the sum of every extracted length.",
+            dependsOn: ["extract"],
+          },
         ],
       });
       const blueprint = await createExecutionPlanBlueprint(
@@ -100,7 +112,7 @@ describeLive("live bounded read-only Workflow Map smoke", () => {
         required: ["id", "length"],
         additionalProperties: false as const,
       };
-      const outputSchema = {
+      const mapOutputSchema = {
         type: "array" as const,
         items: resultSchema,
         minItems: 2,
@@ -125,7 +137,7 @@ describeLive("live bounded read-only Workflow Map smoke", () => {
           required: ["documents"],
           additionalProperties: false,
         },
-        outputSchema,
+        outputSchema: mapOutputSchema,
         itemsPath: ["documents"],
         model: { provider: "deepseek", id: modelId },
         maxConcurrency: 2,
@@ -133,11 +145,30 @@ describeLive("live bounded read-only Workflow Map smoke", () => {
         timeoutMs: 90_000,
         maxAttempts: 1,
       };
+      const reduceNode: ExecutionPlanWorkflowReduceNode = {
+        id: "total_length",
+        type: "reduce",
+        inputBindings: {
+          items: { source: "node", nodeId: "extract" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { items: mapOutputSchema },
+          required: ["items"],
+          additionalProperties: false,
+        },
+        outputSchema: { type: "integer", minimum: 2, maximum: 40 },
+        itemsPath: ["items"],
+        valuePath: ["length"],
+        operation: "sum",
+        timeoutMs: 5_000,
+        maxAttempts: 1,
+      };
       const manifest = defineExecutionPlanWorkflow({
-        name: "Live bounded document Map",
+        name: "Live bounded document Map Reduce",
         version: 1,
         description:
-          "Exercise ordered typed fan-out through two real model calls.",
+          "Exercise ordered typed fan-out and deterministic aggregation.",
         blueprint,
         inputSchema: {
           type: "object",
@@ -152,9 +183,9 @@ describeLive("live bounded read-only Workflow Map smoke", () => {
           required: ["documents"],
           additionalProperties: false,
         },
-        outputSchema,
-        outputNodeId: "extract",
-        nodes: [node],
+        outputSchema: reduceNode.outputSchema,
+        outputNodeId: "total_length",
+        nodes: [node, reduceNode],
         maxConcurrency: 4,
       });
       const thread = await store.createThread({
@@ -182,16 +213,29 @@ describeLive("live bounded read-only Workflow Map smoke", () => {
       expect(result).toEqual(
         expect.objectContaining({
           status: "completed",
-          output: [
-            { id: "doc_alpha", length: 5 },
-            { id: "doc_beta", length: 4 },
+          output: 9,
+          nodeResults: [
+            expect.objectContaining({
+              nodeId: "extract",
+              output: [
+                { id: "doc_alpha", length: 5 },
+                { id: "doc_beta", length: 4 },
+              ],
+            }),
+            expect.objectContaining({
+              nodeId: "total_length",
+              output: 9,
+            }),
           ],
         }),
       );
       const runs = store.listRuns(thread.id);
-      const coordinator = runs.find((run) => !run.parentRunId)!;
+      const coordinator = runs.find((run) =>
+        runs.some((candidate) => candidate.parentRunId === run.id),
+      )!;
       const children = runs.filter((run) => run.parentRunId === coordinator.id);
-      expect(runs).toHaveLength(3);
+      const reduceRunId = result.nodeResults[1]!.runId!;
+      expect(runs).toHaveLength(4);
       expect(children).toHaveLength(2);
       expect(
         children.every(
@@ -204,6 +248,16 @@ describeLive("live bounded read-only Workflow Map smoke", () => {
       expect(
         events.filter((event) => event.type === "workflow.map.item.completed"),
       ).toHaveLength(2);
+      expect(
+        events.filter((event) => event.type === "workflow.reduce.completed"),
+      ).toHaveLength(1);
+      expect(
+        events.filter(
+          (event) =>
+            event.runId === reduceRunId &&
+            (event.type === "model.response" || event.type.startsWith("tool.")),
+        ),
+      ).toHaveLength(0);
       expect(
         verifyThreadReplayBundle(
           await exportThreadReplayBundle(store, thread.id),

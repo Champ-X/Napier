@@ -157,6 +157,63 @@ export async function defineRpcExperimentWorkflowManifest(input: {
   }
 }
 
+export async function defineRpcReduceWorkflowManifest(input: {
+  workspaceRoot: string;
+  dataRoot: string;
+}): Promise<ExecutionPlanWorkflowManifest> {
+  const services = await createLocalAgentRuntime({
+    ...input,
+    sandbox: new UnsupportedSandboxAdapter("rpc-reduce-workflow-fixture"),
+  });
+  try {
+    const valuesSchema = {
+      type: "array" as const,
+      items: { type: "integer" as const },
+      minItems: 0,
+      maxItems: 16,
+    };
+    const requestSchema = objectSchema({ values: valuesSchema });
+    return (
+      await services.embeddedWorkflows.define({
+        name: "RPC deterministic Reduce",
+        version: 1,
+        description: "Sum typed values through a model-free Reduce node.",
+        plan: {
+          objective: "Return one deterministic RPC sum.",
+          steps: [
+            {
+              id: "total",
+              title: "Total values",
+              description: "Sum every typed integer.",
+              verification: "Return the exact deterministic sum.",
+            },
+          ],
+        },
+        inputSchema: requestSchema,
+        outputSchema: { type: "integer" },
+        outputNodeId: "total",
+        nodes: [
+          {
+            id: "total",
+            type: "reduce",
+            inputBindings: {
+              values: { source: "workflow", path: ["values"] },
+            },
+            inputSchema: objectSchema({ values: valuesSchema }),
+            outputSchema: { type: "integer" },
+            itemsPath: ["values"],
+            operation: "sum",
+            timeoutMs: 5_000,
+            maxAttempts: 2,
+          },
+        ],
+      })
+    ).manifest;
+  } finally {
+    await services.shutdown();
+  }
+}
+
 export async function defineRpcBlockedWorkflowManifest(input: {
   workspaceRoot: string;
   dataRoot: string;

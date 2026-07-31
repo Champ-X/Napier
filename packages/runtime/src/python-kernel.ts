@@ -27,6 +27,7 @@ import {
 export const DEFAULT_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 120_000;
 export const MIN_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 10_000;
 export const MAX_PYTHON_KERNEL_SESSION_TIMEOUT_MS = 120_000;
+export const PYTHON_KERNEL_PROTOCOL_RESULT_GRACE_MS = 5_000;
 
 const MAX_PYTHON_KERNEL_PROTOCOL_CHARS = 24 * 1024;
 const MAX_PYTHON_KERNEL_STDERR_MARKER_CHARS =
@@ -279,7 +280,8 @@ export class PythonKernelManager {
     timeoutMs: number;
     signal?: AbortSignal;
   }): Promise<PythonKernelProtocolResult> {
-    const deadline = Date.now() + request.timeoutMs + 1_000;
+    const deadline =
+      Date.now() + request.timeoutMs + PYTHON_KERNEL_PROTOCOL_RESULT_GRACE_MS;
     let cursor = request.afterCursor;
     let buffer = "";
     let stderrBuffer = "";

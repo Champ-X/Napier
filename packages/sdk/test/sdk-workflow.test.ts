@@ -40,6 +40,12 @@ type MapReport = Array<{
   item: string;
 }>;
 
+type ReduceRequest = {
+  values: number[];
+};
+
+type ReduceReport = number;
+
 afterEach(async () => {
   await Promise.all(
     temporaryRoots
@@ -350,6 +356,44 @@ describe("Napier TypeScript SDK Workflows", () => {
     ]);
     await client.close();
   });
+
+  it("defines and executes a deterministic Reduce through the SDK", async () => {
+    const fixture = await createFixture("reduce-execution");
+    const client = await createNapierClient({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("sdk-reduce-execution-test"),
+    });
+    const workflow = await client.defineWorkflow<ReduceRequest, ReduceReport>(
+      reduceWorkflowDefinition(),
+    );
+    const eventTypes: string[] = [];
+    const execution = await client.runWorkflow({
+      workflow,
+      input: { values: [2, 3, 4] },
+      onEvent: (event) => {
+        eventTypes.push(event.type);
+      },
+    });
+
+    expect(execution).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: 9,
+        result: expect.objectContaining({
+          nodeResults: [
+            expect.objectContaining({
+              nodeId: "total",
+              status: "completed",
+              output: 9,
+            }),
+          ],
+        }),
+      }),
+    );
+    expect(eventTypes).toContain("workflow.reduce.completed");
+    await client.close();
+  });
 });
 
 function draftWorkflowDefinition(): DefineNapierWorkflowInput<
@@ -503,6 +547,46 @@ function mapWorkflowDefinition(): DefineNapierWorkflowInput<
         maxConcurrency: 3,
         itemTimeoutMs: 5_000,
         timeoutMs: 30_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+}
+
+function reduceWorkflowDefinition(): DefineNapierWorkflowInput<
+  ReduceRequest,
+  ReduceReport
+> {
+  const valuesSchema = {
+    type: "array" as const,
+    items: { type: "integer" as const },
+    minItems: 0,
+    maxItems: 16,
+  };
+  const inputSchema = objectSchema({ values: valuesSchema });
+  return {
+    name: "SDK deterministic Reduce",
+    version: 1,
+    description: "Sum typed values without a model call.",
+    plan: {
+      objective: "Reduce one typed SDK collection.",
+      steps: [planStep("total", "Total values")],
+    },
+    inputSchema,
+    outputSchema: { type: "integer" },
+    outputNodeId: "total",
+    nodes: [
+      {
+        id: "total",
+        type: "reduce",
+        inputBindings: {
+          values: { source: "workflow", path: ["values"] },
+        },
+        inputSchema,
+        outputSchema: { type: "integer" },
+        itemsPath: ["values"],
+        operation: "sum",
+        timeoutMs: 5_000,
         maxAttempts: 2,
       },
     ],

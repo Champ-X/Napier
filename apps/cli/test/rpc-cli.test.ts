@@ -17,6 +17,7 @@ import { parseCliArgs } from "../src/cli-options.js";
 import {
   defineRpcBlockedWorkflowManifest,
   defineRpcExperimentWorkflowManifest,
+  defineRpcReduceWorkflowManifest,
   defineRpcWorkflowManifest,
 } from "./rpc-workflow-fixture.js";
 
@@ -212,6 +213,7 @@ describe("Napier RPC CLI", () => {
     const blockedManifest = await defineRpcBlockedWorkflowManifest(fixture);
     const experimentManifest =
       await defineRpcExperimentWorkflowManifest(fixture);
+    const reduceManifest = await defineRpcReduceWorkflowManifest(fixture);
     const child = spawn(
       process.execPath,
       [
@@ -315,6 +317,46 @@ describe("Napier RPC CLI", () => {
         }),
       }),
     );
+
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "workflow-reduce",
+      method: "napier/workflow/run",
+      params: {
+        manifest: reduceManifest,
+        input: { values: [2, 3, 4] },
+        title: "RPC Reduce subprocess",
+      },
+    });
+    expect(await rpc.waitForId("workflow-reduce")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          status: "completed",
+          output: 9,
+          result: expect.objectContaining({
+            nodeResults: [
+              expect.objectContaining({
+                nodeId: "total",
+                status: "completed",
+                output: 9,
+              }),
+            ],
+          }),
+        }),
+      }),
+    );
+    expect(
+      rpc
+        .messages()
+        .filter(
+          (candidate) =>
+            candidate["method"] === "napier/event" &&
+            record(candidate["params"])?.["requestId"] === "workflow-reduce",
+        )
+        .map(
+          (message) => record(record(message["params"])?.["event"])?.["type"],
+        ),
+    ).toEqual(expect.arrayContaining(["workflow.reduce.completed"]));
 
     rpc.send({
       jsonrpc: "2.0",

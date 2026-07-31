@@ -897,6 +897,33 @@ export interface ExecutionPlanWorkflowMapNode {
   maxAttempts: number;
 }
 
+export const EXECUTION_PLAN_WORKFLOW_REDUCE_OPERATIONS = [
+  "count",
+  "sum",
+  "minimum",
+  "maximum",
+  "all",
+  "any",
+] as const;
+
+export type ExecutionPlanWorkflowReduceOperation =
+  (typeof EXECUTION_PLAN_WORKFLOW_REDUCE_OPERATIONS)[number];
+
+export interface ExecutionPlanWorkflowReduceNode {
+  id: string;
+  type: "reduce";
+  inputBindings: Record<string, ExecutionPlanWorkflowInputBinding>;
+  inputSchema: WorkflowObjectSchema;
+  outputSchema: WorkflowValueSchema;
+  when?: ExecutionPlanWorkflowCondition;
+  skipOutput?: JsonValue;
+  itemsPath: ExecutionPlanWorkflowValuePathSegment[];
+  valuePath?: ExecutionPlanWorkflowValuePathSegment[];
+  operation: ExecutionPlanWorkflowReduceOperation;
+  timeoutMs: number;
+  maxAttempts: number;
+}
+
 export const EXECUTION_PLAN_WORKFLOW_TOOL_NAMES = [
   "list_files",
   "read_file",
@@ -985,6 +1012,7 @@ export type ExecutionPlanWorkflowNode =
   | ExecutionPlanWorkflowAgentNode
   | ExecutionPlanWorkflowDeterministicNode
   | ExecutionPlanWorkflowMapNode
+  | ExecutionPlanWorkflowReduceNode
   | ExecutionPlanWorkflowToolNode
   | ExecutionPlanWorkflowApprovalNode;
 

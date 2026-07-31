@@ -132,7 +132,8 @@ export class ExecutionPlanWorkflowRecovery {
             step.status === "blocked" &&
             (node.type === "tool" ||
               node.type === "deterministic" ||
-              node.type === "map") &&
+              node.type === "map" ||
+              node.type === "reduce") &&
             step.runId !== undefined
           )
         ) {
@@ -176,7 +177,8 @@ export class ExecutionPlanWorkflowRecovery {
         if (
           (node.type === "tool" ||
             node.type === "deterministic" ||
-            node.type === "map") &&
+            node.type === "map" ||
+            node.type === "reduce") &&
           run.status !== "running" &&
           run.status !== "queued" &&
           (node.type === "tool"
@@ -191,11 +193,17 @@ export class ExecutionPlanWorkflowRecovery {
                   node,
                   run.id,
                 )
-              : await this.ledger.hasNodeMapCompletionEvent(
-                  context,
-                  node,
-                  run.id,
-                ))
+              : node.type === "map"
+                ? await this.ledger.hasNodeMapCompletionEvent(
+                    context,
+                    node,
+                    run.id,
+                  )
+                : await this.ledger.hasNodeReduceCompletionEvent(
+                    context,
+                    node,
+                    run.id,
+                  ))
         ) {
           knownRecoverableOutput = await this.ledger.nodeOutput(
             context,
@@ -320,12 +328,12 @@ export class ExecutionPlanWorkflowRecovery {
     }
   }
 
-  async reopenInterruptedDeterministicNodes(
+  async reopenInterruptedPureNodes(
     context: WorkflowExecutionContext,
   ): Promise<void> {
     context.plan = this.store.getPlan(context.plan.id);
     for (const node of context.manifest.nodes) {
-      if (node.type !== "deterministic") continue;
+      if (node.type !== "deterministic" && node.type !== "reduce") continue;
       const result = context.nodeResults.get(node.id);
       const step = context.plan.steps.find(
         (candidate) => candidate.id === node.id,
@@ -344,9 +352,7 @@ export class ExecutionPlanWorkflowRecovery {
         .listRuns(context.threadId)
         .find((candidate) => candidate.id === step.runId);
       if (!run || run.source !== "workflow" || run.status !== "interrupted") {
-        throw new Error(
-          "Interrupted deterministic Workflow Run binding is invalid",
-        );
+        throw new Error("Interrupted pure Workflow Run binding is invalid");
       }
       const before = context.plan;
       context.plan = await this.store.transitionPlanStep(

@@ -126,7 +126,19 @@ describe("Python kernel HTTP Agent path", () => {
         event.type === "tool.completed" &&
         record(event.payload)?.["toolName"] === "python_kernel",
     );
-    expect(completed).toHaveLength(3);
+    const toolTimeline = events
+      .filter(
+        (event) =>
+          event.type.startsWith("tool.") &&
+          record(event.payload)?.["toolName"] === "python_kernel",
+      )
+      .map((event) => ({
+        type: event.type,
+        action: record(record(event.payload)?.["details"])?.["action"],
+        status: record(event.payload)?.["status"],
+        errorCode: record(event.payload)?.["errorCode"],
+      }));
+    expect(completed, JSON.stringify(toolTimeline)).toHaveLength(3);
     expect(completed[1]?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.python-kernel",
@@ -165,7 +177,7 @@ describe("Python kernel HTTP Agent path", () => {
     expect(durable).not.toContain("PRIVATE_SERVER_VALUES");
     expect(durable).not.toContain("PRIVATE_SERVER_CONSOLE");
     expect(durable).not.toContain("untrusted live output");
-  }, 20_000);
+  }, 30_000);
 });
 
 function directSandbox(): OsSandboxAdapter {

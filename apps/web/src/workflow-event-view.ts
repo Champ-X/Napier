@@ -1,5 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { workflowReduceEventTraceParts } from "./workflow-reduce-event-view";
+
 const WORKFLOW_EVENTS = new Set([
   "workflow.started",
   "workflow.node.started",
@@ -9,6 +11,7 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.reused",
   "workflow.approval.requested",
   "workflow.deterministic.completed",
+  "workflow.reduce.completed",
   "workflow.map.item.started",
   "workflow.map.item.completed",
   "workflow.map.item.failed",
@@ -21,7 +24,6 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.blocked",
   "workflow.cancelled",
 ]);
-
 export function workflowEventTraceSummary(event: RunEvent): string | undefined {
   if (!WORKFLOW_EVENTS.has(event.type) || !record(event.payload)) {
     return undefined;
@@ -188,6 +190,10 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `bytes ${String(outputBytes)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,
     );
+  } else if (event.type === "workflow.reduce.completed") {
+    const reduceParts = workflowReduceEventTraceParts(payload);
+    if (!reduceParts) return undefined;
+    parts.push(...reduceParts);
   } else if (event.type.startsWith("workflow.map.item.")) {
     const nodeIdValue = nodeId(payload["nodeId"]);
     const coordinatorRunId = runId(payload["coordinatorRunId"]);
@@ -350,6 +356,12 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       const mapConfigurationSha256 = hash(payload["mapConfigurationSha256"]);
       if (!mapConfigurationSha256) return undefined;
       parts.push(`map ${mapConfigurationSha256.slice(0, 12)}`);
+    } else if (payload["nodeType"] === "reduce") {
+      const reduceConfigurationSha256 = hash(
+        payload["reduceConfigurationSha256"],
+      );
+      if (!reduceConfigurationSha256) return undefined;
+      parts.push(`reduce ${reduceConfigurationSha256.slice(0, 12)}`);
     } else if (
       payload["nodeType"] !== undefined &&
       payload["nodeType"] !== "agent"

@@ -6,6 +6,20 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added typed deterministic Reduce nodes to executable Workflows. A Reduce
+  selects one required bounded array and can count, sum, find an extremum, or
+  fold Boolean all/any values directly or through a required item field path.
+  It performs no model, tool, expression, coercion, or side effect, while still
+  using a leased Workflow Run with cancellation, timeout, retry, commit-gap
+  recovery, outer-wave concurrency, checkpoint reuse/rerun, SDK, CLI JSONL,
+  stdio RPC, HTTP SSE, portable Replay, and privacy-bounded Web Trace. The live
+  DeepSeek Map smoke now fans out two real model calls and deterministically
+  reduces their typed lengths.
+- Hardened persistent Python evaluation under host contention without
+  weakening its worker-enforced 1-2,000 ms code deadline. The parent now allows
+  a separate bounded five-second scheduling and private-protocol result grace;
+  metadata-only Server test diagnostics distinguish transport failure without
+  exposing code or output text.
 - Replaced Napier's five hand-registered model Provider factories with Pi's
   complete version-pinned `builtinProviders()` catalog. The shared Runtime now
   resolves 38 Provider implementations and 1,116 models across Web, CLI, SDK,

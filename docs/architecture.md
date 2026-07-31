@@ -638,14 +638,30 @@ bounds cover the Runtime's 5.5 MiB legal terminal-frame maximum plus the new
 target Thread Snapshot. Experiment SSE responses override the streaming
 helper's default cache policy with `Cache-Control: no-store`.
 
+Reduce is a model-free pure Workflow node over one required bounded array.
+`count`, `sum`, `minimum`, `maximum`, `all`, and `any` accept either each item
+or a required typed value path within each item. Count, sum, all, and any have
+fixed empty identities; minimum and maximum require a non-empty input Schema.
+The Manifest validator binds operation/path/type compatibility before a Plan
+exists. Execution uses one leased `source=workflow` Run at the frozen Agent
+revision, writes the scalar only to hidden assistant evidence, and publishes a
+body-free `workflow.reduce.completed` receipt with configuration, item/value
+set, input/output, Schema, count, and byte hashes. Recovery requires exactly
+one exact-field receipt plus the hidden scalar, then recomputes the fold from
+the typed input and requires canonical equality instead of trusting those
+hashes alone. Numeric extrema normalize JSON's negative zero before settlement.
+Checkpoint experiments can reuse or rerun Reduce like other proved nodes.
+Independent Reduce nodes remain eligible for the normal bounded outer parallel
+wave.
+
 Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
-nodes, stateless built-in Tool nodes, bounded read-only Agent Map nodes,
-durable binary Approval gates, literal/field-path typed bindings, bounded
-parallel dependency-ready DAG scheduling, typed equality guards with
-schema-valid fallback, cancellation, timeout, explicit retry, and restart
-recovery. It does not yet implement general multi-option decision nodes,
-stateful session Tool nodes, write-capable Map, Reduce, multi-way switch,
-loops, compensation, per-node breakpoints, external Agent adapters, or
+nodes, stateless built-in Tool nodes, bounded read-only Agent Map nodes, typed
+deterministic Reduce nodes, durable binary Approval gates, literal/field-path
+typed bindings, bounded parallel dependency-ready DAG scheduling, typed
+equality guards with schema-valid fallback, cancellation, timeout, explicit
+retry, and restart recovery. It does not yet implement general multi-option
+decision nodes, stateful session Tool nodes, write-capable Map, multi-way
+switch, loops, compensation, per-node breakpoints, external Agent adapters, or
 artifact settlement.
 
 ### Coding Outcome Benchmark
@@ -3120,7 +3136,10 @@ The worker independently validates exact request keys, request ID, encoding,
 UTF-8, code bytes, and timeout. Result frames have exact keys, canonical
 UTF-16LE base64, bounded console entries, Python version, traced-memory
 peak/limit, and a cumulative 30 KiB protocol budget with a reserved terminal
-response.
+response. The worker's trusted 1-2,000 ms timer remains the code-execution
+deadline. The parent permits a separate bounded five-second scheduling and
+protocol-result grace so host contention before worker dispatch cannot turn a
+valid evaluation into an uncertain timeout.
 
 Restricted execution is intentionally not described as a secure Python
 language sandbox. The globals map has only selected arithmetic, container,
@@ -5281,7 +5300,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has fifty-one parts:
+The current boundary has fifty-two parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5478,6 +5497,12 @@ The current boundary has fifty-one parts:
     ModelRef resolution, existing credential-reference enforcement, offline
     listing, caller-selected live-provider smoke coverage, and object-rooted
     function schemas for strict OpenAI-compatible endpoints.
+52. Typed deterministic Workflow Reduce with bounded required array/value
+    paths, fixed operations and empty identities, finite safe arithmetic,
+    JSON-number normalization, leased Run execution, strict Schema and receipt
+    validation, body-free public evidence, recomputed restart recovery,
+    experiment reuse/rerun, and no model, tool, expression, coercion, or
+    side-effect path.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5524,9 +5549,9 @@ deferred until the local P0-P9 product loop is stable.
   and debugger UX, broader multi-node AST transforms, cross-package/path-alias
   test discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
-  session nodes, multi-way switch, loops, write-capable Map, Reduce,
-  compensation, single-node tests and breakpoints, external Agent adapters,
-  artifact settlement, and a visual builder;
+  session nodes, multi-way switch, loops, write-capable Map, compensation,
+  single-node tests and breakpoints, external Agent adapters, artifact
+  settlement, and a visual builder;
 - extend controlled Workflow checkpoint re-execution with model-call/tool-call
   checkpoints, side-effect simulation, dependency replacement, batch
   experiments, interactive root-cause views, and evaluation promotion.

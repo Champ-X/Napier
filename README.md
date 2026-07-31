@@ -1770,6 +1770,9 @@ at 12 entries of 256 characters, cumulative private protocol output at 30 KiB,
 and complete Agent output at 32 KiB. Code requests use canonical base64 and the
 fixed worker uses zlib plus canonical base64 to stay inside the unchanged
 16 KiB explicit-argv budget. Result strings use canonical UTF-16LE base64.
+The worker's trusted timer remains the execution deadline; the parent allows a
+separate bounded five-second scheduling and protocol-delivery grace so a
+loaded host cannot cancel a valid result before the worker starts processing.
 The interpreter starts with `-I -B -S -u`, so system/user site initialization
 does not run. A trusted signal handler enforces each wall timeout with an
 uncatchable process exit; CPU time, child processes, output file size, core
@@ -2934,20 +2937,29 @@ answered gates instruct the user to resume through the original Workflow
 Manifest. Approval checkpoints can be reused after verification or rerun into
 an isolated `waiting` experiment target, and never accept a model override.
 
+Deterministic Reduce nodes aggregate one required bounded array with `count`,
+`sum`, `minimum`, `maximum`, `all`, or `any`. An optional required value path
+selects a typed field from every item, so a Map output such as `{ score }` can
+be summed without another model call. Empty count/sum/all/any use fixed
+identities; extrema require a non-empty input Schema. Reduce has no expression
+language, coercion, custom comparator, tool, or side effect. It still receives
+a leased Workflow Run, retry/timeout/cancellation behavior, restart recovery,
+checkpoint experiment reuse, and hash-only public Trace evidence.
+
 Version 1 intentionally supports Agent, bounded Deterministic, stateless
-built-in Tool, bounded read-only Agent Map, and durable Approval nodes with
-bounded parallel dependency-ready DAG scheduling and typed equality guards.
-Stateful session Tool nodes, write-capable Map, Reduce, multi-way switch,
-loops, compensation, per-node breakpoints, adapter runtimes, artifact
-settlement, and a visual builder remain open. Checkpoint experiments do not
-yet provide model-call/tool-call
+built-in Tool, bounded read-only Agent Map, typed deterministic Reduce, and
+durable Approval nodes with bounded parallel dependency-ready DAG scheduling
+and typed equality guards. Stateful session Tool nodes, write-capable Map,
+multi-way switch, loops, compensation, per-node breakpoints, adapter runtimes,
+artifact settlement, and a visual builder remain open. Checkpoint experiments
+do not yet provide model-call/tool-call
 single-stepping, side-effect simulation, Prompt/Skill/Memory replacement,
 batch experiments, an interactive root-cause timeline, or Evaluation
 promotion. The opt-in DeepSeek CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live
-smoke executes two real concurrent item calls and verifies ordered typed
-aggregation plus Replay:
+smoke executes two real concurrent item calls, deterministically reduces their
+typed lengths, and verifies zero Reduce model/tool activity plus Replay:
 
 ```bash
 npm run test:live-map

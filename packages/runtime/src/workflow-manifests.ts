@@ -23,6 +23,7 @@ import {
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
 } from "./workflow-map-model.js";
+import { validateWorkflowReduceContract } from "./workflow-reduce-manifest.js";
 import { validateExecutionPlanBlueprint } from "./workflow-blueprints.js";
 import {
   assertWorkflowEncodedBytes,
@@ -391,6 +392,26 @@ function validateWorkflowNode(
       label,
       new Set(["model", "when", "skipOutput"]),
     );
+  } else if (type === "reduce") {
+    assertExactKeys(
+      node,
+      [
+        "id",
+        "type",
+        "inputBindings",
+        "inputSchema",
+        "outputSchema",
+        "when",
+        "skipOutput",
+        "itemsPath",
+        "valuePath",
+        "operation",
+        "timeoutMs",
+        "maxAttempts",
+      ],
+      label,
+      new Set(["valuePath", "when", "skipOutput"]),
+    );
   } else if (type === "tool") {
     assertExactKeys(
       node,
@@ -636,6 +657,25 @@ function validateWorkflowNode(
       ...(model ? { model } : {}),
       maxConcurrency,
       itemTimeoutMs,
+      timeoutMs,
+      maxAttempts,
+    };
+  }
+  if (type === "reduce") {
+    const reduce = validateWorkflowReduceContract(
+      node,
+      inputSchema,
+      outputSchema,
+      label,
+    );
+    return {
+      id,
+      type,
+      inputBindings,
+      inputSchema: inputSchema as WorkflowObjectSchema,
+      outputSchema,
+      ...(conditional ? conditional : {}),
+      ...reduce,
       timeoutMs,
       maxAttempts,
     };

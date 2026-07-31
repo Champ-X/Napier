@@ -18,6 +18,7 @@ import {
 } from "./workflow-condition-model.js";
 import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-deterministic-model.js";
 import { workflowMapNodeConfigurationSha256 } from "./workflow-map-model.js";
+import { workflowReduceConfigurationSha256 } from "./workflow-reduce-model.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import {
   defineExecutionPlanWorkflow,
@@ -639,6 +640,13 @@ function sourceNodeMetadataMatches(
       payload["nodeType"] === "map" &&
       payload["mapConfigurationSha256"] ===
         workflowMapNodeConfigurationSha256(node)
+    );
+  }
+  if (node.type === "reduce") {
+    return (
+      payload["nodeType"] === "reduce" &&
+      payload["reduceConfigurationSha256"] ===
+        workflowReduceConfigurationSha256(node)
     );
   }
   return payload["nodeType"] === undefined || payload["nodeType"] === "agent";

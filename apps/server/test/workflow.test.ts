@@ -421,6 +421,120 @@ describe("Workflow HTTP path", () => {
     ).toEqual(["workflow"]);
   });
 
+  it("executes a deterministic Reduce Workflow through public SSE", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-reduce-workflow-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const services = await createServices({
+      workspaceRoot,
+      dataRoot: path.join(root, "data"),
+      sandbox: new UnsupportedSandboxAdapter("server-reduce-workflow-test"),
+    });
+    openServices.push(services);
+    const blueprintThread = services.store.listThreads()[0]!;
+    const blueprintPlan = await services.store.createPlan(blueprintThread.id, {
+      objective: "Sum typed values through public SSE.",
+      steps: [
+        {
+          id: "total",
+          title: "Total values",
+          description: "Sum every typed integer.",
+          verification: "Return the exact deterministic sum.",
+        },
+      ],
+    });
+    const blueprint = await createExecutionPlanBlueprint(
+      services.store,
+      blueprintThread.id,
+      blueprintPlan.id,
+    );
+    const valuesSchema = {
+      type: "array" as const,
+      items: { type: "integer" as const },
+      minItems: 0,
+      maxItems: 16,
+    };
+    const inputSchema = {
+      type: "object" as const,
+      properties: { values: valuesSchema },
+      required: ["values"],
+      additionalProperties: false as const,
+    };
+    const manifest = defineExecutionPlanWorkflow({
+      name: "HTTP deterministic Reduce",
+      version: 1,
+      description: "Execute one model-free Reduce node.",
+      blueprint,
+      inputSchema,
+      outputSchema: { type: "integer" },
+      outputNodeId: "total",
+      nodes: [
+        {
+          id: "total",
+          type: "reduce",
+          inputBindings: {
+            values: { source: "workflow", path: ["values"] },
+          },
+          inputSchema,
+          outputSchema: { type: "integer" },
+          itemsPath: ["values"],
+          operation: "sum",
+          timeoutMs: 5_000,
+          maxAttempts: 2,
+        },
+      ],
+    });
+    const targetThread = await services.store.createThread({
+      title: "HTTP Reduce Workflow target",
+      agentId: blueprintThread.agentId,
+    });
+    const response = await createApp(services).request(
+      `/api/threads/${targetThread.id}/workflows`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manifest,
+          input: { values: [2, 3, 4] },
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const frames = parseSseFrames(await response.text());
+    const frame = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(frame.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: 9,
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "total",
+            status: "completed",
+            output: 9,
+          }),
+        ],
+      }),
+    );
+    const events = await services.store.listEvents(targetThread.id);
+    expect(
+      events.filter((event) => event.type === "workflow.reduce.completed"),
+    ).toHaveLength(1);
+    expect(events.some((event) => event.type === "model.response")).toBe(false);
+    expect(
+      events.some(
+        (event) =>
+          event.type === "tool.started" || event.type === "tool.completed",
+      ),
+    ).toBe(false);
+    expect(
+      services.store.listRuns(targetThread.id).map((run) => run.source),
+    ).toEqual(["workflow"]);
+  });
+
   it("streams a conditional fallback without creating a node Run", async () => {
     const root = await mkdtemp(
       path.join(tmpdir(), "napier-server-conditional-workflow-"),

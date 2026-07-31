@@ -149,4 +149,8 @@ export * from "./workflow-experiment-protocol.js";
 export * from "./workflow-experiments.js";
 export * from "./workflow-manifests.js";
 export * from "./workflow-protocol.js";
+export * from "./workflow-reduce-evidence.js";
+export * from "./workflow-reduce-model.js";
+export * from "./workflow-reduce-node.js";
+export * from "./workflow-reduce-runtime.js";
 export * from "./workflow-runtime.js";

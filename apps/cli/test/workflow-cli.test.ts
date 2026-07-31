@@ -445,6 +445,68 @@ describe("Napier Workflow CLI", () => {
     expect(frames.at(-2)?.type).toBe("snapshot");
   });
 
+  it("streams a deterministic Reduce Workflow through ordered JSONL", async () => {
+    const fixture = await createReduceFixture();
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        '{"values":[2,3,4]}',
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout),
+      {
+        createRuntime: (options) =>
+          createLocalAgentRuntime({
+            ...options,
+            sandbox: new UnsupportedSandboxAdapter("workflow-reduce-cli-test"),
+          }),
+      },
+    );
+
+    expect(code).toBe(0);
+    const frames = parseFrames(stdout.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: 9,
+          nodeResults: [
+            expect.objectContaining({
+              nodeId: "total",
+              status: "completed",
+              output: 9,
+            }),
+          ],
+        }),
+      }),
+    );
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    expect(events.some((event) => event.type === "model.response")).toBe(false);
+    expect(
+      events.filter((event) => event.type === "workflow.reduce.completed"),
+    ).toHaveLength(1);
+    expect(
+      events.some(
+        (event) =>
+          event.type === "tool.started" || event.type === "tool.completed",
+      ),
+    ).toBe(false);
+    expect(events.map((event) => event.seq)).toEqual(
+      events.map((_, index) => index + 1),
+    );
+  });
+
   it("streams a conditional fallback without creating a node Run", async () => {
     const fixture = await createConditionalFixture();
     const stdout = new CaptureWritable();
@@ -1455,6 +1517,84 @@ async function createDeterministicFixture(): Promise<{
             approved: { kind: "literal", value: true },
           },
         },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
+async function createReduceFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-reduce-workflow-cli-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-reduce-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Sum one typed CLI collection without a model.",
+    steps: [
+      {
+        id: "total",
+        title: "Total values",
+        description: "Sum every typed integer.",
+        verification: "Return the exact deterministic sum.",
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const valuesSchema = {
+    type: "array" as const,
+    items: { type: "integer" as const },
+    minItems: 0,
+    maxItems: 16,
+  };
+  const inputSchema = {
+    type: "object" as const,
+    properties: { values: valuesSchema },
+    required: ["values"],
+    additionalProperties: false as const,
+  };
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI deterministic Reduce",
+    version: 1,
+    description: "Execute a model-free Reduce node through CLI JSONL.",
+    blueprint,
+    inputSchema,
+    outputSchema: { type: "integer" },
+    outputNodeId: "total",
+    nodes: [
+      {
+        id: "total",
+        type: "reduce",
+        inputBindings: {
+          values: { source: "workflow", path: ["values"] },
+        },
+        inputSchema,
+        outputSchema: { type: "integer" },
+        itemsPath: ["values"],
+        operation: "sum",
         timeoutMs: 5_000,
         maxAttempts: 2,
       },

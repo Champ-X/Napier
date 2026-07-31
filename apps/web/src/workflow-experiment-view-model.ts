@@ -1,5 +1,6 @@
 import {
   EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA,
+  EXECUTION_PLAN_WORKFLOW_REDUCE_OPERATIONS,
   EXECUTION_PLAN_WORKFLOW_TOOL_NAMES,
   type ExecutionPlanWorkflowInputBinding,
   type ExecutionPlanWorkflowExperimentComparison,
@@ -17,6 +18,9 @@ const SHA256 = /^[a-f0-9]{64}$/u;
 const NODE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const BINDING_NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/u;
 const WORKFLOW_TOOL_NAMES = new Set<string>(EXECUTION_PLAN_WORKFLOW_TOOL_NAMES);
+const WORKFLOW_REDUCE_OPERATIONS = new Set<string>(
+  EXECUTION_PLAN_WORKFLOW_REDUCE_OPERATIONS,
+);
 const FORBIDDEN_PATH_SEGMENTS = new Set([
   "__proto__",
   "constructor",
@@ -118,6 +122,7 @@ export async function validateWorkflowManifest(
       (nodeInput["type"] !== "agent" &&
         nodeInput["type"] !== "deterministic" &&
         nodeInput["type"] !== "map" &&
+        nodeInput["type"] !== "reduce" &&
         nodeInput["type"] !== "tool" &&
         nodeInput["type"] !== "approval") ||
       !record(nodeInput["inputBindings"]) ||
@@ -160,6 +165,23 @@ export async function validateWorkflowManifest(
             typeof nodeInput["model"]["id"] !== "string"))
       ) {
         throw new Error("Workflow manifest Map node is invalid");
+      }
+    }
+    if (nodeInput["type"] === "reduce") {
+      const itemsPath = validateWorkflowBindingPath(nodeInput["itemsPath"]);
+      const valuePath =
+        nodeInput["valuePath"] === undefined
+          ? undefined
+          : validateWorkflowBindingPath(nodeInput["valuePath"]);
+      if (
+        !itemsPath ||
+        (nodeInput["valuePath"] !== undefined && !valuePath) ||
+        typeof nodeInput["operation"] !== "string" ||
+        !WORKFLOW_REDUCE_OPERATIONS.has(nodeInput["operation"]) ||
+        (nodeInput["operation"] === "count" &&
+          nodeInput["valuePath"] !== undefined)
+      ) {
+        throw new Error("Workflow manifest Reduce node is invalid");
       }
     }
     if (

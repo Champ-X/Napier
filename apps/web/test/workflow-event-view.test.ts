@@ -369,6 +369,60 @@ describe("Workflow event Trace projection", () => {
     ).toBeUndefined();
   });
 
+  it("summarizes Reduce configuration and output evidence without item bodies", () => {
+    const nodeStarted = workflowEvent("workflow.node.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "total",
+      nodeType: "reduce",
+      reduceConfigurationSha256: "8".repeat(64),
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      inputSha256: "2".repeat(64),
+      inputSchemaSha256: "3".repeat(64),
+      outputSchemaSha256: "4".repeat(64),
+      planRevisionBefore: 1,
+      planRevisionAfter: 2,
+      recovered: false,
+      input: "PRIVATE_REDUCE_INPUT",
+    });
+    const completed = workflowEvent("workflow.reduce.completed", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      nodeId: "total",
+      attempt: 1,
+      manifestSha256: "1".repeat(64),
+      operation: "sum",
+      reduceConfigurationSha256: "8".repeat(64),
+      inputSha256: "2".repeat(64),
+      itemCount: 3,
+      itemSetSha256: "5".repeat(64),
+      valueSetSha256: "6".repeat(64),
+      outputSha256: "7".repeat(64),
+      outputBytes: 2,
+      outputSchemaSha256: "4".repeat(64),
+      output: "PRIVATE_REDUCE_OUTPUT",
+    });
+
+    expect(workflowEventTraceSummary(nodeStarted)).toContain(
+      `reduce ${"8".repeat(12)}`,
+    );
+    expect(workflowEventTraceSummary(completed)).toContain(
+      `operation sum / items 3 / reduce ${"8".repeat(12)} / input ${"2".repeat(12)} / item-set ${"5".repeat(12)} / value-set ${"6".repeat(12)} / output ${"7".repeat(12)} / bytes 2`,
+    );
+    expect(
+      `${workflowEventTraceSummary(nodeStarted)} ${workflowEventTraceSummary(completed)}`,
+    ).not.toContain("PRIVATE_REDUCE");
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.reduce.completed", {
+          ...(completed.payload as Record<string, JsonValue>),
+          operation: "custom",
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
   it("rejects malformed Workflow evidence", () => {
     expect(
       workflowEventTraceSummary(

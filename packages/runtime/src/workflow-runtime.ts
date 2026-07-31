@@ -59,6 +59,7 @@ import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowDeterministicNodeExecutor } from "./workflow-deterministic-node.js";
 import { ExecutionPlanWorkflowMapNodeExecutor } from "./workflow-map-node.js";
+import { ExecutionPlanWorkflowReduceNodeExecutor } from "./workflow-reduce-node.js";
 import {
   DEFAULT_EXECUTION_PLAN_WORKFLOW_CONCURRENCY,
   executeExecutionPlanWorkflowReadyBatch,
@@ -88,6 +89,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly conditionNodeExecutor: ExecutionPlanWorkflowConditionNodeExecutor;
   private readonly deterministicNodeExecutor: ExecutionPlanWorkflowDeterministicNodeExecutor;
   private readonly mapNodeExecutor: ExecutionPlanWorkflowMapNodeExecutor;
+  private readonly reduceNodeExecutor: ExecutionPlanWorkflowReduceNodeExecutor;
   private readonly toolNodeExecutor: ExecutionPlanWorkflowToolNodeExecutor;
 
   constructor(
@@ -119,6 +121,16 @@ export class ExecutionPlanWorkflowRuntime {
     this.mapNodeExecutor = new ExecutionPlanWorkflowMapNodeExecutor(
       store,
       agentRuntime,
+      this.ledger,
+      {
+        blockNode: (context, node, failure) =>
+          this.blockNode(context, node, failure),
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      },
+    );
+    this.reduceNodeExecutor = new ExecutionPlanWorkflowReduceNodeExecutor(
+      store,
       this.ledger,
       {
         blockNode: (context, node, failure) =>
@@ -335,7 +347,7 @@ export class ExecutionPlanWorkflowRuntime {
     await this.recovery.recoverCompletedAndInterruptedNodes(context);
     await this.approvalNodeExecutor.recoverRunning(context);
     await this.recovery.recoverBlockedNodeResults(context);
-    await this.recovery.reopenInterruptedDeterministicNodes(context);
+    await this.recovery.reopenInterruptedPureNodes(context);
     if (context.reusedNodes.length > 0) {
       await this.reuseMaterializer.reopenInterrupted(
         context,
@@ -482,6 +494,15 @@ export class ExecutionPlanWorkflowRuntime {
     }
     if (node.type === "map") {
       return this.mapNodeExecutor.execute(
+        context,
+        node,
+        input,
+        inputSha256,
+        attempt,
+      );
+    }
+    if (node.type === "reduce") {
+      return this.reduceNodeExecutor.execute(
         context,
         node,
         input,
