@@ -6,6 +6,22 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added `napier chat`, a line-oriented interactive Agent entry that keeps one
+  `LocalAgentRuntime` open across durable turns and delegates run/recovery to
+  the existing `EmbeddedAgentService`. Bounded slash commands switch model or
+  Thread, create the next Thread, resume an interrupted Run, and show local
+  status without Store access or shell interpretation. Assistant deltas stream
+  to stdout; stderr receives prompts, Run status, and metadata-only tool cards.
+  C0/C1 terminal and dangerous bidirectional controls render as visible escapes
+  without changing Ledger text, and a pre-aborted parent stops before Runtime
+  bootstrap.
+  Every turn has an independent timeout, active `SIGINT` cancels only that Run,
+  idle `SIGINT` exits with 130, and EOF or parent termination closes the shared
+  Runtime. TTY-only admission, ready-before-input ordering, backpressure,
+  Provider failure recovery, cancellation, timeout, output failure, privacy,
+  and shutdown tests cover the session. A real `node-pty` test runs the built
+  CLI for two turns, switches model, checks status and a shared Thread, exits
+  cleanly, and reopens SQLite to verify both durable Runs.
 - Added sandboxed PTY mode to managed Workspace Process Sessions. An Agent can
   launch the same fixed Node argv through a real pseudo-terminal, observe TTY
   stdin/stdout and fixed `TERM=xterm-256color`, send bounded live-only input,

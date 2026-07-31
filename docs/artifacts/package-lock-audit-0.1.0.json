@@ -7,7 +7,7 @@
     "name": "napier",
     "version": "0.1.0",
     "packageJsonSha256": "3b38bf59c4df4d9953eacc606207569b4e36781887b99f648c903779ef0fc346",
-    "packageLockSha256": "b34dd110571babaf0002a17de3fb655c34324c1dd94cc2ed78466971537302ce"
+    "packageLockSha256": "96c44496daa025614ab4ced353ce84de2e6153eacf4cb6b9b85e39d49089b1f0"
   },
   "counts": {
     "workspaces": 6,

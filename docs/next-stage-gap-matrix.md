@@ -25,11 +25,90 @@ Audit date: 2026-07-31
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                                 |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, write-capable Map, Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval/Map ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent/Map-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison including Map child Runs, CLI JSONL, HTTP SSE, TypeScript SDK, local stdio RPC, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                          |
-| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. RPC supports Agent and typed Workflow run/resume, blocked-node retry, freshness-bound Approval answer-and-resume, preview-bound checkpoint experiments, request-bound Ledger notifications, real cancellation, mixed bounded concurrency, and orderly shutdown without exposing Store. SDK and RPC reuse the existing Experiment Runtime; CLI and SDK reuse the same Embedded Approval service. Authenticated remote transport, interactive TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                            |
+| P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, one-shot human/JSONL CLI, line-oriented interactive `napier chat`, local TypeScript SDK, and versioned local stdio JSON-RPC now share one Runtime. Chat reuses `EmbeddedAgentService` for durable multi-turn, model/Thread switching, interrupted resume, per-turn cancellation, and metadata-only tool status. RPC supports Agent and typed Workflow run/resume, Approval answer-and-resume, checkpoint experiments, request-bound events, cancellation, concurrency, and orderly shutdown without exposing Store. Authenticated remote transport, full-screen TUI, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                         |
 | P7 extension developer experience | Partial        | Signed MCP packages are deep; stable extension SDK, UI cards, hot reload, ecosystem discovery, and compatibility suites remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+## Completed Slice: Interactive Agent CLI
+
+User scenario: a local user can open one `napier chat` session, complete
+multiple Agent turns on the same durable Thread, switch model or Thread,
+resume an interrupted Run, inspect concise status and tool activity, cancel a
+long turn, and exit without restarting the Runtime or learning Ledger internals.
+
+Acceptance:
+
+- add an explicit interactive CLI command over the existing
+  `LocalAgentRuntime` and `EmbeddedAgentService`; never implement another Agent
+  loop or let the entry operate `LocalStore` directly;
+- keep one Runtime open across multiple prompts and use the returned Thread ID
+  for subsequent turns;
+- support bounded `/model`, `/thread`, `/new`, `/resume`, `/status`, `/help`,
+  and `/exit` commands with exact parsing and no shell interpretation;
+- stream non-redacted `model.text.delta` content to stdout, print a final
+  assistant message only when no delta was available, and render bounded
+  metadata-only tool cards and Run status on stderr; render terminal and
+  bidirectional control characters as visible escapes;
+- cancel the active Run on the first `SIGINT`, keep the session usable after
+  cancellation, exit on idle `SIGINT` or EOF, and abort/shut down on parent
+  termination;
+- apply an independent wall-time budget to every turn and resume attempt;
+- require a real TTY and fail before Runtime bootstrap for piped stdin or
+  `--jsonl`; direct automation continues to use one-shot JSONL or stdio RPC;
+- preserve normal Thread/Run/Model/Tool/Ledger binding, policy checks, secret
+  handling, Process cleanup, and first-terminal-wins semantics;
+- cover multi-turn continuation, model and Thread switching, new Thread,
+  interrupted resume, command errors, failed/cancelled turns, timeout,
+  active/idle interrupt, EOF, output backpressure, runtime shutdown, and
+  private error redaction;
+- run the built CLI inside a real pseudo-terminal and prove ordered prompts,
+  streamed output, durable continuation, status, model switching, and clean
+  exit.
+
+Threat boundary:
+
+- slash commands are local control syntax, not shell commands. Command
+  arguments never become host argv or executable names.
+- Model and tool output is untrusted terminal text. Napier visibly escapes
+  C0/C1 terminal and dangerous bidirectional controls, and never interprets
+  links or embedded instructions as authorization.
+- Interactive stdout is intentionally human-oriented and not a stable machine
+  protocol. JSONL and RPC remain the only automation contracts.
+- This slice does not add Desktop, ACP, remote authentication, full-screen TUI
+  widgets, terminal attachment, or new execution capabilities.
+
+Observed result:
+
+- focused tests cover exact parsing, multi-turn continuation, model and Thread
+  switching, new Thread creation, interrupted resume, command isolation,
+  Provider failure recovery, timeout, active and idle interrupt, EOF, parent
+  termination and pre-abort, stdout backpressure/failure, terminal-control
+  escaping, Runtime shutdown, and private error redaction;
+- a real `node-pty` test starts the built `dist/index.js chat`, verifies TTY
+  admission and model switching, completes two demo-model turns on one Thread,
+  inspects status, exits cleanly, then reopens SQLite and proves two completed
+  durable Runs;
+- running the complete CLI suite concurrently exposed a ready-line race that
+  could drop pasted input before the main iterator subscribed. Chat now
+  prefetches the first readline item before announcing readiness; the same
+  loaded suite passes 83 regular tests with five opt-in live tests skipped;
+- `interactive-cli.ts` remains a 411-line Experience adapter. It calls only
+  shared local bootstrap and `EmbeddedAgentService`; no second Agent loop,
+  Store access, shell interpretation, new policy capability, or machine
+  protocol was introduced. Chat options and shared value validation live in
+  two 69-line modules, reducing the pre-existing `cli-options.ts` from 581 to
+  551 lines rather than growing it;
+- the complete repository gate passes 1,416 regular tests with 25 opt-in live
+  tests skipped, 247 OpenAPI routes, 244/244 locked compatibility operations,
+  six workspaces, 254 packages, and 241/241 integrity entries. The product
+  budget measures 593.0 ms to the first CLI event, 739.5 ms to the first token,
+  1,053.1 ms to completion, 0.3 ms read p95, 7.3 ms 1,000-event projection, and
+  749.568 SQLite bytes/event;
+- the unchanged 69-file Web dist remains at 130.08 KiB for the main entry and
+  is bound to `e7c6d40a17797a71`; the refreshed seven-artifact release set is
+  bound to `f5933713bc6c7a66`.
 
 ## Completed Slice: Sandboxed PTY Process Sessions
 

@@ -29,10 +29,12 @@ Version `0.1.0` includes:
 - a Pi-powered multi-provider runtime for OpenAI, Anthropic, Google, and
   OpenRouter;
 - a deterministic zero-key demo model for onboarding and CI;
-- `napier run`, `napier resume`, sequence-accurate `napier branch`, and typed
-  `napier workflow` CLI commands with human output or hash-bound JSONL, backed
-  by the same Agent Runtime, model registry, policy, Sandbox, SQLite Ledger,
-  and domain services as the HTTP/Web path;
+- `napier chat` for one-Runtime multi-turn terminal sessions with model/Thread
+  switching, interrupted-Run resume, per-turn timeout, active-Run cancellation,
+  and metadata-only tool cards, plus `napier run`, `napier resume`,
+  sequence-accurate `napier branch`, and typed `napier workflow` commands with
+  human output or hash-bound JSONL, all backed by the same Agent Runtime, model
+  registry, policy, Sandbox, SQLite Ledger, and domain services as HTTP/Web;
 - a long-lived local `napier rpc` stdio JSON-RPC 2.0 process for Agent and
   typed Workflow run/resume plus fresh Approval answer-and-resume,
   preview-bound checkpoint experiments, request-bound Ledger event
@@ -339,10 +341,14 @@ Prerequisite: Node.js `>=22.19.0`.
 
 ```bash
 npm install --ignore-scripts
+npm run postinstall
 npm run dev
 ```
 
 Open `http://127.0.0.1:5173`. The demo model works without credentials.
+The explicit root `postinstall` prepares only the current-platform native PTY
+helper after the dependency install; it rejects missing, non-regular, or
+symlinked helpers.
 
 For a production build served by the API process:
 
@@ -374,8 +380,29 @@ npm run --silent napier -- run \
 JSONL mode writes hash-bound event frames followed by one final snapshot and
 one terminal done frame. It emits no banner or other non-JSON stdout. The
 `--silent` npm flag suppresses wrapper/build logs; an installed `napier` binary
-does not need it. Continue an existing Thread by passing its explicit ID and
-the same state directory:
+does not need it.
+
+For a multi-turn terminal session that keeps one Runtime open:
+
+```bash
+npm run --silent napier -- chat \
+  --workspace . \
+  --data-root .napier \
+  --model napier/demo
+```
+
+Use `/status`, `/model <provider/id>`, `/thread <thread-id>`, `/new [title]`,
+`/resume [run-id]`, `/help`, and `/exit`. `Ctrl-C` cancels an active Run while
+keeping the session open; at an idle prompt it exits. EOF closes the Runtime.
+`chat` requires TTY stdin and rejects `--jsonl`; scripts should use `run
+--jsonl` or `rpc`. Assistant text goes to stdout, while stderr receives prompts,
+bounded Run status, and metadata-only tool cards without tool arguments or
+result bodies. Model-provided terminal controls and bidirectional-formatting
+characters are rendered as visible `\uXXXX` escapes rather than executed by the
+terminal.
+
+Continue an existing Thread by passing its explicit ID and the same state
+directory:
 
 ```bash
 npm run --silent napier -- run \
@@ -430,7 +457,8 @@ done frame. A future or missing source sequence fails before creating a
 Thread. The new ID can be passed to `napier run --thread` to continue through
 the normal Agent Runtime. The `branch` command itself is message-history
 branching, not model/tool checkpoint re-execution or side-effect replay. The
-CLI still does not claim an interactive TUI, ACP, or Desktop packaging.
+CLI interactive session is line-oriented; it does not claim a full-screen TUI,
+ACP, or Desktop packaging.
 
 Run one local Runtime as a line-delimited stdio JSON-RPC 2.0 process for an
 editor, desktop shell, or automation host:
@@ -474,8 +502,8 @@ returns its recovery-ready target result. Internal diagnostics are hash-only.
 EOF, SIGINT, SIGTERM, `exit`, and Runtime shutdown cancel and await active Runs
 before SQLite closes. The transport is local stdio only: it does not open a
 socket, accept remote credentials, expose Store, or implement a second Agent
-or Workflow loop. Remote transport/authentication, ACP, and TUI remain
-follow-up work.
+or Workflow loop. Remote transport/authentication, ACP, and a full-screen TUI
+remain follow-up work.
 
 Execute a versioned typed Workflow manifest through the same Runtime:
 

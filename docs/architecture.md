@@ -205,6 +205,29 @@ resume` selects a waiting Thread plus an optional interrupted Run and calls
 streaming, cancellation, and shutdown path; neither implements a second
 model/tool loop or talks directly to Store for Run execution.
 
+`napier chat` is the line-oriented interactive adapter. It keeps one
+`LocalAgentRuntime` open and delegates every prompt and interrupted-Run
+continuation to `EmbeddedAgentService`. The returned Thread ID becomes the next
+turn's explicit input; `/model`, `/thread`, `/new`, `/resume`, `/status`,
+`/help`, and `/exit` only update bounded session state or invoke that service.
+Slash commands are never evaluated as shell input, and the adapter has no
+direct Store access. `cli-chat-options.ts` owns the command-line contract while
+`cli-option-values.ts` centralizes resource, model, timeout, and required-value
+validation shared with the existing one-shot parsers.
+
+Chat requires TTY stdin and rejects `--jsonl`. It creates and prefetches the
+readline iterator before emitting the ready line, so input pasted at that
+freshness boundary cannot be lost while the prompt is still flushing.
+Non-redacted `model.text.delta` values stream to stdout with backpressure; when
+no delta is available, the exact returned Run's assistant message is written
+once. C0/C1 terminal controls and dangerous bidirectional-formatting characters
+are projected as visible `\uXXXX` text, leaving the Ledger value unchanged while
+preventing model output from issuing ANSI/OSC terminal commands. Stderr receives
+the prompt, metadata-only tool lifecycle cards, waiting notices, and bounded Run
+status. Tool arguments, results, and internal errors are not rendered. A broken
+output channel aborts the whole chat session instead of being mistaken for a
+failed Agent turn. A pre-aborted parent fails before Runtime bootstrap.
+
 `napier branch` and the HTTP Branch route share
 `createThreadBranch()`, a Runtime domain service rather than duplicating
 materialization inside either Experience Plane adapter. It validates an exact
@@ -251,14 +274,19 @@ otherwise the latest is selected. A non-waiting Thread, missing parent, second
 concurrent resume, timeout, or cancellation fails or settles through the same
 Run lease and terminal frame rules as Web/SSE recovery.
 
-Timeout, SIGINT, and SIGTERM flow into the active Runtime AbortSignal. Shutdown
-settles Napier-owned Process Sessions and MCP transports before closing
-SQLite; it does not kill unrelated workspace processes or delete state.
-Environment credentials remain unavailable unless the selected data root
-already contains an active credential reference. This adapter does not yet
-provide an interactive TUI, ACP, or Desktop packaging. Thread branching is
-durable message-history materialization; it is not controlled model/tool
-re-execution, dependency substitution, or side-effect simulation.
+For one-shot commands, timeout, SIGINT, and SIGTERM flow into the active
+Runtime AbortSignal. Chat gives every turn and resume attempt an independent
+timeout: a timed-out Run settles through normal cancellation evidence and the
+session remains open. The first active `SIGINT` cancels only that Run; an idle
+`SIGINT` exits with status 130. EOF exits normally, while parent termination
+aborts the session and active Run. All paths settle Napier-owned Process
+Sessions and MCP transports before closing SQLite; they do not kill unrelated
+workspace processes or delete state. Environment credentials remain
+unavailable unless the selected data root already contains an active
+credential reference. This adapter does not yet provide a full-screen TUI,
+ACP, or Desktop packaging. Thread branching is durable message-history
+materialization; it is not controlled model/tool re-execution, dependency
+substitution, or side-effect simulation.
 
 ### Local stdio JSON-RPC
 
@@ -5225,7 +5253,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has forty-eight parts:
+The current boundary has forty-nine parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -5408,6 +5436,11 @@ The current boundary has forty-eight parts:
     answer-and-resume, preview-bound Workflow checkpoint experiments, shared
     Runtime execution, mixed concurrent admission, standard cancellation,
     ordered shutdown, built subprocess coverage, and no second execution loop.
+49. A line-oriented interactive Agent CLI that keeps one local Runtime open
+    across durable turns, delegates through the embedded Agent service, supports
+    bounded model/Thread/new/resume/status controls, separates assistant output
+    from metadata-only tool status, applies per-turn cancellation and timeout,
+    and is covered through a real built-process PTY.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5463,7 +5496,7 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- add authenticated remote transport, interactive TUI, ACP, Desktop,
+- add authenticated remote transport, a full-screen TUI, ACP, Desktop,
   persistent browser UX, and broader data/research capability slices over the
   same Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility

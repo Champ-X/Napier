@@ -1,14 +1,25 @@
 import type { ModelRef } from "@napier/contracts";
 
+import {
+  CHAT_VALUE_OPTIONS,
+  parseChatOptions,
+  type CliChatAction,
+} from "./cli-chat-options.js";
+import {
+  MAX_TIMEOUT_MS,
+  MIN_TIMEOUT_MS,
+  optionalModelRef,
+  optionalResourceId,
+  parseTimeout,
+  requiredResourceId,
+  requiredValue,
+} from "./cli-option-values.js";
+
 export const CLI_VERSION = "0.1.0";
-const DEFAULT_TIMEOUT_MS = 10 * 60 * 1_000;
-const MIN_TIMEOUT_MS = 1_000;
-const MAX_TIMEOUT_MS = 30 * 60 * 1_000;
 const MAX_PROMPT_BYTES = 64 * 1_024;
 const MAX_WORKFLOW_INPUT_BYTES = 64 * 1_024;
 const MAX_TITLE_CHARS = 160;
 const MAX_BRANCH_TITLE_CHARS = 100;
-const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
 
 export interface CliWorkspaceOptions {
   workspace: string;
@@ -65,6 +76,7 @@ export type CliAction =
   | { kind: "help" }
   | { kind: "version" }
   | { kind: "run"; options: CliRunOptions }
+  | CliChatAction
   | { kind: "resume"; options: CliResumeOptions }
   | { kind: "branch"; options: CliBranchOptions }
   | { kind: "rpc"; options: CliRpcOptions }
@@ -130,6 +142,7 @@ export function parseCliArgs(argv: string[]): CliAction {
   const command = argv[0];
   if (
     command !== "run" &&
+    command !== "chat" &&
     command !== "resume" &&
     command !== "branch" &&
     command !== "rpc" &&
@@ -144,16 +157,19 @@ export function parseCliArgs(argv: string[]): CliAction {
     argv.slice(1),
     command === "run"
       ? RUN_VALUE_OPTIONS
-      : command === "resume"
-        ? RESUME_VALUE_OPTIONS
-        : command === "branch"
-          ? BRANCH_VALUE_OPTIONS
-          : command === "rpc"
-            ? RPC_VALUE_OPTIONS
-            : WORKFLOW_VALUE_OPTIONS,
+      : command === "chat"
+        ? CHAT_VALUE_OPTIONS
+        : command === "resume"
+          ? RESUME_VALUE_OPTIONS
+          : command === "branch"
+            ? BRANCH_VALUE_OPTIONS
+            : command === "rpc"
+              ? RPC_VALUE_OPTIONS
+              : WORKFLOW_VALUE_OPTIONS,
     command === "workflow" ? WORKFLOW_FLAG_OPTIONS : new Set(),
   );
   if (command === "run") return parseRunOptions(values, jsonl);
+  if (command === "chat") return parseChatOptions(values, jsonl);
   if (command === "resume") return parseResumeOptions(values, jsonl);
   if (command === "branch") return parseBranchOptions(values, jsonl);
   if (command === "rpc") return parseRpcOptions(values, jsonl);
@@ -452,46 +468,6 @@ function parseOptions(
   return { values, flags, jsonl };
 }
 
-function requiredValue(values: Map<string, string>, flag: string): string {
-  const value = values.get(flag)?.trim();
-  if (!value) throw new Error(`${flag} is required`);
-  return value;
-}
-
-function requiredResourceId(values: Map<string, string>, flag: string): string {
-  const value = requiredValue(values, flag);
-  if (!RESOURCE_ID.test(value)) throw new Error(`${flag} is invalid`);
-  return value;
-}
-
-function optionalResourceId(
-  values: Map<string, string>,
-  flag: string,
-): string | undefined {
-  if (!values.has(flag)) return undefined;
-  return requiredResourceId(values, flag);
-}
-
-function optionalModelRef(values: Map<string, string>): ModelRef | undefined {
-  return values.has("--model")
-    ? parseModelRef(requiredValue(values, "--model"))
-    : undefined;
-}
-
-function parseTimeout(value: string | undefined): number {
-  if (value === undefined) return DEFAULT_TIMEOUT_MS;
-  if (!/^[0-9]+$/u.test(value)) throw new Error("--timeout-ms is invalid");
-  const timeoutMs = Number(value);
-  if (
-    !Number.isSafeInteger(timeoutMs) ||
-    timeoutMs < MIN_TIMEOUT_MS ||
-    timeoutMs > MAX_TIMEOUT_MS
-  ) {
-    throw new Error(`--timeout-ms must be ${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS}`);
-  }
-  return timeoutMs;
-}
-
 function parsePositiveInteger(value: string, flag: string): number {
   if (!/^[0-9]+$/u.test(value)) throw new Error(`${flag} is invalid`);
   const parsed = Number(value);
@@ -501,24 +477,11 @@ function parsePositiveInteger(value: string, flag: string): number {
   return parsed;
 }
 
-function parseModelRef(value: string): ModelRef {
-  const separator = value.indexOf("/");
-  const provider = value.slice(0, separator);
-  const id = value.slice(separator + 1);
-  if (
-    separator < 1 ||
-    !/^[a-z][a-z0-9_-]{0,63}$/u.test(provider) ||
-    !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u.test(id)
-  ) {
-    throw new Error("--model must be provider/model-id");
-  }
-  return { provider, id };
-}
-
 export const CLI_HELP = `Napier CLI ${CLI_VERSION}
 
 Usage:
   napier run --workspace <path> --prompt <text> [options]
+  napier chat --workspace <path> [options]
   napier resume --workspace <path> --thread <thread-id> [options]
   napier branch --workspace <path> --thread <thread-id> --from-seq <n> [options]
   napier rpc --workspace <path> [options]
@@ -526,6 +489,7 @@ Usage:
 
 Commands:
   run                    Start a new Run on a new or existing Thread
+  chat                   Open a multi-turn interactive Agent session
   resume                 Continue an interrupted Run as a linked child
   branch                 Fork message history at an exact Ledger sequence
   rpc                    Serve local JSON-RPC 2.0 over stdio
@@ -538,6 +502,12 @@ Workspace options:
 Run and resume options:
   --model <provider/id>  Model for this Run
   --timeout-ms <ms>      External wall-time limit (${MIN_TIMEOUT_MS}-${MAX_TIMEOUT_MS})
+
+Chat options:
+  --agent <agent-id>     Agent for the first new Thread
+  --thread <thread-id>   Continue this existing Thread
+  --title <text>         Title for the first new Thread
+  --model <provider/id>  Initial model; switch later with /model
 
 Run options:
   --prompt <text>        User prompt for the Run

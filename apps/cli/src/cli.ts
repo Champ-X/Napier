@@ -38,6 +38,7 @@ import {
   type CliWorkflowOptions,
 } from "./cli-options.js";
 import { writeLine } from "./cli-output.js";
+import { executeInteractive } from "./interactive-cli.js";
 import { OrderedEventFrameWriter } from "./ordered-event-frame-writer.js";
 import { executeRpc } from "./rpc-cli.js";
 import { canonicalWorkspace } from "./workspace-path.js";
@@ -50,6 +51,7 @@ export interface CliIo {
   stdin?: Readable;
   stdout: Writable;
   stderr: Writable;
+  subscribeInterrupt?(listener: () => void): () => void;
 }
 
 export interface RunCliDependencies {
@@ -93,6 +95,9 @@ export async function runCli(
   }
   if (action.kind === "run") {
     return executeRun(action.options, io, dependencies, parentSignal);
+  }
+  if (action.kind === "chat") {
+    return executeInteractive(action.options, io, dependencies, parentSignal);
   }
   if (action.kind === "resume") {
     return executeResume(action.options, io, dependencies, parentSignal);
