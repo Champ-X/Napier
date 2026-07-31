@@ -46,6 +46,10 @@ Version `0.1.0` includes:
   retry, latency, usage, cost, tool, output, Evaluation, and Artifact
   comparison, plus a lazy Plan Workbench experiment desk for the complete
   preview-confirm-execute-inspect flow;
+- a checked product-path performance budget over three cold built-CLI JSONL
+  runs, shared Runtime bootstrap, the production `read_file` executor, a
+  1,000-event SQLite Thread, observed RSS, and closed-ledger database growth,
+  with a strictly reprojected release baseline;
 - an authoritative SQLite WAL that commits workspace projections and ordered
   events atomically, uses revision CAS for concurrent local writers, and
   migrates legacy `workspace.json`/JSONL state without evidence loss;
@@ -515,7 +519,38 @@ Manifest, Preview, SSE event hashes/order, final Snapshot, comparison, result
 frame, source/target identities, and no-store response contract; changing
 Thread aborts the in-flight browser request.
 
-## Store Scale Baseline
+## Product Performance Budget
+
+The repository gate runs a real local product-path benchmark after the build:
+
+```bash
+npm run check:product-performance
+npm run bench:product-performance
+```
+
+The checked `local_ci_v1` profile takes the median of three fresh built
+`napier run --jsonl` processes from spawn to `run.started`, first
+`model.text.delta`, and terminal `done`. The same isolated sample measures
+shared Runtime bootstrap, 25 production `read_file` executions, append and
+`getDetail()` latency for a 1,000-event Thread, observed process RSS, and the
+closed SQLite ledger's total bytes and bytes per event.
+
+Limits live in
+[`docs/product-performance-budget.json`](docs/product-performance-budget.json).
+The reviewed baseline is
+[`docs/artifacts/product-performance-baseline-0.1.0.json`](docs/artifacts/product-performance-baseline-0.1.0.json);
+release audit strictly reprojects its medians, percentiles, RSS aggregate,
+database ratio, checks, budget hash, and content hash. `npm run
+bench:product-performance` writes a fresh report under ignored
+`benchmark-results/`.
+
+The demo first-token measure covers local startup, Ledger, stream, and model
+plumbing; it is not a claim about external Provider network latency. RSS is
+sampled at named checkpoints rather than enforced as a hard quota, and this
+profile is a regression gate for the supported local CI environment rather
+than a cross-machine score.
+
+### Store Scale Baseline
 
 Run the opt-in store benchmark after changes to persistence or Thread
 projection code:

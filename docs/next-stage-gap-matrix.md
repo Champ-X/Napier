@@ -19,7 +19,7 @@ Audit date: 2026-07-31
 
 | Priority                          | Current status | Highest-value remaining gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| P0 architecture and baseline      | In progress    | A checked local product-path budget now covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Split Server and Store by domain; extend budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                   |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                          |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, preview-bound coordinated multi-file rename application with rollback and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test selection/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                      |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite over hash-bound static snapshots, Agent/Workflow reuse, a bundled Skill, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook/chart delivery, browser UX, and media production remain.                                                                                                                                                                                                                                                |
@@ -30,6 +30,73 @@ Audit date: 2026-07-31
 | P8 models and memory              | Partial        | Pi providers, credentials, and reviewed facts exist; dynamic catalogs, local/custom providers, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+
+## Completed Slice: Product-Path Performance Budget
+
+User scenario: a maintainer can detect a material regression in Napier's real
+local startup, first response, core read tool, long-Thread projection, memory,
+or SQLite growth before accepting a release.
+
+Acceptance:
+
+- run three fresh built `napier run --jsonl` processes against isolated
+  workspace/data roots and measure median spawn-to-`run.started`, first
+  `model.text.delta`, and completed `done` latency;
+- require each CLI sample to contain an ordered event stream, Snapshot, and
+  terminal completion under a hard process timeout and bounded stdout/stderr;
+- measure shared Runtime module load and bootstrap separately, then execute the
+  production `read_file` implementation 25 times against source-bound bytes;
+- append 1,000 real events through `LocalStore`, measure append p50/p95 and
+  complete `getDetail()` projection, then close SQLite before measuring
+  persistent database bytes and bytes/event;
+- record RSS before module load and after load, bootstrap, tool execution, and
+  long-Thread projection; derive an observed maximum and growth without
+  claiming a hard quota;
+- keep all sample data temporary and remove it after success, failure,
+  cancellation, or timeout;
+- compare every derived metric with the versioned `local_ci_v1` budget during
+  `npm run check`, with an independent saved-baseline verifier;
+- strictly reject unknown budget/report fields, count drift, percentile drift,
+  aggregate drift, budget drift, hash drift, a failed budget, symlinked input,
+  oversized input, pre-cancellation, and timed-out CLI execution;
+- include the validated baseline in the release artifact set.
+
+Threat boundary:
+
+- the zero-key demo first-token metric covers local process, bootstrap, Ledger,
+  JSONL, and deterministic model plumbing. It does not measure an external
+  Provider's network or queue latency;
+- RSS is observed at named checkpoints in the benchmark process. It is neither
+  continuous peak sampling nor an enforced per-session memory limit;
+- the default 1,000-event profile catches local regressions but does not replace
+  the opt-in 10,000-event Store profile or long-horizon production telemetry;
+- timing limits intentionally include scheduling headroom for supported local
+  CI. The report records Node/platform/architecture and is not presented as a
+  cross-machine leaderboard;
+- report evidence contains durations, counts, bytes, environment identity, and
+  hashes only. Prompt, assistant output, workspace paths, and Ledger payloads
+  are excluded.
+
+Observed result:
+
+- the reviewed Apple Silicon/Node 24 baseline measured built CLI first event at
+  `629.453 ms`, first token at `777.299 ms`, and completion at `1,078.766 ms`;
+- shared Runtime bootstrap measured `21.606 ms`, production `read_file` p95
+  `0.333 ms`, 1,000-event append p95 `3.103 ms`, and complete projection
+  `7.044 ms`;
+- observed RSS peaked at `344,997,888` bytes with `290,816,000` bytes growth;
+  the closed ledger used `753,664` bytes, or `753.664` bytes/event;
+- focused tests cover passing reports, budget failure, projection/content
+  tampering, strict input, saved-baseline verification, JSONL ordering,
+  process timeout, and pre-execution cancellation;
+- all implementation stays in split benchmark runner/report modules under 500
+  lines each; no code entered `app.ts`, `store.ts`, Contracts, or the Web
+  bundle;
+- the complete repository gate passed 1,347 tests with 23 opt-in live tests
+  skipped, verified 247 OpenAPI routes and 244/244 compatibility operations,
+  and kept the Web main entry at 130.08 KiB. The final shared-host run bounded
+  Vitest to four workers after unrelated concurrent benchmark load made the
+  default Server fan-out timing-unstable; no tests or assertions were skipped.
 
 ## Completed Slice: Read-Only Sandboxed Commands
 

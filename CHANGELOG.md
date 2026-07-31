@@ -6,6 +6,14 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a checked local product-path performance budget. Three fresh built CLI
+  JSONL processes measure median first Run event, first demo token, and terminal
+  completion; the same isolated benchmark measures shared Runtime bootstrap,
+  production `read_file` p95, 1,000-event SQLite append/projection latency,
+  observed RSS, and closed-ledger bytes/event. Strict report reprojection binds
+  raw samples, derived metrics, limits, environment, and content hash. The
+  reviewed baseline is now part of release artifact audit, while budget
+  breaches, artifact tampering, CLI timeout, and pre-cancellation fail closed.
 - Added preview-bound direct LSP rename application. `lsp_rename` remains a
   read-only, offline language-server preview, while explicitly enabled
   `lsp_rename_apply` accepts only a fresh same-Run one-use capability. Napier

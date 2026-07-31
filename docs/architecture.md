@@ -104,6 +104,43 @@ removal is a versioned contract change.
 
 The runtime has no HTTP or React dependency.
 
+### Product Performance Gate
+
+Performance regression evidence stays outside the Runtime and Store domains:
+
+```text
+three fresh built CLI processes
+  -> observe run.started
+  -> observe first model.text.delta
+  -> require hash-bound snapshot + completed done frame
+  -> use medians to reduce one-off host scheduling noise
+shared local Runtime
+  -> measure module load and bootstrap separately
+  -> execute the production read_file tool 25 times
+  -> append 1,000 real events to one SQLite-backed Thread
+  -> project complete Thread detail
+  -> observe RSS at named checkpoints
+  -> close SQLite and measure persistent ledger bytes
+report
+  -> derive all budget metrics from raw samples
+  -> compare against the versioned local_ci_v1 limits
+  -> bind samples, aggregates, checks, environment, and budget with SHA-256
+  -> reproject the saved baseline during release audit
+```
+
+The runner uses only temporary workspace and data roots and removes them after
+success, failure, cancellation, or timeout. CLI stdout, stderr, duration,
+sample count, and process lifetime are bounded. The saved report contains
+timings, byte counts, and environment identity, not prompts, model text,
+workspace paths, or Ledger event bodies.
+
+The gate measures the deterministic demo path, so first-token latency covers
+local process/bootstrap/Ledger/stream/model plumbing but excludes external
+Provider network latency. RSS is an observed checkpoint maximum, not a hard
+resource quota. The 1,000-event profile is a release regression boundary;
+extended 10,000-event, external-provider, HTTP, browser, and hard quota
+profiles remain separate follow-up work.
+
 ### Server
 
 `@napier/server` is a thin Hono adapter:
@@ -5255,8 +5292,9 @@ deferred until the local P0-P9 product loop is stable.
   managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;
 - domain extraction from the oversized Server and Store modules;
-- startup, first-token, tool-latency, long-thread, memory, Web bundle, and
-  database-growth budgets.
+- extend the checked local CLI/Runtime/tool/1,000-event/SQLite performance
+  budget to external Providers, HTTP, browser sessions, 10,000-event Threads,
+  and enforced process resource quotas.
 
 ### Layer 2: Coding and workflow
 

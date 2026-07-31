@@ -12,6 +12,7 @@ import {
   createReleaseArtifactsVerification,
   verifyReleaseArtifactsReceipt,
 } from "./check-release-artifacts.mjs";
+import { createProductPerformanceReport } from "./product-performance.mjs";
 
 const temporaryRoots = [];
 const execFile = promisify(execFileWithCallback);
@@ -41,6 +42,7 @@ describe("release artifacts audit", () => {
     expect(result.artifacts.map((artifact) => artifact.kind)).toEqual([
       "package-lock-audit",
       "runtime-environment-audit",
+      "product-performance-baseline",
       "web-dist-audit",
       "web-dist-manifest",
       "management-openapi",
@@ -157,6 +159,27 @@ describe("release artifacts audit", () => {
     );
   });
 
+  it("fails when the product performance baseline is tampered", async () => {
+    const { root } = await createFixture();
+    const baselinePath = path.join(
+      root,
+      "docs/artifacts/product-performance-baseline-0.1.0.json",
+    );
+    const baseline = JSON.parse(await readFile(baselinePath, "utf8"));
+    baseline.metrics.readFileP95Ms = 999;
+    await writeJson(baselinePath, baseline);
+
+    const result = await auditReleaseArtifacts({ repoRoot: root });
+
+    expect(result.ok).toBe(false);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        "product-performance baseline: report_content_hash_mismatch",
+        "product-performance baseline: report_projection_mismatch",
+      ]),
+    );
+  });
+
   it("rejects malformed release artifact receipts", async () => {
     const { root } = await createFixture();
     await writeJson(
@@ -191,6 +214,7 @@ async function createFixture() {
   temporaryRoots.push(root);
   await createPackageLockFixture(root);
   await createWebDistFixture(root);
+  await createProductPerformanceFixture(root);
   await createManagementOpenApiFixture(root);
   await createManagementOpenApiCompatibilityFixture(root);
   await execFile(process.execPath, [
@@ -283,6 +307,97 @@ async function createPackageLockFixture(root) {
     contractsPackage,
   );
   await writeJson(path.join(root, "package-lock.json"), lockfile);
+}
+
+async function createProductPerformanceFixture(root) {
+  const budget = {
+    kind: "napier.product-performance-budget",
+    schemaVersion: 1,
+    profile: "release_test_v1",
+    sample: {
+      cliIterations: 1,
+      cliTimeoutMs: 1_000,
+      readFileIterations: 1,
+      longThreadEventCount: 100,
+    },
+    limits: {
+      cliFirstEventMedianMs: 100,
+      cliFirstTokenMedianMs: 100,
+      cliCompletionMedianMs: 100,
+      runtimeBootstrapMs: 100,
+      readFileP95Ms: 100,
+      longThreadAppendP95Ms: 100,
+      longThreadProjectionMs: 100,
+      runtimeObservedPeakRssBytes: 1_000,
+      runtimeRssGrowthBytes: 1_000,
+      databaseBytes: 10_000,
+      databaseBytesPerEvent: 1_000,
+    },
+  };
+  const report = createProductPerformanceReport({
+    budget,
+    measurements: {
+      cli: {
+        sampleCount: 1,
+        samples: [
+          {
+            firstEventMs: 10,
+            firstTokenMs: 20,
+            completionMs: 30,
+            eventCount: 10,
+          },
+        ],
+        firstEventMedianMs: 10,
+        firstTokenMedianMs: 20,
+        completionMedianMs: 30,
+      },
+      runtime: { moduleLoadMs: 5, bootstrapMs: 8 },
+      tool: {
+        name: "read_file",
+        iterations: 1,
+        durationsMs: [3],
+        p50Ms: 3,
+        p95Ms: 3,
+      },
+      longThread: {
+        eventCount: 100,
+        batchDurationMs: 50,
+        appendP50Ms: 1,
+        appendP95Ms: 2,
+        projectionMs: 5,
+        detailBytes: 4_000,
+        eventBytes: 3_000,
+      },
+      memory: {
+        initialRssBytes: 100,
+        afterModuleLoadRssBytes: 200,
+        afterBootstrapRssBytes: 300,
+        afterToolRssBytes: 350,
+        afterLongThreadRssBytes: 400,
+        observedPeakRssBytes: 400,
+        rssGrowthBytes: 300,
+      },
+      database: {
+        eventCount: 100,
+        totalBytes: 5_000,
+        bytesPerEvent: 50,
+      },
+    },
+    environment: {
+      nodeVersion: process.versions.node,
+      platform: process.platform,
+      arch: process.arch,
+    },
+    generatedAt: "2026-07-31T00:00:00.000Z",
+  });
+  await writeJson(
+    path.join(root, "docs/product-performance-budget.json"),
+    budget,
+  );
+  await writeJson(
+    path.join(root, "docs/artifacts/product-performance-baseline-0.1.0.json"),
+    report,
+  );
 }
 
 async function createWebDistFixture(root) {

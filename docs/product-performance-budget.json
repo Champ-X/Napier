@@ -1,0 +1,24 @@
+{
+  "kind": "napier.product-performance-budget",
+  "schemaVersion": 1,
+  "profile": "local_ci_v1",
+  "sample": {
+    "cliIterations": 3,
+    "cliTimeoutMs": 10000,
+    "readFileIterations": 25,
+    "longThreadEventCount": 1000
+  },
+  "limits": {
+    "cliFirstEventMedianMs": 1500,
+    "cliFirstTokenMedianMs": 2500,
+    "cliCompletionMedianMs": 4000,
+    "runtimeBootstrapMs": 1500,
+    "readFileP95Ms": 20,
+    "longThreadAppendP95Ms": 10,
+    "longThreadProjectionMs": 75,
+    "runtimeObservedPeakRssBytes": 469762048,
+    "runtimeRssGrowthBytes": 402653184,
+    "databaseBytes": 8388608,
+    "databaseBytesPerEvent": 4096
+  }
+}

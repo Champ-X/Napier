@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { verifyPackageLockReceipt } from "./check-package-lock.mjs";
 import { verifyRuntimeEnvironmentReceipt } from "./check-runtime-environment.mjs";
 import { verifyWebDistReceipt } from "./check-web-dist.mjs";
+import { verifyProductPerformanceReportFile } from "./product-performance-report.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
@@ -13,6 +14,10 @@ const defaultPackageLockReceiptPath =
   "docs/artifacts/package-lock-audit-0.1.0.json";
 const defaultRuntimeEnvironmentReceiptPath =
   "docs/artifacts/runtime-environment-audit-0.1.0.json";
+const defaultProductPerformanceBudgetPath =
+  "docs/product-performance-budget.json";
+const defaultProductPerformanceBaselinePath =
+  "docs/artifacts/product-performance-baseline-0.1.0.json";
 const defaultWebDistReceiptPath = "docs/artifacts/web-dist-audit-0.1.0.json";
 const defaultWebDistManifestPath = "docs/artifacts/web-dist-0.1.0.sha256";
 const defaultManagementOpenApiPath =
@@ -28,6 +33,11 @@ export async function auditReleaseArtifacts(options = {}) {
   const runtimeEnvironmentReceiptPath =
     options.runtimeEnvironmentReceiptPath ??
     defaultRuntimeEnvironmentReceiptPath;
+  const productPerformanceBudgetPath =
+    options.productPerformanceBudgetPath ?? defaultProductPerformanceBudgetPath;
+  const productPerformanceBaselinePath =
+    options.productPerformanceBaselinePath ??
+    defaultProductPerformanceBaselinePath;
   const webDistReceiptPath =
     options.webDistReceiptPath ?? defaultWebDistReceiptPath;
   const webDistManifestPath =
@@ -50,6 +60,7 @@ export async function auditReleaseArtifacts(options = {}) {
   const [
     packageLockVerification,
     runtimeEnvironmentVerification,
+    productPerformanceVerification,
     webDistVerification,
     webDistManifest,
     managementOpenApi,
@@ -62,6 +73,18 @@ export async function auditReleaseArtifacts(options = {}) {
     verifyRuntimeEnvironmentReceipt({
       repoRoot,
       verifyReceiptPath: runtimeEnvironmentReceiptPath,
+    }),
+    verifyProductPerformanceReportFile({
+      budgetPath: resolveRepoRelativePath(
+        repoRoot,
+        productPerformanceBudgetPath,
+        "productPerformanceBudgetPath",
+      ),
+      reportPath: resolveRepoRelativePath(
+        repoRoot,
+        productPerformanceBaselinePath,
+        "productPerformanceBaselinePath",
+      ),
     }),
     verifyWebDistReceipt({
       repoRoot,
@@ -86,6 +109,13 @@ export async function auditReleaseArtifacts(options = {}) {
       ),
     );
   }
+  if (!productPerformanceVerification.valid) {
+    errors.push(
+      ...productPerformanceVerification.errors.map(
+        (error) => `product-performance baseline: ${error}`,
+      ),
+    );
+  }
   if (!webDistVerification.valid) {
     errors.push(
       ...webDistVerification.errors.map(
@@ -106,6 +136,12 @@ export async function auditReleaseArtifacts(options = {}) {
       path: runtimeEnvironmentVerification.receiptPath,
       sha256: runtimeEnvironmentVerification.receiptSha256,
       valid: runtimeEnvironmentVerification.valid,
+    },
+    {
+      kind: "product-performance-baseline",
+      path: productPerformanceBaselinePath,
+      sha256: productPerformanceVerification.reportSha256,
+      valid: productPerformanceVerification.valid,
     },
     {
       kind: "web-dist-audit",

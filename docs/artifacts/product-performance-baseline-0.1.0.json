@@ -1,0 +1,200 @@
+{
+  "kind": "napier.product-performance-report",
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-31T07:07:14.154Z",
+  "environment": {
+    "nodeVersion": "24.16.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "profile": "local_ci_v1",
+  "budgetSha256": "e94a824d07b5e44ea9945204ef49caef5a6024d00e20ac370dcb7ab69851b063",
+  "sample": {
+    "cliIterations": 3,
+    "cliTimeoutMs": 10000,
+    "readFileIterations": 25,
+    "longThreadEventCount": 1000
+  },
+  "measurements": {
+    "cli": {
+      "sampleCount": 3,
+      "samples": [
+        {
+          "firstEventMs": 587.036,
+          "firstTokenMs": 736.649,
+          "completionMs": 1042.31,
+          "eventCount": 15
+        },
+        {
+          "firstEventMs": 753.407,
+          "firstTokenMs": 928.291,
+          "completionMs": 1290.169,
+          "eventCount": 15
+        },
+        {
+          "firstEventMs": 629.453,
+          "firstTokenMs": 777.299,
+          "completionMs": 1078.766,
+          "eventCount": 15
+        }
+      ],
+      "firstEventMedianMs": 629.453,
+      "firstTokenMedianMs": 777.299,
+      "completionMedianMs": 1078.766
+    },
+    "runtime": {
+      "moduleLoadMs": 507.025,
+      "bootstrapMs": 21.606
+    },
+    "tool": {
+      "name": "read_file",
+      "iterations": 25,
+      "durationsMs": [
+        1.046,
+        0.333,
+        0.315,
+        0.296,
+        0.309,
+        0.287,
+        0.296,
+        0.263,
+        0.254,
+        0.254,
+        0.237,
+        0.217,
+        0.199,
+        0.238,
+        0.231,
+        0.218,
+        0.234,
+        0.238,
+        0.212,
+        0.273,
+        0.223,
+        0.197,
+        0.194,
+        0.225,
+        0.218
+      ],
+      "p50Ms": 0.238,
+      "p95Ms": 0.333
+    },
+    "longThread": {
+      "eventCount": 1000,
+      "batchDurationMs": 1862.702,
+      "appendP50Ms": 1.74,
+      "appendP95Ms": 3.103,
+      "projectionMs": 7.044,
+      "detailBytes": 413443,
+      "eventBytes": 409787
+    },
+    "memory": {
+      "initialRssBytes": 54181888,
+      "afterModuleLoadRssBytes": 185303040,
+      "afterBootstrapRssBytes": 194478080,
+      "afterToolRssBytes": 195690496,
+      "afterLongThreadRssBytes": 344997888,
+      "observedPeakRssBytes": 344997888,
+      "rssGrowthBytes": 290816000
+    },
+    "database": {
+      "eventCount": 1000,
+      "totalBytes": 753664,
+      "bytesPerEvent": 753.664
+    }
+  },
+  "metrics": {
+    "cliFirstEventMedianMs": 629.453,
+    "cliFirstTokenMedianMs": 777.299,
+    "cliCompletionMedianMs": 1078.766,
+    "runtimeBootstrapMs": 21.606,
+    "readFileP95Ms": 0.333,
+    "longThreadAppendP95Ms": 3.103,
+    "longThreadProjectionMs": 7.044,
+    "runtimeObservedPeakRssBytes": 344997888,
+    "runtimeRssGrowthBytes": 290816000,
+    "databaseBytes": 753664,
+    "databaseBytesPerEvent": 753.664
+  },
+  "checks": [
+    {
+      "metric": "cliFirstEventMedianMs",
+      "unit": "ms",
+      "observed": 629.453,
+      "limit": 1500,
+      "passed": true
+    },
+    {
+      "metric": "cliFirstTokenMedianMs",
+      "unit": "ms",
+      "observed": 777.299,
+      "limit": 2500,
+      "passed": true
+    },
+    {
+      "metric": "cliCompletionMedianMs",
+      "unit": "ms",
+      "observed": 1078.766,
+      "limit": 4000,
+      "passed": true
+    },
+    {
+      "metric": "runtimeBootstrapMs",
+      "unit": "ms",
+      "observed": 21.606,
+      "limit": 1500,
+      "passed": true
+    },
+    {
+      "metric": "readFileP95Ms",
+      "unit": "ms",
+      "observed": 0.333,
+      "limit": 20,
+      "passed": true
+    },
+    {
+      "metric": "longThreadAppendP95Ms",
+      "unit": "ms",
+      "observed": 3.103,
+      "limit": 10,
+      "passed": true
+    },
+    {
+      "metric": "longThreadProjectionMs",
+      "unit": "ms",
+      "observed": 7.044,
+      "limit": 75,
+      "passed": true
+    },
+    {
+      "metric": "runtimeObservedPeakRssBytes",
+      "unit": "bytes",
+      "observed": 344997888,
+      "limit": 469762048,
+      "passed": true
+    },
+    {
+      "metric": "runtimeRssGrowthBytes",
+      "unit": "bytes",
+      "observed": 290816000,
+      "limit": 402653184,
+      "passed": true
+    },
+    {
+      "metric": "databaseBytes",
+      "unit": "bytes",
+      "observed": 753664,
+      "limit": 8388608,
+      "passed": true
+    },
+    {
+      "metric": "databaseBytesPerEvent",
+      "unit": "bytes/event",
+      "observed": 753.664,
+      "limit": 4096,
+      "passed": true
+    }
+  ],
+  "status": "passed",
+  "contentSha256": "0a39a29d202c58b3db9b29c9bb01bcb5acfe26c787dada12da03440e577b7a9e"
+}
