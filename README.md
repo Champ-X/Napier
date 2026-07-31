@@ -33,10 +33,10 @@ Version `0.1.0` includes:
   `napier workflow` CLI commands with human output or hash-bound JSONL, backed
   by the same Agent Runtime, model registry, policy, Sandbox, SQLite Ledger,
   and domain services as the HTTP/Web path;
-- a long-lived local `napier rpc` stdio JSON-RPC 2.0 process for Agent run,
-  continuation, interrupted-Run recovery, request-bound Ledger event
-  notifications, standard cancellation, bounded concurrency, and orderly
-  shutdown over the same embedded Runtime service used by the TypeScript SDK;
+- a long-lived local `napier rpc` stdio JSON-RPC 2.0 process for Agent and
+  typed Workflow run/resume, request-bound Ledger event notifications,
+  standard cancellation, bounded concurrency, and orderly shutdown over the
+  same embedded Runtime services used by the TypeScript SDK;
 - versioned executable Plan Workflow manifests with bounded runtime schemas,
   explicit typed node bindings, frozen Agent revision, real Run-backed Agent
   nodes, bounded model-free Deterministic data-shaping nodes, model-free Tool
@@ -440,10 +440,14 @@ npm run --silent napier -- rpc \
   --data-root .napier
 ```
 
-The client first sends `initialize`, then calls `napier/agent/run` or
-`napier/agent/resume`. Every durable event produced by that request is streamed
-as a `napier/event` notification carrying the originating request ID and the
-same event SHA-256 used by SSE/JSONL before the terminal result:
+The client first sends `initialize`, then calls `napier/agent/run`,
+`napier/agent/resume`, `napier/workflow/run`, or
+`napier/workflow/resume`. Workflow calls carry the same versioned Manifest
+consumed by the CLI and TypeScript SDK; new executions also carry typed JSON
+input, while resume binds the existing Thread and Plan and can explicitly
+retry blocked nodes. Every durable event produced by a request is streamed as
+a `napier/event` notification carrying the originating request ID and the same
+event SHA-256 used by SSE/JSONL before the terminal result:
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"my-editor"}}}
@@ -454,14 +458,16 @@ same event SHA-256 used by SSE/JSONL before the terminal result:
 ```
 
 The protocol is exported by `@napier/contracts` at version `1`. Input is strict
-UTF-8 JSON with a 1 MiB line cap and at most four active Agent requests.
-Malformed, unknown, pre-initialize, duplicate, over-capacity, cancelled, and
-post-shutdown requests use stable JSON-RPC error codes; internal diagnostics
-are hash-only. EOF, SIGINT, SIGTERM, `exit`, and Runtime shutdown cancel and
-await active Runs before SQLite closes. The transport is local stdio only: it
-does not open a socket, accept remote credentials, expose Store, or implement a
-second Agent Loop. Workflow RPC, remote transport/authentication, ACP, and TUI
-remain follow-up work.
+UTF-8 JSON with a 1 MiB line cap and at most four active Agent or Workflow
+requests. Workflow Manifest hashes and input Schemas are validated before
+creating a Thread or Plan. Malformed, unknown, pre-initialize, duplicate,
+over-capacity, cancelled, and post-shutdown requests use stable JSON-RPC error
+codes; internal diagnostics are hash-only. EOF, SIGINT, SIGTERM, `exit`, and
+Runtime shutdown cancel and await active Runs before SQLite closes. The
+transport is local stdio only: it does not open a socket, accept remote
+credentials, expose Store, or implement a second Agent or Workflow loop.
+Approval answers, Workflow experiments, remote transport/authentication, ACP,
+and TUI remain follow-up work.
 
 Execute a versioned typed Workflow manifest through the same Runtime:
 

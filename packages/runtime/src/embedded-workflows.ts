@@ -69,6 +69,15 @@ export interface EmbeddedWorkflowExecution {
   result: ExecutionPlanWorkflowResult;
 }
 
+export function validateRunEmbeddedWorkflowInput(
+  manifestInput: ExecutionPlanWorkflowManifest,
+  input: JsonValue,
+): ExecutionPlanWorkflowManifest {
+  const manifest = validateExecutionPlanWorkflowManifest(manifestInput);
+  assertWorkflowValue(manifest.inputSchema, input, "Workflow input");
+  return manifest;
+}
+
 export class EmbeddedWorkflowService {
   constructor(
     private readonly store: LocalStore,
@@ -121,8 +130,10 @@ export class EmbeddedWorkflowService {
     options: RunEmbeddedWorkflowOptions,
   ): Promise<EmbeddedWorkflowExecution> {
     options.signal?.throwIfAborted();
-    const manifest = validateExecutionPlanWorkflowManifest(options.manifest);
-    assertWorkflowValue(manifest.inputSchema, options.input, "Workflow input");
+    const manifest = validateRunEmbeddedWorkflowInput(
+      options.manifest,
+      options.input,
+    );
     const threadId =
       options.threadId ??
       (

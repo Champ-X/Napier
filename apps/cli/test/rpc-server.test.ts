@@ -4,6 +4,7 @@ import type { RunEvent, RunRecord } from "@napier/contracts";
 import type {
   EmbeddedAgentExecution,
   EmbeddedAgentService,
+  EmbeddedWorkflowService,
   ResumeEmbeddedAgentOptions,
   RunEmbeddedAgentOptions,
 } from "@napier/runtime";
@@ -359,6 +360,16 @@ function agentService(overrides: {
   };
 }
 
+function unusedWorkflowService(): Pick<
+  EmbeddedWorkflowService,
+  "run" | "resume"
+> {
+  const unexpected = async (): Promise<never> => {
+    throw new Error("Unexpected Workflow RPC call");
+  };
+  return { run: unexpected, resume: unexpected };
+}
+
 function execution(
   threadId: string,
   runId: string,
@@ -405,11 +416,13 @@ class RpcHarness {
   constructor(
     private readonly agents: Pick<EmbeddedAgentService, "run" | "resume">,
     private readonly signal?: AbortSignal,
+    private readonly workflows = unusedWorkflowService(),
   ) {}
 
   start(): Promise<number> {
     this.server = runNapierRpcServer({
       agents: this.agents,
+      workflows: this.workflows,
       input: this.input,
       output: this.output,
       serverVersion: "test",

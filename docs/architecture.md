@@ -263,16 +263,18 @@ re-execution, dependency substitution, or side-effect simulation.
 ### Local stdio JSON-RPC
 
 `napier rpc` keeps one `LocalAgentRuntime` open for a local parent process and
-uses the same `EmbeddedAgentService` as the TypeScript SDK:
+uses the same `EmbeddedAgentService` and `EmbeddedWorkflowService` as the
+TypeScript SDK:
 
 ```text
 parent process starts napier rpc with canonical workspace/data roots
   -> initialize JSON-RPC protocol version 1
-  -> napier/agent/run or napier/agent/resume
-  -> EmbeddedAgentService preflight
-  -> existing AgentRuntime + policy + Sandbox + Work Ledger
+  -> napier/agent/run, napier/agent/resume,
+     napier/workflow/run, or napier/workflow/resume
+  -> Embedded Agent/Workflow preflight
+  -> existing AgentRuntime or WorkflowRuntime + policy + Sandbox + Work Ledger
   -> napier/event notification with request ID + shared event SHA-256
-  -> terminal Agent execution response
+  -> terminal Agent or Workflow execution response
 $/cancelRequest, EOF, SIGINT, SIGTERM, or exit
   -> abort the owning request or server lifetime
   -> await terminal Run evidence
@@ -282,24 +284,27 @@ $/cancelRequest, EOF, SIGINT, SIGTERM, or exit
 The serializable protocol types live in `@napier/contracts`.
 `rpc-protocol.ts` owns strict message/parameter validation and stable public
 error codes; `rpc-transport.ts` owns bounded UTF-8 line framing and serialized
-backpressure-aware output; `rpc-server.ts` owns initialization, request
-admission, cancellation, and lifecycle state. No RPC code reads Store or
-implements a model/tool loop.
+backpressure-aware output; `rpc-invocations.ts` adapts public methods to the
+embedded services; `rpc-server.ts` owns initialization, request admission,
+cancellation, and lifecycle state. No RPC code reads Store or implements an
+Agent or Workflow loop.
 
 Input is line-delimited JSON-RPC 2.0, capped at 1 MiB per line and four active
-Agent requests. Request IDs are bounded strings or non-negative safe integers.
-Unknown fields, malformed ModelRefs/resource IDs, duplicate active IDs,
-pre-initialize calls, unknown methods, over-capacity calls, and post-shutdown
-calls fail before Runtime mutation. Internal failures expose only a stable
-JSON-RPC message and diagnostic SHA-256. Ledger event notifications and the
-terminal assistant result are intentional client-visible task data. A stdout
-failure aborts the server lifetime and active Runs rather than being treated as
-an ignorable disconnected observer.
+Agent or Workflow requests. Request IDs are bounded strings or non-negative
+safe integers. Unknown fields, malformed ModelRefs/resource IDs, invalid or
+tampered Workflow Manifests, Schema-invalid Workflow input, duplicate active
+IDs, pre-initialize calls, unknown methods, over-capacity calls, and
+post-shutdown calls fail before Runtime mutation. Internal failures expose
+only a stable JSON-RPC message and diagnostic SHA-256. Ledger event
+notifications and terminal task results are intentional client-visible data.
+A stdout failure aborts the server lifetime and active Runs rather than being
+treated as an ignorable disconnected observer.
 
 The process opens no network listener and accepts no transport credential. It
 inherits the selected local data root's existing credential references and
-tool policy, so stdio does not elevate the Agent. This first RPC slice supports
-Agent run/continuation/manual recovery only; Workflow methods, remote
+tool policy, so stdio does not elevate the Agent or Workflow. RPC supports
+Agent and typed Workflow run/resume, including explicit blocked-node retry.
+Workflow Approval answers, checkpoint experiments, remote
 transport/authentication, client reconnection, ACP, TUI, and Desktop packaging
 remain explicit gaps.
 
@@ -5346,10 +5351,10 @@ The current boundary has forty-eight parts:
     association, exact read-only/offline Vitest targets, post-run source
     freshness, Agent/HTTP/Replay/Trace integration, and path/output-free durable
     evidence.
-48. A versioned local stdio JSON-RPC Agent entry with strict bounded framing,
-    request-bound Ledger notifications, shared Embedded Agent execution,
-    concurrent admission, standard cancellation, ordered shutdown, built
-    subprocess coverage, and no second Agent Loop.
+48. A versioned local stdio JSON-RPC Agent and typed Workflow entry with strict
+    bounded framing, request-bound Ledger notifications, shared Embedded
+    execution, mixed concurrent admission, standard cancellation, ordered
+    shutdown, built subprocess coverage, and no second execution loop.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5405,9 +5410,10 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- extend local Agent RPC to typed Workflow methods and authenticated remote
-  transport, then add interactive TUI, ACP, Desktop, persistent browser UX, and
-  broader data/research capability slices over the same Runtime and Ledger;
+- extend local RPC to Workflow Approval/experiment methods and authenticated
+  remote transport, then add interactive TUI, ACP, Desktop, persistent browser
+  UX, and broader data/research capability slices over the same Runtime and
+  Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;
 - fixed Capability & Outcome benchmarks centered on task success, recovery,

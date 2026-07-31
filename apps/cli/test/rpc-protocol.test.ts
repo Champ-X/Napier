@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { Readable, Writable } from "node:stream";
 
 import { describe, expect, it } from "vitest";
@@ -8,9 +11,12 @@ import {
   parseAgentRunParams,
   parseInitializeParams,
   parseJsonRpcMessage,
+  parseWorkflowResumeParams,
+  parseWorkflowRunParams,
   rpcError,
 } from "../src/rpc-protocol.js";
 import { readRpcLines, RpcOutputWriter } from "../src/rpc-transport.js";
+import { defineRpcWorkflowManifest } from "./rpc-workflow-fixture.js";
 
 describe("Napier JSON-RPC protocol", () => {
   it("strictly parses requests, notifications, and initialization", () => {
@@ -90,6 +96,58 @@ describe("Napier JSON-RPC protocol", () => {
     expect(() =>
       parseAgentResumeParams({ threadId: "thread_example", runId: "bad" }),
     ).toThrow("runId is invalid");
+  });
+
+  it("validates Workflow manifests and typed input before Runtime mutation", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "napier-rpc-protocol-"));
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "data");
+    await mkdir(workspaceRoot);
+    try {
+      const manifest = await defineRpcWorkflowManifest({
+        workspaceRoot,
+        dataRoot,
+      });
+      expect(
+        parseWorkflowRunParams({
+          manifest,
+          input: { text: "Protocol delivery" },
+          title: "RPC Workflow",
+        }),
+      ).toEqual({
+        manifest,
+        input: { text: "Protocol delivery" },
+        title: "RPC Workflow",
+      });
+      expect(
+        parseWorkflowResumeParams({
+          manifest,
+          threadId: "thread_example",
+          planId: "plan_example",
+          retryBlocked: true,
+        }),
+      ).toEqual({
+        manifest,
+        threadId: "thread_example",
+        planId: "plan_example",
+        retryBlocked: true,
+      });
+      expect(() =>
+        parseWorkflowRunParams({
+          manifest,
+          input: { text: "" },
+        }),
+      ).toThrow("manifest or input is invalid");
+      expect(() =>
+        parseWorkflowResumeParams({
+          manifest: { ...manifest, contentSha256: "0".repeat(64) },
+          threadId: "thread_example",
+          planId: "plan_example",
+        }),
+      ).toThrow("manifest is invalid");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("frames split CRLF input and rejects oversized or invalid UTF-8 lines", async () => {

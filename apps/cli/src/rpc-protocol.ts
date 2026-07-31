@@ -1,13 +1,21 @@
 import {
   NAPIER_RPC_PROTOCOL_VERSION,
+  type ExecutionPlanWorkflowManifest,
+  type JsonValue,
   type ModelRef,
   type NapierRpcAgentResumeParams,
   type NapierRpcAgentRunParams,
   type NapierRpcErrorResponse,
   type NapierRpcId,
   type NapierRpcSuccessResponse,
+  type NapierRpcWorkflowResumeParams,
+  type NapierRpcWorkflowRunParams,
 } from "@napier/contracts";
-import { sha256 } from "@napier/runtime";
+import {
+  sha256,
+  validateExecutionPlanWorkflowManifest,
+  validateRunEmbeddedWorkflowInput,
+} from "@napier/runtime";
 
 export { NAPIER_RPC_PROTOCOL_VERSION };
 export const MAX_RPC_LINE_BYTES = 1024 * 1024;
@@ -35,6 +43,8 @@ export type JsonRpcSuccess = NapierRpcSuccessResponse<unknown>;
 export type JsonRpcError = NapierRpcErrorResponse;
 export type RpcAgentRunParams = NapierRpcAgentRunParams;
 export type RpcAgentResumeParams = NapierRpcAgentResumeParams;
+export type RpcWorkflowRunParams = NapierRpcWorkflowRunParams;
+export type RpcWorkflowResumeParams = NapierRpcWorkflowResumeParams;
 
 export class JsonRpcProtocolError extends Error {
   constructor(
@@ -55,6 +65,7 @@ const RUN_ID = /^run_[a-z0-9_-]{8,80}$/u;
 const PROVIDER_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const MODEL_ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,159}$/u;
 const MAX_PROMPT_BYTES = 64 * 1024;
+const MAX_RPC_JSON_DEPTH = 64;
 
 export function parseJsonRpcMessage(line: string): JsonRpcMessage {
   let value: unknown;
@@ -158,6 +169,57 @@ export function parseAgentResumeParams(
   };
 }
 
+export function parseWorkflowRunParams(
+  input: Record<string, unknown> | undefined,
+): RpcWorkflowRunParams {
+  if (!input) invalidParams("Workflow run params are required");
+  exactKeys(input, ["manifest", "input", "threadId", "agentId", "title"]);
+  if (!Object.hasOwn(input, "input")) {
+    invalidParams("Workflow input is required");
+  }
+  const workflowInput = jsonValue(input["input"]);
+  const manifest = workflowRunManifest(input["manifest"], workflowInput);
+  const threadId = optionalResourceId(input["threadId"], "threadId");
+  const agentId = optionalResourceId(input["agentId"], "agentId");
+  const title =
+    input["title"] === undefined
+      ? undefined
+      : boundedText(input["title"], 1, 120);
+  if (title && /[<>]/u.test(title)) invalidParams("title is invalid");
+  if (threadId && title) {
+    invalidParams("title cannot be used with an existing Thread");
+  }
+  return {
+    manifest,
+    input: workflowInput,
+    ...(threadId ? { threadId } : {}),
+    ...(agentId ? { agentId } : {}),
+    ...(title ? { title } : {}),
+  };
+}
+
+export function parseWorkflowResumeParams(
+  input: Record<string, unknown> | undefined,
+): RpcWorkflowResumeParams {
+  if (!input) invalidParams("Workflow resume params are required");
+  exactKeys(input, ["manifest", "threadId", "planId", "retryBlocked"]);
+  const manifest = workflowManifest(input["manifest"]);
+  const threadId = resourceId(input["threadId"], "threadId");
+  const planId = resourceId(input["planId"], "planId");
+  const retryBlocked =
+    input["retryBlocked"] === undefined
+      ? undefined
+      : typeof input["retryBlocked"] === "boolean"
+        ? input["retryBlocked"]
+        : invalidParams("retryBlocked is invalid");
+  return {
+    manifest,
+    threadId,
+    planId,
+    ...(retryBlocked ? { retryBlocked: true } : {}),
+  };
+}
+
 export function parseCancelParams(
   input: Record<string, unknown> | undefined,
 ): JsonRpcId {
@@ -221,6 +283,60 @@ function optionalModel(value: unknown): ModelRef | undefined {
     invalidParams("model is invalid");
   }
   return { provider: value["provider"], id: value["id"] };
+}
+
+function workflowRunManifest(
+  value: unknown,
+  input: JsonValue,
+): ExecutionPlanWorkflowManifest {
+  if (!record(value)) invalidParams("manifest is invalid");
+  try {
+    return validateRunEmbeddedWorkflowInput(
+      value as unknown as ExecutionPlanWorkflowManifest,
+      input,
+    );
+  } catch {
+    return invalidParams("manifest or input is invalid");
+  }
+}
+
+function workflowManifest(value: unknown): ExecutionPlanWorkflowManifest {
+  if (!record(value)) invalidParams("manifest is invalid");
+  try {
+    return validateExecutionPlanWorkflowManifest(
+      value as unknown as ExecutionPlanWorkflowManifest,
+    );
+  } catch {
+    return invalidParams("manifest is invalid");
+  }
+}
+
+function jsonValue(value: unknown, depth = 0): JsonValue {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (depth >= MAX_RPC_JSON_DEPTH) invalidParams("JSON value is too deep");
+  if (Array.isArray(value)) {
+    return value.map((entry) => jsonValue(entry, depth + 1));
+  }
+  if (
+    record(value) &&
+    (Object.getPrototypeOf(value) === Object.prototype ||
+      Object.getPrototypeOf(value) === null)
+  ) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        jsonValue(entry, depth + 1),
+      ]),
+    );
+  }
+  return invalidParams("JSON value is invalid");
 }
 
 function boundedText(

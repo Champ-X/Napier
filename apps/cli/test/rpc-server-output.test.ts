@@ -29,6 +29,14 @@ describe("Napier JSON-RPC output failure", () => {
     };
     const server = runNapierRpcServer({
       agents,
+      workflows: {
+        async run() {
+          throw new Error("Unexpected Workflow RPC call");
+        },
+        async resume() {
+          throw new Error("Unexpected Workflow RPC call");
+        },
+      },
       input,
       output,
       serverVersion: "test",

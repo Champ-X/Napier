@@ -6,6 +6,15 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Extended local stdio JSON-RPC protocol v1 with typed Workflow run and resume.
+  Clients pass the same hash-bound Manifest used by CLI/SDK plus Schema-checked
+  JSON input or an existing Thread/Plan and explicit blocked-node retry.
+  Calls reuse `EmbeddedWorkflowService`, share Agent request admission and
+  cancellation, stream request-bound Workflow Ledger events, and return
+  completed, waiting, or blocked results without exposing Store. Real built
+  process coverage executes/resumes a deterministic Workflow, retries a
+  missing-Provider node, verifies Replay, and cancels a real Workflow while
+  stdout is deliberately backpressured.
 - Added a versioned local stdio JSON-RPC 2.0 Agent entry. `napier rpc` keeps one
   `LocalAgentRuntime` open and routes Agent run, continuation, and interrupted
   recovery through the existing `EmbeddedAgentService`. Request-bound durable

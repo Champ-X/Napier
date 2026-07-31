@@ -14,6 +14,10 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 
 import { parseCliArgs } from "../src/cli-options.js";
+import {
+  defineRpcBlockedWorkflowManifest,
+  defineRpcWorkflowManifest,
+} from "./rpc-workflow-fixture.js";
 
 const temporaryRoots: string[] = [];
 const openChildren = new Set<ChildProcessWithoutNullStreams>();
@@ -194,6 +198,197 @@ describe("Napier RPC CLI", () => {
     });
     await store.initialize();
     expect(store.listRuns(threadId)).toHaveLength(2);
+    expect(
+      verifyThreadReplayBundle(await exportThreadReplayBundle(store, threadId))
+        .status,
+    ).toBe("valid");
+    store.close();
+  }, 20_000);
+
+  it("runs and resumes a typed Workflow through the built stdio process", async () => {
+    const fixture = await createFixture();
+    const manifest = await defineRpcWorkflowManifest(fixture);
+    const blockedManifest = await defineRpcBlockedWorkflowManifest(fixture);
+    const child = spawn(
+      process.execPath,
+      [
+        path.resolve(import.meta.dirname, "../dist/index.js"),
+        "rpc",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+      ],
+      {
+        cwd: fixture.root,
+        env: minimalEnv(),
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+    openChildren.add(child);
+    child.once("exit", () => openChildren.delete(child));
+    const rpc = new RpcChild(child);
+
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "initialize",
+      method: "initialize",
+      params: { clientInfo: { name: "workflow-rpc-subprocess-test" } },
+    });
+    expect(await rpc.waitForId("initialize")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          capabilities: expect.objectContaining({
+            workflowRun: true,
+            workflowResume: true,
+          }),
+        }),
+      }),
+    );
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "workflow-run",
+      method: "napier/workflow/run",
+      params: {
+        manifest,
+        input: { text: "Evidence-native RPC Workflow" },
+        title: "RPC Workflow subprocess",
+      },
+    });
+    const first = record((await rpc.waitForId("workflow-run"))["result"]);
+    expect(first).toEqual(
+      expect.objectContaining({
+        threadId: expect.stringMatching(/^thread_/u),
+        planId: expect.stringMatching(/^plan_/u),
+        status: "completed",
+        output: { message: "Evidence-native RPC Workflow" },
+        result: expect.objectContaining({ resumed: false }),
+      }),
+    );
+    const threadId = String(first!["threadId"]);
+    const planId = String(first!["planId"]);
+    const firstEvents = rpc
+      .messages()
+      .filter(
+        (candidate) =>
+          candidate["method"] === "napier/event" &&
+          record(candidate["params"])?.["requestId"] === "workflow-run",
+      );
+    expect(
+      firstEvents.map(
+        (message) => record(record(message["params"])?.["event"])?.["type"],
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        "workflow.started",
+        "workflow.node.started",
+        "workflow.node.completed",
+        "workflow.completed",
+      ]),
+    );
+    for (const message of firstEvents) {
+      const params = record(message["params"])!;
+      expect(params["eventSha256"]).toBe(
+        sha256(JSON.stringify(params["event"])),
+      );
+    }
+
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "workflow-resume",
+      method: "napier/workflow/resume",
+      params: { manifest, threadId, planId },
+    });
+    expect(await rpc.waitForId("workflow-resume")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          threadId,
+          planId,
+          status: "completed",
+          output: { message: "Evidence-native RPC Workflow" },
+          result: expect.objectContaining({ resumed: true }),
+        }),
+      }),
+    );
+
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "workflow-blocked",
+      method: "napier/workflow/run",
+      params: {
+        manifest: blockedManifest,
+        input: { text: "Retry unavailable RPC provider" },
+      },
+    });
+    const blocked = record((await rpc.waitForId("workflow-blocked"))["result"]);
+    expect(blocked).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        result: expect.objectContaining({
+          nodeResults: [
+            expect.objectContaining({
+              nodeId: "deliver",
+              attempt: 1,
+              status: "blocked",
+            }),
+          ],
+        }),
+      }),
+    );
+    const blockedThreadId = String(blocked!["threadId"]);
+    const blockedPlanId = String(blocked!["planId"]);
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "workflow-retry",
+      method: "napier/workflow/resume",
+      params: {
+        manifest: blockedManifest,
+        threadId: blockedThreadId,
+        planId: blockedPlanId,
+        retryBlocked: true,
+      },
+    });
+    expect(await rpc.waitForId("workflow-retry")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          status: "blocked",
+          result: expect.objectContaining({
+            resumed: true,
+            nodeResults: [
+              expect.objectContaining({
+                nodeId: "deliver",
+                attempt: 2,
+                status: "blocked",
+              }),
+            ],
+          }),
+        }),
+      }),
+    );
+
+    rpc.send({ jsonrpc: "2.0", id: "shutdown", method: "shutdown" });
+    await rpc.waitForId("shutdown");
+    rpc.send({ jsonrpc: "2.0", method: "exit" });
+    child.stdin.end();
+    const [code, signal] = (await once(child, "exit")) as [
+      number | null,
+      NodeJS.Signals | null,
+    ];
+    expect({ code, signal }).toEqual({ code: 0, signal: null });
+    expect(rpc.stderr()).toBe("");
+
+    const store = new LocalStore({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+    });
+    await store.initialize();
+    expect(store.listRuns(threadId)).toHaveLength(1);
+    expect(store.listRuns(blockedThreadId)).toHaveLength(2);
+    expect(
+      (await store.listEvents(blockedThreadId)).filter(
+        (event) => event.type === "workflow.node.failed",
+      ),
+    ).toHaveLength(2);
     expect(
       verifyThreadReplayBundle(await exportThreadReplayBundle(store, threadId))
         .status,

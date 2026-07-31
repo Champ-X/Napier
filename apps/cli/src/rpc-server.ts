@@ -1,18 +1,14 @@
 import type { Writable } from "node:stream";
 
-import type { RunEvent } from "@napier/contracts";
 import type {
-  EmbeddedAgentExecution,
   EmbeddedAgentService,
+  EmbeddedWorkflowService,
 } from "@napier/runtime";
-import { streamEventFrame } from "@napier/runtime";
 
 import {
   JsonRpcProtocolError,
   MAX_RPC_ACTIVE_REQUESTS,
   NAPIER_RPC_PROTOCOL_VERSION,
-  parseAgentResumeParams,
-  parseAgentRunParams,
   parseCancelParams,
   parseInitializeParams,
   parseJsonRpcMessage,
@@ -21,8 +17,12 @@ import {
   type JsonRpcId,
   type JsonRpcMessage,
   type JsonRpcNotification,
-  type JsonRpcRequest,
 } from "./rpc-protocol.js";
+import {
+  executeRpcInvocation,
+  isRpcInvocationMethod,
+  prepareRpcInvocation,
+} from "./rpc-invocations.js";
 import {
   readRpcLines,
   RpcOutputWriter,
@@ -31,6 +31,7 @@ import {
 
 export interface NapierRpcServerOptions {
   agents: Pick<EmbeddedAgentService, "run" | "resume">;
+  workflows: Pick<EmbeddedWorkflowService, "run" | "resume">;
   input: AsyncIterable<Buffer | string>;
   output: Writable;
   serverVersion: string;
@@ -124,6 +125,8 @@ export async function runNapierRpcServer(
               capabilities: {
                 agentRun: true,
                 agentResume: true,
+                workflowRun: true,
+                workflowResume: true,
                 eventNotifications: true,
                 requestCancellation: true,
                 maxConcurrentRequests: MAX_RPC_ACTIVE_REQUESTS,
@@ -163,10 +166,7 @@ export async function runNapierRpcServer(
         );
         continue;
       }
-      if (
-        message.method !== "napier/agent/run" &&
-        message.method !== "napier/agent/resume"
-      ) {
+      if (!isRpcInvocationMethod(message.method)) {
         await writer.write(rpcError(message.id, -32601, "Method not found"));
         continue;
       }
@@ -187,10 +187,16 @@ export async function runNapierRpcServer(
         continue;
       }
       try {
-        const invoke = prepareInvocation(options.agents, message);
+        const invoke = prepareRpcInvocation(
+          {
+            agents: options.agents,
+            workflows: options.workflows,
+          },
+          message,
+        );
         const controller = new AbortController();
         const signal = AbortSignal.any([controller.signal, lifetime.signal]);
-        const pending = executeInvocation({
+        const pending = executeRpcInvocation({
           request: message,
           signal,
           invoke,
@@ -228,83 +234,6 @@ export async function runNapierRpcServer(
     options.signal?.removeEventListener("abort", abortLifetime);
   }
   return exitCode;
-}
-
-function prepareInvocation(
-  agents: Pick<EmbeddedAgentService, "run" | "resume">,
-  request: JsonRpcRequest,
-): (
-  signal: AbortSignal,
-  onEvent: (event: RunEvent) => Promise<void>,
-) => Promise<EmbeddedAgentExecution> {
-  if (request.method === "napier/agent/run") {
-    const params = parseAgentRunParams(request.params);
-    return (signal, onEvent) =>
-      agents.run({
-        ...params,
-        signal,
-        onEvent,
-      });
-  }
-  const params = parseAgentResumeParams(request.params);
-  return (signal, onEvent) =>
-    agents.resume({
-      ...params,
-      signal,
-      onEvent,
-    });
-}
-
-async function executeInvocation(input: {
-  request: JsonRpcRequest;
-  signal: AbortSignal;
-  invoke: (
-    signal: AbortSignal,
-    onEvent: (event: RunEvent) => Promise<void>,
-  ) => Promise<EmbeddedAgentExecution>;
-  writer: RpcOutputWriter;
-  shouldWrite(): boolean;
-}): Promise<void> {
-  try {
-    const execution = await input.invoke(input.signal, async (event) => {
-      if (!input.shouldWrite()) return;
-      const eventFrame = streamEventFrame(event);
-      await input.writer.write({
-        jsonrpc: "2.0",
-        method: "napier/event",
-        params: {
-          requestId: input.request.id,
-          event,
-          eventSha256: eventFrame.eventSha256,
-        },
-      });
-    });
-    if (!input.shouldWrite()) return;
-    if (input.signal.aborted || execution.run.status === "cancelled") {
-      await input.writer.write(
-        rpcError(input.request.id, -32800, "Request cancelled"),
-      );
-      return;
-    }
-    await input.writer.write(
-      rpcSuccess(input.request.id, {
-        threadId: execution.threadId,
-        runId: execution.run.id,
-        status: execution.run.status,
-        ...(execution.assistantText !== undefined
-          ? { assistantText: execution.assistantText }
-          : {}),
-        run: execution.run,
-      }),
-    );
-  } catch (error) {
-    if (!input.shouldWrite()) return;
-    await input.writer.write(
-      input.signal.aborted
-        ? rpcError(input.request.id, -32800, "Request cancelled")
-        : rpcError(input.request.id, -32603, "Internal error", error),
-    );
-  }
 }
 
 async function handleNotification(

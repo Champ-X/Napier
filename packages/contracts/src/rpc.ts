@@ -1,4 +1,13 @@
-import type { ModelRef, RunEvent, RunRecord, RunStatus } from "./index.js";
+import type {
+  ExecutionPlanWorkflowManifest,
+  ExecutionPlanWorkflowResult,
+  ExecutionPlanWorkflowStatus,
+  JsonValue,
+  ModelRef,
+  RunEvent,
+  RunRecord,
+  RunStatus,
+} from "./index.js";
 
 export const NAPIER_RPC_PROTOCOL_VERSION = 1;
 
@@ -25,6 +34,21 @@ export interface NapierRpcAgentResumeParams {
   model?: ModelRef;
 }
 
+export interface NapierRpcWorkflowRunParams {
+  manifest: ExecutionPlanWorkflowManifest;
+  input: JsonValue;
+  threadId?: string;
+  agentId?: string;
+  title?: string;
+}
+
+export interface NapierRpcWorkflowResumeParams {
+  manifest: ExecutionPlanWorkflowManifest;
+  threadId: string;
+  planId: string;
+  retryBlocked?: boolean;
+}
+
 export type NapierRpcRequest =
   | {
       jsonrpc: "2.0";
@@ -43,6 +67,18 @@ export type NapierRpcRequest =
       id: NapierRpcId;
       method: "napier/agent/resume";
       params: NapierRpcAgentResumeParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/workflow/run";
+      params: NapierRpcWorkflowRunParams;
+    }
+  | {
+      jsonrpc: "2.0";
+      id: NapierRpcId;
+      method: "napier/workflow/resume";
+      params: NapierRpcWorkflowResumeParams;
     }
   | {
       jsonrpc: "2.0";
@@ -80,6 +116,8 @@ export interface NapierRpcInitializeResult {
   capabilities: {
     agentRun: true;
     agentResume: true;
+    workflowRun: true;
+    workflowResume: true;
     eventNotifications: true;
     requestCancellation: true;
     maxConcurrentRequests: number;
@@ -92,6 +130,14 @@ export interface NapierRpcAgentExecution {
   status: RunStatus;
   assistantText?: string;
   run: RunRecord;
+}
+
+export interface NapierRpcWorkflowExecution {
+  threadId: string;
+  planId: string;
+  status: ExecutionPlanWorkflowStatus;
+  output?: JsonValue;
+  result: ExecutionPlanWorkflowResult;
 }
 
 export interface NapierRpcSuccessResponse<TResult> {
@@ -115,5 +161,6 @@ export interface NapierRpcErrorResponse {
 export type NapierRpcResponse =
   | NapierRpcSuccessResponse<NapierRpcInitializeResult>
   | NapierRpcSuccessResponse<NapierRpcAgentExecution>
+  | NapierRpcSuccessResponse<NapierRpcWorkflowExecution>
   | NapierRpcSuccessResponse<null>
   | NapierRpcErrorResponse;
