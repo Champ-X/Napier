@@ -6,6 +6,26 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added Run-owned controlled Chrome Sessions with navigation, back, AI ARIA
+  snapshots and refs, click/type/select, canonical upload, exclusive bounded
+  download, live screenshot, and explicit close actions. Sessions use fresh
+  profiles, Chromium sandboxing, temporary HOME state, same-Run serialization,
+  cross-Run isolation, cancellation/settlement cleanup, and bounded admission.
+  Every request passes independent Playwright Route checks plus a
+  loopback-only authenticated proxy that rejects private/reserved/mixed DNS
+  and pins one public IP per HTTP or CONNECT socket. Proxy outbound remains
+  closed during startup/idle/read-only views and opens only around preflighted
+  network actions. Main-frame cross-origin navigation requires per-action
+  authorization; popups, dialogs, service workers, unsolicited downloads,
+  overwrite, symlink paths, and automatic recovery are denied. Agent policy
+  requires `unrestricted` without enabling a shell. Ledger, Replay, SSE, and
+  Web Trace retain only bounded action,
+  Session, network, file, screenshot, and hash evidence; page content, URLs,
+  selectors, typed values, paths, PNG bytes, proxy credentials, and raw
+  Session IDs remain live-only. Tests cover the complete action protocol,
+  SSRF, proxy tunneling, auth, cross-origin redirects, cancellation,
+  concurrency, limits, file confinement, Agent integration, Trace privacy,
+  and an opt-in production-sandbox Chrome smoke.
 - Added Run-owned persistent TypeScript language-server Sessions across
   diagnostics, semantic symbols, definition, references, rename, Code Action,
   and write-linked diagnostic flows. Same-Run operations serialize through one

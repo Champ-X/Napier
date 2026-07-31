@@ -22,7 +22,7 @@ Audit date: 2026-07-31
 | P0 architecture and baseline      | In progress    | Split Server and Store by domain; add startup, first-token, tool-latency, long-thread, memory, and database-growth budgets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, workspace drift, reversible file lifecycle, bounded interactive stdin, persistent synchronous JavaScript, and restricted persistent Python now exist. Package-backed Python/Notebook sessions, PTY, write sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                      |
 | P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix and write-linked diagnostics, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; direct rename apply, Code Action resolve/command policy, DAP attach/source maps/multi-thread UX, broader AST transforms, write-linked test/symbol association, and isolated subagent worktrees remain.                                                                                                                                                                                              |
-| P3 browser/research/data/media    | Early          | Structured local data and research Skills exist; persistent browser sessions, source unification, SQL/DataFrame/Notebook, and media production do not.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P3 browser/research/data/media    | Partial        | Run-owned persistent Chrome Sessions now support navigation, ARIA snapshots, click/type/select, upload/download, screenshot, cancellation, fixed-IP public-network confinement, and privacy-bounded Ledger/Trace evidence. Unified Source/Artifact, research citation quality, SQL/DataFrame/Notebook, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                            |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes, policy-checked model-free stateless Tool nodes, durable operator gates, bounded parallel waves, typed equality guards with fallback, a local TypeScript definition/execution SDK, explicit retry, safe pure-node recomputation, restart recovery, CLI JSONL, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, multi-way switch, loops, Map/Reduce, compensation, single-node debugging, external adapters, artifact settlement, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoint experiments now provide read-only preview, verified Agent/Deterministic/Tool/Approval ancestor reuse, descendant rerun including isolated waiting Approval targets, per-Agent-node model replacement, stale-bound side-effect confirmation, isolated target Threads, cancellation/restart recovery, source/target comparison, CLI JSONL, HTTP SSE, privacy-bounded Trace, and a visual desk. User/model/tool checkpoints, Prompt/Skill/Memory/environment replacement, side-effect simulation, single-step/batch experiments, root-cause views, and evaluation promotion remain.                                                                                                                       |
 | P6 product entry points           | Partial        | Web Workbench, HTTP/SSE, human/JSONL CLI, and a local TypeScript SDK for Agent run/continue/recovery plus Workflow definition/execution/resume exist over one Runtime. CLI can atomically approve/reject and resume Workflow gates; HTTP reuses the decision API plus Workflow route; Web answers/cancels and prevents detached Agent continuation. Interactive TUI, remote RPC, ACP, Desktop, seamless Web Manifest-backed Approval resume, and the visual Agent/Workflow builder remain.                                                                                                                                                                                                                                 |
@@ -2683,3 +2683,92 @@ Observed result:
   the Web main entry at 130.08 KiB against the 150 KiB budget. The 69-file Web
   dist is bound to `ed39eefd3756ee12`; the six-artifact release set is bound
   to `d9c673660d3a94e7`.
+
+## Completed Slice: Run-Owned Controlled Browser Sessions
+
+User scenario: an Agent can keep one isolated browser alive across a
+multi-step public web task, interact through fresh accessibility references,
+move explicitly selected files across the workspace boundary, capture a live
+screenshot, and close or cancel the Session without inheriting the user's
+browser profile.
+
+Acceptance:
+
+- support `start`, `navigate`, `back`, `snapshot`, `click`, `type`, `select`,
+  `upload`, `download`, `screenshot`, and `close` through one Agent tool;
+- serialize same-Run actions, isolate Runs, cap two active Sessions and 64
+  actions per Session, and settle browser state with Run cancellation/failure;
+- launch only detected/configured Chrome, Chromium, or Edge with Chromium
+  sandboxing, a fresh profile, minimal environment, temporary HOME, and
+  pre/post-launch executable identity freshness;
+- route every HTTP request and CONNECT tunnel through a loopback-only,
+  randomly authenticated proxy that resolves and pins public IPs;
+- keep proxy outbound disabled during startup, idle time, and read-only views;
+  open it only around a preflighted network-capable Agent action and destroy
+  active outbound sockets when that action settles;
+- reject private, loopback, link-local, reserved, `.local`, credential-bearing,
+  mixed-DNS, unsupported-scheme, and unsupported-port targets;
+- deny top-level cross-origin navigation unless the current action explicitly
+  authorizes it; close popups, dismiss dialogs, block service workers, and
+  cancel unsolicited downloads;
+- bind uploads to canonical rehashed files up to 16 MiB; create downloads
+  exclusively inside non-symlink workspace parents without overwrite and cap
+  them at 32 MiB;
+- expose screenshot bytes only as live image tool content and keep page text,
+  URLs, selectors, typed values, paths, PNG bytes, credentials, and raw
+  Session IDs out of Ledger, Replay, SSE, and Trace;
+- mark Browser effects unsafe for automatic recovery and require
+  `unrestricted` policy without enabling shell or arbitrary host access;
+- provide an opt-in real Chrome smoke that never weakens sandboxing.
+
+Threat boundary:
+
+- Playwright Route checks and the fixed-IP proxy both enforce the public
+  network boundary. The duplicate resolution is intentional; the proxy's
+  validated concrete address is authoritative for each socket;
+- ordinary public subresources may use different origins, but main-frame
+  origin changes are action-scoped. The browser never connects to an existing
+  profile, extension set, cookie store, or debugging endpoint;
+- file selection is an explicit high-risk Agent action. Upload content and
+  downloaded bytes remain live workspace data; only hashes, sizes, and counts
+  become durable evidence;
+- Browser state is process-local and not restart-adopted. An interrupted
+  external action has unknown outcome and is not silently repeated;
+- this is a controlled browser capability, not a general public-network
+  capability for shell, kernels, LSP, debugger, MCP, or arbitrary extensions.
+
+Observed result:
+
+- public-network tests cover IPv4/IPv6 private and reserved ranges, `.local`,
+  loopback exceptions, mixed DNS, credentials, schemes, and ports;
+- proxy tests move real HTTP and CONNECT bytes through an injected fixed-IP
+  dial, reject missing authentication, private/mixed DNS, malformed authority,
+  wrong CONNECT port, and close active tunnels on settlement;
+- Session tests cover every action, same-Run reuse, cross-Run isolation,
+  active/operation limits, explicit and redirect-driven cross-origin gates,
+  cancellation, private DNS, upload/download confinement, screenshot output,
+  and ephemeral launch configuration;
+- Agent integration executes start/snapshot/type/screenshot/close through the
+  real Agent Loop, proves policy blocking before launch, preserves read/write
+  effects, settles the Session, and keeps all private tool values out of
+  durable events;
+- Web Trace validates and renders only bounded Browser Session, network,
+  screenshot, and file evidence, rejecting partial or inconsistent receipts;
+- real Chrome dogfood reached `https://example.com` through the action-gated
+  proxy, reused operations 1-4, produced AI ARIA refs and a 17,808-byte PNG,
+  and admitted only one destination plus one CONNECT while rejecting nine
+  startup/authentication attempts. This diagnostic ran without Chrome's inner
+  sandbox only inside the already enforced IDE sandbox and is not release
+  proof;
+- the production-path smoke retains `chromiumSandbox: true`. The current IDE
+  host rejects that nested sandbox before page creation, so its result here is
+  `inconclusive`, not a passed or unsandboxed fallback;
+- Browser implementation was split across focused network, runtime, page,
+  ownership, file, tool, and Trace modules; Store and Server did not grow;
+- the complete repository gate passed 1263 tests with 21 opt-in live tests
+  skipped by default, audited 6 workspaces and 252 packages with 239/239
+  integrity entries, verified 247 current OpenAPI routes against the 244/244
+  compatibility baseline, and kept the Web main entry at 130.08 KiB against
+  the 150 KiB budget. The 69-file Web dist is bound to
+  `330f8a1b3c17e7c1`; the six-artifact release set is bound to
+  `bb9c790fd4581836`.

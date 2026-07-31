@@ -2,6 +2,7 @@ import path from "node:path";
 
 import type { JsonValue, ToolPolicyMode } from "@napier/contracts";
 
+import { validatePublicHttpUrl } from "./public-network.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 
 export interface PolicyDecision {
@@ -42,6 +43,7 @@ const PROCESS_TOOLS = new Set([
   "node_debugger",
   "workspace_process",
 ]);
+const BROWSER_TOOLS = new Set(["browser"]);
 const INTERNAL_LEDGER_TOOLS = new Set([
   "create_plan",
   "update_plan_step",
@@ -247,6 +249,46 @@ export function assessToolCall(
                 : toolName === "lsp_rename"
                   ? "read-only sandboxed language-server rename preview"
                   : "read-only sandboxed language-server quick-fix preview",
+    };
+  }
+
+  if (BROWSER_TOOLS.has(toolName)) {
+    if (mode !== "unrestricted") {
+      return {
+        allowed: false,
+        risk: "high",
+        reason: "external Browser Sessions require unrestricted policy",
+      };
+    }
+    const action = getStringField(input, "action");
+    if (action === "start" || action === "navigate") {
+      const url = getStringField(input, "url");
+      try {
+        validatePublicHttpUrl(url ?? "");
+      } catch {
+        return {
+          allowed: false,
+          risk: "critical",
+          reason: "browser URL is outside the public HTTP(S) boundary",
+        };
+      }
+    }
+    if (action === "upload" || action === "download") {
+      const candidate = getStringField(input, "path");
+      if (!candidate) {
+        return {
+          allowed: false,
+          risk: "high",
+          reason: "browser file action requires a workspace-relative path",
+        };
+      }
+      const denial = workspaceWritePathDenial(candidate, workspaceRoot);
+      if (denial) return denial;
+    }
+    return {
+      allowed: true,
+      risk: "high",
+      reason: "isolated public-network Browser Session",
     };
   }
 

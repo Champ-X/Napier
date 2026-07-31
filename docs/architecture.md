@@ -2138,6 +2138,57 @@ workspace, protected-segment, and symlink checks; file deletion, arbitrary
 directory operations, and permission changes remain outside this tool.
 Subagents call the read-only tool factory and never receive `apply_patch`.
 
+## Controlled Browser Session Flow
+
+Browser capability is separate from Store, MCP, and the Web Workbench's own
+browser process:
+
+```text
+Agent selects browser under unrestricted policy
+  -> create one Run-owned ephemeral Chrome process and context
+  -> create a loopback-only proxy with random per-Session credentials
+  -> keep proxy outbound closed during startup, idle time, and read-only views
+  -> resolve every destination and reject any mixed non-public DNS answer
+  -> connect the proxy socket to one validated IP without another DNS lookup
+  -> independently Route-check every Playwright HTTP(S) request
+  -> deny top-level cross-origin navigation unless this action authorizes it
+  -> expose bounded AI ARIA refs for click/type/select/upload/download
+  -> confine uploads to rehashed canonical workspace files <=16 MiB
+  -> stream downloads to exclusive non-symlink workspace targets <=32 MiB
+  -> return screenshot PNG bytes only as live tool image content
+  -> retain action, Session reuse, counts, sizes, and hashes in Ledger/Trace
+  -> close context, browser, proxy, tunnels, and temporary HOME on settlement
+```
+
+`public-network.ts` owns shared CIDR and DNS classification; MCP reuses it
+while retaining its explicit loopback development exception.
+`fixed-ip-http-proxy.ts` owns authenticated HTTP/CONNECT transport and transfer
+bounds. `browser-runtime.ts` admits only detected/configured Chrome, Chromium,
+or Edge executables and launches with Chromium sandboxing enabled, a minimal
+environment, temporary HOME, and pre/post-launch device/inode/size/mtime
+freshness checks. `browser-page-session.ts` owns Playwright
+interaction and navigation grants; `browser-session.ts` owns same-Run
+serialization, cross-Run isolation, admission, and cancellation.
+`browser-workspace-files.ts` owns upload/download path and byte confinement;
+`browser-tool.ts` owns Agent schema and privacy projection.
+
+The proxy permits public subresource origins so ordinary pages can load, but
+every top-level origin transition remains action-scoped. Browser Route and
+proxy DNS checks are intentionally duplicated: a target must be public at both
+points, and the proxy's concrete socket address is authoritative for the
+connection. Popups close, dialogs dismiss, service workers stay disabled, and
+downloads without an active explicit action are cancelled. No path connects
+to a user's existing browser, cookies, extensions, or debugging port.
+The proxy opens only around a preflighted network-capable Agent action and
+destroys active outbound sockets when that action settles.
+
+Browser state is process-local and deliberately not restart-adopted. An
+interrupted Browser tool has an unknown external outcome and automatic
+recovery treats it as unsafe rather than silently repeating it. Page bodies,
+URLs, selectors, typed values, paths, downloaded names, screenshots, proxy
+credentials, and random Session IDs remain live-only. Portable Replay carries
+only redacted tool arguments plus bounded operation evidence.
+
 ## TypeScript LSP Code Intelligence Flow
 
 The LSP tools are implemented outside the oversized workspace-tool module.
@@ -5003,6 +5054,11 @@ The current boundary has thirty-nine parts:
     diagnostics, with bounded workspace freshness, operation/global admission,
     terminal uncertain-state handling, one-shot fallback, and hash-only
     reuse evidence.
+41. Run-owned controlled Chrome Sessions with fresh ephemeral profiles,
+    authenticated fixed-IP public-network proxies, independent Route-level
+    SSRF checks, explicit top-level cross-origin authorization, bounded ARIA
+    interaction and screenshots, canonical upload/download confinement,
+    settlement cleanup, and hash-only Ledger/Trace evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5011,8 +5067,10 @@ verification, read-only/offline TypeScript LSP diagnostics/symbols/navigation/
 rename/quick-fix previews, explicit-argv command execution, persistent
 synchronous JavaScript and restricted Python calculations, Run-owned Node
 launch debugging, and bounded background Process Session lifecycle control.
-`unrestricted` is reserved for future sandboxed shell execution, but known
-destructive command patterns are still denied.
+`unrestricted` additionally permits an explicitly enabled controlled Browser
+Session. It does not expose a shell, arbitrary host networking, an existing
+user browser profile, or unrestricted local files; known destructive command
+patterns remain denied.
 
 An in-process policy is not a sandbox. General shell and package installation
 remain disabled. Stdio MCP, workspace verification, the command runner, and
@@ -5054,7 +5112,7 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 3: Product and outcome proof
 
-- interactive TUI, RPC, ACP, Desktop, persistent browser, and
+- interactive TUI, RPC, ACP, Desktop, persistent browser UX, and broader
   data/research capability slices over the same Runtime and Ledger;
 - stable Extension developer APIs, ecosystem discovery, and compatibility
   tests;

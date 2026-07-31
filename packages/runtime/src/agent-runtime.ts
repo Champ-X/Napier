@@ -58,6 +58,7 @@ import {
 } from "./agent-tool-ledger.js";
 import { builtInToolEffect } from "./agent-tool-effects.js";
 import { AgentSessionRuntime } from "./agent-sessions.js";
+import type { RunBrowserSessionManager } from "./browser-session.js";
 import type { WorkspaceFileMutationManager } from "./workspace-file-mutations.js";
 import { createWorkspaceProcessTool } from "./workspace-process-tool.js";
 import type { WorkspaceProcessManager } from "./workspace-processes.js";
@@ -228,11 +229,13 @@ export class AgentRuntime {
     readonly verificationSandbox: OsSandboxAdapter = createPlatformSandboxAdapter(),
     readonly workspaceProcesses?: WorkspaceProcessManager,
     readonly workspaceFileMutations?: WorkspaceFileMutationManager,
+    readonly browserSessions?: RunBrowserSessionManager,
   ) {
     this.sessions = new AgentSessionRuntime(
       workspaceProcesses,
       store.workspaceRoot,
       verificationSandbox,
+      browserSessions,
     );
   }
 

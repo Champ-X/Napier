@@ -3075,6 +3075,7 @@ export const AGENT_TOOL_NAMES = [
   "python_kernel",
   "node_debugger",
   "workspace_process",
+  "browser",
   "verify_workspace",
 ] as const;
 

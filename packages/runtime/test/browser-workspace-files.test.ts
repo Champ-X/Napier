@@ -1,0 +1,156 @@
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { Readable } from "node:stream";
+
+import { afterEach, describe, expect, it } from "vitest";
+
+import {
+  assertBrowserUploadCurrent,
+  inspectBrowserUpload,
+  MAX_BROWSER_DOWNLOAD_BYTES,
+  writeBrowserDownload,
+} from "../src/browser-workspace-files.js";
+
+const roots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    roots.splice(0).map((root) => rm(root, { force: true, recursive: true })),
+  );
+});
+
+describe("browser workspace files", () => {
+  it("binds uploads to a bounded canonical workspace file", async () => {
+    const workspace = await createWorkspace();
+    await writeFile(path.join(workspace, "input.txt"), "upload body");
+
+    const inspected = await inspectBrowserUpload(workspace, "input.txt");
+    expect(inspected).toEqual(
+      expect.objectContaining({
+        path: "input.txt",
+        fileBytes: 11,
+      }),
+    );
+    await expect(
+      assertBrowserUploadCurrent(inspected),
+    ).resolves.toBeUndefined();
+
+    await writeFile(path.join(workspace, "input.txt"), "changed");
+    await expect(assertBrowserUploadCurrent(inspected)).rejects.toThrow(
+      "changed during execution",
+    );
+  });
+
+  it("rejects upload escapes, protected paths, and symlinks", async () => {
+    const workspace = await createWorkspace();
+    const outside = path.join(path.dirname(workspace), "outside.txt");
+    await writeFile(outside, "outside");
+    await symlink(outside, path.join(workspace, "linked.txt"));
+
+    await expect(
+      inspectBrowserUpload(workspace, "../outside.txt"),
+    ).rejects.toThrow("escapes");
+    await expect(
+      inspectBrowserUpload(workspace, ".git/config"),
+    ).rejects.toThrow("protected");
+    await expect(inspectBrowserUpload(workspace, "linked.txt")).rejects.toThrow(
+      "regular file",
+    );
+  });
+
+  it("streams downloads into a new file and refuses overwrite or symlink parents", async () => {
+    const workspace = await createWorkspace();
+    await mkdir(path.join(workspace, "downloads"));
+
+    const result = await writeBrowserDownload(
+      workspace,
+      "downloads/result.txt",
+      Readable.from(["download ", "body"]),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        path: path.join("downloads", "result.txt"),
+        fileBytes: 13,
+      }),
+    );
+    await expect(
+      readFile(path.join(workspace, "downloads/result.txt"), "utf8"),
+    ).resolves.toBe("download body");
+    await expect(
+      writeBrowserDownload(
+        workspace,
+        "downloads/result.txt",
+        Readable.from(["replacement"]),
+      ),
+    ).rejects.toThrow("already exists");
+
+    const outside = path.join(path.dirname(workspace), "outside-directory");
+    await mkdir(outside);
+    await symlink(outside, path.join(workspace, "linked-directory"));
+    await expect(
+      writeBrowserDownload(
+        workspace,
+        "linked-directory/escape.txt",
+        Readable.from(["escape"]),
+      ),
+    ).rejects.toThrow("symlink");
+  });
+
+  it("removes partial downloads after cancellation or size overflow", async () => {
+    const workspace = await createWorkspace();
+    const controller = new AbortController();
+    async function* cancelled() {
+      yield Buffer.from("partial");
+      controller.abort();
+      yield Buffer.from("unreachable");
+    }
+    await expect(
+      writeBrowserDownload(
+        workspace,
+        "cancelled.bin",
+        Readable.from(cancelled()),
+        controller.signal,
+      ),
+    ).rejects.toThrow("cancelled");
+    await expect(
+      readFile(path.join(workspace, "cancelled.bin")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+
+    async function* oversized() {
+      const chunk = Buffer.alloc(1024 * 1024);
+      for (
+        let bytes = 0;
+        bytes <= MAX_BROWSER_DOWNLOAD_BYTES;
+        bytes += chunk.byteLength
+      ) {
+        yield chunk;
+      }
+    }
+    await expect(
+      writeBrowserDownload(
+        workspace,
+        "oversized.bin",
+        Readable.from(oversized()),
+      ),
+    ).rejects.toThrow("up to");
+    await expect(
+      readFile(path.join(workspace, "oversized.bin")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+});
+
+async function createWorkspace(): Promise<string> {
+  const root = await mkdtemp(path.join(tmpdir(), "napier-browser-files-"));
+  roots.push(root);
+  const workspace = path.join(root, "workspace");
+  await mkdir(workspace);
+  return workspace;
+}

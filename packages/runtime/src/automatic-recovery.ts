@@ -50,6 +50,7 @@ const UNSAFE_TOOLS = new Set([
   "python_kernel",
   "node_debugger",
   "workspace_process",
+  "browser",
   "create_plan",
   "update_plan_step",
   "update_plan_artifact",

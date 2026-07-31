@@ -1,6 +1,11 @@
 import type { JsonValue } from "@napier/contracts";
 
 import {
+  browserToolCallArgumentsLedgerProjection,
+  browserToolInputLedgerProjection,
+  browserToolOutputLedgerProjection,
+} from "./browser-tool.js";
+import {
   javascriptKernelToolCallArgumentsLedgerProjection,
   javascriptKernelToolInputLedgerProjection,
   javascriptKernelToolOutputLedgerProjection,
@@ -75,6 +80,9 @@ export function agentToolCallArgumentsLedgerProjection(
   toolName: string,
   args: unknown,
 ): JsonValue {
+  if (toolName === "browser") {
+    return browserToolCallArgumentsLedgerProjection(args);
+  }
   if (toolName === "run_command") {
     return commandToolCallArgumentsLedgerProjection(args);
   }
@@ -127,6 +135,9 @@ export function agentToolInputLedgerProjection(
   toolName: string,
   args: unknown,
 ): Record<string, JsonValue> {
+  if (toolName === "browser") {
+    return browserToolInputLedgerProjection(args);
+  }
   if (toolName === "run_command") {
     return commandToolInputLedgerProjection(args);
   }
@@ -180,6 +191,9 @@ export function agentToolOutputLedgerProjection(
   output: string,
   result: unknown,
 ): Record<string, JsonValue> {
+  if (toolName === "browser") {
+    return browserToolOutputLedgerProjection(output, result);
+  }
   if (toolName === "run_command") {
     return commandToolOutputLedgerProjection(output, result);
   }

@@ -1,5 +1,10 @@
 import type { RunEvent } from "@napier/contracts";
 import {
+  browserEventEvidence,
+  browserSummaryParts,
+  type BrowserToolEventTraceView,
+} from "./browser-event-view";
+import {
   javascriptKernelEventEvidence,
   javascriptKernelSummaryParts,
   type JavascriptKernelToolEventTraceView,
@@ -38,6 +43,7 @@ import {
 export interface ToolEventTraceView
   extends
     CommandToolEventTraceView,
+    BrowserToolEventTraceView,
     LspToolEventTraceView,
     JavascriptKernelToolEventTraceView,
     PythonKernelToolEventTraceView,
@@ -227,6 +233,10 @@ export function toolEventTraceView(
     toolName === "run_command"
       ? commandToolEventEvidence(event.payload["details"])
       : undefined;
+  const browserEvidence =
+    toolName === "browser"
+      ? browserEventEvidence(event.payload["details"])
+      : undefined;
   const javascriptKernelEvidence =
     toolName === "javascript_kernel"
       ? javascriptKernelEventEvidence(event.payload["details"])
@@ -273,6 +283,7 @@ export function toolEventTraceView(
     ...(lspEvidence ? lspEvidence : {}),
     ...(verificationEvidence ? verificationEvidence : {}),
     ...(commandEvidence ? commandEvidence : {}),
+    ...(browserEvidence ? browserEvidence : {}),
     ...(javascriptKernelEvidence ? javascriptKernelEvidence : {}),
     ...(pythonKernelEvidence ? pythonKernelEvidence : {}),
     ...(nodeDebuggerEvidence ? nodeDebuggerEvidence : {}),
@@ -458,6 +469,7 @@ export function toolEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.verificationStdoutTruncated ? ["stdout-truncated"] : []),
     ...(view.verificationStderrTruncated ? ["stderr-truncated"] : []),
     ...commandToolEventSummaryParts(view),
+    ...browserSummaryParts(view),
     ...javascriptKernelSummaryParts(view),
     ...pythonKernelSummaryParts(view),
     ...nodeDebuggerSummaryParts(view),

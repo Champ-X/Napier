@@ -1960,6 +1960,51 @@ macOS rejects nested `sandbox-exec`, so launching the live smoke from an IDE
 process that is itself sandboxed fails closed rather than falling back to an
 unsandboxed language server.
 
+## Controlled Browser Sessions
+
+An Agent profile can enable `browser` under the `unrestricted` policy to use
+one isolated, persistent Chrome Session owned by its current Run. `start`
+creates a fresh ephemeral browser profile; `navigate`, `back`, `snapshot`,
+`click`, `type`, `select`, `upload`, `download`, and `screenshot` reuse it;
+`close`, cancellation, failure, the 64-operation bound, or Run settlement
+destroys the browser, context, authenticated proxy, temporary HOME, and active
+tunnels. AI-mode ARIA snapshots include short `ref` values that later actions
+can target without injecting page JavaScript.
+
+Chrome never connects to an existing user profile or debugging endpoint.
+Every HTTP request and CONNECT tunnel goes through a loopback-only,
+randomly-authenticated Napier proxy. The proxy resolves all answers, rejects
+mixed public/private DNS, pins one validated public IP for the connection, and
+allows only HTTP(S) ports 80/443. Playwright routing independently rejects
+loopback, private, link-local, reserved, `.local`, credential-bearing, and
+non-HTTP(S) requests even if the browser would normally bypass its proxy.
+Proxy outbound is default-deny during Chrome startup and idle time, opens only
+around an explicit network-capable Agent action, and destroys active outbound
+sockets when that action settles.
+Top-level cross-origin navigation is denied unless the current action sets
+`allowCrossOrigin: true`; popups, dialogs, service workers, and unsolicited
+downloads are closed, dismissed, blocked, or cancelled.
+
+Uploads accept only a canonical, regular workspace file up to 16 MiB and
+recheck its hash after selection. Downloads require an explicit
+workspace-relative target in an existing non-symlink parent, never overwrite,
+stream through exclusive creation, stop at 32 MiB, and bind the resulting
+bytes to Ledger evidence. Screenshots are returned as live PNG tool content
+only. Page text, URLs, selectors, typed values, paths, PNG bytes, proxy
+credentials, and raw Session IDs are absent from Ledger, Replay, SSE, and
+Trace; those projections retain bounded counts, sizes, action metadata, and
+SHA-256 bindings.
+
+Run the production-path smoke from a host that permits Chrome's own sandbox:
+
+```bash
+npm run test:live-browser
+```
+
+The smoke never disables Chrome sandboxing. A nested IDE sandbox may reject
+Chrome initialization; that result is reported as inconclusive rather than
+falling back to `--no-sandbox`.
+
 `read_file` also emits bounded line hash anchors for the returned range.
 `apply_patch hashline_replace` can replace a line by its anchor SHA-256 and
 optional line number, so small line edits do not require the model to retype
@@ -3515,7 +3560,8 @@ The default Agent policy is `observe`:
 - in-process read/list/search and AST preview operations inside the workspace
   are allowed;
 - `apply_patch`, `verify_workspace`, `run_command`, `javascript_kernel`,
-  `python_kernel`, `node_debugger`, and `workspace_process` are not exposed;
+  `python_kernel`, `node_debugger`, `workspace_process`, and `browser` are not
+  exposed;
 - workspace writes and process execution are blocked;
 - shell execution is blocked;
 - destructive shell patterns remain blocked even under the future
@@ -3546,6 +3592,11 @@ supplies bounded diagnostic-driven text-edit alternatives while dropping every
 returned command and opaque data. None grants language-server workspace
 writes, command execution, or network access.
 Authorization is checked again immediately before every call.
+
+Selecting `unrestricted` may additionally expose an explicitly enabled
+**Browser Session** through the public-network and workspace-file boundaries
+described above. It does not enable a shell, package installation, arbitrary
+host networking, an existing user browser, or unreviewed local file access.
 
 This in-process policy is defense in depth, not an operating-system sandbox.
 General shell execution remains disabled. Stdio MCP, structured workspace

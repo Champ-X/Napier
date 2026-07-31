@@ -112,7 +112,7 @@ export const contextCopy = {
   toolLoopGuardInvalid:
     "Use distinct comma-separated tool names containing only letters, digits, underscore, dot, colon, or hyphen.",
   recoveryShort: "Recovery",
-  tools: "Workspace tools",
+  tools: "Agent tools",
   toolLabels: {
     list_files: "List files",
     read_file: "Read file",
@@ -137,6 +137,7 @@ export const contextCopy = {
     python_kernel: "Python kernel",
     node_debugger: "Node debugger",
     workspace_process: "Background process",
+    browser: "Browser Session",
     verify_workspace: "Sandbox verify",
   },
   skills: "Available skills",

@@ -1,6 +1,3 @@
-import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
-
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type {
   ExtensionRecord,
@@ -17,6 +14,7 @@ import {
   verifyBoundExtensionPackageTrust,
 } from "./extension-packages.js";
 import { StdioMcpClient } from "./mcp-stdio.js";
+import { resolvePublicHost } from "./public-network.js";
 import {
   createPlatformSandboxAdapter,
   type OsSandboxAdapter,
@@ -718,23 +716,7 @@ export async function validateMcpEndpoint(value: string): Promise<void> {
       "Remote MCP endpoints require HTTPS; HTTP is limited to loopback",
     );
   }
-  if (loopback) return;
-  if (hostname.endsWith(".local")) {
-    throw new Error("MCP endpoints on .local hosts are not allowed");
-  }
-  if (isIP(hostname)) {
-    if (!isPublicAddress(hostname)) {
-      throw new Error("MCP endpoint resolves to a private or reserved address");
-    }
-    return;
-  }
-  const addresses = await lookup(hostname, { all: true, verbatim: true });
-  if (
-    addresses.length === 0 ||
-    addresses.some((address) => !isPublicAddress(address.address))
-  ) {
-    throw new Error("MCP endpoint resolves to a private or reserved address");
-  }
+  await resolvePublicHost(hostname, { allowLoopback: true });
 }
 
 function selectMcpSchemaSearchMatches(
@@ -968,44 +950,6 @@ async function readBoundedText(response: Response): Promise<string> {
   }
   output += decoder.decode();
   return output;
-}
-
-function isPublicAddress(address: string): boolean {
-  const version = isIP(address);
-  if (version === 4) {
-    const parts = address.split(".").map(Number);
-    const [first = 0, second = 0] = parts;
-    if (
-      first === 0 ||
-      first === 10 ||
-      first === 127 ||
-      first >= 224 ||
-      (first === 100 && second >= 64 && second <= 127) ||
-      (first === 169 && second === 254) ||
-      (first === 192 && second === 0) ||
-      (first === 172 && second >= 16 && second <= 31) ||
-      (first === 192 && second === 168) ||
-      (first === 198 && (second === 18 || second === 19 || second === 51)) ||
-      (first === 203 && second === 0)
-    ) {
-      return false;
-    }
-    return true;
-  }
-  if (version === 6) {
-    const normalized = address.toLowerCase();
-    const mapped = normalized.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)?.[1];
-    if (mapped) return isPublicAddress(mapped);
-    return !(
-      normalized === "::" ||
-      normalized === "::1" ||
-      normalized.startsWith("fc") ||
-      normalized.startsWith("fd") ||
-      /^fe[89ab]/.test(normalized) ||
-      normalized.startsWith("2001:db8:")
-    );
-  }
-  return false;
 }
 
 function safeErrorMessage(error: unknown): string {

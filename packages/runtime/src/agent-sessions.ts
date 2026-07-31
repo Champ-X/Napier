@@ -1,4 +1,6 @@
 import { AgentKernelRuntime } from "./agent-kernels.js";
+import { RunBrowserSessionManager } from "./browser-session.js";
+import { createBrowserTool } from "./browser-tool.js";
 import {
   type LspSessionOwner,
   RunLspSessionManager,
@@ -12,14 +14,18 @@ export class AgentSessionRuntime {
   private readonly kernels: AgentKernelRuntime;
   private readonly debuggerManager: NodeDebuggerManager | undefined;
   private readonly languageServers: RunLspSessionManager;
+  private readonly browsers: RunBrowserSessionManager;
 
   constructor(
     processes: WorkspaceProcessManager | undefined,
     workspaceRoot: string,
     sandbox: OsSandboxAdapter,
+    browserSessions?: RunBrowserSessionManager,
   ) {
     this.kernels = new AgentKernelRuntime(processes);
     this.languageServers = new RunLspSessionManager(sandbox, workspaceRoot);
+    this.browsers =
+      browserSessions ?? new RunBrowserSessionManager({ workspaceRoot });
     this.debuggerManager = processes
       ? new NodeDebuggerManager(processes, workspaceRoot)
       : undefined;
@@ -34,12 +40,17 @@ export class AgentSessionRuntime {
     context: { threadId: string; runId: string },
   ): Array<
     | ReturnType<AgentKernelRuntime["createTools"]>[number]
+    | ReturnType<typeof createBrowserTool>
     | ReturnType<typeof createNodeDebuggerTool>
   > {
     const tools: Array<
       | ReturnType<AgentKernelRuntime["createTools"]>[number]
+      | ReturnType<typeof createBrowserTool>
       | ReturnType<typeof createNodeDebuggerTool>
     > = [...this.kernels.createTools(enabledTools, context)];
+    if (enabledTools.includes("browser")) {
+      tools.push(createBrowserTool(this.browsers, context));
+    }
     if (enabledTools.includes("node_debugger") && this.debuggerManager) {
       tools.push(createNodeDebuggerTool(this.debuggerManager, context));
     }
@@ -50,6 +61,7 @@ export class AgentSessionRuntime {
     const settlements = await Promise.allSettled([
       this.kernels.cancelRun(request),
       this.languageServers.cancelRun(request),
+      this.browsers.cancelRun(request),
       ...(this.debuggerManager
         ? [this.debuggerManager.cancelRun(request)]
         : []),
