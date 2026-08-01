@@ -6,8 +6,11 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import {
   fauxAssistantMessage,
@@ -31,6 +34,8 @@ const LIVE_PROCESS_ENABLED =
   process.env.NAPIER_LIVE_WORKSPACE_PROCESS_SMOKE === "1";
 const describeLive = LIVE_PROCESS_ENABLED ? describe : describe.skip;
 const temporaryRoots: string[] = [];
+const execFileAsync = promisify(execFile);
+const require = createRequire(import.meta.url);
 
 afterEach(async () => {
   await Promise.all(
@@ -690,15 +695,36 @@ describeLive("live Workspace Process smoke", () => {
       path.join(tmpdir(), "napier-live-node-debugger-"),
     );
     temporaryRoots.push(workspaceRoot, dataRoot);
+    const sourceRoot = path.join(workspaceRoot, "src");
+    const distRoot = path.join(workspaceRoot, "dist");
+    await mkdir(sourceRoot, { recursive: true });
+    await mkdir(distRoot, { recursive: true });
     await writeFile(
-      path.join(workspaceRoot, "debug-target.mjs"),
+      path.join(sourceRoot, "debug-target.ts"),
       [
-        "function liveCalculation(input) {",
+        "function liveCalculation(input: number): number {",
         "  const doubled = input * 2;",
         "  return doubled + 1;",
         "}",
         "globalThis.LIVE_PRIVATE_DEBUG = liveCalculation(20);",
       ].join("\n"),
+    );
+    await execFileAsync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--target",
+        "ES2022",
+        "--module",
+        "commonjs",
+        "--sourceMap",
+        "--rootDir",
+        sourceRoot,
+        "--outDir",
+        distRoot,
+        path.join(sourceRoot, "debug-target.ts"),
+      ],
+      { cwd: workspaceRoot },
     );
     const store = new LocalStore({ workspaceRoot, dataRoot });
     await store.initialize();
@@ -722,7 +748,9 @@ describeLive("live Workspace Process smoke", () => {
     const launched = await debuggerManager.launch({
       threadId: thread.id,
       runId: run.id,
-      path: "debug-target.mjs",
+      path: "src/debug-target.ts",
+      programPath: "dist/debug-target.js",
+      sourceMapPath: "dist/debug-target.js.map",
       breakpoints: [{ line: 2 }],
       actionTimeoutMs: 5_000,
       sessionTimeoutMs: 20_000,
@@ -751,7 +779,8 @@ describeLive("live Workspace Process smoke", () => {
       expect.objectContaining({
         state: "paused",
         reason: "breakpoint",
-        moduleCount: 1,
+        sourceMapMode: "external",
+        moduleCount: 3,
       }),
     );
     expect(evaluated.evaluation).toEqual(

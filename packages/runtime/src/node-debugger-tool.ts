@@ -1,5 +1,5 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
-import type { JsonValue, WorkspaceProcessStatus } from "@napier/contracts";
+import type { JsonValue } from "@napier/contracts";
 import { Type } from "typebox";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
@@ -13,11 +13,16 @@ import {
   type NodeDebuggerActionResult,
 } from "./node-debugger.js";
 import {
+  formatNodeDebuggerToolResult,
+  type NodeDebuggerToolDetails,
+} from "./node-debugger-tool-result.js";
+import {
   MAX_NODE_DEBUG_BREAKPOINTS,
   MAX_NODE_DEBUG_EXPRESSION_CHARS,
 } from "./node-debugger-worker.js";
 
-export const MAX_NODE_DEBUGGER_TOOL_OUTPUT_BYTES = 32 * 1024;
+export { MAX_NODE_DEBUGGER_TOOL_OUTPUT_BYTES } from "./node-debugger-tool-result.js";
+export type { NodeDebuggerToolDetails } from "./node-debugger-tool-result.js";
 
 const processId = Type.String({ pattern: "^process_[a-z0-9]{8,80}$" });
 const actionTimeout = Type.Optional(
@@ -36,8 +41,26 @@ const nodeDebuggerSchema = Type.Union([
         maxLength: 500,
         pattern: "^[^\\u0000-\\u001f\\u007f]*$",
         description:
-          "Workspace-relative JavaScript or Node-executable TypeScript program.",
+          "Workspace-relative source file. Without sourceMapPath this is also the launched JavaScript or Node-executable TypeScript program.",
       }),
+      programPath: Type.Optional(
+        Type.String({
+          minLength: 1,
+          maxLength: 500,
+          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+          description:
+            "Workspace-relative generated program. Must be supplied with sourceMapPath.",
+        }),
+      ),
+      sourceMapPath: Type.Optional(
+        Type.String({
+          minLength: 1,
+          maxLength: 500,
+          pattern: "^[^\\u0000-\\u001f\\u007f]*$",
+          description:
+            "Workspace-relative external v3 source map. Must be supplied with programPath.",
+        }),
+      ),
       breakpoints: Type.Array(
         Type.Object(
           {
@@ -132,39 +155,6 @@ const nodeDebuggerSchema = Type.Union([
 ]);
 Object.assign(nodeDebuggerSchema, { type: "object" });
 
-export interface NodeDebuggerToolDetails {
-  kind: "napier.node-debugger";
-  schemaVersion: 1;
-  action: NodeDebuggerActionResult["action"];
-  processId: string;
-  state: NodeDebuggerActionResult["state"];
-  processStatus: WorkspaceProcessStatus;
-  reason?: string;
-  exitCode?: number;
-  sourcePathSha256: string;
-  sourceSha256: string;
-  sourceBytes: number;
-  moduleCount: number;
-  moduleSetSha256: string;
-  breakpointCount: number;
-  frameCount: number;
-  scopeCount: number;
-  variableCount: number;
-  variablesTruncated: boolean;
-  evaluationStatus?: "ok" | "error";
-  evaluationType?: string;
-  outputCount: number;
-  outputTruncated: boolean;
-  nodeVersion: string;
-  workerSha256: string;
-  runtimeExecutableSha256: string;
-  runtimeCommandSha256: string;
-  dapRequestSequenceSha256: string;
-  dapResponseSequenceSha256: string;
-  dapEventSequenceSha256: string;
-  resultSha256: string;
-}
-
 export function createNodeDebuggerTool(
   manager: NodeDebuggerManager,
   context: { threadId: string; runId: string },
@@ -173,7 +163,7 @@ export function createNodeDebuggerTool(
     name: "node_debugger",
     label: "Node debugger",
     description:
-      "Launch and control one Run-owned Node Debug Adapter Protocol session in the read-only, offline OS Sandbox. Set source breakpoints, inspect stack/scopes/variables, evaluate expressions without side effects, continue, or single-step. Retain the processId while paused. Source, paths, variable names/values, expressions, arguments, and target output are live-only.",
+      "Launch and control one Run-owned Node Debug Adapter Protocol session in the read-only, offline OS Sandbox. Set source breakpoints, inspect stack/scopes/variables, evaluate expressions without side effects, continue, or single-step. For compiled TypeScript, bind both the generated program and its external source map so breakpoints and frames use original coordinates. Retain the processId while paused. Source, paths, variable names/values, expressions, arguments, and target output are live-only.",
     parameters: nodeDebuggerSchema,
     async execute(_toolCallId, input, signal) {
       let result: NodeDebuggerActionResult;
@@ -181,6 +171,10 @@ export function createNodeDebuggerTool(
         result = await manager.launch({
           ...context,
           path: input.path,
+          ...(input.programPath ? { programPath: input.programPath } : {}),
+          ...(input.sourceMapPath
+            ? { sourceMapPath: input.sourceMapPath }
+            : {}),
           breakpoints: input.breakpoints,
           args: input.args ?? [],
           pauseOnExceptions: input.pauseOnExceptions ?? "uncaught",
@@ -241,7 +235,7 @@ export function createNodeDebuggerTool(
           processId: input.processId,
         });
       }
-      return formatToolResult(result);
+      return formatNodeDebuggerToolResult(result);
     },
   };
 }
@@ -252,6 +246,10 @@ export function nodeDebuggerToolCallArgumentsLedgerProjection(
   const value = record(args) ? args : {};
   const action = debuggerAction(value["action"]);
   const sourcePath = typeof value["path"] === "string" ? value["path"] : "";
+  const programPath =
+    typeof value["programPath"] === "string" ? value["programPath"] : "";
+  const sourceMapPath =
+    typeof value["sourceMapPath"] === "string" ? value["sourceMapPath"] : "";
   const expression =
     typeof value["expression"] === "string" ? value["expression"] : "";
   const programArgs = Array.isArray(value["args"]) ? value["args"] : [];
@@ -275,6 +273,11 @@ export function nodeDebuggerToolCallArgumentsLedgerProjection(
     ...(action === "launch"
       ? {
           sourcePathSha256: sha256(sourcePath),
+          sourceMapMode: programPath && sourceMapPath ? "external" : "none",
+          ...(programPath ? { programPathSha256: sha256(programPath) } : {}),
+          ...(sourceMapPath
+            ? { sourceMapPathSha256: sha256(sourceMapPath) }
+            : {}),
           breakpointCount: breakpoints.length,
           breakpointSetSha256: sha256(canonicalJson(breakpoints)),
           argumentCount: programArgs.length,
@@ -325,126 +328,6 @@ export function nodeDebuggerToolOutputLedgerProjection(
     ...(details && hash(details["resultSha256"])
       ? { resultSha256: details["resultSha256"] }
       : {}),
-  };
-}
-
-function formatToolResult(result: NodeDebuggerActionResult) {
-  const details: NodeDebuggerToolDetails = {
-    kind: "napier.node-debugger",
-    schemaVersion: 1,
-    action: result.action,
-    processId: result.processId,
-    state: result.state,
-    processStatus: result.processStatus,
-    ...(result.reason ? { reason: result.reason } : {}),
-    ...(result.exitCode !== undefined ? { exitCode: result.exitCode } : {}),
-    sourcePathSha256: result.sourcePathSha256,
-    sourceSha256: result.sourceSha256,
-    sourceBytes: result.sourceBytes,
-    moduleCount: result.moduleCount,
-    moduleSetSha256: result.moduleSetSha256,
-    breakpointCount: result.breakpointCount,
-    frameCount: result.frames.length,
-    scopeCount: result.scopes.length,
-    variableCount: result.variables.length,
-    variablesTruncated: result.variablesTruncated,
-    ...(result.evaluation
-      ? {
-          evaluationStatus: result.evaluation.status,
-          evaluationType: result.evaluation.type,
-        }
-      : {}),
-    outputCount: result.output.length,
-    outputTruncated: result.outputTruncated,
-    nodeVersion: result.nodeVersion,
-    workerSha256: result.workerSha256,
-    runtimeExecutableSha256: result.runtimeExecutableSha256,
-    runtimeCommandSha256: result.runtimeCommandSha256,
-    dapRequestSequenceSha256: result.dapRequestSequenceSha256,
-    dapResponseSequenceSha256: result.dapResponseSequenceSha256,
-    dapEventSequenceSha256: result.dapEventSequenceSha256,
-    resultSha256: result.resultSha256,
-  };
-  const lines = [
-    `Node debugger ${result.processId}: ${result.state}`,
-    `Action: ${result.action}`,
-    `Process: ${result.processStatus}`,
-    `Source: ${result.sourcePath}`,
-    `Source SHA-256: ${result.sourceSha256}`,
-    `Workspace modules: ${result.moduleCount} / ${result.moduleSetSha256}`,
-    `Breakpoints: ${result.breakpointCount}`,
-    ...(result.reason ? [`Stop reason: ${result.reason}`] : []),
-    ...(result.exitCode !== undefined
-      ? [`Target exit code: ${result.exitCode}`]
-      : []),
-    `Node: ${result.nodeVersion}`,
-    ...(result.frames.length > 0
-      ? [
-          "",
-          "STACK (untrusted live data)",
-          ...result.frames.map(
-            (frame) =>
-              `#${frame.id} ${frame.name} ${frame.path ?? "(external)"}:${frame.line}:${frame.column}`,
-          ),
-        ]
-      : []),
-    ...(result.scopes.length > 0
-      ? [
-          "",
-          "SCOPES (untrusted live data)",
-          ...result.scopes.map(
-            (scope) =>
-              `${scope.name} -> variablesReference ${scope.variablesReference}`,
-          ),
-        ]
-      : []),
-    ...(result.variables.length > 0
-      ? [
-          "",
-          "VARIABLES (untrusted live data)",
-          ...result.variables.map(
-            (variable) =>
-              `${variable.name}: ${variable.value} (${variable.type})${
-                variable.variablesReference
-                  ? ` -> ${variable.variablesReference}`
-                  : ""
-              }`,
-          ),
-        ]
-      : []),
-    ...(result.evaluation
-      ? [
-          "",
-          "EVALUATION (untrusted live data)",
-          `${result.evaluation.status}: ${result.evaluation.result} (${result.evaluation.type})${
-            result.evaluation.variablesReference
-              ? ` -> ${result.evaluation.variablesReference}`
-              : ""
-          }`,
-        ]
-      : []),
-    ...(result.output.length > 0
-      ? [
-          "",
-          "TARGET OUTPUT (untrusted live data)",
-          ...result.output.map(
-            (entry, index) => `${index + 1} ${entry.category}: ${entry.text}`,
-          ),
-        ]
-      : []),
-    ...(result.outputTruncated || result.variablesTruncated
-      ? ["", "[debug data truncated]"]
-      : []),
-  ];
-  const text = lines.join("\n");
-  if (Buffer.byteLength(text, "utf8") > MAX_NODE_DEBUGGER_TOOL_OUTPUT_BYTES) {
-    throw new Error(
-      `Node debugger tool output exceeds ${MAX_NODE_DEBUGGER_TOOL_OUTPUT_BYTES} UTF-8 bytes`,
-    );
-  }
-  return {
-    content: [{ type: "text" as const, text }],
-    details,
   };
 }
 

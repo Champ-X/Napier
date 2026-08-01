@@ -1,7 +1,9 @@
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import {
   fauxAssistantMessage,
@@ -21,6 +23,8 @@ import {
 } from "../src/index.js";
 
 const temporaryRoots: string[] = [];
+const execFileAsync = promisify(execFile);
+const require = createRequire(import.meta.url);
 
 afterEach(async () => {
   await Promise.all(
@@ -37,17 +41,37 @@ describe("Agent Node debugger integration", () => {
     );
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
-    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    const sourceRoot = path.join(workspaceRoot, "src");
+    const distRoot = path.join(workspaceRoot, "dist");
+    await mkdir(sourceRoot, { recursive: true });
+    await mkdir(distRoot, { recursive: true });
     await writeFile(
-      path.join(workspaceRoot, "src/debug-target.mjs"),
+      path.join(sourceRoot, "debug-target.ts"),
       [
-        "function calculate(input) {",
+        "function calculate(input: number): number {",
         "  const doubled = input * 2;",
         "  const adjusted = doubled + 1;",
         "  return adjusted;",
         "}",
         "globalThis.PRIVATE_DEBUG_RESULT = calculate(20);",
       ].join("\n"),
+    );
+    await execFileAsync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--target",
+        "ES2022",
+        "--module",
+        "commonjs",
+        "--sourceMap",
+        "--rootDir",
+        sourceRoot,
+        "--outDir",
+        distRoot,
+        path.join(sourceRoot, "debug-target.ts"),
+      ],
+      { cwd: workspaceRoot },
     );
     const store = new LocalStore({
       workspaceRoot,
@@ -74,7 +98,9 @@ describe("Agent Node debugger integration", () => {
       fauxAssistantMessage(
         fauxToolCall("node_debugger", {
           action: "launch",
-          path: "src/debug-target.mjs",
+          path: "src/debug-target.ts",
+          programPath: "dist/debug-target.js",
+          sourceMapPath: "dist/debug-target.js.map",
           breakpoints: [{ line: 2 }],
           timeoutMs: 2_000,
           sessionTimeoutMs: 20_000,
@@ -147,7 +173,7 @@ describe("Agent Node debugger integration", () => {
       (context) => {
         const messages = JSON.stringify(context.messages);
         const processId = messages.match(/process_[a-z0-9]{20}/u)?.[0];
-        expect(messages).toContain("src/debug-target.mjs:3:");
+        expect(messages).toContain("src/debug-target.ts:3:");
         expect(processId).toBeDefined();
         return fauxAssistantMessage(
           fauxToolCall("node_debugger", {
@@ -202,14 +228,17 @@ describe("Agent Node debugger integration", () => {
     expect(debuggerEvents.at(-1)?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.node-debugger",
+        schemaVersion: 2,
         action: "continue",
         state: "terminated",
         exitCode: 0,
-        moduleCount: 1,
+        sourceMapMode: "external",
+        moduleCount: 3,
       }),
     );
     const durable = JSON.stringify(events);
-    expect(durable).not.toContain("debug-target.mjs");
+    expect(durable).not.toContain("debug-target.ts");
+    expect(durable).not.toContain("debug-target.js.map");
     expect(durable).not.toContain("PRIVATE_DEBUG_RESULT");
     const durableToolEvidence = JSON.stringify(
       events.filter(

@@ -1,7 +1,9 @@
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import {
   fauxAssistantMessage,
@@ -19,6 +21,8 @@ import { createApp, createServices } from "../src/app.js";
 
 const temporaryRoots: string[] = [];
 const openServices: Awaited<ReturnType<typeof createServices>>[] = [];
+const execFileAsync = promisify(execFile);
+const require = createRequire(import.meta.url);
 
 afterEach(async () => {
   for (const services of openServices.splice(0)) {
@@ -40,17 +44,37 @@ describe("Node debugger HTTP Agent path", () => {
     );
     temporaryRoots.push(root);
     const workspaceRoot = path.join(root, "workspace");
-    await mkdir(path.join(workspaceRoot, "src"), { recursive: true });
+    const sourceRoot = path.join(workspaceRoot, "src");
+    const distRoot = path.join(workspaceRoot, "dist");
+    await mkdir(sourceRoot, { recursive: true });
+    await mkdir(distRoot, { recursive: true });
     await writeFile(
-      path.join(workspaceRoot, "src/debug-target.mjs"),
+      path.join(sourceRoot, "debug-target.ts"),
       [
-        "function serverCalculation(input) {",
+        "function serverCalculation(input: number): number {",
         "  const doubled = input * 2;",
         "  const adjusted = doubled + 1;",
         "  return adjusted;",
         "}",
         "globalThis.PRIVATE_SERVER_DEBUG = serverCalculation(20);",
       ].join("\n"),
+    );
+    await execFileAsync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--target",
+        "ES2022",
+        "--module",
+        "commonjs",
+        "--sourceMap",
+        "--rootDir",
+        sourceRoot,
+        "--outDir",
+        distRoot,
+        path.join(sourceRoot, "debug-target.ts"),
+      ],
+      { cwd: workspaceRoot },
     );
     const services = await createServices({
       workspaceRoot,
@@ -81,7 +105,9 @@ describe("Node debugger HTTP Agent path", () => {
       fauxAssistantMessage(
         fauxToolCall("node_debugger", {
           action: "launch",
-          path: "src/debug-target.mjs",
+          path: "src/debug-target.ts",
+          programPath: "dist/debug-target.js",
+          sourceMapPath: "dist/debug-target.js.map",
           breakpoints: [{ line: 2 }],
           timeoutMs: 2_000,
           sessionTimeoutMs: 20_000,
@@ -117,7 +143,7 @@ describe("Node debugger HTTP Agent path", () => {
       (context) => {
         const messages = JSON.stringify(context.messages);
         const processId = messages.match(/process_[a-z0-9]{20}/u)?.[0];
-        expect(messages).toContain("src/debug-target.mjs:3:");
+        expect(messages).toContain("src/debug-target.ts:3:");
         return fauxAssistantMessage(
           fauxToolCall("node_debugger", {
             action: "continue",
@@ -154,11 +180,13 @@ describe("Node debugger HTTP Agent path", () => {
     expect(completed[0]?.payload["details"]).toEqual(
       expect.objectContaining({
         kind: "napier.node-debugger",
+        schemaVersion: 2,
         action: "launch",
         state: "paused",
         reason: "breakpoint",
         frameCount: 2,
-        moduleCount: 1,
+        sourceMapMode: "external",
+        moduleCount: 3,
       }),
     );
     expect(completed.at(-1)?.payload["details"]).toEqual(
@@ -199,7 +227,8 @@ describe("Node debugger HTTP Agent path", () => {
           event.type.startsWith("workspace.process."),
       ),
     );
-    expect(durableTools).not.toContain("debug-target.mjs");
+    expect(durableTools).not.toContain("debug-target.ts");
+    expect(durableTools).not.toContain("debug-target.js.map");
     expect(durableTools).not.toContain("PRIVATE_SERVER_DEBUG");
     expect(durableTools).not.toContain("input + 1");
     expect(durableTools).not.toContain("21 (number)");

@@ -16,6 +16,9 @@ export interface NodeDebuggerToolEventTraceView {
   nodeDebuggerReason?: string;
   nodeDebuggerExitCode?: number;
   nodeDebuggerSourceBytes?: number;
+  nodeDebuggerSourceMapMode?: "none" | "external";
+  nodeDebuggerProgramBytes?: number;
+  nodeDebuggerSourceMapBytes?: number;
   nodeDebuggerModuleCount?: number;
   nodeDebuggerBreakpointCount?: number;
   nodeDebuggerFrameCount?: number;
@@ -29,6 +32,10 @@ export interface NodeDebuggerToolEventTraceView {
   nodeDebuggerNodeVersion?: string;
   nodeDebuggerSourcePathSha256?: string;
   nodeDebuggerSourceSha256?: string;
+  nodeDebuggerProgramPathSha256?: string;
+  nodeDebuggerProgramSha256?: string;
+  nodeDebuggerSourceMapPathSha256?: string;
+  nodeDebuggerSourceMapSha256?: string;
   nodeDebuggerModuleSetSha256?: string;
   nodeDebuggerWorkerSha256?: string;
   nodeDebuggerRuntimeExecutableSha256?: string;
@@ -59,9 +66,10 @@ export function nodeDebuggerEventEvidence(
   const action = value["action"];
   const state = value["state"];
   const processStatus = value["processStatus"];
+  const schemaVersion = value["schemaVersion"];
   if (
     value["kind"] !== "napier.node-debugger" ||
-    value["schemaVersion"] !== 1 ||
+    (schemaVersion !== 1 && schemaVersion !== 2) ||
     typeof action !== "string" ||
     !ACTIONS.has(action) ||
     !debugState(state) ||
@@ -70,6 +78,19 @@ export function nodeDebuggerEventEvidence(
     return undefined;
   }
   const sourceBytes = integerInRange(value["sourceBytes"], 0, 1024 * 1024);
+  const sourceMapMode =
+    schemaVersion === 2 &&
+    (value["sourceMapMode"] === "none" || value["sourceMapMode"] === "external")
+      ? value["sourceMapMode"]
+      : undefined;
+  const programBytes =
+    schemaVersion === 2
+      ? integerInRange(value["programBytes"], 0, 1024 * 1024)
+      : undefined;
+  const sourceMapBytes =
+    schemaVersion === 2 && sourceMapMode === "external"
+      ? integerInRange(value["sourceMapBytes"], 0, 1024 * 1024)
+      : undefined;
   const moduleCount = integerInRange(value["moduleCount"], 1, 256);
   const breakpointCount = integerInRange(value["breakpointCount"], 1, 16);
   const frameCount = integerInRange(value["frameCount"], 0, 32);
@@ -89,6 +110,18 @@ export function nodeDebuggerEventEvidence(
     "dapEventSequenceSha256",
     "resultSha256",
   ].map((key) => sha256(value[key]));
+  const programPathSha256 =
+    schemaVersion === 2 ? sha256(value["programPathSha256"]) : undefined;
+  const programSha256 =
+    schemaVersion === 2 ? sha256(value["programSha256"]) : undefined;
+  const sourceMapPathSha256 =
+    schemaVersion === 2 && sourceMapMode === "external"
+      ? sha256(value["sourceMapPathSha256"])
+      : undefined;
+  const sourceMapSha256 =
+    schemaVersion === 2 && sourceMapMode === "external"
+      ? sha256(value["sourceMapSha256"])
+      : undefined;
   if (
     sourceBytes === undefined ||
     moduleCount === undefined ||
@@ -101,6 +134,18 @@ export function nodeDebuggerEventEvidence(
     typeof value["outputTruncated"] !== "boolean" ||
     !nodeVersion ||
     hashes.some((hash) => !hash) ||
+    (schemaVersion === 2 &&
+      (!sourceMapMode ||
+        programBytes === undefined ||
+        !programPathSha256 ||
+        !programSha256 ||
+        (sourceMapMode === "external"
+          ? sourceMapBytes === undefined ||
+            !sourceMapPathSha256 ||
+            !sourceMapSha256
+          : value["sourceMapBytes"] !== undefined ||
+            value["sourceMapPathSha256"] !== undefined ||
+            value["sourceMapSha256"] !== undefined))) ||
     (value["reason"] !== undefined &&
       (typeof value["reason"] !== "string" ||
         !["breakpoint", "exception", "pause", "step"].includes(
@@ -128,6 +173,13 @@ export function nodeDebuggerEventEvidence(
       ? { nodeDebuggerExitCode: value["exitCode"] }
       : {}),
     nodeDebuggerSourceBytes: sourceBytes,
+    ...(sourceMapMode ? { nodeDebuggerSourceMapMode: sourceMapMode } : {}),
+    ...(programBytes !== undefined
+      ? { nodeDebuggerProgramBytes: programBytes }
+      : {}),
+    ...(sourceMapBytes !== undefined
+      ? { nodeDebuggerSourceMapBytes: sourceMapBytes }
+      : {}),
     nodeDebuggerModuleCount: moduleCount,
     nodeDebuggerBreakpointCount: breakpointCount,
     nodeDebuggerFrameCount: frameCount,
@@ -148,6 +200,16 @@ export function nodeDebuggerEventEvidence(
     nodeDebuggerNodeVersion: nodeVersion,
     nodeDebuggerSourcePathSha256: hashes[0]!,
     nodeDebuggerSourceSha256: hashes[1]!,
+    ...(programPathSha256
+      ? { nodeDebuggerProgramPathSha256: programPathSha256 }
+      : {}),
+    ...(programSha256 ? { nodeDebuggerProgramSha256: programSha256 } : {}),
+    ...(sourceMapPathSha256
+      ? { nodeDebuggerSourceMapPathSha256: sourceMapPathSha256 }
+      : {}),
+    ...(sourceMapSha256
+      ? { nodeDebuggerSourceMapSha256: sourceMapSha256 }
+      : {}),
     nodeDebuggerModuleSetSha256: hashes[2]!,
     nodeDebuggerWorkerSha256: hashes[3]!,
     nodeDebuggerRuntimeExecutableSha256: hashes[4]!,
@@ -189,12 +251,17 @@ export function nodeDebuggerSummaryParts(
     ...(view.nodeDebuggerModuleCount !== undefined
       ? [`modules ${view.nodeDebuggerModuleCount}`]
       : []),
+    ...(view.nodeDebuggerSourceMapMode === "external"
+      ? ["source-map external"]
+      : []),
     ...(view.nodeDebuggerNodeVersion
       ? [`node ${view.nodeDebuggerNodeVersion}`]
       : []),
     ...(view.nodeDebuggerVariablesTruncated ? ["variables-truncated"] : []),
     ...(view.nodeDebuggerOutputTruncated ? ["output-truncated"] : []),
     ...hashSummary("debug-source", view.nodeDebuggerSourceSha256),
+    ...hashSummary("debug-program", view.nodeDebuggerProgramSha256),
+    ...hashSummary("debug-source-map", view.nodeDebuggerSourceMapSha256),
     ...hashSummary("debug-modules", view.nodeDebuggerModuleSetSha256),
     ...hashSummary("dap-request", view.nodeDebuggerDapRequestSha256),
     ...hashSummary("dap-response", view.nodeDebuggerDapResponseSha256),

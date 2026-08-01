@@ -466,6 +466,44 @@ describe("workspace policy", () => {
     expect(
       assessToolCall(
         "workspace",
+        "node_debugger",
+        {
+          action: "launch",
+          path: "src/example.ts",
+          programPath: "dist/example.js",
+          sourceMapPath: "dist/example.js.map",
+        },
+        "/workspace",
+      ).allowed,
+    ).toBe(true);
+    expect(
+      assessToolCall(
+        "workspace",
+        "node_debugger",
+        {
+          action: "launch",
+          path: "src/example.ts",
+          programPath: "dist/example.js",
+        },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
+        "node_debugger",
+        {
+          action: "launch",
+          path: "src/example.ts",
+          programPath: "../outside.js",
+          sourceMapPath: "dist/example.js.map",
+        },
+        "/workspace",
+      ).allowed,
+    ).toBe(false);
+    expect(
+      assessToolCall(
+        "workspace",
         "run_command",
         { runtime: "node", args: ["--version"], cwd: "../outside" },
         "/workspace",

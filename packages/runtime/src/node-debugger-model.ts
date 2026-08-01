@@ -72,6 +72,15 @@ export interface NodeDebuggerActionResult {
   sourcePathSha256: string;
   sourceSha256: string;
   sourceBytes: number;
+  sourceMapMode: "none" | "external";
+  programPath: string;
+  programPathSha256: string;
+  programSha256: string;
+  programBytes: number;
+  sourceMapPath?: string;
+  sourceMapPathSha256?: string;
+  sourceMapSha256?: string;
+  sourceMapBytes?: number;
   moduleCount: number;
   moduleSetSha256: string;
   breakpointCount: number;
@@ -130,11 +139,21 @@ export function validateInitializeResponse(
 export function validateLaunchResponse(
   body: Record<string, unknown> | undefined,
   source: WorkspaceSourceFile,
+  program: WorkspaceSourceFile,
+  sourceMap?: WorkspaceSourceFile,
 ): string {
   if (
     !record(body) ||
     body["sourceSha256"] !== source.fileSha256 ||
     body["sourcePath"] !== source.path ||
+    body["programSha256"] !== program.fileSha256 ||
+    body["programPath"] !== program.path ||
+    body["sourceMapMode"] !== (sourceMap ? "external" : "none") ||
+    (sourceMap
+      ? body["sourceMapSha256"] !== sourceMap.fileSha256 ||
+        body["sourceMapPath"] !== sourceMap.path
+      : body["sourceMapSha256"] !== undefined ||
+        body["sourceMapPath"] !== undefined) ||
     typeof body["nodeVersion"] !== "string" ||
     !/^\d+\.\d+\.\d+$/u.test(body["nodeVersion"])
   ) {

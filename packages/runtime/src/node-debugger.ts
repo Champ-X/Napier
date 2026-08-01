@@ -42,14 +42,14 @@ import {
   validateSessionTimeout,
 } from "./node-debugger-model.js";
 import {
+  assertNodeDebuggerSourceBindingCurrent,
+  loadNodeDebuggerSourceBinding,
+} from "./node-debugger-source-binding.js";
+import {
   MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
   type WorkspaceProcessManager,
 } from "./workspace-processes.js";
-import {
-  assertWorkspaceSourceCurrent,
-  loadWorkspaceSourceFile,
-  type WorkspaceSourceFile,
-} from "./workspace-source.js";
+import type { WorkspaceSourceFile } from "./workspace-source.js";
 
 export {
   DEFAULT_NODE_DEBUG_ACTION_TIMEOUT_MS,
@@ -68,20 +68,14 @@ export type {
   NodeDebugVariable,
 } from "./node-debugger-model.js";
 
-const NODE_DEBUG_EXTENSIONS = new Set([
-  ".js",
-  ".mjs",
-  ".cjs",
-  ".ts",
-  ".mts",
-  ".cts",
-]);
 const AUTH = /^[a-f0-9]{32}$/u;
 
 interface RegisteredNodeDebugger {
   threadId: string;
   runId: string;
   source: WorkspaceSourceFile;
+  program: WorkspaceSourceFile;
+  sourceMap?: WorkspaceSourceFile;
   breakpointCount: number;
   processId: string;
   state: NodeDebugSessionState;
@@ -123,6 +117,8 @@ export class NodeDebuggerManager {
     threadId: string;
     runId: string;
     path: string;
+    programPath?: string;
+    sourceMapPath?: string;
     breakpoints: NodeDebugBreakpoint[];
     args?: string[];
     pauseOnExceptions?: "none" | "uncaught" | "all";
@@ -138,17 +134,15 @@ export class NodeDebuggerManager {
     validateActionTimeout(actionTimeoutMs);
     validateBreakpoints(request.breakpoints);
     validateArguments(request.args ?? []);
-    const source = await loadWorkspaceSourceFile(
-      this.workspaceRoot,
-      request.path,
-      {
-        label: "Node debugger",
-        maxBytes: MAX_NODE_DEBUG_SOURCE_BYTES,
-        extensions: NODE_DEBUG_EXTENSIONS,
-        extensionError:
-          "Node debugger supports JavaScript and Node-executable TypeScript source files",
-      },
-    );
+    const { source, program, sourceMap } = await loadNodeDebuggerSourceBinding({
+      workspaceRoot: this.workspaceRoot,
+      path: request.path,
+      ...(request.programPath ? { programPath: request.programPath } : {}),
+      ...(request.sourceMapPath
+        ? { sourceMapPath: request.sourceMapPath }
+        : {}),
+      maxBytes: MAX_NODE_DEBUG_SOURCE_BYTES,
+    });
     validateBreakpointLines(request.breakpoints, source.source);
     const session = await this.processes.startPrivateProtocol({
       threadId: request.threadId,
@@ -166,6 +160,8 @@ export class NodeDebuggerManager {
       threadId: request.threadId,
       runId: request.runId,
       source,
+      program,
+      ...(sourceMap ? { sourceMap } : {}),
       breakpointCount: request.breakpoints.length,
       processId: session.id,
       state: "starting",
@@ -211,17 +207,30 @@ export class NodeDebuggerManager {
         registration,
         "launch",
         {
-          program: source.target,
+          program: program.target,
           workspaceRoot: source.workspaceRoot,
           sourcePath: source.path,
           sourceSha256: source.fileSha256,
+          programPath: program.path,
+          programSha256: program.fileSha256,
+          ...(sourceMap
+            ? {
+                sourceMapPath: sourceMap.path,
+                sourceMapSha256: sourceMap.fileSha256,
+              }
+            : {}),
           args: request.args ?? [],
         },
         actionTimeoutMs,
         evidence,
         request.signal,
       );
-      registration.nodeVersion = validateLaunchResponse(launched.body, source);
+      registration.nodeVersion = validateLaunchResponse(
+        launched.body,
+        source,
+        program,
+        sourceMap,
+      );
       await this.sendRequest(
         registration,
         "setExceptionBreakpoints",
@@ -502,10 +511,10 @@ export class NodeDebuggerManager {
     registration.busy = true;
     const evidence = operationEvidence();
     try {
-      await assertWorkspaceSourceCurrent(registration.source, {
-        label: "Node debugger",
-        maxBytes: MAX_NODE_DEBUG_SOURCE_BYTES,
-      });
+      await assertNodeDebuggerSourceBindingCurrent(
+        registration,
+        MAX_NODE_DEBUG_SOURCE_BYTES,
+      );
       requirePaused(registration);
       const moduleSnapshot = parseModuleSnapshot(
         (
@@ -828,6 +837,17 @@ export class NodeDebuggerManager {
       sourcePathSha256: registration.source.pathSha256,
       sourceSha256: registration.source.fileSha256,
       sourceBytes: registration.source.fileBytes,
+      sourceMapMode: registration.sourceMap ? "external" : "none",
+      programPathSha256: registration.program.pathSha256,
+      programSha256: registration.program.fileSha256,
+      programBytes: registration.program.fileBytes,
+      ...(registration.sourceMap
+        ? {
+            sourceMapPathSha256: registration.sourceMap.pathSha256,
+            sourceMapSha256: registration.sourceMap.fileSha256,
+            sourceMapBytes: registration.sourceMap.fileBytes,
+          }
+        : {}),
       moduleCount: registration.moduleCount,
       moduleSetSha256: registration.moduleSetSha256,
       breakpointCount: registration.breakpointCount,
@@ -865,6 +885,19 @@ export class NodeDebuggerManager {
       sourcePathSha256: registration.source.pathSha256,
       sourceSha256: registration.source.fileSha256,
       sourceBytes: registration.source.fileBytes,
+      sourceMapMode: registration.sourceMap ? "external" : "none",
+      programPath: registration.program.path,
+      programPathSha256: registration.program.pathSha256,
+      programSha256: registration.program.fileSha256,
+      programBytes: registration.program.fileBytes,
+      ...(registration.sourceMap
+        ? {
+            sourceMapPath: registration.sourceMap.path,
+            sourceMapPathSha256: registration.sourceMap.pathSha256,
+            sourceMapSha256: registration.sourceMap.fileSha256,
+            sourceMapBytes: registration.sourceMap.fileBytes,
+          }
+        : {}),
       moduleCount: registration.moduleCount,
       moduleSetSha256: registration.moduleSetSha256,
       breakpointCount: registration.breakpointCount,

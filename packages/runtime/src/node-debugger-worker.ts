@@ -1,6 +1,7 @@
 import { deflateSync } from "node:zlib";
 
 import { sha256 } from "./ed25519.js";
+import { NODE_DEBUGGER_SOURCE_MAP_CONTROLLER_SOURCE } from "./node-debugger-source-map-worker.js";
 
 export const MAX_NODE_DEBUG_SOURCE_BYTES = 1024 * 1024;
 export const MAX_NODE_DEBUG_BREAKPOINTS = 16;
@@ -22,6 +23,7 @@ const NODE_DEBUGGER_CONTROLLER_SOURCE = String.raw`
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const inspector = require("node:inspector");
+const { SourceMap } = require("node:module");
 const path = require("node:path");
 const { createInterface } = require("node:readline");
 const { fileURLToPath, pathToFileURL } = require("node:url");
@@ -43,7 +45,6 @@ const MAX_OUTPUT_CHARS = ${MAX_NODE_DEBUG_OUTPUT_CHARS};
 const MAX_OUTPUT_ENTRY_CHARS = ${MAX_NODE_DEBUG_OUTPUT_ENTRY_CHARS};
 const PROTOCOL_FAILURE = ${JSON.stringify(NODE_DEBUGGER_PROTOCOL_FAILURE_MARKER)};
 const AUTH = crypto.randomBytes(16).toString("hex");
-const SOURCE_EXTENSIONS = new Set([".js", ".mjs", ".cjs", ".ts", ".mts", ".cts"]);
 const SCOPE_TYPES = new Set(["local", "closure", "catch", "block", "script"]);
 
 const session = new inspector.Session();
@@ -61,6 +62,9 @@ let paused = false;
 let terminated = false;
 let launch;
 let targetUrl;
+let activeSourceMap;
+let sourceMapEntries = [];
+let sourceMapSourceName;
 let sourceLines = 0;
 let pauseReason;
 let frameSequence = 1;
@@ -182,59 +186,7 @@ function inside(candidate, root) {
   );
 }
 
-function validateLaunch(argumentsValue) {
-  if (
-    !exactRecord(argumentsValue, [
-      "program",
-      "workspaceRoot",
-      "sourcePath",
-      "sourceSha256",
-      "args",
-    ]) ||
-    !visibleString(argumentsValue.program, 2_000) ||
-    !path.isAbsolute(argumentsValue.program) ||
-    !visibleString(argumentsValue.workspaceRoot, 2_000) ||
-    !path.isAbsolute(argumentsValue.workspaceRoot) ||
-    !visibleString(argumentsValue.sourcePath, 500) ||
-    path.isAbsolute(argumentsValue.sourcePath) ||
-    !/^[a-f0-9]{64}$/.test(argumentsValue.sourceSha256) ||
-    !Array.isArray(argumentsValue.args) ||
-    argumentsValue.args.length > 16 ||
-    argumentsValue.args.some((argument) => !visibleString(argument, 500))
-  ) {
-    throw new Error("Launch arguments are invalid");
-  }
-  const root = fs.realpathSync(argumentsValue.workspaceRoot);
-  const program = fs.realpathSync(argumentsValue.program);
-  if (
-    root !== path.resolve(argumentsValue.workspaceRoot) ||
-    program !== path.resolve(argumentsValue.program) ||
-    !inside(program, root) ||
-    path.relative(root, program) !== argumentsValue.sourcePath ||
-    !SOURCE_EXTENSIONS.has(path.extname(program).toLowerCase())
-  ) {
-    throw new Error("Launch target is outside the bound workspace");
-  }
-  const info = fs.statSync(program);
-  if (!info.isFile() || info.size > MAX_SOURCE_BYTES) {
-    throw new Error("Launch target exceeds its source boundary");
-  }
-  const source = fs.readFileSync(program);
-  if (
-    source.byteLength > MAX_SOURCE_BYTES ||
-    crypto.createHash("sha256").update(source).digest("hex") !==
-      argumentsValue.sourceSha256
-  ) {
-    throw new Error("Launch target does not match its source binding");
-  }
-  new TextDecoder("utf-8", { fatal: true }).decode(source);
-  return {
-    ...argumentsValue,
-    program,
-    workspaceRoot: root,
-    source: source.toString("utf8"),
-  };
-}
+${NODE_DEBUGGER_SOURCE_MAP_CONTROLLER_SOURCE}
 
 function resetPausedState() {
   frames.clear();
@@ -248,41 +200,23 @@ function boundedText(value, maximum = MAX_VALUE_CHARS) {
   return text.slice(0, maximum);
 }
 
-function sourceForFrame(frame) {
-  const url =
-    typeof frame.url === "string" && frame.url
-      ? frame.url
-      : scriptUrls.get(frame.location && frame.location.scriptId);
-  if (!launch || typeof url !== "string" || !url.startsWith("file:")) {
-    return undefined;
-  }
-  try {
-    const absolute = fileURLToPath(url);
-    if (!inside(absolute, launch.workspaceRoot)) return undefined;
-    const relative = path.relative(launch.workspaceRoot, absolute);
-    return {
-      name: path.basename(relative),
-      path: relative,
-      sourceReference: 0,
-    };
-  } catch {
-    return undefined;
-  }
-}
-
 function observeWorkspaceModule(url) {
   if (!launch || typeof url !== "string" || !url.startsWith("file:")) return;
   try {
     const absolute = fileURLToPath(url);
-    if (!inside(absolute, launch.workspaceRoot)) return;
-    const info = fs.statSync(absolute);
-    if (!info.isFile() || info.size > MAX_SOURCE_BYTES) return;
-    const source = fs.readFileSync(absolute);
-    workspaceModules.set(path.relative(launch.workspaceRoot, absolute), {
-      absolute,
-      sha256: crypto.createHash("sha256").update(source).digest("hex"),
-    });
+    observeWorkspaceFile(absolute);
   } catch {}
+}
+
+function observeWorkspaceFile(absolute) {
+  if (!launch || !inside(absolute, launch.workspaceRoot)) return;
+  const info = fs.statSync(absolute);
+  if (!info.isFile() || info.size > MAX_SOURCE_BYTES) return;
+  const source = fs.readFileSync(absolute);
+  workspaceModules.set(path.relative(launch.workspaceRoot, absolute), {
+    absolute,
+    sha256: crypto.createHash("sha256").update(source).digest("hex"),
+  });
 }
 
 function moduleSnapshot() {
@@ -318,12 +252,14 @@ function emitModuleSnapshot() {
 function stackFrame(frame) {
   const frameId = frameSequence++;
   frames.set(frameId, frame);
+  const location = frameLocation(frame);
+  if (!location) throw new Error("Workspace frame location is unavailable");
   return {
     id: frameId,
     name: boundedText(frame.functionName || "(anonymous)", 120),
-    ...(sourceForFrame(frame) ? { source: sourceForFrame(frame) } : {}),
-    line: frame.location.lineNumber + 1,
-    column: frame.location.columnNumber + 1,
+    source: location.source,
+    line: location.line,
+    column: location.column,
   };
 }
 
@@ -442,7 +378,7 @@ session.on("Debugger.scriptParsed", ({ params }) => {
 session.on("Debugger.paused", ({ params }) => {
   if (terminated) return;
   const workspaceFrames = params.callFrames.filter((frame) =>
-    sourceForFrame(frame),
+    frameLocation(frame),
   );
   const hitBreakpoints = Array.isArray(params.hitBreakpoints)
     ? params.hitBreakpoints
@@ -456,7 +392,7 @@ session.on("Debugger.paused", ({ params }) => {
     !hitBreakpoints.some((breakpointId) => {
       const requested = breakpoints.get(breakpointId);
       return workspaceFrames.some(
-        (frame) => frame.location.lineNumber + 1 === requested?.line,
+        (frame) => frameLocation(frame)?.line === requested?.line,
       );
     })
   ) {
@@ -509,7 +445,13 @@ async function launchRequest(request) {
   if (!initialized || launch) throw new Error("DAP launch state is invalid");
   launch = validateLaunch(request.arguments);
   targetUrl = pathToFileURL(launch.program).href;
+  activeSourceMap = launch.sourceMap;
+  sourceMapEntries = launch.sourceMapEntries || [];
+  sourceMapSourceName = launch.sourceMapSourceName;
   sourceLines = launch.source.split("\n").length;
+  observeWorkspaceFile(launch.sourceTarget);
+  observeWorkspaceFile(launch.program);
+  if (launch.sourceMapTarget) observeWorkspaceFile(launch.sourceMapTarget);
   await post("Runtime.enable");
   await post("Debugger.enable");
   await configureOutputCapture();
@@ -526,6 +468,15 @@ async function launchRequest(request) {
   respond(request, {
     sourceSha256: launch.sourceSha256,
     sourcePath: launch.sourcePath,
+    programSha256: launch.programSha256,
+    programPath: launch.programPath,
+    sourceMapMode: launch.sourceMapMode,
+    ...(launch.sourceMapMode === "external"
+      ? {
+          sourceMapSha256: launch.sourceMapSha256,
+          sourceMapPath: launch.sourceMapPath,
+        }
+      : {}),
     nodeVersion: process.versions.node,
   });
 }
@@ -591,10 +542,11 @@ async function setBreakpoints(request) {
     const key = breakpoint.line + ":" + (breakpoint.column || 1);
     if (seen.has(key)) throw new Error("DAP breakpoints must be unique");
     seen.add(key);
+    const generated = generatedLocationForBreakpoint(breakpoint);
     const result = await post("Debugger.setBreakpointByUrl", {
       url: targetUrl,
-      lineNumber: breakpoint.line - 1,
-      columnNumber: (breakpoint.column || 1) - 1,
+      lineNumber: generated.lineNumber,
+      columnNumber: generated.columnNumber,
     });
     breakpoints.set(result.breakpointId, breakpoint);
     values.push({
@@ -669,13 +621,17 @@ async function stackTrace(request) {
   ) {
     throw new Error("DAP stack request is invalid");
   }
-  const allFrames = [...frames.entries()].map(([id, frame]) => ({
-    id,
-    name: boundedText(frame.functionName || "(anonymous)", 120),
-    ...(sourceForFrame(frame) ? { source: sourceForFrame(frame) } : {}),
-    line: frame.location.lineNumber + 1,
-    column: frame.location.columnNumber + 1,
-  }));
+  const allFrames = [...frames.entries()].map(([id, frame]) => {
+    const location = frameLocation(frame);
+    if (!location) throw new Error("Workspace frame location is unavailable");
+    return {
+      id,
+      name: boundedText(frame.functionName || "(anonymous)", 120),
+      source: location.source,
+      line: location.line,
+      column: location.column,
+    };
+  });
   const start = Number.isSafeInteger(argumentsValue.startFrame)
     ? Math.max(0, argumentsValue.startFrame)
     : 0;

@@ -415,6 +415,105 @@ describe("Tool event trace view", () => {
     expect(summary).not.toContain("PRIVATE_DEBUG");
   });
 
+  it("validates source-mapped Node debugger evidence and conditional hashes", () => {
+    const details = {
+      kind: "napier.node-debugger",
+      schemaVersion: 2,
+      action: "launch",
+      processId: "process_12345678901234567890",
+      state: "paused",
+      processStatus: "running",
+      reason: "breakpoint",
+      sourcePathSha256: "1".repeat(64),
+      sourceSha256: "2".repeat(64),
+      sourceBytes: 321,
+      sourceMapMode: "external",
+      programPathSha256: "3".repeat(64),
+      programSha256: "4".repeat(64),
+      programBytes: 400,
+      sourceMapPathSha256: "5".repeat(64),
+      sourceMapSha256: "6".repeat(64),
+      sourceMapBytes: 180,
+      moduleCount: 3,
+      moduleSetSha256: "7".repeat(64),
+      breakpointCount: 1,
+      frameCount: 1,
+      scopeCount: 0,
+      variableCount: 0,
+      variablesTruncated: false,
+      outputCount: 0,
+      outputTruncated: false,
+      nodeVersion: "24.16.0",
+      workerSha256: "8".repeat(64),
+      runtimeExecutableSha256: "9".repeat(64),
+      runtimeCommandSha256: "a".repeat(64),
+      dapRequestSequenceSha256: "b".repeat(64),
+      dapResponseSequenceSha256: "c".repeat(64),
+      dapEventSequenceSha256: "d".repeat(64),
+      resultSha256: "e".repeat(64),
+    };
+    const event = toolEvent("tool.completed", {
+      toolName: "node_debugger",
+      status: "completed",
+      effect: "write",
+      details,
+    });
+
+    expect(toolEventTraceView(event)).toEqual(
+      expect.objectContaining({
+        nodeDebuggerSourceMapMode: "external",
+        nodeDebuggerProgramBytes: 400,
+        nodeDebuggerSourceMapBytes: 180,
+        nodeDebuggerProgramSha256: "4".repeat(64),
+        nodeDebuggerSourceMapSha256: "6".repeat(64),
+      }),
+    );
+    expect(toolEventTraceSummary(event)).toContain(
+      "source-map external / node 24.16.0",
+    );
+    expect(toolEventTraceSummary(event)).toContain(
+      `debug-program ${"4".repeat(12)} / debug-source-map ${"6".repeat(12)}`,
+    );
+
+    const {
+      sourceMapPathSha256: _sourceMapPathSha256,
+      sourceMapSha256: _sourceMapSha256,
+      sourceMapBytes: _sourceMapBytes,
+      ...directDetails
+    } = details;
+    expect(
+      toolEventTraceView(
+        toolEvent("tool.completed", {
+          toolName: "node_debugger",
+          status: "completed",
+          effect: "write",
+          details: {
+            ...directDetails,
+            sourceMapMode: "none",
+          },
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        nodeDebuggerSourceMapMode: "none",
+        nodeDebuggerProgramSha256: "4".repeat(64),
+      }),
+    );
+
+    const malformed = toolEventTraceView(
+      toolEvent("tool.completed", {
+        toolName: "node_debugger",
+        status: "completed",
+        effect: "write",
+        details: {
+          ...details,
+          sourceMapMode: "none",
+        },
+      }),
+    );
+    expect(malformed?.nodeDebuggerAction).toBeUndefined();
+  });
+
   it("summarizes TypeScript AST evidence without paths, names, or source", () => {
     const query = toolEvent("tool.completed", {
       toolName: "ast_query",

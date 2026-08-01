@@ -6,6 +6,39 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added external source-map debugging to the existing Run-owned Node DAP
+  session. `node_debugger` keeps direct JavaScript and Node-executable
+  TypeScript launches compatible, while compiled TypeScript can now bind an
+  original `path`, generated `programPath`, and external `sourceMapPath`.
+  All three are canonical <=1 MiB non-symlinked workspace files fixed to
+  pre-launch hashes. The private read-only/offline adapter strictly parses one
+  single-source v3 map, validates its generated filename, relative
+  `sourceMappingURL`, exact real source and optional `sourcesContent`, decodes
+  at most 8,192 bounded VLQ mappings, maps requested breakpoints into generated
+  code, and returns breakpoint/exception/stack/step frames in original source
+  coordinates. Every paused action revalidates source, program, map, and loaded
+  workspace modules; mismatch, drift, cancellation, malformed protocol, or
+  unknown adapter exit terminates the complete Process. No compiler, network,
+  write, Inspector TCP, URL source, inline/sectioned map, or multi-source
+  bundler authority is added. Schema-v2 Agent/HTTP/Web/Replay evidence retains
+  only mode, byte counts, and source/program/map/module/worker/runtime/DAP/
+  result hashes, while legacy schema-v1 Trace remains readable and all paths,
+  bodies, expressions, variables, arguments, and target output stay live-only.
+  Real TypeScript 5.9.3 built-Runtime Dogfood stops at the requested TS line,
+  reads `quantity=6`, steps to the next TS line, and exits 0; Runtime, Server,
+  and Web suites pass 932, 104, and 434 tests. Source binding, private map
+  parsing, and tool formatting are isolated in 110-, 401-, and 192-line
+  modules; the compressed DAP Worker is 44 lines smaller than before the slice.
+  The opt-in macOS Sandbox smoke remains fail-closed before adapter
+  initialization under this nested IDE's existing `sandbox-exec` denial, with
+  no host fallback. The complete gate passes 1,649 regular tests with 29
+  opt-in live tests skipped, 255 OpenAPI routes, and 244/244 compatibility
+  operations. Product performance remains within budget at 649.1 ms to first
+  CLI event, 794.8 ms to first token, 1,100.3 ms to completion, 0.9 ms read
+  p95, 7.2 ms for a 1,000-event projection, and 749.568 closed SQLite
+  bytes/event. The 92-file Web dist main entry remains 130.32 KiB under its
+  150 KiB limit, bound to `ea9cb4a553fb0a75`; the seven-artifact release set
+  is bound to `0e405163f8dcb401`.
 - Added preview-bound coordinated application for one selected LSP Code Action.
   `lsp_code_actions` now returns a separate five-minute one-use ID beside each
   live alternative when `lsp_code_action_apply` is enabled. All alternatives

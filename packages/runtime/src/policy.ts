@@ -405,16 +405,26 @@ export function assessToolCall(
       toolName === "node_debugger" &&
       getStringField(input, "action") === "launch"
     ) {
-      const candidate = getStringField(input, "path");
+      const sourcePath = getStringField(input, "path");
+      const programPath = getStringField(input, "programPath");
+      const sourceMapPath = getStringField(input, "sourceMapPath");
+      const candidates = [sourcePath, programPath, sourceMapPath].filter(
+        (candidate): candidate is string => candidate !== undefined,
+      );
       if (
-        !candidate ||
-        path.isAbsolute(candidate) ||
-        !isPathInsideWorkspace(candidate, workspaceRoot)
+        !sourcePath ||
+        Boolean(programPath) !== Boolean(sourceMapPath) ||
+        candidates.some(
+          (candidate) =>
+            path.isAbsolute(candidate) ||
+            !isPathInsideWorkspace(candidate, workspaceRoot),
+        )
       ) {
         return {
           allowed: false,
           risk: "high",
-          reason: "Node debugger must target a path inside the workspace",
+          reason:
+            "Node debugger source, program, and source map must target paths inside the workspace",
         };
       }
     }

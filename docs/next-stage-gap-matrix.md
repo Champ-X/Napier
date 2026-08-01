@@ -21,7 +21,7 @@ Audit date: 2026-08-01
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | A checked local product-path budget now covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Split Server and Store by domain; extend budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, and explicitly preauthorized failed-write compensation now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, proved orphan cleanup, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics/relevant tests, nearest-package write-linked test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step exist; broader Code Action kinds, DAP attach/source maps/multi-thread UX, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics/relevant tests, nearest-package write-linked test execution with changed-declaration evidence, and Run-owned Node launch DAP with breakpoints/stack/variables/evaluation/single-step plus external single-source v3 maps for compiled TypeScript exist; broader Code Action kinds, DAP attach/multi-thread UX, inline or bundled source maps, broader AST transforms, cross-package/path-alias test discovery, coding outcome benchmarks, and isolated subagent worktrees remain.                                                                                                                                                                                                                                                                                                                                                                                                      |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint-only tests with durable successor holds, typed checkpoint output simulation, typed selected-checkpoint constructed-input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript definition/execution SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, graph-level branch pruning, write-capable Map/Loop, compensation, top-level Workflow input replacement, write/session side-effect simulation, richer interactive step controls, external adapters, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 single-node execution runs one selected checkpoint and durably pauses direct successors, schema-3 simulation Schema-validates and materializes one typed selected-node output before the ordinary scheduler executes descendants, and schema-4 replacement Schema-validates one complete constructed checkpoint input before ordinary selected-node and descendant execution. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools also support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target output comparison. Stateful or write tool checkpoints/result simulation, top-level Workflow input replacement, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                             |
@@ -30,6 +30,94 @@ Audit date: 2026-08-01
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+## Implemented Slice: External Source-Map Node Debugging
+
+User scenario: a Coding Agent sets a breakpoint in an original TypeScript
+file, launches its generated JavaScript and external map through the existing
+Run-owned debugger, inspects TypeScript locals, steps in original coordinates,
+and completes without asking the model to reason over generated lines.
+
+Acceptance:
+
+- keep the existing direct JavaScript and Node-executable TypeScript launch
+  contract compatible, and require `programPath` plus `sourceMapPath` together
+  only when compiled-source mapping is requested;
+- bind original source, generated program, and map to three distinct canonical
+  workspace files, each valid UTF-8, non-symlinked, protected-root free,
+  <=1 MiB, and fixed to its pre-launch SHA-256;
+- parse the external v3 map inside the existing private adapter rather than on
+  the host, require one relative source resolving exactly to the bound original
+  file, an exact generated filename and relative `sourceMappingURL`, and at
+  most 8,192 safe decoded mappings;
+- map each requested original line/column to a generated Inspector breakpoint,
+  then map accepted breakpoint, exception, stack, and step frames back to the
+  exact original source coordinates;
+- include source, program, map, and subsequently loaded workspace modules in
+  the stop snapshot, and rehash all three explicit files before every
+  paused-state action;
+- retain the existing read-only/offline Sandbox, no Inspector TCP listener,
+  authenticated bounded DAP framing, side-effect-rejected evaluation,
+  Run/Thread ownership, busy exclusion, timeout, cancellation, and settlement
+  cleanup;
+- project schema-v2 source-map mode, byte counts, and
+  source/program/map/module/worker/runtime/DAP/result hashes through Agent,
+  HTTP/SSE, portable Replay, and strict Web Trace while accepting legacy
+  schema-v1 direct-launch evidence;
+- keep original/generated/map paths and bodies, breakpoints, arguments,
+  expressions, stack/scope/variable names and values, and target output
+  live-only.
+
+Threat boundary:
+
+- the generated program and map are untrusted workspace inputs. A map grants
+  coordinate translation only; it grants no compiler invocation, file write,
+  package, network, command, host require, or Inspector endpoint authority;
+- URL sources, source-root redirection, sections, multiple sources, mismatched
+  `file`, a wrong or repeated `sourceMappingURL`, another real source, unsafe
+  indices, excessive mappings, invalid UTF-8/JSON, and symlink or path escape
+  fail closed before target execution;
+- `sourcesContent` is never executed or exposed and, when present, must exactly
+  equal the bound current source. Inline and multi-source bundler maps remain
+  unsupported rather than being partially trusted;
+- preflight cancellation creates no Session. Cancellation after the private
+  protocol starts terminates the complete Process; program/map/source drift,
+  malformed protocol, unknown adapter exit, or stale module snapshot does the
+  same. Debugger sessions remain intentionally non-recoverable across restart.
+
+Observed result:
+
+- real TypeScript 5.9.3 compiles `pricing.ts` to CommonJS plus an external map.
+  Independent built-Runtime Dogfood stops `quote` at TypeScript line 2, reads
+  `quantity=6`, steps to TypeScript line 3, binds three workspace files, and
+  terminates with exit 0 and a stable result hash;
+- the deterministic Agent and public HTTP/SSE paths execute the same real
+  `tsc --sourceMap` fixture through launch, evaluate, step, and continue.
+  Portable Replay stays valid and durable evidence contains no source,
+  generated/map path, map body, expression, variable, argument, or target
+  output text;
+- Runtime tests cover direct compatibility, real mapped breakpoints/frames,
+  evaluation, stepping, generated-program drift, map drift, source mismatch,
+  incomplete path pairing, cancellation, timeout, explicit cancellation,
+  concurrent action exclusion, Run isolation, dependency drift, unauthenticated
+  frames, and process cleanup. Web independently accepts schema-v1 and both
+  schema-v2 modes while rejecting inconsistent conditional map hashes;
+- source loading, map-controller parsing, and tool-result formatting are split
+  into 110-, 401-, and 192-line modules. The existing 922-line compressed DAP
+  worker is 44 lines smaller than before this slice, and the tool module falls
+  to 361 lines; Store and Server gain no production state or routes;
+- Runtime, Server, and Web suites pass 932, 104, and 434 tests respectively.
+  The opt-in real macOS Sandbox smoke remains inconclusive in this nested IDE:
+  the adapter exits before initialization under the existing `sandbox-exec`
+  denial, and no host fallback is used.
+- complete `npm run check` passes 1,649 regular tests with 29 opt-in live tests
+  skipped, 255 OpenAPI routes, 244/244 compatibility operations, and every
+  TypeScript/Web build. Product performance remains within budget at 649.1 ms
+  to first CLI event, 794.8 ms to first token, 1,100.3 ms to completion,
+  0.9 ms read p95, 7.2 ms for a 1,000-event projection, and 749.568 closed
+  SQLite bytes/event. The 92-file Web dist main entry remains 130.32 KiB under
+  its 150 KiB limit, bound to `ea9cb4a553fb0a75`; the seven-artifact release
+  set is bound to `0e405163f8dcb401`.
 
 ## Implemented Slice: Preview-Bound Coordinated Code Action Apply
 
@@ -3941,9 +4029,12 @@ Threat boundary:
   next stop or termination. The adapter retains the standard command for a
   future non-blocking session model rather than advertising an unreachable
   action.
-- This slice is launch-only. Attach, hot breakpoint mutation, source maps,
-  multi-thread/child debugging, a generic third-party adapter host, debugger
-  UI, write-capable targets, checkpoints, and cross-restart recovery remain.
+- This original slice was launch-only and did not provide source maps. The
+  later external source-map slice adds bounded single-source v3 mapping without
+  changing its Process ownership. Attach, hot breakpoint mutation,
+  multi-thread/child debugging, inline or bundled maps, a generic third-party
+  adapter host, debugger UI, write-capable targets, checkpoints, and
+  cross-restart recovery remain.
 
 Observed result:
 

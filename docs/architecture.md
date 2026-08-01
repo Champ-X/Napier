@@ -3735,17 +3735,18 @@ Session boundary without introducing another durable session graph:
 ```text
 Agent selects launch + source + breakpoints
   -> require non-observe policy + enabled node_debugger tool
-  -> canonicalize one <=1 MiB workspace source without symlinks
-  -> hash source/path and launch the fixed compressed adapter worker
+  -> canonicalize one direct source or source + program + external map
+  -> hash every <=1 MiB non-symlinked file and launch the fixed adapter worker
   -> use a fixed secret-free environment, read-only workspace, and denied network
   -> connect a controller Worker to the target main thread with node:inspector
-  -> initialize DAP, bind source breakpoints and exception policy
-  -> evaluate require(canonical target) without opening an inspector TCP port
-  -> capture the loaded workspace module graph and stop at a real source frame
+  -> optionally validate one bounded single-source v3 map inside the Sandbox
+  -> map source breakpoints to generated locations and initialize DAP
+  -> evaluate require(canonical program) without opening an inspector TCP port
+  -> map accepted frames back to source and capture all bound workspace files
 Agent selects stack/scopes/variables/evaluate/step
   -> require the same live Thread, Run, Process, and paused registration
-  -> rehash the launch source and ask the authenticated adapter to rehash modules
-  -> terminate the session if source or any loaded workspace module drifted
+  -> rehash source/program/map and ask the adapter to rehash its module set
+  -> terminate if any bound file or loaded workspace module drifted
   -> exchange one bounded Content-Length-framed DAP request/response sequence
   -> reject expression side effects through throwOnSideEffect
   -> return bounded stack/value/output text to the live Agent only
@@ -3765,6 +3766,18 @@ disconnect. The Agent surface intentionally omits pause because its current
 continue/step calls synchronously wait for the next stop or termination; an
 unreachable action is not advertised.
 
+For compiled TypeScript, the launch request separately binds the original
+source, generated program, and external map. `node-debugger-source-binding.ts`
+performs host-side workspace confinement and exact file hashing before process
+creation. The compressed controller embeds a focused source-map fragment that
+strictly parses v3 JSON, decodes at most 8,192 VLQ mappings, and constructs
+Node's built-in `SourceMap` only after the map's `file`, relative
+`sourceMappingURL`, single `sources` entry, actual source path, optional
+`sourcesContent`, generated line count, source line count, and mapping indices
+all match. Breakpoints use decoded reverse locations; stack and step frames use
+generated-to-original lookup. Map text never leaves the private adapter
+protocol.
+
 DAP input and output use strict `Content-Length` framing with independent
 header, message, cumulative byte, and message-count limits. A random 128-bit
 per-process authenticator is injected into every adapter response/event and
@@ -3775,26 +3788,29 @@ termination; they cannot forge accepted stack, variable, stop, or exit
 evidence.
 
 Only workspace call frames are projected. Script IDs are resolved through
-`Debugger.scriptParsed`, relocated breakpoints must still match the requested
-source line, and internal/external-only pauses resume automatically. Each
-accepted stop emits a hash over the sorted workspace module path/content set.
-Before every paused-state action, a private `napierVerifyModules` DAP extension
-rehashes that set in the Sandbox. A stale snapshot is an unknown evidence state
-and cancels the complete Process.
+`Debugger.scriptParsed`; source-mapped frames must resolve to the exact bound
+original source, relocated breakpoints must still match the requested source
+line, and internal/external-only pauses resume automatically. Each accepted
+stop emits a hash over the sorted workspace module path/content set, including
+the source, generated program, and map. Before every paused-state action, a
+private `napierVerifyModules` DAP extension rehashes that set in the Sandbox. A
+stale snapshot is an unknown evidence state and cancels the complete Process.
 
 Paths, source, argv, expressions, stack/scope/variable names and values, and
 target output are live-only. `tool.*`, `workspace.process.*`, Replay, public
 SSE history, and Web Trace retain only bounded action/state/status/reason,
 counts, Node version, truncation flags, exit code, and
-source/module/worker/runtime/request/response/event/result hashes. Generic
-Process output and stdin remain unavailable for the private protocol.
+source/program/source-map/module/worker/runtime/request/response/event/result
+hashes. Schema-v2 Trace also records only source-map mode and bounded file byte
+counts. Generic Process output and stdin remain unavailable for the private
+protocol; schema-v1 direct-launch evidence remains readable.
 
 This slice does not provide attach, breakpoint mutation after launch,
-multi-thread or child-process debugging, source maps, a third-party adapter
-host, write-capable targets, debugger UI, checkpoint recovery, or cross-restart
-adoption. The opt-in macOS Sandbox smoke is inconclusive in the reviewed nested
-IDE: both the existing JavaScript smoke and a minimal `sandbox-exec` invocation
-fail with exit 71 and `sandbox_apply: Operation not permitted`. No host fallback
+multi-thread or child-process debugging, inline/sectioned or multi-source
+bundler maps, a third-party adapter host, write-capable targets, debugger UI,
+checkpoint recovery, or cross-restart adoption. The opt-in macOS Sandbox smoke
+is inconclusive in the reviewed nested IDE: the adapter exits before
+initialization, matching the existing `sandbox-exec` denial. No host fallback
 exists.
 
 ## Workspace Verification Flow
@@ -6116,6 +6132,11 @@ The current boundary has sixty-four parts:
     shared CAS/staging/fsync/rollback transaction, fresh before/after
     diagnostics, linked tests, command denial, and body-free Agent/HTTP/Web/
     Replay evidence.
+65. Run-owned external source-map debugging for compiled TypeScript with
+    explicit original/program/map bindings, bounded single-source v3 parsing
+    inside the private adapter, original-coordinate breakpoints and stack/step
+    frames, complete three-file freshness, schema-v2 Agent/HTTP/Web/Replay
+    evidence, and no compiler, network, Inspector TCP, or write authority.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6160,9 +6181,10 @@ deferred until the local P0-P9 product loop is stable.
 
 ### Layer 2: Coding and workflow
 
-- broader Code Action kinds, Node attach/source-map/multi-thread DAP and
-  debugger UX, broader multi-node AST transforms, cross-package/path-alias test
-  discovery, coding outcome benchmarks, and isolated subagent worktrees;
+- broader Code Action kinds, Node attach/multi-thread DAP, inline or bundled
+  source-map coverage and debugger UX, broader multi-node AST transforms,
+  cross-package/path-alias test discovery, coding outcome benchmarks, and
+  isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, graph-level branch pruning, write-capable Map/Loop,
   compensation, top-level Workflow input replacement, write/session

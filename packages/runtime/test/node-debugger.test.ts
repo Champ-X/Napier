@@ -1,7 +1,9 @@
-import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { execFile, spawn } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -16,6 +18,8 @@ import { WorkspaceProcessManager } from "../src/workspace-processes.js";
 const temporaryRoots: string[] = [];
 const openProcesses: WorkspaceProcessManager[] = [];
 const openStores: LocalStore[] = [];
+const execFileAsync = promisify(execFile);
+const require = createRequire(import.meta.url);
 
 afterEach(async () => {
   await Promise.allSettled(
@@ -30,6 +34,300 @@ afterEach(async () => {
 });
 
 describe("Run-owned Node debugger", () => {
+  it("maps real TypeScript breakpoints, frames, variables, and steps through an external source map", async () => {
+    const fixture = await createFixture("globalThis.UNUSED = true;\n");
+    const sourcePath = path.join(fixture.workspaceRoot, "src/calculate.ts");
+    const distRoot = path.join(fixture.workspaceRoot, "dist");
+    await mkdir(distRoot, { recursive: true });
+    await writeFile(
+      sourcePath,
+      [
+        "function calculate(input: number): number {",
+        "  const doubled = input * 2;",
+        "  const adjusted = doubled + 1;",
+        "  return adjusted;",
+        "}",
+        "globalThis.RESULT = calculate(20);",
+      ].join("\n"),
+    );
+    await execFileAsync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--target",
+        "ES2022",
+        "--module",
+        "commonjs",
+        "--sourceMap",
+        "--rootDir",
+        path.join(fixture.workspaceRoot, "src"),
+        "--outDir",
+        distRoot,
+        sourcePath,
+      ],
+      { cwd: fixture.workspaceRoot },
+    );
+
+    const launched = await fixture.debuggerManager.launch({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      path: "src/calculate.ts",
+      programPath: "dist/calculate.js",
+      sourceMapPath: "dist/calculate.js.map",
+      breakpoints: [{ line: 2 }],
+      actionTimeoutMs: 2_000,
+      sessionTimeoutMs: 20_000,
+    });
+
+    expect(launched).toEqual(
+      expect.objectContaining({
+        state: "paused",
+        reason: "breakpoint",
+        sourceMapMode: "external",
+        sourcePath: "src/calculate.ts",
+        programPath: "dist/calculate.js",
+        sourceMapPath: "dist/calculate.js.map",
+        moduleCount: 3,
+      }),
+    );
+    expect(launched.frames[0]).toEqual(
+      expect.objectContaining({
+        name: "calculate",
+        path: "src/calculate.ts",
+        line: 2,
+      }),
+    );
+    const evaluated = await fixture.debuggerManager.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: launched.processId,
+      frameId: launched.frames[0]!.id,
+      expression: "input",
+    });
+    expect(evaluated.evaluation).toEqual(
+      expect.objectContaining({ status: "ok", result: "20", type: "number" }),
+    );
+    const stepped = await fixture.debuggerManager.resume({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: launched.processId,
+      action: "next",
+    });
+    expect(stepped.frames[0]).toEqual(
+      expect.objectContaining({
+        path: "src/calculate.ts",
+        line: 3,
+      }),
+    );
+    const completed = await fixture.debuggerManager.resume({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: launched.processId,
+      action: "continue",
+    });
+    expect(completed).toEqual(
+      expect.objectContaining({
+        state: "terminated",
+        exitCode: 0,
+        sourceMapMode: "external",
+      }),
+    );
+    const durable = JSON.stringify(
+      await fixture.store.listEvents(fixture.threadId),
+    );
+    expect(durable).not.toContain("calculate.ts");
+    expect(durable).not.toContain("calculate.js.map");
+  }, 20_000);
+
+  it("fails closed when a bound generated program or source map drifts", async () => {
+    const fixture = await createFixture("globalThis.UNUSED = true;\n");
+    const sourcePath = path.join(fixture.workspaceRoot, "src/calculate.ts");
+    const programPath = path.join(fixture.workspaceRoot, "dist/calculate.js");
+    const sourceMapPath = `${programPath}.map`;
+    await mkdir(path.dirname(programPath), { recursive: true });
+    await writeFile(
+      sourcePath,
+      [
+        "function calculate(input: number): number {",
+        "  const doubled = input * 2;",
+        "  return doubled;",
+        "}",
+        "globalThis.RESULT = calculate(20);",
+      ].join("\n"),
+    );
+    await execFileAsync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--target",
+        "ES2022",
+        "--module",
+        "commonjs",
+        "--sourceMap",
+        "--rootDir",
+        path.join(fixture.workspaceRoot, "src"),
+        "--outDir",
+        path.dirname(programPath),
+        sourcePath,
+      ],
+      { cwd: fixture.workspaceRoot },
+    );
+    const launchSourceMapped = () =>
+      fixture.debuggerManager.launch({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        path: "src/calculate.ts",
+        programPath: "dist/calculate.js",
+        sourceMapPath: "dist/calculate.js.map",
+        breakpoints: [{ line: 2 }],
+        actionTimeoutMs: 2_000,
+        sessionTimeoutMs: 20_000,
+      });
+
+    const programSession = await launchSourceMapped();
+    await writeFile(programPath, `${await readFile(programPath, "utf8")}\n`);
+    await expect(
+      fixture.debuggerManager.stackTrace({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        processId: programSession.processId,
+      }),
+    ).rejects.toThrow("program changed");
+
+    await execFileAsync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--target",
+        "ES2022",
+        "--module",
+        "commonjs",
+        "--sourceMap",
+        "--rootDir",
+        path.join(fixture.workspaceRoot, "src"),
+        "--outDir",
+        path.dirname(programPath),
+        sourcePath,
+      ],
+      { cwd: fixture.workspaceRoot },
+    );
+    const mapSession = await launchSourceMapped();
+    const sourceMap = JSON.parse(
+      await readFile(sourceMapPath, "utf8"),
+    ) as Record<string, unknown>;
+    await writeFile(
+      sourceMapPath,
+      JSON.stringify({ ...sourceMap, names: ["drift"] }),
+    );
+    await expect(
+      fixture.debuggerManager.stackTrace({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        processId: mapSession.processId,
+      }),
+    ).rejects.toThrow("source map changed");
+  }, 20_000);
+
+  it("rejects incomplete or mismatched external source-map bindings without leaving a process", async () => {
+    const fixture = await createFixture("globalThis.UNUSED = true;\n");
+    const sourcePath = path.join(fixture.workspaceRoot, "src/calculate.ts");
+    const distRoot = path.join(fixture.workspaceRoot, "dist");
+    const sourceMapPath = path.join(distRoot, "calculate.js.map");
+    await mkdir(distRoot, { recursive: true });
+    await writeFile(
+      sourcePath,
+      [
+        "function calculate(input: number): number {",
+        "  const doubled = input * 2;",
+        "  return doubled;",
+        "}",
+        "globalThis.RESULT = calculate(20);",
+      ].join("\n"),
+    );
+    await execFileAsync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--target",
+        "ES2022",
+        "--module",
+        "commonjs",
+        "--sourceMap",
+        "--rootDir",
+        path.join(fixture.workspaceRoot, "src"),
+        "--outDir",
+        distRoot,
+        sourcePath,
+      ],
+      { cwd: fixture.workspaceRoot },
+    );
+    await expect(
+      fixture.debuggerManager.launch({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        path: "src/calculate.ts",
+        programPath: "dist/calculate.js",
+        breakpoints: [{ line: 2 }],
+      }),
+    ).rejects.toThrow("must be provided together");
+
+    const sourceMap = JSON.parse(
+      await readFile(sourceMapPath, "utf8"),
+    ) as Record<string, unknown>;
+    await writeFile(
+      path.join(fixture.workspaceRoot, "outside.ts"),
+      "export {}",
+    );
+    await writeFile(
+      sourceMapPath,
+      JSON.stringify({ ...sourceMap, sources: ["../outside.ts"] }),
+    );
+    await expect(
+      fixture.debuggerManager.launch({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        path: "src/calculate.ts",
+        programPath: "dist/calculate.js",
+        sourceMapPath: "dist/calculate.js.map",
+        breakpoints: [{ line: 2 }],
+        actionTimeoutMs: 2_000,
+        sessionTimeoutMs: 20_000,
+      }),
+    ).rejects.toThrow("request failed");
+    expect(
+      (await fixture.processes.list(fixture.threadId)).some(
+        (session) => session.status === "running",
+      ),
+    ).toBe(false);
+
+    await writeFile(sourceMapPath, JSON.stringify(sourceMap));
+    const sourceMapped = await fixture.debuggerManager.launch({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      path: "src/calculate.ts",
+      programPath: "dist/calculate.js",
+      sourceMapPath: "dist/calculate.js.map",
+      breakpoints: [{ line: 2 }],
+      actionTimeoutMs: 2_000,
+      sessionTimeoutMs: 20_000,
+    });
+    const controller = new AbortController();
+    controller.abort();
+    await expect(
+      fixture.debuggerManager.stackTrace({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        processId: sourceMapped.processId,
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow("aborted");
+    expect(
+      (await fixture.processes.list(fixture.threadId)).find(
+        (session) => session.id === sourceMapped.processId,
+      )?.status,
+    ).toBe("cancelled");
+  }, 20_000);
+
   it("launches through DAP, inspects locals, evaluates without side effects, steps, and terminates", async () => {
     const fixture = await createFixture(debugSource());
     const launched = await fixture.debuggerManager.launch({

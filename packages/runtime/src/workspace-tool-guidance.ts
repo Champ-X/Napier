@@ -198,8 +198,8 @@ export function formatWorkspaceToolGuidance(
   }
   if (hasNodeDebugger) {
     lines.push(
-      "Use node_debugger to launch a real workspace JavaScript or Node-executable TypeScript program under DAP when stack, local variables, or single-step evidence is needed. Set at least one source breakpoint, retain the processId and frame/reference IDs, and cancel a paused session when finished.",
-      "Debugger source, paths, expressions, arguments, stack names, variable names/values, and target output are live-only. Evaluation rejects side effects. Source or loaded-module drift, malformed or unauthenticated DAP frames, timeout, cancellation, or unknown protocol state terminates the complete session.",
+      "Use node_debugger to launch a real workspace JavaScript or Node-executable TypeScript program under DAP when stack, local variables, or single-step evidence is needed. For compiled TypeScript, pass the original path plus both programPath and sourceMapPath; breakpoints and returned frames then use original source coordinates. Set at least one source breakpoint, retain the processId and frame/reference IDs, and cancel a paused session when finished.",
+      "Debugger source, generated program, external source map, paths, expressions, arguments, stack names, variable names/values, and target output are live-only. Evaluation rejects side effects. Source, program, source-map, or loaded-module drift, malformed or unauthenticated DAP frames, timeout, cancellation, or unknown protocol state terminates the complete session.",
     );
   }
   if (hasProcess) {

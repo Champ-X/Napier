@@ -2244,35 +2244,46 @@ It supports source breakpoints, exception stops, stack traces, scopes,
 variables, side-effect-rejected expression evaluation, continue, step over,
 step in, step out, and explicit cancellation.
 
-The launch path is canonical, workspace-relative, non-symlinked, protected-root
-free, valid UTF-8, and capped at 1 MiB. The adapter controller runs in a Worker
-and attaches `node:inspector` to the target main thread without opening a TCP
-listener. DAP frames, message count, session/action time, breakpoints, stack,
-scopes, variables, references, expressions, target output, and Agent output
-are independently bounded. Every adapter response and event carries a random
-per-process authenticator, so target stdout cannot forge a stop, stack, or
-variable result.
+Compiled TypeScript can instead bind an original `path`, generated
+`programPath`, and external `sourceMapPath`. The fixed adapter validates and
+parses one bounded v3 single-source map inside the Sandbox, maps requested
+source breakpoints to generated locations, and maps accepted stack/step frames
+back to the original TypeScript coordinates. The map must be the generated
+program's exact relative `sourceMappingURL`, name that program, resolve its
+single source to the bound original file, and contain at most 8,192 decoded
+mappings. It cannot use a URL, another workspace source, a symlink, sections,
+or unbound `sourcesContent`.
 
-The source hash and loaded workspace module graph are captured at each stop.
-Every paused-state action revalidates both before returning data; source or
-dependency drift terminates the complete session. Unknown post-write outcomes,
-malformed or unauthenticated frames, target/adapter exit, timeout, caller
-cancellation, and protocol exhaustion also fail closed. `AgentSessionRuntime`
-cancels any debugger left paused before the owning Run records a terminal
-event.
+All one or three launch files are canonical, workspace-relative,
+non-symlinked, protected-root free, valid UTF-8, and individually capped at
+1 MiB. The adapter controller runs in a Worker and attaches `node:inspector`
+to the target main thread without opening a TCP listener. DAP frames, message
+count, session/action time, breakpoints, stack, scopes, variables, references,
+expressions, target output, and Agent output are independently bounded. Every
+adapter response and event carries a random per-process authenticator, so
+target stdout cannot forge a stop, stack, or variable result.
+
+The source, generated program, optional source map, and loaded workspace module
+graph are captured at each stop. Every paused-state action revalidates all
+bindings before returning data; any drift terminates the complete session.
+Unknown post-write outcomes, malformed or unauthenticated frames,
+target/adapter exit, timeout, caller cancellation, and protocol exhaustion also
+fail closed. `AgentSessionRuntime` cancels any debugger left paused before the
+owning Run records a terminal event.
 
 Paths, stack/scope/variable names and values, expressions, argv, source, and
 target output are live-only untrusted model context. Ledger, Replay, public SSE
 history, and Web Trace retain only bounded status/count/version metadata and
-source/module/worker/runtime/DAP/result hashes. Generic Process APIs expose
-neither private protocol output nor writable stdin.
+source/program/source-map/module/worker/runtime/DAP/result hashes. Generic
+Process APIs expose neither private protocol output nor writable stdin.
 
 This is a Node launch-debugging slice, not attach, hot breakpoint mutation,
 multi-thread/child debugging, a generic third-party DAP host, debugger UI,
-cross-restart recovery, or write-capable execution. The opt-in real OS-Sandbox
-smoke is part of `npm run test:live-process`; the nested IDE host used for this
-revision rejects even a minimal `sandbox-exec` probe with exit 71, so that
-smoke is inconclusive here and no unsandboxed fallback is used.
+cross-restart recovery, write-capable execution, inline/sectioned maps, or
+multi-source bundler maps. The opt-in real OS-Sandbox smoke is part of
+`npm run test:live-process`; the nested IDE host used for this revision exits
+before adapter initialization, matching its existing `sandbox-exec` denial, so
+that smoke is inconclusive here and no unsandboxed fallback is used.
 
 ## Controlled Workspace Editing
 
@@ -4636,7 +4647,9 @@ with bounded live-only values and fail-closed terminal outcomes.
 runtime assets, traced-heap enforcement, and fail-closed terminal outcomes.
 **Node debugger** adds Run-owned Node launch debugging with breakpoints,
 stack/scopes/variables, side-effect-rejected evaluation, and single-step
-control over the same read-only/offline Process boundary.
+control over the same read-only/offline Process boundary. It can bind a
+generated program and bounded external single-source v3 map so compiled
+TypeScript breakpoints and frames remain in original source coordinates.
 **TypeScript AST** adds exact in-process syntax queries and no-write structural
 previews; every resulting edit still returns through Atomic patch and explicit
 verification.

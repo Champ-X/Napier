@@ -109,8 +109,9 @@ describe("workspace tool guidance", () => {
     expect(guidance).toContain(
       "Use node_debugger to launch a real workspace JavaScript",
     );
+    expect(guidance).toContain("programPath and sourceMapPath");
     expect(guidance).toContain("Evaluation rejects side effects");
-    expect(guidance).toContain("loaded-module drift");
+    expect(guidance).toContain("source-map, or loaded-module drift");
   });
 
   it("requires exact Browser Source capture and claim-bound citations", () => {
