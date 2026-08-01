@@ -537,6 +537,7 @@ export class AgentRuntime {
               run,
               profile: agentProfile,
               sandbox: this.verificationSandbox,
+              processes: this.workspaceProcesses,
               worktreeOwnerId: this.workerId,
               parentSignal: abortController.signal,
               ...(options.onEvent ? { onEvent: options.onEvent } : {}),

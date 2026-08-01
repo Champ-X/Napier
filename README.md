@@ -2974,7 +2974,30 @@ postcondition, or error that leaves candidate bytes changed permanently
 invalidates candidate settlement. A no-write preflight failure leaves the
 candidate usable but still requires a fresh preview.
 
-Patch, candidate command, and verification calls share one serial queue.
+When the parent profile also enables `node_debugger` and the Runtime has a
+managed `WorkspaceProcessManager`, the child receives the existing Node DAP
+tool against only its private candidate. The debugger reuses the authenticated
+worker, strict DAP framing, source/program/map and loaded-module freshness,
+side-effect-rejected evaluation, bounded output/time, global Process admission,
+fixed environment, denied network, and read-only Sandbox policy. A focused
+Process adapter can override the workspace root only for the internal private
+protocol; ordinary Process starts cannot use that scope. Candidate dependency
+roots remain identity-bound read-only runtime paths.
+
+Every launch, stack, scope, variable, evaluation, resume, step, and cancel
+action binds identical complete candidate snapshots before and after execution
+and revalidates the candidate toolchain. Worktree preview, delegation failure,
+timeout, cancellation, and cleanup first terminate and settle every debugger,
+then observe candidate bytes again. Cleanup occurs before toolchain drift is
+reported so a stale overlay cannot strand a paused target. Changed or
+unobservable bytes permanently block merge settlement. Source, program/map
+paths, breakpoints, arguments, expressions, stack names, variables, target
+output, candidate roots, and protocol bodies remain live-only; durable
+Subagent steps and Workspace Process events retain only bounded hashes and
+counts.
+
+Patch, candidate debugger, candidate command, and verification calls share one
+serial queue.
 Verification retains its existing 16-attempt limit. When the parent profile
 also enables `run_command`, the child may make at most eight explicit-argv Node
 attempts against the private candidate. The command runner uses a fixed
@@ -3000,17 +3023,20 @@ and verifier stdout/stderr, diagnostics, test names, paths, candidate bodies,
 write grants, Sandbox labels, and preview IDs remain live-only.
 
 This is a filesystem worktree, not a Git branch, shell checkout, container, or
-general process sandbox. The child has no shell, Process Session, network,
-Browser, Extension, persistent Session, or nested-delegation capability.
+general process sandbox. The child has no shell, general Process Session,
+network, Browser, Extension, unrelated persistent Session, or
+nested-delegation capability.
 Empty-directory operations, directory moves, parent-directory creation during
 lifecycle operations, permission edits, symlinks, binary files, ambiguous
 renames between files with duplicate content, package scripts, arbitrary
-executables, Python, and cross-Run preview recovery remain unsupported. Pure
-additions use mode `0644`; a byte-identical rename preserves the observed
-source mode. The fixed verifier and optional Node command remain read-only and
-offline; neither grants general process authority. Automatic lifecycle LSP and
-dependency-graph tests currently cover TypeScript/JavaScript source extensions;
-other text formats are explicitly omitted rather than reported as verified.
+executables, Python, DAP attach, multi-thread debugging, and cross-Run preview
+recovery remain unsupported. Pure additions use mode `0644`; a byte-identical
+rename preserves the observed source mode. The fixed verifier, optional Node
+command, and optional DAP target remain read-only and offline; none grants
+general process authority or counts as test verification. Automatic lifecycle
+LSP and dependency-graph tests currently cover TypeScript/JavaScript source
+extensions; other text formats are explicitly omitted rather than reported as
+verified.
 
 Run the opt-in real Agent-to-private-worktree smoke:
 
@@ -3019,11 +3045,12 @@ npm run test:live-coder
 ```
 
 The smoke uses the explicit direct-process test adapter to run real
-symbols/definition/references, a grant-bound two-file semantic rename, Node,
-candidate diagnostics/Vitest, old/new dependency-graph test selection, parent
-diagnostics, and explicit merge against unmerged bytes. `npm run
-test:live-command` separately exercises the real platform OS Sandbox on hosts
-that permit nested sandboxing.
+symbols/definition/references, a grant-bound two-file semantic rename, a third
+unmerged JavaScript modification under DAP breakpoint/evaluation/step/
+completion, Node inspection, candidate diagnostics/Vitest, old/new
+dependency-graph test selection, parent diagnostics, and explicit merge.
+`npm run test:live-command` separately exercises the real platform OS Sandbox
+on hosts that permit nested sandboxing.
 
 New delegations must return a bounded
 JSON outcome containing a summary, typed findings/risks/recommendations,

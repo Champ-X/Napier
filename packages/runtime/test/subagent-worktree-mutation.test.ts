@@ -22,6 +22,7 @@ import type {
 import type { LspWorkspaceEditDiagnosticsAdapter } from "../src/lsp-workspace-edit-mutation.js";
 import type { SubagentWorktreeLifecycleDiagnosticsAdapter } from "../src/subagent-worktree-lifecycle-diagnostics.js";
 import { SubagentWorktreeMutationManager } from "../src/subagent-worktree-mutation.js";
+import type { WorkspaceProcessManager } from "../src/workspace-processes.js";
 import {
   controlledLspRenameSandbox,
   textEdit,
@@ -55,6 +56,12 @@ describe("Subagent worktree mutation manager", () => {
         "lsp_code_actions",
         "lsp_code_action_apply",
       ],
+      processes: {} as WorkspaceProcessManager,
+      debuggerOwner: {
+        threadId: "thread_lsp_tools",
+        runId: "run_lsp_tools",
+      },
+      enableCandidateDebugger: true,
       diagnostics: diagnosticsAdapter(),
     });
     const source = "export const value = 1;\n";
@@ -79,6 +86,7 @@ describe("Subagent worktree mutation manager", () => {
         "lsp_symbols",
         "lsp_code_actions",
         "lsp_code_action_apply",
+        "node_debugger",
         "lsp_diagnostics",
       ],
     );

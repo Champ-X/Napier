@@ -26,6 +26,7 @@ import {
 import { MAX_SUBAGENT_WORKTREE_WRITE_FILES } from "./subagent-worktree-files.js";
 import { isSubagentSemanticLspToolName } from "./subagent-worktree-lsp-tools.js";
 import { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
+import type { WorkspaceProcessManager } from "./workspace-processes.js";
 
 export {
   delegateTaskCallArgumentsLedgerProjection,
@@ -75,6 +76,7 @@ export interface SubagentCoordinatorOptions {
   run: RunRecord;
   profile: AgentProfile;
   sandbox: OsSandboxAdapter;
+  processes?: WorkspaceProcessManager | undefined;
   worktreeOwnerId: string;
   parentSignal: AbortSignal;
   onEvent?: EventSink;
@@ -138,6 +140,13 @@ export class SubagentCoordinator {
         dataRoot: options.store.dataRoot,
         ownerId: options.worktreeOwnerId,
         sandbox: options.sandbox,
+        ...(options.processes ? { processes: options.processes } : {}),
+        debuggerOwner: {
+          threadId: options.run.threadId,
+          runId: options.run.id,
+        },
+        enableCandidateDebugger:
+          options.profile.enabledTools.includes("node_debugger"),
         enableCandidateVerification:
           options.profile.enabledTools.includes("verify_workspace"),
         enableCandidateCommand:

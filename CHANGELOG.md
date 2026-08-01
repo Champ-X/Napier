@@ -6,6 +6,35 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added private coder Node DAP. A coder now inherits `node_debugger` only when
+  its parent profile enables the capability and the Runtime supplies the
+  managed Process/Sandbox runtime. The existing debugger tool, authenticated
+  worker, strict DAP framing, source/program/map and loaded-module freshness,
+  side-effect-rejected evaluation, admission, timeout, output, and process
+  settlement paths are reused. A focused Process adapter can scope only
+  private-protocol launches to the candidate root and identity-bound dependency
+  overlay; ordinary Process starts reject the same override. Launch, stack,
+  scopes, variables, evaluation, resume, step, and cancel share the candidate
+  mutation queue and require complete before/after snapshot equality plus
+  toolchain stability. Preview, failure, timeout, and cancellation cleanup
+  terminate and settle every debugger before checking drift or removing the
+  worktree, so stale toolchains cannot strand a paused target. Debug source,
+  paths, breakpoints, arguments, expressions, frames, variables, output,
+  candidate roots, and protocol bodies stay live-only; durable Subagent and
+  Workspace Process evidence remains path-free and portable. Tests cover
+  capability omission, private-scope denial on ordinary starts, ownership,
+  real breakpoint/evaluation/step/merge, paused cleanup, target writes,
+  toolchain drift cleanup, timeout, cancellation, concurrency, source/map/
+  module drift, malformed protocol, authentication, and Agent/Replay privacy.
+  Direct-process coder Dogfood completed semantic TypeScript rename, a third
+  unmerged JavaScript change under real DAP, Node, LSP, Vitest, old/new graph
+  selection, parent diagnostics, and merge in 38.62 seconds. Candidate Process
+  adaptation is isolated in focused modules and `node-debugger.ts` is two lines
+  smaller than before the slice. The full gate passed 1,721 regular tests with
+  30 opt-in live tests skipped. Product performance remained within baseline
+  at 732.6 ms to first CLI event, 880.6 ms to first token, 1,185.8 ms to
+  completion, 0.4 ms read p95, 7.3 ms for a 1,000-event projection, and
+  749.568 closed SQLite bytes/event. The Web main entry remained 130.32 KiB.
 - Added private coder semantic LSP navigation and edits. A coder now inherits
   the parent's `lsp_symbols`, `lsp_definition`, `lsp_references`,
   `lsp_rename`, `lsp_rename_apply`, `lsp_code_actions`, and

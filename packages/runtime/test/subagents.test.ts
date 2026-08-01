@@ -128,7 +128,7 @@ describe("SubagentCoordinator", () => {
       {},
       {
         enabledSubagents: ["coder"],
-        enabledTools: ["apply_patch", "lsp_diagnostics"],
+        enabledTools: ["apply_patch", "lsp_diagnostics", "node_debugger"],
         toolPolicy: "workspace",
       },
     );

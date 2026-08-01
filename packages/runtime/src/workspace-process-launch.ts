@@ -39,6 +39,13 @@ export interface WorkspaceProcessLaunchRequest {
   signal?: AbortSignal;
 }
 
+export interface PrivateWorkspaceProcessLaunchRequest extends WorkspaceProcessLaunchRequest {
+  privateWorkspace: {
+    workspaceRoot: string;
+    runtimeReadPaths?: string[];
+  };
+}
+
 export interface LaunchedWorkspaceProcess {
   session: WorkspaceProcessSession;
   prepared: PreparedCommandExecution;
@@ -49,7 +56,7 @@ export interface LaunchedWorkspaceProcess {
 }
 
 export async function launchWorkspaceProcess(input: {
-  request: WorkspaceProcessLaunchRequest;
+  request: WorkspaceProcessLaunchRequest | PrivateWorkspaceProcessLaunchRequest;
   privateProtocol: boolean;
   writePreviewId?: string;
   options: CommandRunnerOptions & { dataRoot?: string };
@@ -59,6 +66,7 @@ export async function launchWorkspaceProcess(input: {
 }): Promise<LaunchedWorkspaceProcess> {
   const { request } = input;
   assertLaunchRequest(request, input.privateProtocol, input.shuttingDown());
+  const commandOptions = processCommandOptions(request, input.options);
   const processId = createId("process");
   let prepared: PreparedCommandExecution;
   let beforeSnapshot: WorkspacePathSnapshot;
@@ -94,7 +102,7 @@ export async function launchWorkspaceProcess(input: {
         ...(request.signal ? { signal: request.signal } : {}),
       });
     } else {
-      prepared = await prepareCommandExecution(input.options, request.command);
+      prepared = await prepareCommandExecution(commandOptions, request.command);
       io = bindWorkspaceProcessIo(prepared, request.terminal);
       beforeSnapshot = await createWorkspacePathSnapshot(
         prepared.workspaceRoot,
@@ -198,7 +206,7 @@ function createRunningSession(input: {
 }
 
 function assertLaunchRequest(
-  request: WorkspaceProcessLaunchRequest,
+  request: WorkspaceProcessLaunchRequest | PrivateWorkspaceProcessLaunchRequest,
   privateProtocol: boolean,
   shuttingDown: boolean,
 ): void {
@@ -216,7 +224,46 @@ function assertLaunchRequest(
   if (privateProtocol && request.terminal !== undefined) {
     throw new Error("Private Process protocols cannot use PTY mode");
   }
+  if ("privateWorkspace" in request && !privateProtocol) {
+    throw new Error(
+      "Private Process workspace scope requires the private protocol path",
+    );
+  }
   validateWorkspaceProcessTerminalSize(request.terminal);
+}
+
+function processCommandOptions(
+  request: WorkspaceProcessLaunchRequest | PrivateWorkspaceProcessLaunchRequest,
+  options: CommandRunnerOptions & { dataRoot?: string },
+): CommandRunnerOptions & { dataRoot?: string } {
+  if (!("privateWorkspace" in request)) return options;
+  const scope = request.privateWorkspace;
+  if (
+    !scope ||
+    typeof scope !== "object" ||
+    Array.isArray(scope) ||
+    Object.keys(scope).some(
+      (key) => key !== "workspaceRoot" && key !== "runtimeReadPaths",
+    ) ||
+    typeof scope.workspaceRoot !== "string" ||
+    !scope.workspaceRoot ||
+    (scope.runtimeReadPaths !== undefined &&
+      (!Array.isArray(scope.runtimeReadPaths) ||
+        scope.runtimeReadPaths.some(
+          (candidate) => typeof candidate !== "string",
+        )))
+  ) {
+    throw new Error("Private Process workspace scope is invalid");
+  }
+  const runtimeReadPaths = [
+    ...(options.runtimeReadPaths ?? []),
+    ...(scope.runtimeReadPaths ?? []),
+  ];
+  return {
+    ...options,
+    workspaceRoot: scope.workspaceRoot,
+    ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
+  };
 }
 
 async function abandonLaunch(

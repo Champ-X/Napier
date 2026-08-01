@@ -17,6 +17,7 @@ import { exportThreadReplayBundle } from "../src/replay.js";
 import type { OsSandboxAdapter } from "../src/sandbox.js";
 import { LocalStore } from "../src/store.js";
 import { verifyThreadReplayBundle } from "../src/thread-bundles.js";
+import { WorkspaceProcessManager } from "../src/workspace-processes.js";
 import { controlledLspRenameSandbox } from "./lsp-rename-test-fixture.js";
 
 const temporaryRoots: string[] = [];
@@ -76,6 +77,7 @@ describe("Agent coder Subagent", () => {
         "lsp_rename_apply",
         "lsp_code_actions",
         "lsp_code_action_apply",
+        "node_debugger",
         "run_command",
         "verify_workspace",
       ],
@@ -149,6 +151,7 @@ describe("Agent coder Subagent", () => {
             "lsp_rename_apply",
             "lsp_code_actions",
             "lsp_code_action_apply",
+            "node_debugger",
           ]),
         );
         return fauxAssistantMessage(
@@ -248,7 +251,20 @@ describe("Agent coder Subagent", () => {
     ]);
     const models = new ModelRegistry();
     models.registerProvider(faux.provider);
-    const runtime = new AgentRuntime(store, models, undefined, coderSandbox());
+    const sandbox = coderSandbox();
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      sandbox,
+    });
+    await processes.initialize();
+    const runtime = new AgentRuntime(
+      store,
+      models,
+      undefined,
+      sandbox,
+      processes,
+    );
 
     const run = await runtime.runPrompt({
       threadId: thread.id,
@@ -339,6 +355,7 @@ describe("Agent coder Subagent", () => {
     );
     const replay = await exportThreadReplayBundle(store, thread.id);
     expect(verifyThreadReplayBundle(replay).status).toBe("valid");
+    await processes.shutdown();
   });
 });
 

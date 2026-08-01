@@ -2,7 +2,9 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 
 import { createCommandTool } from "./command-tool.js";
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
+import { createNodeDebuggerTool } from "./node-debugger-tool.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
+import type { SubagentWorktreeDebugger } from "./subagent-worktree-debugger.js";
 import { createSubagentWorktreeFileTool } from "./subagent-worktree-file-tool.js";
 import type { SubagentWorktreeSession } from "./subagent-worktree-files.js";
 import { createSubagentWorktreeLspTools } from "./subagent-worktree-lsp-tools.js";
@@ -22,6 +24,7 @@ export function createSubagentWorktreeTools(options: {
   operations: SubagentWorktreeOperationCoordinator;
   toolchain?: SubagentWorktreeToolchain;
   sandbox?: OsSandboxAdapter;
+  debugger?: SubagentWorktreeDebugger;
   enableCandidateCommand?: boolean;
   enableCandidateVerification?: boolean;
   enabledSemanticLspTools?: readonly string[];
@@ -57,6 +60,18 @@ export function createSubagentWorktreeTools(options: {
       ...(verifyToolchain ? { verifyToolchain } : {}),
     }),
   );
+  if (options.debugger) {
+    tools.push(
+      options.operations.wrapReadOnlyTool(
+        createNodeDebuggerTool(
+          options.debugger.manager,
+          options.debugger.owner,
+        ),
+        options.session,
+        verifyToolchain,
+      ),
+    );
+  }
   if (options.enableCandidateCommand) {
     tools.push(
       options.operations.wrapCommandTool(

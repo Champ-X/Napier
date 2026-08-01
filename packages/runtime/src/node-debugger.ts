@@ -45,10 +45,8 @@ import {
   assertNodeDebuggerSourceBindingCurrent,
   loadNodeDebuggerSourceBinding,
 } from "./node-debugger-source-binding.js";
-import {
-  MAX_WORKSPACE_PROCESS_POLL_WAIT_MS,
-  type WorkspaceProcessManager,
-} from "./workspace-processes.js";
+import type { NodeDebuggerProcessManager } from "./node-debugger-process.js";
+import { MAX_WORKSPACE_PROCESS_POLL_WAIT_MS } from "./workspace-processes.js";
 import type { WorkspaceSourceFile } from "./workspace-source.js";
 
 export {
@@ -109,7 +107,7 @@ export class NodeDebuggerManager {
   private readonly registrations = new Map<string, RegisteredNodeDebugger>();
 
   constructor(
-    private readonly processes: WorkspaceProcessManager,
+    private readonly processes: NodeDebuggerProcessManager,
     private readonly workspaceRoot: string,
   ) {}
 

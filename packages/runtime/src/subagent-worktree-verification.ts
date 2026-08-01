@@ -44,6 +44,33 @@ export class SubagentWorktreeOperationCoordinator {
     return this.serial(operation);
   }
 
+  async runReadOnlyOperation<T>(
+    label: string,
+    session: SubagentWorktreeSession,
+    operation: () => Promise<T>,
+    verifyToolchain?: () => Promise<void>,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    return this.serial(async () => {
+      const before = await observeSubagentWorktreeCandidate(session);
+      try {
+        await verifyToolchain?.();
+        const result = await operation();
+        await verifyToolchain?.();
+        const after = await observeSubagentWorktreeCandidate(session, signal);
+        this.assertReadOnlySnapshot(label, before, after);
+        return result;
+      } catch (error) {
+        const failure = await settleToolchainFailure(error, verifyToolchain);
+        const after = await this.observeAfterFailure(session);
+        if (before.contentSha256 !== after.contentSha256) {
+          this.integrityViolated = true;
+        }
+        throw failure;
+      }
+    });
+  }
+
   wrapReadOnlyTool(
     tool: AgentTool,
     session: SubagentWorktreeSession,
@@ -52,30 +79,13 @@ export class SubagentWorktreeOperationCoordinator {
     return {
       ...tool,
       execute: (toolCallId, args, signal) =>
-        this.serial(async () => {
-          const before = await observeSubagentWorktreeCandidate(session);
-          try {
-            await verifyToolchain?.();
-            const result = await tool.execute(toolCallId, args, signal);
-            await verifyToolchain?.();
-            const after = await observeSubagentWorktreeCandidate(
-              session,
-              signal,
-            );
-            this.assertReadOnlySnapshot(tool.name, before, after);
-            return result;
-          } catch (error) {
-            const failure = await settleToolchainFailure(
-              error,
-              verifyToolchain,
-            );
-            const after = await this.observeAfterFailure(session);
-            if (before.contentSha256 !== after.contentSha256) {
-              this.integrityViolated = true;
-            }
-            throw failure;
-          }
-        }),
+        this.runReadOnlyOperation(
+          tool.name,
+          session,
+          () => tool.execute(toolCallId, args, signal),
+          verifyToolchain,
+          signal,
+        ),
     };
   }
 

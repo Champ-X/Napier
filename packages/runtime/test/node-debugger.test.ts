@@ -12,7 +12,9 @@ import {
   NodeDebuggerManager,
   type NodeDebuggerActionResult,
 } from "../src/node-debugger.js";
+import { createPrivateWorkspaceNodeDebuggerProcesses } from "../src/node-debugger-process.js";
 import type { OsSandboxAdapter, SandboxedProcess } from "../src/sandbox.js";
+import type { PrivateWorkspaceProcessLaunchRequest } from "../src/workspace-process-launch.js";
 import { WorkspaceProcessManager } from "../src/workspace-processes.js";
 
 const temporaryRoots: string[] = [];
@@ -137,6 +139,84 @@ describe("Run-owned Node debugger", () => {
     );
     expect(durable).not.toContain("calculate.ts");
     expect(durable).not.toContain("calculate.js.map");
+  }, 20_000);
+
+  it("launches only the admitted private workspace through the private protocol path", async () => {
+    const fixture = await createFixture(
+      "function calculate(input) {\n  return input;\n}\nglobalThis.RESULT = calculate(1);\n",
+    );
+    const candidateRoot = path.join(fixture.root, "candidate");
+    const candidateTarget = path.join(candidateRoot, "src/debug-target.mjs");
+    await mkdir(path.dirname(candidateTarget), { recursive: true });
+    await writeFile(
+      candidateTarget,
+      [
+        "function calculate(input) {",
+        "  const observed = input + 1;",
+        "  return observed;",
+        "}",
+        "globalThis.PRIVATE_CANDIDATE_RESULT = calculate(41);",
+      ].join("\n"),
+    );
+    const candidateDebugger = new NodeDebuggerManager(
+      createPrivateWorkspaceNodeDebuggerProcesses({
+        processes: fixture.processes,
+        workspaceRoot: candidateRoot,
+      }),
+      candidateRoot,
+    );
+
+    const launched = await candidateDebugger.launch({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      path: "src/debug-target.mjs",
+      breakpoints: [{ line: 2 }],
+      actionTimeoutMs: 2_000,
+      sessionTimeoutMs: 20_000,
+    });
+
+    expect(launched).toEqual(
+      expect.objectContaining({
+        state: "paused",
+        reason: "breakpoint",
+        sourcePath: "src/debug-target.mjs",
+      }),
+    );
+    const evaluated = await candidateDebugger.evaluate({
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      processId: launched.processId,
+      frameId: launched.frames[0]!.id,
+      expression: "input",
+    });
+    expect(evaluated.evaluation).toEqual(
+      expect.objectContaining({ status: "ok", result: "41", type: "number" }),
+    );
+    await expect(
+      candidateDebugger.resume({
+        threadId: fixture.threadId,
+        runId: fixture.runId,
+        processId: launched.processId,
+        action: "continue",
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({ state: "terminated", exitCode: 0 }),
+    );
+
+    const ordinaryOverride: PrivateWorkspaceProcessLaunchRequest = {
+      threadId: fixture.threadId,
+      runId: fixture.runId,
+      command: { runtime: "node", args: ["-e", "void 0"] },
+      privateWorkspace: { workspaceRoot: candidateRoot },
+    };
+    await expect(fixture.processes.start(ordinaryOverride)).rejects.toThrow(
+      "requires the private protocol path",
+    );
+    const durable = JSON.stringify(
+      await fixture.store.listEvents(fixture.threadId),
+    );
+    expect(durable).not.toContain(candidateRoot);
+    expect(durable).not.toContain("PRIVATE_CANDIDATE_RESULT");
   }, 20_000);
 
   it("fails closed when a bound generated program or source map drifts", async () => {

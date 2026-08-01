@@ -23,6 +23,12 @@ import {
 } from "./subagent-worktree-apply-verification.js";
 import { commitSubagentWorktreeChanges } from "./subagent-worktree-commit.js";
 import {
+  createSubagentWorktreeDebugger,
+  settleSubagentWorktreeDebugger,
+  type SubagentWorktreeDebugger,
+  type SubagentWorktreeDebuggerOwner,
+} from "./subagent-worktree-debugger.js";
+import {
   createSubagentWorktree,
   finalizeSubagentWorktree,
   observeSubagentWorktreeSource,
@@ -53,6 +59,7 @@ import {
   commitWorkspaceChanges,
   type CommitWorkspaceChangesOptions,
 } from "./workspace-change-commit.js";
+import type { WorkspaceProcessManager } from "./workspace-processes.js";
 import type { WriteLinkedTestVerificationRunner } from "./write-linked-test-verification.js";
 
 export {
@@ -122,6 +129,9 @@ export interface SubagentWorktreeMutationManagerOptions {
   dataRoot: string;
   ownerId: string;
   sandbox?: OsSandboxAdapter;
+  processes?: WorkspaceProcessManager;
+  debuggerOwner?: SubagentWorktreeDebuggerOwner;
+  enableCandidateDebugger?: boolean;
   enableCandidateVerification?: boolean;
   enableCandidateCommand?: boolean;
   enabledSemanticLspTools?: readonly string[];
@@ -146,13 +156,16 @@ export interface SubagentWorktreeMutationManagerOptions {
   >;
 }
 
+interface SubagentWorktreeContext {
+  operations: SubagentWorktreeOperationCoordinator;
+  toolchain?: SubagentWorktreeToolchain;
+  debugger?: SubagentWorktreeDebugger;
+}
+
 export class SubagentWorktreeMutationManager {
   private readonly contexts = new WeakMap<
     SubagentWorktreeSession,
-    {
-      operations: SubagentWorktreeOperationCoordinator;
-      toolchain?: SubagentWorktreeToolchain;
-    }
+    SubagentWorktreeContext
   >();
   private readonly coordinator: LspWorkspaceEditMutationCoordinator<
     WorktreePreviewSource,
@@ -229,9 +242,21 @@ export class SubagentWorktreeMutationManager {
         candidateRoot: session.root,
         ...(signal ? { signal } : {}),
       });
+      const candidateDebugger =
+        this.options.enableCandidateDebugger &&
+        this.options.processes &&
+        this.options.debuggerOwner
+          ? createSubagentWorktreeDebugger({
+              processes: this.options.processes,
+              session,
+              owner: this.options.debuggerOwner,
+              ...(toolchain ? { toolchain } : {}),
+            })
+          : undefined;
       this.contexts.set(session, {
         operations: new SubagentWorktreeOperationCoordinator(),
         ...(toolchain ? { toolchain } : {}),
+        ...(candidateDebugger ? { debugger: candidateDebugger } : {}),
       });
       return session;
     } catch (error) {
@@ -251,6 +276,7 @@ export class SubagentWorktreeMutationManager {
       operations: context.operations,
       ...(context.toolchain ? { toolchain: context.toolchain } : {}),
       ...(this.options.sandbox ? { sandbox: this.options.sandbox } : {}),
+      ...(context.debugger ? { debugger: context.debugger } : {}),
       ...(this.options.enableCandidateCommand
         ? { enableCandidateCommand: true }
         : {}),
@@ -276,6 +302,13 @@ export class SubagentWorktreeMutationManager {
       throw new Error("Coder Subagent worktree context is unavailable");
     }
     await context.operations.settle();
+    if (context.debugger) {
+      await settleSubagentWorktreeDebugger({
+        debugger: context.debugger,
+        operations: context.operations,
+        session,
+      });
+    }
     context.operations.assertIntegrity();
     if (context.toolchain) {
       await assertSubagentWorktreeToolchainStable(context.toolchain);
@@ -379,9 +412,21 @@ export class SubagentWorktreeMutationManager {
     };
   }
 
-  cleanup(session: SubagentWorktreeSession): Promise<void> {
-    this.contexts.delete(session);
-    return removeSubagentWorktree(session.root);
+  async cleanup(session: SubagentWorktreeSession): Promise<void> {
+    const context = this.contexts.get(session);
+    try {
+      if (context?.debugger) {
+        await context.operations.settle();
+        await settleSubagentWorktreeDebugger({
+          debugger: context.debugger,
+          operations: context.operations,
+          session,
+        });
+      }
+    } finally {
+      this.contexts.delete(session);
+      await removeSubagentWorktree(session.root);
+    }
   }
 
   async apply(

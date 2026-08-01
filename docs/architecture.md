@@ -2827,13 +2827,14 @@ child Pi Agent
   -> wrap apply_patch so only granted create/modify paths are accepted
   -> expose candidate_file delete/move with hash and destination-absence CAS;
      both rename source and destination require grants
-  -> serialize private create/modify/delete/move, one-shot LSP diagnostics,
-     and optional fixed verification through one candidate operation queue
+  -> serialize private create/modify/delete/move, semantic LSP, optional DAP,
+     read-only commands, diagnostics, and fixed verification through one queue
   -> bind each of <=16 verification attempts to the complete candidate snapshot
      observed after that operation
-  -> provide no shell, Process, network, Browser, Extension, Session, or
-     nested-delegation capability
+  -> provide no shell, general Process, network, Browser, Extension, unrelated
+     Session, or nested-delegation capability
 candidate finalization
+  -> cancel and settle every private debugger before removing candidate bytes
   -> rescan source and private tree
   -> reject source byte/mode drift, no change, undeclared lifecycle change,
      binary, symlink, special-file, or resource-limit violations
@@ -2913,6 +2914,24 @@ execution. It does not recursively hash every transitive dependency byte; the
 installed local dependency tree remains a trusted host boundary until an
 immutable container or remote toolchain backend supplies a stronger identity.
 
+When the parent enables `node_debugger` and supplies the managed Process
+runtime, a focused Process adapter scopes only the internal private-protocol
+launch to the candidate root and its identity-bound read-only dependency path.
+Ordinary Process starts reject that scope. The existing `NodeDebuggerManager`,
+authenticated worker, DAP framing, source binding, side-effect-rejected
+evaluation, module freshness, admission, timeout, and output bounds remain
+unchanged. Thread/Run ownership plus a manager-local registration map prevents
+candidate process adoption by a parent debugger, sibling coder, recreated
+manager, or another Run.
+
+Every debugger action uses the candidate read-only wrapper and complete
+before/after snapshot equality. Preview and failure cleanup first cancel and
+settle all candidate debugger registrations without allowing toolchain drift
+to skip process termination; preview then performs the ordinary integrity and
+toolchain checks. A direct-process adversarial test writes from the debug
+target to prove that changed candidate bytes permanently block settlement even
+when the test adapter does not enforce OS isolation.
+
 The operation coordinator records no raw verifier output. Each attempt binds
 tool kind/status, pass classification, canonical input/result hashes, and the
 complete candidate snapshot hash. Finalization recomputes freshness, so a
@@ -2930,6 +2949,9 @@ disambiguation, and modified-file LSP adaptation;
 `subagent-worktree-storage.ts` owns private owner roots and stale cleanup;
 `subagent-worktree-review.ts` owns the bounded parent-visible change window;
 `subagent-worktree-toolchain.ts` owns the dependency overlay;
+`node-debugger-process.ts` owns the narrow Process interface and private-root
+adapter; `subagent-worktree-debugger.ts` owns candidate debugger construction
+and cleanup;
 `subagent-worktree-verification.ts` owns serialization and snapshot-bound
 attempt evidence; `subagent-worktree-mutation.ts` owns child tool adaptation,
 preview storage, and the parent merge adapter.
@@ -2949,7 +2971,8 @@ these modules plus focused role, parser, verifier, and repair modules; each new
 core logic file remains below 500 lines.
 
 Write paths, candidate patch arguments/results, candidate bodies, preview IDs,
-verifier output, and raw errors remain live-only. Durable Agent/HTTP/Replay
+debug paths/arguments/expressions/frames/variables/output, verifier output, and
+raw errors remain live-only. Durable Agent/HTTP/Replay
 evidence retains role, state, add/modify/delete/rename counts,
 transaction/diagnostic/test status, and hashes for the task, outcome, source
 snapshot, write scope, changed file set, candidate verification
@@ -2959,16 +2982,17 @@ Web independently validates count relationships and never trusts
 Runtime-reported paths or candidate content. Existing typed-outcome path
 citations keep the ordinary grounded Subagent evidence semantics.
 
-This slice supports file lifecycle within existing parent directories. Empty
+This capability supports file lifecycle within existing parent directories.
+Empty
 directories, directory move/delete, permission edits, symlinks, arbitrary
 binary changes, ambiguous duplicate-content rename pairing, arbitrary
-child-side commands/package scripts, cross-Run preview recovery, and Git
-worktree semantics remain unavailable. Pure additions use `0644`; a detected
-rename preserves the source mode. Candidate LSP and the optional fixed verifier
-remain read-only and offline; they are not general Process authority.
-Automatic lifecycle diagnostics and related-test selection currently cover
-TypeScript/JavaScript source extensions. Unsupported text formats are omitted,
-not labeled verified.
+child-side package scripts, DAP attach/multi-thread debugging, cross-Run preview
+recovery, and Git worktree semantics remain unavailable. Pure additions use
+`0644`; a detected rename preserves the source mode. Candidate LSP, DAP,
+commands, and the optional fixed verifier remain read-only and offline; they
+are not general Process authority. Automatic lifecycle diagnostics and
+related-test selection currently cover TypeScript/JavaScript source extensions.
+Unsupported text formats are omitted, not labeled verified.
 
 SQLite analysis remains outside the oversized workspace-tool module.
 `sqlite-database-file.ts` owns canonical file admission, sidecar denial,
@@ -6072,7 +6096,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has sixty-eight parts:
+The current boundary has sixty-nine parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -6362,6 +6386,13 @@ The current boundary has sixty-eight parts:
     evidence stream. Nested packages outside declared workspaces keep nearest-
     package test scans while declared workspace changes retain monorepo-wide
     reverse-dependency discovery.
+69. Capability-inherited private coder Node DAP using the existing debugger and
+    a private-protocol-only candidate Process scope, with shared Process
+    admission, read-only/offline Sandbox execution, Thread/Run and manager-local
+    ownership, serialized complete candidate snapshot checks, source/program/
+    map/module/toolchain freshness, cleanup-before-drift ordering, fail-closed
+    write detection, live-only debugger data, path-free Process evidence, and
+    real breakpoint/evaluation/step/merge Dogfood.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
