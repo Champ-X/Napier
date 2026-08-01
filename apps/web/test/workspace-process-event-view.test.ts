@@ -126,6 +126,7 @@ describe("Workspace Process event view", () => {
         writeScopeCount: 2,
         writeScopeSetSha256: "d".repeat(64),
         writePreviewSha256: "e".repeat(64),
+        failureRecovery: "restore_scopes",
         workspaceWriteScopeStatus: "within_scope",
         workspaceDeltaStatus: "changed",
         workspaceChangedFileCount: 2,
@@ -140,6 +141,7 @@ describe("Workspace Process event view", () => {
     expect(summary).toContain("changed-path-count 2");
     expect(summary).not.toContain("changed-files");
     expect(summary).toContain("scope-status within_scope");
+    expect(summary).toContain("failure-recovery restore-scopes");
     expect(summary).not.toContain("PRIVATE_WRITE_SCOPE");
   });
 
@@ -155,6 +157,7 @@ describe("Workspace Process event view", () => {
       createdAt: "2026-08-01T00:00:00.000Z",
       payload: {
         processId: "process_1234567890abcdef1234",
+        initiatedBy: "automatic_compensation",
         scopeCount: 2,
         fileCount: 3,
         directoryCount: 4,
@@ -166,7 +169,7 @@ describe("Workspace Process event view", () => {
       },
     };
     expect(workspaceProcessEventTraceSummary(attempt)).toBe(
-      `process / rollback-started / id abcdef1234 / scopes 2 / files 3 / directories 4 / bytes 25 / preview ${"d".repeat(12)} / recovery ${"a".repeat(12)} / expected ${"b".repeat(12)}`,
+      `process / rollback-started / id abcdef1234 / by automatic_compensation / scopes 2 / files 3 / directories 4 / bytes 25 / preview ${"d".repeat(12)} / recovery ${"a".repeat(12)} / expected ${"b".repeat(12)}`,
     );
     const event: RunEvent = {
       id: "event_1234567890abcdef1234",
@@ -198,7 +201,7 @@ describe("Workspace Process event view", () => {
     };
     const summary = workspaceProcessEventTraceSummary(event);
     expect(summary).toBe(
-      `process / rolled-back / id abcdef1234 / status restored / scopes 2 / restored-scopes 2 / files 3 / directories 4 / bytes 25 / durable / rollback-verified / recovery ${"a".repeat(12)} / expected ${"b".repeat(12)} / observed ${"c".repeat(12)}`,
+      `process / rolled-back / id abcdef1234 / status restored / by operator / scopes 2 / restored-scopes 2 / files 3 / directories 4 / bytes 25 / durable / rollback-verified / recovery ${"a".repeat(12)} / expected ${"b".repeat(12)} / observed ${"c".repeat(12)}`,
     );
     expect(summary).not.toContain("PRIVATE_RECOVERY_PATH");
     expect(summary).not.toContain("TOP_SECRET");

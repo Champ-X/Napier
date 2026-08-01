@@ -1960,6 +1960,19 @@ keeps workspace root read-only and remounts only those scopes writable;
 network remains denied. Cross-Manager data-root locks serialize scoped writers
 for the same workspace.
 
+`preview_write` can additionally bind
+`failureRecovery: "restore_scopes"`. This explicit pre-launch authorization
+creates a schema-v7 Process and does not broaden the approved paths. After a
+failed, timed-out, output-capped, or cancelled Process produces a complete
+`changed + within_scope` settlement, Napier keeps the same workspace lock,
+persists terminal Process evidence, rechecks settled-after freshness, and runs
+the existing two-phase recovery transaction. Process polls remain pending
+until the compensation outcome is known. Successful, unchanged,
+outside-scope, indeterminate, or interrupted Sessions do not auto-restore;
+restart never invents or retries a missing compensation attempt. Operator
+rollback remains available when the automatic attempt was not safe or was
+fully reverted.
+
 Before a scoped write launches, Napier copies only the approved scopes into a
 mode-checked private recovery directory under the local data root. A changed,
 fully settled schema-v6 session exposes operator-only rollback through
@@ -2038,9 +2051,9 @@ exported fixtures. Durable `workspace.process.started`, `.input`, `.resized`,
 the Napier Process ID, owning Thread and Run, status, executable,
 command/environment/limit hashes, input
 sequence/counts and cumulative digest, output hashes/counts, cursor, truncation
-state, I/O mode, terminal dimensions, and resize sequence. Schema-v5 and
-schema-v6 scoped-write events additionally bind the preview hash, scope
-count/set hash, and
+state, I/O mode, terminal dimensions, and resize sequence. Schema-v5 through
+schema-v7 scoped-write events additionally bind the preview hash, scope
+count/set hash, optional failure-recovery policy, and
 `within_scope`, `outside_scope`, or `indeterminate` settlement. They also bind
 pre/post workspace digests, comparison status, changed-entry count, and a
 changed-path-set digest without storing paths.
@@ -2050,8 +2063,8 @@ Processes panel. After restart, an unclosed session becomes `interrupted` with
 unknown outcome and no output or path details; Napier does not silently rerun
 it or claim the old host process was reattached. Existing schema v1-v4 Process
 receipts and schema-v5 scoped writes remain readable, ordinary pipe and PTY
-sessions use schema v4, and new scoped writes use schema v6 with private
-recovery bindings.
+sessions use schema v4, ordinary recoverable scoped writes use schema v6, and
+explicitly compensated writes use schema v7.
 
 Run the complete Agent-to-Sandbox smoke from a non-sandboxed Terminal:
 
@@ -2068,7 +2081,8 @@ remote write backends require a managed guardian or OCI boundary and are not
 claimed by this implementation. Scoped settlement proves observed path
 containment, not which external process wrote each byte. Operator rollback
 restores approved scopes only; it cannot undo outside-scope drift, recover an
-unknown crash window, or run automatically from the Agent tool. Pipe
+unknown crash window, or become an unreviewed Agent action. The only automatic
+path is the exact failure recovery bound into the original write preview. Pipe
 interaction remains distinct from PTY; the PTY provides
 terminal sizing and control bytes but not shell access, cross-restart attach, a
 durable screen buffer, or Napier job-control commands. The separate JavaScript

@@ -6,6 +6,38 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added explicitly preauthorized failure compensation for scoped Workspace
+  Process writes. `preview_write` can bind `failureRecovery=restore_scopes`
+  into a schema-v2 preview and schema-v7 Session without adding paths or an
+  Agent rollback action. Failed, timed-out, output-capped, or cancelled
+  Processes with a complete within-scope Delta persist terminal evidence,
+  retain the same cross-Manager write lock, recheck settled-after freshness,
+  and execute the existing two-phase staged recovery as
+  `automatic_compensation`. Polls do not expose a premature terminal state
+  while compensation is pending. Success, unchanged/outside/indeterminate
+  state, interruption, old schemas, and restart-only evidence never infer
+  automatic authority; operator review remains available when safe. Agent,
+  HTTP, Web Process cards, Trace, Replay, and restart projection share derived
+  compensation status while durable evidence remains path/body/error free.
+  Focused tests cover success, failure, cancellation, timeout, outside drift,
+  intent/outcome persistence failure, restart, concurrency, privacy, and real
+  Agent execution. Production Web dogfood physically restored
+  `DOGFOOD_BEFORE`, rendered `FAILED` plus automatic restoration, showed the
+  ordered intent/outcome in Trace, produced zero console errors, and returned
+  200 for all captured requests. The opt-in real OS smoke remained fail-closed
+  in this nested IDE: `sandbox-exec` exited 71 before mutation, Delta was
+  unchanged, compensation was correctly `not_needed`, and no host fallback
+  occurred. Compensation projection, transaction, orchestration, and Session
+  finalization were split into focused modules; the Process manager remains at
+  940 lines and recovery stays below its preceding size. The CLI suite now
+  caps Vitest at four workers so real PTY and subprocess tests retain their
+  original deadlines without host oversubscription flakes. The complete gate
+  passes 1,622 regular tests with 29 opt-in live tests skipped, 255 OpenAPI
+  routes, 244/244 compatibility operations, and the product performance budget
+  at 883.4 ms to first CLI event, 1,039.7 ms to first token, 1,352.2 ms to
+  completion, 0.4 ms read p95, and 8.4 ms for a 1,000-event projection. The
+  92-file Web dist main entry remains 130.32 KiB, bound to
+  `731e877124343d2e`; the release set is bound to `8335c91132485038`.
 - Added preview-bound operator rollback for changed scoped Workspace Process
   Sessions. Schema-v6 starts capture only approved pre-execution scopes in a
   private local recovery directory before sandbox launch and bind aggregate

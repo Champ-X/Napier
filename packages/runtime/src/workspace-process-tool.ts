@@ -167,6 +167,9 @@ export function createWorkspaceProcessTool(
             ...(input.timeoutMs ? { timeoutMs: input.timeoutMs } : {}),
           },
           writePaths: input.writePaths,
+          ...(input.failureRecovery
+            ? { failureRecovery: input.failureRecovery }
+            : {}),
           ...("terminal" in input ? { terminal: input.terminal } : {}),
           ...("interactive" in input && input.interactive === true
             ? { interactive: true }
@@ -287,6 +290,9 @@ export function workspaceProcessToolCallArgumentsLedgerProjection(
     ...(value["appendNewline"] === true ? { appendNewline: true } : {}),
     ...(value["close"] === true ? { close: true } : {}),
     ...(value["interactive"] === true ? { interactive: true } : {}),
+    ...(value["failureRecovery"] === "restore_scopes"
+      ? { failureRecovery: value["failureRecovery"] }
+      : {}),
     ...(Array.isArray(value["writePaths"])
       ? {
           writeScopeCount: value["writePaths"].length,

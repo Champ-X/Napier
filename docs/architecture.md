@@ -3370,9 +3370,21 @@ Agent selects start_write + preview ID
      hash-only symlink identity without following its target
   -> classify every changed path as within_scope, outside_scope, or
      indeterminate without assigning external drift to the child
-  -> append schema-v6 hash-only Process settlement and release the lock
+  -> append schema-v6/v7 hash-only Process settlement
 
-Operator selects rollback preview for one changed schema-v6 Process
+If schema-v7 binds failureRecovery=restore_scopes and settlement is
+failed/timed_out/output_capped/cancelled + changed + within_scope
+  -> keep polls pending and retain the same workspace write lock
+  -> recheck the exact settled-after workspace and private recovery manifest
+  -> append automatic_compensation rollback_started intent
+  -> run the same staged restore/reverse/fsync transaction
+  -> append the matching rolled_back outcome and expose its derived status
+Otherwise
+  -> never infer automatic authorization from old schema, restart, success,
+     interruption, outside-scope drift, or an indeterminate snapshot
+  -> release the lock with operator rollback available when still safe
+
+Operator selects rollback preview for one changed schema-v6/v7 Process
   -> require private Process/Thread/Run/scope/before-hash bindings
   -> verify every backup content hash and recursive POSIX mode-set hash
   -> require the complete workspace to equal the settled-after hash
@@ -3449,7 +3461,8 @@ after Runtime restart while the summary evidence remains. Schema v1 sessions
 continue to project as delta-unavailable, schema v2 sessions retain snapshot
 evidence without input metadata, schema v3 retains pipe input evidence,
 ordinary pipe/PTY sessions use schema v4, and schema-v5 scoped writes remain
-readable. New recoverable scoped writes use schema v6.
+readable. Ordinary recoverable scoped writes use schema v6; explicitly
+compensated writes use schema v7.
 
 Admission reservation, write preview state and lock acquisition, output/Delta
 projection, settlement classification, tool result rendering, and tool input
@@ -3475,8 +3488,8 @@ because `sandbox-exec` has no parent-death contract; startup therefore records
 unknown interruption rather than completion or reattachment. A guardian or OCI
 identity is required for proved cleanup of abrupt or deliberately detached
 descendants and cross-restart reattachment. Hard total RSS quotas,
-package-backed Python, remote sandboxes, automatic compensation, and writer
-attribution remain outside this slice. PTY mode supplies real terminal stdin/stdout,
+package-backed Python, remote sandboxes, and writer attribution remain outside
+this slice. PTY mode supplies real terminal stdin/stdout,
 sizing, control bytes, and process-group cancellation, but does not grant shell
 access, cross-restart attach, a durable screen buffer, or Napier job-control
 commands. The JavaScript/Python kernels and Node debugger below remain
@@ -6036,6 +6049,11 @@ The current boundary has fifty-six parts:
     cross-Manager serialization, multi-scope reverse recovery, two-phase
     Ledger intent/outcome evidence, restart blocking for pending outcomes,
     HTTP/Web delivery, and path/body-free Trace.
+61. Explicitly preauthorized scoped-write failure compensation with
+    schema-v2 preview/schema-v7 Session binding, unsuccessful within-scope-only
+    admission, same-lock settled-after freshness, two-phase automatic
+    intent/outcome evidence, poll finality, restart non-retry, operator fallback,
+    and shared Agent/HTTP/Web/Replay/Trace projection.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6045,7 +6063,7 @@ rename/quick-fix previews, preview-bound coordinated rename application,
 explicit-argv command execution, persistent synchronous JavaScript and
 restricted Python calculations, Run-owned Node launch debugging, and bounded
 background Process Session lifecycle control plus preview-bound writes to
-explicit existing scopes.
+explicit existing scopes and optional same-scope failure compensation.
 `unrestricted` additionally permits an explicitly enabled controlled Browser
 Session and Research Source citations derived from its active page. It does
 not expose a shell, arbitrary host networking, an existing user browser
@@ -6068,8 +6086,7 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 1: Local execution and architecture
 
 - extend bounded Workspace Process Sessions with a managed guardian, proved
-  orphan cleanup, cross-restart reattachment, automatic compensation, and
-  remote scoped-write backends;
+  orphan cleanup, cross-restart reattachment, and remote scoped-write backends;
 - extend restricted Python into package-backed data/Notebook sessions and add
   managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;

@@ -87,6 +87,10 @@ export function workspaceProcessEventTraceSummary(
     return [
       "process / rollback-started",
       ...(processId ? [`id ${processId.slice(-10)}`] : []),
+      ...(event.payload["initiatedBy"] === "operator" ||
+      event.payload["initiatedBy"] === "automatic_compensation"
+        ? [`by ${event.payload["initiatedBy"]}`]
+        : []),
       ...(scopeCount !== undefined ? [`scopes ${scopeCount}`] : []),
       ...(fileCount !== undefined ? [`files ${fileCount}`] : []),
       ...(directoryCount !== undefined
@@ -123,6 +127,10 @@ export function workspaceProcessEventTraceSummary(
       "process / rolled-back",
       ...(processId ? [`id ${processId.slice(-10)}`] : []),
       ...(status ? [`status ${status}`] : []),
+      ...(event.payload["initiatedBy"] === "operator" ||
+      event.payload["initiatedBy"] === "automatic_compensation"
+        ? [`by ${event.payload["initiatedBy"]}`]
+        : []),
       ...(scopeCount !== undefined ? [`scopes ${scopeCount}`] : []),
       ...(restoredScopeCount !== undefined
         ? [`restored-scopes ${restoredScopeCount}`]
@@ -206,6 +214,9 @@ export function workspaceProcessEventTraceSummary(
       : []),
     ...(writePreviewSha256
       ? [`write-preview ${writePreviewSha256.slice(0, 12)}`]
+      : []),
+    ...(event.payload["failureRecovery"] === "restore_scopes"
+      ? ["failure-recovery restore-scopes"]
       : []),
     ...(argumentCount !== undefined ? [`args ${argumentCount}`] : []),
     ...(stdoutChars !== undefined ? [`stdout-chars ${stdoutChars}`] : []),

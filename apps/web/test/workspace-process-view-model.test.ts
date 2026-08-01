@@ -152,6 +152,19 @@ describe("Workspace Process view model", () => {
         workspaceWriteScopeStatus: "outside_scope",
       }).workspaceDeltaLabel,
     ).toBe("2 observed path changes include unverified scope");
+    expect(
+      workspaceProcessCardView({
+        ...scoped,
+        schemaVersion: 7,
+        failureRecovery: "restore_scopes",
+        workspaceCompensationStatus: "restored",
+      }),
+    ).toEqual(
+      expect.objectContaining({
+        failureRecovery: "restore_scopes",
+        compensationStatus: "restored",
+      }),
+    );
   });
 
   it("distinguishes observed drift, indeterminate comparison, and unavailable legacy evidence", () => {

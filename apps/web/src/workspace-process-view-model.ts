@@ -13,6 +13,8 @@ export interface WorkspaceProcessCardView {
   durationLabel: string;
   runtimeLabel: string;
   scopeLabel: string;
+  failureRecovery?: "restore_scopes";
+  compensationStatus?: WorkspaceProcessSession["workspaceCompensationStatus"];
   limitLabel: string;
   outputLabel: string;
   outputAvailable: boolean;
@@ -57,6 +59,14 @@ export function workspaceProcessCardView(
       session.workspaceAccess === "scoped_write"
         ? `Workspace scoped write · ${session.writeScopeCount ?? 0} scope${session.writeScopeCount === 1 ? "" : "s"} · ${session.writeScopeSetSha256?.slice(0, 12) ?? "unavailable"} · Network denied`
         : "Workspace read-only · Network denied",
+    ...(session.failureRecovery
+      ? {
+          failureRecovery: session.failureRecovery,
+          ...(session.workspaceCompensationStatus
+            ? { compensationStatus: session.workspaceCompensationStatus }
+            : {}),
+        }
+      : {}),
     limitLabel: `${Math.round(session.timeoutMs / 1_000)}s · ${session.outputLimitChars.toLocaleString()} chars/stream`,
     outputLabel:
       session.ioMode === "pty"

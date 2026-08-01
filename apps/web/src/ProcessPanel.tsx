@@ -444,6 +444,15 @@ export default function ProcessPanel({
                     <dt>{copy.limits}</dt>
                     <dd>{card.limitLabel}</dd>
                   </div>
+                  {card.failureRecovery ? (
+                    <div>
+                      <dt>{copy.failureRecovery}</dt>
+                      <dd>
+                        {copy.failureRecoveryRestore} ·{" "}
+                        {compensationLabel(card.compensationStatus)}
+                      </dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt>{copy.output}</dt>
                     <dd>{card.outputLabel}</dd>
@@ -675,6 +684,17 @@ export default function ProcessPanel({
       )}
     </section>
   );
+}
+
+function compensationLabel(
+  status: WorkspaceProcessSession["workspaceCompensationStatus"],
+): string {
+  if (status === "not_needed") return copy.compensationNotNeeded;
+  if (status === "restored") return copy.compensationRestored;
+  if (status === "reverted") return copy.compensationReverted;
+  if (status === "indeterminate") return copy.compensationIndeterminate;
+  if (status === "unavailable") return copy.compensationUnavailable;
+  return copy.compensationPending;
 }
 
 function formatDeltaMetadata(

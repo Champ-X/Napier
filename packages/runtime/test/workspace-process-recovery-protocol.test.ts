@@ -1,7 +1,8 @@
-import type { JsonValue } from "@napier/contracts";
+import type { JsonValue, WorkspaceProcessSession } from "@napier/contracts";
 import { describe, expect, it } from "vitest";
 
 import { canonicalJson, sha256 } from "../src/ed25519.js";
+import { WorkspaceProcessCompensationProjection } from "../src/workspace-process-compensation.js";
 import {
   createWorkspaceProcessRecoveryManifest,
   parseWorkspaceProcessRecoveryManifest,
@@ -54,6 +55,7 @@ describe("Workspace Process recovery protocol", () => {
       threadId: manifest.threadId,
       runId: manifest.runId,
       processId: manifest.processId,
+      initiatedBy: "operator",
       previewSha256: sha256("rollback-preview"),
       recoverySnapshotSha256: manifest.contentSha256,
       expectedWorkspaceSha256: sha256("after"),
@@ -86,6 +88,41 @@ describe("Workspace Process recovery protocol", () => {
         withContentHash({ ...withoutContentHash(result), durable: false }),
       ),
     ).toBe(undefined);
+  });
+
+  it("distinguishes no-op failure recovery from unsafe settlement states", () => {
+    const projection = new WorkspaceProcessCompensationProjection();
+    const session = (
+      overrides: Partial<WorkspaceProcessSession>,
+    ): WorkspaceProcessSession =>
+      ({
+        id: "process_compensationstatus",
+        schemaVersion: 7,
+        failureRecovery: "restore_scopes",
+        status: "failed",
+        workspaceDeltaStatus: "changed",
+        workspaceWriteScopeStatus: "within_scope",
+        ...overrides,
+      }) as WorkspaceProcessSession;
+
+    expect(projection.status(session({ status: "running" }))).toBe("pending");
+    expect(projection.status(session({ status: "succeeded" }))).toBe(
+      "not_needed",
+    );
+    expect(
+      projection.status(session({ workspaceDeltaStatus: "unchanged" })),
+    ).toBe("not_needed");
+    expect(
+      projection.status(session({ workspaceDeltaStatus: "indeterminate" })),
+    ).toBe("unavailable");
+    expect(
+      projection.status(
+        session({ workspaceWriteScopeStatus: "outside_scope" }),
+      ),
+    ).toBe("unavailable");
+    expect(projection.status(session({ status: "interrupted" }))).toBe(
+      "unavailable",
+    );
   });
 });
 

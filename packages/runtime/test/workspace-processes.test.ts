@@ -215,6 +215,34 @@ async function settleRollbackCandidate(
   return { target, session, settled };
 }
 
+async function startCompensationCandidate(
+  harness: Awaited<ReturnType<typeof createHarness>>,
+  timeoutMs = 30_000,
+) {
+  const generated = path.join(harness.workspaceRoot, "generated");
+  const target = path.join(generated, "result.txt");
+  await mkdir(generated);
+  await writeFile(target, "before");
+  const preview = await harness.manager.previewWrite({
+    threadId: harness.thread.id,
+    runId: harness.run.id,
+    command: {
+      runtime: "node",
+      args: ["-e", "process.exit(1)"],
+      timeoutMs,
+    },
+    writePaths: ["generated"],
+    failureRecovery: "restore_scopes",
+  });
+  const session = await harness.manager.startWrite({
+    threadId: harness.thread.id,
+    runId: harness.run.id,
+    previewId: preview.id,
+  });
+  await writeFile(target, "after");
+  return { target, preview, session };
+}
+
 describe("Workspace Process Manager", () => {
   it("starts, streams cursor output, and settles without persisting text", async () => {
     const harness = await createHarness();
@@ -562,6 +590,448 @@ describe("Workspace Process Manager", () => {
         await exportThreadReplayBundle(harness.store, harness.thread.id),
       ).status,
     ).toBe("valid");
+    harness.store.close();
+  });
+
+  it("automatically compensates a failed scoped write from its bound preview", async () => {
+    const harness = await createHarness();
+    const generated = path.join(harness.workspaceRoot, "generated");
+    const target = path.join(generated, "result.txt");
+    await mkdir(generated);
+    await writeFile(target, "before");
+    const preview = await harness.manager.previewWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: { runtime: "node", args: ["-e", "process.exit(1)"] },
+      writePaths: ["generated"],
+      failureRecovery: "restore_scopes",
+    });
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 2,
+        failureRecovery: "restore_scopes",
+      }),
+    );
+    const session = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: preview.id,
+    });
+    expect(session).toEqual(
+      expect.objectContaining({
+        schemaVersion: 7,
+        failureRecovery: "restore_scopes",
+        workspaceCompensationStatus: "pending",
+      }),
+    );
+    await writeFile(target, "after");
+    harness.controlled.processes[0]!.settle(1);
+
+    const settled = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        schemaVersion: 7,
+        status: "failed",
+        workspaceDeltaStatus: "changed",
+        workspaceWriteScopeStatus: "within_scope",
+        failureRecovery: "restore_scopes",
+        workspaceCompensationStatus: "restored",
+        workspaceRollbackAvailable: false,
+      }),
+    );
+    expect(await readFile(target, "utf8")).toBe("before");
+    const events = await harness.store.listEvents(harness.thread.id);
+    expect(
+      events
+        .filter((event) => event.type.startsWith("workspace.process."))
+        .map((event) => event.type),
+    ).toEqual([
+      "workspace.process.started",
+      "workspace.process.settled",
+      "workspace.process.rollback_started",
+      "workspace.process.rolled_back",
+    ]);
+    expect(projectWorkspaceProcessRollbackAttempts(events)).toEqual([
+      expect.objectContaining({
+        processId: session.id,
+        initiatedBy: "automatic_compensation",
+        previewSha256: preview.contentSha256,
+      }),
+    ]);
+    expect(projectWorkspaceProcessRollbackResults(events)).toEqual([
+      expect.objectContaining({
+        processId: session.id,
+        initiatedBy: "automatic_compensation",
+        status: "restored",
+      }),
+    ]);
+    expect(JSON.stringify(events)).not.toContain("generated");
+    expect(JSON.stringify(events)).not.toContain("before");
+    expect(JSON.stringify(events)).not.toContain("after");
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(harness.store, harness.thread.id),
+      ).status,
+    ).toBe("valid");
+    harness.store.close();
+
+    const restartedStore = new LocalStore({
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+    });
+    await restartedStore.initialize();
+    const restarted = new WorkspaceProcessManager({
+      store: restartedStore,
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+      sandbox: createControlledSandbox().sandbox,
+    });
+    await restarted.initialize();
+    expect((await restarted.list(harness.thread.id))[0]).toEqual(
+      expect.objectContaining({
+        id: session.id,
+        workspaceCompensationStatus: "restored",
+        workspaceRollbackAvailable: false,
+      }),
+    );
+    await restarted.shutdown();
+    restartedStore.close();
+  });
+
+  it("keeps successful preauthorized writes and leaves operator rollback available", async () => {
+    const harness = await createHarness();
+    const generated = path.join(harness.workspaceRoot, "generated");
+    const target = path.join(generated, "result.txt");
+    await mkdir(generated);
+    await writeFile(target, "before");
+    const preview = await harness.manager.previewWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: { runtime: "node", args: ["-e", "void 0"] },
+      writePaths: ["generated"],
+      failureRecovery: "restore_scopes",
+    });
+    const session = await harness.manager.startWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      previewId: preview.id,
+    });
+    await writeFile(target, "after");
+    harness.controlled.processes[0]!.settle(0);
+
+    expect(
+      await harness.manager.waitForSettlement(harness.thread.id, session.id),
+    ).toEqual(
+      expect.objectContaining({
+        schemaVersion: 7,
+        status: "succeeded",
+        workspaceCompensationStatus: "not_needed",
+        workspaceRollbackAvailable: true,
+      }),
+    );
+    expect(await readFile(target, "utf8")).toBe("after");
+    expect(
+      (await harness.store.listEvents(harness.thread.id)).some((event) =>
+        event.type.includes("rollback"),
+      ),
+    ).toBe(false);
+    harness.store.close();
+  });
+
+  it("blocks automatic compensation for outside-scope drift but preserves operator review", async () => {
+    const harness = await createHarness();
+    const { target, session } = await startCompensationCandidate(harness);
+    const outside = path.join(harness.workspaceRoot, "outside.txt");
+    await writeFile(outside, "external");
+    harness.controlled.processes[0]!.settle(1);
+
+    const settled = await harness.manager.waitForSettlement(
+      harness.thread.id,
+      session.id,
+    );
+    expect(settled).toEqual(
+      expect.objectContaining({
+        status: "failed",
+        workspaceWriteScopeStatus: "outside_scope",
+        workspaceCompensationStatus: "unavailable",
+        workspaceRollbackAvailable: true,
+      }),
+    );
+    expect(await readFile(target, "utf8")).toBe("after");
+    expect(
+      (await harness.store.listEvents(harness.thread.id)).some((event) =>
+        event.type.includes("rollback"),
+      ),
+    ).toBe(false);
+
+    const preview = await harness.manager.previewRollback(
+      harness.thread.id,
+      session.id,
+    );
+    expect(
+      await harness.manager.rollback(harness.thread.id, session.id, preview.id),
+    ).toEqual(
+      expect.objectContaining({
+        initiatedBy: "operator",
+        status: "restored",
+      }),
+    );
+    expect(await readFile(target, "utf8")).toBe("before");
+    expect(await readFile(outside, "utf8")).toBe("external");
+    harness.store.close();
+  });
+
+  it("fails automatic compensation closed across Ledger intent and outcome failures", async () => {
+    const intentHarness = await createHarness();
+    const intentCandidate = await startCompensationCandidate(intentHarness);
+    const appendIntentEvent = intentHarness.store.appendEvent.bind(
+      intentHarness.store,
+    );
+    const intentSpy = vi
+      .spyOn(intentHarness.store, "appendEvent")
+      .mockImplementation(async (input) => {
+        if (input.type === "workspace.process.rollback_started") {
+          throw new Error("TOP_SECRET_COMPENSATION_INTENT_FAILURE");
+        }
+        return appendIntentEvent(input);
+      });
+    intentHarness.controlled.processes[0]!.settle(1);
+    expect(
+      await intentHarness.manager.waitForSettlement(
+        intentHarness.thread.id,
+        intentCandidate.session.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceCompensationStatus: "unavailable",
+        workspaceRollbackAvailable: true,
+      }),
+    );
+    intentSpy.mockRestore();
+    expect(await readFile(intentCandidate.target, "utf8")).toBe("after");
+    expect(
+      (await intentHarness.store.listEvents(intentHarness.thread.id)).some(
+        (event) => event.type.includes("rollback"),
+      ),
+    ).toBe(false);
+    expect(
+      JSON.stringify(
+        await intentHarness.store.listEvents(intentHarness.thread.id),
+      ),
+    ).not.toContain("TOP_SECRET");
+    intentHarness.store.close();
+    const intentRestartStore = new LocalStore({
+      workspaceRoot: intentHarness.workspaceRoot,
+      dataRoot: intentHarness.dataRoot,
+    });
+    await intentRestartStore.initialize();
+    const intentRestart = new WorkspaceProcessManager({
+      store: intentRestartStore,
+      workspaceRoot: intentHarness.workspaceRoot,
+      dataRoot: intentHarness.dataRoot,
+      sandbox: createControlledSandbox().sandbox,
+    });
+    await intentRestart.initialize();
+    expect((await intentRestart.list(intentHarness.thread.id))[0]).toEqual(
+      expect.objectContaining({
+        workspaceCompensationStatus: "unavailable",
+        workspaceRollbackAvailable: true,
+      }),
+    );
+    expect(
+      (await intentRestartStore.listEvents(intentHarness.thread.id)).some(
+        (event) => event.type.includes("rollback"),
+      ),
+    ).toBe(false);
+    await intentRestart.shutdown();
+    intentRestartStore.close();
+
+    const outcomeHarness = await createHarness();
+    const outcomeCandidate = await startCompensationCandidate(outcomeHarness);
+    const appendOutcomeEvent = outcomeHarness.store.appendEvent.bind(
+      outcomeHarness.store,
+    );
+    const outcomeSpy = vi
+      .spyOn(outcomeHarness.store, "appendEvent")
+      .mockImplementation(async (input) => {
+        if (input.type === "workspace.process.rolled_back") {
+          throw new Error("TOP_SECRET_COMPENSATION_OUTCOME_FAILURE");
+        }
+        return appendOutcomeEvent(input);
+      });
+    outcomeHarness.controlled.processes[0]!.settle(1);
+    expect(
+      await outcomeHarness.manager.waitForSettlement(
+        outcomeHarness.thread.id,
+        outcomeCandidate.session.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        workspaceCompensationStatus: "indeterminate",
+        workspaceRollbackAvailable: false,
+      }),
+    );
+    outcomeSpy.mockRestore();
+    expect(await readFile(outcomeCandidate.target, "utf8")).toBe("before");
+    const outcomeEvents = await outcomeHarness.store.listEvents(
+      outcomeHarness.thread.id,
+    );
+    expect(
+      outcomeEvents
+        .filter((event) => event.type.includes("rollback"))
+        .map((event) => event.type),
+    ).toEqual(["workspace.process.rollback_started"]);
+    expect(JSON.stringify(outcomeEvents)).not.toContain("TOP_SECRET");
+    outcomeHarness.store.close();
+
+    const restartedStore = new LocalStore({
+      workspaceRoot: outcomeHarness.workspaceRoot,
+      dataRoot: outcomeHarness.dataRoot,
+    });
+    await restartedStore.initialize();
+    const restarted = new WorkspaceProcessManager({
+      store: restartedStore,
+      workspaceRoot: outcomeHarness.workspaceRoot,
+      dataRoot: outcomeHarness.dataRoot,
+      sandbox: createControlledSandbox().sandbox,
+    });
+    await restarted.initialize();
+    expect((await restarted.list(outcomeHarness.thread.id))[0]).toEqual(
+      expect.objectContaining({
+        workspaceCompensationStatus: "indeterminate",
+        workspaceRollbackAvailable: false,
+      }),
+    );
+    await restarted.shutdown();
+    restartedStore.close();
+  });
+
+  it("compensates cancellation and timeout after their process changes settle", async () => {
+    const cancelledHarness = await createHarness();
+    const cancelledCandidate =
+      await startCompensationCandidate(cancelledHarness);
+    expect(
+      await cancelledHarness.manager.cancel(
+        cancelledHarness.thread.id,
+        cancelledCandidate.session.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "cancelled",
+        workspaceCompensationStatus: "restored",
+      }),
+    );
+    expect(await readFile(cancelledCandidate.target, "utf8")).toBe("before");
+    cancelledHarness.store.close();
+
+    vi.useFakeTimers();
+    const timeoutHarness = await createHarness();
+    const timeoutCandidate = await startCompensationCandidate(
+      timeoutHarness,
+      1_000,
+    );
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(
+      await timeoutHarness.manager.waitForSettlement(
+        timeoutHarness.thread.id,
+        timeoutCandidate.session.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "timed_out",
+        workspaceCompensationStatus: "restored",
+      }),
+    );
+    expect(await readFile(timeoutCandidate.target, "utf8")).toBe("before");
+    timeoutHarness.store.close();
+    vi.useRealTimers();
+
+    const interruptedHarness = await createHarness();
+    const interruptedCandidate =
+      await startCompensationCandidate(interruptedHarness);
+    await interruptedHarness.manager.shutdown();
+    expect(
+      await interruptedHarness.manager.waitForSettlement(
+        interruptedHarness.thread.id,
+        interruptedCandidate.session.id,
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "interrupted",
+        workspaceCompensationStatus: "unavailable",
+        workspaceRollbackAvailable: true,
+      }),
+    );
+    expect(await readFile(interruptedCandidate.target, "utf8")).toBe("after");
+    expect(
+      (
+        await interruptedHarness.store.listEvents(interruptedHarness.thread.id)
+      ).some((event) => event.type.includes("rollback")),
+    ).toBe(false);
+    interruptedHarness.store.close();
+  });
+
+  it("retains the cross-Manager write lock through automatic compensation", async () => {
+    const harness = await createHarness();
+    const secondControlled = createControlledSandbox();
+    const secondManager = new WorkspaceProcessManager({
+      store: harness.store,
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+      sandbox: secondControlled.sandbox,
+    });
+    await secondManager.initialize();
+    const candidate = await startCompensationCandidate(harness);
+    let releaseAttempt: (() => void) | undefined;
+    let markAttemptEntered: (() => void) | undefined;
+    const attemptEntered = new Promise<void>((resolve) => {
+      markAttemptEntered = resolve;
+    });
+    const attemptGate = new Promise<void>((resolve) => {
+      releaseAttempt = resolve;
+    });
+    const appendEvent = harness.store.appendEvent.bind(harness.store);
+    const appendSpy = vi
+      .spyOn(harness.store, "appendEvent")
+      .mockImplementation(async (input) => {
+        if (input.type === "workspace.process.rollback_started") {
+          markAttemptEntered?.();
+          await attemptGate;
+        }
+        return appendEvent(input);
+      });
+    harness.controlled.processes[0]!.settle(1);
+    const settlement = harness.manager.waitForSettlement(
+      harness.thread.id,
+      candidate.session.id,
+    );
+    await attemptEntered;
+
+    const secondPreview = await secondManager.previewWrite({
+      threadId: harness.thread.id,
+      runId: harness.run.id,
+      command: { runtime: "node", args: ["-e", "void 0"] },
+      writePaths: ["generated"],
+    });
+    await expect(
+      secondManager.startWrite({
+        threadId: harness.thread.id,
+        runId: harness.run.id,
+        previewId: secondPreview.id,
+      }),
+    ).rejects.toThrow("already being edited");
+    releaseAttempt?.();
+    expect(await settlement).toEqual(
+      expect.objectContaining({
+        workspaceCompensationStatus: "restored",
+      }),
+    );
+    appendSpy.mockRestore();
+    expect(await readFile(candidate.target, "utf8")).toBe("before");
+    await secondManager.shutdown();
     harness.store.close();
   });
 

@@ -11,10 +11,12 @@ import type {
 import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import {
+  WorkspaceProcessCompensationProjection,
+  workspaceProcessStatusIsCompensable,
+} from "./workspace-process-compensation.js";
+import {
   captureWorkspaceProcessRecoveryScopes,
-  cleanupWorkspaceProcessRollbackArtifacts,
   removeWorkspaceProcessRecovery,
-  restoreWorkspaceProcessRecoveryScopes,
   verifyWorkspaceProcessRecoveryScopes,
 } from "./workspace-process-recovery-files.js";
 import {
@@ -27,11 +29,8 @@ import {
   type WorkspaceProcessRecoveryBinding,
   type WorkspaceProcessRecoveryManifest,
 } from "./workspace-process-recovery-manifest.js";
-import {
-  createWorkspaceProcessRollbackAttempt,
-  createWorkspaceProcessRollbackResult,
-} from "./workspace-process-rollback-evidence.js";
 import { WorkspaceProcessRollbackPreviewStore } from "./workspace-process-rollback-preview-store.js";
+import { executeWorkspaceProcessRollbackTransaction } from "./workspace-process-rollback-transaction.js";
 import { createWorkspaceProcessWriteSnapshot } from "./workspace-process-write-snapshot.js";
 import type { PreparedWorkspaceProcessWrite } from "./workspace-process-write-preview.js";
 import { writeJsonExclusive } from "./workspace-file-scope.js";
@@ -56,6 +55,7 @@ export class WorkspaceProcessRecoveryManager {
   >();
   private readonly previews: WorkspaceProcessRollbackPreviewStore;
   private readonly blocked = new Set<string>();
+  private readonly compensation = new WorkspaceProcessCompensationProjection();
   private initialized = false;
 
   constructor(
@@ -119,6 +119,7 @@ export class WorkspaceProcessRecoveryManager {
         .filter((attempt) => !completedAttemptIds.has(attempt.id))
         .map((attempt) => attempt.processId),
     );
+    this.compensation.reconcile(attempts, results);
     for (const [processId, manifest] of [...this.manifests]) {
       if (pendingProcessIds.has(processId)) {
         this.blocked.add(processId);
@@ -152,6 +153,7 @@ export class WorkspaceProcessRecoveryManager {
       throw new Error("Workspace Process recovery Process ID is invalid");
     }
     this.blocked.delete(input.processId);
+    this.compensation.reset(input.processId);
     const recoveryDirectory = this.recoveryDirectory(input.processId);
     const captured = await captureWorkspaceProcessRecoveryScopes({
       recoveryDirectory,
@@ -199,7 +201,7 @@ export class WorkspaceProcessRecoveryManager {
 
   available(session: WorkspaceProcessSession): boolean {
     if (
-      session.schemaVersion !== 6 ||
+      session.schemaVersion < 6 ||
       session.status === "running" ||
       !session.recoverySnapshotSha256 ||
       session.workspaceAfterTruncated === true ||
@@ -210,6 +212,12 @@ export class WorkspaceProcessRecoveryManager {
     }
     const manifest = this.manifests.get(session.id);
     return Boolean(manifest && this.manifestMatchesSession(manifest, session));
+  }
+
+  compensationStatus(
+    session: WorkspaceProcessSession,
+  ): WorkspaceProcessSession["workspaceCompensationStatus"] {
+    return this.compensation.status(session);
   }
 
   async preview(
@@ -290,95 +298,63 @@ export class WorkspaceProcessRecoveryManager {
           );
         }
         input.signal?.throwIfAborted();
-        const rollbackId = createId("processrollback");
-        const attempt = createWorkspaceProcessRollbackAttempt({
-          id: rollbackId,
-          threadId: input.session.threadId,
-          runId: input.session.runId,
-          processId: input.session.id,
-          previewSha256: preview.contentSha256,
-          recoverySnapshotSha256: manifest.contentSha256,
-          expectedWorkspaceSha256: preview.expectedWorkspaceSha256,
-          scopeCount: manifest.totals.scopeCount,
-          fileCount: manifest.totals.fileCount,
-          directoryCount: manifest.totals.directoryCount,
-          bytes: manifest.totals.bytes,
-          attemptedAt: this.now().toISOString(),
-        });
-        try {
-          await input.recordAttempt(attempt);
-        } catch {
-          throw new Error(
-            "Workspace Process rollback was not started because its Ledger intent could not be persisted",
-          );
-        }
-        this.blocked.add(input.session.id);
-        const restored = await restoreWorkspaceProcessRecoveryScopes({
+        const result = await executeWorkspaceProcessRollbackTransaction({
+          session: input.session,
+          manifest,
+          initiatedBy: "operator",
+          authorizationSha256: preview.contentSha256,
           workspaceRoot: this.options.workspaceRoot,
           recoveryDirectory: this.recoveryDirectory(input.session.id),
-          rollbackId,
-          scopes: manifest.scopes,
           ...(input.signal ? { signal: input.signal } : {}),
-        }).catch((error) => ({
-          status: "reverted" as const,
-          restoredScopeCount: 0,
-          durable: true,
-          cancellationObserved: input.signal?.aborted === true,
-          cleanupTargets: [],
-          error,
-        }));
-        let status = restored.status;
-        let durable = restored.durable;
-        let rollbackError = restored.error;
-        if (status !== "indeterminate") {
-          try {
-            const cleanupDurable =
-              await cleanupWorkspaceProcessRollbackArtifacts(
-                restored.cleanupTargets,
-              );
-            durable = durable && cleanupDurable;
-          } catch (error) {
-            status = "indeterminate";
-            durable = false;
-            rollbackError = error;
-          }
-        }
-        const observed = await createWorkspaceProcessWriteSnapshot(
-          this.options.workspaceRoot,
-        );
-        const result = createWorkspaceProcessRollbackResult({
-          attempt,
-          status,
-          observedWorkspaceSha256: observed.sha256,
-          restoredScopeCount: restored.restoredScopeCount,
-          rollbackVerified: status === "restored",
-          durable,
-          cancellationObserved: restored.cancellationObserved,
-          appliedAt: this.now().toISOString(),
-          ...(rollbackError ? { error: rollbackError } : {}),
+          now: () => this.now(),
+          recordAttempt: input.recordAttempt,
+          attemptRecorded: () => this.blocked.add(input.session.id),
+          recordResult: input.recordResult,
         });
-        try {
-          await input.recordResult(result);
-        } catch {
-          this.blocked.add(input.session.id);
-          throw new Error(
-            "Workspace Process rollback changed the workspace but its Ledger outcome could not be persisted; inspect workspace state before retrying",
-          );
-        }
-        if (result.status === "restored") {
-          this.manifests.delete(input.session.id);
-          this.blocked.delete(input.session.id);
-          await removeWorkspaceProcessRecovery(
-            this.recoveryDirectory(input.session.id),
-          ).catch(() => undefined);
-        } else if (result.status === "indeterminate") {
-          this.blocked.add(input.session.id);
-        } else {
-          this.blocked.delete(input.session.id);
-        }
+        await this.acceptResult(result);
         return result;
       },
     );
+  }
+
+  async compensate(input: {
+    session: WorkspaceProcessSession;
+    recordAttempt(attempt: WorkspaceProcessRollbackAttempt): Promise<void>;
+    recordResult(result: WorkspaceProcessRollbackResult): Promise<void>;
+  }): Promise<WorkspaceProcessRollbackResult> {
+    this.assertReady();
+    if (
+      input.session.schemaVersion !== 7 ||
+      input.session.failureRecovery !== "restore_scopes" ||
+      !workspaceProcessStatusIsCompensable(input.session.status) ||
+      input.session.workspaceDeltaStatus !== "changed" ||
+      input.session.workspaceWriteScopeStatus !== "within_scope" ||
+      !input.session.writePreviewSha256
+    ) {
+      throw new Error(
+        "Workspace Process automatic compensation is unavailable",
+      );
+    }
+    const manifest = await this.requireManifest(input.session);
+    await this.requireCurrentWorkspace(input.session);
+    const result = await executeWorkspaceProcessRollbackTransaction({
+      session: input.session,
+      manifest,
+      initiatedBy: "automatic_compensation",
+      authorizationSha256: input.session.writePreviewSha256,
+      workspaceRoot: this.options.workspaceRoot,
+      recoveryDirectory: this.recoveryDirectory(input.session.id),
+      now: () => this.now(),
+      recordAttempt: input.recordAttempt,
+      attemptRecorded: () => {
+        this.blocked.add(input.session.id);
+        this.compensation.attemptRecorded(input.session.id);
+      },
+      recordResult: input.recordResult,
+    });
+    this.compensation.resultRecorded(result);
+    await this.acceptResult(result);
+    return result;
   }
 
   private async requireManifest(
@@ -409,7 +385,7 @@ export class WorkspaceProcessRecoveryManager {
   ): boolean {
     const binding = workspaceProcessRecoveryBinding(manifest);
     return (
-      session.schemaVersion === 6 &&
+      session.schemaVersion >= 6 &&
       session.status !== "running" &&
       session.workspaceDeltaStatus === "changed" &&
       session.workspaceAfterTruncated !== true &&
@@ -490,6 +466,22 @@ export class WorkspaceProcessRecoveryManager {
       throw new Error(
         "WorkspaceProcessRecoveryManager.initialize() must be called first",
       );
+    }
+  }
+
+  private async acceptResult(
+    result: WorkspaceProcessRollbackResult,
+  ): Promise<void> {
+    if (result.status === "restored") {
+      this.manifests.delete(result.processId);
+      this.blocked.delete(result.processId);
+      await removeWorkspaceProcessRecovery(
+        this.recoveryDirectory(result.processId),
+      ).catch(() => undefined);
+    } else if (result.status === "indeterminate") {
+      this.blocked.add(result.processId);
+    } else {
+      this.blocked.delete(result.processId);
     }
   }
 }

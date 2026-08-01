@@ -306,6 +306,155 @@ describe("Agent Workspace Process integration", () => {
     await processes.shutdown();
     store.close();
   });
+
+  it("preauthorizes and observes failed-write compensation through the Agent loop", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-agent-process-compensation-test-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const dataRoot = path.join(root, "data");
+    const target = path.join(workspaceRoot, "generated", "result.txt");
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, "BEFORE");
+    const store = new LocalStore({ workspaceRoot, dataRoot });
+    await store.initialize();
+    const sandbox = scopedWriteSandbox(workspaceRoot, {
+      content: "FAILED_RESULT",
+      exitCode: 1,
+    });
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      dataRoot,
+      sandbox,
+    });
+    await processes.initialize();
+    const agent = await store.updateAgent(store.listAgents()[0]!.id, {
+      toolPolicy: "workspace",
+      enabledTools: ["workspace_process"],
+    });
+    const thread = await store.createThread({
+      title: "Agent failed process compensation",
+      agentId: agent.id,
+    });
+    const source =
+      "require('node:fs').writeFileSync('generated/result.txt','FAILED_RESULT');process.exit(1)";
+    const provider = fauxProvider({ provider: "faux-process-compensation" });
+    let previewContext = "";
+    let compensationContext = "";
+    provider.setResponses([
+      fauxAssistantMessage(
+        fauxToolCall("workspace_process", {
+          action: "preview_write",
+          runtime: "node",
+          args: ["-e", source],
+          writePaths: ["generated"],
+          failureRecovery: "restore_scopes",
+          timeoutMs: 10_000,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        previewContext = JSON.stringify(context.messages);
+        const previewId = previewContext.match(
+          /processpreview_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(previewId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "start_write",
+            previewId,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "poll",
+            processId,
+            afterCursor: 0,
+            waitMs: 1_000,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        const processId = JSON.stringify(context.messages).match(
+          /process_[a-z0-9]{20}/u,
+        )?.[0];
+        expect(processId).toBeDefined();
+        return fauxAssistantMessage(
+          fauxToolCall("workspace_process", {
+            action: "poll",
+            processId,
+            afterCursor: 1,
+            waitMs: 1_000,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        compensationContext = JSON.stringify(context.messages);
+        return fauxAssistantMessage(
+          "The failed generator was automatically restored to its approved pre-execution scope.",
+        );
+      },
+      fauxAssistantMessage('{"facts":[]}'),
+    ]);
+    const registry = new ModelRegistry();
+    registry.registerProvider(provider.provider);
+    const runtime = new AgentRuntime(
+      store,
+      registry,
+      undefined,
+      sandbox,
+      processes,
+    );
+
+    const run = await runtime.runPrompt({
+      threadId: thread.id,
+      text: "Run the fallible generator with explicit failure recovery.",
+      model: { provider: "faux-process-compensation", id: "faux-1" },
+    });
+
+    expect(run.status).toBe("completed");
+    expect(previewContext).toContain("Failure recovery: restore_scopes");
+    expect(compensationContext).toContain(
+      "Failure recovery: restore_scopes / restored",
+    );
+    expect(await readFile(target, "utf8")).toBe("BEFORE");
+    expect((await processes.list(thread.id))[0]).toEqual(
+      expect.objectContaining({
+        schemaVersion: 7,
+        status: "failed",
+        failureRecovery: "restore_scopes",
+        workspaceCompensationStatus: "restored",
+        workspaceRollbackAvailable: false,
+      }),
+    );
+    const events = await store.listEvents(thread.id);
+    expect(
+      events
+        .filter((event) => event.type.startsWith("workspace.process."))
+        .map((event) => event.type),
+    ).toEqual([
+      "workspace.process.started",
+      "workspace.process.settled",
+      "workspace.process.rollback_started",
+      "workspace.process.rolled_back",
+    ]);
+    expect(JSON.stringify(events)).not.toContain(source);
+    expect(JSON.stringify(events)).not.toContain("generated/result.txt");
+    expect(JSON.stringify(events)).not.toContain("FAILED_RESULT");
+    await processes.shutdown();
+    store.close();
+  });
 });
 
 function inputSettlingSandbox(output: string): OsSandboxAdapter {
@@ -354,7 +503,10 @@ function inputSettlingSandbox(output: string): OsSandboxAdapter {
   };
 }
 
-function scopedWriteSandbox(workspaceRoot: string): OsSandboxAdapter {
+function scopedWriteSandbox(
+  workspaceRoot: string,
+  options: { content?: string; exitCode?: number } = {},
+): OsSandboxAdapter {
   return {
     id: "agent-process-write-sandbox",
     async launch(request) {
@@ -368,7 +520,7 @@ function scopedWriteSandbox(workspaceRoot: string): OsSandboxAdapter {
       ]);
       await writeFile(
         path.join(workspaceRoot, "generated", "result.txt"),
-        "SCOPED_RESULT",
+        options.content ?? "SCOPED_RESULT",
       );
       const stdin = new PassThrough();
       const stdout = new PassThrough();
@@ -380,7 +532,7 @@ function scopedWriteSandbox(workspaceRoot: string): OsSandboxAdapter {
         stdin,
         stdout,
         stderr,
-        exit: Promise.resolve({ code: 0, signal: null }),
+        exit: Promise.resolve({ code: options.exitCode ?? 0, signal: null }),
         terminate: async () => undefined,
       } satisfies SandboxedProcess;
     },

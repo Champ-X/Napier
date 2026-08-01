@@ -12,12 +12,10 @@ import type {
   WorkspaceProcessRollbackResult,
   WorkspaceProcessResizeReceipt,
   WorkspaceProcessSession,
-  WorkspaceProcessStatus,
   WorkspaceProcessWritePreview,
 } from "@napier/contracts";
 
 import {
-  assertCommandRuntimeStable,
   MAX_COMMAND_OUTPUT_CHARS,
   type CommandRunnerOptions,
   type PreparedCommandExecution,
@@ -47,6 +45,7 @@ import {
   type WriteWorkspaceProcessInputRequest,
 } from "./workspace-process-control.js";
 import { reserveWorkspaceProcessStart } from "./workspace-process-admission.js";
+import { compensateWorkspaceProcessFailure } from "./workspace-process-auto-compensation.js";
 import { WorkspaceProcessRecoveryManager } from "./workspace-process-recovery.js";
 import {
   appendWorkspaceProcessRollbackAttempt,
@@ -64,7 +63,7 @@ import type {
   WorkspacePathSnapshot,
   WorkspaceSnapshotDelta,
 } from "./workspace-snapshot.js";
-import { settleWorkspaceProcessWorkspace } from "./workspace-process-settlement.js";
+import { settleWorkspaceProcessExecution } from "./workspace-process-settlement.js";
 import { workspaceProcessResizeReceiptPayload } from "./workspace-process-resize-events.js";
 import {
   type PreviewWorkspaceProcessWriteRequest,
@@ -112,6 +111,7 @@ interface ActiveWorkspaceProcess
   stderr: StreamCollector;
   timeout: ReturnType<typeof setTimeout>;
   forcedStatus?: ForcedWorkspaceProcessStatus;
+  compensationPending?: boolean;
   interruptionReason?: string;
   termination?: Promise<void>;
   completion: Promise<void>;
@@ -372,13 +372,19 @@ export class WorkspaceProcessManager {
     return sessions.map((session) => {
       const entry = this.entries.get(session.id);
       if (entry) return this.runtimeSession(entry);
-      return session.schemaVersion === 6
+      return session.schemaVersion >= 6
         ? workspaceProcessSessionWithRuntimeState(session, {
             nextCursor: session.nextCursor,
             outputAvailable: false,
             workspaceDeltaAvailable: false,
             workspaceRollbackAvailable:
               this.recovery?.available(session) === true,
+            ...(this.recovery?.compensationStatus(session)
+              ? {
+                  workspaceCompensationStatus:
+                    this.recovery.compensationStatus(session),
+                }
+              : {}),
           })
         : session;
     });
@@ -424,7 +430,8 @@ export class WorkspaceProcessManager {
     if (
       entry &&
       entry.session.threadId === threadId &&
-      entry.session.status === "running" &&
+      (entry.session.status === "running" ||
+        entry.compensationPending === true) &&
       !entry.chunks.some((chunk) => chunk.cursor > afterCursor) &&
       waitMs > 0
     ) {
@@ -659,74 +666,58 @@ export class WorkspaceProcessManager {
     await Promise.all([entry.stdout.completion, entry.stderr.completion]);
     clearTimeout(entry.timeout);
     entry.parentSignal?.removeEventListener("abort", entry.parentAbort!);
-    let status: WorkspaceProcessStatus =
-      entry.forcedStatus ?? (exit.code === 0 ? "succeeded" : "failed");
-    let interruptionReason = entry.interruptionReason;
-    try {
-      await assertCommandRuntimeStable(entry.prepared);
-    } catch {
-      status = "failed";
-      interruptionReason =
-        "The bound command runtime changed during execution.";
-    }
-    const { afterSnapshot, workspaceDelta, writeScopeStatus } =
-      await settleWorkspaceProcessWorkspace({
-        workspaceRoot: entry.prepared.workspaceRoot,
-        beforeSnapshot: entry.beforeSnapshot,
-        ...(entry.relativeWritePaths
-          ? { relativeWritePaths: entry.relativeWritePaths }
-          : {}),
-      });
-    entry.workspaceDelta = workspaceDelta;
-    if (writeScopeStatus === "outside_scope" && !interruptionReason) {
-      interruptionReason =
-        "Workspace changes were observed outside the approved write scope; attribution is unknown.";
-    } else if (writeScopeStatus === "indeterminate" && !interruptionReason) {
-      interruptionReason =
-        "The scoped workspace write could not be completely verified.";
-    }
-    const settledAt = nowIso();
-    const stdoutSha256 = entry.stdout.hash.digest("hex");
-    const stderrSha256 = entry.stderr.hash.digest("hex");
-    const session = createWorkspaceProcessSession({
-      ...stableSessionInput(entry.session),
-      schemaVersion: entry.session.schemaVersion,
-      status,
-      ...(entry.session.schemaVersion >= 3 ? { stdinOpen: false } : {}),
-      settledAt,
-      durationMs: Math.max(
-        0,
-        Date.parse(settledAt) - Date.parse(entry.session.startedAt),
-      ),
-      exitCode: exit.code,
-      signal: exit.signal,
+    const settled = await settleWorkspaceProcessExecution({
+      session: entry.session,
+      prepared: entry.prepared,
+      beforeSnapshot: entry.beforeSnapshot,
+      ...(entry.relativeWritePaths
+        ? { relativeWritePaths: entry.relativeWritePaths }
+        : {}),
+      ...(entry.forcedStatus ? { forcedStatus: entry.forcedStatus } : {}),
+      ...(entry.interruptionReason
+        ? { interruptionReason: entry.interruptionReason }
+        : {}),
+      exit,
       stdoutChars: entry.stdout.chars,
       stderrChars: entry.stderr.chars,
-      stdoutSha256,
-      stderrSha256,
+      stdoutSha256: entry.stdout.hash.digest("hex"),
+      stderrSha256: entry.stderr.hash.digest("hex"),
       stdoutTruncated: entry.stdout.truncated,
       stderrTruncated: entry.stderr.truncated,
       nextCursor: entry.nextCursor,
-      workspaceAfterSha256: afterSnapshot.sha256,
-      workspaceAfterTruncated: afterSnapshot.truncated,
-      workspaceDeltaStatus: workspaceDelta.status,
-      workspaceChangedFileCount: workspaceDelta.changedFileCount,
-      workspaceChangedPathSetSha256: workspaceDelta.changedPathSetSha256,
-      ...(writeScopeStatus
-        ? { workspaceWriteScopeStatus: writeScopeStatus }
-        : {}),
-      ...(interruptionReason ? { interruptionReason } : {}),
     });
+    const { session, workspaceDelta } = settled;
+    entry.workspaceDelta = workspaceDelta;
+    const compensationEligible =
+      session.schemaVersion === 7 &&
+      session.failureRecovery === "restore_scopes" &&
+      session.workspaceDeltaStatus === "changed" &&
+      session.workspaceWriteScopeStatus === "within_scope" &&
+      session.status !== "succeeded" &&
+      session.status !== "interrupted";
+    entry.compensationPending = compensationEligible;
     entry.session = session;
-    this.notifyChange(entry);
+    if (!compensationEligible) this.notifyChange(entry);
     await this.appendSession(
       session,
-      status === "interrupted"
+      session.status === "interrupted"
         ? WORKSPACE_PROCESS_INTERRUPTED_EVENT
         : WORKSPACE_PROCESS_SETTLED_EVENT,
     );
+    if (compensationEligible) {
+      try {
+        await compensateWorkspaceProcessFailure({
+          recovery: this.recovery!,
+          store: this.options.store,
+          session,
+        }).catch(() => undefined);
+      } finally {
+        entry.compensationPending = false;
+      }
+      this.notifyChange(entry);
+    }
     if (
-      session.schemaVersion === 6 &&
+      session.schemaVersion >= 6 &&
       session.workspaceDeltaStatus !== "changed"
     ) {
       await this.recovery?.remove(session.id);
@@ -764,6 +755,7 @@ export class WorkspaceProcessManager {
     clearTimeout(entry.timeout);
     entry.parentSignal?.removeEventListener("abort", entry.parentAbort!);
     delete entry.workspaceDelta;
+    entry.compensationPending = false;
     entry.session = createWorkspaceProcessSession({
       ...stableSessionInput(entry.session),
       schemaVersion: entry.session.schemaVersion,
@@ -852,14 +844,22 @@ export class WorkspaceProcessManager {
   private runtimeSession(
     entry: ActiveWorkspaceProcess,
   ): WorkspaceProcessSession {
+    const compensationStatus = entry.compensationPending
+      ? "pending"
+      : this.recovery?.compensationStatus(entry.session);
     return workspaceProcessSessionWithRuntimeState(entry.session, {
       nextCursor: entry.nextCursor,
       outputAvailable: !entry.privateProtocol,
       workspaceDeltaAvailable: Boolean(entry.workspaceDelta),
-      ...(entry.session.schemaVersion === 6
+      ...(entry.session.schemaVersion >= 6
         ? {
             workspaceRollbackAvailable:
               this.recovery?.available(entry.session) === true,
+            ...(compensationStatus
+              ? {
+                  workspaceCompensationStatus: compensationStatus,
+                }
+              : {}),
           }
         : {}),
       ...(entry.privateProtocol &&

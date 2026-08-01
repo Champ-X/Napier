@@ -16,6 +16,7 @@ import {
   WORKSPACE_PROCESS_TERMINAL_FIELDS,
 } from "./workspace-process-resize-events.js";
 import { projectWorkspaceProcessRollbackHistory } from "./workspace-process-rollback-events.js";
+export { workspaceProcessSessionWithRuntimeState } from "./workspace-process-runtime-session.js";
 export {
   parseWorkspaceProcessRollbackAttempt,
   parseWorkspaceProcessRollbackResult,
@@ -53,8 +54,9 @@ export type WorkspaceProcessSessionInput = Omit<
   | "outputAvailable"
   | "workspaceDeltaAvailable"
   | "workspaceRollbackAvailable"
+  | "workspaceCompensationStatus"
   | "contentSha256"
-> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 | 6 };
+> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 | 6 | 7 };
 
 export function createWorkspaceProcessSession(
   input: WorkspaceProcessSessionInput,
@@ -96,6 +98,7 @@ export function workspaceProcessStableSessionInput(
   | "outputAvailable"
   | "workspaceDeltaAvailable"
   | "workspaceRollbackAvailable"
+  | "workspaceCompensationStatus"
   | "contentSha256"
 > {
   const {
@@ -105,6 +108,7 @@ export function workspaceProcessStableSessionInput(
     outputAvailable: _outputAvailable,
     workspaceDeltaAvailable: _workspaceDeltaAvailable,
     workspaceRollbackAvailable: _workspaceRollbackAvailable,
+    workspaceCompensationStatus: _workspaceCompensationStatus,
     contentSha256: _contentSha256,
     ...input
   } = session;
@@ -269,34 +273,6 @@ export function parseWorkspaceProcessInputReceipt(
   return structuredClone(value) as unknown as WorkspaceProcessInputReceipt;
 }
 
-export function workspaceProcessSessionWithRuntimeState(
-  session: WorkspaceProcessSession,
-  runtime: {
-    nextCursor: number;
-    outputAvailable: boolean;
-    workspaceDeltaAvailable: boolean;
-    workspaceRollbackAvailable?: boolean;
-    stdinOpen?: boolean;
-  },
-): WorkspaceProcessSession {
-  const { contentSha256: _contentSha256, ...content } = {
-    ...session,
-    nextCursor: runtime.nextCursor,
-    outputAvailable: runtime.outputAvailable,
-    workspaceDeltaAvailable: runtime.workspaceDeltaAvailable,
-    ...(runtime.workspaceRollbackAvailable !== undefined
-      ? { workspaceRollbackAvailable: runtime.workspaceRollbackAvailable }
-      : {}),
-    ...(runtime.stdinOpen !== undefined
-      ? { stdinOpen: runtime.stdinOpen }
-      : {}),
-  };
-  return {
-    ...content,
-    contentSha256: sha256(canonicalJson(content)),
-  };
-}
-
 function parseWorkspaceProcessSession(
   value: unknown,
 ): WorkspaceProcessSession | undefined {
@@ -309,7 +285,8 @@ function parseWorkspaceProcessSession(
       value["schemaVersion"] !== 3 &&
       value["schemaVersion"] !== 4 &&
       value["schemaVersion"] !== 5 &&
-      value["schemaVersion"] !== 6) ||
+      value["schemaVersion"] !== 6 &&
+      value["schemaVersion"] !== 7) ||
     typeof status !== "string" ||
     !STATUSES.has(status as WorkspaceProcessStatus) ||
     typeof value["id"] !== "string" ||
@@ -373,12 +350,17 @@ function parseWorkspaceProcessSession(
     "recoveryBytes",
     "workspaceRollbackAvailable",
   ] as const;
+  const compensationFields = [
+    "failureRecovery",
+    "workspaceCompensationStatus",
+  ] as const;
   if (value["schemaVersion"] === 1) {
     if (
       workspaceFields.some((field) => value[field] !== undefined) ||
       stdinFields.some((field) => value[field] !== undefined) ||
       writeFields.some((field) => value[field] !== undefined) ||
       recoveryFields.some((field) => value[field] !== undefined) ||
+      compensationFields.some((field) => value[field] !== undefined) ||
       WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
         (field) => value[field] !== undefined,
       )
@@ -437,7 +419,8 @@ function parseWorkspaceProcessSession(
     (value["schemaVersion"] < 5 &&
       (value["workspaceAccess"] !== "read_only" ||
         writeFields.some((field) => value[field] !== undefined) ||
-        recoveryFields.some((field) => value[field] !== undefined))) ||
+        recoveryFields.some((field) => value[field] !== undefined) ||
+        compensationFields.some((field) => value[field] !== undefined))) ||
     (value["schemaVersion"] >= 5 &&
       (value["workspaceAccess"] !== "scoped_write" ||
         !hash(value["writePreviewSha256"]) ||
@@ -454,8 +437,9 @@ function parseWorkspaceProcessSession(
   }
   if (
     (value["schemaVersion"] === 5 &&
-      recoveryFields.some((field) => value[field] !== undefined)) ||
-    (value["schemaVersion"] === 6 &&
+      (recoveryFields.some((field) => value[field] !== undefined) ||
+        compensationFields.some((field) => value[field] !== undefined))) ||
+    (value["schemaVersion"] >= 6 &&
       (!hash(value["recoverySnapshotSha256"]) ||
         !boundedInteger(value["recoveryScopeCount"], 1, 8) ||
         !boundedInteger(value["recoveryFileCount"], 0, 10_000) ||
@@ -464,7 +448,12 @@ function parseWorkspaceProcessSession(
           Number(value["recoveryDirectoryCount"]) >
           10_000 ||
         !boundedInteger(value["recoveryBytes"], 0, 64 * 1024 * 1024) ||
-        value["workspaceRollbackAvailable"] !== false))
+        value["workspaceRollbackAvailable"] !== false)) ||
+    (value["schemaVersion"] === 6 &&
+      compensationFields.some((field) => value[field] !== undefined)) ||
+    (value["schemaVersion"] === 7 &&
+      (value["failureRecovery"] !== "restore_scopes" ||
+        value["workspaceCompensationStatus"] !== undefined))
   ) {
     return undefined;
   }

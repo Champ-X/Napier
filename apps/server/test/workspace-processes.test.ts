@@ -1,4 +1,11 @@
-import { lstat, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -378,6 +385,93 @@ describe("Workspace Process HTTP API", () => {
     expect(JSON.stringify(detail.events)).not.toContain("api-result.txt");
     expect(JSON.stringify(detail.events)).not.toContain("SCOPED_HTTP_RESULT");
   });
+
+  it("projects preauthorized failure compensation through Process and Thread HTTP", async () => {
+    const root = await mkdtemp(
+      path.join(tmpdir(), "napier-server-compensation-"),
+    );
+    temporaryRoots.push(root);
+    const workspaceRoot = path.join(root, "workspace");
+    const generated = path.join(workspaceRoot, "generated");
+    const target = path.join(generated, "api-result.txt");
+    await mkdir(generated, { recursive: true });
+    await writeFile(target, "HTTP_BEFORE");
+    const services = await createServices({
+      dataRoot: path.join(root, "data"),
+      workspaceRoot,
+      sandbox: scopedWriteSandbox({
+        content: "HTTP_FAILED_RESULT",
+        exitCode: 1,
+      }),
+    });
+    openServices.push(services);
+    const app = createApp(services);
+    const agent = services.store.listAgents()[0]!;
+    const thread = await services.store.createThread({
+      title: "Compensated Process API",
+      agentId: agent.id,
+    });
+    const run = await services.store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const preview = await services.workspaceProcesses.previewWrite({
+      threadId: thread.id,
+      runId: run.id,
+      command: {
+        runtime: "node",
+        args: ["-e", "write generated/api-result.txt then fail"],
+      },
+      writePaths: ["generated"],
+      failureRecovery: "restore_scopes",
+    });
+    const started = await services.workspaceProcesses.startWrite({
+      threadId: thread.id,
+      runId: run.id,
+      previewId: preview.id,
+    });
+    await services.workspaceProcesses.waitForSettlement(thread.id, started.id);
+
+    const listResponse = await app.request(
+      `/api/threads/${thread.id}/processes`,
+    );
+    expect(listResponse.status).toBe(200);
+    expect((await listResponse.json()) as WorkspaceProcessSession[]).toEqual([
+      expect.objectContaining({
+        id: started.id,
+        schemaVersion: 7,
+        status: "failed",
+        failureRecovery: "restore_scopes",
+        workspaceCompensationStatus: "restored",
+        workspaceRollbackAvailable: false,
+      }),
+    ]);
+    expect(await readFile(target, "utf8")).toBe("HTTP_BEFORE");
+    const detail = (await (
+      await app.request(`/api/threads/${thread.id}`)
+    ).json()) as ThreadDetail;
+    expect(
+      detail.events
+        .filter(
+          (event) =>
+            event.type === "workspace.process.rollback_started" ||
+            event.type === "workspace.process.rolled_back",
+        )
+        .map((event) => [
+          event.type,
+          event.payload &&
+          !Array.isArray(event.payload) &&
+          typeof event.payload === "object"
+            ? event.payload["initiatedBy"]
+            : undefined,
+        ]),
+    ).toEqual([
+      ["workspace.process.rollback_started", "automatic_compensation"],
+      ["workspace.process.rolled_back", "automatic_compensation"],
+    ]);
+    expect(JSON.stringify(detail.events)).not.toContain("api-result.txt");
+    expect(JSON.stringify(detail.events)).not.toContain("HTTP_FAILED_RESULT");
+  });
 });
 
 function createControlledSandbox() {
@@ -418,7 +512,9 @@ function createControlledSandbox() {
   return { sandbox, stdin, stdout, terminate };
 }
 
-function scopedWriteSandbox(): OsSandboxAdapter {
+function scopedWriteSandbox(
+  options: { content?: string; exitCode?: number } = {},
+): OsSandboxAdapter {
   return {
     id: "server-process-write-sandbox",
     async launch(request) {
@@ -426,7 +522,7 @@ function scopedWriteSandbox(): OsSandboxAdapter {
       expect(request.workspaceWritePaths).toEqual([generated]);
       await writeFile(
         path.join(generated, "api-result.txt"),
-        "SCOPED_HTTP_RESULT",
+        options.content ?? "SCOPED_HTTP_RESULT",
       );
       const stdin = new PassThrough();
       const stdout = new PassThrough();
@@ -437,7 +533,7 @@ function scopedWriteSandbox(): OsSandboxAdapter {
         stdin,
         stdout,
         stderr,
-        exit: Promise.resolve({ code: 0, signal: null }),
+        exit: Promise.resolve({ code: options.exitCode ?? 0, signal: null }),
         terminate: async () => undefined,
       } satisfies SandboxedProcess;
     },

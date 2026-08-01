@@ -10,6 +10,7 @@ export function createWorkspaceProcessRollbackAttempt(input: {
   threadId: string;
   runId: string;
   processId: string;
+  initiatedBy: WorkspaceProcessRollbackAttempt["initiatedBy"];
   previewSha256: string;
   recoverySnapshotSha256: string;
   expectedWorkspaceSha256: string;
@@ -23,7 +24,6 @@ export function createWorkspaceProcessRollbackAttempt(input: {
     kind: "napier.workspace-process-rollback-attempt" as const,
     schemaVersion: 1 as const,
     ...input,
-    initiatedBy: "operator" as const,
   };
   return {
     ...content,
@@ -49,7 +49,7 @@ export function createWorkspaceProcessRollbackResult(input: {
     threadId: input.attempt.threadId,
     runId: input.attempt.runId,
     processId: input.attempt.processId,
-    initiatedBy: "operator" as const,
+    initiatedBy: input.attempt.initiatedBy,
     attemptSha256: input.attempt.contentSha256,
     status: input.status,
     recoverySnapshotSha256: input.attempt.recoverySnapshotSha256,

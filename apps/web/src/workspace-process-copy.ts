@@ -69,6 +69,16 @@ export const workspaceProcessCopy = {
   rollbackEvidence: "Rollback evidence",
   rollbackError:
     "Rollback was rejected or its outcome is unknown. Refresh the session and inspect the workspace before retrying.",
+  failureRecovery: "Failure recovery",
+  failureRecoveryRestore: "Restore approved scopes after unsuccessful exit",
+  compensationPending: "Pending process settlement",
+  compensationNotNeeded: "Not needed",
+  compensationRestored: "Approved scopes restored automatically",
+  compensationReverted: "Automatic restore reverted; operator review available",
+  compensationIndeterminate:
+    "Automatic restore is indeterminate; inspect the workspace",
+  compensationUnavailable:
+    "Automatic restore was not safe; operator review may be available",
   commandHash: "Command",
   outputHashes: "stdout / stderr",
   started: "Started",

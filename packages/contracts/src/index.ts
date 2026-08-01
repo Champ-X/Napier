@@ -4264,10 +4264,18 @@ export type WorkspaceProcessWriteScopeStatus =
   | "indeterminate";
 export type WorkspaceProcessStdinMode = "closed" | "interactive";
 export type WorkspaceProcessIoMode = "pipe" | "pty";
+export type WorkspaceProcessFailureRecovery = "restore_scopes";
+export type WorkspaceProcessCompensationStatus =
+  | "pending"
+  | "not_needed"
+  | "restored"
+  | "reverted"
+  | "indeterminate"
+  | "unavailable";
 
 export interface WorkspaceProcessWritePreview {
   kind: "napier.workspace-process-write-preview";
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   id: string;
   threadId: string;
   runId: string;
@@ -4289,6 +4297,7 @@ export interface WorkspaceProcessWritePreview {
   workspaceBeforeSha256: string;
   workspaceBeforeFileCount: number;
   workspaceBeforeBytes: number;
+  failureRecovery?: WorkspaceProcessFailureRecovery;
   createdAt: string;
   expiresAt: string;
   contentSha256: string;
@@ -4296,7 +4305,7 @@ export interface WorkspaceProcessWritePreview {
 
 export interface WorkspaceProcessSession {
   kind: "napier.workspace-process-session";
-  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7;
   id: string;
   threadId: string;
   runId: string;
@@ -4339,6 +4348,8 @@ export interface WorkspaceProcessSession {
   recoveryFileCount?: number;
   recoveryDirectoryCount?: number;
   recoveryBytes?: number;
+  failureRecovery?: WorkspaceProcessFailureRecovery;
+  workspaceCompensationStatus?: WorkspaceProcessCompensationStatus;
   workspaceRollbackAvailable?: boolean;
   workspaceDeltaAvailable?: boolean;
   startedAt: string;
@@ -4384,7 +4395,7 @@ export interface WorkspaceProcessRollbackAttempt {
   threadId: string;
   runId: string;
   processId: string;
-  initiatedBy: "operator";
+  initiatedBy: "operator" | "automatic_compensation";
   previewSha256: string;
   recoverySnapshotSha256: string;
   expectedWorkspaceSha256: string;
@@ -4403,7 +4414,7 @@ export interface WorkspaceProcessRollbackResult {
   threadId: string;
   runId: string;
   processId: string;
-  initiatedBy: "operator";
+  initiatedBy: "operator" | "automatic_compensation";
   attemptSha256: string;
   status: "restored" | "reverted" | "indeterminate";
   recoverySnapshotSha256: string;

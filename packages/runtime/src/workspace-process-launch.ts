@@ -151,7 +151,7 @@ function createRunningSession(input: {
   recoveryBinding?: WorkspaceProcessRecoveryBinding;
 }): WorkspaceProcessSession {
   return createWorkspaceProcessSession({
-    schemaVersion: input.write ? 6 : 4,
+    schemaVersion: input.write ? (input.write.failureRecovery ? 7 : 6) : 4,
     id: input.processId,
     threadId: input.request.threadId,
     runId: input.request.runId,
@@ -182,6 +182,9 @@ function createRunningSession(input: {
           writePreviewSha256: input.write.preview.contentSha256,
           writeScopeCount: input.write.preview.writeScopeCount,
           writeScopeSetSha256: input.write.preview.writeScopeSetSha256,
+          ...(input.write.failureRecovery
+            ? { failureRecovery: input.write.failureRecovery }
+            : {}),
           ...input.recoveryBinding!,
         }
       : {}),

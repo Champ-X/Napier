@@ -128,6 +128,7 @@ export function projectWorkspaceProcessRollbackHistory(
       !session ||
       closed.has(result.processId) ||
       result.id !== attempt.id ||
+      result.initiatedBy !== attempt.initiatedBy ||
       result.attemptSha256 !== attempt.contentSha256 ||
       result.scopeCount !== attempt.scopeCount ||
       result.fileCount !== attempt.fileCount ||
@@ -159,7 +160,8 @@ export function parseWorkspaceProcessRollbackAttempt(
     !RESOURCE_ID.test(value["runId"]) ||
     typeof value["processId"] !== "string" ||
     !PROCESS_ID.test(value["processId"]) ||
-    value["initiatedBy"] !== "operator" ||
+    (value["initiatedBy"] !== "operator" &&
+      value["initiatedBy"] !== "automatic_compensation") ||
     !hash(value["previewSha256"]) ||
     !hash(value["recoverySnapshotSha256"]) ||
     !hash(value["expectedWorkspaceSha256"]) ||
@@ -205,7 +207,8 @@ export function parseWorkspaceProcessRollbackResult(
     !RESOURCE_ID.test(value["runId"]) ||
     typeof value["processId"] !== "string" ||
     !PROCESS_ID.test(value["processId"]) ||
-    value["initiatedBy"] !== "operator" ||
+    (value["initiatedBy"] !== "operator" &&
+      value["initiatedBy"] !== "automatic_compensation") ||
     !hash(value["attemptSha256"]) ||
     (value["status"] !== "restored" &&
       value["status"] !== "reverted" &&
@@ -252,14 +255,19 @@ function rollbackEvidenceMatchesSession(
   event: RunEvent,
 ): boolean {
   return (
-    session.schemaVersion === 6 &&
+    session.schemaVersion >= 6 &&
     session.status !== "running" &&
     evidence.threadId === event.threadId &&
     evidence.runId === event.runId &&
     evidence.threadId === session.threadId &&
     evidence.runId === session.runId &&
     evidence.recoverySnapshotSha256 === session.recoverySnapshotSha256 &&
-    evidence.expectedWorkspaceSha256 === session.workspaceAfterSha256
+    evidence.expectedWorkspaceSha256 === session.workspaceAfterSha256 &&
+    (evidence.initiatedBy === "operator" ||
+      (session.schemaVersion === 7 &&
+        session.failureRecovery === "restore_scopes" &&
+        (evidence.kind === "napier.workspace-process-rollback" ||
+          evidence.previewSha256 === session.writePreviewSha256)))
   );
 }
 

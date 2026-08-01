@@ -29,6 +29,8 @@ export interface WorkspaceProcessToolDetails {
   workspaceAccess?: "read_only" | "scoped_write";
   writeScopeCount?: number;
   writeScopeSetSha256?: string;
+  failureRecovery?: "restore_scopes";
+  workspaceCompensationStatus?: WorkspaceProcessSession["workspaceCompensationStatus"];
   workspaceWriteScopeStatus?:
     | "within_scope"
     | "outside_scope"
@@ -77,6 +79,12 @@ export function workspaceProcessToolResult(
     ...(session.writeScopeSetSha256
       ? { writeScopeSetSha256: session.writeScopeSetSha256 }
       : {}),
+    ...(session.failureRecovery
+      ? { failureRecovery: session.failureRecovery }
+      : {}),
+    ...(session.workspaceCompensationStatus
+      ? { workspaceCompensationStatus: session.workspaceCompensationStatus }
+      : {}),
     ...(session.workspaceWriteScopeStatus
       ? { workspaceWriteScopeStatus: session.workspaceWriteScopeStatus }
       : {}),
@@ -118,6 +126,9 @@ export function workspaceProcessToolResult(
         workspaceAccess: session.workspaceAccess,
         writeScopeCount: session.writeScopeCount ?? null,
         writeScopeSetSha256: session.writeScopeSetSha256 ?? null,
+        failureRecovery: session.failureRecovery ?? null,
+        workspaceCompensationStatus:
+          session.workspaceCompensationStatus ?? null,
         workspaceWriteScopeStatus: session.workspaceWriteScopeStatus ?? null,
         nextCursor: chunks.at(-1)?.cursor ?? session.nextCursor,
         chunkCount: chunks.length,
@@ -146,6 +157,11 @@ export function workspaceProcessToolResult(
       ? [
           `Write scopes: ${session.writeScopeCount} / ${session.writeScopeSetSha256}`,
           `Write scope verification: ${session.workspaceWriteScopeStatus ?? "pending"}`,
+          ...(session.failureRecovery
+            ? [
+                `Failure recovery: ${session.failureRecovery} / ${session.workspaceCompensationStatus ?? "pending"}`,
+              ]
+            : []),
         ]
       : []),
     `I/O mode: ${session.ioMode ?? "legacy-pipe"}`,
@@ -162,7 +178,7 @@ export function workspaceProcessToolResult(
         ]
       : []),
     `Workspace delta: ${session.workspaceDeltaStatus ?? "pending"}`,
-    `${session.schemaVersion === 5 ? "Workspace changed paths" : "Workspace changed files"}: ${
+    `${session.schemaVersion >= 5 ? "Workspace changed paths" : "Workspace changed files"}: ${
       session.workspaceDeltaStatus === "indeterminate"
         ? "unknown"
         : (session.workspaceChangedFileCount ?? "unknown")
@@ -203,6 +219,9 @@ export function workspaceProcessWritePreviewToolResult(
     workspaceAccess: "scoped_write",
     writeScopeCount: preview.writeScopeCount,
     writeScopeSetSha256: preview.writeScopeSetSha256,
+    ...(preview.failureRecovery
+      ? { failureRecovery: preview.failureRecovery }
+      : {}),
     ioMode: preview.ioMode,
     ...(preview.terminalColumns !== undefined
       ? { terminalColumns: preview.terminalColumns }
@@ -218,6 +237,7 @@ export function workspaceProcessWritePreviewToolResult(
         workspaceBeforeSha256: preview.workspaceBeforeSha256,
         writeScopeCount: preview.writeScopeCount,
         writeScopeSetSha256: preview.writeScopeSetSha256,
+        failureRecovery: preview.failureRecovery ?? null,
       }),
     ),
   };
@@ -232,6 +252,7 @@ export function workspaceProcessWritePreviewToolResult(
           `Workspace before SHA-256: ${preview.workspaceBeforeSha256}`,
           `Workspace: ${preview.workspaceBeforeFileCount} files / ${preview.workspaceBeforeBytes} bytes`,
           `Write scopes: ${preview.writeScopeCount} / ${preview.writeScopeSetSha256}`,
+          `Failure recovery: ${preview.failureRecovery ?? "operator_only"}`,
           `I/O mode: ${preview.ioMode}`,
           `Expires: ${preview.expiresAt}`,
           "Start only with start_write and this one-use preview ID.",

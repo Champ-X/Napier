@@ -1,7 +1,10 @@
 import { lstat, readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
 
-import type { WorkspaceProcessWritePreview } from "@napier/contracts";
+import type {
+  WorkspaceProcessFailureRecovery,
+  WorkspaceProcessWritePreview,
+} from "@napier/contracts";
 
 import {
   assertCommandRuntimeStable,
@@ -37,6 +40,7 @@ export interface PreviewWorkspaceProcessWriteRequest {
   runId: string;
   command: CommandExecutionRequest;
   writePaths: string[];
+  failureRecovery?: WorkspaceProcessFailureRecovery;
   interactive?: boolean;
   terminal?: WorkspaceProcessTerminalSize;
   signal?: AbortSignal;
@@ -59,6 +63,7 @@ export interface PreparedWorkspaceProcessWrite {
   beforeSnapshot: WorkspacePathSnapshot;
   absoluteWritePaths: string[];
   relativeWritePaths: string[];
+  failureRecovery?: WorkspaceProcessFailureRecovery;
 }
 
 export interface WorkspaceProcessWriteStartRequest {
@@ -86,6 +91,12 @@ export class WorkspaceProcessWritePreviewManager {
     request: PreviewWorkspaceProcessWriteRequest,
   ): Promise<WorkspaceProcessWritePreview> {
     request.signal?.throwIfAborted();
+    if (
+      request.failureRecovery !== undefined &&
+      request.failureRecovery !== "restore_scopes"
+    ) {
+      throw new Error("Workspace Process failure recovery policy is invalid");
+    }
     if (request.terminal !== undefined && request.interactive !== undefined) {
       throw new Error(
         "Workspace Process write PTY mode cannot be combined with pipe interactive mode",
@@ -129,7 +140,7 @@ export class WorkspaceProcessWritePreviewManager {
     ).toISOString();
     const content = {
       kind: "napier.workspace-process-write-preview" as const,
-      schemaVersion: 1 as const,
+      schemaVersion: request.failureRecovery ? (2 as const) : (1 as const),
       id: createId("processpreview"),
       threadId: request.threadId,
       runId: request.runId,
@@ -155,6 +166,9 @@ export class WorkspaceProcessWritePreviewManager {
       workspaceBeforeSha256: beforeSnapshot.sha256,
       workspaceBeforeFileCount: beforeSnapshot.fileCount,
       workspaceBeforeBytes: beforeSnapshot.bytes,
+      ...(request.failureRecovery
+        ? { failureRecovery: request.failureRecovery }
+        : {}),
       createdAt,
       expiresAt,
     };
@@ -181,6 +195,9 @@ export class WorkspaceProcessWritePreviewManager {
       beforeSnapshot,
       absoluteWritePaths: scopes.absolute,
       relativeWritePaths: scopes.relative,
+      ...(request.failureRecovery
+        ? { failureRecovery: request.failureRecovery }
+        : {}),
     });
     return structuredClone(preview);
   }

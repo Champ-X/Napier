@@ -115,7 +115,8 @@ export function validWorkspaceProcessTerminalFields(
   if (
     value["schemaVersion"] !== 4 &&
     value["schemaVersion"] !== 5 &&
-    value["schemaVersion"] !== 6
+    value["schemaVersion"] !== 6 &&
+    value["schemaVersion"] !== 7
   )
     return false;
   if (value["ioMode"] === "pipe") {

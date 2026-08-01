@@ -30,6 +30,7 @@ const writePaths = Type.Array(
   }),
   { minItems: 1, maxItems: MAX_WORKSPACE_PROCESS_WRITE_SCOPES },
 );
+const failureRecovery = Type.Optional(Type.Literal("restore_scopes"));
 
 export const workspaceProcessWriteActionSchema = Type.Union([
   Type.Object(
@@ -40,6 +41,7 @@ export const workspaceProcessWriteActionSchema = Type.Union([
       cwd,
       timeoutMs,
       writePaths,
+      failureRecovery,
       interactive: Type.Optional(Type.Boolean()),
     },
     { additionalProperties: false },
@@ -52,6 +54,7 @@ export const workspaceProcessWriteActionSchema = Type.Union([
       cwd,
       timeoutMs,
       writePaths,
+      failureRecovery,
       terminal: Type.Object(
         {
           columns: Type.Integer({

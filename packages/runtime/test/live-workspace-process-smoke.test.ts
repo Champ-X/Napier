@@ -128,6 +128,81 @@ describeLive("live Workspace Process smoke", () => {
     store.close();
   }, 30_000);
 
+  it("automatically restores a failed scoped write in the real OS sandbox", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-process-compensation-workspace-"),
+    );
+    const dataRoot = await mkdtemp(
+      path.join(tmpdir(), "napier-live-process-compensation-"),
+    );
+    temporaryRoots.push(workspaceRoot, dataRoot);
+    const generated = path.join(workspaceRoot, "generated");
+    const target = path.join(generated, "live.txt");
+    await mkdir(generated);
+    await writeFile(target, "LIVE_BEFORE");
+    const store = new LocalStore({ workspaceRoot, dataRoot });
+    await store.initialize();
+    const processes = new WorkspaceProcessManager({
+      store,
+      workspaceRoot,
+      dataRoot,
+      sandbox: createPlatformSandboxAdapter(),
+    });
+    await processes.initialize();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Live scoped Process compensation",
+      agentId: agent.id,
+    });
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+    });
+    const preview = await processes.previewWrite({
+      threadId: thread.id,
+      runId: run.id,
+      command: {
+        runtime: "node",
+        args: [
+          "-e",
+          "require('node:fs').writeFileSync('generated/live.txt','LIVE_FAILED_WRITE');process.exit(7)",
+        ],
+        timeoutMs: 10_000,
+      },
+      writePaths: ["generated"],
+      failureRecovery: "restore_scopes",
+    });
+    const started = await processes.startWrite({
+      threadId: thread.id,
+      runId: run.id,
+      previewId: preview.id,
+    });
+    expect(await processes.waitForSettlement(thread.id, started.id)).toEqual(
+      expect.objectContaining({
+        schemaVersion: 7,
+        status: "failed",
+        workspaceCompensationStatus: "restored",
+        workspaceRollbackAvailable: false,
+      }),
+    );
+    expect(await readFile(target, "utf8")).toBe("LIVE_BEFORE");
+    const events = await store.listEvents(thread.id);
+    expect(
+      events
+        .filter((event) => event.type.startsWith("workspace.process."))
+        .map((event) => event.type),
+    ).toEqual([
+      "workspace.process.started",
+      "workspace.process.settled",
+      "workspace.process.rollback_started",
+      "workspace.process.rolled_back",
+    ]);
+    expect(JSON.stringify(events)).not.toContain("generated/live.txt");
+    expect(JSON.stringify(events)).not.toContain("LIVE_FAILED_WRITE");
+    await processes.shutdown();
+    store.close();
+  }, 30_000);
+
   it("keeps state across bounded input writes in the real Agent sandbox", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "napier-live-process-workspace-"),
