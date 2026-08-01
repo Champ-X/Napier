@@ -29,6 +29,10 @@ export interface DelegationDetails {
   changedFileCount?: number;
   changedFileSetSha256?: string;
   sourceSnapshotSha256?: string;
+  candidateAddedFileCount?: number;
+  candidateModifiedFileCount?: number;
+  candidateDeletedFileCount?: number;
+  candidateRenamedFileCount?: number;
   candidateVerificationAttemptCount?: number;
   candidateVerificationFreshCount?: number;
   candidateVerificationPassedCount?: number;
@@ -61,6 +65,10 @@ export function subagentTaskPayload(
           sourceSnapshotSha256: preview.sourceSnapshotSha256,
           changedFileCount: preview.changedFileCount,
           changedFileSetSha256: preview.changedFileSetSha256,
+          candidateAddedFileCount: preview.addedFileCount,
+          candidateModifiedFileCount: preview.modifiedFileCount,
+          candidateDeletedFileCount: preview.deletedFileCount,
+          candidateRenamedFileCount: preview.renamedFileCount,
           candidateVerificationAttemptCount:
             preview.candidateVerification.attemptCount,
           candidateVerificationFreshCount:
@@ -106,6 +114,10 @@ export function subagentTaskDetails(
           changedFileCount: preview.changedFileCount,
           changedFileSetSha256: preview.changedFileSetSha256,
           sourceSnapshotSha256: preview.sourceSnapshotSha256,
+          candidateAddedFileCount: preview.addedFileCount,
+          candidateModifiedFileCount: preview.modifiedFileCount,
+          candidateDeletedFileCount: preview.deletedFileCount,
+          candidateRenamedFileCount: preview.renamedFileCount,
           candidateVerificationAttemptCount:
             preview.candidateVerification.attemptCount,
           candidateVerificationFreshCount:
@@ -140,6 +152,7 @@ export function formatDelegationResult(
           "",
           "Coder worktree candidate is isolated and not yet merged.",
           `Changed files: ${preview.changedFileCount}`,
+          `Lifecycle: ${preview.addedFileCount} added / ${preview.modifiedFileCount} modified / ${preview.deletedFileCount} deleted / ${preview.renamedFileCount} renamed`,
           ...preview.changedPaths.map((candidate) => `- ${candidate}`),
           `Apply preview: ${preview.id}`,
           `Preview expires: ${preview.expiresAt}`,
@@ -260,6 +273,10 @@ export function delegateTaskOutputLedgerProjection(
             changedFileCount: details["changedFileCount"],
             changedFileSetSha256: details["changedFileSetSha256"],
             sourceSnapshotSha256: details["sourceSnapshotSha256"],
+            candidateAddedFileCount: details["candidateAddedFileCount"],
+            candidateModifiedFileCount: details["candidateModifiedFileCount"],
+            candidateDeletedFileCount: details["candidateDeletedFileCount"],
+            candidateRenamedFileCount: details["candidateRenamedFileCount"],
             candidateVerificationAttemptCount:
               details["candidateVerificationAttemptCount"],
             candidateVerificationFreshCount:

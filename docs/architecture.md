@@ -2814,7 +2814,7 @@ capability:
 ```text
 parent delegate_task(role=coder, writePaths)
   -> require workspace policy, apply_patch, lsp_diagnostics, and 1-8 unique
-     existing regular UTF-8 write paths
+     regular UTF-8 file paths; absent paths are explicit creation grants
   -> create dataRoot/subagent-worktrees/<workerId>/<taskId> with 0700 parents
   -> scan the canonical workspace twice and require one stable snapshot
   -> copy <=2,000 files, <=32 MiB total, <=1 MiB each with O_NOFOLLOW,
@@ -2824,18 +2824,21 @@ child Pi Agent
   -> install <=512 protected dependency links across <=64 package scopes:
      external packages remain under the parent read-only node_modules while
      workspace-package links resolve to the corresponding private directories
-  -> wrap apply_patch so create, undeclared paths, and missing expected hashes
-     fail before private mutation
-  -> serialize private patches, one-shot LSP diagnostics, and optional fixed
-     Sandbox verification through one candidate operation queue
+  -> wrap apply_patch so only granted create/modify paths are accepted
+  -> expose candidate_file delete/move with hash and destination-absence CAS;
+     both rename source and destination require grants
+  -> serialize private create/modify/delete/move, one-shot LSP diagnostics,
+     and optional fixed verification through one candidate operation queue
   -> bind each of <=16 verification attempts to the complete candidate snapshot
      observed after that operation
   -> provide no shell, Process, network, Browser, Extension, Session, or
      nested-delegation capability
 candidate finalization
   -> rescan source and private tree
-  -> reject source drift, no change, undeclared change, add/remove, binary,
-     symlink, special-file, or resource-limit violations
+  -> reject source byte/mode drift, no change, undeclared lifecycle change,
+     binary, symlink, special-file, or resource-limit violations
+  -> derive sorted add/modify/delete records; count rename only for one
+     unambiguous identical-digest add/delete pair and preserve its source mode
   -> ground the typed outcome against candidate bytes
   -> derive a <=32 KiB live-only per-file change window with before/after
      hashes, control escaping, explicit untrusted-data labeling, and truncation
@@ -2847,10 +2850,16 @@ parent subagent_worktree_apply(previewId)
   -> verify task, outcome, source snapshot, write scope, and changed-file hashes
   -> rescan the complete admitted source before and after diagnostics/test
      selection; reject observed drift
-  -> run fresh before diagnostics and optional write-linked test selection
-  -> reuse the shared multi-file lock, staging, fsync, hard-link backup,
-     ordered commit, reverse rollback, and postcondition transaction
-  -> run fresh after diagnostics and selected tests
+  -> run fresh before diagnostics and optional write-linked test selection for
+     modified TypeScript/JavaScript paths
+  -> reuse one generic nullable-state transaction:
+     - stage/fsync add/modify bytes beside each target
+     - hard-link backups for every existing target
+     - install additions by hard link without overwrite
+     - replace modifications by rename
+     - rename deletions to verified same-directory tombstones
+     - reverse rollback and verify all absent/present postconditions
+  -> run fresh after diagnostics and selected tests for modified paths
   -> append one hash/count/status-only tool result to the ordinary Work Ledger
 ```
 
@@ -2863,9 +2872,17 @@ live owner's directories, removes dead or legacy owner directories, and rejects
 malformed or symlinked owner metadata.
 
 An external process does not honor Napier's path locks and can race after the
-last complete-source recheck. The transaction still revalidates each actual
-target under its lock before commit, preventing silent overwrite of candidate
-files; unrelated-file atomicity would require a stronger execution backend.
+last complete-source recheck. The transaction revalidates content, canonical
+path, inode, device, and expected presence under its locks. Additions use
+hard-link no-overwrite installation. Deletions atomically move to a private
+tombstone and recheck its identity before settlement. Existing-file rename
+replacement still has an unavoidable host-filesystem interval after the last
+identity check; unrelated-file atomicity would require a stronger execution
+backend.
+
+A concurrent coder fork rejects recognized `.napier-change-*` stage, backup,
+or tombstone files instead of copying transaction recovery bytes into a new
+private candidate.
 
 The dependency overlay grants no new write authority. It rejects unsafe names,
 special entries, top-level links escaping both the admitted workspace and its
@@ -2890,15 +2907,20 @@ before explicit apply. Durable task, merge, SSE, Replay, and Web projections
 retain only aggregate counts plus verification-set/toolchain hashes.
 
 `subagent-worktree-files.ts` owns bounded fork/finalize/freshness operations;
+`subagent-worktree-diff.ts` owns authoritative lifecycle comparison, rename
+disambiguation, and modified-file LSP adaptation;
+`subagent-worktree-file-tool.ts` owns private delete/move CAS;
 `subagent-worktree-storage.ts` owns private owner roots and stale cleanup;
 `subagent-worktree-review.ts` owns the bounded parent-visible change window;
 `subagent-worktree-toolchain.ts` owns the dependency overlay;
 `subagent-worktree-verification.ts` owns serialization and snapshot-bound
 attempt evidence; `subagent-worktree-mutation.ts` owns child tool adaptation,
-preview storage, and the parent merge adapter. It composes
-`LspWorkspaceEditMutationCoordinator` and `commitLspRename()` rather than
-creating a second write transaction. `subagent-task-runner.ts` owns the child
-Agent loop and candidate outcome grounding, while
+preview storage, and the parent merge adapter.
+`workspace-change-model.ts`, `workspace-change-files.ts`, and
+`workspace-change-commit.ts` own the shared nullable-state transaction;
+`commitLspRename()` is now a modify-only adapter over that same transaction.
+`subagent-task-runner.ts` owns the child Agent loop and candidate outcome
+grounding, while
 `subagent-task-evidence.ts` owns durable projection and live result formatting.
 The former monolithic coordinator and outcome implementation are split across
 these modules plus focused role, parser, verifier, and repair modules; each new
@@ -2906,19 +2928,21 @@ core logic file remains below 500 lines.
 
 Write paths, candidate patch arguments/results, candidate bodies, preview IDs,
 verifier output, and raw errors remain live-only. Durable Agent/HTTP/Replay
-evidence retains role, state, bounded counts, transaction/diagnostic/test
-status, and hashes for the task, outcome, source snapshot, write scope, changed
-file set, candidate verification set/toolchain, plan, files, and result. Web
-independently parses that bounded schema and never trusts Runtime-reported
-paths or candidate content. Existing typed-outcome path citations keep the
-ordinary grounded Subagent evidence semantics.
+evidence retains role, state, add/modify/delete/rename counts,
+transaction/diagnostic/test status, and hashes for the task, outcome, source
+snapshot, write scope, changed file set, candidate verification
+set/toolchain, plan, files, and result. Web independently validates count
+relationships and never trusts Runtime-reported paths or candidate content.
+Existing typed-outcome path citations keep the ordinary grounded Subagent
+evidence semantics.
 
-This slice supports only existing regular text files. Candidate file creation,
-deletion, rename, permission changes, symlinks, arbitrary binary changes,
-arbitrary child-side commands/package scripts, cross-Run preview recovery, and
-Git worktree semantics remain unavailable. Candidate LSP and the optional
-fixed verifier remain read-only and offline; they are not general Process
-authority.
+This slice supports file lifecycle within existing parent directories. Empty
+directories, directory move/delete, permission edits, symlinks, arbitrary
+binary changes, ambiguous duplicate-content rename pairing, arbitrary
+child-side commands/package scripts, cross-Run preview recovery, and Git
+worktree semantics remain unavailable. Pure additions use `0644`; a detected
+rename preserves the source mode. Candidate LSP and the optional fixed verifier
+remain read-only and offline; they are not general Process authority.
 
 SQLite analysis remains outside the oversized workspace-tool module.
 `sqlite-database-file.ts` owns canonical file admission, sidecar denial,
@@ -6343,7 +6367,7 @@ deferred until the local P0-P9 product loop is stable.
 - broader Code Action kinds, Node attach/multi-thread DAP, inline or bundled
   source-map coverage and debugger UX, broader multi-node AST transforms,
   richer cross-package build/test configuration, coding outcome benchmarks,
-  and isolated subagent worktrees;
+  coder directory lifecycle, and sandboxed child command/package execution;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, graph-level branch pruning, write-capable Map/Loop,
   compensation, top-level Workflow input replacement, write/session

@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import {
+  chmod,
   mkdir,
   mkdtemp,
   readFile,
+  rename,
   rm,
   symlink,
   writeFile,
@@ -66,7 +68,15 @@ describe("Subagent worktree files", () => {
     const candidate = await finalizeSubagentWorktree(session);
 
     expect(candidate.changedPaths).toEqual(["src/first.ts", "src/second.ts"]);
-    expect(candidate.files).toHaveLength(2);
+    expect(candidate.changes).toHaveLength(2);
+    expect(candidate).toEqual(
+      expect.objectContaining({
+        addedFileCount: 0,
+        modifiedFileCount: 2,
+        deletedFileCount: 0,
+        renamedFileCount: 0,
+      }),
+    );
     expect(candidate.changedFileSetSha256).toMatch(/^[a-f0-9]{64}$/u);
     expect(
       await readFile(path.join(workspaceRoot, "src/first.ts"), "utf8"),
@@ -126,6 +136,24 @@ describe("Subagent worktree files", () => {
       "conflicts with workspace drift",
     );
 
+    const modeDrift = await createWorkspace();
+    temporaryRoots.push(modeDrift.root);
+    await writeFile(
+      path.join(modeDrift.workspaceRoot, "src/value.ts"),
+      "export const value = 1;\n",
+    );
+    const modeSession = await createSubagentWorktree({
+      workspaceRoot: modeDrift.workspaceRoot,
+      dataRoot: modeDrift.dataRoot,
+      ownerId: "worker_files_test",
+      taskId: "task_mode12345",
+      writePaths: ["src/value.ts"],
+    });
+    await chmod(path.join(modeDrift.workspaceRoot, "src/value.ts"), 0o755);
+    await expect(observeSubagentWorktreeSource(modeSession)).rejects.toThrow(
+      "conflicts with workspace drift",
+    );
+
     const linked = await createWorkspace();
     temporaryRoots.push(linked.root);
     await writeFile(
@@ -162,6 +190,31 @@ describe("Subagent worktree files", () => {
       }),
     ).rejects.toThrow("exceeds its limit");
 
+    const activeTransaction = await createWorkspace();
+    temporaryRoots.push(activeTransaction.root);
+    await Promise.all([
+      writeFile(
+        path.join(activeTransaction.workspaceRoot, "src/value.ts"),
+        "export const value = 1;\n",
+      ),
+      writeFile(
+        path.join(
+          activeTransaction.workspaceRoot,
+          "src/.value.ts.napier-change-0123456789abcdefabcd.tmp",
+        ),
+        "private staged bytes\n",
+      ),
+    ]);
+    await expect(
+      createSubagentWorktree({
+        workspaceRoot: activeTransaction.workspaceRoot,
+        dataRoot: activeTransaction.dataRoot,
+        ownerId: "worker_files_test",
+        taskId: "task_active123",
+        writePaths: ["src/value.ts"],
+      }),
+    ).rejects.toThrow("active change transaction");
+
     const recursive = await createWorkspace();
     temporaryRoots.push(recursive.root);
     const unsafeDataRoot = path.join(recursive.workspaceRoot, "runtime-data");
@@ -179,6 +232,66 @@ describe("Subagent worktree files", () => {
         writePaths: ["src/value.ts"],
       }),
     ).rejects.toThrow("outside or protected from workspace scans");
+  });
+
+  it("derives authorized add, delete, and rename lifecycle changes", async () => {
+    const harness = await createWorkspace();
+    temporaryRoots.push(harness.root);
+    const deleted = "export const deleted = true;\n";
+    const moved = "export const moved = true;\n";
+    await Promise.all([
+      writeFile(path.join(harness.workspaceRoot, "src/delete.ts"), deleted),
+      writeFile(path.join(harness.workspaceRoot, "src/source.ts"), moved),
+    ]);
+    const session = await createSubagentWorktree({
+      workspaceRoot: harness.workspaceRoot,
+      dataRoot: harness.dataRoot,
+      ownerId: "worker_files_test",
+      taskId: "task_lifecycle1",
+      writePaths: [
+        "src/add.ts",
+        "src/delete.ts",
+        "src/renamed.ts",
+        "src/source.ts",
+      ],
+    });
+
+    await Promise.all([
+      rm(path.join(session.root, "src/delete.ts")),
+      writeFile(
+        path.join(session.root, "src/add.ts"),
+        "export const added = true;\n",
+      ),
+    ]);
+    await rename(
+      path.join(session.root, "src/source.ts"),
+      path.join(session.root, "src/renamed.ts"),
+    );
+    const candidate = await finalizeSubagentWorktree(session);
+
+    expect(candidate).toEqual(
+      expect.objectContaining({
+        changedPaths: [
+          "src/add.ts",
+          "src/delete.ts",
+          "src/renamed.ts",
+          "src/source.ts",
+        ],
+        addedFileCount: 2,
+        modifiedFileCount: 0,
+        deletedFileCount: 2,
+        renamedFileCount: 1,
+      }),
+    );
+    expect(candidate.changes.map((change) => change.operation)).toEqual([
+      "add",
+      "delete",
+      "add",
+      "delete",
+    ]);
+    await expect(
+      readFile(path.join(harness.workspaceRoot, "src/source.ts"), "utf8"),
+    ).resolves.toBe(moved);
   });
 
   it("removes stale prior-worker directories before creating a new fork", async () => {

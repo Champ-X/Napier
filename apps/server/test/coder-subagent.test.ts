@@ -43,8 +43,17 @@ describe("coder Subagent HTTP Agent path", () => {
     ]);
     const sourcePath = "src/private-value.txt";
     const source = "value=1\n";
+    const deletedPath = "src/private-delete.txt";
+    const movedPath = "src/private-move.txt";
+    const renamedPath = "src/private-renamed.txt";
+    const addedPath = "src/private-added.txt";
+    const deleted = "delete-me\n";
+    const moved = "move-me\n";
+    const added = "added\n";
     await Promise.all([
       writeFile(path.join(workspaceRoot, sourcePath), source),
+      writeFile(path.join(workspaceRoot, deletedPath), deleted),
+      writeFile(path.join(workspaceRoot, movedPath), moved),
       writeFile(
         path.join(workspaceRoot, "node_modules/vitest/vitest.mjs"),
         "// fixed verifier fixture\n",
@@ -78,9 +87,15 @@ describe("coder Subagent HTTP Agent path", () => {
       fauxAssistantMessage(
         fauxToolCall("delegate_task", {
           role: "coder",
-          description: "Update isolated private value",
-          task: "Change the authorized value from 1 to 2.",
-          writePaths: [sourcePath],
+          description: "Apply isolated private lifecycle changes",
+          task: "Modify, add, delete, and rename the authorized files.",
+          writePaths: [
+            addedPath,
+            deletedPath,
+            movedPath,
+            renamedPath,
+            sourcePath,
+          ],
         }),
         { stopReason: "toolUse" },
       ),
@@ -94,9 +109,36 @@ describe("coder Subagent HTTP Agent path", () => {
         { stopReason: "toolUse" },
       ),
       fauxAssistantMessage(
+        fauxToolCall("apply_patch", {
+          operation: "create",
+          path: addedPath,
+          expectedSha256: null,
+          content: added,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("candidate_file", {
+          operation: "delete",
+          path: deletedPath,
+          expectedSha256: sha256(deleted),
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("candidate_file", {
+          operation: "move",
+          sourcePath: movedPath,
+          destinationPath: renamedPath,
+          expectedSourceSha256: sha256(moved),
+          expectedDestinationSha256: null,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
         fauxToolCall("verify_workspace", {
           kind: "test",
-          target: sourcePath,
+          target: addedPath,
         }),
         { stopReason: "toolUse" },
       ),
@@ -115,6 +157,9 @@ describe("coder Subagent HTTP Agent path", () => {
         expect(previewId).toMatch(/^subworkpreview_/u);
         expect(JSON.stringify(context.messages)).toContain(
           "Candidate verification: 1 fresh / 1 passed / 0 failed / 0 stale",
+        );
+        expect(JSON.stringify(context.messages)).toContain(
+          "Lifecycle: 2 added / 1 modified / 2 deleted / 1 renamed",
         );
         return fauxAssistantMessage(
           fauxToolCall("subagent_worktree_apply", { previewId }),
@@ -147,6 +192,18 @@ describe("coder Subagent HTTP Agent path", () => {
     expect(await readFile(path.join(workspaceRoot, sourcePath), "utf8")).toBe(
       "value=2\n",
     );
+    await expect(
+      readFile(path.join(workspaceRoot, addedPath), "utf8"),
+    ).resolves.toBe(added);
+    await expect(
+      readFile(path.join(workspaceRoot, renamedPath), "utf8"),
+    ).resolves.toBe(moved);
+    await expect(
+      readFile(path.join(workspaceRoot, deletedPath)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(workspaceRoot, movedPath)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     const events = await services.store.listEvents(thread.id);
     const merge = events.find(
       (event) =>
@@ -157,7 +214,11 @@ describe("coder Subagent HTTP Agent path", () => {
       expect.objectContaining({
         kind: "napier.subagent-worktree-apply",
         status: "applied",
-        fileCount: 1,
+        fileCount: 5,
+        candidateAddedFileCount: 2,
+        candidateModifiedFileCount: 1,
+        candidateDeletedFileCount: 2,
+        candidateRenamedFileCount: 1,
         candidateVerificationAttemptCount: 1,
         candidateVerificationFreshCount: 1,
         candidateVerificationPassedCount: 1,
@@ -169,6 +230,8 @@ describe("coder Subagent HTTP Agent path", () => {
     const durable = JSON.stringify(events);
     expect(durable).not.toContain(previewId);
     expect(durable).not.toContain("value=2");
+    expect(durable).not.toContain(addedPath);
+    expect(durable).not.toContain(renamedPath);
     expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
   });
 });

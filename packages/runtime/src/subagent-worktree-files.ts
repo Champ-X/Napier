@@ -3,10 +3,12 @@ import { lstat, mkdir, open, readdir, realpath, rm } from "node:fs/promises";
 import path from "node:path";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import type {
-  LspRenameEdit,
-  LspRenameFile,
-} from "./lsp-rename-workspace-edit.js";
+import {
+  createSubagentWorktreeCandidate,
+  type SubagentWorktreeCandidate,
+  type SubagentWorktreeFile,
+  type SubagentWorktreeSnapshot,
+} from "./subagent-worktree-diff.js";
 import { isProtectedWorkspacePathSegment } from "./workspace-file-scope.js";
 import { prepareSubagentWorktreeOwnerRoot } from "./subagent-worktree-storage.js";
 
@@ -24,21 +26,14 @@ const GENERATED_DIRECTORIES = new Set([
   "playwright-report",
   "test-results",
 ]);
+const ACTIVE_CHANGE_ARTIFACT =
+  /^\..+\.napier-change-[a-f0-9]{20}\.(?:bak|deleted|tmp)$/u;
 
-interface WorktreeFile {
-  path: string;
-  pathSha256: string;
-  fileSha256: string;
-  sizeBytes: number;
-  buffer: Buffer;
-}
-
-export interface SubagentWorktreeSnapshot {
-  files: WorktreeFile[];
-  fileCount: number;
-  bytes: number;
-  contentSha256: string;
-}
+export type {
+  SubagentWorktreeCandidate,
+  SubagentWorktreeFile,
+  SubagentWorktreeSnapshot,
+} from "./subagent-worktree-diff.js";
 
 export interface SubagentWorktreeSession {
   taskId: string;
@@ -49,14 +44,6 @@ export interface SubagentWorktreeSession {
   sourceBytes: number;
   writePaths: string[];
   writeScopeSetSha256: string;
-  baselineFiles: WorktreeFile[];
-}
-
-export interface SubagentWorktreeCandidate {
-  files: LspRenameFile[];
-  changedPaths: string[];
-  changedFileSetSha256: string;
-  candidateSnapshotSha256: string;
 }
 
 export async function createSubagentWorktree(input: {
@@ -83,12 +70,7 @@ export async function createSubagentWorktree(input: {
     );
     for (const writePath of writePaths) {
       const file = baselineByPath.get(writePath);
-      if (!file) {
-        throw new Error(
-          "Subagent worktree write paths must name existing regular files",
-        );
-      }
-      decodeUtf8(file.buffer, "Subagent worktree write target");
+      if (file) decodeUtf8(file.buffer, "Subagent worktree write target");
     }
     await copySnapshot(root, baseline, input.signal);
     const observed = await readWorktreeSnapshot(sourceRoot, input.signal);
@@ -107,9 +89,6 @@ export async function createSubagentWorktree(input: {
       writePaths,
       writeScopeSetSha256: sha256(
         canonicalJson(writePaths.map((candidate) => sha256(candidate))),
-      ),
-      baselineFiles: writePaths.map(
-        (candidate) => baselineByPath.get(candidate)!,
       ),
     };
   } catch (error) {
@@ -130,12 +109,6 @@ export async function finalizeSubagentWorktree(
   if (source.contentSha256 !== session.sourceSnapshotSha256) {
     throw new Error("Workspace changed while the Subagent worktree was active");
   }
-  const baseline = new Map(
-    session.baselineFiles.map((file) => [file.path, file]),
-  );
-  const candidateByPath = new Map(
-    candidate.files.map((file) => [file.path, file]),
-  );
   const completeBaseline = await readWorktreeSnapshot(
     session.sourceRoot,
     signal,
@@ -145,55 +118,11 @@ export async function finalizeSubagentWorktree(
       "Workspace changed while the Subagent worktree was finalized",
     );
   }
-  if (
-    candidate.fileCount !== completeBaseline.fileCount ||
-    candidate.files.some(
-      (file) =>
-        !completeBaseline.files.some(
-          (sourceFile) => sourceFile.path === file.path,
-        ),
-    )
-  ) {
-    throw new Error("Subagent worktree added or removed an unauthorized file");
-  }
-  const changedPaths = candidate.files
-    .filter((file) => {
-      const sourceFile = completeBaseline.files.find(
-        (entry) => entry.path === file.path,
-      );
-      return sourceFile?.fileSha256 !== file.fileSha256;
-    })
-    .map((file) => file.path)
-    .sort();
-  if (
-    changedPaths.length < 1 ||
-    changedPaths.some((changedPath) => !baseline.has(changedPath))
-  ) {
-    throw new Error(
-      changedPaths.length < 1
-        ? "Subagent worktree produced no declared file changes"
-        : "Subagent worktree changed a file outside its declared write paths",
-    );
-  }
-  const files = changedPaths.map((changedPath) => {
-    const before = baseline.get(changedPath)!;
-    const after = candidateByPath.get(changedPath)!;
-    return fullFileEdit(before, after);
+  return createSubagentWorktreeCandidate({
+    baseline: completeBaseline,
+    candidate,
+    writePaths: session.writePaths,
   });
-  return {
-    files,
-    changedPaths,
-    candidateSnapshotSha256: candidate.contentSha256,
-    changedFileSetSha256: sha256(
-      canonicalJson(
-        files.map((file) => ({
-          pathSha256: file.pathSha256,
-          beforeSha256: file.fileSha256,
-          afterSha256: sha256(file.edits[0]!.newText),
-        })),
-      ),
-    ),
-  };
 }
 
 export async function observeSubagentWorktreeCandidate(
@@ -229,7 +158,7 @@ function normalizeWritePaths(values: string[]): string[] {
       `Subagent worktree requires 1-${MAX_SUBAGENT_WORKTREE_WRITE_FILES} write paths`,
     );
   }
-  const normalized = values.map(normalizeRelativePath);
+  const normalized = values.map(normalizeSubagentWorktreePath);
   const identities = new Set(
     normalized.map((candidate) =>
       process.platform === "darwin" || process.platform === "win32"
@@ -243,7 +172,7 @@ function normalizeWritePaths(values: string[]): string[] {
   return normalized.sort();
 }
 
-function normalizeRelativePath(value: string): string {
+export function normalizeSubagentWorktreePath(value: string): string {
   if (
     typeof value !== "string" ||
     !value ||
@@ -274,7 +203,7 @@ async function readWorktreeSnapshot(
   root: string,
   signal?: AbortSignal,
 ): Promise<SubagentWorktreeSnapshot> {
-  const files: WorktreeFile[] = [];
+  const files: SubagentWorktreeFile[] = [];
   let bytes = 0;
   const visit = async (directory: string): Promise<void> => {
     signal?.throwIfAborted();
@@ -282,6 +211,11 @@ async function readWorktreeSnapshot(
     children.sort((left, right) => left.name.localeCompare(right.name));
     for (const child of children) {
       signal?.throwIfAborted();
+      if (ACTIVE_CHANGE_ARTIFACT.test(child.name)) {
+        throw new Error(
+          "Subagent worktree source contains an active change transaction",
+        );
+      }
       if (
         isProtectedWorkspacePathSegment(child.name) ||
         GENERATED_DIRECTORIES.has(child.name.toLowerCase())
@@ -303,7 +237,8 @@ async function readWorktreeSnapshot(
         throw new Error("Subagent worktree file limit exceeded");
       }
       const relative = path.relative(root, absolute).split(path.sep).join("/");
-      const buffer = await readCanonicalFile(absolute);
+      const captured = await readCanonicalFile(absolute);
+      const buffer = captured.buffer;
       bytes += buffer.byteLength;
       if (bytes > MAX_SUBAGENT_WORKTREE_BYTES) {
         throw new Error("Subagent worktree byte limit exceeded");
@@ -313,6 +248,7 @@ async function readWorktreeSnapshot(
         pathSha256: sha256(relative),
         fileSha256: sha256(buffer),
         sizeBytes: buffer.byteLength,
+        mode: captured.mode,
         buffer,
       });
     }
@@ -328,13 +264,16 @@ async function readWorktreeSnapshot(
           pathSha256: file.pathSha256,
           fileSha256: file.fileSha256,
           sizeBytes: file.sizeBytes,
+          mode: file.mode,
         })),
       ),
     ),
   };
 }
 
-async function readCanonicalFile(target: string): Promise<Buffer> {
+async function readCanonicalFile(
+  target: string,
+): Promise<{ buffer: Buffer; mode: number }> {
   if ((await realpath(target)) !== target) {
     throw new Error("Subagent worktree source file is not canonical");
   }
@@ -359,7 +298,7 @@ async function readCanonicalFile(target: string): Promise<Buffer> {
     ) {
       throw new Error("Subagent worktree source file changed during capture");
     }
-    return buffer;
+    return { buffer, mode: opened.mode & 0o777 };
   } finally {
     await handle.close();
   }
@@ -382,42 +321,6 @@ async function copySnapshot(
       await handle.close();
     }
   }
-}
-
-function fullFileEdit(
-  before: WorktreeFile,
-  after: WorktreeFile,
-): LspRenameFile {
-  const oldText = decodeUtf8(before.buffer, "Subagent worktree baseline");
-  const newText = decodeUtf8(after.buffer, "Subagent worktree candidate");
-  const lines = oldText.split("\n");
-  const edit: LspRenameEdit = {
-    path: before.path,
-    pathSha256: before.pathSha256,
-    fileSha256: before.fileSha256,
-    startLine: 1,
-    startCharacter: 1,
-    endLine: lines.length,
-    endCharacter: lines.at(-1)!.length + 1,
-    rangeSha256: sha256(
-      canonicalJson({
-        startLine: 1,
-        startCharacter: 1,
-        endLine: lines.length,
-        endCharacter: lines.at(-1)!.length + 1,
-      }),
-    ),
-    oldText,
-    oldTextSha256: sha256(oldText),
-    newText,
-    newTextSha256: sha256(newText),
-  };
-  return {
-    path: before.path,
-    pathSha256: before.pathSha256,
-    fileSha256: before.fileSha256,
-    edits: [edit],
-  };
 }
 
 function decodeUtf8(buffer: Buffer, label: string): string {

@@ -6,6 +6,40 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added complete regular-file lifecycle for isolated coder candidates. The
+  existing 1–8 `writePaths` now authorize absent or existing create/modify/
+  delete paths and both sides of a rename. `apply_patch` handles private
+  create/modify while a new private `candidate_file` tool performs hash-bound
+  delete and move with destination non-existence CAS; every candidate mutation
+  remains serialized with LSP and fixed verification. Finalization derives
+  add/modify/delete from physical bytes, recognizes only unambiguous
+  identical-content rename pairs, preserves source mode, and binds source mode
+  into freshness. Parent apply now uses one generalized nullable-state
+  transaction shared by LSP rename: additions install through hard-link
+  no-overwrite, modifications use staged rename, and deletions move to
+  content/inode/device-verified same-directory tombstones. Existing targets
+  retain hard-link backups until postconditions pass; partial mixed commits
+  reverse in order, and rollback failure remains indeterminate with recovery
+  artifact counts. Agent, HTTP/SSE, portable Replay, and strict Web Trace
+  expose only bounded add/modify/delete/rename counts and existing hashes;
+  write grants, unreferenced paths, candidate bodies, and preview IDs remain
+  private. Tests cover normal mixed settlement, stale/occupied/symlink/race
+  rejection, no-overwrite external winners for private moves and parent
+  additions, cancellation, rollback, duplicate-content ambiguity, chmod drift,
+  mode preservation, concurrency, restart invalidation, active-transaction fork
+  rejection, and original LSP rename/Code Action compatibility.
+  Real built-Runtime Dogfood modified, added, deleted, and renamed five fixture
+  paths; real Vitest imported the addition and rename destination before and
+  after explicit merge, with clean diagnostics and full cleanup in 18.29
+  seconds. New transaction and candidate modules remain below 500 lines, and
+  the existing mutation manager remains at 497 lines. The complete gate passes
+  1,693 regular tests with 30 opt-in live tests skipped, 255 OpenAPI routes,
+  and 244/244 compatibility operations. Product performance remains within
+  budget at 637.5 ms to first CLI event, 787.0 ms to first token, 1,098.9 ms to
+  completion, 0.4 ms read p95, 6.9 ms for a 1,000-event projection, and
+  749.568 closed SQLite bytes/event. The 92-file Web dist main entry remains
+  130.32 KiB under its 150 KiB limit, bound to `9a4dc8f5ab7f92ce`; the
+  seven-artifact release set is bound to `8280e6926d8d4dc0`.
 - Added pre-merge verification for isolated coder candidates. A coder now
   receives real one-shot TypeScript/JavaScript LSP diagnostics and, when the
   parent profile explicitly enables it, the existing fixed

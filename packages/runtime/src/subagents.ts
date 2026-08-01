@@ -56,7 +56,7 @@ const delegateTaskSchema = Type.Object({
         minLength: 1,
         maxLength: 500,
         description:
-          "Existing workspace-relative UTF-8 file that the coder may modify only inside its private worktree.",
+          "Workspace-relative UTF-8 file path that the coder may create, modify, delete, or use as one side of a move only inside its private worktree.",
       }),
       { minItems: 1, maxItems: MAX_SUBAGENT_WORKTREE_WRITE_FILES },
     ),
@@ -180,7 +180,7 @@ export class SubagentCoordinator {
         "Delegate a substantial independent investigation, review, or path-scoped coding task to an isolated subagent.",
         `Available roles: ${[...this.enabledRoles].join(", ")}.`,
         `Run budget: at most ${this.limits.maxTotal} total and ${this.limits.maxConcurrent} concurrent delegations.`,
-        "Coder tasks require explicit existing writePaths and return an unmerged one-use worktree preview.",
+        "Coder tasks require explicit writePaths for every created, modified, deleted, moved-from, or moved-to file and return an unmerged one-use worktree preview.",
         "Do not delegate trivial work or tasks that require the parent conversation.",
       ].join(" "),
       parameters: delegateTaskSchema,
@@ -192,9 +192,7 @@ export class SubagentCoordinator {
           (input.role === "coder" && !input.writePaths) ||
           (input.role !== "coder" && input.writePaths !== undefined)
         ) {
-          throw new Error(
-            "Only coder Subagents require explicit existing writePaths",
-          );
+          throw new Error("Only coder Subagents require explicit writePaths");
         }
         const prompt = input.task.trim();
         const reusable = findReusableDelegation(

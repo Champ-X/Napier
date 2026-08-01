@@ -32,6 +32,10 @@ export interface SubagentEventTraceView {
   sourceSnapshotSha256?: string;
   writeScopeSetSha256?: string;
   changedFileSetSha256?: string;
+  candidateAddedFileCount?: number;
+  candidateModifiedFileCount?: number;
+  candidateDeletedFileCount?: number;
+  candidateRenamedFileCount?: number;
   candidateVerificationAttemptCount?: number;
   candidateVerificationFreshCount?: number;
   candidateVerificationPassedCount?: number;
@@ -148,6 +152,7 @@ export function subagentEventTraceView(
   const candidateToolchainSha256 = sha256(
     event.payload["candidateToolchainSha256"],
   );
+  const lifecycle = candidateLifecycle(event.payload, changedFileCount);
   const validCandidateVerification =
     candidateVerificationAttemptCount !== undefined &&
     candidateVerificationFreshCount !== undefined &&
@@ -203,6 +208,7 @@ export function subagentEventTraceView(
     ...(sourceSnapshotSha256 ? { sourceSnapshotSha256 } : {}),
     ...(writeScopeSetSha256 ? { writeScopeSetSha256 } : {}),
     ...(changedFileSetSha256 ? { changedFileSetSha256 } : {}),
+    ...(lifecycle ?? {}),
     ...(validCandidateVerification
       ? {
           candidateVerificationAttemptCount,
@@ -276,6 +282,11 @@ export function subagentEventTraceSummary(event: RunEvent): string | undefined {
     ...(view.changedFileSetSha256
       ? [`change-set ${view.changedFileSetSha256.slice(0, 12)}`]
       : []),
+    ...(view.candidateAddedFileCount !== undefined
+      ? [
+          `lifecycle ${view.candidateAddedFileCount} added / ${view.candidateModifiedFileCount ?? 0} modified / ${view.candidateDeletedFileCount ?? 0} deleted / ${view.candidateRenamedFileCount ?? 0} renamed`,
+        ]
+      : []),
     ...(view.candidateVerificationFreshCount !== undefined
       ? [
           `candidate-verification ${view.candidateVerificationFreshCount} fresh / ${view.candidateVerificationPassedCount ?? 0} passed / ${view.candidateVerificationFailedCount ?? 0} failed / ${view.candidateVerificationStaleCount ?? 0} stale`,
@@ -287,6 +298,45 @@ export function subagentEventTraceSummary(event: RunEvent): string | undefined {
         ]
       : []),
   ].join(" / ");
+}
+
+function candidateLifecycle(
+  payload: Record<string, unknown>,
+  changedFileCount: number | undefined,
+): Pick<
+  SubagentEventTraceView,
+  | "candidateAddedFileCount"
+  | "candidateModifiedFileCount"
+  | "candidateDeletedFileCount"
+  | "candidateRenamedFileCount"
+> | null {
+  const values = [
+    payload["candidateAddedFileCount"],
+    payload["candidateModifiedFileCount"],
+    payload["candidateDeletedFileCount"],
+    payload["candidateRenamedFileCount"],
+  ];
+  if (values.every((value) => value === undefined)) return {};
+  const [added, modified, deleted, renamed] = values.map((value) =>
+    boundedInteger(value, 0, 8),
+  );
+  if (
+    changedFileCount === undefined ||
+    added === undefined ||
+    modified === undefined ||
+    deleted === undefined ||
+    renamed === undefined ||
+    added + modified + deleted !== changedFileCount ||
+    renamed > Math.min(added, deleted)
+  ) {
+    return null;
+  }
+  return {
+    candidateAddedFileCount: added,
+    candidateModifiedFileCount: modified,
+    candidateDeletedFileCount: deleted,
+    candidateRenamedFileCount: renamed,
+  };
 }
 
 function taskIdValue(value: unknown): string | undefined {

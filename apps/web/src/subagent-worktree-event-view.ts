@@ -18,6 +18,10 @@ export interface SubagentWorktreeToolEventTraceView {
   subagentWorktreeRollbackVerified?: boolean;
   subagentWorktreeDurable?: boolean;
   subagentWorktreeDiagnosticsStatus?: string;
+  subagentWorktreeCandidateAddedFileCount?: number;
+  subagentWorktreeCandidateModifiedFileCount?: number;
+  subagentWorktreeCandidateDeletedFileCount?: number;
+  subagentWorktreeCandidateRenamedFileCount?: number;
   subagentWorktreeCandidateVerificationAttemptCount?: number;
   subagentWorktreeCandidateVerificationFreshCount?: number;
   subagentWorktreeCandidateVerificationPassedCount?: number;
@@ -72,6 +76,7 @@ export function subagentWorktreeEventEvidence(
   const diagnosticsResultSha256 = hash(diagnostics?.["resultSha256"]);
   const tests = writeLinkedTestEventEvidence(input["tests"]);
   const candidateVerification = candidateVerificationEvidence(input);
+  const lifecycle = candidateLifecycleEvidence(input, fileCount);
   const requiredHashes = {
     sourceSnapshot: hash(input["sourceSnapshotSha256"]),
     outcome: hash(input["outcomeSha256"]),
@@ -108,7 +113,8 @@ export function subagentWorktreeEventEvidence(
       (!diagnosticsStatus || !diagnosticsResultSha256)) ||
     Object.values(requiredHashes).some((candidate) => !candidate) ||
     (input["tests"] !== undefined && !tests) ||
-    !candidateVerification
+    !candidateVerification ||
+    !lifecycle
   ) {
     return undefined;
   }
@@ -142,6 +148,7 @@ export function subagentWorktreeEventEvidence(
       ? { subagentWorktreeObservedFileSetSha256: observedFileSetSha256 }
       : {}),
     subagentWorktreeResultSha256: requiredHashes.result!,
+    ...lifecycle,
     ...candidateVerification,
     ...(tests ?? {}),
   };
@@ -166,6 +173,11 @@ export function subagentWorktreeSummaryParts(
     ...(view.subagentWorktreeDiagnosticsStatus
       ? [`diagnostics ${view.subagentWorktreeDiagnosticsStatus}`]
       : []),
+    ...(view.subagentWorktreeCandidateAddedFileCount !== undefined
+      ? [
+          `lifecycle ${view.subagentWorktreeCandidateAddedFileCount} added / ${view.subagentWorktreeCandidateModifiedFileCount ?? 0} modified / ${view.subagentWorktreeCandidateDeletedFileCount ?? 0} deleted / ${view.subagentWorktreeCandidateRenamedFileCount ?? 0} renamed`,
+        ]
+      : []),
     ...(view.subagentWorktreeCandidateVerificationFreshCount !== undefined
       ? [
           `candidate-verification ${view.subagentWorktreeCandidateVerificationFreshCount} fresh / ${view.subagentWorktreeCandidateVerificationPassedCount ?? 0} passed / ${view.subagentWorktreeCandidateVerificationFailedCount ?? 0} failed / ${view.subagentWorktreeCandidateVerificationStaleCount ?? 0} stale`,
@@ -185,6 +197,45 @@ export function subagentWorktreeSummaryParts(
       ? [`outcome ${view.subagentWorktreeOutcomeSha256.slice(0, 12)}`]
       : []),
   ];
+}
+
+function candidateLifecycleEvidence(
+  input: Record<string, unknown>,
+  fileCount: number | undefined,
+): Pick<
+  SubagentWorktreeToolEventTraceView,
+  | "subagentWorktreeCandidateAddedFileCount"
+  | "subagentWorktreeCandidateModifiedFileCount"
+  | "subagentWorktreeCandidateDeletedFileCount"
+  | "subagentWorktreeCandidateRenamedFileCount"
+> | null {
+  const fields = [
+    input["candidateAddedFileCount"],
+    input["candidateModifiedFileCount"],
+    input["candidateDeletedFileCount"],
+    input["candidateRenamedFileCount"],
+  ];
+  if (fields.every((value) => value === undefined)) return {};
+  const [added, modified, deleted, renamed] = fields.map((value) =>
+    integer(value, 0, 8),
+  );
+  if (
+    fileCount === undefined ||
+    added === undefined ||
+    modified === undefined ||
+    deleted === undefined ||
+    renamed === undefined ||
+    added + modified + deleted !== fileCount ||
+    renamed > Math.min(added, deleted)
+  ) {
+    return null;
+  }
+  return {
+    subagentWorktreeCandidateAddedFileCount: added,
+    subagentWorktreeCandidateModifiedFileCount: modified,
+    subagentWorktreeCandidateDeletedFileCount: deleted,
+    subagentWorktreeCandidateRenamedFileCount: renamed,
+  };
 }
 
 function candidateVerificationEvidence(

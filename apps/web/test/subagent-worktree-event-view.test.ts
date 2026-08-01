@@ -26,6 +26,10 @@ describe("Subagent worktree event view", () => {
         subagentWorktreeWriteScopeCount: 2,
         subagentWorktreeChangedFileCount: 2,
         subagentWorktreeDiagnosticsStatus: "clean",
+        subagentWorktreeCandidateAddedFileCount: 1,
+        subagentWorktreeCandidateModifiedFileCount: 0,
+        subagentWorktreeCandidateDeletedFileCount: 1,
+        subagentWorktreeCandidateRenamedFileCount: 0,
         subagentWorktreeCandidateVerificationFreshCount: 2,
         subagentWorktreeCandidateVerificationPassedCount: 1,
         subagentWorktreeCandidateVerificationFailedCount: 1,
@@ -42,6 +46,7 @@ describe("Subagent worktree event view", () => {
         "candidate-files 2",
         "write-scopes 2",
         "diagnostics clean",
+        "lifecycle 1 added / 0 modified / 1 deleted / 0 renamed",
         "candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale",
       ]),
     );
@@ -127,6 +132,10 @@ describe("Subagent worktree event view", () => {
     expect(
       subagentWorktreeEventEvidence(impossibleVerification),
     ).toBeUndefined();
+
+    const impossibleLifecycle = worktreeDetails();
+    impossibleLifecycle["candidateAddedFileCount"] = 2;
+    expect(subagentWorktreeEventEvidence(impossibleLifecycle)).toBeUndefined();
   });
 });
 
@@ -144,6 +153,10 @@ function worktreeDetails(): Record<string, unknown> {
     writeScopeCount: 2,
     writeScopeSetSha256: digest,
     changedFileSetSha256: digest,
+    candidateAddedFileCount: 1,
+    candidateModifiedFileCount: 0,
+    candidateDeletedFileCount: 1,
+    candidateRenamedFileCount: 0,
     candidateVerificationAttemptCount: 3,
     candidateVerificationFreshCount: 2,
     candidateVerificationPassedCount: 1,

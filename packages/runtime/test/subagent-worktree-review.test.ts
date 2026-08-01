@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
-import type { LspRenameFile } from "../src/lsp-rename-workspace-edit.js";
+import type { SubagentWorktreeChange } from "../src/subagent-worktree-diff.js";
 import {
   createSubagentWorktreeReview,
   MAX_SUBAGENT_WORKTREE_REVIEW_BYTES,
@@ -48,29 +48,16 @@ function candidate(
   relativePath: string,
   oldText: string,
   newText: string,
-): LspRenameFile {
+): SubagentWorktreeChange {
   const pathSha256 = sha256(relativePath);
-  const fileSha256 = sha256(oldText);
   return {
+    operation: "modify",
     path: relativePath,
     pathSha256,
-    fileSha256,
-    edits: [
-      {
-        path: relativePath,
-        pathSha256,
-        fileSha256,
-        startLine: 1,
-        startCharacter: 1,
-        endLine: oldText.split("\n").length,
-        endCharacter: 1,
-        rangeSha256: sha256("range"),
-        oldText,
-        oldTextSha256: fileSha256,
-        newText,
-        newTextSha256: sha256(newText),
-      },
-    ],
+    beforeSha256: sha256(oldText),
+    afterSha256: sha256(newText),
+    beforeText: oldText,
+    afterText: newText,
   };
 }
 

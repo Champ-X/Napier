@@ -21,7 +21,7 @@ Audit date: 2026-08-01
 | --------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | P0 architecture and baseline      | In progress    | A checked local product-path budget now covers built CLI startup/first token/completion, shared Runtime bootstrap, production read-tool latency, 1,000-event append/projection, observed RSS, and closed SQLite bytes/event. Split Server and Store by domain; extend budgets to external Providers, HTTP/browser paths, 10,000-event Threads, and enforced resource quotas.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | P1 managed work environment       | In progress    | Foreground commands, background Process Sessions, reversible file lifecycle, bounded pipe input, sandboxed PTY, persistent synchronous JavaScript, restricted persistent Python, preview-bound Process writes, operator rollback, and explicitly preauthorized failed-write compensation now exist. Recovery uses private content/mode-verified pre-execution snapshots, settled-after freshness, cross-Manager serialization, reverse recovery, two-phase Ledger intent/outcome evidence, restart blocking, HTTP/Web controls, and no unreviewed Agent rollback action. Package-backed Python/Notebook sessions, hard total-RSS quotas, remote sandboxes, tool callbacks, a guardian, proved orphan cleanup, and cross-restart reattachment remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit existing-file write grants, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, one-use coordinated merge, conflict detection, post-merge diagnostics, and related tests exist; candidate file creation/deletion, arbitrary child-side command/package execution, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and coding outcome benchmarks remain.                                                                                                                                                                                                                     |
+| P2 coding intelligence            | Partial        | Hashline, heuristic cross-language symbols, real TypeScript/JavaScript AST query/edit previews, Run-owned persistent LSP across diagnostics/symbols/definitions/references/rename/quick-fix, edit-only data-backed Code Action resolve with deny-all command policy, preview-bound coordinated rename and mutually exclusive quick-fix application with rollback/diagnostics, monorepo-aware write-linked tests, Run-owned Node launch DAP with external single-source maps, and opt-in coder Subagents with bounded private worktrees, explicit create/modify/delete/rename file grants, serialized candidate LSP/fixed Sandbox verification, snapshot-fresh pass/fail/stale evidence, one-use coordinated lifecycle merge, conflict detection, post-merge diagnostics, and related tests exist; directory lifecycle, arbitrary child-side command/package execution, cross-Run previews, broader Code Action kinds, DAP attach/multi-thread UX, inline/bundled maps, broader AST transforms/build configurations, and coding outcome benchmarks remain.                                                                                                                                                                                                           |
 | P3 browser/research/data/media    | Partial        | Run-owned Chrome supports controlled interaction and artifact movement. Research Sources provide claim-bound citations and verified Markdown. Data analysis now includes flat-file inspection plus process-isolated, parameterized read-only SQLite and deterministic single-series SVG chart delivery over hash-bound static snapshots, with Agent/Workflow reuse, a bundled Skill, verified Artifacts, and privacy-bounded Trace. Cross-format Source/Artifact unification, source-quality scoring, contradiction automation, DataFrame/Notebook, multi-series or interactive visualization, browser UX, and media production remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | P4 executable Workflows           | Partial        | Versioned typed Agent/Deterministic/Tool/Approval DAG manifests, runtime schemas, literal and field-path bindings, real Run-backed Agent nodes, bounded pure data-shaping nodes with typed root multi-way Switch selection, policy-checked model-free stateless Tool nodes, bounded read-only Agent Map fan-out, bounded sequential read-only Agent Loop refinement with checkpoint reuse, typed model-free Reduce aggregation, durable operator gates, persistent pre-node breakpoints, selected-checkpoint-only tests with durable successor holds, typed checkpoint output simulation, typed selected-checkpoint constructed-input replacement, bounded parallel waves, typed equality guards with fallback, terminal workspace file/directory Artifact settlement, a local TypeScript definition/execution SDK, explicit retry, safe recomputation, restart recovery, CLI JSONL, local stdio RPC, HTTP SSE, controlled experiments, and privacy-bounded Trace now exist. Stateful-session nodes, graph-level branch pruning, write-capable Map/Loop, compensation, top-level Workflow input replacement, write/session side-effect simulation, richer interactive step controls, external adapters, natural-language extraction, and the visual builder remain. |
 | P5 controlled re-execution        | Partial        | Workflow checkpoints support verified reuse/rerun and side-effect confirmation; schema-2 single-node execution runs one selected checkpoint and durably pauses direct successors, schema-3 simulation Schema-validates and materializes one typed selected-node output before the ordinary scheduler executes descendants, and schema-4 replacement Schema-validates one complete constructed checkpoint input before ordinary selected-node and descendant execution. Historical user messages execute in isolated read-only Branches through Web/CLI/HTTP/SDK/RPC and can freeze exact captured results for ten stateless read-only tools with zero live fallback. Captured provider calls execute exactly once without dispatching returned tools. The same ten tools also support standalone preview-bound re-execution with scoped Workspace freshness, independent browser validation, and source/target output comparison. Stateful or write tool checkpoints/result simulation, top-level Workflow input replacement, Prompt/Skill/Memory/environment replacement, batch experiments, richer root-cause views, and evaluation promotion remain.                                                                                                             |
@@ -30,6 +30,92 @@ Audit date: 2026-08-01
 | P8 models and memory              | Partial        | The Runtime now registers Pi's complete pinned 38-Provider, 1,116-model catalog with a fair bounded Workbench projection, explicit full-catalog ModelRef resolution, existing credential references, and strict function-schema compatibility. Dynamic refresh, subscription login, local/custom Provider manifests, routing policies, semantic memory, decay, and correction retrieval remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | P9 outcome benchmark              | Started        | Two fixed CLI Coding cases now cover single-file repair and a multi-file LSP-guided API migration with repeated trials, Sandbox assertions, distributions, and Ledger evidence; non-nested scoring, cross-model/broader Coding plus other domains remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | P10 team/distributed              | Deferred       | Do not prioritize Postgres, distributed workers, RBAC, or collaboration before the local P0-P9 acceptance gates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+## Implemented Slice: Isolated Coder File Lifecycle
+
+User scenario: one parent Coding Agent authorizes a bounded set of file paths;
+the private coder modifies an existing file, creates another, deletes an
+obsolete file, renames a fourth, verifies the complete candidate, and returns
+one explicit merge preview without touching the parent workspace early.
+
+Acceptance:
+
+- preserve `writePaths` compatibility while redefining each of its 1–8 entries
+  as an explicit create/modify/delete/move-source/move-destination file grant;
+  every rename requires both paths;
+- allow absent authorized paths at fork time, while existing grants must still
+  identify regular UTF-8 files inside the admitted snapshot;
+- keep `apply_patch` for create/modify and add one private `candidate_file`
+  delete/move tool with source hash and destination non-existence CAS;
+- serialize every private lifecycle mutation with candidate LSP/verification;
+  no child operation can reach the parent workspace;
+- derive add/modify/delete from the final physical candidate rather than tool
+  self-report. Recognize rename only for one unambiguous identical-content
+  add/delete pair; reject duplicate-content ambiguity and preserve the source
+  mode for a recognized rename;
+- bind source snapshots to file mode as well as path/content/size so external
+  chmod makes the preview stale;
+- generalize the existing coordinated write transaction to nullable
+  before/after states, while retaining one multi-path lock, bounded staging,
+  directory fsync, hard-link backups, ordered settlement, reverse rollback,
+  recovery-artifact reporting, cancellation settlement, and postconditions;
+- install additions with hard-link no-overwrite semantics; move deletions to a
+  same-directory tombstone and recheck content/inode/device before accepting
+  them; keep LSP rename as a modify-only adapter over this same transaction;
+- project bounded add/modify/delete/rename counts through Agent, HTTP/SSE,
+  Replay, and strict Web views without persisting write grants, candidate
+  bodies, preview IDs, or unreferenced lifecycle paths.
+
+Threat boundary:
+
+- this is regular UTF-8 file lifecycle inside existing parent directories, not
+  directory lifecycle, symlink/binary mutation, permission editing, shell,
+  Process, package-script, network, or Git authority;
+- additions fail if the target exists at preflight or is externally won before
+  installation; Napier never overwrites that winner;
+- deletions are not immediate unlink operations. A verified tombstone and
+  hard-link backup remain available until the complete transaction settles;
+- source content/mode drift, undeclared paths, stale hashes, occupied or
+  symlinked destinations, ambiguous rename pairing, partial commit, rollback
+  failure, cancellation, and external races remain fail-visible;
+- a concurrent coder fork rejects recognized transaction stage, backup, or
+  tombstone artifacts instead of copying recovery bytes into another private
+  candidate;
+- external processes still do not honor Napier locks. Existing-file replacement
+  has a narrow host-filesystem race after the last identity check; stronger
+  guarantees require an immutable sandbox or filesystem transaction backend;
+- explicit typed-outcome evidence paths retain ordinary grounded Subagent
+  semantics. Other grants and lifecycle paths remain hash-only.
+
+Observed result:
+
+- the complete faux Agent and public HTTP/SSE paths execute modify + create +
+  delete + rename, expose lifecycle counts to the parent, explicitly merge once,
+  preserve portable Replay validity, and keep unreferenced paths/candidate
+  content out of durable evidence;
+- strict Web projections require all lifecycle counts together, enforce
+  `added + modified + deleted = changed files`, and require
+  `renamed <= min(added, deleted)`;
+- transaction coverage proves normal mixed settlement, no-overwrite external
+  winner preservation for private moves and parent additions, stale and symlink
+  rejection, pre-commit cancellation, mixed reverse rollback, tombstone
+  cleanup, chmod freshness, mode-preserving rename, concurrent first-writer
+  behavior, active-transaction fork rejection, and restart-local previews;
+- opt-in `npm run test:live-coder` changes five real Napier fixture paths. Its
+  real Vitest imports both the newly added file and rename destination, while
+  the deleted/source paths disappear only after explicit merge; candidate and
+  post-merge diagnostics/tests pass in 18.29 seconds;
+- nullable transaction model/files/commit, candidate diff/file tool, and coder
+  commit adapter are focused modules. The mutation manager remains 497 lines;
+  the transaction coordinator and file layer remain 304 and 346 lines.
+- complete `npm run check` passes 1,693 regular tests with 30 opt-in live tests
+  skipped, 255 OpenAPI routes, 244/244 compatibility operations, and every
+  TypeScript/Web build. Product performance remains within budget at 637.5 ms
+  to first CLI event, 787.0 ms to first token, 1,098.9 ms to completion,
+  0.4 ms read p95, 6.9 ms for a 1,000-event projection, and 749.568 closed
+  SQLite bytes/event. The 92-file Web dist main entry remains 130.32 KiB under
+  its 150 KiB limit, bound to `9a4dc8f5ab7f92ce`; the seven-artifact release
+  set is bound to `8280e6926d8d4dc0`.
 
 ## Implemented Slice: Pre-Merge Coder Candidate Verification
 

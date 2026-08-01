@@ -4147,6 +4147,10 @@ export interface SubagentWorktreeApplyDetails extends Omit<
   writeScopeCount: number;
   writeScopeSetSha256: string;
   changedFileSetSha256: string;
+  candidateAddedFileCount?: number;
+  candidateModifiedFileCount?: number;
+  candidateDeletedFileCount?: number;
+  candidateRenamedFileCount?: number;
   candidateVerificationAttemptCount?: number;
   candidateVerificationFreshCount?: number;
   candidateVerificationPassedCount?: number;

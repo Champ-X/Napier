@@ -40,8 +40,13 @@ describe("Agent coder Subagent", () => {
       }),
     ]);
     const source = "value=1\n";
+    const deleted = "delete-me\n";
+    const moved = "move-me\n";
+    const added = "added\n";
     await Promise.all([
       writeFile(path.join(workspaceRoot, "src/value.txt"), source),
+      writeFile(path.join(workspaceRoot, "src/delete.txt"), deleted),
+      writeFile(path.join(workspaceRoot, "src/move.txt"), moved),
       writeFile(
         path.join(workspaceRoot, "node_modules/vitest/vitest.mjs"),
         "// fixed verifier fixture\n",
@@ -72,9 +77,15 @@ describe("Agent coder Subagent", () => {
         return fauxAssistantMessage(
           fauxToolCall("delegate_task", {
             role: "coder",
-            description: "Update the isolated value",
-            task: "Change the authorized value from 1 to 2.",
-            writePaths: ["src/value.txt"],
+            description: "Apply an isolated file lifecycle change",
+            task: "Modify value.txt, create add.txt, delete delete.txt, and rename move.txt to renamed.txt.",
+            writePaths: [
+              "src/add.txt",
+              "src/delete.txt",
+              "src/move.txt",
+              "src/renamed.txt",
+              "src/value.txt",
+            ],
           }),
           { stopReason: "toolUse" },
         );
@@ -96,26 +107,58 @@ describe("Agent coder Subagent", () => {
       },
       (context) => {
         expect(context.tools?.map((tool) => tool.name)).toContain(
+          "candidate_file",
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("apply_patch", {
+            operation: "create",
+            path: "src/add.txt",
+            expectedSha256: null,
+            content: added,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      fauxAssistantMessage(
+        fauxToolCall("candidate_file", {
+          operation: "delete",
+          path: "src/delete.txt",
+          expectedSha256: sha256(deleted),
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
+        fauxToolCall("candidate_file", {
+          operation: "move",
+          sourcePath: "src/move.txt",
+          destinationPath: "src/renamed.txt",
+          expectedSourceSha256: sha256(moved),
+          expectedDestinationSha256: null,
+        }),
+        { stopReason: "toolUse" },
+      ),
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toContain(
           "verify_workspace",
         );
         return fauxAssistantMessage(
           fauxToolCall("verify_workspace", {
             kind: "test",
-            target: "src/value.txt",
+            target: "src/add.txt",
           }),
           { stopReason: "toolUse" },
         );
       },
       fauxAssistantMessage(
         JSON.stringify({
-          summary: "Prepared the requested candidate.",
+          summary: "Prepared the requested lifecycle candidate.",
           items: [
             {
               kind: "finding",
               severity: "info",
-              title: "Value updated",
-              detail: "The isolated candidate contains the requested value.",
-              evidence: [{ path: "src/value.txt", lineStart: 1, lineEnd: 1 }],
+              title: "Lifecycle completed",
+              detail: "The isolated candidate contains the added file.",
+              evidence: [{ path: "src/add.txt", lineStart: 1, lineEnd: 1 }],
             },
           ],
           unknowns: [],
@@ -127,6 +170,9 @@ describe("Agent coder Subagent", () => {
           serialized.match(/subworkpreview_[a-z0-9]{8,80}/u)?.[0] ?? "";
         expect(previewId).toMatch(/^subworkpreview_/u);
         expect(serialized).toContain("src/value.txt");
+        expect(serialized).toContain(
+          "Lifecycle: 2 added / 1 modified / 2 deleted / 1 renamed",
+        );
         expect(serialized).toContain(
           "Candidate verification: 1 fresh / 1 passed / 0 failed / 0 stale",
         );
@@ -165,6 +211,18 @@ describe("Agent coder Subagent", () => {
     expect(
       await readFile(path.join(workspaceRoot, "src/value.txt"), "utf8"),
     ).toBe("value=2\n");
+    await expect(
+      readFile(path.join(workspaceRoot, "src/add.txt"), "utf8"),
+    ).resolves.toBe(added);
+    await expect(
+      readFile(path.join(workspaceRoot, "src/renamed.txt"), "utf8"),
+    ).resolves.toBe(moved);
+    await expect(
+      readFile(path.join(workspaceRoot, "src/delete.txt")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(workspaceRoot, "src/move.txt")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     const events = await store.listEvents(thread.id);
     const merge = events.find(
       (event) =>
@@ -175,8 +233,12 @@ describe("Agent coder Subagent", () => {
       expect.objectContaining({
         kind: "napier.subagent-worktree-apply",
         status: "applied",
-        fileCount: 1,
+        fileCount: 5,
         taskId: expect.stringMatching(/^task_/u),
+        candidateAddedFileCount: 2,
+        candidateModifiedFileCount: 1,
+        candidateDeletedFileCount: 2,
+        candidateRenamedFileCount: 1,
         candidateVerificationAttemptCount: 1,
         candidateVerificationFreshCount: 1,
         candidateVerificationPassedCount: 1,
@@ -188,6 +250,9 @@ describe("Agent coder Subagent", () => {
     const durable = JSON.stringify(events);
     expect(durable).not.toContain(previewId);
     expect(durable).not.toContain("value=2");
+    expect(durable).toContain("src/add.txt");
+    expect(durable).not.toContain("src/renamed.txt");
+    expect(durable).not.toContain("src/delete.txt");
     expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
     expect(
       events.find(

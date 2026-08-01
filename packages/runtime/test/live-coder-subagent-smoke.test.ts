@@ -46,16 +46,27 @@ describeLive("live coder Subagent smoke", () => {
       mkdir(path.join(fixtureRoot, "test"), { recursive: true }),
     ]);
     const sourcePath = `${fixtureName}/src/value.ts`;
+    const addedPath = `${fixtureName}/src/added.ts`;
+    const deletedPath = `${fixtureName}/src/deleted.ts`;
+    const movedPath = `${fixtureName}/src/move.ts`;
+    const renamedPath = `${fixtureName}/src/renamed.ts`;
     const testPath = `${fixtureName}/test/value.test.ts`;
     const source = "export const liveCoderValue = 1;\n";
+    const deleted = "export const deletedValue = 99;\n";
+    const moved = "export const movedValue = 3;\n";
+    const added = "export const addedValue = 2;\n";
     await Promise.all([
       writeFile(path.join(workspaceRoot, sourcePath), source),
+      writeFile(path.join(workspaceRoot, deletedPath), deleted),
+      writeFile(path.join(workspaceRoot, movedPath), moved),
       writeFile(
         path.join(workspaceRoot, testPath),
         [
           'import { expect, test } from "vitest";',
           'import { liveCoderValue } from "../src/value.js";',
-          'test("coder value", () => expect(liveCoderValue).toBe(2));',
+          'import { addedValue } from "../src/added.js";',
+          'import { movedValue } from "../src/renamed.js";',
+          'test("coder value", () => expect(liveCoderValue + addedValue + movedValue).toBe(7));',
           "",
         ].join("\n"),
       ),
@@ -73,17 +84,40 @@ describeLive("live coder Subagent smoke", () => {
       }),
     });
     const worktree = await manager.createWorktree("task_livecoder1", [
+      addedPath,
+      deletedPath,
+      movedPath,
+      renamedPath,
       sourcePath,
     ]);
     const tools = manager.createCoderTools(worktree);
     const patch = tools.find((tool) => tool.name === "apply_patch")!;
     const lsp = tools.find((tool) => tool.name === "lsp_diagnostics")!;
     const verify = tools.find((tool) => tool.name === "verify_workspace")!;
+    const candidateFile = tools.find((tool) => tool.name === "candidate_file")!;
     await patch.execute("live-coder-patch", {
       operation: "replace",
       path: sourcePath,
       expectedSha256: sha256(source),
       edits: [{ oldText: "= 1", newText: "= 2" }],
+    });
+    await patch.execute("live-coder-add", {
+      operation: "create",
+      path: addedPath,
+      expectedSha256: null,
+      content: added,
+    });
+    await candidateFile.execute("live-coder-delete", {
+      operation: "delete",
+      path: deletedPath,
+      expectedSha256: sha256(deleted),
+    });
+    await candidateFile.execute("live-coder-move", {
+      operation: "move",
+      sourcePath: movedPath,
+      destinationPath: renamedPath,
+      expectedSourceSha256: sha256(moved),
+      expectedDestinationSha256: null,
     });
     const candidateDiagnostics = await lsp.execute("live-coder-lsp", {
       path: sourcePath,
@@ -104,6 +138,15 @@ describeLive("live coder Subagent smoke", () => {
       }),
     );
     const preview = await manager.storePreview(worktree, "f".repeat(64));
+    expect(preview).toEqual(
+      expect.objectContaining({
+        changedFileCount: 5,
+        addedFileCount: 2,
+        modifiedFileCount: 1,
+        deletedFileCount: 2,
+        renamedFileCount: 1,
+      }),
+    );
     expect(preview.candidateVerification).toEqual(
       expect.objectContaining({
         attemptCount: 2,
@@ -117,13 +160,20 @@ describeLive("live coder Subagent smoke", () => {
     expect(await readFile(path.join(workspaceRoot, sourcePath), "utf8")).toBe(
       source,
     );
+    await expect(
+      readFile(path.join(workspaceRoot, addedPath)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     const applied = await manager.apply(preview.id);
 
     expect(applied.details).toEqual(
       expect.objectContaining({
         status: "applied",
         postcondition: "verified",
-        fileCount: 1,
+        fileCount: 5,
+        candidateAddedFileCount: 2,
+        candidateModifiedFileCount: 1,
+        candidateDeletedFileCount: 2,
+        candidateRenamedFileCount: 1,
         diagnostics: expect.objectContaining({ status: "clean" }),
         tests: expect.objectContaining({
           status: "passed",
@@ -140,6 +190,18 @@ describeLive("live coder Subagent smoke", () => {
     expect(await readFile(path.join(workspaceRoot, sourcePath), "utf8")).toBe(
       "export const liveCoderValue = 2;\n",
     );
+    await expect(
+      readFile(path.join(workspaceRoot, addedPath), "utf8"),
+    ).resolves.toBe(added);
+    await expect(
+      readFile(path.join(workspaceRoot, renamedPath), "utf8"),
+    ).resolves.toBe(moved);
+    await expect(
+      readFile(path.join(workspaceRoot, deletedPath)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(workspaceRoot, movedPath)),
+    ).rejects.toMatchObject({ code: "ENOENT" });
     expect(JSON.stringify(applied.details)).not.toContain(sourcePath);
     expect(JSON.stringify(applied.details)).not.toContain(preview.id);
   }, 120_000);

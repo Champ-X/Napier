@@ -231,13 +231,14 @@ Version `0.1.0` includes:
   evidence, immutable correction supersession, atomic multi-source
   consolidation, bounded injection, and audit events;
 - isolated researcher, reviewer, and general subagents with read-only tools,
-  plus an opt-in `coder` role that edits up to eight declared existing text
-  files in a bounded private workspace snapshot, runs real LSP and optional
-  fixed Sandbox verification against candidate bytes, and returns a bounded
-  live change review plus snapshot-fresh pass/fail/stale evidence and a one-use
-  candidate for explicit parent merge. All roles retain bounded run budgets,
-  cancellation, strict typed outcomes, hash-bound delegation receipts, and a
-  compaction-immune durable task projection;
+  plus an opt-in `coder` role that creates, modifies, deletes, or renames up to
+  eight explicitly authorized text-file paths in a bounded private workspace
+  snapshot, runs real LSP and optional fixed Sandbox verification against
+  candidate bytes, and returns a bounded live change review plus
+  snapshot-fresh pass/fail/stale evidence and a one-use candidate for explicit
+  parent merge. All roles retain bounded run budgets, cancellation, strict
+  typed outcomes, hash-bound delegation receipts, and a compaction-immune
+  durable task projection;
 - reviewed Streamable HTTP MCP connections with provenance, capability and
   per-tool effect approval, local routing hints, deferred schema search, Agent
   enablement, no-store extension state headers, and last-moment policy checks;
@@ -2869,21 +2870,25 @@ The opt-in `coder` role lets a parent Coding Agent delegate a bounded change
 without granting the child direct access to parent workspace writes:
 
 ```text
-delegate_task(role=coder, writePaths=[1..8 existing files])
+delegate_task(role=coder, writePaths=[1..8 file paths])
   -> snapshot at most 2,000 files / 32 MiB into a private Runtime-owner root
   -> reject symlinks, special files, protected/generated roots, and source drift
   -> overlay read-only parent dependencies, redirect workspace packages to the candidate
-  -> run a Pi child with private read/AST tools and path-limited apply_patch
-  -> serialize patch, real LSP, and optional fixed verify_workspace operations
+  -> run a Pi child with private read/AST tools, path-limited apply_patch,
+     and candidate_file delete/move; both rename paths require grants
+  -> serialize create/modify/delete/move, real LSP, and fixed verification
   -> bind each verification result to the complete private candidate snapshot
-  -> ground its typed outcome against candidate bytes and actual changed files
+  -> derive authoritative add/modify/delete changes and unambiguous renames
+  -> ground its typed outcome against surviving candidate bytes
   -> derive a control-safe live-only change window and fresh/pass/fail/stale evidence
   -> delete the private tree and return a five-minute one-use merge preview
 subagent_worktree_apply(previewId)
   -> consume the capability and recheck the complete source snapshot
-  -> acquire the shared multi-file locks and stage/fsync/commit atomically
-  -> reverse rollback on partial failure and verify postconditions
-  -> run fresh LSP diagnostics and enabled write-linked tests
+  -> acquire shared multi-file locks and recheck hash + inode + mode state
+  -> install additions by no-overwrite hard link, replace staged files by rename,
+     and move deletions to same-directory verified tombstones
+  -> reverse rollback on partial failure, fsync, and verify nullable postconditions
+  -> run fresh LSP diagnostics and enabled write-linked tests for modified paths
 ```
 
 The parent workspace is unchanged until the second tool call. A source change
@@ -2891,14 +2896,20 @@ observed during candidate finalization or either apply preflight makes the
 candidate stale; when concurrent candidates share a source snapshot, the first
 successful merge therefore makes the others stale. An external process can
 still race after the last full-source scan because it does not honor Napier's
-locks; lock-local target CAS prevents silent overwrite of the candidate files.
-The live parent result includes per-file before/after hashes and one
-common-prefix/suffix change window, labels file content as untrusted, escapes
-terminal/bidirectional controls, and reports truncation instead of claiming
-complete review. The preview is deliberately memory-only and valid in the same
-Run, so Runtime restart invalidates it without mutation. PID-bound owner
-manifests preserve worktrees owned by another live local Runtime and allow a
-later worker to clean directories left by a dead process.
+locks. Lock-local hash/inode checks narrow the remaining external race;
+additions use no-overwrite installation, and deletions first move to a
+content/identity-verified tombstone so partial failure can restore them. The
+live parent result labels each file as add/modify/delete, detects a rename only
+when one added and one deleted file have an unambiguous identical digest,
+escapes terminal/bidirectional controls, and reports truncation instead of
+claiming complete review. The preview is deliberately memory-only and valid in
+the same Run, so Runtime restart invalidates it without mutation. PID-bound
+owner manifests preserve worktrees owned by another live local Runtime and
+allow a later worker to clean directories left by a dead process.
+
+A concurrent coder fork fails closed while a recognized
+`.napier-change-*` stage, backup, or tombstone is present, so transaction
+recovery bytes are never copied into another candidate.
 
 Candidate LSP always uses a fresh one-shot language server. When the parent
 profile also enables `verify_workspace`, the child receives the existing fixed
@@ -2927,11 +2938,13 @@ IDs remain live-only.
 
 This is a filesystem worktree, not a Git branch, shell checkout, container, or
 process sandbox. The child has no shell, Process, network, Browser, Extension,
-persistent Session, or nested-delegation capability. Candidate creation,
-deletion, rename, mode changes, symlinks, binary files, arbitrary child-side
-commands/package scripts, and cross-Run preview recovery are not supported.
-The fixed verifier remains read-only and offline; it is not a general process
-capability.
+persistent Session, or nested-delegation capability. Empty-directory
+operations, directory moves, parent-directory creation during lifecycle
+operations, permission edits, symlinks, binary files, ambiguous renames between
+files with duplicate content, arbitrary child-side commands/package scripts,
+and cross-Run preview recovery remain unsupported. Pure additions use mode
+`0644`; a byte-identical rename preserves the observed source mode. The fixed
+verifier remains read-only and offline; it is not a general process capability.
 
 Run the opt-in real Agent-to-private-worktree smoke:
 

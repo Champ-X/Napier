@@ -109,8 +109,12 @@ describe("Subagent event trace view", () => {
       mergePreviewAvailable: true,
       sourceFileCount: 120,
       sourceBytes: 4096,
-      writeScopeCount: 2,
-      changedFileCount: 1,
+      writeScopeCount: 5,
+      changedFileCount: 5,
+      candidateAddedFileCount: 2,
+      candidateModifiedFileCount: 1,
+      candidateDeletedFileCount: 2,
+      candidateRenamedFileCount: 1,
       sourceSnapshotSha256: "2".repeat(64),
       writeScopeSetSha256: "3".repeat(64),
       changedFileSetSha256: "4".repeat(64),
@@ -133,9 +137,13 @@ describe("Subagent event trace view", () => {
         mergePreviewAvailable: true,
         sourceFileCount: 120,
         sourceBytes: 4096,
-        writeScopeCount: 2,
-        changedFileCount: 1,
+        writeScopeCount: 5,
+        changedFileCount: 5,
         changedFileSetSha256: "4".repeat(64),
+        candidateAddedFileCount: 2,
+        candidateModifiedFileCount: 1,
+        candidateDeletedFileCount: 2,
+        candidateRenamedFileCount: 1,
         candidateVerificationFreshCount: 2,
         candidateVerificationPassedCount: 1,
         candidateVerificationFailedCount: 1,
@@ -144,7 +152,7 @@ describe("Subagent event trace view", () => {
       }),
     );
     expect(subagentEventTraceSummary(event)).toContain(
-      `workspace isolated_write / merge-preview / source-files 120 / write-scopes 2 / changed-files 1 / change-set ${"4".repeat(12)} / candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale / candidate-verification-set ${"5".repeat(12)}`,
+      `workspace isolated_write / merge-preview / source-files 120 / write-scopes 5 / changed-files 5 / change-set ${"4".repeat(12)} / lifecycle 2 added / 1 modified / 2 deleted / 1 renamed / candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale / candidate-verification-set ${"5".repeat(12)}`,
     );
     expect(subagentEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

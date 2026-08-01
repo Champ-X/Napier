@@ -51,6 +51,11 @@ export interface LspWorkspaceEditMutationOptions<
     Partial<Pick<WriteLinkedTestVerificationRunner, "supports">>;
   now?: () => Date;
   commit?: typeof commitLspRename;
+  commitSource?: (
+    source: Source,
+    signal?: AbortSignal,
+  ) => Promise<LspRenameCommitOutcome>;
+  changeCount?: (source: Source) => number;
   commitOptions?: Pick<CommitLspRenameOptions, "renameFile" | "linkFile">;
   preflight?: (source: Source, signal?: AbortSignal) => Promise<void>;
 }
@@ -127,7 +132,9 @@ export class LspWorkspaceEditMutationCoordinator<
   storePreview(
     source: Source,
   ): LspWorkspaceEditApplyPreview<Source> | undefined {
-    if (source.files.length === 0) return undefined;
+    const changeCount =
+      this.options.changeCount?.(source) ?? source.files.length;
+    if (changeCount === 0) return undefined;
     this.prune();
     const now = this.validNow();
     const id = createId(this.options.previewPrefix);
@@ -179,14 +186,16 @@ export class LspWorkspaceEditMutationCoordinator<
     assertNotAborted(signal, this.options.label);
     await this.options.preflight?.(preview.source, signal);
     assertNotAborted(signal, this.options.label);
-    const outcome = await this.commit({
-      workspaceRoot: this.options.workspaceRoot,
-      dataRoot: this.options.dataRoot,
-      sourcePreviewResultSha256: preview.source.sourcePreviewResultSha256,
-      files: preview.source.files,
-      ...(signal ? { signal } : {}),
-      ...this.options.commitOptions,
-    });
+    const outcome = this.options.commitSource
+      ? await this.options.commitSource(preview.source, signal)
+      : await this.commit({
+          workspaceRoot: this.options.workspaceRoot,
+          dataRoot: this.options.dataRoot,
+          sourcePreviewResultSha256: preview.source.sourcePreviewResultSha256,
+          files: preview.source.files,
+          ...(signal ? { signal } : {}),
+          ...this.options.commitOptions,
+        });
     const diagnosticObservation =
       outcome.status === "applied"
         ? await this.observeAfter(diagnostics, outcome.expectedFiles, signal)
@@ -245,6 +254,7 @@ export class LspWorkspaceEditMutationCoordinator<
   private testsEnabled(source: Source): boolean {
     return Boolean(
       this.options.tests &&
+      source.files.length > 0 &&
       (!this.options.tests.supports ||
         source.files.every((file) => this.options.tests!.supports!(file.path))),
     );

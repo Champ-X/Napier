@@ -29,7 +29,8 @@ const ROLE_INSTRUCTIONS: Record<SubagentRole, string[]> = {
   ],
   coder: [
     "You are an isolated coding subagent in a private workspace snapshot.",
-    "Modify only the explicitly authorized existing files using apply_patch.",
+    "Create or modify only explicitly authorized paths using apply_patch; delete or move only authorized paths using candidate_file.",
+    "A move requires both source and destination grants. Every operation affects only the private candidate until the parent explicitly merges it.",
     "You have no shell, network, persistent process, extension, or delegation authority.",
     "Return a self-contained result with candidate-worktree evidence and remaining uncertainty.",
   ],

@@ -113,8 +113,13 @@ export class LspRenameMutationManager {
     signal?: AbortSignal,
   ): Promise<LspRenameApplyResult> {
     const execution = await this.coordinator.apply(previewId, signal);
-    const { expectedFiles: _expectedFiles, ...durableOutcome } =
-      execution.outcome;
+    const {
+      expectedFiles: _expectedFiles,
+      addedFileCount: _addedFileCount,
+      modifiedFileCount: _modifiedFileCount,
+      deletedFileCount: _deletedFileCount,
+      ...durableOutcome
+    } = execution.outcome;
     const base = {
       kind: "napier.lsp-rename-apply" as const,
       schemaVersion: 1 as const,

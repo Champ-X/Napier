@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -49,6 +57,7 @@ describe("Subagent worktree mutation manager", () => {
       "ast_query",
       "ast_edit_preview",
       "apply_patch",
+      "candidate_file",
     ]);
     const patch = tools.find((tool) => tool.name === "apply_patch")!;
     await Promise.all([
@@ -72,7 +81,7 @@ describe("Subagent worktree mutation manager", () => {
         expectedSha256: "a".repeat(64),
         edits: [{ oldText: "a", newText: "b" }],
       }),
-    ).rejects.toThrow("declared existing write paths");
+    ).rejects.toThrow("declared file paths");
 
     const preview = await manager.storePreview(worktree, "b".repeat(64));
     expect(preview).toEqual(
@@ -156,6 +165,91 @@ describe("Subagent worktree mutation manager", () => {
     await expect(manager.apply(preview.id)).rejects.toThrow(
       "preview not found",
     );
+  });
+
+  it("merges authorized add, delete, and rename lifecycle changes once", async () => {
+    const harness = await createHarness();
+    const manager = createManager(harness);
+    const deleted = "export const deleted = true;\n";
+    const moved = "export const moved = true;\n";
+    const added = "export const added = true;\n";
+    await Promise.all([
+      writeFile(path.join(harness.workspaceRoot, "src/delete.ts"), deleted),
+      writeFile(path.join(harness.workspaceRoot, "src/source.ts"), moved),
+    ]);
+    await chmod(path.join(harness.workspaceRoot, "src/source.ts"), 0o755);
+    const worktree = await manager.createWorktree("task_lifecycle1", [
+      "src/add.ts",
+      "src/delete.ts",
+      "src/renamed.ts",
+      "src/source.ts",
+    ]);
+    const tools = manager.createCoderTools(worktree);
+    const patch = tools.find((tool) => tool.name === "apply_patch")!;
+    const candidateFile = tools.find((tool) => tool.name === "candidate_file")!;
+
+    await patch.execute("create-addition", {
+      operation: "create",
+      path: "src/add.ts",
+      expectedSha256: null,
+      content: added,
+    });
+    await candidateFile.execute("delete-file", {
+      operation: "delete",
+      path: "src/delete.ts",
+      expectedSha256: sha256(deleted),
+    });
+    await candidateFile.execute("move-file", {
+      operation: "move",
+      sourcePath: "src/source.ts",
+      destinationPath: "src/renamed.ts",
+      expectedSourceSha256: sha256(moved),
+      expectedDestinationSha256: null,
+    });
+    const preview = await manager.storePreview(worktree, "1".repeat(64));
+
+    expect(preview).toEqual(
+      expect.objectContaining({
+        changedFileCount: 4,
+        addedFileCount: 2,
+        modifiedFileCount: 0,
+        deletedFileCount: 2,
+        renamedFileCount: 1,
+        review: expect.stringContaining("Operation: add"),
+      }),
+    );
+    await expect(
+      readFile(path.join(harness.workspaceRoot, "src/add.ts")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+
+    const applied = await manager.apply(preview.id);
+    expect(applied.details).toEqual(
+      expect.objectContaining({
+        status: "applied",
+        postcondition: "verified",
+        fileCount: 4,
+        candidateAddedFileCount: 2,
+        candidateModifiedFileCount: 0,
+        candidateDeletedFileCount: 2,
+        candidateRenamedFileCount: 1,
+      }),
+    );
+    await expect(
+      readFile(path.join(harness.workspaceRoot, "src/add.ts"), "utf8"),
+    ).resolves.toBe(added);
+    await expect(
+      readFile(path.join(harness.workspaceRoot, "src/renamed.ts"), "utf8"),
+    ).resolves.toBe(moved);
+    expect(
+      (await stat(path.join(harness.workspaceRoot, "src/renamed.ts"))).mode &
+        0o777,
+    ).toBe(0o755);
+    await expect(
+      readFile(path.join(harness.workspaceRoot, "src/delete.ts")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
+    await expect(
+      readFile(path.join(harness.workspaceRoot, "src/source.ts")),
+    ).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("rechecks complete source freshness after diagnostics and before commit", async () => {
