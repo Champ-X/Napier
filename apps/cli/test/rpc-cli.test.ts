@@ -693,6 +693,59 @@ describe("Napier RPC CLI", () => {
 
     rpc.send({
       jsonrpc: "2.0",
+      id: "experiment-step-preview",
+      method: "napier/workflow/experiment/preview",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "prepare",
+        mode: "step_nodes",
+      },
+    });
+    const stepPreview = record(
+      (await rpc.waitForId("experiment-step-preview"))["result"],
+    )!;
+    expect(stepPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        mode: "step_nodes",
+        executionNodeIds: ["prepare"],
+        stopBeforeNodeIds: ["deliver"],
+      }),
+    );
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-step-run",
+      method: "napier/workflow/experiment/run",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "prepare",
+        mode: "step_nodes",
+        expectedPreviewSha256: stepPreview["previewSha256"],
+      },
+    });
+    expect(await rpc.waitForId("experiment-step-run")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          status: "paused",
+          experiment: expect.objectContaining({
+            preview: expect.objectContaining({
+              schemaVersion: 5,
+              mode: "step_nodes",
+            }),
+            result: expect.objectContaining({
+              breakpoint: expect.objectContaining({ nodeId: "deliver" }),
+            }),
+          }),
+        }),
+      }),
+    );
+
+    rpc.send({
+      jsonrpc: "2.0",
       id: "experiment-stale",
       method: "napier/workflow/experiment/run",
       params: {

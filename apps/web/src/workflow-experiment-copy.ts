@@ -12,12 +12,15 @@ export const workflowExperimentCopy = {
   executionMode: "Execution scope",
   subgraphMode: "Checkpoint and descendants",
   singleNodeMode: "Selected checkpoint only",
+  stepNodesMode: "Step through rerun nodes",
   simulateNodeMode: "Simulated checkpoint output",
   replaceInputMode: "Replacement checkpoint input",
   subgraphHint:
     "Rerun the selected checkpoint and its complete descendant subgraph.",
   singleNodeHint:
     "Execute the selected checkpoint and hold any direct descendants.",
+  stepNodesHint:
+    "Execute the selected checkpoint, then release exactly one remaining rerun node per Continue action.",
   simulateNodeHint:
     "Skip the selected checkpoint, bind a typed simulated output, and execute its descendants.",
   replaceInputHint:

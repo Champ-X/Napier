@@ -20,8 +20,13 @@ export const WORKFLOW_BREAKPOINT_CONTINUED_EVENT =
 
 type BreakpointDisposition =
   | ExecutionPlanWorkflowBreakpoint
+  | WorkflowBreakpointRelease
   | "cancelled"
   | undefined;
+
+interface WorkflowBreakpointRelease {
+  releasedNodeId: string;
+}
 
 interface RecoveredBreakpoint {
   breakpoint: ExecutionPlanWorkflowBreakpoint;
@@ -67,6 +72,9 @@ export class ExecutionPlanWorkflowBreakpointRuntime {
       throw new Error("Workflow has no open breakpoint to continue");
     }
 
+    const releasedNodeId = this.releasedReadyNodeId(context, recovered);
+    if (releasedNodeId) return { releasedNodeId };
+
     for (const [index, nodeId] of context.breakBeforeNodeIds.entries()) {
       if (recovered.has(nodeId)) continue;
       const step = context.plan.steps.find(
@@ -81,6 +89,24 @@ export class ExecutionPlanWorkflowBreakpointRuntime {
       return context.signal?.aborted ? "cancelled" : breakpoint;
     }
     return undefined;
+  }
+
+  private releasedReadyNodeId(
+    context: WorkflowExecutionContext,
+    recovered: Map<string, RecoveredBreakpoint>,
+  ): string | undefined {
+    return [...recovered.values()]
+      .filter(
+        (candidate) =>
+          candidate.continued &&
+          context.plan.steps.find(
+            (step) => step.id === candidate.breakpoint.nodeId,
+          )?.status === "ready",
+      )
+      .sort(
+        (left, right) =>
+          left.breakpoint.breakpointIndex - right.breakpoint.breakpointIndex,
+      )[0]?.breakpoint.nodeId;
   }
 
   private async recover(

@@ -22,11 +22,13 @@ export function WorkflowExperimentModeField({
   const hint =
     mode === "single_node"
       ? copy.singleNodeHint
-      : mode === "simulate_node"
-        ? copy.simulateNodeHint
-        : mode === "replace_input"
-          ? copy.replaceInputHint
-          : copy.subgraphHint;
+      : mode === "step_nodes"
+        ? copy.stepNodesHint
+        : mode === "simulate_node"
+          ? copy.simulateNodeHint
+          : mode === "replace_input"
+            ? copy.replaceInputHint
+            : copy.subgraphHint;
   return (
     <>
       <label className="workflow-experiment-model">
@@ -44,6 +46,7 @@ export function WorkflowExperimentModeField({
         >
           <option value="subgraph">{copy.subgraphMode}</option>
           <option value="single_node">{copy.singleNodeMode}</option>
+          <option value="step_nodes">{copy.stepNodesMode}</option>
           <option value="simulate_node">{copy.simulateNodeMode}</option>
           <option value="replace_input">{copy.replaceInputMode}</option>
         </select>

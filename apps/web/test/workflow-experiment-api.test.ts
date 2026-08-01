@@ -206,6 +206,47 @@ describe("Workflow experiment Web API", () => {
     ).rejects.toThrow("preview binding");
   });
 
+  it("binds a schema-v5 preview to the exact step-control set", async () => {
+    const fixture = experimentFixture();
+    const {
+      schemaVersion: _schemaVersion,
+      previewSha256: _previewSha256,
+      ...previewBase
+    } = fixture.preview;
+    const content = {
+      ...previewBase,
+      schemaVersion: 5 as const,
+      mode: "step_nodes" as const,
+      executionNodeIds: ["report"],
+      stopBeforeNodeIds: [],
+    };
+    const preview = {
+      ...content,
+      previewSha256: sha256(canonicalJson(content)),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse(preview, {
+          headers: {
+            "Cache-Control": "no-store",
+            "X-Napier-Content-SHA256": preview.previewSha256,
+            "X-Napier-Content-SHA256-Mode": "stable",
+            "X-Napier-Workflow-Experiment-Preview-SHA256":
+              preview.previewSha256,
+          },
+        }),
+      ),
+    );
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        fromNodeId: "report",
+        mode: "step_nodes",
+      }),
+    ).resolves.toEqual(preview);
+  });
+
   it("accepts a snapshot-bound experiment result and exposes progress frames", async () => {
     const fixture = experimentFixture();
     const frames: unknown[] = [];

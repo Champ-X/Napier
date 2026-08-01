@@ -1472,6 +1472,7 @@ export interface ExecutionPlanWorkflowExperimentToolEffects {
 export type ExecutionPlanWorkflowExperimentMode =
   | "subgraph"
   | "single_node"
+  | "step_nodes"
   | "simulate_node"
   | "replace_input";
 
@@ -1522,11 +1523,19 @@ export interface ExecutionPlanWorkflowExperimentPreviewV4 extends ExecutionPlanW
   replacementInputBytes: number;
 }
 
+export interface ExecutionPlanWorkflowExperimentPreviewV5 extends ExecutionPlanWorkflowExperimentPreviewBase {
+  schemaVersion: 5;
+  mode: "step_nodes";
+  executionNodeIds: string[];
+  stopBeforeNodeIds: string[];
+}
+
 export type ExecutionPlanWorkflowExperimentPreview =
   | ExecutionPlanWorkflowExperimentPreviewV1
   | ExecutionPlanWorkflowExperimentPreviewV2
   | ExecutionPlanWorkflowExperimentPreviewV3
-  | ExecutionPlanWorkflowExperimentPreviewV4;
+  | ExecutionPlanWorkflowExperimentPreviewV4
+  | ExecutionPlanWorkflowExperimentPreviewV5;
 
 export interface ExecutionPlanWorkflowExperimentMetricSet {
   runCount: number;

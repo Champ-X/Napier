@@ -272,6 +272,21 @@ describe("Napier JSON-RPC protocol", () => {
           sourceThreadId: "thread_example",
           manifest,
           planId: "plan_abcdefgh",
+          fromNodeId: "deliver",
+          mode: "step_nodes",
+        }),
+      ).toEqual({
+        sourceThreadId: "thread_example",
+        manifest,
+        planId: "plan_abcdefgh",
+        fromNodeId: "deliver",
+        mode: "step_nodes",
+      });
+      expect(
+        parseWorkflowExperimentPreviewParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
           fromNodeId: "prepare",
           mode: "simulate_node",
           simulatedOutput: { normalized: "RPC simulated" },

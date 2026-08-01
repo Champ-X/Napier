@@ -15,8 +15,9 @@ export async function executeExecutionPlanWorkflowReadyBatch<T>(
     context: WorkflowExecutionContext,
     node: ExecutionPlanWorkflowNode,
   ) => Promise<T>,
+  releasedNodeId?: string,
 ): Promise<WorkflowBatchNodeOutcome<T>[]> {
-  const nodes = selectExecutionPlanWorkflowReadyBatch(context);
+  const nodes = selectExecutionPlanWorkflowReadyBatch(context, releasedNodeId);
   if (nodes.length === 0) return [];
 
   const controller = new AbortController();
@@ -60,12 +61,20 @@ export function executionPlanWorkflowMaxConcurrency(
 
 function selectExecutionPlanWorkflowReadyBatch(
   context: WorkflowExecutionContext,
+  releasedNodeId?: string,
 ): ExecutionPlanWorkflowNode[] {
   const ready = context.manifest.nodes.filter(
     (node) =>
       context.plan.steps.find((step) => step.id === node.id)?.status ===
       "ready",
   );
+  if (releasedNodeId) {
+    const released = ready.find((node) => node.id === releasedNodeId);
+    if (!released) {
+      throw new Error("Workflow released breakpoint node is not ready");
+    }
+    return [released];
+  }
   if (ready.length === 0) return [];
   const maxConcurrency = executionPlanWorkflowMaxConcurrency(context);
   if (maxConcurrency === 1) return ready.slice(0, 1);

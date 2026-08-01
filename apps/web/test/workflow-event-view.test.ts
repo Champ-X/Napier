@@ -321,6 +321,31 @@ describe("Workflow event Trace projection", () => {
     const malformed = structuredClone(singleNode);
     delete (malformed.payload as Record<string, unknown>)["stopBeforeNodeIds"];
     expect(workflowEventTraceSummary(malformed)).toBeUndefined();
+    const stepNodes = workflowEvent("workflow.experiment.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      sourceThreadId: "thread_source_private",
+      sourcePlanId: "plan_source_private",
+      sourcePlanRevision: 4,
+      sourceManifestSha256: "2".repeat(64),
+      fromNodeId: "inspect",
+      reusedNodeIds: [],
+      rerunNodeIds: ["inspect", "report", "publish"],
+      executionMode: "step_nodes",
+      executionNodeIds: ["inspect"],
+      stopBeforeNodeIds: ["report", "publish"],
+      previewSha256: "7".repeat(64),
+      sideEffectsConfirmed: false,
+    });
+    expect(workflowEventTraceSummary(stepNodes)).toContain(
+      "mode step-nodes / execute 1 / stop-before 2",
+    );
+    const incompleteStepNodes = structuredClone(stepNodes);
+    (incompleteStepNodes.payload as Record<string, unknown>)[
+      "stopBeforeNodeIds"
+    ] = ["report"];
+    expect(workflowEventTraceSummary(incompleteStepNodes)).toBeUndefined();
     const simulation = workflowEvent("workflow.experiment.started", {
       schemaVersion: 1,
       planId: "plan_abcdefghijklmnopqrst",

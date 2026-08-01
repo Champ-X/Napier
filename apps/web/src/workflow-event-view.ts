@@ -80,14 +80,20 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       typeof payload["sideEffectsConfirmed"] !== "boolean" ||
       (executionMode !== undefined &&
         executionMode !== "single_node" &&
+        executionMode !== "step_nodes" &&
         executionMode !== "simulate_node" &&
         executionMode !== "replace_input") ||
-      (executionMode === "single_node"
+      (executionMode === "single_node" || executionMode === "step_nodes"
         ? !executionNodeIds ||
           !stopBeforeNodeIds ||
           executionNodeIds.length !== 1 ||
           executionNodeIds[0] !== fromNodeId ||
           stopBeforeNodeIds.length > 16 ||
+          (executionMode === "step_nodes" &&
+            !sameStrings(
+              stopBeforeNodeIds,
+              rerunNodeIds.filter((nodeId) => nodeId !== fromNodeId),
+            )) ||
           simulationNodeId !== undefined ||
           simulatedOutputSha256 !== undefined ||
           simulatedOutputBytes !== undefined ||
@@ -127,9 +133,11 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `from ${fromNodeId}`,
       `reused ${String(reusedNodeIds.length)}`,
       `rerun ${String(rerunNodeIds.length)}`,
-      ...(executionMode === "single_node"
+      ...(executionMode === "single_node" || executionMode === "step_nodes"
         ? [
-            "mode single-node",
+            executionMode === "single_node"
+              ? "mode single-node"
+              : "mode step-nodes",
             `execute ${String(executionNodeIds!.length)}`,
             `stop-before ${String(stopBeforeNodeIds!.length)}`,
           ]
@@ -840,6 +848,13 @@ function hash(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-f0-9]{64}$/u.test(value)
     ? value
     : undefined;
+}
+
+function sameStrings(left: string[], right: string[]): boolean {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
 }
 
 function record(value: unknown): value is Record<string, unknown> {

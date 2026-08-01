@@ -37,6 +37,14 @@ describe("Workflow experiment execution mode", () => {
       stopBeforeNodeIds: ["left", "right"],
     });
     expect(
+      projectWorkflowExperimentExecution(manifest, "prepare", "step_nodes"),
+    ).toEqual({
+      mode: "step_nodes",
+      rerunNodeIds: ["prepare", "left", "right", "join"],
+      executionNodeIds: ["prepare"],
+      stopBeforeNodeIds: ["left", "right", "join"],
+    });
+    expect(
       projectWorkflowExperimentExecution(manifest, "prepare", "simulate_node"),
     ).toEqual({
       mode: "simulate_node",
@@ -76,6 +84,9 @@ describe("Workflow experiment execution mode", () => {
     expect(() =>
       projectWorkflowExperimentExecution(manifest, "root", "single_node"),
     ).toThrow("exceeds 16 direct successors");
+    expect(() =>
+      projectWorkflowExperimentExecution(manifest, "root", "step_nodes"),
+    ).toThrow("exceeds 16 remaining nodes");
   });
 });
 

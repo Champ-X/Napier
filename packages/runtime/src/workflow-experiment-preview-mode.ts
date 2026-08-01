@@ -26,6 +26,8 @@ export function workflowExperimentPreviewModeKeys(
         "replacementInputSha256",
         "replacementInputBytes",
       ];
+    case 5:
+      return ["mode", "executionNodeIds", "stopBeforeNodeIds"];
     default:
       return [];
   }
@@ -33,8 +35,10 @@ export function workflowExperimentPreviewModeKeys(
 
 export function validWorkflowExperimentPreviewSchemaVersion(
   value: unknown,
-): value is 1 | 2 | 3 | 4 {
-  return value === 1 || value === 2 || value === 3 || value === 4;
+): value is 1 | 2 | 3 | 4 | 5 {
+  return (
+    value === 1 || value === 2 || value === 3 || value === 4 || value === 5
+  );
 }
 
 export function workflowExperimentNodeIdList(
@@ -60,6 +64,7 @@ export function validateWorkflowExperimentPreviewMode(
 ): {
   executionNodeIds: string[];
   stopBeforeNodeIds: string[];
+  toolEffectNodeIds: string[];
 } {
   const schemaVersion = preview["schemaVersion"];
   const executionNodeIds =
@@ -67,7 +72,7 @@ export function validateWorkflowExperimentPreviewMode(
       ? rerunNodeIds
       : workflowExperimentNodeIdList(preview["executionNodeIds"], "execution");
   const stopBeforeNodeIds =
-    schemaVersion === 2
+    schemaVersion === 2 || schemaVersion === 5
       ? workflowExperimentNodeIdList(
           preview["stopBeforeNodeIds"],
           "stop-before",
@@ -81,6 +86,17 @@ export function validateWorkflowExperimentPreviewMode(
         stopBeforeNodeIds.length > 16 ||
         stopBeforeNodeIds.includes(String(preview["fromNodeId"])) ||
         stopBeforeNodeIds.some((nodeId) => !rerunNodeIds.includes(nodeId)))) ||
+    (schemaVersion === 5 &&
+      (preview["mode"] !== "step_nodes" ||
+        canonicalJson(executionNodeIds) !==
+          canonicalJson([preview["fromNodeId"]]) ||
+        stopBeforeNodeIds.length > 16 ||
+        canonicalJson(stopBeforeNodeIds) !==
+          canonicalJson(
+            rerunNodeIds.filter(
+              (nodeId) => nodeId !== String(preview["fromNodeId"]),
+            ),
+          ))) ||
     (schemaVersion === 3 &&
       (preview["mode"] !== "simulate_node" ||
         preview["simulatedNodeId"] !== preview["fromNodeId"] ||
@@ -98,7 +114,11 @@ export function validateWorkflowExperimentPreviewMode(
     executionNodeIds,
     rerunNodeIds,
   );
-  return { executionNodeIds, stopBeforeNodeIds };
+  return {
+    executionNodeIds,
+    stopBeforeNodeIds,
+    toolEffectNodeIds: schemaVersion === 5 ? rerunNodeIds : executionNodeIds,
+  };
 }
 
 function hash(value: unknown): value is string {

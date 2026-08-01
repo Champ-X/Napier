@@ -6,6 +6,26 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added Workflow node step control. Schema-v5 `step_nodes` experiments execute
+  the selected checkpoint, freeze every remaining rerun node in Manifest order,
+  and reuse the ordinary persistent breakpoint scheduler so each Continue
+  releases exactly one ready node. Breakpoint continuation now produces an
+  internal exact-node scheduler release; a parallel-ready sibling stays held
+  until the released node settles. A continuation persisted immediately before
+  cancellation or process loss recovers the same still-ready node without a
+  duplicate consent event. CLI JSONL (`--step-nodes`), local stdio RPC,
+  TypeScript SDK, HTTP/SSE, the Plan Workflow experiment desk, Web protocol
+  validation, Trace, comparison, and portable Replay share the same Runtime and
+  Ledger. Existing schemas 1-4 and normal breakpoints remain compatible.
+  Built-CLI Dogfood ran a four-node `prepare -> left/right -> join` Workflow and
+  proved three successive Continue actions completed exactly `left`, `right`,
+  and `join` in order. Historical source-evidence validation was extracted from
+  the touched projector, reducing it from 678 to 407 lines while the new module
+  remains 281 lines. The full gate passed 1,733 regular tests with 31 opt-in
+  live tests skipped. Product performance stayed within baseline at 792.7 ms
+  to first CLI event, 940.9 ms to first token, 1,251.4 ms to completion, 0.4 ms
+  read p95, 7.5 ms for a 1,000-event projection, and 749.568 closed SQLite
+  bytes/event. The Web main entry remained 130.32 KiB.
 - Added a debugger-qualified Coding Outcome benchmark. Exact case schema v3
   declares a unique enabled `requiredCompletedTools` set, and evaluation schema
   v3 derives completion only from `tool.completed` events in the scored Run's

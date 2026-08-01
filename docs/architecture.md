@@ -690,8 +690,8 @@ scheduler:
 source Thread + Plan + source Manifest
   -> verify completed source Run/node evidence
   -> derive selected-node descendant rerun subgraph
-  -> choose full-subgraph, selected-node-only, selected-output simulation,
-     or selected constructed-input replacement
+  -> choose full-subgraph, selected-node-only, node-by-node step control,
+     selected-output simulation, or selected constructed-input replacement
   -> for simulation, validate the explicit output against the node Schema
      and bind its canonical hash and byte count
   -> for input replacement, validate the complete constructed input against
@@ -707,6 +707,7 @@ source Thread + Plan + source Manifest
      selected-node input override
   -> execute every non-simulated node through the normal Workflow Runtime
   -> for single-node mode, pause before every direct successor
+  -> for step-control mode, pause before every remaining rerun node
   -> align source/target node evidence and derive target-minus-source metrics
   -> append privacy-bounded workflow.experiment.compared evidence
   -> emit target snapshot + workflow_experiment_result
@@ -750,6 +751,25 @@ break-before set. Unknown checkpoints, partial lineage, source drift,
 impossible stop sets, and self-consistently rehashed result tampering fail
 closed. This is real selected-node execution, not arbitrary input/output
 mocking, side-effect simulation, or a second Workflow state machine.
+
+`step_nodes` emits schema 5 and uses the same initial execution allowlist as
+`single_node`, but `stopBeforeNodeIds` contains every other rerun node in
+Manifest order. The stop set remains capped at 16 and is frozen in the ordinary
+`workflow.started` event. All non-selected nodes therefore remain behind
+normal durable breakpoint evidence until explicitly continued. Unlike
+single-node testing, historical Tool-effect projection and exact-preview
+side-effect confirmation cover the complete rerun subgraph because every held
+node remains executable through a later Continue.
+
+A continued breakpoint projects one internal released-node instruction.
+`executeExecutionPlanWorkflowReadyBatch` accepts that exact ready node for the
+next batch and cannot co-schedule a sibling that is still held. Only after the
+released node settles does the main scheduler loop recover or create the next
+reachable hold. If cancellation or process loss occurs after
+`workflow.breakpoint.continued`, recovery finds the continued breakpoint whose
+Plan step is still `ready` and releases the same node without appending another
+consent event. This also corrects ordinary parallel breakpoint behavior; it is
+not a step-specific scheduler or second state store.
 
 `simulate_node` emits schema 3. `rerunNodeIds` remains the selected node plus
 every descendant that cannot be reused, while `executionNodeIds` contains only
@@ -836,9 +856,9 @@ automatic recovery.
 Preview and execution are available through CLI JSONL and dedicated HTTP
 preview/SSE routes, the TypeScript SDK, and local stdio RPC. The lazy
 Workbench desk independently recomputes the
-rerun/reused/execution/direct-successor/simulation/input-replacement sets,
-validates schema-1/schema-2/schema-3/schema-4 preview hashes, binds terminal
-SSE to Snapshot Plan/Thread state, and requires a matching reached event for a
+rerun/reused/execution/stop/simulation/input-replacement sets, validates
+schema-1/schema-2/schema-3/schema-4/schema-5 preview hashes, binds terminal SSE
+to Snapshot Plan/Thread state, and requires a matching reached event for a
 paused result. Web Trace projects only mode, node IDs, counts, confirmation
 state, and hash prefixes. Source/output/input-replacement bodies, tool
 arguments, diagnostics, and paths are not copied into experiment-specific
@@ -1110,7 +1130,7 @@ parallel dependency-ready DAG scheduling, typed equality guards with
 schema-valid fallback, cancellation, timeout, explicit retry, restart
 recovery, and terminal workspace file/directory Artifact settlement. It does
 not yet implement general graph-level branch pruning, stateful session Tool
-nodes, write-capable Map/Loop, compensation, per-node breakpoints, or external
+nodes, write-capable Map/Loop, compensation, mid-node suspension, or external
 Agent adapters.
 
 ### Coding Outcome Benchmark
@@ -6413,6 +6433,12 @@ The current boundary has sixty-nine parts:
     map/module/toolchain freshness, cleanup-before-drift ordering, fail-closed
     write detection, live-only debugger data, path-free Process evidence, and
     real breakpoint/evaluation/step/merge Dogfood.
+70. Preview-bound Workflow node step control using schema-v5 experiment
+    projections and the existing persistent breakpoint scheduler, with every
+    remaining rerun node held in Manifest order, exact one-node release across
+    parallel-ready branches, continued-but-unsettled restart recovery,
+    CLI/HTTP/SDK/RPC/Web delivery, independent browser validation, portable
+    Replay, and real built-CLI four-node Dogfood.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6465,8 +6491,7 @@ deferred until the local P0-P9 product loop is stable.
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, graph-level branch pruning, write-capable Map/Loop,
   compensation, top-level Workflow input replacement, write/session
-  side-effect simulation, interactive multi-step controls, external Agent
-  adapters, and a visual builder;
+  side-effect simulation, external Agent adapters, and a visual builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only
   tool-call re-execution with stateful/write checkpoints and result simulation,
   Prompt/Skill/Memory/environment replacement, batch experiments, interactive

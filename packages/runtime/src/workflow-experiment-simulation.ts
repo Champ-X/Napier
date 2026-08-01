@@ -81,30 +81,38 @@ export function createWorkflowExperimentPreview(input: {
           executionNodeIds: input.execution.executionNodeIds,
           stopBeforeNodeIds: input.execution.stopBeforeNodeIds,
         }
-      : input.execution.mode === "simulate_node"
+      : input.execution.mode === "step_nodes"
         ? {
             ...input.base,
-            schemaVersion: 3 as const,
-            mode: "simulate_node" as const,
+            schemaVersion: 5 as const,
+            mode: "step_nodes" as const,
             executionNodeIds: input.execution.executionNodeIds,
-            simulatedNodeId: input.simulatedNodes[0]!.nodeId,
-            simulatedOutputSha256: input.simulatedNodes[0]!.outputSha256,
-            simulatedOutputBytes: input.simulatedNodes[0]!.outputBytes,
+            stopBeforeNodeIds: input.execution.stopBeforeNodeIds,
           }
-        : input.execution.mode === "replace_input"
+        : input.execution.mode === "simulate_node"
           ? {
               ...input.base,
-              schemaVersion: 4 as const,
-              mode: "replace_input" as const,
+              schemaVersion: 3 as const,
+              mode: "simulate_node" as const,
               executionNodeIds: input.execution.executionNodeIds,
-              replacedInputNodeId: input.inputOverrides[0]!.nodeId,
-              replacementInputSha256: input.inputOverrides[0]!.inputSha256,
-              replacementInputBytes: input.inputOverrides[0]!.inputBytes,
+              simulatedNodeId: input.simulatedNodes[0]!.nodeId,
+              simulatedOutputSha256: input.simulatedNodes[0]!.outputSha256,
+              simulatedOutputBytes: input.simulatedNodes[0]!.outputBytes,
             }
-          : {
-              ...input.base,
-              schemaVersion: 1 as const,
-            };
+          : input.execution.mode === "replace_input"
+            ? {
+                ...input.base,
+                schemaVersion: 4 as const,
+                mode: "replace_input" as const,
+                executionNodeIds: input.execution.executionNodeIds,
+                replacedInputNodeId: input.inputOverrides[0]!.nodeId,
+                replacementInputSha256: input.inputOverrides[0]!.inputSha256,
+                replacementInputBytes: input.inputOverrides[0]!.inputBytes,
+              }
+            : {
+                ...input.base,
+                schemaVersion: 1 as const,
+              };
   return {
     ...content,
     previewSha256: sha256(canonicalJson(content)),

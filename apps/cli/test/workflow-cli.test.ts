@@ -187,6 +187,56 @@ describe("Napier Workflow CLI", () => {
         retryBlocked: false,
       },
     });
+    expect(
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "report",
+        "--step-nodes",
+        "--preview-experiment",
+        "--jsonl",
+      ]),
+    ).toEqual({
+      kind: "workflow",
+      options: {
+        workspace: ".",
+        manifestPath: "workflow.json",
+        threadId: "thread_abcdefghijklmnopqrst",
+        planId: "plan_abcdefghijklmnopqrst",
+        fromNodeId: "report",
+        stepNodes: true,
+        previewExperiment: true,
+        timeoutMs: 600_000,
+        jsonl: true,
+        retryBlocked: false,
+      },
+    });
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "report",
+        "--single-node",
+        "--step-nodes",
+        "--preview-experiment",
+      ]),
+    ).toThrow("mutually exclusive");
     expect(() =>
       parseCliArgs([
         "workflow",
@@ -1371,6 +1421,125 @@ describe("Napier Workflow CLI", () => {
         result: expect.objectContaining({
           output: {
             report: "CLI continued single node",
+            approved: true,
+          },
+        }),
+      }),
+    );
+
+    const stepPreviewStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "inspect",
+          "--step-nodes",
+          "--preview-experiment",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, stepPreviewStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const stepPreview = JSON.parse(
+      stepPreviewStdout.text(),
+    ) as ExecutionPlanWorkflowExperimentPreview;
+    provider.setResponses([
+      fauxAssistantMessage('{"summary":"CLI step inspect","count":1}'),
+    ]);
+    const stepStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "inspect",
+          "--step-nodes",
+          "--expected-preview",
+          stepPreview.previewSha256,
+          "--jsonl",
+        ],
+        cliIo(fixture.root, stepStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const stepped = validateExecutionPlanWorkflowExperimentResultFrame(
+      parseFrames(stepStdout.text()).at(-1),
+    );
+    expect(stepped).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        experiment: expect.objectContaining({
+          preview: expect.objectContaining({
+            schemaVersion: 5,
+            mode: "step_nodes",
+            executionNodeIds: ["inspect"],
+            stopBeforeNodeIds: ["report"],
+          }),
+          result: expect.objectContaining({
+            breakpoint: expect.objectContaining({ nodeId: "report" }),
+          }),
+        }),
+      }),
+    );
+    provider.setResponses([
+      fauxAssistantMessage(
+        '{"report":"CLI continued step control","approved":true}',
+      ),
+    ]);
+    const steppedContinueStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          stepped.targetThreadId,
+          "--plan",
+          stepped.targetPlanId,
+          "--continue-breakpoint",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, steppedContinueStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    expect(
+      validateExecutionPlanWorkflowResultFrame(
+        parseFrames(steppedContinueStdout.text()).at(-1),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: {
+            report: "CLI continued step control",
             approved: true,
           },
         }),

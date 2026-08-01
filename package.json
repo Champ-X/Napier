@@ -47,6 +47,7 @@
     "test:live-process": "npm run test:live-process -w @napier/runtime",
     "test:live-provider": "npm run test:live-provider -w @napier/runtime",
     "test:live-sqlite": "npm run test:live-sqlite -w @napier/runtime",
+    "test:live-workflow-step": "npm run test:live-workflow-step -w @napier/cli",
     "test:live-deepseek": "npm run test:live-deepseek -w @napier/runtime",
     "test:root": "vitest run scripts/*.test.mjs --testTimeout=30000",
     "typecheck": "npm run build:core && npm run typecheck -w @napier/sdk && npm run typecheck -w @napier/cli && npm run typecheck -w @napier/server && npm run typecheck -w @napier/web",

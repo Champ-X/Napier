@@ -327,23 +327,25 @@ async function executeWorkflow(
           fromNodeId: options.fromNodeId,
           ...(options.singleNode
             ? { mode: "single_node" as const }
-            : options.simulateOutputJson !== undefined
-              ? {
-                  mode: "simulate_node" as const,
-                  simulatedOutput: parseJson(
-                    options.simulateOutputJson,
-                    "Workflow simulated output",
-                  ),
-                }
-              : options.replaceInputJson !== undefined
+            : options.stepNodes
+              ? { mode: "step_nodes" as const }
+              : options.simulateOutputJson !== undefined
                 ? {
-                    mode: "replace_input" as const,
-                    replacementInput: parseJson(
-                      options.replaceInputJson,
-                      "Workflow replacement input",
+                    mode: "simulate_node" as const,
+                    simulatedOutput: parseJson(
+                      options.simulateOutputJson,
+                      "Workflow simulated output",
                     ),
                   }
-                : {}),
+                : options.replaceInputJson !== undefined
+                  ? {
+                      mode: "replace_input" as const,
+                      replacementInput: parseJson(
+                        options.replaceInputJson,
+                        "Workflow replacement input",
+                      ),
+                    }
+                  : {}),
           ...(options.title ? { title: options.title } : {}),
           ...(options.modelOverridesJson
             ? {

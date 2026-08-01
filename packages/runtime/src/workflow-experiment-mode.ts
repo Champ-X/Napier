@@ -34,6 +34,22 @@ export function projectWorkflowExperimentExecution(
       stopBeforeNodeIds: [],
     };
   }
+  if (mode === "step_nodes") {
+    const stopBeforeNodeIds = rerunNodeIds.filter(
+      (nodeId) => nodeId !== fromNodeId,
+    );
+    if (stopBeforeNodeIds.length > MAX_WORKFLOW_BREAKPOINTS) {
+      throw new Error(
+        `Workflow step control exceeds ${String(MAX_WORKFLOW_BREAKPOINTS)} remaining nodes`,
+      );
+    }
+    return {
+      mode,
+      rerunNodeIds,
+      executionNodeIds: [fromNodeId],
+      stopBeforeNodeIds,
+    };
+  }
   const directSuccessors = new Set(
     manifest.blueprint.steps
       .filter((step) => step.dependsOn?.includes(fromNodeId))

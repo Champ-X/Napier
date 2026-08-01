@@ -515,6 +515,133 @@ describe("Execution Plan Workflow experiments", () => {
     reopened.close();
   });
 
+  it("steps one checkpoint before holding the remaining subgraph", async () => {
+    const fixture = await createFixture({ deterministicInspect: true });
+    const reportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
+    for (const type of ["tool.started", "tool.completed"]) {
+      await fixture.store.appendEvent({
+        threadId: fixture.sourceThreadId,
+        runId: reportRunId,
+        type,
+        category: "tool",
+        visibility: "user",
+        payload: {
+          callId: "call_step_descendant_write",
+          toolName: "apply_patch",
+          status: type === "tool.started" ? "started" : "completed",
+          effect: "write",
+        },
+      });
+    }
+    const request = {
+      ...experimentRequest(fixture),
+      fromNodeId: "inspect",
+      mode: "step_nodes" as const,
+    };
+    const preview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      request,
+    );
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        mode: "step_nodes",
+        rerunNodeIds: ["inspect", "report"],
+        executionNodeIds: ["inspect"],
+        stopBeforeNodeIds: ["report"],
+        requiresSideEffectConfirmation: true,
+        toolEffects: [
+          expect.objectContaining({ nodeId: "inspect" }),
+          expect.objectContaining({ nodeId: "report", writeCount: 1 }),
+        ],
+      }),
+    );
+
+    const experiment = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+        confirmSideEffects: true,
+      },
+    });
+    expect(experiment.result).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({
+          nodeId: "report",
+          breakpointIndex: 0,
+          breakpointCount: 1,
+        }),
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    const forged = structuredClone(experiment);
+    if (forged.preview.schemaVersion !== 5) {
+      throw new Error("Expected a step-control preview");
+    }
+    const { previewSha256: _previewSha256, ...forgedPreviewContent } =
+      forged.preview;
+    forgedPreviewContent.stopBeforeNodeIds = [];
+    forged.preview = {
+      ...forgedPreviewContent,
+      previewSha256: sha256(canonicalJson(forgedPreviewContent)),
+    };
+    expect(() => validateExecutionPlanWorkflowExperimentResult(forged)).toThrow(
+      "node sets are invalid",
+    );
+    const pausedEvents = await fixture.store.listEvents(
+      experiment.targetThreadId,
+    );
+    expect(
+      pausedEvents.find((event) => event.type === "workflow.experiment.started")
+        ?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        executionMode: "step_nodes",
+        executionNodeIds: ["inspect"],
+        stopBeforeNodeIds: ["report"],
+      }),
+    );
+
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Continued step control","approved":true}',
+      ),
+    ]);
+    const completed = await fixture.workflows.run({
+      threadId: experiment.targetThreadId,
+      request: {
+        manifest: experiment.candidateManifest,
+        planId: experiment.result.planId,
+        continueBreakpoint: true,
+      },
+    });
+    expect(completed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Continued step control",
+          approved: true,
+        },
+      }),
+    );
+    expect(
+      verifyThreadReplayBundle(
+        await exportThreadReplayBundle(
+          fixture.store,
+          experiment.targetThreadId,
+        ),
+      ).status,
+    ).toBe("valid");
+    fixture.store.close();
+  });
+
   it("simulates one checkpoint output and executes its descendants through the normal scheduler", async () => {
     const fixture = await createFixture();
     const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;

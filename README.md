@@ -66,8 +66,10 @@ Version `0.1.0` includes:
   and executes only its descendants through the normal scheduler. A schema-4
   input-replacement mode Schema-validates one complete constructed checkpoint
   input, reuses verified ancestors, then executes the selected node and every
-  descendant through that same scheduler. SDK, local RPC, CLI, HTTP, and a
-  lazy Plan Workbench desk share the complete
+  descendant through that same scheduler. A schema-5 step-control mode executes
+  the selected checkpoint, holds every remaining rerun node, and releases
+  exactly one ready node per durable Continue even across parallel branches or
+  restart. SDK, local RPC, CLI, HTTP, and a lazy Plan Workbench desk share the complete
   preview-confirm-execute-inspect flow;
 - controlled Agent message experiments that select a terminal historical
   `message.user`, freeze its Agent revision, Prompt Variables, Skill catalog,
@@ -871,6 +873,45 @@ reuses real source evidence and executes a real node; it does not mock node
 output, replace arbitrary input, simulate side effects, or provide mid-node
 stepping.
 
+Use `--step-nodes` when the complete rerun subgraph should advance one node per
+operator action:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_source \
+  --plan plan_source \
+  --from-node inspect \
+  --step-nodes \
+  --preview-experiment \
+  --jsonl
+```
+
+Schema-5 previews keep the complete selected-node descendant set in
+`rerunNodeIds`, put only the selected checkpoint in initial
+`executionNodeIds`, and bind every other rerun node in Manifest order as
+`stopBeforeNodeIds`. At most 16 remaining nodes can be held. Execution requires
+the exact preview hash. Historical Tool effects and side-effect confirmation
+cover the complete rerun subgraph because later Continue actions can execute
+those nodes. The selected node then runs normally and pauses at the first ready
+held node.
+
+Each ordinary `--continue-breakpoint` persists one exact continuation and lets
+only that bound node enter the scheduler. Other parallel-ready nodes remain
+held until later actions. If cancellation or process loss happens after the
+continuation event but before node settlement, recovery executes the same
+released node without requesting duplicate consent or opening another hold.
+This is pre-node orchestration, not mid-node DAP stepping or a separate
+Workflow engine.
+
+Run the opt-in four-node built-CLI Dogfood:
+
+```bash
+npm run test:live-workflow-step
+```
+
 Use `--simulate-output-json` to replace one selected checkpoint output while
 executing its descendants normally:
 
@@ -941,14 +982,14 @@ IDs, Schema/input hashes, and bytes. Portable full-Thread import preserves the
 override as opaque user JSON while remapping actual resource lineage. This
 mode replaces neither top-level Workflow input nor historical dependency
 outputs, and it does not simulate write/session effects or external Session
-state. `--replace-input-json`, `--single-node`, and
+state. `--replace-input-json`, `--single-node`, `--step-nodes`, and
 `--simulate-output-json` are mutually exclusive.
 
 The same path is available in **Plan -> Workflow experiment desk**. Load the
 exact versioned Manifest used by the source run, select its durable source Plan
 and checkpoint node, optionally replace that node with the currently selected
 configured model, select full-subgraph, single-node, typed-output simulation,
-or typed-input replacement, and preview before execution. The desk renders
+step control, or typed-input replacement, and preview before execution. The desk renders
 historical read/write/unknown effects and
 `rerun`/`execute now`/`stop before`/`simulated`/`input replaced` counts, and
 requires an explicit checkbox for a preview that needs side-effect
@@ -3717,6 +3758,15 @@ experiment lineage and the target's frozen breakpoint set. Unknown
 checkpoints, more than 16 direct successors, drift, partial lineage, or
 self-consistently rehashed stop-set changes fail closed.
 
+`mode=step_nodes` produces schema 5. Initial `executionNodeIds` remains
+`[fromNodeId]`, while `stopBeforeNodeIds` is every other rerun node in Manifest
+order rather than only direct successors. The same 16-breakpoint bound applies.
+After a continuation event is durable, breakpoint recovery projects its exact
+ready node as a one-node scheduler release. The parallel scheduler must select
+that node alone for the next batch; only after it settles can another configured
+ready node emit `workflow.breakpoint.reached`. A continued-but-unsettled node
+survives cancellation and SQLite reopen without another consent event.
+
 `mode=simulate_node` emits schema 3 and substitutes one Schema-valid selected
 output without entering its model or Tool path. `mode=replace_input` emits
 schema 4 and substitutes the selected node's complete constructed input before
@@ -3875,14 +3925,15 @@ Map, bounded read-only Agent Loop, typed deterministic Reduce, and durable
 Approval nodes with bounded parallel dependency-ready DAG scheduling, typed
 equality guards, and terminal workspace file/directory Artifact settlement.
 Stateful session Tool nodes, write-capable Map/Loop, graph-level branch
-pruning, compensation, per-node breakpoints, adapter runtimes, and a visual
+pruning, compensation, mid-node suspension, adapter runtimes, and a visual
 builder remain open. Checkpoint experiments now provide
 single-call execution for an explicit
 stateless read-only built-in subset, while message experiments can freeze
 captured results for that same subset. Workflow experiments can also substitute
 one typed checkpoint output before normally executing descendants, or replace
 one selected checkpoint's complete typed constructed input before executing
-that node and its descendants. Top-level Workflow input replacement,
+that node and its descendants. Schema-v5 step control executes one real node
+per durable Continue across the remaining rerun subgraph. Top-level Workflow input replacement,
 stateful/write tool stepping or side-effect simulation, Prompt/Skill/Memory
 replacement, batch experiments, an interactive root-cause timeline, and
 Evaluation promotion remain open. The opt-in DeepSeek

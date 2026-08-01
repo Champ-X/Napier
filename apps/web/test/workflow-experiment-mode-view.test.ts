@@ -47,6 +47,37 @@ describe("Workflow experiment execution mode projection", () => {
     ).toBe(false);
   });
 
+  it("binds step control to every remaining rerun node", () => {
+    const preview = {
+      schemaVersion: 5,
+      mode: "step_nodes",
+      fromNodeId: "prepare",
+      reusedNodeIds: [],
+      rerunNodeIds: ["prepare", "report", "publish"],
+      executionNodeIds: ["prepare"],
+      stopBeforeNodeIds: ["report", "publish"],
+    } as unknown as ExecutionPlanWorkflowExperimentPreview;
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        preview,
+        workflowManifest(),
+        "prepare",
+        "step_nodes",
+      ),
+    ).toBe(true);
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        {
+          ...preview,
+          stopBeforeNodeIds: ["report"],
+        } as ExecutionPlanWorkflowExperimentPreview,
+        workflowManifest(),
+        "prepare",
+        "step_nodes",
+      ),
+    ).toBe(false);
+  });
+
   it("preserves the schema-v1 full-subgraph projection", () => {
     const preview = {
       schemaVersion: 1,

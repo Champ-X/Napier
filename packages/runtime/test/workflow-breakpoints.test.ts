@@ -288,6 +288,95 @@ describe("Workflow breakpoints", () => {
     fixture.store.close();
   });
 
+  it("releases one parallel node and recovers it before the next hold", async () => {
+    const fixture = await createFixture({ parallel: true });
+    const first = await fixture.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        input: { request: "Step through both parallel branches." },
+        breakBeforeNodeIds: ["left", "right"],
+      },
+    });
+    expect(first).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({ nodeId: "left" }),
+      }),
+    );
+
+    const controller = new AbortController();
+    const cancelled = await fixture.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: first.planId,
+        continueBreakpoint: true,
+      },
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (event.type === "workflow.breakpoint.continued") controller.abort();
+      },
+    });
+    expect(cancelled.status).toBe("cancelled");
+    expect(fixture.store.getPlan(first.planId).steps).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "left", status: "ready" }),
+        expect.objectContaining({ id: "right", status: "ready" }),
+      ]),
+    );
+
+    fixture.store.close();
+    const reopened = await reopenFixture(fixture);
+    const second = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: first.planId,
+      },
+    });
+    expect(second).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({ nodeId: "right" }),
+        nodeResults: expect.arrayContaining([
+          expect.objectContaining({ nodeId: "left", status: "completed" }),
+        ]),
+      }),
+    );
+    const steppedEvents = await reopened.store.listEvents(fixture.threadId);
+    expect(
+      steppedEvents.filter(
+        (event) =>
+          event.type === "workflow.deterministic.completed" &&
+          record(event.payload)?.["nodeId"] === "left",
+      ),
+    ).toHaveLength(1);
+    expect(
+      steppedEvents.some(
+        (event) =>
+          event.type === "workflow.deterministic.completed" &&
+          record(event.payload)?.["nodeId"] === "right",
+      ),
+    ).toBe(false);
+
+    const completed = await reopened.workflows.run({
+      threadId: fixture.threadId,
+      request: {
+        manifest: fixture.manifest,
+        planId: first.planId,
+        continueBreakpoint: true,
+      },
+    });
+    expect(completed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { content: "join" },
+      }),
+    );
+    reopened.store.close();
+  });
+
   it("isolates breakpoint state across concurrent Threads", async () => {
     const fixture = await createFixture();
     const sourceThread = fixture.store.listThreads()[0]!;
@@ -406,7 +495,9 @@ interface BreakpointFixture {
   manifest: ExecutionPlanWorkflowManifest;
 }
 
-async function createFixture(): Promise<BreakpointFixture> {
+async function createFixture(options?: {
+  parallel?: boolean;
+}): Promise<BreakpointFixture> {
   const root = await mkdtemp(
     path.join(tmpdir(), "napier-workflow-breakpoint-"),
   );
@@ -417,7 +508,9 @@ async function createFixture(): Promise<BreakpointFixture> {
   const store = new LocalStore({ workspaceRoot, dataRoot });
   await store.initialize();
   const sourceThread = store.listThreads()[0]!;
-  const planRequest = breakpointPlan();
+  const planRequest = options?.parallel
+    ? parallelBreakpointPlan()
+    : breakpointPlan();
   const sourcePlan = await store.createPlan(sourceThread.id, planRequest);
   const blueprint = await createExecutionPlanBlueprint(
     store,
@@ -429,62 +522,95 @@ async function createFixture(): Promise<BreakpointFixture> {
     agentId: sourceThread.agentId,
   });
   await store.updateAgent(thread.agentId, { toolPolicy: "workspace" });
-  const manifest = defineExecutionPlanWorkflow({
-    name: "Breakpoint write",
-    version: 1,
-    description: "Pause before one policy-checked workspace write.",
-    blueprint,
-    inputSchema: requestSchema(),
-    outputSchema: workspacePatchReceiptSchema(),
-    outputNodeId: "write",
-    nodes: [
-      {
-        id: "prepare",
-        type: "deterministic",
-        inputBindings: {
-          workflow: { source: "workflow" },
-        },
-        inputSchema: {
-          type: "object",
-          properties: { workflow: requestSchema() },
-          required: ["workflow"],
-          additionalProperties: false,
-        },
+  const manifest = options?.parallel
+    ? defineExecutionPlanWorkflow({
+        name: "Parallel breakpoint steps",
+        version: 1,
+        description: "Release exactly one parallel deterministic node.",
+        blueprint,
+        inputSchema: requestSchema(),
         outputSchema: preparedSchema(),
-        template: {
-          kind: "object",
-          properties: {
-            content: {
-              kind: "literal",
-              value: "created after explicit breakpoint continuation\n",
+        outputNodeId: "join",
+        maxConcurrency: 2,
+        nodes: ["prepare", "left", "right", "join"].map((id) => ({
+          id,
+          type: "deterministic" as const,
+          inputBindings: {
+            workflow: { source: "workflow" as const },
+          },
+          inputSchema: {
+            type: "object" as const,
+            properties: { workflow: requestSchema() },
+            required: ["workflow"],
+            additionalProperties: false,
+          },
+          outputSchema: preparedSchema(),
+          template: {
+            kind: "object" as const,
+            properties: {
+              content: { kind: "literal" as const, value: id },
             },
           },
-        },
-        timeoutMs: 5_000,
-        maxAttempts: 1,
-      },
-      {
-        id: "write",
-        type: "tool",
-        tool: "apply_patch",
-        effect: "write",
-        inputBindings: {
-          operation: { source: "literal", value: "create" },
-          path: { source: "literal", value: "breakpoint.txt" },
-          expectedSha256: { source: "literal", value: null },
-          content: {
-            source: "node",
-            nodeId: "prepare",
-            path: ["content"],
-          },
-        },
-        inputSchema: workspacePatchInputSchema(),
+          timeoutMs: 5_000,
+          maxAttempts: 1,
+        })),
+      })
+    : defineExecutionPlanWorkflow({
+        name: "Breakpoint write",
+        version: 1,
+        description: "Pause before one policy-checked workspace write.",
+        blueprint,
+        inputSchema: requestSchema(),
         outputSchema: workspacePatchReceiptSchema(),
-        timeoutMs: 5_000,
-        maxAttempts: 1,
-      },
-    ],
-  });
+        outputNodeId: "write",
+        nodes: [
+          {
+            id: "prepare",
+            type: "deterministic",
+            inputBindings: {
+              workflow: { source: "workflow" },
+            },
+            inputSchema: {
+              type: "object",
+              properties: { workflow: requestSchema() },
+              required: ["workflow"],
+              additionalProperties: false,
+            },
+            outputSchema: preparedSchema(),
+            template: {
+              kind: "object",
+              properties: {
+                content: {
+                  kind: "literal",
+                  value: "created after explicit breakpoint continuation\n",
+                },
+              },
+            },
+            timeoutMs: 5_000,
+            maxAttempts: 1,
+          },
+          {
+            id: "write",
+            type: "tool",
+            tool: "apply_patch",
+            effect: "write",
+            inputBindings: {
+              operation: { source: "literal", value: "create" },
+              path: { source: "literal", value: "breakpoint.txt" },
+              expectedSha256: { source: "literal", value: null },
+              content: {
+                source: "node",
+                nodeId: "prepare",
+                path: ["content"],
+              },
+            },
+            inputSchema: workspacePatchInputSchema(),
+            outputSchema: workspacePatchReceiptSchema(),
+            timeoutMs: 5_000,
+            maxAttempts: 1,
+          },
+        ],
+      });
   const agentRuntime = new AgentRuntime(store, new ModelRegistry());
   return {
     root,
@@ -538,6 +664,41 @@ function breakpointPlan(): CreateExecutionPlanRequest {
         path: "breakpoint.txt",
         kind: "file",
         description: "The file created after breakpoint continuation.",
+      },
+    ],
+  };
+}
+
+function parallelBreakpointPlan(): CreateExecutionPlanRequest {
+  return {
+    objective: "Advance parallel Workflow branches one node at a time.",
+    steps: [
+      {
+        id: "prepare",
+        title: "Prepare",
+        description: "Prepare both branches.",
+        verification: "Return typed preparation.",
+      },
+      {
+        id: "left",
+        title: "Left",
+        description: "Execute the left branch.",
+        verification: "Return typed left output.",
+        dependsOn: ["prepare"],
+      },
+      {
+        id: "right",
+        title: "Right",
+        description: "Execute the right branch.",
+        verification: "Return typed right output.",
+        dependsOn: ["prepare"],
+      },
+      {
+        id: "join",
+        title: "Join",
+        description: "Join both branches.",
+        verification: "Return typed join output.",
+        dependsOn: ["left", "right"],
       },
     ],
   };
@@ -608,4 +769,10 @@ function workspacePatchReceiptSchema(): WorkflowObjectSchema {
     ],
     additionalProperties: false,
   };
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
 }

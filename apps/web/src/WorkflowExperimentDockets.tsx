@@ -51,7 +51,7 @@ export function WorkflowExperimentPreviewDocket({
                 <dt>{copy.executeNow}</dt>
                 <dd>{preview.executionNodeIds.length}</dd>
               </div>
-              {preview.schemaVersion === 2 ? (
+              {preview.schemaVersion === 2 || preview.schemaVersion === 5 ? (
                 <div>
                   <dt>{copy.stopBefore}</dt>
                   <dd>{preview.stopBeforeNodeIds.length}</dd>

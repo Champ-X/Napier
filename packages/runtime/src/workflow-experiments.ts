@@ -125,7 +125,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
         request: {
           manifest: source.candidateManifest,
           input: source.sourceInput,
-          ...(preview.schemaVersion === 2 &&
+          ...((preview.schemaVersion === 2 || preview.schemaVersion === 5) &&
           preview.stopBeforeNodeIds.length > 0
             ? { breakBeforeNodeIds: preview.stopBeforeNodeIds }
             : {}),
@@ -147,7 +147,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
             sideEffectsConfirmed:
               preview.requiresSideEffectConfirmation &&
               request.confirmSideEffects === true,
-            ...(preview.schemaVersion === 2
+            ...(preview.schemaVersion === 2 || preview.schemaVersion === 5
               ? {
                   executionMode: preview.mode,
                   executionNodeIds: preview.executionNodeIds,

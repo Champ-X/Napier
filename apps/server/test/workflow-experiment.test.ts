@@ -281,6 +281,83 @@ describe("Workflow experiment HTTP path", () => {
         }),
       }),
     );
+
+    const stepRequest = {
+      manifest: fixture.manifest,
+      fromNodeId: "inspect",
+      mode: "step_nodes" as const,
+    };
+    const stepPreview = await previewWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      stepRequest,
+    );
+    expect(stepPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        mode: "step_nodes",
+        executionNodeIds: ["inspect"],
+        stopBeforeNodeIds: ["report"],
+      }),
+    );
+    fixture.primary.setResponses([
+      fauxAssistantMessage('{"summary":"Web step inspect","count":1}'),
+    ]);
+    const stepped = await executeWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      {
+        ...stepRequest,
+        expectedPreviewSha256: stepPreview.previewSha256,
+      },
+      stepPreview,
+    );
+    expect(stepped).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        experiment: expect.objectContaining({
+          preview: expect.objectContaining({
+            schemaVersion: 5,
+            mode: "step_nodes",
+          }),
+          result: expect.objectContaining({
+            breakpoint: expect.objectContaining({ nodeId: "report" }),
+          }),
+        }),
+      }),
+    );
+    const steppedDetail = await fixture.services.store.getDetail(
+      stepped.targetThreadId,
+    );
+    const steppedProjection = projectWorkflowBreakpoint(
+      steppedDetail.plans,
+      steppedDetail.events,
+    );
+    if (steppedProjection.status !== "open") {
+      throw new Error("Expected the step-control descendant hold");
+    }
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Web continued step control","approved":true}',
+      ),
+    ]);
+    await expect(
+      continueWorkflowBreakpoint(
+        stepped.targetThreadId,
+        stepped.experiment.candidateManifest,
+        steppedProjection.breakpoint,
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: "completed",
+        result: expect.objectContaining({
+          output: {
+            report: "Web continued step control",
+            approved: true,
+          },
+        }),
+      }),
+    );
   }, 20_000);
 
   it("simulates one checkpoint through the real Web client and executes its descendant", async () => {

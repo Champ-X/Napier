@@ -100,6 +100,7 @@ export interface CliWorkflowOptions extends CliExecutionOptions {
   continueBreakpoint?: boolean;
   fromNodeId?: string;
   singleNode?: boolean;
+  stepNodes?: boolean;
   simulateOutputJson?: string;
   replaceInputJson?: string;
   modelOverridesJson?: string;
@@ -218,6 +219,7 @@ const WORKFLOW_FLAG_OPTIONS = new Set([
   "--preview-experiment",
   "--confirm-side-effects",
   "--single-node",
+  "--step-nodes",
   "--approve",
   "--reject",
 ]);
@@ -677,6 +679,7 @@ function parseWorkflowOptions(
     }
     if (
       Number(flags.has("--single-node")) +
+        Number(flags.has("--step-nodes")) +
         Number(simulateOutputJson !== undefined) +
         Number(replaceInputJson !== undefined) >
       1
@@ -685,6 +688,7 @@ function parseWorkflowOptions(
     }
     if (
       (flags.has("--single-node") ||
+        flags.has("--step-nodes") ||
         simulateOutputJson !== undefined ||
         replaceInputJson !== undefined) &&
       !flags.has("--preview-experiment") &&
@@ -707,6 +711,7 @@ function parseWorkflowOptions(
       flags.has("--preview-experiment") ||
       flags.has("--confirm-side-effects") ||
       flags.has("--single-node") ||
+      flags.has("--step-nodes") ||
       breakBeforeNodeIds.length > 0
     ) {
       throw new Error(
@@ -754,7 +759,8 @@ function parseWorkflowOptions(
       expectedPreviewSha256 !== undefined ||
       flags.has("--preview-experiment") ||
       flags.has("--confirm-side-effects") ||
-      flags.has("--single-node"))
+      flags.has("--single-node") ||
+      flags.has("--step-nodes"))
   ) {
     throw new Error("Workflow experiment options require --from-node");
   }
@@ -780,6 +786,7 @@ function parseWorkflowOptions(
       ...(breakBeforeNodeIds.length > 0 ? { breakBeforeNodeIds } : {}),
       ...(fromNodeId ? { fromNodeId } : {}),
       ...(flags.has("--single-node") ? { singleNode: true } : {}),
+      ...(flags.has("--step-nodes") ? { stepNodes: true } : {}),
       ...(simulateOutputJson !== undefined ? { simulateOutputJson } : {}),
       ...(replaceInputJson !== undefined ? { replaceInputJson } : {}),
       ...(modelOverridesJson !== undefined ? { modelOverridesJson } : {}),
@@ -976,6 +983,7 @@ Workflow options:
   --decision-note <text> Optional answer note used with --approve/--reject
   --from-node <node-id>  Fork an experiment from this Workflow node
   --single-node          Execute selected checkpoint; hold direct successors
+  --step-nodes           Execute one node, then step through the rerun subgraph
   --simulate-output-json Simulate checkpoint output, then execute descendants
   --replace-input-json  Replace checkpoint input, then execute its subgraph
   --model-overrides-json Per-node ModelRef overrides for rerun nodes

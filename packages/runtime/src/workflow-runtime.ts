@@ -473,12 +473,13 @@ export class ExecutionPlanWorkflowRuntime {
       if (breakpoint === "cancelled") {
         return this.finish(context, "cancelled");
       }
-      if (breakpoint) {
+      if (breakpoint && !("releasedNodeId" in breakpoint)) {
         return this.finish(context, "paused", breakpoint);
       }
       const batch = await executeExecutionPlanWorkflowReadyBatch(
         context,
         (nodeContext, node) => this.executeNode(nodeContext, node),
+        breakpoint?.releasedNodeId,
       );
       if (batch.length === 0) break;
       let cancelled = false;

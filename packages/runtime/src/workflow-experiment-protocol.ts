@@ -102,6 +102,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     mode !== undefined &&
     mode !== "subgraph" &&
     mode !== "single_node" &&
+    mode !== "step_nodes" &&
     mode !== "simulate_node" &&
     mode !== "replace_input"
   ) {
@@ -151,6 +152,7 @@ export function validateCreateExecutionPlanWorkflowExperimentRequest(
     planId: request["planId"],
     fromNodeId: request["fromNodeId"],
     ...(mode === "single_node" ||
+    mode === "step_nodes" ||
     mode === "simulate_node" ||
     mode === "replace_input"
       ? { mode }
@@ -225,10 +227,8 @@ export function validateExecutionPlanWorkflowExperimentPreview(
     preview["rerunNodeIds"],
     "rerun",
   );
-  const { executionNodeIds } = validateWorkflowExperimentPreviewMode(
-    preview,
-    rerunNodeIds,
-  );
+  const { executionNodeIds, toolEffectNodeIds } =
+    validateWorkflowExperimentPreviewMode(preview, rerunNodeIds);
   if (
     rerunNodeIds.length < 1 ||
     !rerunNodeIds.includes(preview["fromNodeId"]) ||
@@ -252,7 +252,7 @@ export function validateExecutionPlanWorkflowExperimentPreview(
   );
   if (
     canonicalJson(toolEffects.map((effects) => effects.nodeId)) !==
-      canonicalJson(executionNodeIds) ||
+      canonicalJson(toolEffectNodeIds) ||
     Boolean(preview["requiresSideEffectConfirmation"]) !==
       toolEffects.some(
         (effects) =>
@@ -364,7 +364,7 @@ export function validateExecutionPlanWorkflowExperimentResult(
     (preview.schemaVersion !== 1 &&
       canonicalJson(preview.executionNodeIds) !==
         canonicalJson(execution.executionNodeIds)) ||
-    (preview.schemaVersion === 2 &&
+    ((preview.schemaVersion === 2 || preview.schemaVersion === 5) &&
       canonicalJson(preview.stopBeforeNodeIds) !==
         canonicalJson(execution.stopBeforeNodeIds)) ||
     (preview.schemaVersion === 3 &&

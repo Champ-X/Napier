@@ -42,6 +42,18 @@ export function workflowExperimentPreviewMatchesMode(
       sameStrings(preview.executionNodeIds, rerunNodeIds)
     );
   }
+  if (mode === "step_nodes") {
+    return (
+      preview.schemaVersion === 5 &&
+      preview.mode === "step_nodes" &&
+      preview.stopBeforeNodeIds.length <= 16 &&
+      sameStrings(preview.executionNodeIds, [fromNodeId]) &&
+      sameStrings(
+        preview.stopBeforeNodeIds,
+        rerunNodeIds.filter((nodeId) => nodeId !== fromNodeId),
+      )
+    );
+  }
   if (preview.schemaVersion !== 2 || preview.mode !== "single_node") {
     return false;
   }

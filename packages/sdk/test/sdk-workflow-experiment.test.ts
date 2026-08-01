@@ -129,7 +129,7 @@ describe("Napier TypeScript SDK Workflow experiments", () => {
     store.close();
   });
 
-  it("runs one checkpoint and continues its durable descendant hold", async () => {
+  it("runs single-node and step-controlled checkpoint holds", async () => {
     const fixture = await createFixture("single-node");
     const client = await createNapierClient({
       ...fixture,
@@ -195,6 +195,53 @@ describe("Napier TypeScript SDK Workflow experiments", () => {
       continueBreakpoint: true,
     });
     expect(continued).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { message: "SDK single node result" },
+      }),
+    );
+
+    const stepPreview = await client.previewWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "prepare",
+      mode: "step_nodes",
+    });
+    expect(stepPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 5,
+        mode: "step_nodes",
+        executionNodeIds: ["prepare"],
+        stopBeforeNodeIds: ["deliver"],
+      }),
+    );
+    const stepped = await client.runWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "prepare",
+      mode: "step_nodes",
+      expectedPreviewSha256: stepPreview.previewSha256,
+    });
+    expect(stepped.result).toEqual(
+      expect.objectContaining({
+        status: "paused",
+        breakpoint: expect.objectContaining({ nodeId: "deliver" }),
+      }),
+    );
+    const stepCandidate = loadNapierWorkflow<
+      ExperimentRequest,
+      ExperimentResult
+    >(stepped.candidateManifest);
+    await expect(
+      client.resumeWorkflow({
+        workflow: stepCandidate,
+        threadId: stepped.targetThreadId,
+        planId: stepped.result.planId,
+        continueBreakpoint: true,
+      }),
+    ).resolves.toEqual(
       expect.objectContaining({
         status: "completed",
         output: { message: "SDK single node result" },

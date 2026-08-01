@@ -12,6 +12,7 @@ export async function validateWorkflowExperimentPreview(
   const singleNode = schemaVersion === 2;
   const simulatedNode = schemaVersion === 3;
   const replacedInput = schemaVersion === 4;
+  const stepNodes = schemaVersion === 5;
   const required = [
     "kind",
     "schemaVersion",
@@ -29,7 +30,9 @@ export async function validateWorkflowExperimentPreview(
     "toolEffects",
     "requiresSideEffectConfirmation",
     "previewSha256",
-    ...(singleNode ? ["mode", "executionNodeIds", "stopBeforeNodeIds"] : []),
+    ...(singleNode || stepNodes
+      ? ["mode", "executionNodeIds", "stopBeforeNodeIds"]
+      : []),
     ...(simulatedNode
       ? [
           "mode",
@@ -55,7 +58,8 @@ export async function validateWorkflowExperimentPreview(
     (schemaVersion !== 1 &&
       schemaVersion !== 2 &&
       schemaVersion !== 3 &&
-      schemaVersion !== 4) ||
+      schemaVersion !== 4 &&
+      schemaVersion !== 5) ||
     typeof input["sourceThreadId"] !== "string" ||
     typeof input["sourcePlanId"] !== "string" ||
     !positiveInteger(input["sourcePlanRevision"]) ||
@@ -77,6 +81,17 @@ export async function validateWorkflowExperimentPreview(
           (nodeId) =>
             nodeId === input["fromNodeId"] ||
             !(input["rerunNodeIds"] as string[]).includes(nodeId),
+        ))) ||
+    (stepNodes &&
+      (input["mode"] !== "step_nodes" ||
+        !stringArray(input["executionNodeIds"], 30) ||
+        !sameStrings(input["executionNodeIds"], [input["fromNodeId"]]) ||
+        !stringArray(input["stopBeforeNodeIds"], 16) ||
+        !sameStrings(
+          input["stopBeforeNodeIds"],
+          (input["rerunNodeIds"] as string[]).filter(
+            (nodeId) => nodeId !== input["fromNodeId"],
+          ),
         ))) ||
     (simulatedNode &&
       (input["mode"] !== "simulate_node" ||
@@ -110,9 +125,10 @@ export async function validateWorkflowExperimentPreview(
   const reusedNodeIds = input["reusedNodeIds"] as string[];
   const rerunNodeIds = input["rerunNodeIds"] as string[];
   const executionNodeIds =
-    singleNode || simulatedNode || replacedInput
+    singleNode || simulatedNode || replacedInput || stepNodes
       ? (input["executionNodeIds"] as string[])
       : rerunNodeIds;
+  const toolEffectNodeIds = stepNodes ? rerunNodeIds : executionNodeIds;
   const modelOverrides = input["modelOverrides"] as Record<string, unknown>;
   if (
     reusedNodeIds.some((nodeId) => rerunNodeIds.includes(nodeId)) ||
@@ -131,7 +147,7 @@ export async function validateWorkflowExperimentPreview(
   if (
     !sameStrings(
       effects.map((effect) => String(effect["nodeId"])),
-      executionNodeIds,
+      toolEffectNodeIds,
     ) ||
     input["requiresSideEffectConfirmation"] !==
       effects.some(

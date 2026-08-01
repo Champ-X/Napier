@@ -167,9 +167,10 @@ function validateExperimentLineage(
     typeof payload["sideEffectsConfirmed"] !== "boolean" ||
     (executionMode !== undefined &&
       executionMode !== "single_node" &&
+      executionMode !== "step_nodes" &&
       executionMode !== "simulate_node" &&
       executionMode !== "replace_input") ||
-    (executionMode === "single_node"
+    (executionMode === "single_node" || executionMode === "step_nodes"
       ? executionNodeIds === undefined || stopBeforeNodeIds === undefined
       : executionMode === "simulate_node"
         ? executionNodeIds === undefined ||
@@ -200,6 +201,7 @@ function validateExperimentLineage(
     candidateManifest,
     fromNodeId,
     executionMode === "single_node" ||
+      executionMode === "step_nodes" ||
       executionMode === "simulate_node" ||
       executionMode === "replace_input"
       ? executionMode
@@ -214,11 +216,12 @@ function validateExperimentLineage(
     canonicalJson(targetBreakBeforeNodeIds) !==
       canonicalJson(execution.stopBeforeNodeIds) ||
     ((executionMode === "single_node" ||
+      executionMode === "step_nodes" ||
       executionMode === "simulate_node" ||
       executionMode === "replace_input") &&
       canonicalJson(executionNodeIds) !==
         canonicalJson(execution.executionNodeIds)) ||
-    (executionMode === "single_node" &&
+    ((executionMode === "single_node" || executionMode === "step_nodes") &&
       canonicalJson(stopBeforeNodeIds) !==
         canonicalJson(execution.stopBeforeNodeIds))
   ) {
@@ -234,7 +237,7 @@ function validateExperimentLineage(
     rerunNodeIds,
     previewSha256: payload["previewSha256"],
     sideEffectsConfirmed: payload["sideEffectsConfirmed"],
-    ...(executionMode === "single_node"
+    ...(executionMode === "single_node" || executionMode === "step_nodes"
       ? {
           executionMode,
           executionNodeIds: executionNodeIds!,
