@@ -2,6 +2,7 @@ import {
   writeLinkedTestEventEvidence,
   type WriteLinkedTestEventTraceView,
 } from "./write-linked-test-event-view";
+import { candidateCommandEventEvidence } from "./candidate-command-event-view";
 import { lspRenameApplyEventEvidence } from "./lsp-rename-apply-event-view";
 
 export interface SubagentWorktreeToolEventTraceView {
@@ -28,6 +29,12 @@ export interface SubagentWorktreeToolEventTraceView {
   subagentWorktreeCandidateVerificationFailedCount?: number;
   subagentWorktreeCandidateVerificationStaleCount?: number;
   subagentWorktreeCandidateVerificationSetSha256?: string;
+  subagentWorktreeCandidateCommandAttemptCount?: number;
+  subagentWorktreeCandidateCommandFreshCount?: number;
+  subagentWorktreeCandidateCommandSucceededCount?: number;
+  subagentWorktreeCandidateCommandFailedCount?: number;
+  subagentWorktreeCandidateCommandStaleCount?: number;
+  subagentWorktreeCandidateCommandSetSha256?: string;
   subagentWorktreeCandidateToolchainSha256?: string;
   subagentWorktreeOutcomeSha256?: string;
   subagentWorktreeSourceSnapshotSha256?: string;
@@ -76,6 +83,7 @@ export function subagentWorktreeEventEvidence(
   const diagnosticsResultSha256 = hash(diagnostics?.["resultSha256"]);
   const tests = writeLinkedTestEventEvidence(input["tests"]);
   const candidateVerification = candidateVerificationEvidence(input);
+  const candidateCommands = candidateCommandEventEvidence(input);
   const lifecycle = candidateLifecycleEvidence(input, fileCount);
   const requiredHashes = {
     sourceSnapshot: hash(input["sourceSnapshotSha256"]),
@@ -114,6 +122,7 @@ export function subagentWorktreeEventEvidence(
     Object.values(requiredHashes).some((candidate) => !candidate) ||
     (input["tests"] !== undefined && !tests) ||
     !candidateVerification ||
+    !candidateCommands ||
     !lifecycle
   ) {
     return undefined;
@@ -150,6 +159,22 @@ export function subagentWorktreeEventEvidence(
     subagentWorktreeResultSha256: requiredHashes.result!,
     ...lifecycle,
     ...candidateVerification,
+    ...(candidateCommands.attemptCount !== undefined
+      ? {
+          subagentWorktreeCandidateCommandAttemptCount:
+            candidateCommands.attemptCount,
+          subagentWorktreeCandidateCommandFreshCount:
+            candidateCommands.freshCount,
+          subagentWorktreeCandidateCommandSucceededCount:
+            candidateCommands.succeededCount,
+          subagentWorktreeCandidateCommandFailedCount:
+            candidateCommands.failedCount,
+          subagentWorktreeCandidateCommandStaleCount:
+            candidateCommands.staleCount,
+          subagentWorktreeCandidateCommandSetSha256:
+            candidateCommands.setSha256,
+        }
+      : {}),
     ...(tests ?? {}),
   };
 }
@@ -186,6 +211,16 @@ export function subagentWorktreeSummaryParts(
     ...(view.subagentWorktreeCandidateVerificationSetSha256
       ? [
           `candidate-verification-set ${view.subagentWorktreeCandidateVerificationSetSha256.slice(0, 12)}`,
+        ]
+      : []),
+    ...(view.subagentWorktreeCandidateCommandFreshCount !== undefined
+      ? [
+          `candidate-commands ${view.subagentWorktreeCandidateCommandFreshCount} fresh / ${view.subagentWorktreeCandidateCommandSucceededCount ?? 0} succeeded / ${view.subagentWorktreeCandidateCommandFailedCount ?? 0} failed / ${view.subagentWorktreeCandidateCommandStaleCount ?? 0} stale`,
+        ]
+      : []),
+    ...(view.subagentWorktreeCandidateCommandSetSha256
+      ? [
+          `candidate-command-set ${view.subagentWorktreeCandidateCommandSetSha256.slice(0, 12)}`,
         ]
       : []),
     ...(view.subagentWorktreeRollbackAttempted ? ["rollback-attempted"] : []),

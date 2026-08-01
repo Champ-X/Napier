@@ -67,13 +67,14 @@ describeLive("live coder Subagent smoke", () => {
         ].join("\n"),
       ),
     ]);
-    const sandbox = directSandbox();
+    const sandbox = directProcessAdapter();
     const manager = new SubagentWorktreeMutationManager({
       workspaceRoot,
       dataRoot,
       ownerId: `worker_live_${suffix}`,
       sandbox,
       enableCandidateVerification: true,
+      enableCandidateCommand: true,
       tests: new WriteLinkedTestVerificationRunner({
         workspaceRoot,
         sandbox,
@@ -89,6 +90,7 @@ describeLive("live coder Subagent smoke", () => {
     const patch = tools.find((tool) => tool.name === "apply_patch")!;
     const lsp = tools.find((tool) => tool.name === "lsp_diagnostics")!;
     const verify = tools.find((tool) => tool.name === "verify_workspace")!;
+    const command = tools.find((tool) => tool.name === "run_command")!;
     const candidateFile = tools.find((tool) => tool.name === "candidate_file")!;
     await patch.execute("live-coder-add", {
       operation: "create",
@@ -108,6 +110,32 @@ describeLive("live coder Subagent smoke", () => {
       expectedSourceSha256: sha256(moved),
       expectedDestinationSha256: null,
     });
+    const candidateCommand = await command.execute("live-coder-command", {
+      runtime: "node",
+      args: [
+        "-e",
+        [
+          "const fs = require('node:fs');",
+          "const ts = require('typescript');",
+          "const added = fs.readFileSync(process.argv[1], 'utf8');",
+          "const moved = fs.readFileSync(process.argv[2], 'utf8');",
+          "if (typeof ts.version !== 'string' || !added.includes('addedValue = 2') || !moved.includes('movedValue = 3')) process.exit(9);",
+          "console.log('candidate-command-ok');",
+        ].join(""),
+        addedPath,
+        renamedPath,
+      ],
+      timeoutMs: 30_000,
+    });
+    expect(candidateCommand.content[0]?.text).toContain("candidate-command-ok");
+    expect(candidateCommand.details).toEqual(
+      expect.objectContaining({
+        runtime: "node",
+        status: "succeeded",
+        workspaceAccess: "read_only",
+        networkAccess: "denied",
+      }),
+    );
     const candidateDiagnostics = await lsp.execute("live-coder-lsp", {
       path: addedPath,
       timeoutMs: 30_000,
@@ -134,6 +162,13 @@ describeLive("live coder Subagent smoke", () => {
         modifiedFileCount: 0,
         deletedFileCount: 2,
         renamedFileCount: 1,
+        candidateCommands: expect.objectContaining({
+          attemptCount: 1,
+          freshCount: 1,
+          succeededCount: 1,
+          failedCount: 0,
+          staleCount: 0,
+        }),
       }),
     );
     expect(preview.candidateVerification).toEqual(
@@ -174,6 +209,11 @@ describeLive("live coder Subagent smoke", () => {
         candidateVerificationPassedCount: 2,
         candidateVerificationFailedCount: 0,
         candidateVerificationStaleCount: 0,
+        candidateCommandAttemptCount: 1,
+        candidateCommandFreshCount: 1,
+        candidateCommandSucceededCount: 1,
+        candidateCommandFailedCount: 0,
+        candidateCommandStaleCount: 0,
       }),
     );
     expect(applied.summary).toContain(testPath);
@@ -194,7 +234,7 @@ describeLive("live coder Subagent smoke", () => {
   }, 120_000);
 });
 
-function directSandbox(): OsSandboxAdapter {
+function directProcessAdapter(): OsSandboxAdapter {
   return {
     id: "direct-coder-subagent-smoke",
     async launch(request) {

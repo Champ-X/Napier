@@ -19,6 +19,7 @@ export * from "./browser-workspace-files.js";
 export * from "./channels.js";
 export * from "./checkpoint-calibration.js";
 export * from "./command-execution.js";
+export * from "./command-tool.js";
 export * from "./compaction.js";
 export * from "./credential-references.js";
 export * from "./credentials.js";

@@ -6072,7 +6072,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has sixty-four parts:
+The current boundary has sixty-seven parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -6346,6 +6346,13 @@ The current boundary has sixty-four parts:
     typed reverse edges, reachable-only incompleteness, exact config freshness,
     real cross-package Vitest execution, and path/body-free Agent/HTTP/Web/
     Replay evidence.
+67. Capability-inherited coder candidate commands using the existing
+    explicit-argv Node runner against only private unmerged bytes, with fixed
+    environment, denied network, read-only dependency overlay, bound runtime
+    identities, eight-attempt and time/output limits, shared mutation ordering,
+    complete before/after snapshot equality, fail-closed read-only violation,
+    independent fresh/stale status, and argv/output/path-free
+    Agent/HTTP/Web/Replay evidence that never counts as verification.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6393,7 +6400,8 @@ deferred until the local P0-P9 product loop is stable.
 - broader Code Action kinds, Node attach/multi-thread DAP, inline or bundled
   source-map coverage and debugger UX, broader multi-node AST transforms,
   richer cross-package build/test configuration, coding outcome benchmarks,
-  coder directory lifecycle, and sandboxed child command/package execution;
+  coder directory lifecycle, and child package-script/Python/persistent
+  execution;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, graph-level branch pruning, write-capable Map/Loop,
   compensation, top-level Workflow input replacement, write/session

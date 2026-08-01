@@ -139,6 +139,8 @@ export class SubagentCoordinator {
         sandbox: options.sandbox,
         enableCandidateVerification:
           options.profile.enabledTools.includes("verify_workspace"),
+        enableCandidateCommand:
+          options.profile.enabledTools.includes("run_command"),
         ...(tests ? { tests } : {}),
       });
     }

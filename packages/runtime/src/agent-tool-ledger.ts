@@ -75,7 +75,7 @@ import {
   commandToolCallArgumentsLedgerProjection,
   commandToolInputLedgerProjection,
   commandToolOutputLedgerProjection,
-} from "./command-execution.js";
+} from "./command-tool.js";
 import {
   typescriptAstToolCallArgumentsLedgerProjection,
   typescriptAstToolInputLedgerProjection,

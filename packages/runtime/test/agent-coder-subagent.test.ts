@@ -66,7 +66,12 @@ describe("Agent coder Subagent", () => {
     await store.initialize();
     const agent = await store.updateAgent(store.listAgents()[0]!.id, {
       toolPolicy: "workspace",
-      enabledTools: ["apply_patch", "lsp_diagnostics", "verify_workspace"],
+      enabledTools: [
+        "apply_patch",
+        "lsp_diagnostics",
+        "run_command",
+        "verify_workspace",
+      ],
       enabledSubagents: ["coder"],
     });
     const thread = await store.createThread({
@@ -146,6 +151,18 @@ describe("Agent coder Subagent", () => {
       ),
       (context) => {
         expect(context.tools?.map((tool) => tool.name)).toContain(
+          "run_command",
+        );
+        return fauxAssistantMessage(
+          fauxToolCall("run_command", {
+            runtime: "node",
+            args: ["-e", "console.log('TOP_SECRET_CANDIDATE_COMMAND_ARG')"],
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      (context) => {
+        expect(context.tools?.map((tool) => tool.name)).toContain(
           "verify_workspace",
         );
         return fauxAssistantMessage(
@@ -182,6 +199,9 @@ describe("Agent coder Subagent", () => {
         );
         expect(serialized).toContain(
           "Candidate verification: 1 fresh / 1 passed / 0 failed / 0 stale",
+        );
+        expect(serialized).toContain(
+          "Candidate commands: 1 fresh / 1 succeeded / 0 failed / 0 stale",
         );
         return fauxAssistantMessage(
           fauxToolCall("subagent_worktree_apply", { previewId }),
@@ -247,6 +267,12 @@ describe("Agent coder Subagent", () => {
         candidateVerificationPassedCount: 1,
         candidateVerificationFailedCount: 0,
         candidateVerificationStaleCount: 0,
+        candidateCommandAttemptCount: 1,
+        candidateCommandFreshCount: 1,
+        candidateCommandSucceededCount: 1,
+        candidateCommandFailedCount: 0,
+        candidateCommandStaleCount: 0,
+        candidateCommandSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         diagnostics: expect.objectContaining({
           status: "clean",
           fileCount: 5,
@@ -266,6 +292,7 @@ describe("Agent coder Subagent", () => {
     expect(durable).not.toContain("src/renamed.ts");
     expect(durable).not.toContain("src/delete.ts");
     expect(durable).not.toContain(testPath);
+    expect(durable).not.toContain("TOP_SECRET_CANDIDATE_COMMAND_ARG");
     expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
     expect(
       events.find(

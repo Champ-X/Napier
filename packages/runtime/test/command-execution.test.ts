@@ -4,6 +4,7 @@ import {
   mkdir,
   mkdtemp,
   realpath,
+  rename,
   rm,
   symlink,
   writeFile,
@@ -17,9 +18,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   CommandRunner,
-  createCommandTool,
   prepareCommandExecution,
 } from "../src/command-execution.js";
+import { createCommandTool } from "../src/command-tool.js";
 import type {
   OsSandboxAdapter,
   SandboxedProcess,
@@ -220,12 +221,15 @@ describe("sandboxed command execution", () => {
   });
 
   it("runs explicit argv with read-only offline capabilities and no inherited secrets", async () => {
-    const { workspaceRoot, executables } = await createWorkspace();
+    const { root, workspaceRoot, executables } = await createWorkspace();
+    const toolchain = path.join(root, "toolchain");
+    await mkdir(toolchain);
     const fake = createFakeSandbox({ stdout: "42\n" });
     const runner = new CommandRunner({
       workspaceRoot,
       sandbox: fake.sandbox,
       executables,
+      runtimeReadPaths: [toolchain],
     });
 
     const result = await runner.run({
@@ -247,6 +251,7 @@ describe("sandboxed command execution", () => {
         commandSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         argumentSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         environmentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+        runtimeReadPathSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
         resourceLimitsSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       }),
     );
@@ -262,6 +267,7 @@ describe("sandboxed command execution", () => {
       "process.spawn",
       "workspace.read",
     ]);
+    expect(request.runtimeReadPaths).toEqual([await realpath(toolchain)]);
     expect(JSON.stringify(request)).not.toContain("network.connect");
     expect(JSON.stringify(request)).not.toContain("workspace.write");
     expect(JSON.stringify(request)).not.toContain("NAPIER_LIVE");
@@ -338,6 +344,34 @@ describe("sandboxed command execution", () => {
     expect(fake.terminateCalls[0]).toHaveBeenCalledOnce();
   });
 
+  it("revalidates runtime bytes after cancellation", async () => {
+    const { workspaceRoot, executables } = await createWorkspace();
+    const fake = createFakeSandbox({
+      hang: true,
+      onLaunch: async () => {
+        await writeFile(executables.node, "#!/bin/sh\nexit 9\n");
+        await chmod(executables.node, 0o755);
+      },
+    });
+    const runner = new CommandRunner({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+      executables,
+    });
+    const controller = new AbortController();
+    const execution = runner.run(
+      { runtime: "node", args: ["-e", "setInterval(() => {}, 1000)"] },
+      controller.signal,
+    );
+    await vi.waitFor(() => expect(fake.launchRequests).toHaveLength(1));
+    controller.abort();
+
+    await expect(execution).rejects.toThrow(
+      "command runtime changed during execution",
+    );
+    expect(fake.terminateCalls[0]).toHaveBeenCalledOnce();
+  });
+
   it("supports concurrent isolated invocations", async () => {
     const { workspaceRoot, executables } = await createWorkspace();
     const fake = createFakeSandbox({ stdout: "ok\n" });
@@ -382,6 +416,29 @@ describe("sandboxed command execution", () => {
     ).rejects.toThrow("command runtime changed during execution");
   });
 
+  it("fails closed when an admitted runtime read path is replaced", async () => {
+    const { root, workspaceRoot, executables } = await createWorkspace();
+    const toolchain = path.join(root, "toolchain");
+    const replaced = path.join(root, "toolchain-replaced");
+    await mkdir(toolchain);
+    const fake = createFakeSandbox({
+      onLaunch: async () => {
+        await rename(toolchain, replaced);
+        await mkdir(toolchain);
+      },
+    });
+    const runner = new CommandRunner({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+      executables,
+      runtimeReadPaths: [toolchain],
+    });
+
+    await expect(
+      runner.run({ runtime: "node", args: ["--version"] }),
+    ).rejects.toThrow("runtime read path changed");
+  });
+
   it("rejects path escape, malformed argv, and unavailable runtimes before launch", async () => {
     const { root, workspaceRoot, executables } = await createWorkspace();
     const outside = path.join(root, "outside");
@@ -413,6 +470,22 @@ describe("sandboxed command execution", () => {
         executables: { node: path.join(root, "missing") },
       }).run({ runtime: "node", args: [] }),
     ).rejects.toThrow("node runtime is unavailable");
+    const privateRuntimePath = path.join(root, "TOP_SECRET_RUNTIME_PATH");
+    const runtimePathFailure = await new CommandRunner({
+      workspaceRoot,
+      sandbox: fake.sandbox,
+      executables,
+      runtimeReadPaths: [privateRuntimePath],
+    })
+      .run({ runtime: "node", args: [] })
+      .catch((error: unknown) => error);
+    expect(runtimePathFailure).toBeInstanceOf(Error);
+    expect((runtimePathFailure as Error).message).toBe(
+      "command runtime read path is unavailable",
+    );
+    expect((runtimePathFailure as Error).message).not.toContain(
+      privateRuntimePath,
+    );
     expect(fake.launchRequests).toHaveLength(0);
   });
 

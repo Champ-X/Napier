@@ -4,6 +4,7 @@ import type {
   SubagentWorktreeApplyDetails,
 } from "@napier/contracts";
 
+import { createCommandTool } from "./command-tool.js";
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type {
   LspRenameDiagnosticsObservation,
@@ -12,12 +13,12 @@ import type {
 import { createLspDiagnosticsTool } from "./lsp-diagnostics-tool.js";
 import type { LspRenameFile } from "./lsp-rename-workspace-edit.js";
 import {
-  formatLspWorkspaceEditApplySummary,
   LspWorkspaceEditMutationCoordinator,
   type LspWorkspaceEditDiagnosticsAdapter,
   type LspWorkspaceEditPreviewSource,
 } from "./lsp-workspace-edit-mutation.js";
 import type { OsSandboxAdapter } from "./sandbox.js";
+import { createSubagentWorktreeApplyResult } from "./subagent-worktree-apply-result.js";
 import {
   createSubagentWorktreeApplyVerification,
   type SubagentWorktreeApplyVerificationState,
@@ -39,6 +40,7 @@ import {
   SubagentWorktreeLifecycleDiagnostics,
   type SubagentWorktreeLifecycleDiagnosticsAdapter,
 } from "./subagent-worktree-lifecycle-diagnostics.js";
+import { createSubagentWorktreePatchTool } from "./subagent-worktree-patch-tool.js";
 import { createSubagentWorktreeReview } from "./subagent-worktree-review.js";
 import {
   assertSubagentWorktreeToolchainStable,
@@ -46,16 +48,12 @@ import {
   type SubagentWorktreeToolchain,
 } from "./subagent-worktree-toolchain.js";
 import {
+  type SubagentCandidateCommandSummary,
   type SubagentCandidateVerificationSummary,
   SubagentWorktreeOperationCoordinator,
 } from "./subagent-worktree-verification.js";
 import { createTypescriptAstTools } from "./typescript-ast-tool.js";
-import {
-  applyWorkspacePatch,
-  createWorkspaceTools,
-  type WorkspacePatchInput,
-} from "./tools.js";
-import { createWorkspacePatchTool } from "./workspace-patch-tool.js";
+import { createWorkspaceTools } from "./tools.js";
 import { createVerificationTool } from "./verification.js";
 import {
   commitWorkspaceChanges,
@@ -70,7 +68,7 @@ export {
   subagentWorktreeToolOutputLedgerProjection,
 } from "./subagent-worktree-tool.js";
 
-interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
+export interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
   taskId: string;
   outcomeSha256: string;
   sourceRoot: string;
@@ -86,6 +84,12 @@ interface WorktreePreviewSource extends LspWorkspaceEditPreviewSource {
   candidateVerificationFailedCount: number;
   candidateVerificationStaleCount: number;
   candidateVerificationSetSha256: string;
+  candidateCommandAttemptCount: number;
+  candidateCommandFreshCount: number;
+  candidateCommandSucceededCount: number;
+  candidateCommandFailedCount: number;
+  candidateCommandStaleCount: number;
+  candidateCommandSetSha256: string;
   candidateToolchainSha256?: string;
   addedFileCount: number;
   modifiedFileCount: number;
@@ -110,6 +114,7 @@ export interface SubagentWorktreePreview {
   review: string;
   reviewTruncated: boolean;
   candidateVerification: SubagentCandidateVerificationSummary;
+  candidateCommands: SubagentCandidateCommandSummary;
   candidateToolchainSha256?: string;
 }
 
@@ -124,6 +129,7 @@ export interface SubagentWorktreeMutationManagerOptions {
   ownerId: string;
   sandbox?: OsSandboxAdapter;
   enableCandidateVerification?: boolean;
+  enableCandidateCommand?: boolean;
   diagnostics?: LspWorkspaceEditDiagnosticsAdapter<
     LspRenameDiagnosticsState,
     LspRenameDiagnosticsObservation
@@ -249,16 +255,11 @@ export class SubagentWorktreeMutationManager {
       ...createTypescriptAstTools(session.root),
     ];
     tools.push(
-      createWorkspacePatchTool({
-        workspaceRoot: session.root,
-        dataRoot: this.options.dataRoot,
-        applyPatch: async (workspaceRoot, dataRoot, input) => {
-          return context.operations.runMutation(async () => {
-            assertAuthorizedPatch(session, input);
-            return applyWorkspacePatch(workspaceRoot, dataRoot, input);
-          });
-        },
-      }),
+      createSubagentWorktreePatchTool(
+        session,
+        this.options.dataRoot,
+        context.operations.runMutation.bind(context.operations),
+      ),
     );
     tools.push(
       createSubagentWorktreeFileTool(
@@ -273,6 +274,19 @@ export class SubagentWorktreeMutationManager {
       const runtimeReadPaths = context.toolchain
         ? [context.toolchain.sourceNodeModulesRoot]
         : [];
+      if (this.options.enableCandidateCommand) {
+        tools.push(
+          context.operations.wrapCommandTool(
+            createCommandTool({
+              workspaceRoot: session.root,
+              sandbox: this.options.sandbox,
+              ...(runtimeReadPaths.length > 0 ? { runtimeReadPaths } : {}),
+            }),
+            session,
+            verifyToolchain,
+          ),
+        );
+      }
       tools.push(
         context.operations.wrapVerificationTool(
           createLspDiagnosticsTool({
@@ -323,6 +337,9 @@ export class SubagentWorktreeMutationManager {
     const candidateVerification = context.operations.summarize(
       candidate.candidateSnapshotSha256,
     );
+    const candidateCommands = context.operations.summarizeCommands(
+      candidate.candidateSnapshotSha256,
+    );
     const receipt = {
       taskId: session.taskId,
       outcomeSha256,
@@ -343,6 +360,12 @@ export class SubagentWorktreeMutationManager {
       candidateVerificationFailedCount: candidateVerification.failedCount,
       candidateVerificationStaleCount: candidateVerification.staleCount,
       candidateVerificationSetSha256: candidateVerification.setSha256,
+      candidateCommandAttemptCount: candidateCommands.attemptCount,
+      candidateCommandFreshCount: candidateCommands.freshCount,
+      candidateCommandSucceededCount: candidateCommands.succeededCount,
+      candidateCommandFailedCount: candidateCommands.failedCount,
+      candidateCommandStaleCount: candidateCommands.staleCount,
+      candidateCommandSetSha256: candidateCommands.setSha256,
       ...(context.toolchain
         ? { candidateToolchainSha256: context.toolchain.contentSha256 }
         : {}),
@@ -370,6 +393,12 @@ export class SubagentWorktreeMutationManager {
       candidateVerificationFailedCount: candidateVerification.failedCount,
       candidateVerificationStaleCount: candidateVerification.staleCount,
       candidateVerificationSetSha256: candidateVerification.setSha256,
+      candidateCommandAttemptCount: candidateCommands.attemptCount,
+      candidateCommandFreshCount: candidateCommands.freshCount,
+      candidateCommandSucceededCount: candidateCommands.succeededCount,
+      candidateCommandFailedCount: candidateCommands.failedCount,
+      candidateCommandStaleCount: candidateCommands.staleCount,
+      candidateCommandSetSha256: candidateCommands.setSha256,
       ...(context.toolchain
         ? { candidateToolchainSha256: context.toolchain.contentSha256 }
         : {}),
@@ -394,6 +423,7 @@ export class SubagentWorktreeMutationManager {
       review: review.text,
       reviewTruncated: review.truncated,
       candidateVerification,
+      candidateCommands,
       ...(context.toolchain
         ? { candidateToolchainSha256: context.toolchain.contentSha256 }
         : {}),
@@ -410,86 +440,7 @@ export class SubagentWorktreeMutationManager {
     signal?: AbortSignal,
   ): Promise<SubagentWorktreeApplyResult> {
     const execution = await this.coordinator.apply(previewId, signal);
-    const {
-      expectedFiles: _expectedFiles,
-      addedFileCount: _addedFileCount,
-      modifiedFileCount: _modifiedFileCount,
-      deletedFileCount: _deletedFileCount,
-      ...durableOutcome
-    } = execution.outcome;
-    const base = {
-      kind: "napier.subagent-worktree-apply" as const,
-      schemaVersion: 1 as const,
-      ...durableOutcome,
-      taskId: execution.source.taskId,
-      outcomeSha256: execution.source.outcomeSha256,
-      sourceSnapshotSha256: execution.source.sourceSnapshotSha256,
-      sourceFileCount: execution.source.sourceFileCount,
-      sourceBytes: execution.source.sourceBytes,
-      writeScopeCount: execution.source.writeScopeCount,
-      writeScopeSetSha256: execution.source.writeScopeSetSha256,
-      changedFileSetSha256: execution.source.changedFileSetSha256,
-      candidateAddedFileCount: execution.source.addedFileCount,
-      candidateModifiedFileCount: execution.source.modifiedFileCount,
-      candidateDeletedFileCount: execution.source.deletedFileCount,
-      candidateRenamedFileCount: execution.source.renamedFileCount,
-      candidateVerificationAttemptCount:
-        execution.source.candidateVerificationAttemptCount,
-      candidateVerificationFreshCount:
-        execution.source.candidateVerificationFreshCount,
-      candidateVerificationPassedCount:
-        execution.source.candidateVerificationPassedCount,
-      candidateVerificationFailedCount:
-        execution.source.candidateVerificationFailedCount,
-      candidateVerificationStaleCount:
-        execution.source.candidateVerificationStaleCount,
-      candidateVerificationSetSha256:
-        execution.source.candidateVerificationSetSha256,
-      ...(execution.source.candidateToolchainSha256
-        ? {
-            candidateToolchainSha256: execution.source.candidateToolchainSha256,
-          }
-        : {}),
-      ...(execution.diagnostics
-        ? { diagnostics: execution.diagnostics.details }
-        : {}),
-      ...(execution.tests ? { tests: execution.tests.details } : {}),
-    };
-    const details: SubagentWorktreeApplyDetails = {
-      ...base,
-      resultSha256: sha256(canonicalJson(base)),
-    };
-    return {
-      details,
-      summary: formatLspWorkspaceEditApplySummary({
-        label: "Subagent worktree apply",
-        details,
-        ...(execution.diagnostics
-          ? { diagnosticsSummary: execution.diagnostics.summary }
-          : {}),
-        ...(execution.tests ? { testsSummary: execution.tests.summary } : {}),
-        appliedMessage:
-          "The reviewed coder candidate is committed. Diagnostics and related-test evidence above describe the merged workspace.",
-        rolledBackMessage:
-          "The candidate commit failed and every changed file was restored. Delegate or preview again before retrying.",
-        indeterminateMessage:
-          "Workspace state is indeterminate. Inspect every candidate path before another write.",
-      }),
-    };
-  }
-}
-
-function assertAuthorizedPatch(
-  session: SubagentWorktreeSession,
-  input: WorkspacePatchInput,
-): void {
-  if (
-    !session.writePaths.includes(input.path) ||
-    (input.operation === "create" && input.createParentDirectories === true)
-  ) {
-    throw new Error(
-      "Coder Subagent apply_patch is limited to declared file paths with existing parent directories",
-    );
+    return createSubagentWorktreeApplyResult(execution);
   }
 }
 

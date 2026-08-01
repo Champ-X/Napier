@@ -124,6 +124,12 @@ describe("Subagent event trace view", () => {
       candidateVerificationFailedCount: 1,
       candidateVerificationStaleCount: 1,
       candidateVerificationSetSha256: "5".repeat(64),
+      candidateCommandAttemptCount: 3,
+      candidateCommandFreshCount: 2,
+      candidateCommandSucceededCount: 1,
+      candidateCommandFailedCount: 1,
+      candidateCommandStaleCount: 1,
+      candidateCommandSetSha256: "7".repeat(64),
       candidateToolchainSha256: "6".repeat(64),
       previewId: "TOP_SECRET_PREVIEW",
       changedPaths: ["TOP_SECRET_PATH"],
@@ -149,10 +155,15 @@ describe("Subagent event trace view", () => {
         candidateVerificationFailedCount: 1,
         candidateVerificationStaleCount: 1,
         candidateVerificationSetSha256: "5".repeat(64),
+        candidateCommandFreshCount: 2,
+        candidateCommandSucceededCount: 1,
+        candidateCommandFailedCount: 1,
+        candidateCommandStaleCount: 1,
+        candidateCommandSetSha256: "7".repeat(64),
       }),
     );
     expect(subagentEventTraceSummary(event)).toContain(
-      `workspace isolated_write / merge-preview / source-files 120 / write-scopes 5 / changed-files 5 / change-set ${"4".repeat(12)} / lifecycle 2 added / 1 modified / 2 deleted / 1 renamed / candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale / candidate-verification-set ${"5".repeat(12)}`,
+      `workspace isolated_write / merge-preview / source-files 120 / write-scopes 5 / changed-files 5 / change-set ${"4".repeat(12)} / lifecycle 2 added / 1 modified / 2 deleted / 1 renamed / candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale / candidate-verification-set ${"5".repeat(12)} / candidate-commands 2 fresh / 1 succeeded / 1 failed / 1 stale / candidate-command-set ${"7".repeat(12)}`,
     );
     expect(subagentEventTraceSummary(event)).not.toContain("TOP_SECRET");
   });

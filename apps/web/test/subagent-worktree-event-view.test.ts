@@ -38,6 +38,11 @@ describe("Subagent worktree event view", () => {
         subagentWorktreeCandidateVerificationFailedCount: 1,
         subagentWorktreeCandidateVerificationStaleCount: 1,
         subagentWorktreeCandidateVerificationSetSha256: digest,
+        subagentWorktreeCandidateCommandFreshCount: 2,
+        subagentWorktreeCandidateCommandSucceededCount: 1,
+        subagentWorktreeCandidateCommandFailedCount: 1,
+        subagentWorktreeCandidateCommandStaleCount: 1,
+        subagentWorktreeCandidateCommandSetSha256: digest,
         subagentWorktreeOutcomeSha256: digest,
         subagentWorktreeResultSha256: digest,
       }),
@@ -51,6 +56,7 @@ describe("Subagent worktree event view", () => {
         "diagnostics clean",
         "lifecycle 1 added / 0 modified / 1 deleted / 0 renamed",
         "candidate-verification 2 fresh / 1 passed / 1 failed / 1 stale",
+        "candidate-commands 2 fresh / 1 succeeded / 1 failed / 1 stale",
       ]),
     );
 
@@ -141,6 +147,10 @@ describe("Subagent worktree event view", () => {
     const impossibleLifecycle = worktreeDetails();
     impossibleLifecycle["candidateAddedFileCount"] = 2;
     expect(subagentWorktreeEventEvidence(impossibleLifecycle)).toBeUndefined();
+
+    const impossibleCommands = worktreeDetails();
+    impossibleCommands["candidateCommandSucceededCount"] = 3;
+    expect(subagentWorktreeEventEvidence(impossibleCommands)).toBeUndefined();
   });
 });
 
@@ -168,6 +178,12 @@ function worktreeDetails(): Record<string, unknown> {
     candidateVerificationFailedCount: 1,
     candidateVerificationStaleCount: 1,
     candidateVerificationSetSha256: digest,
+    candidateCommandAttemptCount: 3,
+    candidateCommandFreshCount: 2,
+    candidateCommandSucceededCount: 1,
+    candidateCommandFailedCount: 1,
+    candidateCommandStaleCount: 1,
+    candidateCommandSetSha256: digest,
     candidateToolchainSha256: digest,
     sourcePreviewResultSha256: digest,
     planSha256: digest,

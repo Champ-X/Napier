@@ -1,7 +1,7 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { AgentProfile } from "@napier/contracts";
 
-import { createCommandTool } from "./command-execution.js";
+import { createCommandTool } from "./command-tool.js";
 import { LspCodeActionApplyDiagnostics } from "./lsp-code-action-apply-diagnostics.js";
 import { createLspCodeActionApplyTool } from "./lsp-code-action-apply-tool.js";
 import { LspCodeActionMutationManager } from "./lsp-code-action-mutation-manager.js";

@@ -6,6 +6,41 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added serialized read-only commands for isolated coder candidates. A child
+  receives `run_command` only when its parent profile already enables that
+  capability and an OS Sandbox exists. The existing explicit-argv Node runner
+  executes against only the private candidate with fixed environment, denied
+  network, bounded time/output, bound executable/runtime paths, and the
+  protected read-only dependency overlay; no shell string, package script,
+  Python, Process Session, or parent write authority is introduced. At most
+  eight commands share the patch/file/LSP/verification queue and bind complete
+  before/after candidate snapshots. Later edits make attempts stale, while
+  current statuses remain independently
+  succeeded/failed/timed-out/output-capped/error and never count as candidate
+  verification. Any Sandbox write violation permanently blocks preview
+  settlement. Agent, HTTP/SSE, portable Replay, and strict Web retain only
+  bounded counts and a command-set hash; argv, cwd, output, paths, bodies,
+  Sandbox labels, grants, and preview IDs remain live-only. Tests cover parent
+  capability omission, concurrency, the eight-attempt limit, non-zero/timeout/
+  output-cap/error/cancellation handling, later-edit staleness, candidate and
+  runtime-path drift, privacy, merge, SSE, Replay, and Web invariants. The
+  direct-process Dogfood adapter executed real Node over unmerged
+  add/delete/move bytes, loaded TypeScript through the overlay, and completed
+  candidate LSP, fixed Vitest, lifecycle-aware parent verification, and merge
+  in 32.20 seconds; the separate platform-Sandbox smoke remains the isolation
+  check on hosts that permit nested sandboxing. The former
+  900-line command module is split into execution, runtime-binding, and
+  Agent/Ledger modules; worktree patch and apply-result adaptation are also
+  focused modules, with every touched production file below 500 lines. The
+  Runtime suite passes 984 regular tests with 25 opt-in tests skipped. Complete
+  `npm run check` passes 1,708 regular tests with 30 opt-in live tests skipped,
+  255 OpenAPI routes, and 244/244 compatibility operations. Product performance
+  remains within budget at 616.7 ms to first CLI event, 763.7 ms to first
+  token, 1,057.3 ms to completion, 0.4 ms read p95, 7.2 ms for a 1,000-event
+  projection, and 753.664 closed SQLite bytes/event. The 92-file Web dist main
+  entry remains 130.32 KiB under its 150 KiB limit, bound to
+  `c981a9b5a1e1f91f`; the seven-artifact release set is bound to
+  `b7273d31ab17393c`.
 - Added lifecycle-aware parent verification for isolated coder candidates.
   Coder apply now uses an optional typed source-aware adapter in the existing
   one-use WorkspaceEdit coordinator; ordinary Rename and Code Action behavior

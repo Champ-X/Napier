@@ -72,7 +72,12 @@ describe("coder Subagent HTTP Agent path", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         toolPolicy: "workspace",
-        enabledTools: ["apply_patch", "lsp_diagnostics", "verify_workspace"],
+        enabledTools: [
+          "apply_patch",
+          "lsp_diagnostics",
+          "run_command",
+          "verify_workspace",
+        ],
         enabledSubagents: ["coder"],
       }),
     });
@@ -136,6 +141,13 @@ describe("coder Subagent HTTP Agent path", () => {
         { stopReason: "toolUse" },
       ),
       fauxAssistantMessage(
+        fauxToolCall("run_command", {
+          runtime: "node",
+          args: ["-e", "console.log('TOP_SECRET_SERVER_COMMAND_ARG')"],
+        }),
+        { stopReason: "toolUse" },
+      ),
+      fauxAssistantMessage(
         fauxToolCall("verify_workspace", {
           kind: "test",
           target: addedPath,
@@ -157,6 +169,9 @@ describe("coder Subagent HTTP Agent path", () => {
         expect(previewId).toMatch(/^subworkpreview_/u);
         expect(JSON.stringify(context.messages)).toContain(
           "Candidate verification: 1 fresh / 1 passed / 0 failed / 0 stale",
+        );
+        expect(JSON.stringify(context.messages)).toContain(
+          "Candidate commands: 1 fresh / 1 succeeded / 0 failed / 0 stale",
         );
         expect(JSON.stringify(context.messages)).toContain(
           "Lifecycle: 2 added / 1 modified / 2 deleted / 1 renamed",
@@ -224,6 +239,12 @@ describe("coder Subagent HTTP Agent path", () => {
         candidateVerificationPassedCount: 1,
         candidateVerificationFailedCount: 0,
         candidateVerificationStaleCount: 0,
+        candidateCommandAttemptCount: 1,
+        candidateCommandFreshCount: 1,
+        candidateCommandSucceededCount: 1,
+        candidateCommandFailedCount: 0,
+        candidateCommandStaleCount: 0,
+        candidateCommandSetSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
         diagnostics: expect.objectContaining({
           status: "clean",
           fileCount: 0,
@@ -240,6 +261,7 @@ describe("coder Subagent HTTP Agent path", () => {
     expect(durable).not.toContain(addedPath);
     expect(durable).not.toContain(renamedPath);
     expect(durable).not.toContain("TOP_SECRET_CANDIDATE_STDOUT");
+    expect(durable).not.toContain("TOP_SECRET_SERVER_COMMAND_ARG");
   });
 });
 

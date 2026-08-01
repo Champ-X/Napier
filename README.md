@@ -2878,7 +2878,12 @@ delegate_task(role=coder, writePaths=[1..8 file paths])
   -> overlay read-only parent dependencies, redirect workspace packages to the candidate
   -> run a Pi child with private read/AST tools, path-limited apply_patch,
      and candidate_file delete/move; both rename paths require grants
-  -> serialize create/modify/delete/move, real LSP, and fixed verification
+  -> when the parent enables run_command, add explicit-argv read-only Node
+     execution over the private candidate and protected dependency overlay
+  -> serialize create/modify/delete/move, candidate commands, real LSP,
+     and fixed verification
+  -> bind command attempts independently as fresh/stale and
+     succeeded/failed/timed-out/output-capped/error
   -> bind each verification result to the complete private candidate snapshot
   -> derive authoritative add/modify/delete changes and unambiguous renames
   -> ground its typed outcome against surviving candidate bytes
@@ -2944,37 +2949,55 @@ The toolchain receipt binds the fixed entrypoint and package-manager metadata;
 it does not recursively hash every transitive dependency byte, so the local
 installed dependency tree remains part of the trusted host boundary.
 
-Patch and verification calls share one serial queue with at most 16
-verification attempts. Each attempt records a result hash and the complete
-candidate snapshot hash observed after the read-only operation. Finalization
-recomputes that snapshot: later edits make prior attempts `stale`, while
-current attempts are split into `passed` and `failed`. A failed or absent check
-does not silently block preview creation because the parent may need to review
-an expected failure; the live result makes that state explicit before the
-separate merge call. Durable delegation, merge, SSE, Replay, and Web evidence
-retain only bounded counts plus verification-set/toolchain, old/new graph,
-selected-test, diagnostic, and result hashes. Verifier stdout/stderr,
-diagnostics, test names, paths, candidate bodies, write grants, and preview IDs
-remain live-only.
+Patch, candidate command, and verification calls share one serial queue.
+Verification retains its existing 16-attempt limit. When the parent profile
+also enables `run_command`, the child may make at most eight explicit-argv Node
+attempts against the private candidate. The command runner uses a fixed
+environment, denied network, read-only candidate root, bounded time/output,
+bound executable, and the already protected read-only dependency overlay. It
+does not evaluate a shell string or expose package scripts, Process Sessions,
+Python, environment variables, or parent workspace writes. Complete before and
+after snapshots must match; any write despite the Sandbox policy permanently
+blocks preview settlement.
+
+Each verification or command attempt records a result hash and complete
+candidate snapshot hash. Finalization recomputes that snapshot: later edits
+make prior attempts `stale`. Current verification attempts are split into
+`passed` and `failed`; current command attempts remain separately classified as
+`succeeded`, `failed`, `timed_out`, `output_capped`, or `error`. Command success
+is execution evidence only and never implies type or test correctness. A failed
+or absent check does not silently block preview creation because the parent may
+need to review an expected failure; the live result makes that state explicit
+before the separate merge call. Durable delegation, merge, SSE, Replay, and Web
+evidence retain only bounded counts plus command/verification-set, toolchain,
+old/new graph, selected-test, diagnostic, and result hashes. Argv, cwd, command
+and verifier stdout/stderr, diagnostics, test names, paths, candidate bodies,
+write grants, Sandbox labels, and preview IDs remain live-only.
 
 This is a filesystem worktree, not a Git branch, shell checkout, container, or
-process sandbox. The child has no shell, Process, network, Browser, Extension,
-persistent Session, or nested-delegation capability. Empty-directory
-operations, directory moves, parent-directory creation during lifecycle
-operations, permission edits, symlinks, binary files, ambiguous renames between
-files with duplicate content, arbitrary child-side commands/package scripts,
-and cross-Run preview recovery remain unsupported. Pure additions use mode
-`0644`; a byte-identical rename preserves the observed source mode. The fixed
-verifier remains read-only and offline; it is not a general process capability.
-Automatic lifecycle LSP and dependency-graph tests currently cover
-TypeScript/JavaScript source extensions; other text formats are explicitly
-omitted rather than reported as verified.
+general process sandbox. The child has no shell, Process Session, network,
+Browser, Extension, persistent Session, or nested-delegation capability.
+Empty-directory operations, directory moves, parent-directory creation during
+lifecycle operations, permission edits, symlinks, binary files, ambiguous
+renames between files with duplicate content, package scripts, arbitrary
+executables, Python, and cross-Run preview recovery remain unsupported. Pure
+additions use mode `0644`; a byte-identical rename preserves the observed
+source mode. The fixed verifier and optional Node command remain read-only and
+offline; neither grants general process authority. Automatic lifecycle LSP and
+dependency-graph tests currently cover TypeScript/JavaScript source extensions;
+other text formats are explicitly omitted rather than reported as verified.
 
 Run the opt-in real Agent-to-private-worktree smoke:
 
 ```bash
 npm run test:live-coder
 ```
+
+The smoke uses the explicit direct-process test adapter to execute real Node
+against unmerged lifecycle bytes, load TypeScript through the dependency
+overlay, and then complete candidate LSP, fixed Vitest, parent
+diagnostics/tests, and explicit merge. `npm run test:live-command` separately
+exercises the real platform OS Sandbox on hosts that permit nested sandboxing.
 
 New delegations must return a bounded
 JSON outcome containing a summary, typed findings/risks/recommendations,

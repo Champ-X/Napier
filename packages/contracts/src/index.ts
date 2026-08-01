@@ -4157,6 +4157,12 @@ export interface SubagentWorktreeApplyDetails extends Omit<
   candidateVerificationFailedCount?: number;
   candidateVerificationStaleCount?: number;
   candidateVerificationSetSha256?: string;
+  candidateCommandAttemptCount?: number;
+  candidateCommandFreshCount?: number;
+  candidateCommandSucceededCount?: number;
+  candidateCommandFailedCount?: number;
+  candidateCommandStaleCount?: number;
+  candidateCommandSetSha256?: string;
   candidateToolchainSha256?: string;
 }
 

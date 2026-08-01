@@ -9,7 +9,10 @@ import type {
 
 import { canonicalJson, sha256 } from "./ed25519.js";
 import type { SubagentWorktreePreview } from "./subagent-worktree-mutation.js";
-import { formatSubagentCandidateVerification } from "./subagent-worktree-verification.js";
+import {
+  formatSubagentCandidateCommands,
+  formatSubagentCandidateVerification,
+} from "./subagent-worktree-verification.js";
 
 export const MAX_SUBAGENT_STEP_CHARS = 8_192;
 export const MAX_SUBAGENT_RESULT_CHARS = 12_000;
@@ -39,6 +42,12 @@ export interface DelegationDetails {
   candidateVerificationFailedCount?: number;
   candidateVerificationStaleCount?: number;
   candidateVerificationSetSha256?: string;
+  candidateCommandAttemptCount?: number;
+  candidateCommandFreshCount?: number;
+  candidateCommandSucceededCount?: number;
+  candidateCommandFailedCount?: number;
+  candidateCommandStaleCount?: number;
+  candidateCommandSetSha256?: string;
   candidateToolchainSha256?: string;
 }
 
@@ -81,6 +90,13 @@ export function subagentTaskPayload(
             preview.candidateVerification.staleCount,
           candidateVerificationSetSha256:
             preview.candidateVerification.setSha256,
+          candidateCommandAttemptCount: preview.candidateCommands.attemptCount,
+          candidateCommandFreshCount: preview.candidateCommands.freshCount,
+          candidateCommandSucceededCount:
+            preview.candidateCommands.succeededCount,
+          candidateCommandFailedCount: preview.candidateCommands.failedCount,
+          candidateCommandStaleCount: preview.candidateCommands.staleCount,
+          candidateCommandSetSha256: preview.candidateCommands.setSha256,
           ...(preview.candidateToolchainSha256
             ? { candidateToolchainSha256: preview.candidateToolchainSha256 }
             : {}),
@@ -130,6 +146,13 @@ export function subagentTaskDetails(
             preview.candidateVerification.staleCount,
           candidateVerificationSetSha256:
             preview.candidateVerification.setSha256,
+          candidateCommandAttemptCount: preview.candidateCommands.attemptCount,
+          candidateCommandFreshCount: preview.candidateCommands.freshCount,
+          candidateCommandSucceededCount:
+            preview.candidateCommands.succeededCount,
+          candidateCommandFailedCount: preview.candidateCommands.failedCount,
+          candidateCommandStaleCount: preview.candidateCommands.staleCount,
+          candidateCommandSetSha256: preview.candidateCommands.setSha256,
           ...(preview.candidateToolchainSha256
             ? { candidateToolchainSha256: preview.candidateToolchainSha256 }
             : {}),
@@ -165,6 +188,7 @@ export function formatDelegationResult(
             : []),
           "",
           ...formatSubagentCandidateVerification(preview.candidateVerification),
+          ...formatSubagentCandidateCommands(preview.candidateCommands),
           "Review the candidate evidence, then call subagent_worktree_apply with this preview ID.",
         ]
       : []),
@@ -289,6 +313,14 @@ export function delegateTaskOutputLedgerProjection(
               details["candidateVerificationStaleCount"],
             candidateVerificationSetSha256:
               details["candidateVerificationSetSha256"],
+            candidateCommandAttemptCount:
+              details["candidateCommandAttemptCount"],
+            candidateCommandFreshCount: details["candidateCommandFreshCount"],
+            candidateCommandSucceededCount:
+              details["candidateCommandSucceededCount"],
+            candidateCommandFailedCount: details["candidateCommandFailedCount"],
+            candidateCommandStaleCount: details["candidateCommandStaleCount"],
+            candidateCommandSetSha256: details["candidateCommandSetSha256"],
             candidateToolchainSha256: details["candidateToolchainSha256"],
             mergePreviewAvailable:
               typeof details["worktreePreviewId"] === "string",

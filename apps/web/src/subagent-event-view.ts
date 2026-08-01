@@ -1,5 +1,7 @@
 import type { RunEvent } from "@napier/contracts";
 
+import { candidateCommandEventEvidence } from "./candidate-command-event-view";
+
 export interface SubagentEventTraceView {
   action: string;
   taskId?: string;
@@ -42,6 +44,12 @@ export interface SubagentEventTraceView {
   candidateVerificationFailedCount?: number;
   candidateVerificationStaleCount?: number;
   candidateVerificationSetSha256?: string;
+  candidateCommandAttemptCount?: number;
+  candidateCommandFreshCount?: number;
+  candidateCommandSucceededCount?: number;
+  candidateCommandFailedCount?: number;
+  candidateCommandStaleCount?: number;
+  candidateCommandSetSha256?: string;
   candidateToolchainSha256?: string;
 }
 
@@ -152,6 +160,7 @@ export function subagentEventTraceView(
   const candidateToolchainSha256 = sha256(
     event.payload["candidateToolchainSha256"],
   );
+  const candidateCommands = candidateCommandEventEvidence(event.payload);
   const lifecycle = candidateLifecycle(event.payload, changedFileCount);
   const validCandidateVerification =
     candidateVerificationAttemptCount !== undefined &&
@@ -217,6 +226,16 @@ export function subagentEventTraceView(
           candidateVerificationFailedCount,
           candidateVerificationStaleCount,
           candidateVerificationSetSha256,
+        }
+      : {}),
+    ...(candidateCommands?.attemptCount !== undefined
+      ? {
+          candidateCommandAttemptCount: candidateCommands.attemptCount,
+          candidateCommandFreshCount: candidateCommands.freshCount,
+          candidateCommandSucceededCount: candidateCommands.succeededCount,
+          candidateCommandFailedCount: candidateCommands.failedCount,
+          candidateCommandStaleCount: candidateCommands.staleCount,
+          candidateCommandSetSha256: candidateCommands.setSha256,
         }
       : {}),
     ...(candidateToolchainSha256 ? { candidateToolchainSha256 } : {}),
@@ -296,6 +315,14 @@ export function subagentEventTraceSummary(event: RunEvent): string | undefined {
       ? [
           `candidate-verification-set ${view.candidateVerificationSetSha256.slice(0, 12)}`,
         ]
+      : []),
+    ...(view.candidateCommandFreshCount !== undefined
+      ? [
+          `candidate-commands ${view.candidateCommandFreshCount} fresh / ${view.candidateCommandSucceededCount ?? 0} succeeded / ${view.candidateCommandFailedCount ?? 0} failed / ${view.candidateCommandStaleCount ?? 0} stale`,
+        ]
+      : []),
+    ...(view.candidateCommandSetSha256
+      ? [`candidate-command-set ${view.candidateCommandSetSha256.slice(0, 12)}`]
       : []),
   ].join(" / ");
 }
