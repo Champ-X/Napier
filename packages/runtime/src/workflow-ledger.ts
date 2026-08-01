@@ -205,6 +205,7 @@ export class ExecutionPlanWorkflowLedger {
         planId: context.plan.id,
         manifestSha256: context.manifest.contentSha256,
         inputSha256,
+        input,
         attempt,
         assistantOutput: await this.nodeAssistantOutput(
           context.threadId,

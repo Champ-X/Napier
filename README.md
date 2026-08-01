@@ -3212,9 +3212,10 @@ prompt, model, title, and Thread/Agent binding before mutation;
 same frozen historical-message source and read-only isolated target as
 CLI/HTTP/RPC, with an exact preview hash required for every execution.
 `resumeAgent()` uses the same interrupted-Run recovery path as CLI. Agent,
-Deterministic, Tool, Approval, condition, parallelism, retry, cancellation,
-recovery, policy, Sandbox, and Ledger behavior remain the existing Runtime
-behavior. Runnable examples are
+Deterministic templates including typed multi-way Switch selection, Tool,
+Approval, condition, parallelism, retry, cancellation, recovery, policy,
+Sandbox, and Ledger behavior remain the existing Runtime behavior. Runnable
+examples are
 [`packages/sdk/examples/agent-run.mjs`](packages/sdk/examples/agent-run.mjs)
 and
 [`packages/sdk/examples/typed-workflow.mjs`](packages/sdk/examples/typed-workflow.mjs).
@@ -3240,8 +3241,12 @@ real `source=workflow` Run for every ready node. The Workflow freezes the target
 Thread's Agent revision at start. Agent nodes invoke `AgentRuntime` with
 isolated message history and strict JSON output. Deterministic nodes resolve a
 bounded recursive template made only of literal JSON, input field selection,
-object construction, and array construction. They perform no model or tool
-call and expose no JavaScript, JSONPath, interpolation, or expression engine.
+object construction, and array construction. A root `switch` template may
+select one required typed input path across 2–16 unique canonical case values
+and an optional default; each selected branch is another ordinary bounded
+template. It performs no coercion and blocks with `switch_unmatched` when no
+case or default exists. Deterministic execution performs no model or tool call
+and exposes no JavaScript, JSONPath, interpolation, or expression engine.
 Tool nodes invoke one allowlisted stateless built-in directly, with no model
 call, after enabled-tool, TypeBox argument, declared `read`/`write` effect,
 Agent policy, workspace scope, and freshness checks. Their schema-validated
@@ -3582,13 +3587,14 @@ language, coercion, custom comparator, tool, or side effect. It still receives
 a leased Workflow Run, retry/timeout/cancellation behavior, restart recovery,
 checkpoint experiment reuse, and hash-only public Trace evidence.
 
-Version 1 intentionally supports Agent, bounded Deterministic, stateless
-built-in Tool, bounded read-only Agent Map, bounded read-only Agent Loop, typed
-deterministic Reduce, and durable Approval nodes with bounded parallel
-dependency-ready DAG scheduling, typed equality guards, and terminal workspace
-file/directory Artifact settlement. Stateful session Tool nodes, write-capable
-Map/Loop, multi-way switch, compensation, per-node breakpoints, adapter
-runtimes, and a visual builder remain open. Checkpoint experiments now provide
+Version 1 intentionally supports Agent, bounded Deterministic including root
+multi-way Switch templates, stateless built-in Tool, bounded read-only Agent
+Map, bounded read-only Agent Loop, typed deterministic Reduce, and durable
+Approval nodes with bounded parallel dependency-ready DAG scheduling, typed
+equality guards, and terminal workspace file/directory Artifact settlement.
+Stateful session Tool nodes, write-capable Map/Loop, graph-level branch
+pruning, compensation, per-node breakpoints, adapter runtimes, and a visual
+builder remain open. Checkpoint experiments now provide
 single-call execution for an explicit
 stateless read-only built-in subset, while message experiments can freeze
 captured results for that same subset. Workflow experiments can also substitute

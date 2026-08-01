@@ -6,6 +6,29 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added typed root multi-way Switch templates to existing Deterministic
+  Workflow nodes. A Switch selects one required typed input path across 2–16
+  unique canonical, schema-valid cases and an optional default, then evaluates
+  exactly one bounded branch template through the existing leased Run. It uses
+  no model, tool, script, coercion, or browser scheduler; nested Switches are
+  rejected and an unmatched node without a default blocks as
+  `switch_unmatched`. Public completion evidence records only the explicit
+  Manifest case ID, selector hash, default flag, template/input/output/schema
+  hashes, and output bytes. Recovery re-evaluates the exact case and canonical
+  output from typed input, so duplicate or forged decision evidence fails
+  closed. SDK and CLI execute the shared contract; Web independently rejects
+  malformed Switch Manifests and renders body-free decision Trace. Ninety
+  focused Runtime/CLI/SDK/Server/Web tests cover normal/default/unmatched,
+  cancellation, concurrency, schema and ambiguity rejection, restart reuse,
+  privacy, and tampering. External SDK dogfood selected `urgent_queue`,
+  delivered a real typed routing result with zero model/tool calls, and
+  produced a valid portable Replay. The complete gate passes 1,629 regular
+  tests with 29 opt-in live tests skipped, 255 OpenAPI routes, 244/244
+  compatibility operations, and the product performance budget at 1,173.9 ms
+  to first CLI event, 1,326.5 ms to first token, 1,645.2 ms to completion,
+  0.7 ms read p95, and 11.5 ms for a 1,000-event projection. The 92-file Web
+  dist main entry remains 130.32 KiB, bound to `6ae872edc3d52079`; the release
+  set is bound to `f98074781cdfcb9b`.
 - Added explicitly preauthorized failure compensation for scoped Workspace
   Process writes. `preview_write` can bind `failureRecovery=restore_scopes`
   into a schema-v2 preview and schema-v7 Session without adding paths or an

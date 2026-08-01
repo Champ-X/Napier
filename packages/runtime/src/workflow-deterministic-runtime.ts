@@ -10,8 +10,9 @@ import { canonicalJson, sha256 } from "./ed25519.js";
 import { createId } from "./ids.js";
 import type { LocalStore } from "./store.js";
 import {
-  executeExecutionPlanWorkflowDeterministicTemplate,
+  evaluateExecutionPlanWorkflowDeterministicTemplate,
   executionPlanWorkflowDeterministicTemplateSha256,
+  ExecutionPlanWorkflowSwitchUnmatchedError,
 } from "./workflow-deterministic-model.js";
 import { WORKFLOW_DETERMINISTIC_COMPLETED_EVENT } from "./workflow-deterministic-evidence.js";
 import {
@@ -127,19 +128,24 @@ export class ExecutionPlanWorkflowDeterministicRuntime {
         options.onEvent,
       );
       controller.signal.throwIfAborted();
-      let output: JsonValue;
+      let evaluation;
       try {
-        output = executeExecutionPlanWorkflowDeterministicTemplate(
+        evaluation = evaluateExecutionPlanWorkflowDeterministicTemplate(
           options.node.template,
           options.input,
         );
-      } catch {
+      } catch (error) {
         throw new ExecutionPlanWorkflowDeterministicError(
-          "template_failed",
-          "Workflow deterministic template could not resolve its input",
+          error instanceof ExecutionPlanWorkflowSwitchUnmatchedError
+            ? "switch_unmatched"
+            : "template_failed",
+          error instanceof ExecutionPlanWorkflowSwitchUnmatchedError
+            ? "Workflow deterministic Switch has no matching case or default"
+            : "Workflow deterministic template could not resolve its input",
           leased.run,
         );
       }
+      const output: JsonValue = evaluation.output;
       try {
         assertWorkflowEncodedBytes(
           output,
@@ -198,6 +204,14 @@ export class ExecutionPlanWorkflowDeterministicRuntime {
             outputSha256,
             outputBytes: Buffer.byteLength(serializedOutput, "utf8"),
             outputSchemaSha256: workflowSchemaSha256(options.node.outputSchema),
+            ...(evaluation.switchSelection
+              ? {
+                  switchCaseId: evaluation.switchSelection.caseId,
+                  switchSelectorSha256:
+                    evaluation.switchSelection.selectorSha256,
+                  switchDefault: evaluation.switchSelection.defaultSelected,
+                }
+              : {}),
           },
         },
         options.onEvent,

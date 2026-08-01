@@ -18,7 +18,7 @@ import {
   executionPlanWorkflowConditionSchema,
   validateExecutionPlanWorkflowCondition,
 } from "./workflow-condition-model.js";
-import { validateExecutionPlanWorkflowDeterministicTemplate } from "./workflow-deterministic-model.js";
+import { validateExecutionPlanWorkflowDeterministicTemplateContract } from "./workflow-deterministic-model.js";
 import {
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_CONCURRENCY,
   MAX_EXECUTION_PLAN_WORKFLOW_MAP_ITEMS,
@@ -772,8 +772,9 @@ function validateWorkflowNode(
       inputSchema: inputSchema as WorkflowObjectSchema,
       outputSchema,
       ...(conditional ? conditional : {}),
-      template: validateExecutionPlanWorkflowDeterministicTemplate(
+      template: validateExecutionPlanWorkflowDeterministicTemplateContract(
         node["template"],
+        inputSchema,
         `${label} template`,
       ),
       timeoutMs,

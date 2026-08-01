@@ -9,6 +9,7 @@ import type {
   ExecutionPlanBlueprint,
   ExecutionPlanWorkflowDeterministicTemplate,
   ExecutionPlanWorkflowManifest,
+  JsonValue,
   RunEvent,
   WorkflowObjectSchema,
 } from "@napier/contracts";
@@ -322,6 +323,247 @@ describe("Execution Plan Workflow runtime", () => {
     expect(resumed.output).toEqual(result.output);
     expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(2);
     fixture.store.close();
+  });
+
+  it("selects and recovers one typed Deterministic Switch case", async () => {
+    const fixture = await createFixture();
+    const manifest = switchWorkflowManifest(fixture.manifest.blueprint);
+    const agentId = fixture.store.getThread(fixture.targetThreadId).agentId;
+    const concurrentThread = await fixture.store.createThread({
+      title: "Concurrent Switch",
+      agentId,
+    });
+    const [result, concurrent] = await Promise.all([
+      fixture.workflows.run({
+        threadId: fixture.targetThreadId,
+        request: {
+          manifest,
+          input: {
+            request: "PRIVATE_SWITCH_REQUEST",
+            route: "priority",
+          },
+        },
+      }),
+      fixture.workflows.run({
+        threadId: concurrentThread.id,
+        request: {
+          manifest,
+          input: {
+            request: "Concurrent audit request",
+            route: "audit",
+          },
+        },
+      }),
+    ]);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "PRIVATE_SWITCH_REQUEST",
+          approved: true,
+        },
+      }),
+    );
+    expect(concurrent.output).toEqual({
+      report: "Audit route",
+      approved: true,
+    });
+    expect(result.nodeResults).toEqual([
+      expect.objectContaining({
+        nodeId: "inspect",
+        status: "completed",
+        output: { summary: "PRIVATE_SWITCH_REQUEST", count: 1 },
+      }),
+      expect.objectContaining({
+        nodeId: "report",
+        status: "completed",
+        output: {
+          report: "PRIVATE_SWITCH_REQUEST",
+          approved: true,
+        },
+      }),
+    ]);
+    const events = await fixture.store.listEvents(fixture.targetThreadId);
+    const switchEvent = events.find(
+      (event) =>
+        event.type === "workflow.deterministic.completed" &&
+        record(event.payload)?.["nodeId"] === "inspect",
+    );
+    expect(switchEvent?.payload).toEqual(
+      expect.objectContaining({
+        switchCaseId: "fast_path",
+        switchSelectorSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        switchDefault: false,
+      }),
+    );
+    expect(JSON.stringify(switchEvent?.payload)).not.toContain("priority");
+    expect(JSON.stringify(switchEvent?.payload)).not.toContain(
+      "PRIVATE_SWITCH_REQUEST",
+    );
+    expect(
+      events.some(
+        (event) =>
+          event.type === "model.response" || event.type === "tool.started",
+      ),
+    ).toBe(false);
+    const runCount = fixture.store.listRuns(fixture.targetThreadId).length;
+    const resumed = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: { manifest, planId: result.planId },
+    });
+    expect(resumed.output).toEqual(result.output);
+    expect(fixture.store.listRuns(fixture.targetThreadId)).toHaveLength(
+      runCount,
+    );
+
+    await fixture.store.appendEvent({
+      threadId: fixture.targetThreadId,
+      runId: switchEvent!.runId,
+      type: "workflow.deterministic.completed",
+      category: "plan",
+      visibility: "user",
+      payload: {
+        ...(switchEvent!.payload as Record<string, JsonValue>),
+        switchCaseId: "audit_path",
+      },
+    });
+    await expect(
+      fixture.workflows.run({
+        threadId: fixture.targetThreadId,
+        request: { manifest, planId: result.planId },
+      }),
+    ).rejects.toThrow("output evidence is unavailable");
+    fixture.store.close();
+  });
+
+  it("uses a Switch default and blocks an unmatched Switch without one", async () => {
+    const defaultFixture = await createFixture();
+    const defaultManifest = switchWorkflowManifest(
+      defaultFixture.manifest.blueprint,
+    );
+    const selectedDefault = await defaultFixture.workflows.run({
+      threadId: defaultFixture.targetThreadId,
+      request: {
+        manifest: defaultManifest,
+        input: { request: "Default request", route: "other" },
+      },
+    });
+    expect(selectedDefault.nodeResults[0]).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { summary: "Default route", count: 0 },
+      }),
+    );
+    expect(
+      (
+        await defaultFixture.store.listEvents(defaultFixture.targetThreadId)
+      ).find(
+        (event) =>
+          event.type === "workflow.deterministic.completed" &&
+          record(event.payload)?.["nodeId"] === "inspect",
+      )?.payload,
+    ).toEqual(
+      expect.objectContaining({
+        switchCaseId: "default",
+        switchDefault: true,
+      }),
+    );
+    defaultFixture.store.close();
+
+    const unmatchedFixture = await createFixture();
+    const unmatchedManifest = switchWorkflowManifest(
+      unmatchedFixture.manifest.blueprint,
+      { includeDefault: false },
+    );
+    const unmatched = await unmatchedFixture.workflows.run({
+      threadId: unmatchedFixture.targetThreadId,
+      request: {
+        manifest: unmatchedManifest,
+        input: { request: "Unmatched request", route: "other" },
+      },
+    });
+    expect(unmatched).toEqual(
+      expect.objectContaining({
+        status: "blocked",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            errorCode: "switch_unmatched",
+          }),
+        ],
+      }),
+    );
+    expect(
+      (
+        await unmatchedFixture.store.listEvents(unmatchedFixture.targetThreadId)
+      ).some(
+        (event) =>
+          event.type === "workflow.deterministic.completed" &&
+          record(event.payload)?.["nodeId"] === "inspect",
+      ),
+    ).toBe(false);
+    unmatchedFixture.store.close();
+  });
+
+  it("cancels a Switch before it can commit a selection", async () => {
+    const fixture = await createFixture();
+    const manifest = switchWorkflowManifest(fixture.manifest.blueprint);
+    const controller = new AbortController();
+    const cancelled = await fixture.workflows.run({
+      threadId: fixture.targetThreadId,
+      request: {
+        manifest,
+        input: { request: "Cancelled Switch", route: "priority" },
+      },
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "inspect"
+        ) {
+          controller.abort();
+        }
+      },
+    });
+
+    expect(cancelled).toEqual(
+      expect.objectContaining({
+        status: "cancelled",
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            errorCode: "cancelled",
+          }),
+        ],
+      }),
+    );
+    expect(
+      (await fixture.store.listEvents(fixture.targetThreadId)).some(
+        (event) =>
+          event.type === "workflow.deterministic.completed" &&
+          record(event.payload)?.["nodeId"] === "inspect",
+      ),
+    ).toBe(false);
+    fixture.store.close();
+  });
+
+  it("rejects duplicate and schema-invalid Switch cases before execution", async () => {
+    const duplicateFixture = await createFixture();
+    expect(() =>
+      switchWorkflowManifest(duplicateFixture.manifest.blueprint, {
+        auditEquals: "priority",
+      }),
+    ).toThrow("case values must be unique");
+    duplicateFixture.store.close();
+
+    const invalidFixture = await createFixture();
+    expect(() =>
+      switchWorkflowManifest(invalidFixture.manifest.blueprint, {
+        auditEquals: 42,
+      }),
+    ).toThrow("does not match");
+    invalidFixture.store.close();
   });
 
   it("blocks unresolved paths and schema-invalid Deterministic output", async () => {
@@ -2977,6 +3219,117 @@ function parallelWorkflowDefinition(blueprint: ExecutionPlanBlueprint) {
       },
     ],
   };
+}
+
+function switchWorkflowManifest(
+  blueprint: ExecutionPlanBlueprint,
+  options: {
+    includeDefault?: boolean;
+    auditEquals?: JsonValue;
+  } = {},
+): ExecutionPlanWorkflowManifest {
+  const inputSchema: WorkflowObjectSchema = {
+    type: "object",
+    properties: {
+      request: { type: "string", minLength: 1, maxLength: 500 },
+      route: {
+        type: "string",
+        enum: ["priority", "audit", "other"],
+      },
+    },
+    required: ["request", "route"],
+    additionalProperties: false,
+  };
+  return defineExecutionPlanWorkflow({
+    name: "Typed multi-way Switch",
+    version: 1,
+    description:
+      "Select one deterministic typed branch without a model or tool call.",
+    blueprint,
+    inputSchema,
+    outputSchema: reportSchema(),
+    outputNodeId: "report",
+    nodes: [
+      {
+        id: "inspect",
+        type: "deterministic",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: inputSchema },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: inspectionSchema(),
+        template: {
+          kind: "switch",
+          path: ["workflow", "route"],
+          cases: [
+            {
+              id: "fast_path",
+              equals: "priority",
+              then: {
+                kind: "object",
+                properties: {
+                  summary: {
+                    kind: "input",
+                    path: ["workflow", "request"],
+                  },
+                  count: { kind: "literal", value: 1 },
+                },
+              },
+            },
+            {
+              id: "audit_path",
+              equals: options.auditEquals ?? "audit",
+              then: {
+                kind: "literal",
+                value: { summary: "Audit route", count: 2 },
+              },
+            },
+          ],
+          ...((options.includeDefault ?? true)
+            ? {
+                default: {
+                  kind: "literal" as const,
+                  value: { summary: "Default route", count: 0 },
+                },
+              }
+            : {}),
+        },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+      {
+        id: "report",
+        type: "deterministic",
+        inputBindings: {
+          inspection: { source: "node", nodeId: "inspect" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { inspection: inspectionSchema() },
+          required: ["inspection"],
+          additionalProperties: false,
+        },
+        outputSchema: reportSchema(),
+        template: {
+          kind: "object",
+          properties: {
+            report: {
+              kind: "input",
+              path: ["inspection", "summary"],
+            },
+            approved: { kind: "literal", value: true },
+          },
+        },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
 }
 
 function conditionalWorkflowManifest(

@@ -173,6 +173,9 @@ describe("Workflow event Trace projection", () => {
         outputSha256: "5".repeat(64),
         outputBytes: 42,
         outputSchemaSha256: "4".repeat(64),
+        switchCaseId: "fast_path",
+        switchSelectorSha256: "9".repeat(64),
+        switchDefault: false,
         output: "PRIVATE_DETERMINISTIC_OUTPUT",
       },
     );
@@ -181,6 +184,9 @@ describe("Workflow event Trace projection", () => {
     );
     expect(workflowEventTraceSummary(deterministicCompleted)).toContain(
       `template ${"8".repeat(12)} / input ${"2".repeat(12)} / output ${"5".repeat(12)} / bytes 42`,
+    );
+    expect(workflowEventTraceSummary(deterministicCompleted)).toContain(
+      `switch-case fast_path / selector ${"9".repeat(12)}`,
     );
     expect(
       `${workflowEventTraceSummary(deterministicStarted)} ${workflowEventTraceSummary(deterministicCompleted)}`,

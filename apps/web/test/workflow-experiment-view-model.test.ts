@@ -68,6 +68,39 @@ describe("Workflow experiment Workbench view model", () => {
     ).rejects.toThrow("shape");
   });
 
+  it("accepts bounded deterministic Switches and rejects ambiguous cases", async () => {
+    const manifest = workflowSwitchManifest();
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(manifest)),
+    ).resolves.toEqual(manifest);
+
+    const duplicate = structuredClone(manifest);
+    duplicate.nodes[0]!.template.cases[1]!.equals = "priority";
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(duplicate)),
+    ).rejects.toThrow("must be unique");
+
+    const nested = structuredClone(manifest) as unknown as {
+      nodes: Array<{
+        template: {
+          cases: Array<{ then: unknown }>;
+        };
+      }>;
+    };
+    nested.nodes[0]!.template.cases[0]!.then = structuredClone(
+      nested.nodes[0]!.template,
+    );
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(nested)),
+    ).rejects.toThrow("Switch is invalid");
+
+    const undersized = structuredClone(manifest);
+    undersized.nodes[0]!.template.cases.splice(1);
+    await expect(
+      parseWorkflowManifestText(JSON.stringify(undersized)),
+    ).rejects.toThrow("Switch is invalid");
+  });
+
   it("accepts conditional fallback nodes and rejects unsafe condition paths", async () => {
     const manifest = workflowConditionalManifest();
     await expect(
@@ -441,6 +474,50 @@ function workflowDeterministicManifest() {
         },
         timeoutMs: 5_000,
         maxAttempts: 2,
+      },
+    ],
+  };
+  return {
+    ...content,
+    generatedAt,
+    contentSha256: sha256(canonicalJson(content)),
+  };
+}
+
+function workflowSwitchManifest() {
+  const base = workflowDeterministicManifest();
+  const { generatedAt, contentSha256: _contentSha256, ...baseContent } = base;
+  const content = {
+    ...baseContent,
+    nodes: [
+      {
+        ...base.nodes[0]!,
+        template: {
+          kind: "switch" as const,
+          path: ["workflow", "request"],
+          cases: [
+            {
+              id: "fast_path",
+              equals: "priority",
+              then: {
+                kind: "literal" as const,
+                value: { report: "Priority route" },
+              },
+            },
+            {
+              id: "audit_path",
+              equals: "audit",
+              then: {
+                kind: "literal" as const,
+                value: { report: "Audit route" },
+              },
+            },
+          ],
+          default: {
+            kind: "literal" as const,
+            value: { report: "Default route" },
+          },
+        },
       },
     ],
   };

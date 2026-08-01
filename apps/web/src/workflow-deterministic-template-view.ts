@@ -6,6 +6,7 @@ import type {
 import { canonicalJson } from "./stable-digest";
 
 const BINDING_NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/u;
+const SWITCH_CASE_ID = /^[a-z][a-z0-9_-]{0,63}$/u;
 const FORBIDDEN_PATH_SEGMENTS = new Set([
   "__proto__",
   "constructor",
@@ -16,6 +17,8 @@ const MAX_TEMPLATE_DEPTH = 8;
 const MAX_TEMPLATE_NODES = 128;
 const MAX_TEMPLATE_PROPERTIES = 32;
 const MAX_TEMPLATE_ITEMS = 128;
+const MIN_SWITCH_CASES = 2;
+const MAX_SWITCH_CASES = 16;
 
 export function validateWorkflowDeterministicTemplate(
   input: unknown,
@@ -26,13 +29,14 @@ export function validateWorkflowDeterministicTemplate(
   ) {
     throw new Error("Workflow manifest Deterministic template is too large");
   }
-  return deterministicTemplate(input, 0, { nodes: 0 });
+  return deterministicTemplate(input, 0, { nodes: 0 }, true);
 }
 
 function deterministicTemplate(
   input: unknown,
   depth: number,
   budget: { nodes: number },
+  switchAllowed: boolean,
 ): ExecutionPlanWorkflowDeterministicTemplate {
   if (
     depth > MAX_TEMPLATE_DEPTH ||
@@ -77,9 +81,77 @@ function deterministicTemplate(
               "Workflow manifest Deterministic property is invalid",
             );
           }
-          return [name, deterministicTemplate(value, depth + 1, budget)];
+          return [name, deterministicTemplate(value, depth + 1, budget, false)];
         }),
       ),
+    };
+  }
+  if (input["kind"] === "switch") {
+    if (
+      !switchAllowed ||
+      !exactKeys(input, ["kind", "path", "cases"], ["default"])
+    ) {
+      throw new Error("Workflow manifest Deterministic Switch is invalid");
+    }
+    const path = validatePath(input["path"]);
+    const caseInputs = input["cases"];
+    if (
+      !path ||
+      !Array.isArray(caseInputs) ||
+      caseInputs.length < MIN_SWITCH_CASES ||
+      caseInputs.length > MAX_SWITCH_CASES
+    ) {
+      throw new Error("Workflow manifest Deterministic Switch is invalid");
+    }
+    const caseIds = new Set<string>();
+    const caseValues = new Set<string>();
+    const cases = caseInputs.map((caseInput) => {
+      if (
+        !record(caseInput) ||
+        !exactKeys(caseInput, ["id", "equals", "then"]) ||
+        typeof caseInput["id"] !== "string" ||
+        !SWITCH_CASE_ID.test(caseInput["id"]) ||
+        caseInput["id"] === "default" ||
+        caseIds.has(caseInput["id"]) ||
+        !deterministicJsonValue(caseInput["equals"], depth + 1, budget)
+      ) {
+        throw new Error(
+          "Workflow manifest Deterministic Switch case is invalid",
+        );
+      }
+      const equalsJson = canonicalJson(caseInput["equals"]);
+      if (caseValues.has(equalsJson)) {
+        throw new Error(
+          "Workflow manifest Deterministic Switch cases must be unique",
+        );
+      }
+      caseIds.add(caseInput["id"]);
+      caseValues.add(equalsJson);
+      return {
+        id: caseInput["id"],
+        equals: caseInput["equals"],
+        then: deterministicTemplate(
+          caseInput["then"],
+          depth + 1,
+          budget,
+          false,
+        ),
+      };
+    });
+    return {
+      kind: "switch",
+      path,
+      cases,
+      ...(input["default"] !== undefined
+        ? {
+            default: deterministicTemplate(
+              input["default"],
+              depth + 1,
+              budget,
+              false,
+            ),
+          }
+        : {}),
     };
   }
   if (
@@ -93,7 +165,7 @@ function deterministicTemplate(
   return {
     kind: "array",
     items: input["items"].map((item) =>
-      deterministicTemplate(item, depth + 1, budget),
+      deterministicTemplate(item, depth + 1, budget, false),
     ),
   };
 }

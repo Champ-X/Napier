@@ -393,7 +393,9 @@ timeouts; `workflow-tool-runtime.ts` owns leased direct execution; and
 `workflow-deterministic-runtime.ts` owns the leased model-free Run,
 `workflow-deterministic-node.ts` coordinates Plan transitions, and
 `workflow-deterministic-evidence.ts` verifies terminal evidence without
-growing the central Ledger coordinator.
+growing the central Ledger coordinator. The deterministic model also owns the
+root multi-way Switch contract and evaluator so routing does not enter the
+scheduler or Manifest coordinator.
 `workflow-loop-node.ts` coordinates Loop Plan state and whole-node timeout;
 `workflow-loop-runtime.ts` owns the leased coordinator;
 `workflow-loop-iteration-runtime.ts` owns sequential read-only Agent turns;
@@ -461,9 +463,12 @@ Agent nodes are normal `AgentRuntime.runPrompt()` invocations with their
 manifest model override, timeout, AbortSignal, Run lease, policy, Sandbox,
 tools, and Ledger. Deterministic nodes create the same leased Run and resolve
 a bounded pure JSON template over their typed input. The only primitives are
-literal JSON, bounded field selection, object construction, and array
-construction; there is no model, tool, JavaScript, JSONPath, interpolation, or
-expression evaluation. Tool nodes also perform no model call. They select one
+literal JSON, bounded field selection, object construction, array construction,
+and one root Switch. A Switch selects a required schema path across 2–16
+canonical, unique, schema-valid case values and an optional default, then
+evaluates exactly one ordinary branch template. There is no coercion, nested
+Switch, model, tool, JavaScript, JSONPath, interpolation, or expression
+evaluation. Tool nodes also perform no model call. They select one
 of 18 stateless built-ins, validate literal/Workflow/dependency field-path
 bindings, TypeBox arguments, declared effect, enabled capability, Agent policy,
 workspace scope, and freshness before `tool.started`. JavaScript/Python
@@ -590,6 +595,16 @@ downstream bindings without creating a Run. This preserves Plan's existing
 completed-or-skipped dependency semantics while keeping every executed attempt
 Run-backed.
 
+Multi-way selection remains inside the existing Deterministic leased Run. A
+root Switch with no match and no default blocks as `switch_unmatched`; a
+matched/default branch is schema-checked before commitment. Public completion
+evidence records only the stable case ID, selector SHA-256, default flag,
+template/input/output/schema hashes, and byte count. It never records the
+selector value or branch output body. The case ID is explicit Manifest control
+metadata, not model-generated data. Downstream graph routing can compose this
+typed output with ordinary equality guards; Switch does not silently prune Plan
+steps or invent graph edges.
+
 Approval nodes reuse the existing operator-decision state machine rather than
 adding approval storage. The first leased `source=workflow` Run transitions the
 Plan step to running, records a Manifest/input/attempt/deadline-bound decision,
@@ -602,8 +617,9 @@ deadline expiry blocks the Plan.
 The Agent-node prompt labels Workflow input as untrusted data and requires
 exactly one JSON value. Deterministic output is schema-checked before terminal
 evidence and stored as hidden assistant data; the terminal Workflow event
-contains only template/input/output/schema hashes and output bytes. Tool-node
-output is its structured `details`, never the tool's model-facing text body.
+contains only template/input/output/schema hashes and output bytes. Switch
+completion additionally binds the case ID, selector hash, and default flag.
+Tool-node output is its structured `details`, never the tool's model-facing text body.
 Runtime schema validation occurs before the Plan step completes. Generic tool
 arguments and text are reduced to bytes/hash in Tool-node Ledger evidence,
 while typed structured output remains bound for recovery and delivery.
@@ -619,8 +635,10 @@ Resume accepts the original Manifest plus Plan ID, recovers the original input
 and frozen Agent revision from `workflow.started`, and revalidates both against
 the target Thread. Agent and Deterministic output are reconstructed from bound
 assistant evidence; Deterministic recovery additionally requires one terminal
-event bound to template, attempt, input, output, bytes, and schema. Tool output
-requires a unique terminal tool event bound to
+event bound to template, attempt, input, output, bytes, and schema, then
+re-evaluates the template from the typed input. Switch recovery must reproduce
+the exact case/default decision and selector hash. Tool output requires a
+unique terminal tool event bound to
 Plan/node/tool/effect/input/output hashes. Map output requires the coordinator
 completion plus a unique started/completed pair for every indexed child,
 parent/Plan/restricted-configuration lineage, per-item input/output/schema
@@ -1085,14 +1103,14 @@ Independent Reduce nodes remain eligible for the normal bounded outer parallel
 wave.
 
 Schema version 1 is intentionally narrow: Agent nodes, bounded Deterministic
-nodes, stateless built-in Tool nodes, bounded read-only Agent Map and Loop
-nodes, typed deterministic Reduce nodes, durable binary Approval gates,
-literal/field-path typed bindings, bounded parallel dependency-ready DAG
-scheduling, typed equality guards with schema-valid fallback, cancellation,
-timeout, explicit retry, restart recovery, and terminal workspace
-file/directory Artifact settlement. It does not yet implement general
-multi-option decision nodes, stateful session Tool nodes, write-capable
-Map/Loop, multi-way switch, compensation, per-node breakpoints, or external
+nodes with root multi-way Switch templates, stateless built-in Tool nodes,
+bounded read-only Agent Map and Loop nodes, typed deterministic Reduce nodes,
+durable binary Approval gates, literal/field-path typed bindings, bounded
+parallel dependency-ready DAG scheduling, typed equality guards with
+schema-valid fallback, cancellation, timeout, explicit retry, restart
+recovery, and terminal workspace file/directory Artifact settlement. It does
+not yet implement general graph-level branch pruning, stateful session Tool
+nodes, write-capable Map/Loop, compensation, per-node breakpoints, or external
 Agent adapters.
 
 ### Coding Outcome Benchmark
@@ -5806,7 +5824,7 @@ Inspector.
 
 ## Security Boundary
 
-The current boundary has fifty-six parts:
+The current boundary has sixty-two parts:
 
 1. workspace path confinement with canonical realpaths and external-symlink
    rejection;
@@ -6054,6 +6072,11 @@ The current boundary has fifty-six parts:
     admission, same-lock settled-after freshness, two-phase automatic
     intent/outcome evidence, poll finality, restart non-retry, operator fallback,
     and shared Agent/HTTP/Web/Replay/Trace projection.
+62. Typed root multi-way Switch templates inside existing Deterministic
+    Workflow Runs, with 2–16 schema-valid unique cases, optional default,
+    model/tool-free execution, explicit unmatched blocking, concurrent
+    isolation, cancellation, exact decision/output recovery, SDK/CLI delivery,
+    independent Web Manifest validation, and selector/output-body-free Trace.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6101,10 +6124,10 @@ deferred until the local P0-P9 product loop is stable.
   and debugger UX, broader multi-node AST transforms, cross-package/path-alias
   test discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
-  session nodes, multi-way switch, write-capable Map/Loop, compensation,
-  top-level Workflow input replacement, write/session side-effect simulation,
-  interactive multi-step controls, external Agent adapters, and a visual
-  builder;
+  session nodes, graph-level branch pruning, write-capable Map/Loop,
+  compensation, top-level Workflow input replacement, write/session
+  side-effect simulation, interactive multi-step controls, external Agent
+  adapters, and a visual builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only
   tool-call re-execution with stateful/write checkpoints and result simulation,
   Prompt/Skill/Memory/environment replacement, batch experiments, interactive

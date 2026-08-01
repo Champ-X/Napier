@@ -46,6 +46,15 @@ type ReduceRequest = {
 
 type ReduceReport = number;
 
+type SwitchRequest = {
+  route: "priority" | "audit" | "other";
+  text: string;
+};
+
+type SwitchReport = {
+  message: string;
+};
+
 afterEach(async () => {
   await Promise.all(
     temporaryRoots
@@ -445,6 +454,45 @@ describe("Napier TypeScript SDK Workflows", () => {
     expect(eventTypes).toContain("workflow.reduce.completed");
     await client.close();
   });
+
+  it("defines and executes a typed deterministic Switch through the SDK", async () => {
+    const fixture = await createFixture("switch-execution");
+    const client = await createNapierClient({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+      sandbox: new UnsupportedSandboxAdapter("sdk-switch-execution-test"),
+    });
+    const workflow = await client.defineWorkflow<SwitchRequest, SwitchReport>(
+      switchWorkflowDefinition(),
+    );
+    let switchPayload: unknown;
+    const execution = await client.runWorkflow({
+      workflow,
+      input: { route: "priority", text: "SDK Switch output" },
+      onEvent: (event) => {
+        if (event.type === "workflow.deterministic.completed") {
+          switchPayload = event.payload;
+        }
+      },
+    });
+
+    expect(execution).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { message: "SDK Switch output" },
+      }),
+    );
+    expect(switchPayload).toEqual(
+      expect.objectContaining({
+        switchCaseId: "fast_path",
+        switchSelectorSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        switchDefault: false,
+      }),
+    );
+    expect(JSON.stringify(switchPayload)).not.toContain("priority");
+    expect(JSON.stringify(switchPayload)).not.toContain("SDK Switch output");
+    await client.close();
+  });
 });
 
 function draftWorkflowDefinition(): DefineNapierWorkflowInput<
@@ -637,6 +685,78 @@ function reduceWorkflowDefinition(): DefineNapierWorkflowInput<
         outputSchema: { type: "integer" },
         itemsPath: ["values"],
         operation: "sum",
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  };
+}
+
+function switchWorkflowDefinition(): DefineNapierWorkflowInput<
+  SwitchRequest,
+  SwitchReport
+> {
+  const inputSchema = objectSchema({
+    route: {
+      type: "string",
+      enum: ["priority", "audit", "other"],
+    },
+    text: { type: "string", minLength: 1, maxLength: 200 },
+  });
+  const outputSchema = objectSchema({
+    message: { type: "string", minLength: 1, maxLength: 200 },
+  });
+  return {
+    name: "SDK deterministic Switch",
+    version: 1,
+    description: "Select one typed output without a model call.",
+    plan: {
+      objective: "Route one typed SDK input.",
+      steps: [planStep("route", "Route input")],
+    },
+    inputSchema,
+    outputSchema,
+    outputNodeId: "route",
+    nodes: [
+      {
+        id: "route",
+        type: "deterministic",
+        inputBindings: {
+          request: { source: "workflow" },
+        },
+        inputSchema: objectSchema({ request: inputSchema }),
+        outputSchema,
+        template: {
+          kind: "switch",
+          path: ["request", "route"],
+          cases: [
+            {
+              id: "fast_path",
+              equals: "priority",
+              then: {
+                kind: "object",
+                properties: {
+                  message: {
+                    kind: "input",
+                    path: ["request", "text"],
+                  },
+                },
+              },
+            },
+            {
+              id: "audit_path",
+              equals: "audit",
+              then: {
+                kind: "literal",
+                value: { message: "SDK audit route" },
+              },
+            },
+          ],
+          default: {
+            kind: "literal",
+            value: { message: "SDK default route" },
+          },
+        },
         timeoutMs: 5_000,
         maxAttempts: 2,
       },

@@ -295,6 +295,16 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const outputSha256 = hash(payload["outputSha256"]);
     const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
     const outputBytes = boundedInteger(payload["outputBytes"], 0, 32 * 1024);
+    const hasSwitchSelection =
+      payload["switchCaseId"] !== undefined ||
+      payload["switchSelectorSha256"] !== undefined ||
+      payload["switchDefault"] !== undefined;
+    const switchCaseId = hasSwitchSelection
+      ? nodeId(payload["switchCaseId"])
+      : undefined;
+    const switchSelectorSha256 = hasSwitchSelection
+      ? hash(payload["switchSelectorSha256"])
+      : undefined;
     if (
       !nodeIdValue ||
       attempt === undefined ||
@@ -302,7 +312,11 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       !inputSha256 ||
       !outputSha256 ||
       !outputSchemaSha256 ||
-      outputBytes === undefined
+      outputBytes === undefined ||
+      (hasSwitchSelection &&
+        (!switchCaseId ||
+          !switchSelectorSha256 ||
+          typeof payload["switchDefault"] !== "boolean"))
     ) {
       return undefined;
     }
@@ -314,6 +328,13 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `output ${outputSha256.slice(0, 12)}`,
       `bytes ${String(outputBytes)}`,
       `output-schema ${outputSchemaSha256.slice(0, 12)}`,
+      ...(switchCaseId && switchSelectorSha256
+        ? [
+            `switch-case ${switchCaseId}`,
+            `selector ${switchSelectorSha256.slice(0, 12)}`,
+            ...(payload["switchDefault"] === true ? ["switch-default"] : []),
+          ]
+        : []),
     );
   } else if (event.type === "workflow.reduce.completed") {
     const reduceParts = workflowReduceEventTraceParts(payload);

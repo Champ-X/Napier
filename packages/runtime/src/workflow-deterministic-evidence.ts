@@ -5,7 +5,10 @@ import type {
 } from "@napier/contracts";
 
 import { canonicalJson, sha256 } from "./ed25519.js";
-import { executionPlanWorkflowDeterministicTemplateSha256 } from "./workflow-deterministic-model.js";
+import {
+  evaluateExecutionPlanWorkflowDeterministicTemplate,
+  executionPlanWorkflowDeterministicTemplateSha256,
+} from "./workflow-deterministic-model.js";
 import {
   parseExecutionPlanWorkflowNodeOutput,
   workflowSchemaSha256,
@@ -36,6 +39,7 @@ export function readWorkflowDeterministicOutputEvidence(options: {
   planId: string;
   manifestSha256: string;
   inputSha256: string;
+  input: JsonValue;
   attempt: number;
   assistantOutput: string;
 }): JsonValue {
@@ -48,6 +52,20 @@ export function readWorkflowDeterministicOutputEvidence(options: {
   );
   const payload =
     completions.length === 1 ? record(completions[0]?.payload) : undefined;
+  let expected;
+  try {
+    expected = evaluateExecutionPlanWorkflowDeterministicTemplate(
+      options.node.template,
+      options.input,
+    );
+  } catch {
+    throw new Error("Workflow deterministic output evidence is unavailable");
+  }
+  const selection = expected.switchSelection;
+  const hasSelectionEvidence =
+    payload?.["switchCaseId"] !== undefined ||
+    payload?.["switchSelectorSha256"] !== undefined ||
+    payload?.["switchDefault"] !== undefined;
   if (
     !payload ||
     payload["schemaVersion"] !== 1 ||
@@ -60,7 +78,12 @@ export function readWorkflowDeterministicOutputEvidence(options: {
     !nonNegativeInteger(payload["outputBytes"]) ||
     payload["output"] !== undefined ||
     payload["outputSchemaSha256"] !==
-      workflowSchemaSha256(options.node.outputSchema)
+      workflowSchemaSha256(options.node.outputSchema) ||
+    (selection
+      ? payload["switchCaseId"] !== selection.caseId ||
+        payload["switchSelectorSha256"] !== selection.selectorSha256 ||
+        payload["switchDefault"] !== selection.defaultSelected
+      : hasSelectionEvidence)
   ) {
     throw new Error("Workflow deterministic output evidence is unavailable");
   }
@@ -71,7 +94,8 @@ export function readWorkflowDeterministicOutputEvidence(options: {
   const serializedOutput = canonicalJson(output);
   if (
     sha256(serializedOutput) !== payload["outputSha256"] ||
-    Buffer.byteLength(serializedOutput, "utf8") !== payload["outputBytes"]
+    Buffer.byteLength(serializedOutput, "utf8") !== payload["outputBytes"] ||
+    canonicalJson(output) !== canonicalJson(expected.output)
   ) {
     throw new Error("Workflow deterministic output evidence hash mismatch");
   }

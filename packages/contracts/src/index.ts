@@ -840,6 +840,12 @@ export interface ExecutionPlanWorkflowCondition {
   equals: JsonValue;
 }
 
+export interface ExecutionPlanWorkflowDeterministicSwitchCase {
+  id: string;
+  equals: JsonValue;
+  then: ExecutionPlanWorkflowDeterministicTemplate;
+}
+
 export type ExecutionPlanWorkflowDeterministicTemplate =
   | {
       kind: "literal";
@@ -856,6 +862,12 @@ export type ExecutionPlanWorkflowDeterministicTemplate =
   | {
       kind: "array";
       items: ExecutionPlanWorkflowDeterministicTemplate[];
+    }
+  | {
+      kind: "switch";
+      path: ExecutionPlanWorkflowValuePathSegment[];
+      cases: ExecutionPlanWorkflowDeterministicSwitchCase[];
+      default?: ExecutionPlanWorkflowDeterministicTemplate;
     };
 
 export interface ExecutionPlanWorkflowAgentNode {

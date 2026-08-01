@@ -707,6 +707,62 @@ describe("Napier Workflow CLI", () => {
     expect(frames.at(-2)?.type).toBe("snapshot");
   });
 
+  it("streams a typed deterministic Switch through ordered JSONL", async () => {
+    const fixture = await createSwitchFixture();
+    const stdout = new CaptureWritable();
+    const code = await runCli(
+      [
+        "workflow",
+        "--workspace",
+        fixture.workspaceRoot,
+        "--data-root",
+        fixture.dataRoot,
+        "--manifest",
+        "workflow.json",
+        "--input-json",
+        JSON.stringify({
+          request: "CLI Switch output",
+          route: "priority",
+        }),
+        "--jsonl",
+      ],
+      cliIo(fixture.root, stdout),
+      {
+        createRuntime: (options) =>
+          createLocalAgentRuntime({
+            ...options,
+            sandbox: new UnsupportedSandboxAdapter("workflow-switch-cli-test"),
+          }),
+      },
+    );
+
+    expect(code).toBe(0);
+    const frames = parseFrames(stdout.text());
+    const result = validateExecutionPlanWorkflowResultFrame(frames.at(-1));
+    expect(result.result.output).toEqual({
+      report: "CLI Switch output",
+      approved: true,
+    });
+    const events = frames.flatMap((frame) =>
+      frame.type === "event" ? [frame.event] : [],
+    );
+    const switchEvent = events.find(
+      (event) => event.type === "workflow.deterministic.completed",
+    );
+    expect(switchEvent?.payload).toEqual(
+      expect.objectContaining({
+        switchCaseId: "fast_path",
+        switchSelectorSha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
+        switchDefault: false,
+      }),
+    );
+    expect(JSON.stringify(switchEvent?.payload)).not.toContain("priority");
+    expect(JSON.stringify(switchEvent?.payload)).not.toContain(
+      "CLI Switch output",
+    );
+    expect(events.some((event) => event.type === "model.response")).toBe(false);
+  });
+
   it("streams a deterministic Reduce Workflow through ordered JSONL", async () => {
     const fixture = await createReduceFixture();
     const stdout = new CaptureWritable();
@@ -2098,6 +2154,119 @@ async function createDeterministicFixture(): Promise<{
               path: ["workflow", "request"],
             },
             approved: { kind: "literal", value: true },
+          },
+        },
+        timeoutMs: 5_000,
+        maxAttempts: 2,
+      },
+    ],
+  });
+  await writeFile(
+    path.join(workspaceRoot, "workflow.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  await services.shutdown();
+  return { root, workspaceRoot, dataRoot };
+}
+
+async function createSwitchFixture(): Promise<{
+  root: string;
+  workspaceRoot: string;
+  dataRoot: string;
+}> {
+  const root = await mkdtemp(
+    path.join(tmpdir(), "napier-switch-workflow-cli-"),
+  );
+  temporaryRoots.push(root);
+  const workspaceRoot = path.join(root, "workspace");
+  const dataRoot = path.join(root, "data");
+  await mkdir(workspaceRoot, { recursive: true });
+  const services = await createLocalAgentRuntime({
+    workspaceRoot,
+    dataRoot,
+    sandbox: new UnsupportedSandboxAdapter("workflow-switch-cli-setup"),
+  });
+  const sourceThread = services.store.listThreads()[0]!;
+  const sourcePlan = await services.store.createPlan(sourceThread.id, {
+    objective: "Route one typed CLI result without a model.",
+    steps: [
+      {
+        id: "report",
+        title: "Route report",
+        description: "Select one typed deterministic branch.",
+        verification: "Return the selected deterministic report.",
+      },
+    ],
+  });
+  const blueprint = await createExecutionPlanBlueprint(
+    services.store,
+    sourceThread.id,
+    sourcePlan.id,
+  );
+  const inputSchema: WorkflowObjectSchema = {
+    type: "object",
+    properties: {
+      request: { type: "string", minLength: 1, maxLength: 500 },
+      route: {
+        type: "string",
+        enum: ["priority", "audit", "other"],
+      },
+    },
+    required: ["request", "route"],
+    additionalProperties: false,
+  };
+  const manifest = defineExecutionPlanWorkflow({
+    name: "CLI Deterministic Switch",
+    version: 1,
+    description: "Execute a typed multi-way Switch through CLI JSONL.",
+    blueprint,
+    inputSchema,
+    outputSchema: reportSchema(),
+    outputNodeId: "report",
+    nodes: [
+      {
+        id: "report",
+        type: "deterministic",
+        inputBindings: {
+          workflow: { source: "workflow" },
+        },
+        inputSchema: {
+          type: "object",
+          properties: { workflow: inputSchema },
+          required: ["workflow"],
+          additionalProperties: false,
+        },
+        outputSchema: reportSchema(),
+        template: {
+          kind: "switch",
+          path: ["workflow", "route"],
+          cases: [
+            {
+              id: "fast_path",
+              equals: "priority",
+              then: {
+                kind: "object",
+                properties: {
+                  report: {
+                    kind: "input",
+                    path: ["workflow", "request"],
+                  },
+                  approved: { kind: "literal", value: true },
+                },
+              },
+            },
+            {
+              id: "audit_path",
+              equals: "audit",
+              then: {
+                kind: "literal",
+                value: { report: "CLI audit route", approved: true },
+              },
+            },
+          ],
+          default: {
+            kind: "literal",
+            value: { report: "CLI default route", approved: false },
           },
         },
         timeoutMs: 5_000,
