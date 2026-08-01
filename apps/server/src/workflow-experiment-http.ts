@@ -81,8 +81,10 @@ export async function executeWorkflowExperimentHttp(
   }
   setPreviewHeaders(context, preview.previewSha256);
   if (
-    prepared.request.expectedPreviewSha256 !== undefined &&
-    prepared.request.expectedPreviewSha256 !== preview.previewSha256
+    (prepared.request.expectedPreviewSha256 !== undefined &&
+      prepared.request.expectedPreviewSha256 !== preview.previewSha256) ||
+    (preview.schemaVersion !== 1 &&
+      prepared.request.expectedPreviewSha256 !== preview.previewSha256)
   ) {
     return helpers.jsonError(
       context,

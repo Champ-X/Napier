@@ -365,6 +365,7 @@ export class ExecutionPlanWorkflowRecovery {
       const run = this.store
         .listRuns(context.threadId)
         .find((candidate) => candidate.id === step.runId);
+      if (run?.source === "workflow_simulation") continue;
       if (!run || run.source !== "workflow" || run.status !== "interrupted") {
         throw new Error("Interrupted pure Workflow Run binding is invalid");
       }
@@ -399,7 +400,12 @@ export class ExecutionPlanWorkflowRecovery {
             .listRuns(context.threadId)
             .find((candidate) => candidate.id === step.runId)
         : undefined;
-      if (run?.source === "workflow_reuse") continue;
+      if (
+        run?.source === "workflow_reuse" ||
+        run?.source === "workflow_simulation"
+      ) {
+        continue;
+      }
       const attempts =
         (await this.ledger.nextAttempt(
           context.threadId,

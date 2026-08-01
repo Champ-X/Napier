@@ -207,6 +207,20 @@ describe("Workflow experiment HTTP path", () => {
         stopBeforeNodeIds: ["report"],
       }),
     );
+    const unbound = await app.request(
+      `/api/threads/${fixture.sourceThreadId}/workflows/${fixture.sourcePlanId}/experiments`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      },
+    );
+    expect(unbound.status).toBe(409);
+    expect(
+      fixture.services.store
+        .listThreads()
+        .filter((thread) => thread.id !== fixture.sourceThreadId),
+    ).toHaveLength(1);
 
     fixture.primary.setResponses([
       fauxAssistantMessage('{"summary":"Web single node","count":1}'),
@@ -267,6 +281,99 @@ describe("Workflow experiment HTTP path", () => {
         }),
       }),
     );
+  }, 20_000);
+
+  it("simulates one checkpoint through the real Web client and executes its descendant", async () => {
+    const fixture = await createFixture();
+    const app = createApp(fixture.services);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL | Request, init?: RequestInit) => {
+        const requestPath =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+        return app.request(requestPath, init);
+      }),
+    );
+    const request = {
+      manifest: fixture.manifest,
+      fromNodeId: "inspect",
+      mode: "simulate_node" as const,
+      simulatedOutput: {
+        summary: "HTTP simulated inspection",
+        count: 6,
+      },
+    };
+    const preview = await previewWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      request,
+    );
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 3,
+        mode: "simulate_node",
+        executionNodeIds: ["report"],
+        simulatedNodeId: "inspect",
+      }),
+    );
+
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Web report from simulation","approved":true}',
+      ),
+    ]);
+    const result = await executeWorkflowExperiment(
+      fixture.sourceThreadId,
+      fixture.sourcePlanId,
+      {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
+      preview,
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        experiment: expect.objectContaining({
+          result: expect.objectContaining({
+            output: {
+              report: "Web report from simulation",
+              approved: true,
+            },
+          }),
+          comparison: expect.objectContaining({
+            nodes: expect.arrayContaining([
+              expect.objectContaining({
+                nodeId: "inspect",
+                execution: "simulated",
+              }),
+            ]),
+          }),
+        }),
+      }),
+    );
+    expect(
+      fixture.services.store
+        .listRuns(result.targetThreadId)
+        .map((run) => run.source),
+    ).toEqual(["workflow_simulation", "workflow"]);
+    const events = await fixture.services.store.listEvents(
+      result.targetThreadId,
+    );
+    expect(
+      events.filter((event) => event.type === "workflow.node.simulated"),
+    ).toHaveLength(1);
+    expect(
+      events
+        .filter((event) => event.type === "workflow.node.simulated")
+        .some((event) =>
+          JSON.stringify(event.payload).includes("HTTP simulated"),
+        ),
+    ).toBe(false);
   }, 20_000);
 
   it("returns a no-mutation conflict until write-effect evidence is confirmed", async () => {

@@ -518,6 +518,57 @@ describe("Napier RPC CLI", () => {
 
     rpc.send({
       jsonrpc: "2.0",
+      id: "experiment-simulation-preview",
+      method: "napier/workflow/experiment/preview",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "prepare",
+        mode: "simulate_node",
+        simulatedOutput: { normalized: "RPC simulated output" },
+      },
+    });
+    const simulationPreview = record(
+      (await rpc.waitForId("experiment-simulation-preview"))["result"],
+    )!;
+    expect(simulationPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 3,
+        mode: "simulate_node",
+        executionNodeIds: ["deliver"],
+        simulatedNodeId: "prepare",
+      }),
+    );
+    rpc.send({
+      jsonrpc: "2.0",
+      id: "experiment-simulation-run",
+      method: "napier/workflow/experiment/run",
+      params: {
+        sourceThreadId: experimentSourceThreadId,
+        manifest: experimentManifest,
+        planId: experimentSourcePlanId,
+        fromNodeId: "prepare",
+        mode: "simulate_node",
+        simulatedOutput: { normalized: "RPC simulated output" },
+        expectedPreviewSha256: simulationPreview["previewSha256"],
+      },
+    });
+    expect(await rpc.waitForId("experiment-simulation-run")).toEqual(
+      expect.objectContaining({
+        result: expect.objectContaining({
+          status: "completed",
+          experiment: expect.objectContaining({
+            result: expect.objectContaining({
+              output: { message: "RPC simulated output" },
+            }),
+          }),
+        }),
+      }),
+    );
+
+    rpc.send({
+      jsonrpc: "2.0",
       id: "experiment-single-preview",
       method: "napier/workflow/experiment/preview",
       params: {

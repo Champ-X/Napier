@@ -1,6 +1,7 @@
 import type {
   WorkflowExperimentLineage,
   WorkflowReusedNode,
+  WorkflowSimulatedNode,
 } from "./workflow-context.js";
 
 export const WORKFLOW_EXPERIMENT_EXECUTION: unique symbol = Symbol(
@@ -11,4 +12,5 @@ export interface WorkflowExperimentExecution {
   agentRevision: number;
   lineage: WorkflowExperimentLineage;
   reusedNodes: WorkflowReusedNode[];
+  simulatedNodes: WorkflowSimulatedNode[];
 }

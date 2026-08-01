@@ -99,12 +99,12 @@ export function canonicalWorkflowExperimentStrings(values: string[]): string[] {
 }
 
 export function workflowExperimentConfigurationChanged(
-  execution: "reused" | "rerun",
+  execution: ExecutionPlanWorkflowExperimentNodeComparison["execution"],
   sourceSha256s: string[],
   targetSha256s: string[],
 ): boolean {
   return (
-    execution === "rerun" &&
+    execution !== "reused" &&
     canonicalJson(canonicalWorkflowExperimentStrings(sourceSha256s)) !==
       canonicalJson(canonicalWorkflowExperimentStrings(targetSha256s))
   );

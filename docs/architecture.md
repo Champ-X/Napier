@@ -672,14 +672,18 @@ scheduler:
 source Thread + Plan + source Manifest
   -> verify completed source Run/node evidence
   -> derive selected-node descendant rerun subgraph
-  -> choose full-subgraph execution or selected-node-only execution
+  -> choose full-subgraph, selected-node-only, or selected-output simulation
+  -> for simulation, validate the explicit output against the node Schema
+     and bind its canonical hash and byte count
   -> summarize historical read/write/unknown tool effects
   -> bind candidate model replacements and preview hash
   -> require exact preview confirmation for write/unknown effects
   -> create independent target Thread and normal ExecutionPlan
   -> materialize verified completed ancestors as source=workflow_reuse Runs
      and preserve verified skipped ancestors as zero-Run skipped outputs
-  -> execute the selected node, or it plus descendants, through Workflow Runtime
+  -> materialize a simulated selected node as source=workflow_simulation,
+     or execute the selected node, or it plus descendants
+  -> execute every non-simulated node through the normal Workflow Runtime
   -> for single-node mode, pause before every direct successor
   -> align source/target node evidence and derive target-minus-source metrics
   -> append privacy-bounded workflow.experiment.compared evidence
@@ -725,6 +729,36 @@ impossible stop sets, and self-consistently rehashed result tampering fail
 closed. This is real selected-node execution, not arbitrary input/output
 mocking, side-effect simulation, or a second Workflow state machine.
 
+`simulate_node` emits schema 3. `rerunNodeIds` remains the selected node plus
+every descendant that cannot be reused, while `executionNodeIds` contains only
+the descendants and `simulatedNodeId` identifies the selected checkpoint. The
+explicit JSON output is limited to 32 KiB, validated against the selected
+node's output Schema, and bound by canonical SHA-256 plus byte count. Schema-2
+and schema-3 execution both require the exact current preview hash; schema 1
+retains its compatible confirmation behavior.
+
+The selected node does not enter the model, Tool, or side-effect paths. A
+package-internal capability admits one `workflow_simulation` Run only for the
+same active Plan and dependency-ready step. That Run writes the standard
+Run/Plan/node lifecycle around a public hash-only
+`workflow.node.simulated` event, settles the typed output, and hands control
+back to the ordinary scheduler for descendants. Their historical write,
+unknown, or unresolved effects still drive the normal side-effect
+confirmation. Comparison labels the selected node `simulated`, while
+`rerunNodeCount` continues to describe the complete non-reusable subgraph.
+
+Exact output is stored once as hidden
+`workflow.node.simulation.requested` recovery evidence. The public simulated
+event and Web Trace expose only safe IDs, Manifest/input/output/Schema hashes,
+and bytes. A deliberate full portable Thread fixture includes the hidden event
+because import and SQLite-reopen recovery need the typed value; the value is
+not rendered in Trace or the experiment desk. Recovery requires exactly one
+request event and recomputes its Schema, hash, bytes, Manifest, Plan, and node
+bindings. Missing, duplicate, drifted, or tampered evidence fails closed.
+Completed simulation Runs recover through normal node output reconstruction;
+interrupted simulation materialization is handled by its dedicated
+materializer and cannot enter generic Run retry.
+
 The source Plan is read-only. Reused outputs are accepted only when source
 Plan/Run ownership, frozen Agent revision, model, node input/output/schema
 hashes, and unique start/completion evidence agree. Each target reuse binds the
@@ -749,8 +783,9 @@ automatic recovery.
 
 Preview and execution are available through CLI JSONL and dedicated HTTP
 preview/SSE routes, the TypeScript SDK, and local stdio RPC. The lazy
-Workbench desk independently recomputes the rerun/reused/direct-successor sets,
-validates schema-1/schema-2 preview hashes, binds terminal SSE to Snapshot
+Workbench desk independently recomputes the
+rerun/reused/execution/direct-successor/simulation sets, validates
+schema-1/schema-2/schema-3 preview hashes, binds terminal SSE to Snapshot
 Plan/Thread state, and requires a matching reached event for a paused result.
 Web Trace projects only mode, node IDs, counts, confirmation state, and hash
 prefixes. Source/output bodies, tool arguments, diagnostics, and paths are not
@@ -979,12 +1014,14 @@ explicit CAS-named local result download.
 
 The Plan Workbench adds a lazy Workflow Experiment Desk over the same HTTP
 boundary. It accepts a browser-local, content-verified Manifest, lets the user
-select a source Plan/checkpoint and optional selected-model override, then
-requires preview before execution. Preview responses are rebound to the exact
-Thread, Plan, Manifest, node, model overrides, response hash, and no-store
-headers. Execution reuses the existing isolated Runtime; the browser validates
-multi-Run event hashes/order, one final Snapshot, the complete experiment
-result/comparison hash chain, and source/target identities before rendering.
+select a source Plan/checkpoint, execution mode, optional selected-model
+override, or explicit typed simulation value, then requires preview before
+execution. Preview responses are rebound to the exact Thread, Plan, Manifest,
+node, model overrides, simulated-output hash/bytes, response hash, and
+no-store headers. Execution reuses the existing isolated Runtime; the browser
+validates multi-Run event hashes/order, one final Snapshot, the complete
+experiment result/comparison hash chain, and source/target identities before
+rendering.
 Navigation aborts the current fetch and operation-generation checks prevent an
 old response from repopulating a newly selected Thread.
 
@@ -5885,6 +5922,11 @@ The current boundary has fifty-six parts:
     exact ordered implementation/argument matching, zero live-tool fallback,
     preserved source error state, divergence failure, shared
     Web/CLI/HTTP/SDK/RPC delivery, and body-free Ledger/Replay/Trace evidence.
+57. Preview-bound Workflow checkpoint output simulation with runtime Schema
+    validation, descendant-only normal scheduling, capability-gated
+    zero-model/zero-tool materialization, SQLite recovery, exact-preview
+    freshness, source/target comparison, CLI/HTTP/SDK/RPC/Web delivery, and
+    hash-only public simulation evidence.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -5932,8 +5974,9 @@ deferred until the local P0-P9 product loop is stable.
   test discovery, coding outcome benchmarks, and isolated subagent worktrees;
 - extend typed Agent/Deterministic/Tool/Approval DAG execution with stateful
   session nodes, multi-way switch, write-capable Map/Loop, compensation,
-  arbitrary input/output mocks, interactive multi-step controls, external
-  Agent adapters, and a visual builder;
+  arbitrary Workflow input replacement, write/session side-effect simulation,
+  interactive multi-step controls, external Agent adapters, and a visual
+  builder;
 - extend controlled Workflow, user-message, model-call, and stateless read-only
   tool-call re-execution with stateful/write checkpoints and result simulation,
   Prompt/Skill/Memory/environment replacement, batch experiments, interactive

@@ -6,6 +6,7 @@ import { Writable } from "node:stream";
 import { fauxAssistantMessage, fauxProvider } from "@earendil-works/pi-ai";
 import { EXECUTION_PLAN_WORKFLOW_APPROVAL_OUTPUT_SCHEMA } from "@napier/contracts";
 import type {
+  ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResultFrame,
   ExecutionPlanWorkflowResultFrame,
   JsonValue,
@@ -120,6 +121,91 @@ describe("Napier Workflow CLI", () => {
         retryBlocked: false,
       },
     });
+    expect(
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "inspect",
+        "--simulate-output-json",
+        '{"summary":"simulated","count":2}',
+        "--preview-experiment",
+        "--jsonl",
+      ]),
+    ).toEqual({
+      kind: "workflow",
+      options: {
+        workspace: ".",
+        manifestPath: "workflow.json",
+        threadId: "thread_abcdefghijklmnopqrst",
+        planId: "plan_abcdefghijklmnopqrst",
+        fromNodeId: "inspect",
+        simulateOutputJson: '{"summary":"simulated","count":2}',
+        previewExperiment: true,
+        timeoutMs: 600_000,
+        jsonl: true,
+        retryBlocked: false,
+      },
+    });
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "inspect",
+        "--simulate-output-json",
+        '{"summary":"simulated","count":2}',
+      ]),
+    ).toThrow("requires --expected-preview");
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "inspect",
+        "--single-node",
+        "--simulate-output-json",
+        '{"summary":"simulated","count":2}',
+        "--preview-experiment",
+      ]),
+    ).toThrow("mutually exclusive");
+    expect(() =>
+      parseCliArgs([
+        "workflow",
+        "--workspace",
+        ".",
+        "--manifest",
+        "workflow.json",
+        "--thread",
+        "thread_abcdefghijklmnopqrst",
+        "--plan",
+        "plan_abcdefghijklmnopqrst",
+        "--from-node",
+        "inspect",
+        "--single-node",
+      ]),
+    ).toThrow("requires --expected-preview");
     expect(() =>
       parseCliArgs([
         "workflow",
@@ -889,6 +975,129 @@ describe("Napier Workflow CLI", () => {
       parseFrames(sourceStdout.text()).at(-1),
     );
 
+    const simulationPreviewStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "inspect",
+          "--simulate-output-json",
+          '{"summary":"CLI simulated inspection","count":4}',
+          "--preview-experiment",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, simulationPreviewStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const simulationPreview = JSON.parse(
+      simulationPreviewStdout.text(),
+    ) as ExecutionPlanWorkflowExperimentPreview;
+    expect(simulationPreview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 3,
+        mode: "simulate_node",
+        executionNodeIds: ["report"],
+        simulatedNodeId: "inspect",
+      }),
+    );
+    provider.setResponses([
+      fauxAssistantMessage(
+        '{"report":"CLI report from simulation","approved":true}',
+      ),
+    ]);
+    const simulationStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "inspect",
+          "--simulate-output-json",
+          '{"summary":"CLI simulated inspection","count":4}',
+          "--expected-preview",
+          simulationPreview.previewSha256,
+          "--jsonl",
+        ],
+        cliIo(fixture.root, simulationStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const simulation = validateExecutionPlanWorkflowExperimentResultFrame(
+      parseFrames(simulationStdout.text()).at(-1),
+    );
+    expect(simulation).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        experiment: expect.objectContaining({
+          preview: expect.objectContaining({ schemaVersion: 3 }),
+          result: expect.objectContaining({
+            output: {
+              report: "CLI report from simulation",
+              approved: true,
+            },
+          }),
+          comparison: expect.objectContaining({
+            nodes: expect.arrayContaining([
+              expect.objectContaining({
+                nodeId: "inspect",
+                execution: "simulated",
+              }),
+            ]),
+          }),
+        }),
+      }),
+    );
+
+    const singleNodePreviewStdout = new CaptureWritable();
+    expect(
+      await runCli(
+        [
+          "workflow",
+          "--workspace",
+          fixture.workspaceRoot,
+          "--data-root",
+          fixture.dataRoot,
+          "--manifest",
+          "workflow.json",
+          "--thread",
+          source.threadId,
+          "--plan",
+          source.planId,
+          "--from-node",
+          "inspect",
+          "--single-node",
+          "--preview-experiment",
+          "--jsonl",
+        ],
+        cliIo(fixture.root, singleNodePreviewStdout),
+        dependencies,
+      ),
+    ).toBe(0);
+    const singleNodePreview = JSON.parse(
+      singleNodePreviewStdout.text(),
+    ) as ExecutionPlanWorkflowExperimentPreview;
     provider.setResponses([
       fauxAssistantMessage('{"summary":"CLI single node","count":1}'),
     ]);
@@ -910,6 +1119,8 @@ describe("Napier Workflow CLI", () => {
           "--from-node",
           "inspect",
           "--single-node",
+          "--expected-preview",
+          singleNodePreview.previewSha256,
           "--jsonl",
         ],
         cliIo(fixture.root, singleNodeStdout),

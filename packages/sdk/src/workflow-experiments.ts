@@ -19,6 +19,7 @@ export interface PreviewNapierWorkflowExperimentOptions<
   sourcePlanId: string;
   fromNodeId: string;
   mode?: ExecutionPlanWorkflowExperimentMode;
+  simulatedOutput?: JsonValue;
   title?: string;
   modelOverrides?: Record<string, ModelRef>;
   signal?: AbortSignal;
@@ -86,6 +87,9 @@ function workflowExperimentRequest<
     planId: options.sourcePlanId,
     fromNodeId: options.fromNodeId,
     ...(options.mode !== undefined ? { mode: options.mode } : {}),
+    ...(options.simulatedOutput !== undefined
+      ? { simulatedOutput: options.simulatedOutput }
+      : {}),
     ...(options.title !== undefined ? { title: options.title } : {}),
     ...(options.modelOverrides !== undefined
       ? { modelOverrides: options.modelOverrides }

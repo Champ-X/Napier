@@ -268,6 +268,23 @@ describe("Napier JSON-RPC protocol", () => {
         mode: "single_node",
       });
       expect(
+        parseWorkflowExperimentPreviewParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          fromNodeId: "prepare",
+          mode: "simulate_node",
+          simulatedOutput: { normalized: "RPC simulated" },
+        }),
+      ).toEqual({
+        sourceThreadId: "thread_example",
+        manifest,
+        planId: "plan_abcdefgh",
+        fromNodeId: "prepare",
+        mode: "simulate_node",
+        simulatedOutput: { normalized: "RPC simulated" },
+      });
+      expect(
         parseWorkflowExperimentRunParams({
           sourceThreadId: "thread_example",
           manifest,
@@ -339,6 +356,15 @@ describe("Napier JSON-RPC protocol", () => {
           planId: "plan_abcdefgh",
           fromNodeId: "deliver",
           mode: "unknown",
+        }),
+      ).toThrow("params are invalid");
+      expect(() =>
+        parseWorkflowExperimentPreviewParams({
+          sourceThreadId: "thread_example",
+          manifest,
+          planId: "plan_abcdefgh",
+          fromNodeId: "prepare",
+          mode: "simulate_node",
         }),
       ).toThrow("params are invalid");
     } finally {

@@ -26,6 +26,14 @@ export function projectWorkflowExperimentExecution(
       stopBeforeNodeIds: [],
     };
   }
+  if (mode === "simulate_node") {
+    return {
+      mode,
+      rerunNodeIds,
+      executionNodeIds: rerunNodeIds.filter((nodeId) => nodeId !== fromNodeId),
+      stopBeforeNodeIds: [],
+    };
+  }
   const directSuccessors = new Set(
     manifest.blueprint.steps
       .filter((step) => step.dependsOn?.includes(fromNodeId))

@@ -63,6 +63,37 @@ describe("Workflow experiment execution mode projection", () => {
       ),
     ).toBe(true);
   });
+
+  it("binds output simulation to the selected node and real descendants", () => {
+    const preview = {
+      schemaVersion: 3,
+      mode: "simulate_node",
+      fromNodeId: "prepare",
+      reusedNodeIds: [],
+      rerunNodeIds: ["prepare", "report", "publish"],
+      executionNodeIds: ["report", "publish"],
+      simulatedNodeId: "prepare",
+    } as unknown as ExecutionPlanWorkflowExperimentPreview;
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        preview,
+        workflowManifest(),
+        "prepare",
+        "simulate_node",
+      ),
+    ).toBe(true);
+    expect(
+      workflowExperimentPreviewMatchesMode(
+        {
+          ...preview,
+          executionNodeIds: ["publish"],
+        } as ExecutionPlanWorkflowExperimentPreview,
+        workflowManifest(),
+        "prepare",
+        "simulate_node",
+      ),
+    ).toBe(false);
+  });
 });
 
 function workflowManifest(): ExecutionPlanWorkflowManifest {

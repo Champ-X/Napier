@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { LocalStore } from "../src/store.js";
 import { createThreadReplayBundle } from "../src/thread-bundles.js";
 import { WORKFLOW_NODE_EXECUTION } from "../src/workflow-node-execution.js";
+import { WORKFLOW_SIMULATION_EXECUTION } from "../src/workflow-simulation-execution.js";
 
 const temporaryRoots: string[] = [];
 
@@ -209,6 +210,75 @@ describe("LocalStore", () => {
     await store.finishRun(runs[3]!.id, "completed");
     expect(store.getThread(thread.id).status).toBe("idle");
     expect(store.getThread(thread.id).currentRunId).toBeUndefined();
+    store.close();
+  });
+
+  it("admits Workflow simulation Runs only through a dependency-ready Plan capability", async () => {
+    const store = await createStore();
+    const agent = store.listAgents()[0]!;
+    const thread = await store.createThread({
+      title: "Workflow simulation gate",
+      agentId: agent.id,
+    });
+    const plan = await store.createPlan(thread.id, {
+      objective: "Gate one simulated Workflow output.",
+      steps: [
+        {
+          id: "prepare",
+          title: "Prepare",
+          description: "Provide a simulated typed output.",
+          verification: "The output is bound to the active Plan.",
+        },
+      ],
+    });
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        source: "workflow_simulation",
+      }),
+    ).rejects.toThrow("Plan capability");
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        source: "workflow_simulation",
+        [WORKFLOW_SIMULATION_EXECUTION]: {
+          planId: plan.id,
+          nodeId: "prepare",
+          outputSha256: "invalid",
+        },
+      }),
+    ).rejects.toThrow("Plan capability");
+    await expect(
+      store.createRun({
+        threadId: thread.id,
+        agentId: agent.id,
+        source: "user",
+        [WORKFLOW_SIMULATION_EXECUTION]: {
+          planId: plan.id,
+          nodeId: "prepare",
+          outputSha256: "a".repeat(64),
+        },
+      }),
+    ).rejects.toThrow("requires a simulation Run source");
+    const run = await store.createRun({
+      threadId: thread.id,
+      agentId: agent.id,
+      source: "workflow_simulation",
+      [WORKFLOW_SIMULATION_EXECUTION]: {
+        planId: plan.id,
+        nodeId: "prepare",
+        outputSha256: "a".repeat(64),
+      },
+    });
+    expect(run).toEqual(
+      expect.objectContaining({
+        source: "workflow_simulation",
+        workflowPlanId: plan.id,
+      }),
+    );
+    await store.finishRun(run.id, "completed");
     store.close();
   });
 

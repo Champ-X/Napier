@@ -176,7 +176,10 @@ export interface RunPromptOptions {
   onRunCreated?: (run: RunRecord) => Promise<void> | void;
   parentRunId?: string;
   operatorDecisionId?: string;
-  source?: Exclude<RunInvocationSource, "workflow_reuse">;
+  source?: Exclude<
+    RunInvocationSource,
+    "workflow_reuse" | "workflow_simulation"
+  >;
   triggerId?: string;
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
@@ -273,6 +276,11 @@ export class AgentRuntime {
     if (requestedSource === "workflow_reuse") {
       throw new Error(
         "Workflow reuse Runs can only be created by the Workflow materializer",
+      );
+    }
+    if (requestedSource === "workflow_simulation") {
+      throw new Error(
+        "Workflow simulation Runs can only be created by an internal Workflow capability",
       );
     }
     const activeRuns = this.activeRuns.get(options.threadId);
@@ -3459,7 +3467,11 @@ function turnPromptEvent(source: TurnSource) {
 }
 
 function isWorkflowRunSource(source: TurnSource | undefined): boolean {
-  return source === "workflow" || source === "workflow_reuse";
+  return (
+    source === "workflow" ||
+    source === "workflow_reuse" ||
+    source === "workflow_simulation"
+  );
 }
 
 function recoveryEventSummary(event: RunEvent): string {

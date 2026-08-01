@@ -96,8 +96,10 @@ export class ExecutionPlanWorkflowExperimentRuntime {
       source.preview,
     );
     if (
-      request.expectedPreviewSha256 !== undefined &&
-      request.expectedPreviewSha256 !== preview.previewSha256
+      (request.expectedPreviewSha256 !== undefined &&
+        request.expectedPreviewSha256 !== preview.previewSha256) ||
+      (preview.schemaVersion !== 1 &&
+        request.expectedPreviewSha256 !== preview.previewSha256)
     ) {
       throw new WorkflowExperimentPreviewChangedError();
     }
@@ -131,6 +133,7 @@ export class ExecutionPlanWorkflowExperimentRuntime {
         [WORKFLOW_EXPERIMENT_EXECUTION]: {
           agentRevision: source.sourceAgentRevision,
           reusedNodes: source.reusedNodes,
+          simulatedNodes: source.simulatedNodes,
           lineage: {
             sourceThreadId: options.sourceThreadId,
             sourcePlanId: source.sourcePlan.id,
@@ -149,7 +152,15 @@ export class ExecutionPlanWorkflowExperimentRuntime {
                   executionNodeIds: preview.executionNodeIds,
                   stopBeforeNodeIds: preview.stopBeforeNodeIds,
                 }
-              : {}),
+              : preview.schemaVersion === 3
+                ? {
+                    executionMode: preview.mode,
+                    executionNodeIds: preview.executionNodeIds,
+                    simulationNodeId: preview.simulatedNodeId,
+                    simulatedOutputSha256: preview.simulatedOutputSha256,
+                    simulatedOutputBytes: preview.simulatedOutputBytes,
+                  }
+                : {}),
           },
         },
         ...(options.signal ? { signal: options.signal } : {}),

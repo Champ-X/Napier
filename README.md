@@ -60,8 +60,11 @@ Version `0.1.0` includes:
   retry, latency, usage, cost, tool, output, Evaluation, and Artifact
   comparison. A schema-2 single-node mode executes only the selected
   checkpoint, pauses durably before its direct successors, and requires an
-  explicit breakpoint continuation before the remaining subgraph can run.
-  SDK, local RPC, CLI, HTTP, and a lazy Plan Workbench desk share the complete
+  explicit breakpoint continuation before the remaining subgraph can run. A
+  schema-3 simulation mode instead Schema-validates one explicit selected-node
+  output, materializes it as a zero-model/zero-tool `workflow_simulation` Run,
+  and executes only its descendants through the normal scheduler. SDK, local
+  RPC, CLI, HTTP, and a lazy Plan Workbench desk share the complete
   preview-confirm-execute-inspect flow;
 - controlled Agent message experiments that select a terminal historical
   `message.user`, freeze its Agent revision, Prompt Variables, Skill catalog,
@@ -669,6 +672,7 @@ single read-only tool-call path. `napier/workflow/experiment/preview` projects
 a source Thread/Plan checkpoint without mutation;
 `napier/workflow/experiment/run` requires the returned `previewSha256`, creates
 an isolated target Thread, reuses verified ancestors, reruns the selected
+descendants, or materializes one schema-3 typed output before executing its
 descendants, and returns the candidate Manifest and source/target comparison.
 Write or unknown historical tool effects also require explicit
 `confirmSideEffects`. A waiting Workflow response includes its pending
@@ -835,9 +839,10 @@ The compatible default subgraph preview remains schema 1. Single-node previews
 use schema 2 and bind three distinct sets: `rerunNodeIds` is the complete
 descendant subgraph that cannot be reused, `executionNodeIds` contains only
 the selected checkpoint, and `stopBeforeNodeIds` contains its direct
-successors. Tool-effect projection and side-effect confirmation cover only
-`executionNodeIds`; historical write evidence from a successor that will not
-run cannot authorize or block the selected-node test.
+successors. Execute by repeating the request with
+`--expected-preview <previewSha256>`. Tool-effect projection and side-effect
+confirmation cover only `executionNodeIds`; historical write evidence from a
+successor that will not run cannot authorize or block the selected-node test.
 
 Execution uses the normal Workflow scheduler. When direct successors exist, it
 returns `paused` after the selected node settles and before any successor
@@ -850,15 +855,52 @@ reuses real source evidence and executes a real node; it does not mock node
 output, replace arbitrary input, simulate side effects, or provide mid-node
 stepping.
 
+Use `--simulate-output-json` to replace one selected checkpoint output while
+executing its descendants normally:
+
+```bash
+npm run --silent napier -- workflow \
+  --workspace . \
+  --data-root .napier \
+  --manifest workflows/report.json \
+  --thread thread_source \
+  --plan plan_source \
+  --from-node inspect \
+  --simulate-output-json '{"summary":"Reviewed fixture","count":4}' \
+  --preview-experiment \
+  --jsonl
+```
+
+Execution repeats the same request with
+`--expected-preview <previewSha256>`. Schema-3 previews keep
+`rerunNodeIds` as the selected checkpoint plus descendants, but
+`executionNodeIds` contains only descendants and `simulatedNodeId` names the
+selected checkpoint. The supplied value must be valid JSON, fit the 32 KiB
+node-output bound, and satisfy that node's output Schema. The selected node
+never calls a model or Tool; a capability-gated `workflow_simulation` Run
+settles it, then the ordinary Workflow scheduler evaluates and executes
+descendants. Historical write or unknown effects on those descendants still
+require exact-preview side-effect confirmation.
+
+The exact simulated value is hidden local recovery evidence and is included in
+an explicit full portable Thread fixture because cross-restart/import recovery
+requires it. Public `workflow.node.simulated` evidence, Web Trace summaries,
+and the rendered desk expose only safe IDs, Schema/output hashes, byte counts,
+and Run source. Per-node comparison labels the selected node `simulated`
+rather than implying a real rerun. This mode does not replace arbitrary
+Workflow input, simulate write/session side effects, or capture external
+Session state.
+
 The same path is available in **Plan -> Workflow experiment desk**. Load the
 exact versioned Manifest used by the source run, select its durable source Plan
 and checkpoint node, optionally replace that node with the currently selected
-configured model, select full-subgraph or single-node execution, and preview
-before execution. The desk renders historical read/write/unknown effects,
-`rerun`/`execute now`/`stop before` counts, and requires an explicit checkbox
-for a preview that needs side-effect confirmation. A successful isolated fork
-shows aggregate and per-node target-minus-source deltas, can open the target
-Thread, and downloads the complete local result as
+configured model, select full-subgraph, single-node, or typed-output
+simulation, and preview before execution. The desk renders historical
+read/write/unknown effects and `rerun`/`execute now`/`stop before`/`simulated`
+counts, and requires an explicit checkbox for a preview that needs side-effect
+confirmation. A successful isolated fork shows aggregate and per-node
+target-minus-source deltas, can open the target Thread, and downloads the
+complete local result as
 `napier-workflow-experiment-<plan>-<hash>.json`. The browser revalidates the
 Manifest, Preview, SSE event hashes/order, final Snapshot, comparison, result
 frame, source/target identities, and no-store response contract; changing
@@ -3123,7 +3165,7 @@ Reach and continuation reconstruct from the Ledger after SQLite reopen.
 Duplicate, stale, mismatched, or forged evidence fails closed, and a consumed
 continuation remains consumed if cancellation or process loss occurs before
 the node starts. This primitive pauses only at node boundaries; it does not
-claim mid-node suspension, DAP stepping, single-node mocks, or side-effect
+claim mid-node suspension, DAP stepping, arbitrary input mocks, or side-effect
 simulation. CLI JSONL, HTTP SSE, the TypeScript SDK, and local stdio RPC share
 the same contract, while Web Trace exposes only node IDs, counts, revisions,
 event sequence, and hash prefixes.
@@ -3428,9 +3470,11 @@ Map/Loop, multi-way switch, compensation, per-node breakpoints, adapter
 runtimes, and a visual builder remain open. Checkpoint experiments now provide
 single-call execution for an explicit
 stateless read-only built-in subset, while message experiments can freeze
-captured results for that same subset. Stateful/write tool stepping or
-simulation, Prompt/Skill/Memory replacement, batch experiments, an interactive
-root-cause timeline, and Evaluation promotion remain open. The opt-in DeepSeek
+captured results for that same subset. Workflow experiments can also substitute
+one typed checkpoint output before normally executing descendants. Arbitrary
+input replacement, stateful/write tool stepping or side-effect simulation,
+Prompt/Skill/Memory replacement, batch experiments, an interactive root-cause
+timeline, and Evaluation promotion remain open. The opt-in DeepSeek
 CLI smoke executes and checkpoint-reruns one
 real typed node when `DEEPSEEK_API_KEY` is available; default tests use
 deterministic providers and perform no network call. The Map-specific live

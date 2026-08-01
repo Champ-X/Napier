@@ -118,6 +118,7 @@ const RUN_SOURCES = new Set([
   "channel",
   "workflow",
   "workflow_reuse",
+  "workflow_simulation",
   "model_experiment",
   "tool_experiment",
 ]);
@@ -587,11 +588,18 @@ export function validateThreadReplayBundle(input: unknown): ThreadReplayBundle {
     }
     if (run["workflowPlanId"] !== undefined) {
       assertResourceId(run["workflowPlanId"], `runs[${index}].workflowPlanId`);
-      if (run["source"] !== "workflow") {
+      if (
+        run["source"] !== "workflow" &&
+        run["source"] !== "workflow_simulation"
+      ) {
         throw new Error(
           `Thread replay bundle Workflow Run Plan binding is invalid: ${runId}`,
         );
       }
+    } else if (run["source"] === "workflow_simulation") {
+      throw new Error(
+        `Thread replay bundle Workflow simulation Plan binding is missing: ${runId}`,
+      );
     }
     assertIsoDate(run["startedAt"], `runs[${index}].startedAt`);
     for (const key of ["finishedAt", "interruptedAt"]) {

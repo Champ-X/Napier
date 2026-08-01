@@ -23,6 +23,17 @@ export function workflowExperimentPreviewMatchesMode(
     return false;
   }
   if (mode === "subgraph") return preview.schemaVersion === 1;
+  if (mode === "simulate_node") {
+    return (
+      preview.schemaVersion === 3 &&
+      preview.mode === "simulate_node" &&
+      preview.simulatedNodeId === fromNodeId &&
+      sameStrings(
+        preview.executionNodeIds,
+        rerunNodeIds.filter((nodeId) => nodeId !== fromNodeId),
+      )
+    );
+  }
   if (preview.schemaVersion !== 2 || preview.mode !== "single_node") {
     return false;
   }

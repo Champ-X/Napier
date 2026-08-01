@@ -315,6 +315,44 @@ describe("Workflow event Trace projection", () => {
     const malformed = structuredClone(singleNode);
     delete (malformed.payload as Record<string, unknown>)["stopBeforeNodeIds"];
     expect(workflowEventTraceSummary(malformed)).toBeUndefined();
+    const simulation = workflowEvent("workflow.experiment.started", {
+      schemaVersion: 1,
+      planId: "plan_abcdefghijklmnopqrst",
+      manifestSha256: "1".repeat(64),
+      sourceThreadId: "thread_source_private",
+      sourcePlanId: "plan_source_private",
+      sourcePlanRevision: 4,
+      sourceManifestSha256: "2".repeat(64),
+      fromNodeId: "inspect",
+      reusedNodeIds: [],
+      rerunNodeIds: ["inspect", "report"],
+      executionMode: "simulate_node",
+      executionNodeIds: ["report"],
+      simulationNodeId: "inspect",
+      simulatedOutputSha256: "8".repeat(64),
+      simulatedOutputBytes: 42,
+      previewSha256: "7".repeat(64),
+      sideEffectsConfirmed: false,
+      simulatedOutput: "PRIVATE_SIMULATED_OUTPUT",
+    });
+    expect(workflowEventTraceSummary(simulation)).toContain(
+      "mode simulate-node / execute 1 / simulated inspect",
+    );
+    expect(workflowEventTraceSummary(simulation)).not.toContain("PRIVATE");
+    expect(
+      workflowEventTraceSummary(
+        workflowEvent("workflow.node.simulated", {
+          schemaVersion: 1,
+          planId: "plan_abcdefghijklmnopqrst",
+          manifestSha256: "1".repeat(64),
+          nodeId: "inspect",
+          inputSha256: "2".repeat(64),
+          outputSha256: "3".repeat(64),
+          outputBytes: 42,
+          outputSchemaSha256: "4".repeat(64),
+        }),
+      ),
+    ).toContain("workflow node simulated / node inspect");
   });
 
   it("summarizes Map coordination and item evidence without data bodies", () => {

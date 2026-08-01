@@ -55,6 +55,7 @@ const STEP_STATUSES = new Set<PlanStepStatus>([
 const RUN_SOURCES = new Set<RunInvocationSource>([
   "workflow",
   "workflow_reuse",
+  "workflow_simulation",
 ]);
 
 export function validateExecutionPlanWorkflowExperimentComparison(
@@ -175,7 +176,7 @@ export function validateExecutionPlanWorkflowExperimentComparison(
       nodes.length ||
     nodes.filter((node) => node.execution === "reused").length !==
       comparison["reusedNodeCount"] ||
-    nodes.filter((node) => node.execution === "rerun").length !==
+    nodes.filter((node) => node.execution !== "reused").length !==
       comparison["rerunNodeCount"] ||
     canonicalJson(sourceMetrics) !==
       canonicalJson(
@@ -209,7 +210,9 @@ export function validateExecutionPlanWorkflowExperimentComparison(
   if (
     canonicalJson(changedNodeIds) !==
     canonicalJson(
-      nodes.filter(workflowExperimentNodeChanged).map((node) => node.nodeId),
+      canonicalWorkflowExperimentStrings(
+        nodes.filter(workflowExperimentNodeChanged).map((node) => node.nodeId),
+      ),
     )
   ) {
     throw new Error("Workflow experiment changed-node binding is invalid");
@@ -254,11 +257,15 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
     validated.nodes.length !== candidateManifest.nodeCount ||
     canonicalJson(validated.nodes.map((node) => node.nodeId)) !==
       canonicalJson(candidateManifest.nodes.map((node) => node.id)) ||
-    validated.nodes.some(
-      (node) =>
-        node.execution !==
-        (preview.rerunNodeIds.includes(node.nodeId) ? "rerun" : "reused"),
-    ) ||
+    validated.nodes.some((node) => {
+      const expectedExecution =
+        preview.schemaVersion === 3 && node.nodeId === preview.simulatedNodeId
+          ? "simulated"
+          : preview.rerunNodeIds.includes(node.nodeId)
+            ? "rerun"
+            : "reused";
+      return node.execution !== expectedExecution;
+    }) ||
     validated.sourceOutputSha256 !==
       validated.nodes.find(
         (node) => node.nodeId === sourceManifest.outputNodeId,
@@ -297,7 +304,11 @@ export function assertExecutionPlanWorkflowExperimentComparisonBinding(
         ? targetManifestNode.model
         : undefined;
     const expectedRunSource =
-      node.execution === "reused" ? "workflow_reuse" : "workflow";
+      node.execution === "reused"
+        ? "workflow_reuse"
+        : node.execution === "simulated"
+          ? "workflow_simulation"
+          : "workflow";
     if (
       node.modelChanged !==
         (canonicalJson(sourceModel ?? null) !==
@@ -343,7 +354,9 @@ function validateNodeComparison(
   ]);
   if (
     !resourceId(node["nodeId"], NODE_ID) ||
-    (node["execution"] !== "reused" && node["execution"] !== "rerun") ||
+    (node["execution"] !== "reused" &&
+      node["execution"] !== "rerun" &&
+      node["execution"] !== "simulated") ||
     typeof node["statusChanged"] !== "boolean" ||
     typeof node["modelChanged"] !== "boolean" ||
     typeof node["configurationChanged"] !== "boolean" ||

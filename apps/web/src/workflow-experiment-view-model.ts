@@ -29,7 +29,7 @@ const FORBIDDEN_PATH_SEGMENTS = new Set([
 
 export interface WorkflowExperimentNodeView {
   nodeId: string;
-  execution: "reused" | "rerun";
+  execution: ExecutionPlanWorkflowExperimentNodeComparison["execution"];
   sourceStatus: string;
   targetStatus: string;
   statusChanged: boolean;

@@ -8,6 +8,7 @@ import {
 
 import type {
   ExecutionPlan,
+  ExecutionPlanWorkflowExperimentMode,
   ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentResultFrame,
   ExecutionPlanWorkflowManifest,
@@ -21,8 +22,10 @@ import {
 } from "./workflow-experiment-api";
 import { workflowExperimentCopy as copy } from "./workflow-experiment-copy";
 import {
+  buildWorkflowExperimentRequest,
   defaultWorkflowExperimentSourcePlanId,
   downloadWorkflowExperimentResult,
+  loadWorkflowExperimentManifest,
   shortWorkflowExperimentId,
 } from "./workflow-experiment-desk-helpers";
 import {
@@ -30,14 +33,8 @@ import {
   WorkflowExperimentPreviewDocket,
 } from "./WorkflowExperimentDockets";
 import { WorkflowExperimentModeField } from "./WorkflowExperimentModeField";
-import {
-  parseWorkflowManifestText,
-  parseWorkflowModelKey,
-  projectWorkflowExperimentComparison,
-} from "./workflow-experiment-view-model";
+import { projectWorkflowExperimentComparison } from "./workflow-experiment-view-model";
 import "./workflow-experiment.css";
-
-const MAX_MANIFEST_BYTES = 1024 * 1024;
 
 interface PreviewState {
   preview: ExecutionPlanWorkflowExperimentPreview;
@@ -66,7 +63,9 @@ export default function WorkflowExperimentDesk({
     defaultWorkflowExperimentSourcePlanId(plans),
   );
   const [fromNodeId, setFromNodeId] = useState("");
-  const [singleNode, setSingleNode] = useState(false);
+  const [mode, setMode] =
+    useState<ExecutionPlanWorkflowExperimentMode>("subgraph");
+  const [simulatedOutput, setSimulatedOutput] = useState("");
   const [replaceModel, setReplaceModel] = useState(false);
   const [previewState, setPreviewState] = useState<PreviewState>();
   const [confirmed, setConfirmed] = useState(false);
@@ -79,7 +78,8 @@ export default function WorkflowExperimentDesk({
   const operationGeneration = useRef(0);
   const selectedNode = manifest?.nodes.find((node) => node.id === fromNodeId);
   const canReplaceModel =
-    selectedNode?.type === "agent" || selectedNode?.type === "map";
+    mode !== "simulate_node" &&
+    (selectedNode?.type === "agent" || selectedNode?.type === "map");
 
   const comparison = useMemo(
     () =>
@@ -97,7 +97,8 @@ export default function WorkflowExperimentDesk({
     setManifestFilename("");
     setSourcePlanId(defaultWorkflowExperimentSourcePlanId(plans));
     setFromNodeId("");
-    setSingleNode(false);
+    setMode("subgraph");
+    setSimulatedOutput("");
     setReplaceModel(false);
     setPreviewState(undefined);
     setConfirmed(false);
@@ -168,22 +169,19 @@ export default function WorkflowExperimentDesk({
   };
 
   const loadManifest = async (file: File): Promise<void> => {
-    if (file.size > MAX_MANIFEST_BYTES) {
-      setError(copy.errors.manifestTooLarge);
-      return;
-    }
     const operation = startOperation();
     setBusy("manifest");
     setError(undefined);
     clearPreview();
     try {
-      const parsed = await parseWorkflowManifestText(await file.text());
+      const parsed = await loadWorkflowExperimentManifest(file);
       if (!isCurrentOperation(operation.controller, operation.generation)) {
         return;
       }
       setManifest(parsed);
       setManifestFilename(file.name);
       setFromNodeId(parsed.outputNodeId);
+      setSimulatedOutput("");
     } catch (loadError) {
       if (!isCurrentOperation(operation.controller, operation.generation)) {
         return;
@@ -201,22 +199,6 @@ export default function WorkflowExperimentDesk({
     }
   };
 
-  const buildRequest = (): WorkflowExperimentWebRequest => {
-    if (!manifest || !fromNodeId) throw new Error(copy.errors.previewRequired);
-    return {
-      manifest,
-      fromNodeId,
-      ...(singleNode ? { mode: "single_node" as const } : {}),
-      ...(replaceModel && canReplaceModel
-        ? {
-            modelOverrides: {
-              [fromNodeId]: parseWorkflowModelKey(selectedModelKey),
-            },
-          }
-        : {}),
-    };
-  };
-
   const preview = async (): Promise<void> => {
     if (!manifest || !sourcePlanId || busy) return;
     const operation = startOperation();
@@ -224,7 +206,15 @@ export default function WorkflowExperimentDesk({
     setError(undefined);
     clearPreview();
     try {
-      const request = buildRequest();
+      const request = buildWorkflowExperimentRequest({
+        manifest,
+        fromNodeId,
+        mode,
+        simulatedOutput,
+        replaceModel,
+        canReplaceModel,
+        selectedModelKey,
+      });
       const projected = await previewWorkflowExperiment(
         threadId,
         sourcePlanId,
@@ -301,7 +291,8 @@ export default function WorkflowExperimentDesk({
     setManifest(undefined);
     setManifestFilename("");
     setFromNodeId("");
-    setSingleNode(false);
+    setMode("subgraph");
+    setSimulatedOutput("");
     setReplaceModel(false);
     setError(undefined);
   };
@@ -387,6 +378,7 @@ export default function WorkflowExperimentDesk({
               if (node?.type !== "agent" && node?.type !== "map") {
                 setReplaceModel(false);
               }
+              setSimulatedOutput("");
               invalidatePreview();
             }}
           >
@@ -399,10 +391,16 @@ export default function WorkflowExperimentDesk({
         </label>
 
         <WorkflowExperimentModeField
-          singleNode={singleNode}
+          mode={mode}
+          simulatedOutput={simulatedOutput}
           disabled={!manifest || Boolean(busy)}
-          onChange={(next) => {
-            setSingleNode(next);
+          onModeChange={(next) => {
+            setMode(next);
+            if (next === "simulate_node") setReplaceModel(false);
+            invalidatePreview();
+          }}
+          onSimulatedOutputChange={(next) => {
+            setSimulatedOutput(next);
             invalidatePreview();
           }}
         />
@@ -442,6 +440,7 @@ export default function WorkflowExperimentDesk({
               !manifest ||
               !sourcePlanId ||
               !fromNodeId ||
+              (mode === "simulate_node" && simulatedOutput.trim() === "") ||
               running ||
               Boolean(busy)
             }

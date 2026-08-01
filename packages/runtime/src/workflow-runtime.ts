@@ -52,6 +52,11 @@ import {
   workflowPlanCreatedPayload,
 } from "./workflow-runtime-model.js";
 import { ExecutionPlanWorkflowReuseMaterializer } from "./workflow-reuse-materializer.js";
+import { ExecutionPlanWorkflowSimulationMaterializer } from "./workflow-simulation-materializer.js";
+import {
+  WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT,
+  workflowSimulationRequestPayload,
+} from "./workflow-simulation-evidence.js";
 import { executionPlanRequestFromBlueprint } from "./workflow-blueprints.js";
 import { ExecutionPlanWorkflowApprovalNodeExecutor } from "./workflow-approval-node.js";
 import { ExecutionPlanWorkflowArtifactSettlement } from "./workflow-artifact-settlement.js";
@@ -89,6 +94,7 @@ export class ExecutionPlanWorkflowRuntime {
   private readonly breakpointRuntime: ExecutionPlanWorkflowBreakpointRuntime;
   private readonly recovery: ExecutionPlanWorkflowRecovery;
   private readonly reuseMaterializer: ExecutionPlanWorkflowReuseMaterializer;
+  private readonly simulationMaterializer: ExecutionPlanWorkflowSimulationMaterializer;
   private readonly approvalNodeExecutor: ExecutionPlanWorkflowApprovalNodeExecutor;
   private readonly conditionNodeExecutor: ExecutionPlanWorkflowConditionNodeExecutor;
   private readonly deterministicNodeExecutor: ExecutionPlanWorkflowDeterministicNodeExecutor;
@@ -187,6 +193,11 @@ export class ExecutionPlanWorkflowRuntime {
           this.completePlanStep(context, nodeId, runId, outputSha256),
       },
     );
+    this.simulationMaterializer =
+      new ExecutionPlanWorkflowSimulationMaterializer(store, this.ledger, {
+        completePlanStep: (context, nodeId, runId, outputSha256) =>
+          this.completePlanStep(context, nodeId, runId, outputSha256),
+      });
   }
 
   async run(
@@ -308,6 +319,8 @@ export class ExecutionPlanWorkflowRuntime {
       nodeResults: new Map(),
       reusedNodes:
         experiment?.reusedNodes.map((node) => structuredClone(node)) ?? [],
+      simulatedNodes:
+        experiment?.simulatedNodes.map((node) => structuredClone(node)) ?? [],
     };
     if (experiment) {
       await this.ledger.append(
@@ -326,6 +339,33 @@ export class ExecutionPlanWorkflowRuntime {
         },
         options.onEvent,
       );
+      for (const simulated of experiment.simulatedNodes) {
+        const node = manifest.nodes.find(
+          (candidate) => candidate.id === simulated.nodeId,
+        );
+        if (!node) {
+          throw new Error("Workflow simulation node is not in the Manifest");
+        }
+        await this.ledger.append(
+          {
+            threadId: options.threadId,
+            runId: createId("runctl"),
+            type: WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT,
+            category: "plan",
+            visibility: "hidden",
+            payload: workflowSimulationRequestPayload({
+              planId: plan.id,
+              manifestSha256: manifest.contentSha256,
+              nodeId: simulated.nodeId,
+              output: simulated.output,
+              outputSha256: simulated.outputSha256,
+              outputBytes: simulated.outputBytes,
+              outputSchemaSha256: workflowSchemaSha256(node.outputSchema),
+            }),
+          },
+          options.onEvent,
+        );
+      }
     }
     return context;
   }
@@ -380,6 +420,7 @@ export class ExecutionPlanWorkflowRuntime {
       outputs: new Map(),
       nodeResults: new Map(),
       reusedNodes: experiment.reusedNodes,
+      simulatedNodes: experiment.simulatedNodes,
     };
   }
 
@@ -396,6 +437,19 @@ export class ExecutionPlanWorkflowRuntime {
         context.reusedNodes,
       );
       await this.reuseMaterializer.materialize(context, context.reusedNodes);
+      if (context.signal?.aborted) {
+        return this.finish(context, "cancelled");
+      }
+    }
+    if (context.simulatedNodes.length > 0) {
+      await this.simulationMaterializer.reopenInterrupted(
+        context,
+        context.simulatedNodes,
+      );
+      await this.simulationMaterializer.materialize(
+        context,
+        context.simulatedNodes,
+      );
       if (context.signal?.aborted) {
         return this.finish(context, "cancelled");
       }

@@ -543,6 +543,12 @@ import {
   type WorkflowNodeExecution,
 } from "./workflow-node-execution.js";
 import {
+  WORKFLOW_SIMULATION_EXECUTION,
+  type WorkflowSimulationExecution,
+} from "./workflow-simulation-execution.js";
+import { validateWorkflowSimulationRunGate } from "./workflow-simulation-run-gate.js";
+import { WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT } from "./workflow-simulation-evidence.js";
+import {
   isWorkflowReadOnlyChildExecutionMode,
   validateWorkflowReadOnlyChildRunGate,
 } from "./workflow-read-only-child-run-gate.js";
@@ -759,6 +765,7 @@ export interface CreateRunInput {
   source?: RunInvocationSource;
   triggerId?: string;
   [WORKFLOW_NODE_EXECUTION]?: WorkflowNodeExecution;
+  [WORKFLOW_SIMULATION_EXECUTION]?: WorkflowSimulationExecution;
   [AGENT_MESSAGE_EXPERIMENT_EXECUTION]?: AgentMessageExperimentExecution;
   [MODEL_INVOCATION_EXPERIMENT_EXECUTION]?: ModelInvocationExperimentExecution;
   [TOOL_INVOCATION_EXPERIMENT_EXECUTION]?: ToolInvocationExperimentExecution;
@@ -8339,7 +8346,7 @@ export class LocalStore {
         const payload = rebindImportedSubagentEventPayload(
           source.type,
           source.payload,
-          remapJsonValue(source.payload, idMap),
+          remapImportedEventPayload(source.type, source.payload, idMap),
           subagentsById,
           idMap,
         );
@@ -8367,7 +8374,11 @@ export class LocalStore {
         )
         .map((source) => {
           for (const event of events) {
-            event.payload = remapJsonValue(event.payload, idMap);
+            event.payload = remapImportedEventPayload(
+              event.type,
+              event.payload,
+              idMap,
+            );
           }
           const mappedRunId = runIds.get(source.runId)!;
           const mappedRootRunId = runIds.get(source.rootRunId)!;
@@ -8471,7 +8482,11 @@ export class LocalStore {
         return mapped;
       });
       for (const event of events) {
-        event.payload = remapJsonValue(event.payload, idMap);
+        event.payload = remapImportedEventPayload(
+          event.type,
+          event.payload,
+          idMap,
+        );
       }
       const importedStatus: ThreadStatus =
         activeRunIds.size > 0 || bundle.thread.status === "waiting"
@@ -10218,7 +10233,7 @@ export class LocalStore {
           (candidate) => candidate.id === run.workflowPlanId,
         );
         if (
-          run.source !== "workflow" ||
+          (run.source !== "workflow" && run.source !== "workflow_simulation") ||
           !workflowPlan ||
           workflowPlan.threadId !== run.threadId
         ) {
@@ -10226,6 +10241,10 @@ export class LocalStore {
             `Persisted Workflow Run Plan binding is invalid: ${run.id}`,
           );
         }
+      } else if (run.source === "workflow_simulation") {
+        throw new Error(
+          `Persisted Workflow simulation Run Plan binding is missing: ${run.id}`,
+        );
       }
       const configuration = run.configuration
         ? validateRunConfigurationFingerprint(run.configuration)
@@ -11173,6 +11192,12 @@ export class LocalStore {
   ): PersistedRunRecord {
     const thread = this.mutableThread(input.threadId);
     const workflowExecution = input[WORKFLOW_NODE_EXECUTION];
+    const simulationExecution = validateWorkflowSimulationRunGate({
+      source: input.source,
+      threadId: thread.id,
+      execution: input[WORKFLOW_SIMULATION_EXECUTION],
+      plans: this.state.plans,
+    });
     if (input.source === "workflow") {
       const plan = workflowExecution
         ? this.state.plans.find(
@@ -11189,6 +11214,8 @@ export class LocalStore {
         "Workflow Plan capability requires a Workflow Run source",
       );
     }
+    const workflowPlanId =
+      workflowExecution?.planId ?? simulationExecution?.planId;
     const activeRuns = this.state.runs.filter(
       (run) =>
         run.threadId === thread.id &&
@@ -11199,8 +11226,7 @@ export class LocalStore {
       activeRuns.length > 0 &&
       activeRuns.every(
         (run) =>
-          run.source === "workflow" &&
-          run.workflowPlanId === workflowExecution?.planId,
+          run.source === "workflow" && run.workflowPlanId === workflowPlanId,
       );
     if (activeRuns.length > 0 && !concurrentWorkflowRun) {
       throw new Error(`Thread already has an active run: ${activeRuns[0]!.id}`);
@@ -11488,9 +11514,7 @@ export class LocalStore {
       agentId: input.agentId,
       status: "running",
       ...(input.source ? { source: input.source } : {}),
-      ...(workflowExecution
-        ? { workflowPlanId: workflowExecution.planId }
-        : {}),
+      ...(workflowPlanId ? { workflowPlanId } : {}),
       ...(input.triggerId ? { triggerId: input.triggerId } : {}),
       startedAt: nowIso(),
       usage: emptyUsage(),
@@ -12687,6 +12711,28 @@ function normalizeInboundChannelAdapter(
 function normalizeImportedThreadTitle(value: string): string {
   const normalized = value.replace(/\s+/g, " ").trim();
   return normalized ? normalized.slice(0, 100) : "Imported ledger";
+}
+
+function remapImportedEventPayload(
+  type: string,
+  payload: JsonValue,
+  idMap: ReadonlyMap<string, string>,
+): JsonValue {
+  const simulationOutput =
+    type === WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT &&
+    isRecord(payload) &&
+    Object.prototype.hasOwnProperty.call(payload, "output")
+      ? structuredClone(payload["output"])
+      : undefined;
+  const remapped = remapJsonValue(payload, idMap);
+  if (
+    simulationOutput !== undefined &&
+    isRecord(remapped) &&
+    Object.prototype.hasOwnProperty.call(remapped, "output")
+  ) {
+    remapped["output"] = simulationOutput;
+  }
+  return remapped;
 }
 
 function remapJsonValue(

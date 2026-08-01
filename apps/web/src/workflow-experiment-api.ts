@@ -75,6 +75,7 @@ export async function previewWorkflowExperiment(
       body.fromNodeId,
       body.mode ?? "subgraph",
     ) ||
+    !(await workflowExperimentSimulationMatchesRequest(preview, body)) ||
     canonicalJson(preview.modelOverrides) !==
       canonicalJson(body.modelOverrides ?? {})
   ) {
@@ -106,7 +107,14 @@ export async function executeWorkflowExperiment(
   const path = experimentPath(threadId, planId, false);
   if (
     body.expectedPreviewSha256 !== expectedPreview.previewSha256 ||
-    body.manifest.contentSha256 !== expectedPreview.sourceManifestSha256
+    body.manifest.contentSha256 !== expectedPreview.sourceManifestSha256 ||
+    !workflowExperimentPreviewMatchesMode(
+      expectedPreview,
+      body.manifest,
+      body.fromNodeId,
+      body.mode ?? "subgraph",
+    ) ||
+    !(await workflowExperimentSimulationMatchesRequest(expectedPreview, body))
   ) {
     throw new Error("Workflow experiment execution preview is stale");
   }
@@ -395,4 +403,21 @@ function recordType(input: unknown): string | undefined {
 
 function record(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === "object" && !Array.isArray(input);
+}
+
+async function workflowExperimentSimulationMatchesRequest(
+  preview: ExecutionPlanWorkflowExperimentPreview,
+  body: WorkflowExperimentWebRequest,
+): Promise<boolean> {
+  if (preview.schemaVersion !== 3) {
+    return body.simulatedOutput === undefined;
+  }
+  if (body.mode !== "simulate_node" || body.simulatedOutput === undefined) {
+    return false;
+  }
+  const encoded = canonicalJson(body.simulatedOutput);
+  return (
+    preview.simulatedOutputBytes === new TextEncoder().encode(encoded).length &&
+    preview.simulatedOutputSha256 === (await sha256Text(encoded))
+  );
 }

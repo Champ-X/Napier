@@ -203,6 +203,72 @@ describe("Napier TypeScript SDK Workflow experiments", () => {
     await client.close();
   });
 
+  it("simulates one typed checkpoint and executes its descendant", async () => {
+    const fixture = await createFixture("simulate-node");
+    const client = await createNapierClient({
+      ...fixture,
+      sandbox: new UnsupportedSandboxAdapter("sdk-experiment-simulate-node"),
+    });
+    const workflow = await client.defineWorkflow<
+      ExperimentRequest,
+      ExperimentResult
+    >(experimentWorkflowDefinition());
+    const source = await client.runWorkflow({
+      workflow,
+      input: { text: "Source SDK value" },
+    });
+    const simulatedOutput = { normalized: "Simulated SDK value" };
+    const preview = await client.previewWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "prepare",
+      mode: "simulate_node",
+      simulatedOutput,
+    });
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 3,
+        mode: "simulate_node",
+        executionNodeIds: ["deliver"],
+        simulatedNodeId: "prepare",
+      }),
+    );
+    const experiment = await client.runWorkflowExperiment({
+      workflow,
+      sourceThreadId: source.threadId,
+      sourcePlanId: source.planId,
+      fromNodeId: "prepare",
+      mode: "simulate_node",
+      simulatedOutput,
+      expectedPreviewSha256: preview.previewSha256,
+    });
+    expect(experiment.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: { message: "Simulated SDK value" },
+      }),
+    );
+    expect(experiment.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "prepare",
+        execution: "simulated",
+      }),
+    );
+    await client.close();
+
+    const store = await openStore(fixture);
+    expect(
+      store.listRuns(experiment.targetThreadId).map((run) => run.source),
+    ).toEqual(["workflow_simulation", "workflow"]);
+    expect(
+      (await store.listEvents(experiment.targetThreadId)).filter(
+        (event) => event.type === "workflow.node.simulated",
+      ),
+    ).toHaveLength(1);
+    store.close();
+  });
+
   it("recovers a cancelled target through normal Workflow resume", async () => {
     const fixture = await createFixture("recover");
     const client = await createNapierClient({

@@ -322,7 +322,17 @@ async function executeWorkflow(
           manifest,
           planId: options.planId,
           fromNodeId: options.fromNodeId,
-          ...(options.singleNode ? { mode: "single_node" as const } : {}),
+          ...(options.singleNode
+            ? { mode: "single_node" as const }
+            : options.simulateOutputJson !== undefined
+              ? {
+                  mode: "simulate_node" as const,
+                  simulatedOutput: parseJson(
+                    options.simulateOutputJson,
+                    "Workflow simulated output",
+                  ),
+                }
+              : {}),
           ...(options.title ? { title: options.title } : {}),
           ...(options.modelOverridesJson
             ? {

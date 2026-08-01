@@ -48,6 +48,10 @@ import {
   parseExecutionPlanWorkflowNodeOutput,
   workflowSchemaSha256,
 } from "./workflow-schemas.js";
+import {
+  WORKFLOW_NODE_SIMULATED_EVENT,
+  WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT,
+} from "./workflow-simulation-evidence.js";
 
 export const WORKFLOW_EVENT_SCHEMA_VERSION = 1;
 export const WORKFLOW_STARTED_EVENT = "workflow.started";
@@ -150,8 +154,15 @@ export class ExecutionPlanWorkflowLedger {
       .listRuns(context.threadId)
       .find((candidate) => candidate.id === runId);
     if (!run) throw new Error("Workflow node Run is missing");
-    if (run.source !== "workflow" && run.source !== "workflow_reuse") {
+    if (
+      run.source !== "workflow" &&
+      run.source !== "workflow_reuse" &&
+      run.source !== "workflow_simulation"
+    ) {
       throw new Error("Workflow node Run source is invalid");
+    }
+    if (run.source === "workflow_simulation") {
+      return this.nodeSimulationOutput(context, node, runId, inputSha256);
     }
     if (run.source === "workflow_reuse" || node.type === "agent") {
       return parseExecutionPlanWorkflowNodeOutput(
@@ -310,6 +321,72 @@ export class ExecutionPlanWorkflowLedger {
       throw new Error("Workflow tool output evidence hash mismatch");
     }
     return output;
+  }
+
+  private async nodeSimulationOutput(
+    context: WorkflowLedgerContext,
+    node: ExecutionPlanWorkflowNode,
+    runId: string,
+    inputSha256: string,
+  ): Promise<JsonValue> {
+    const events = await this.store.listEvents(context.threadId);
+    const requested = events.filter(
+      (event) =>
+        event.type === WORKFLOW_NODE_SIMULATION_REQUESTED_EVENT &&
+        event.visibility === "hidden" &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["planId"] === context.plan.id &&
+        event.payload["nodeId"] === node.id,
+    );
+    const simulated = events.filter(
+      (event) =>
+        event.runId === runId &&
+        event.type === WORKFLOW_NODE_SIMULATED_EVENT &&
+        event.visibility === "user" &&
+        isWorkflowRecord(event.payload) &&
+        event.payload["planId"] === context.plan.id &&
+        event.payload["nodeId"] === node.id,
+    );
+    const requestedPayload =
+      requested.length === 1 && isWorkflowRecord(requested[0]!.payload)
+        ? requested[0]!.payload
+        : undefined;
+    const simulatedPayload =
+      simulated.length === 1 && isWorkflowRecord(simulated[0]!.payload)
+        ? simulated[0]!.payload
+        : undefined;
+    const output = requestedPayload?.["output"];
+    if (
+      !requestedPayload ||
+      !simulatedPayload ||
+      requestedPayload["schemaVersion"] !== WORKFLOW_EVENT_SCHEMA_VERSION ||
+      simulatedPayload["schemaVersion"] !== WORKFLOW_EVENT_SCHEMA_VERSION ||
+      requestedPayload["manifestSha256"] !== context.manifest.contentSha256 ||
+      simulatedPayload["manifestSha256"] !== context.manifest.contentSha256 ||
+      simulatedPayload["inputSha256"] !== inputSha256 ||
+      requestedPayload["outputSha256"] !== simulatedPayload["outputSha256"] ||
+      requestedPayload["outputBytes"] !== simulatedPayload["outputBytes"] ||
+      requestedPayload["outputSchemaSha256"] !==
+        workflowSchemaSha256(node.outputSchema) ||
+      simulatedPayload["outputSchemaSha256"] !==
+        workflowSchemaSha256(node.outputSchema) ||
+      output === undefined
+    ) {
+      throw new Error("Workflow simulation output evidence is unavailable");
+    }
+    assertWorkflowValue(
+      node.outputSchema,
+      output,
+      `Workflow simulated output ${node.id}`,
+    );
+    const encoded = canonicalJson(output);
+    if (
+      sha256(encoded) !== requestedPayload["outputSha256"] ||
+      Buffer.byteLength(encoded, "utf8") !== requestedPayload["outputBytes"]
+    ) {
+      throw new Error("Workflow simulation output evidence hash mismatch");
+    }
+    return structuredClone(output);
   }
 
   async approvalDecision(

@@ -22,6 +22,7 @@ export type RunInvocationSource =
   | "channel"
   | "workflow"
   | "workflow_reuse"
+  | "workflow_simulation"
   | "model_experiment"
   | "tool_experiment";
 export type GoalStatus = "active" | "completed" | "blocked";
@@ -1456,7 +1457,10 @@ export interface ExecutionPlanWorkflowExperimentToolEffects {
   unknownToolNames: string[];
 }
 
-export type ExecutionPlanWorkflowExperimentMode = "subgraph" | "single_node";
+export type ExecutionPlanWorkflowExperimentMode =
+  | "subgraph"
+  | "single_node"
+  | "simulate_node";
 
 interface ExecutionPlanWorkflowExperimentPreviewBase {
   kind: "napier.execution-plan-workflow-experiment-preview";
@@ -1487,9 +1491,19 @@ export interface ExecutionPlanWorkflowExperimentPreviewV2 extends ExecutionPlanW
   stopBeforeNodeIds: string[];
 }
 
+export interface ExecutionPlanWorkflowExperimentPreviewV3 extends ExecutionPlanWorkflowExperimentPreviewBase {
+  schemaVersion: 3;
+  mode: "simulate_node";
+  executionNodeIds: string[];
+  simulatedNodeId: string;
+  simulatedOutputSha256: string;
+  simulatedOutputBytes: number;
+}
+
 export type ExecutionPlanWorkflowExperimentPreview =
   | ExecutionPlanWorkflowExperimentPreviewV1
-  | ExecutionPlanWorkflowExperimentPreviewV2;
+  | ExecutionPlanWorkflowExperimentPreviewV2
+  | ExecutionPlanWorkflowExperimentPreviewV3;
 
 export interface ExecutionPlanWorkflowExperimentMetricSet {
   runCount: number;
@@ -1545,7 +1559,7 @@ export interface ExecutionPlanWorkflowExperimentNodeObservation {
 
 export interface ExecutionPlanWorkflowExperimentNodeComparison {
   nodeId: string;
-  execution: "reused" | "rerun";
+  execution: "reused" | "rerun" | "simulated";
   source: ExecutionPlanWorkflowExperimentNodeObservation;
   target: ExecutionPlanWorkflowExperimentNodeObservation;
   statusChanged: boolean;
@@ -1592,6 +1606,7 @@ export interface CreateExecutionPlanWorkflowExperimentRequest {
   planId: string;
   fromNodeId: string;
   mode?: ExecutionPlanWorkflowExperimentMode;
+  simulatedOutput?: JsonValue;
   title?: string;
   modelOverrides?: Record<string, ModelRef>;
   confirmSideEffects?: boolean;

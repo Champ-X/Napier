@@ -1,7 +1,6 @@
 import type {
   CreateExecutionPlanWorkflowExperimentRequest,
   ExecutionPlan,
-  ExecutionPlanWorkflowExperimentPreview,
   ExecutionPlanWorkflowExperimentToolEffects,
   ExecutionPlanWorkflowManifest,
   JsonValue,
@@ -21,6 +20,10 @@ import { workflowLoopNodeConfigurationSha256 } from "./workflow-loop-model.js";
 import { workflowMapNodeConfigurationSha256 } from "./workflow-map-model.js";
 import { workflowReduceConfigurationSha256 } from "./workflow-reduce-model.js";
 import { projectWorkflowExperimentExecution } from "./workflow-experiment-mode.js";
+import {
+  createWorkflowExperimentPreview,
+  projectWorkflowExperimentSimulation,
+} from "./workflow-experiment-simulation.js";
 import { ExecutionPlanWorkflowLedger } from "./workflow-ledger.js";
 import {
   defineExecutionPlanWorkflow,
@@ -38,8 +41,9 @@ export interface ExecutionPlanWorkflowExperimentSource {
   sourceAgentId: string;
   sourceAgentRevision: number;
   candidateManifest: ExecutionPlanWorkflowManifest;
-  preview: ExecutionPlanWorkflowExperimentPreview;
+  preview: ReturnType<typeof createWorkflowExperimentPreview>;
   reusedNodes: WorkflowReusedNode[];
+  simulatedNodes: ReturnType<typeof projectWorkflowExperimentSimulation>;
 }
 
 export interface ExecutionPlanWorkflowSourceEvidence {
@@ -70,9 +74,10 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     request.fromNodeId,
     request.mode ?? "subgraph",
   );
-  const { rerunNodeIds, executionNodeIds, stopBeforeNodeIds } = execution;
+  const { rerunNodeIds, executionNodeIds } = execution;
   const rerunSet = new Set(rerunNodeIds);
   const executionSet = new Set(executionNodeIds);
+  const simulatedNodes = projectWorkflowExperimentSimulation(manifest, request);
   const reusedNodeIds = manifest.nodes
     .map((node) => node.id)
     .filter((nodeId) => !rerunSet.has(nodeId));
@@ -144,30 +149,19 @@ export async function projectExecutionPlanWorkflowExperimentSource(
     toolEffects,
     requiresSideEffectConfirmation,
   };
-  const previewContent =
-    execution.mode === "single_node"
-      ? {
-          ...previewBase,
-          schemaVersion: 2 as const,
-          mode: "single_node" as const,
-          executionNodeIds,
-          stopBeforeNodeIds,
-        }
-      : {
-          ...previewBase,
-          schemaVersion: 1 as const,
-        };
   return {
     sourcePlan,
     sourceInput: structuredClone(source.input),
     sourceAgentId: source.agentId,
     sourceAgentRevision: source.agentRevision,
     candidateManifest,
-    preview: {
-      ...previewContent,
-      previewSha256: sha256(canonicalJson(previewContent)),
-    },
+    preview: createWorkflowExperimentPreview({
+      base: previewBase,
+      execution,
+      simulatedNodes,
+    }),
     reusedNodes,
+    simulatedNodes,
   };
 }
 
@@ -277,7 +271,9 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
       throw new Error("Workflow experiment source Run is not completed");
     }
     if (
-      (run.source !== "workflow" && run.source !== "workflow_reuse") ||
+      (run.source !== "workflow" &&
+        run.source !== "workflow_reuse" &&
+        run.source !== "workflow_simulation") ||
       run.agentId !== start.agentId ||
       run.agentRevision !== start.agentRevision
     ) {
@@ -286,9 +282,11 @@ export async function projectExecutionPlanWorkflowSourceEvidence(
     const expectedModel =
       run.source === "workflow_reuse"
         ? { provider: "napier", id: "workflow-reuse" }
-        : node.type === "agent" || node.type === "map" || node.type === "loop"
-          ? (node.model ?? agent.model)
-          : agent.model;
+        : run.source === "workflow_simulation"
+          ? { provider: "napier", id: "workflow-simulation" }
+          : node.type === "agent" || node.type === "map" || node.type === "loop"
+            ? (node.model ?? agent.model)
+            : agent.model;
     if (
       !run.configuration ||
       run.configuration.model.provider !== expectedModel.provider ||

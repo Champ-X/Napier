@@ -371,7 +371,10 @@ describe("Execution Plan Workflow experiments", () => {
 
     const experiment = await fixture.experiments.run({
       sourceThreadId: fixture.sourceThreadId,
-      request,
+      request: {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+      },
     });
     expect(experiment.result).toEqual(
       expect.objectContaining({
@@ -512,15 +515,362 @@ describe("Execution Plan Workflow experiments", () => {
     reopened.close();
   });
 
+  it("simulates one checkpoint output and executes its descendants through the normal scheduler", async () => {
+    const fixture = await createFixture();
+    const sourceReportRunId = fixture.sourceResult.nodeResults[1]!.runId!;
+    for (const type of ["tool.started", "tool.completed"]) {
+      await fixture.store.appendEvent({
+        threadId: fixture.sourceThreadId,
+        runId: sourceReportRunId,
+        type,
+        category: "tool",
+        visibility: "user",
+        payload: {
+          callId: "call_simulation_descendant_write",
+          toolName: "apply_patch",
+          status: type === "tool.started" ? "started" : "completed",
+          effect: "write",
+        },
+      });
+    }
+    const sourceAgentId = fixture.store.getThread(
+      fixture.sourceThreadId,
+    ).agentId;
+    const simulatedOutput = {
+      summary: sourceAgentId,
+      count: 7,
+    };
+    const request = {
+      ...experimentRequest(fixture),
+      fromNodeId: "inspect",
+      mode: "simulate_node" as const,
+      simulatedOutput,
+    };
+    const preview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      request,
+    );
+    const encodedOutput = canonicalJson(simulatedOutput);
+    expect(preview).toEqual(
+      expect.objectContaining({
+        schemaVersion: 3,
+        mode: "simulate_node",
+        reusedNodeIds: [],
+        rerunNodeIds: ["inspect", "report"],
+        executionNodeIds: ["report"],
+        simulatedNodeId: "inspect",
+        simulatedOutputSha256: sha256(encodedOutput),
+        simulatedOutputBytes: Buffer.byteLength(encodedOutput, "utf8"),
+        requiresSideEffectConfirmation: true,
+        toolEffects: [
+          expect.objectContaining({
+            nodeId: "report",
+            toolCallCount: 1,
+            writeCount: 1,
+          }),
+        ],
+      }),
+    );
+    await expect(
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request,
+      }),
+    ).rejects.toThrow("preview changed");
+    await expect(
+      fixture.experiments.run({
+        sourceThreadId: fixture.sourceThreadId,
+        request: {
+          ...request,
+          expectedPreviewSha256: preview.previewSha256,
+        },
+      }),
+    ).rejects.toThrow("requires explicit confirmation");
+
+    fixture.primary.setResponses([
+      fauxAssistantMessage(
+        '{"report":"Report from simulated inspection","approved":true}',
+      ),
+    ]);
+    const experiment = await fixture.experiments.run({
+      sourceThreadId: fixture.sourceThreadId,
+      request: {
+        ...request,
+        expectedPreviewSha256: preview.previewSha256,
+        confirmSideEffects: true,
+      },
+    });
+    expect(experiment.result).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: {
+          report: "Report from simulated inspection",
+          approved: true,
+        },
+        nodeResults: [
+          expect.objectContaining({
+            nodeId: "inspect",
+            status: "completed",
+            output: simulatedOutput,
+          }),
+          expect.objectContaining({
+            nodeId: "report",
+            status: "completed",
+          }),
+        ],
+      }),
+    );
+    expect(
+      fixture.store.listRuns(experiment.targetThreadId).map((run) => ({
+        source: run.source,
+        model: run.configuration?.model,
+      })),
+    ).toEqual([
+      {
+        source: "workflow_simulation",
+        model: { provider: "napier", id: "workflow-simulation" },
+      },
+      {
+        source: "workflow",
+        model: { provider: "faux-workflow-primary", id: "faux-1" },
+      },
+    ]);
+    expect(experiment.comparison?.nodes[0]).toEqual(
+      expect.objectContaining({
+        nodeId: "inspect",
+        execution: "simulated",
+        target: expect.objectContaining({
+          runSources: ["workflow_simulation"],
+          toolNames: [],
+          metrics: expect.objectContaining({
+            modelResponseCount: 0,
+            toolCallCount: 0,
+          }),
+        }),
+      }),
+    );
+    const events = await fixture.store.listEvents(experiment.targetThreadId);
+    const requested = events.filter(
+      (event) => event.type === "workflow.node.simulation.requested",
+    );
+    const simulated = events.filter(
+      (event) => event.type === "workflow.node.simulated",
+    );
+    expect(requested).toEqual([
+      expect.objectContaining({
+        visibility: "hidden",
+        payload: expect.objectContaining({
+          output: simulatedOutput,
+          outputSha256: sha256(encodedOutput),
+        }),
+      }),
+    ]);
+    expect(simulated).toEqual([
+      expect.objectContaining({
+        visibility: "user",
+        payload: expect.not.objectContaining({ output: expect.anything() }),
+      }),
+    ]);
+    expect(
+      events.some(
+        (event) =>
+          event.runId === simulated[0]!.runId &&
+          event.type === "model.response",
+      ),
+    ).toBe(false);
+    const bundle = await exportThreadReplayBundle(
+      fixture.store,
+      experiment.targetThreadId,
+    );
+    expect(verifyThreadReplayBundle(bundle).status).toBe("valid");
+    const imported = await fixture.store.importThreadReplayBundle(bundle);
+    const importedRequest = (
+      await fixture.store.listEvents(imported.thread.id)
+    ).find((event) => event.type === "workflow.node.simulation.requested");
+    expect(record(importedRequest?.payload)?.["output"]).toEqual(
+      simulatedOutput,
+    );
+    const importedResult = await fixture.workflows.run({
+      threadId: imported.thread.id,
+      request: {
+        manifest: experiment.candidateManifest,
+        planId: imported.plans[0]!.id,
+      },
+    });
+    expect(importedResult.output).toEqual(experiment.result.output);
+
+    fixture.store.close();
+    const reopened = new LocalStore({
+      workspaceRoot: fixture.workspaceRoot,
+      dataRoot: fixture.dataRoot,
+    });
+    await reopened.initialize();
+    const models = new ModelRegistry();
+    models.registerProvider(fixture.primary.provider);
+    const workflows = new ExecutionPlanWorkflowRuntime(
+      reopened,
+      new AgentRuntime(reopened, models),
+    );
+    const resumed = await workflows.run({
+      threadId: experiment.targetThreadId,
+      request: {
+        manifest: experiment.candidateManifest,
+        planId: experiment.result.planId,
+      },
+    });
+    expect(resumed).toEqual(
+      expect.objectContaining({
+        status: "completed",
+        output: experiment.result.output,
+      }),
+    );
+    expect(reopened.listRuns(experiment.targetThreadId)).toHaveLength(2);
+    reopened.close();
+  });
+
+  it("fails invalid simulation, contains cancellation, and isolates concurrent targets", async () => {
+    const invalidFixture = await createFixture();
+    await expect(
+      invalidFixture.experiments.preview(invalidFixture.sourceThreadId, {
+        ...experimentRequest(invalidFixture),
+        fromNodeId: "inspect",
+        mode: "simulate_node",
+        simulatedOutput: {
+          summary: "Invalid count",
+          count: 99,
+        },
+      }),
+    ).rejects.toThrow("simulated output");
+    expect(invalidFixture.store.listThreads()).toHaveLength(2);
+    invalidFixture.store.close();
+
+    const cancelledFixture = await createFixture();
+    const cancelledRequest = {
+      ...experimentRequest(cancelledFixture),
+      fromNodeId: "inspect",
+      mode: "simulate_node" as const,
+      simulatedOutput: {
+        summary: "Cancel after simulation",
+        count: 3,
+      },
+    };
+    const cancelledPreview = await cancelledFixture.experiments.preview(
+      cancelledFixture.sourceThreadId,
+      cancelledRequest,
+    );
+    const controller = new AbortController();
+    const cancelled = await cancelledFixture.experiments.run({
+      sourceThreadId: cancelledFixture.sourceThreadId,
+      request: {
+        ...cancelledRequest,
+        expectedPreviewSha256: cancelledPreview.previewSha256,
+      },
+      signal: controller.signal,
+      onEvent: (event) => {
+        if (event.type === "workflow.node.simulated") controller.abort();
+      },
+    });
+    expect(cancelled.result.status).toBe("cancelled");
+    const cancelledEvents = await cancelledFixture.store.listEvents(
+      cancelled.targetThreadId,
+    );
+    expect(
+      cancelledEvents.some(
+        (event) =>
+          event.type === "workflow.node.started" &&
+          record(event.payload)?.["nodeId"] === "report",
+      ),
+    ).toBe(false);
+    cancelledFixture.store.close();
+
+    const concurrentFixture = await createFixture();
+    const concurrentRequest = {
+      ...experimentRequest(concurrentFixture),
+      fromNodeId: "report",
+      mode: "simulate_node" as const,
+      simulatedOutput: {
+        report: "Concurrent simulated report",
+        approved: true,
+      },
+    };
+    const concurrentPreview = await concurrentFixture.experiments.preview(
+      concurrentFixture.sourceThreadId,
+      concurrentRequest,
+    );
+    const [left, right] = await Promise.all([
+      concurrentFixture.experiments.run({
+        sourceThreadId: concurrentFixture.sourceThreadId,
+        request: {
+          ...concurrentRequest,
+          expectedPreviewSha256: concurrentPreview.previewSha256,
+        },
+      }),
+      concurrentFixture.experiments.run({
+        sourceThreadId: concurrentFixture.sourceThreadId,
+        request: {
+          ...concurrentRequest,
+          expectedPreviewSha256: concurrentPreview.previewSha256,
+        },
+      }),
+    ]);
+    expect(left.targetThreadId).not.toBe(right.targetThreadId);
+    for (const experiment of [left, right]) {
+      expect(experiment.result).toEqual(
+        expect.objectContaining({
+          status: "completed",
+          output: {
+            report: "Concurrent simulated report",
+            approved: true,
+          },
+        }),
+      );
+      expect(
+        concurrentFixture.store
+          .listRuns(experiment.targetThreadId)
+          .map((run) => run.source),
+      ).toEqual(["workflow_reuse", "workflow_simulation"]);
+    }
+
+    const duplicate = (
+      await concurrentFixture.store.listEvents(left.targetThreadId)
+    ).find((event) => event.type === "workflow.node.simulation.requested")!;
+    await concurrentFixture.store.appendEvent({
+      threadId: left.targetThreadId,
+      runId: "runctl_duplicate_simulation",
+      type: duplicate.type,
+      category: duplicate.category,
+      visibility: duplicate.visibility,
+      payload: structuredClone(duplicate.payload),
+    });
+    await expect(
+      concurrentFixture.workflows.run({
+        threadId: left.targetThreadId,
+        request: {
+          manifest: left.candidateManifest,
+          planId: left.result.planId,
+        },
+      }),
+    ).rejects.toThrow("recovery evidence");
+    concurrentFixture.store.close();
+  });
+
   it("contains single-node failure and cancellation before any descendant work", async () => {
     const failedFixture = await createFixture();
     failedFixture.primary.setResponses([fauxAssistantMessage("not json")]);
+    const failedRequest = {
+      ...experimentRequest(failedFixture),
+      fromNodeId: "inspect",
+      mode: "single_node" as const,
+    };
+    const failedPreview = await failedFixture.experiments.preview(
+      failedFixture.sourceThreadId,
+      failedRequest,
+    );
     const failed = await failedFixture.experiments.run({
       sourceThreadId: failedFixture.sourceThreadId,
       request: {
-        ...experimentRequest(failedFixture),
-        fromNodeId: "inspect",
-        mode: "single_node",
+        ...failedRequest,
+        expectedPreviewSha256: failedPreview.previewSha256,
       },
     });
     expect(failed.result).toEqual(
@@ -548,12 +898,20 @@ describe("Execution Plan Workflow experiments", () => {
       fauxAssistantMessage('{"summary":"Cancelled inspection","count":1}'),
     ]);
     const controller = new AbortController();
+    const cancelledRequest = {
+      ...experimentRequest(cancelledFixture),
+      fromNodeId: "inspect",
+      mode: "single_node" as const,
+    };
+    const cancelledPreview = await cancelledFixture.experiments.preview(
+      cancelledFixture.sourceThreadId,
+      cancelledRequest,
+    );
     const cancelled = await cancelledFixture.experiments.run({
       sourceThreadId: cancelledFixture.sourceThreadId,
       request: {
-        ...experimentRequest(cancelledFixture),
-        fromNodeId: "inspect",
-        mode: "single_node",
+        ...cancelledRequest,
+        expectedPreviewSha256: cancelledPreview.previewSha256,
       },
       signal: controller.signal,
       onEvent: (event) => {
@@ -591,14 +949,22 @@ describe("Execution Plan Workflow experiments", () => {
       fromNodeId: "inspect",
       mode: "single_node" as const,
     };
+    const preview = await fixture.experiments.preview(
+      fixture.sourceThreadId,
+      request,
+    );
+    const boundRequest = {
+      ...request,
+      expectedPreviewSha256: preview.previewSha256,
+    };
     const [left, right] = await Promise.all([
       fixture.experiments.run({
         sourceThreadId: fixture.sourceThreadId,
-        request,
+        request: boundRequest,
       }),
       fixture.experiments.run({
         sourceThreadId: fixture.sourceThreadId,
-        request,
+        request: boundRequest,
       }),
     ]);
     expect(left.targetThreadId).not.toBe(right.targetThreadId);

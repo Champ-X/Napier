@@ -45,16 +45,23 @@ export function WorkflowExperimentPreviewDocket({
             <dt>{copy.rerun}</dt>
             <dd>{preview.rerunNodeIds.length}</dd>
           </div>
-          {preview.schemaVersion === 2 ? (
+          {preview.schemaVersion !== 1 ? (
             <>
               <div>
                 <dt>{copy.executeNow}</dt>
                 <dd>{preview.executionNodeIds.length}</dd>
               </div>
-              <div>
-                <dt>{copy.stopBefore}</dt>
-                <dd>{preview.stopBeforeNodeIds.length}</dd>
-              </div>
+              {preview.schemaVersion === 2 ? (
+                <div>
+                  <dt>{copy.stopBefore}</dt>
+                  <dd>{preview.stopBeforeNodeIds.length}</dd>
+                </div>
+              ) : (
+                <div>
+                  <dt>{copy.simulated}</dt>
+                  <dd>1</dd>
+                </div>
+              )}
             </>
           ) : null}
         </dl>
@@ -69,6 +76,15 @@ export function WorkflowExperimentPreviewDocket({
           {copy.candidateManifest}
           <code>{preview.candidateManifestSha256.slice(0, 12)}</code>
         </span>
+        {preview.schemaVersion === 3 ? (
+          <span>
+            {copy.simulatedOutput}
+            <code>
+              {preview.simulatedOutputSha256.slice(0, 12)} /{" "}
+              {preview.simulatedOutputBytes} {copy.bytes}
+            </code>
+          </span>
+        ) : null}
       </div>
 
       {totalEffects > 0 ? (

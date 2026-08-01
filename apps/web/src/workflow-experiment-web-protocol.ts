@@ -5,6 +5,11 @@ import { validateWorkflowExperimentPreview } from "./workflow-experiment-preview
 import { validateWorkflowManifest } from "./workflow-experiment-view-model";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
+const WORKFLOW_RUN_SOURCES = new Set([
+  "workflow",
+  "workflow_reuse",
+  "workflow_simulation",
+]);
 
 export { validateWorkflowExperimentPreview } from "./workflow-experiment-preview-web-protocol";
 
@@ -202,7 +207,9 @@ function validComparisonNode(input: unknown): boolean {
   }
   return (
     typeof input["nodeId"] === "string" &&
-    (input["execution"] === "reused" || input["execution"] === "rerun") &&
+    (input["execution"] === "reused" ||
+      input["execution"] === "rerun" ||
+      input["execution"] === "simulated") &&
     typeof input["statusChanged"] === "boolean" &&
     typeof input["modelChanged"] === "boolean" &&
     typeof input["configurationChanged"] === "boolean" &&
@@ -221,6 +228,7 @@ function validObservation(input: Record<string, unknown>): boolean {
     planStepStatus(input["status"]) &&
     stringArray(input["runIds"], 10) &&
     stringArray(input["runSources"], 10) &&
+    input["runSources"].every((source) => WORKFLOW_RUN_SOURCES.has(source)) &&
     modelArray(input["models"], 10) &&
     stringArray(input["configurationSha256s"], 10) &&
     stringArray(input["toolNames"], 128) &&

@@ -6,6 +6,43 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added typed output simulation to controlled Workflow checkpoint experiments.
+  `mode=simulate_node` emits a backward-compatible schema-3 preview that binds
+  the complete non-reusable subgraph, descendant-only execution set, selected
+  simulation node, and canonical output hash/bytes separately. The explicit
+  JSON value is limited to 32 KiB and must satisfy the selected node output
+  Schema. Execution requires the exact current preview, reuses verified
+  ancestors, materializes one package-capability-gated
+  `workflow_simulation` Run with zero model or Tool calls, and hands every
+  descendant to the ordinary Workflow scheduler. Historical write/unknown
+  effects on those descendants still require explicit confirmation.
+  SQLite reopen recovers the value from unique hidden
+  `workflow.node.simulation.requested` evidence; the public
+  `workflow.node.simulated` event and Web Trace retain only safe IDs, hashes,
+  and bytes. Portable full-Thread fixtures intentionally carry the hidden
+  recovery event. Missing, duplicate, stale, forged, or direct-Store evidence
+  fails closed, and generic Run retry cannot take over simulation
+  materialization. Per-node comparison now labels the selected checkpoint
+  `simulated`, while `rerunNodeCount` retains its complete-subgraph meaning.
+  CLI JSONL, HTTP SSE, TypeScript SDK, local stdio RPC, the lazy Plan Workbench
+  desk, strict browser validation, and privacy-bounded Trace share the same
+  Runtime. Real tests cover Schema denial, exact-preview freshness,
+  descendant side-effect confirmation, success, cancellation, SQLite recovery,
+  concurrent isolation, duplicate evidence, Store bypass, and portable Replay.
+  Production-browser dogfood simulated `prepare` in a deterministic
+  `prepare -> deliver` Workflow, executed only `deliver`, produced
+  `DOGFOOD_SIMULATED_VALUE`, observed the exact
+  `workflow_simulation -> workflow` Run-source sequence and 21-event Ledger,
+  and reported zero console or page errors. This does not claim arbitrary
+  Workflow input replacement, write/session side-effect simulation, or
+  stateful Session checkpoints. The complete gate passes 1,578 regular tests
+  with 27 opt-in live tests skipped, 253 OpenAPI routes, and 244/244
+  compatibility operations. Product performance remains within budget at
+  591.8 ms to first CLI event, 751.7 ms to first token, 1,060.7 ms to
+  completion, 0.3 ms read p95, and 7.1 ms for a 1,000-event projection. The
+  34.38 kB lazy experiment desk keeps the 90-file Web dist main entry at
+  130.24 KiB, bound to `e35590e26b49028a`, with release set
+  `43fdac31019ef1ef`.
 - Added real single-node checkpoint tests to controlled Workflow experiments.
   The compatible default continues to emit schema-1 previews and rerun the
   selected descendant subgraph. `mode=single_node` emits schema 2 and binds the

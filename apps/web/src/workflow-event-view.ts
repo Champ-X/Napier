@@ -10,6 +10,7 @@ const WORKFLOW_EVENTS = new Set([
   "workflow.node.skipped",
   "workflow.node.failed",
   "workflow.node.reused",
+  "workflow.node.simulated",
   "workflow.approval.requested",
   "workflow.deterministic.completed",
   "workflow.reduce.completed",
@@ -56,6 +57,13 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
     const executionMode = payload["executionMode"];
     const executionNodeIds = nodeIds(payload["executionNodeIds"]);
     const stopBeforeNodeIds = nodeIds(payload["stopBeforeNodeIds"]);
+    const simulationNodeId = nodeId(payload["simulationNodeId"]);
+    const simulatedOutputSha256 = hash(payload["simulatedOutputSha256"]);
+    const simulatedOutputBytes = boundedInteger(
+      payload["simulatedOutputBytes"],
+      1,
+      32 * 1024,
+    );
     const previewSha256 = hash(payload["previewSha256"]);
     if (
       !fromNodeId ||
@@ -63,14 +71,29 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       !rerunNodeIds ||
       !previewSha256 ||
       typeof payload["sideEffectsConfirmed"] !== "boolean" ||
-      (executionMode !== undefined && executionMode !== "single_node") ||
+      (executionMode !== undefined &&
+        executionMode !== "single_node" &&
+        executionMode !== "simulate_node") ||
       (executionMode === "single_node"
         ? !executionNodeIds ||
           !stopBeforeNodeIds ||
           executionNodeIds.length !== 1 ||
           executionNodeIds[0] !== fromNodeId ||
-          stopBeforeNodeIds.length > 16
-        : executionNodeIds !== undefined || stopBeforeNodeIds !== undefined)
+          stopBeforeNodeIds.length > 16 ||
+          simulationNodeId !== undefined ||
+          simulatedOutputSha256 !== undefined ||
+          simulatedOutputBytes !== undefined
+        : executionMode === "simulate_node"
+          ? !executionNodeIds ||
+            stopBeforeNodeIds !== undefined ||
+            simulationNodeId !== fromNodeId ||
+            !simulatedOutputSha256 ||
+            simulatedOutputBytes === undefined
+          : executionNodeIds !== undefined ||
+            stopBeforeNodeIds !== undefined ||
+            simulationNodeId !== undefined ||
+            simulatedOutputSha256 !== undefined ||
+            simulatedOutputBytes !== undefined)
     ) {
       return undefined;
     }
@@ -84,7 +107,15 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
             `execute ${String(executionNodeIds!.length)}`,
             `stop-before ${String(stopBeforeNodeIds!.length)}`,
           ]
-        : []),
+        : executionMode === "simulate_node"
+          ? [
+              "mode simulate-node",
+              `execute ${String(executionNodeIds!.length)}`,
+              `simulated ${simulationNodeId}`,
+              `simulation ${simulatedOutputSha256!.slice(0, 12)}`,
+              `bytes ${String(simulatedOutputBytes)}`,
+            ]
+          : []),
       `preview ${previewSha256.slice(0, 12)}`,
       payload["sideEffectsConfirmed"] ? "side-effects confirmed" : "read-only",
     );
@@ -112,6 +143,28 @@ export function workflowEventTraceSummary(event: RunEvent): string | undefined {
       `source-attempt ${String(sourceAttempt)}`,
       `input ${inputSha256.slice(0, 12)}`,
       `output ${outputSha256.slice(0, 12)}`,
+    );
+  } else if (event.type === "workflow.node.simulated") {
+    const nodeIdValue = nodeId(payload["nodeId"]);
+    const inputSha256 = hash(payload["inputSha256"]);
+    const outputSha256 = hash(payload["outputSha256"]);
+    const outputSchemaSha256 = hash(payload["outputSchemaSha256"]);
+    const outputBytes = boundedInteger(payload["outputBytes"], 1, 32 * 1024);
+    if (
+      !nodeIdValue ||
+      !inputSha256 ||
+      !outputSha256 ||
+      !outputSchemaSha256 ||
+      outputBytes === undefined
+    ) {
+      return undefined;
+    }
+    parts.push(
+      `node ${nodeIdValue}`,
+      `input ${inputSha256.slice(0, 12)}`,
+      `output ${outputSha256.slice(0, 12)}`,
+      `bytes ${String(outputBytes)}`,
+      `output-schema ${outputSchemaSha256.slice(0, 12)}`,
     );
   } else if (event.type === "workflow.experiment.compared") {
     const comparisonSha256 = hash(payload["comparisonSha256"]);

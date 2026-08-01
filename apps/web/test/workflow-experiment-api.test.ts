@@ -92,6 +92,62 @@ describe("Workflow experiment Web API", () => {
     ).rejects.toThrow("preview binding");
   });
 
+  it("binds a schema-v3 preview to the exact simulated output", async () => {
+    const fixture = experimentFixture();
+    const simulatedOutput = { report: "Browser simulation" };
+    const {
+      schemaVersion: _schemaVersion,
+      previewSha256: _previewSha256,
+      toolEffects: _toolEffects,
+      ...previewBase
+    } = fixture.preview;
+    const encoded = canonicalJson(simulatedOutput);
+    const content = {
+      ...previewBase,
+      schemaVersion: 3 as const,
+      mode: "simulate_node" as const,
+      executionNodeIds: [],
+      simulatedNodeId: "report",
+      simulatedOutputSha256: sha256(encoded),
+      simulatedOutputBytes: new TextEncoder().encode(encoded).length,
+      toolEffects: [],
+    };
+    const preview = {
+      ...content,
+      previewSha256: sha256(canonicalJson(content)),
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse(preview, {
+          headers: {
+            "Cache-Control": "no-store",
+            "X-Napier-Content-SHA256": preview.previewSha256,
+            "X-Napier-Content-SHA256-Mode": "stable",
+            "X-Napier-Workflow-Experiment-Preview-SHA256":
+              preview.previewSha256,
+          },
+        }),
+      ),
+    );
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        fromNodeId: "report",
+        mode: "simulate_node",
+        simulatedOutput,
+      }),
+    ).resolves.toEqual(preview);
+    await expect(
+      previewWorkflowExperiment(fixture.sourceThreadId, fixture.sourcePlanId, {
+        manifest: fixture.manifest,
+        fromNodeId: "report",
+        mode: "simulate_node",
+        simulatedOutput: { report: "Rehashed substitution" },
+      }),
+    ).rejects.toThrow("preview binding");
+  });
+
   it("accepts a snapshot-bound experiment result and exposes progress frames", async () => {
     const fixture = experimentFixture();
     const frames: unknown[] = [];

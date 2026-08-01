@@ -29,11 +29,27 @@ describe("Workflow experiment execution mode", () => {
       stopBeforeNodeIds: ["left", "right"],
     });
     expect(
+      projectWorkflowExperimentExecution(manifest, "prepare", "simulate_node"),
+    ).toEqual({
+      mode: "simulate_node",
+      rerunNodeIds: ["prepare", "left", "right", "join"],
+      executionNodeIds: ["left", "right", "join"],
+      stopBeforeNodeIds: [],
+    });
+    expect(
       projectWorkflowExperimentExecution(manifest, "join", "single_node"),
     ).toEqual({
       mode: "single_node",
       rerunNodeIds: ["join"],
       executionNodeIds: ["join"],
+      stopBeforeNodeIds: [],
+    });
+    expect(
+      projectWorkflowExperimentExecution(manifest, "join", "simulate_node"),
+    ).toEqual({
+      mode: "simulate_node",
+      rerunNodeIds: ["join"],
+      executionNodeIds: [],
       stopBeforeNodeIds: [],
     });
   });

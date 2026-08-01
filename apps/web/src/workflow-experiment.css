@@ -129,10 +129,10 @@
   min-width: 0;
 }
 
-.workflow-experiment-controls select {
+.workflow-experiment-controls select,
+.workflow-experiment-controls textarea {
   width: 100%;
   min-width: 0;
-  height: 31px;
   padding: 5px 7px;
   overflow: hidden;
   font-family: var(--mono);
@@ -144,7 +144,18 @@
   border-radius: 2px;
 }
 
+.workflow-experiment-controls select {
+  height: 31px;
+}
+
+.workflow-experiment-controls textarea {
+  min-height: 72px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
 .workflow-experiment-controls select:focus-visible,
+.workflow-experiment-controls textarea:focus-visible,
 .workflow-experiment-model:has(input:focus-visible),
 .workflow-experiment-file:has(input:focus-visible) {
   border-color: var(--ledger);

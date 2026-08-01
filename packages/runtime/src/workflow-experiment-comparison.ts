@@ -89,7 +89,12 @@ export async function createExecutionPlanWorkflowExperimentComparison(
       ]);
       return compareNode(
         sourceNode.id,
-        rerun.has(sourceNode.id) ? "rerun" : "reused",
+        options.preview.schemaVersion === 3 &&
+          sourceNode.id === options.preview.simulatedNodeId
+          ? "simulated"
+          : rerun.has(sourceNode.id)
+            ? "rerun"
+            : "reused",
         sourceNode.type === "agent" ||
           sourceNode.type === "map" ||
           sourceNode.type === "loop"
@@ -160,9 +165,9 @@ export async function createExecutionPlanWorkflowExperimentComparison(
     targetEvaluations: evaluationSummary(targetEvaluations, targetRunIds),
     sourceArtifacts: artifactSummary(options.sourcePlan),
     targetArtifacts: artifactSummary(options.targetPlan),
-    changedNodeIds: nodes
-      .filter(workflowExperimentNodeChanged)
-      .map((node) => node.nodeId),
+    changedNodeIds: canonicalWorkflowExperimentStrings(
+      nodes.filter(workflowExperimentNodeChanged).map((node) => node.nodeId),
+    ),
     nodes,
   };
   assertComparisonPlanBindings(options);
@@ -241,7 +246,11 @@ async function observeNode(
   if (
     runIds.some((runId) => {
       const source = runById.get(runId)?.source;
-      return source !== "workflow" && source !== "workflow_reuse";
+      return (
+        source !== "workflow" &&
+        source !== "workflow_reuse" &&
+        source !== "workflow_simulation"
+      );
     })
   ) {
     throw new Error("Workflow experiment comparison Run source is invalid");
@@ -381,7 +390,7 @@ function groupEventsByRun(events: RunEvent[]): Map<string, RunEvent[]> {
 
 function compareNode(
   nodeId: string,
-  execution: "reused" | "rerun",
+  execution: ExecutionPlanWorkflowExperimentNodeComparison["execution"],
   sourceModel: ModelRef | undefined,
   targetModel: ModelRef | undefined,
   source: ExecutionPlanWorkflowExperimentNodeObservation,
