@@ -6,6 +6,45 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added preview-bound operator rollback for changed scoped Workspace Process
+  Sessions. Schema-v6 starts capture only approved pre-execution scopes in a
+  private local recovery directory before sandbox launch and bind aggregate
+  counts plus a manifest hash to Process evidence. Rollback requires a fresh
+  five-minute one-use preview, the exact settled-after workspace digest, the
+  existing cross-Manager write lock, and content plus recursive POSIX mode-set
+  verification. Multi-scope same-parent staging reverses earlier commits if a
+  later swap or verification fails. Hash-only
+  `workspace.process.rollback_started` intent is durable before the first file
+  mutation; a matching `rolled_back` result records `restored`, `reverted`, or
+  `indeterminate`. Intent failure causes zero file changes, while a missing
+  outcome, indeterminate result, backup drift, workspace drift, cancellation,
+  or concurrent writer fails closed and blocks unsafe retry across restart.
+  HTTP and the lazy Processes panel provide operator-only review/apply; the
+  Agent tool, ordinary read-only Processes, old schema receipts, and Replay
+  gain no write capability. Trace and portable evidence contain only status,
+  counts, and hashes, never paths, backup bytes, command source, symlink
+  targets, or raw errors. Process launch, recovery files/manifests/evidence,
+  preview storage, Ledger append, and the complete Server Process router now
+  live in focused modules; `workspace-processes.ts` falls from 960 to 940
+  lines and `apps/server/src/app.ts` shrinks by moving Process HTTP routing out.
+  Focused tests cover success, one-use/stale previews, cancellation,
+  concurrency, restart, manifest and permission tampering, two-scope reverse
+  recovery, partial staging cleanup, restrictive directory modes, fsync
+  failure, recovery-directory symlinks, strict protocol fields, intent/outcome
+  Ledger failure, HTTP/Web projection, Replay, and privacy. The opt-in real
+  OS-sandbox scoped-write smoke now completes through physical rollback.
+  Production Web dogfood reopened a recoverable Process
+  after Runtime restart, restored one file and empty directory, removed an
+  added file/directory/symlink, preserved outside state, refreshed Process and
+  Thread/Trace projections without page reload, returned 409 to repeat
+  preview, exposed no private path/body/output text, and produced zero browser
+  console errors with all seven captured UI requests returning 200. The
+  complete gate passes 1,613 regular tests with 28 opt-in live tests skipped,
+  255 OpenAPI routes, 244/244 compatibility operations, and the product
+  performance budget at 831.5 ms to first CLI event, 975.8 ms to first token,
+  1,269.0 ms to completion, 0.8 ms read p95, and 7.4 ms for a 1,000-event
+  projection. The 92-file Web dist main entry is 130.32 KiB, bound to
+  `7c337ed0d99253d0`; the release set is bound to `cd8b30fe99cb9833`.
 - Added preview-bound scoped writes to managed Workspace Process Sessions.
   Ordinary `start` remains read-only; `preview_write` binds exact argv,
   executable, environment, limits, cwd, Thread, Run, a complete workspace

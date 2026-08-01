@@ -2,6 +2,8 @@ import type {
   JsonValue,
   RunEvent,
   WorkspaceProcessInputReceipt,
+  WorkspaceProcessRollbackAttempt,
+  WorkspaceProcessRollbackResult,
   WorkspaceProcessSession,
   WorkspaceProcessStatus,
 } from "@napier/contracts";
@@ -13,6 +15,15 @@ import {
   validWorkspaceProcessTerminalFields,
   WORKSPACE_PROCESS_TERMINAL_FIELDS,
 } from "./workspace-process-resize-events.js";
+import { projectWorkspaceProcessRollbackHistory } from "./workspace-process-rollback-events.js";
+export {
+  parseWorkspaceProcessRollbackAttempt,
+  parseWorkspaceProcessRollbackResult,
+  WORKSPACE_PROCESS_ROLLBACK_STARTED_EVENT,
+  WORKSPACE_PROCESS_ROLLED_BACK_EVENT,
+  workspaceProcessRollbackAttemptPayload,
+  workspaceProcessRollbackResultPayload,
+} from "./workspace-process-rollback-events.js";
 
 export const WORKSPACE_PROCESS_STARTED_EVENT = "workspace.process.started";
 export const WORKSPACE_PROCESS_INPUT_EVENT = "workspace.process.input";
@@ -41,8 +52,9 @@ export type WorkspaceProcessSessionInput = Omit<
   | "schemaVersion"
   | "outputAvailable"
   | "workspaceDeltaAvailable"
+  | "workspaceRollbackAvailable"
   | "contentSha256"
-> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 };
+> & { schemaVersion?: 1 | 2 | 3 | 4 | 5 | 6 };
 
 export function createWorkspaceProcessSession(
   input: WorkspaceProcessSessionInput,
@@ -60,6 +72,7 @@ export function createWorkspaceProcessSession(
     ...base,
     schemaVersion,
     ...(schemaVersion >= 2 ? { workspaceDeltaAvailable: false } : {}),
+    ...(schemaVersion >= 6 ? { workspaceRollbackAvailable: false } : {}),
   };
   return {
     ...content,
@@ -82,6 +95,7 @@ export function workspaceProcessStableSessionInput(
   | "status"
   | "outputAvailable"
   | "workspaceDeltaAvailable"
+  | "workspaceRollbackAvailable"
   | "contentSha256"
 > {
   const {
@@ -90,6 +104,7 @@ export function workspaceProcessStableSessionInput(
     status: _status,
     outputAvailable: _outputAvailable,
     workspaceDeltaAvailable: _workspaceDeltaAvailable,
+    workspaceRollbackAvailable: _workspaceRollbackAvailable,
     contentSha256: _contentSha256,
     ...input
   } = session;
@@ -198,6 +213,24 @@ export function projectWorkspaceProcessSessions(
   );
 }
 
+export function projectWorkspaceProcessRollbackResults(
+  events: RunEvent[],
+): WorkspaceProcessRollbackResult[] {
+  return projectWorkspaceProcessRollbackHistory(
+    events,
+    parseWorkspaceProcessSession,
+  ).results;
+}
+
+export function projectWorkspaceProcessRollbackAttempts(
+  events: RunEvent[],
+): WorkspaceProcessRollbackAttempt[] {
+  return projectWorkspaceProcessRollbackHistory(
+    events,
+    parseWorkspaceProcessSession,
+  ).attempts;
+}
+
 export function parseWorkspaceProcessInputReceipt(
   value: unknown,
 ): WorkspaceProcessInputReceipt | undefined {
@@ -242,6 +275,7 @@ export function workspaceProcessSessionWithRuntimeState(
     nextCursor: number;
     outputAvailable: boolean;
     workspaceDeltaAvailable: boolean;
+    workspaceRollbackAvailable?: boolean;
     stdinOpen?: boolean;
   },
 ): WorkspaceProcessSession {
@@ -250,6 +284,9 @@ export function workspaceProcessSessionWithRuntimeState(
     nextCursor: runtime.nextCursor,
     outputAvailable: runtime.outputAvailable,
     workspaceDeltaAvailable: runtime.workspaceDeltaAvailable,
+    ...(runtime.workspaceRollbackAvailable !== undefined
+      ? { workspaceRollbackAvailable: runtime.workspaceRollbackAvailable }
+      : {}),
     ...(runtime.stdinOpen !== undefined
       ? { stdinOpen: runtime.stdinOpen }
       : {}),
@@ -271,7 +308,8 @@ function parseWorkspaceProcessSession(
       value["schemaVersion"] !== 2 &&
       value["schemaVersion"] !== 3 &&
       value["schemaVersion"] !== 4 &&
-      value["schemaVersion"] !== 5) ||
+      value["schemaVersion"] !== 5 &&
+      value["schemaVersion"] !== 6) ||
     typeof status !== "string" ||
     !STATUSES.has(status as WorkspaceProcessStatus) ||
     typeof value["id"] !== "string" ||
@@ -327,11 +365,20 @@ function parseWorkspaceProcessSession(
     "writeScopeSetSha256",
     "workspaceWriteScopeStatus",
   ] as const;
+  const recoveryFields = [
+    "recoverySnapshotSha256",
+    "recoveryScopeCount",
+    "recoveryFileCount",
+    "recoveryDirectoryCount",
+    "recoveryBytes",
+    "workspaceRollbackAvailable",
+  ] as const;
   if (value["schemaVersion"] === 1) {
     if (
       workspaceFields.some((field) => value[field] !== undefined) ||
       stdinFields.some((field) => value[field] !== undefined) ||
       writeFields.some((field) => value[field] !== undefined) ||
+      recoveryFields.some((field) => value[field] !== undefined) ||
       WORKSPACE_PROCESS_TERMINAL_FIELDS.some(
         (field) => value[field] !== undefined,
       )
@@ -389,8 +436,9 @@ function parseWorkspaceProcessSession(
   if (
     (value["schemaVersion"] < 5 &&
       (value["workspaceAccess"] !== "read_only" ||
-        writeFields.some((field) => value[field] !== undefined))) ||
-    (value["schemaVersion"] === 5 &&
+        writeFields.some((field) => value[field] !== undefined) ||
+        recoveryFields.some((field) => value[field] !== undefined))) ||
+    (value["schemaVersion"] >= 5 &&
       (value["workspaceAccess"] !== "scoped_write" ||
         !hash(value["writePreviewSha256"]) ||
         !boundedInteger(value["writeScopeCount"], 1, 8) ||
@@ -401,6 +449,22 @@ function parseWorkspaceProcessSession(
             value["workspaceWriteScopeStatus"] !== "within_scope" &&
             value["workspaceWriteScopeStatus"] !== "outside_scope" &&
             value["workspaceWriteScopeStatus"] !== "indeterminate")))
+  ) {
+    return undefined;
+  }
+  if (
+    (value["schemaVersion"] === 5 &&
+      recoveryFields.some((field) => value[field] !== undefined)) ||
+    (value["schemaVersion"] === 6 &&
+      (!hash(value["recoverySnapshotSha256"]) ||
+        !boundedInteger(value["recoveryScopeCount"], 1, 8) ||
+        !boundedInteger(value["recoveryFileCount"], 0, 10_000) ||
+        !boundedInteger(value["recoveryDirectoryCount"], 0, 10_000) ||
+        Number(value["recoveryFileCount"]) +
+          Number(value["recoveryDirectoryCount"]) >
+          10_000 ||
+        !boundedInteger(value["recoveryBytes"], 0, 64 * 1024 * 1024) ||
+        value["workspaceRollbackAvailable"] !== false))
   ) {
     return undefined;
   }
@@ -457,7 +521,7 @@ function parseWorkspaceProcessSession(
     return undefined;
   }
   if (
-    value["schemaVersion"] === 5 &&
+    value["schemaVersion"] >= 5 &&
     status !== "running" &&
     status !== "interrupted" &&
     value["workspaceWriteScopeStatus"] === undefined

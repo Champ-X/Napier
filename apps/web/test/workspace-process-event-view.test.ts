@@ -142,4 +142,65 @@ describe("Workspace Process event view", () => {
     expect(summary).toContain("scope-status within_scope");
     expect(summary).not.toContain("PRIVATE_WRITE_SCOPE");
   });
+
+  it("summarizes rollback evidence without recovery paths or error text", () => {
+    const attempt: RunEvent = {
+      id: "event_1234567890abcdef1200",
+      threadId: "thread_1234567890abcdef1234",
+      runId: "run_1234567890abcdef1234",
+      seq: 5,
+      type: "workspace.process.rollback_started",
+      category: "tool",
+      visibility: "user",
+      createdAt: "2026-08-01T00:00:00.000Z",
+      payload: {
+        processId: "process_1234567890abcdef1234",
+        scopeCount: 2,
+        fileCount: 3,
+        directoryCount: 4,
+        bytes: 25,
+        previewSha256: "d".repeat(64),
+        recoverySnapshotSha256: "a".repeat(64),
+        expectedWorkspaceSha256: "b".repeat(64),
+        rawPaths: ["PRIVATE_RECOVERY_PATH"],
+      },
+    };
+    expect(workspaceProcessEventTraceSummary(attempt)).toBe(
+      `process / rollback-started / id abcdef1234 / scopes 2 / files 3 / directories 4 / bytes 25 / preview ${"d".repeat(12)} / recovery ${"a".repeat(12)} / expected ${"b".repeat(12)}`,
+    );
+    const event: RunEvent = {
+      id: "event_1234567890abcdef1234",
+      threadId: "thread_1234567890abcdef1234",
+      runId: "run_1234567890abcdef1234",
+      seq: 6,
+      type: "workspace.process.rolled_back",
+      category: "tool",
+      visibility: "user",
+      createdAt: "2026-08-01T00:00:00.000Z",
+      payload: {
+        processId: "process_1234567890abcdef1234",
+        status: "restored",
+        initiatedBy: "operator",
+        scopeCount: 2,
+        restoredScopeCount: 2,
+        fileCount: 3,
+        directoryCount: 4,
+        bytes: 25,
+        durable: true,
+        rollbackVerified: true,
+        cancellationObserved: false,
+        recoverySnapshotSha256: "a".repeat(64),
+        expectedWorkspaceSha256: "b".repeat(64),
+        observedWorkspaceSha256: "c".repeat(64),
+        rawPaths: ["PRIVATE_RECOVERY_PATH"],
+        rawError: "TOP_SECRET_RECOVERY_ERROR",
+      },
+    };
+    const summary = workspaceProcessEventTraceSummary(event);
+    expect(summary).toBe(
+      `process / rolled-back / id abcdef1234 / status restored / scopes 2 / restored-scopes 2 / files 3 / directories 4 / bytes 25 / durable / rollback-verified / recovery ${"a".repeat(12)} / expected ${"b".repeat(12)} / observed ${"c".repeat(12)}`,
+    );
+    expect(summary).not.toContain("PRIVATE_RECOVERY_PATH");
+    expect(summary).not.toContain("TOP_SECRET");
+  });
 });

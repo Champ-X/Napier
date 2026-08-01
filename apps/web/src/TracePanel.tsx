@@ -1069,7 +1069,7 @@ function eventIcon(category: RunEvent["category"]): ReactNode {
 
 function eventLabel(type: string): string {
   return type
-    .split(".")
+    .split(/[._]/u)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }

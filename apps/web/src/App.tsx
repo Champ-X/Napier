@@ -474,7 +474,10 @@ export function App() {
                 </div>
               }
             >
-              <LazyProcessPanel threadId={vm.detail.thread.id} />
+              <LazyProcessPanel
+                threadId={vm.detail.thread.id}
+                onThreadChanged={vm.refreshActiveThread}
+              />
             </Suspense>
           ) : null}
           {vm.inspectorTab === "files" && vm.detail ? (

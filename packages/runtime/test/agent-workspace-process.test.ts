@@ -281,7 +281,7 @@ describe("Agent Workspace Process integration", () => {
     const [session] = await processes.list(thread.id);
     expect(session).toEqual(
       expect.objectContaining({
-        schemaVersion: 5,
+        schemaVersion: 6,
         status: "succeeded",
         workspaceAccess: "scoped_write",
         workspaceWriteScopeStatus: "within_scope",

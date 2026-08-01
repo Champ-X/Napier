@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = path.resolve(path.dirname(scriptPath), "..");
 const defaultSourcePath = "apps/server/src/app.ts";
+const defaultSourcePaths = [
+  defaultSourcePath,
+  "apps/server/src/workspace-process-http.ts",
+];
 const defaultArtifactPath = "docs/artifacts/management-openapi-0.1.0.json";
 const PROMOTED_OPERATION_SCHEMAS = {
   "GET /api/health": {
@@ -162,13 +166,18 @@ const PROMOTED_OPERATION_SCHEMAS = {
 
 export async function generateManagementOpenApi(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? defaultRepoRoot);
-  const sourcePath = options.sourcePath ?? defaultSourcePath;
-  const absoluteSourcePath = resolveRepoRelativePath(
-    repoRoot,
-    sourcePath,
-    "sourcePath",
+  const sourcePaths = options.sourcePaths
+    ? [...options.sourcePaths]
+    : options.sourcePath
+      ? [options.sourcePath]
+      : defaultSourcePaths;
+  const absoluteSourcePaths = sourcePaths.map((sourcePath) =>
+    resolveRepoRelativePath(repoRoot, sourcePath, "sourcePath"),
   );
-  const sourceText = await readFile(absoluteSourcePath, "utf8");
+  const sourceTexts = await Promise.all(
+    absoluteSourcePaths.map((sourcePath) => readFile(sourcePath, "utf8")),
+  );
+  const sourceText = sourceTexts.join("\n");
   const packageJson = parseJson(
     await readFile(path.join(repoRoot, "package.json"), "utf8"),
     "package.json",
@@ -2005,7 +2014,13 @@ export async function generateManagementOpenApi(options = {}) {
       },
     },
     "x-napier-artifact-kind": "management-openapi",
-    "x-napier-source-path": toRepoRelativePath(repoRoot, absoluteSourcePath),
+    "x-napier-source-path": toRepoRelativePath(
+      repoRoot,
+      absoluteSourcePaths[0],
+    ),
+    "x-napier-source-paths": absoluteSourcePaths.map((sourcePath) =>
+      toRepoRelativePath(repoRoot, sourcePath),
+    ),
     "x-napier-source-sha256": sha256Text(sourceText),
     "x-napier-route-count": routes.length,
     "x-napier-route-set-sha256": routeSetSha256,

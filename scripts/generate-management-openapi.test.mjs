@@ -56,7 +56,7 @@ describe("management OpenAPI generator", () => {
 
     const generated = await generateManagementOpenApi({ repoRoot: root });
 
-    expect(generated.routeCount).toBe(19);
+    expect(generated.routeCount).toBe(20);
     expect(generated.routeSetSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(generated.artifact).toEqual(
       expect.objectContaining({
@@ -66,7 +66,11 @@ describe("management OpenAPI generator", () => {
           version: "9.9.9",
         }),
         "x-napier-source-path": "apps/server/src/app.ts",
-        "x-napier-route-count": 19,
+        "x-napier-source-paths": [
+          "apps/server/src/app.ts",
+          "apps/server/src/workspace-process-http.ts",
+        ],
+        "x-napier-route-count": 20,
       }),
     );
     expect(generated.artifact.components.schemas.HealthResponse).toEqual(
@@ -734,10 +738,10 @@ describe("management OpenAPI generator", () => {
       "docs/artifacts/management-openapi.json",
     ]);
     expect(writeResult.stdout).toContain(
-      "Wrote docs/artifacts/management-openapi.json: 19 routes",
+      "Wrote docs/artifacts/management-openapi.json: 20 routes",
     );
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
-    expect(artifact["x-napier-route-count"]).toBe(19);
+    expect(artifact["x-napier-route-count"]).toBe(20);
 
     const checkResult = await execFile(process.execPath, [
       scriptPath,
@@ -803,6 +807,10 @@ async function createFixture() {
       );
       app.get("/assets/index.js", () => undefined);
     `,
+  );
+  await writeFile(
+    path.join(root, "apps/server/src/workspace-process-http.ts"),
+    'app.post("/api/threads/:threadId/processes/:processId/rollback", () => undefined);\n',
   );
   return root;
 }

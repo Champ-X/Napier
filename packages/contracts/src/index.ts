@@ -4296,7 +4296,7 @@ export interface WorkspaceProcessWritePreview {
 
 export interface WorkspaceProcessSession {
   kind: "napier.workspace-process-session";
-  schemaVersion: 1 | 2 | 3 | 4 | 5;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
   id: string;
   threadId: string;
   runId: string;
@@ -4334,6 +4334,12 @@ export interface WorkspaceProcessSession {
   writeScopeCount?: number;
   writeScopeSetSha256?: string;
   workspaceWriteScopeStatus?: WorkspaceProcessWriteScopeStatus;
+  recoverySnapshotSha256?: string;
+  recoveryScopeCount?: number;
+  recoveryFileCount?: number;
+  recoveryDirectoryCount?: number;
+  recoveryBytes?: number;
+  workspaceRollbackAvailable?: boolean;
   workspaceDeltaAvailable?: boolean;
   startedAt: string;
   settledAt?: string;
@@ -4349,6 +4355,71 @@ export interface WorkspaceProcessSession {
   nextCursor: number;
   outputAvailable: boolean;
   interruptionReason?: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceProcessRollbackPreview {
+  kind: "napier.workspace-process-rollback-preview";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  processId: string;
+  sessionSha256: string;
+  recoverySnapshotSha256: string;
+  expectedWorkspaceSha256: string;
+  scopeCount: number;
+  fileCount: number;
+  directoryCount: number;
+  bytes: number;
+  createdAt: string;
+  expiresAt: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceProcessRollbackAttempt {
+  kind: "napier.workspace-process-rollback-attempt";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  processId: string;
+  initiatedBy: "operator";
+  previewSha256: string;
+  recoverySnapshotSha256: string;
+  expectedWorkspaceSha256: string;
+  scopeCount: number;
+  fileCount: number;
+  directoryCount: number;
+  bytes: number;
+  attemptedAt: string;
+  contentSha256: string;
+}
+
+export interface WorkspaceProcessRollbackResult {
+  kind: "napier.workspace-process-rollback";
+  schemaVersion: 1;
+  id: string;
+  threadId: string;
+  runId: string;
+  processId: string;
+  initiatedBy: "operator";
+  attemptSha256: string;
+  status: "restored" | "reverted" | "indeterminate";
+  recoverySnapshotSha256: string;
+  expectedWorkspaceSha256: string;
+  observedWorkspaceSha256: string;
+  scopeCount: number;
+  restoredScopeCount: number;
+  fileCount: number;
+  directoryCount: number;
+  bytes: number;
+  rollbackAttempted: boolean;
+  rollbackVerified: boolean;
+  durable: boolean;
+  cancellationObserved: boolean;
+  appliedAt: string;
+  errorSha256?: string;
   contentSha256: string;
 }
 

@@ -1638,6 +1638,110 @@ button:disabled {
   color: #813d30;
 }
 
+.process-rollback {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  margin-top: 8px;
+  font-family: var(--mono);
+}
+
+.process-rollback > button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 6px;
+}
+
+.process-rollback > section {
+  width: 100%;
+  padding: 9px;
+  color: var(--ink-soft);
+  background: rgb(190 84 61 / 6%);
+  border: 1px solid #d9a698;
+  border-left: 3px solid var(--vermilion);
+}
+
+.process-rollback > section > header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 7px;
+  align-items: start;
+}
+
+.process-rollback > section > header svg {
+  color: var(--vermilion);
+}
+
+.process-rollback > section > header div {
+  display: grid;
+  gap: 2px;
+}
+
+.process-rollback > section > header strong {
+  font-size: 7px;
+  color: var(--ink);
+}
+
+.process-rollback > section > header span,
+.process-rollback > section p,
+.process-rollback-result span {
+  font-size: 6px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
+.process-rollback > section p {
+  margin: 7px 0 0;
+}
+
+.process-rollback > section .process-rollback-warning {
+  color: #813d30;
+}
+
+.process-rollback > section dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  margin-top: 8px;
+}
+
+.process-rollback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.process-rollback-actions button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 6px;
+}
+
+.process-rollback-result {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  padding: 8px;
+  margin: 0;
+  background: rgb(69 107 91 / 7%);
+  border-left: 3px solid #456b5b;
+}
+
+.process-rollback-result.is-reverted,
+.process-rollback-result.is-indeterminate {
+  background: rgb(190 84 61 / 7%);
+  border-left-color: var(--vermilion);
+}
+
+.process-rollback-result strong {
+  font-size: 7px;
+  color: var(--ink-soft);
+}
+
 .process-input {
   display: grid;
   gap: 6px;

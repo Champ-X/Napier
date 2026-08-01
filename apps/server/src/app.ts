@@ -477,6 +477,7 @@ import {
   executeWorkflowExperimentHttp,
   previewWorkflowExperimentHttp,
 } from "./workflow-experiment-http.js";
+import { registerWorkspaceProcessHttp } from "./workspace-process-http.js";
 
 export interface NapierServices {
   store: LocalStore;
@@ -654,8 +655,6 @@ const MAX_PLAN_ARTIFACT_FILE_VERIFY_REQUEST_BYTES = 32 * 1024 * 1024;
 const MAX_PLAN_ARTIFACT_DATA_PROFILE_VERIFY_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_PLAN_ARTIFACT_DIRECTORY_MANIFEST_VERIFY_REQUEST_BYTES =
   4 * 1024 * 1024;
-const MAX_WORKSPACE_PROCESS_INPUT_REQUEST_BYTES = 128 * 1024;
-
 export async function createServices(options?: {
   dataRoot?: string;
   workspaceRoot?: string;
@@ -4459,15 +4458,13 @@ export function createApp(services: NapierServices): Hono {
     return context.json(recovery);
   });
 
-  app.get("/api/threads/:threadId/processes", async (context) => {
-    const threadId = context.req.param("threadId");
-    try {
-      const sessions = await services.workspaceProcesses.list(threadId);
-      setWorkspaceProcessProjectionHeaders(context, sessions);
-      return context.json(sessions);
-    } catch (error) {
-      return jsonError(context, errorMessage(error), 404);
-    }
+  registerWorkspaceProcessHttp(app, services.workspaceProcesses, {
+    jsonError,
+    errorMessage,
+    readLimitedJson,
+    requestBodyTooLarge: (error) => error instanceof RequestBodyTooLargeError,
+    requestRecord: (input, keys) => requestRecord(input, [...keys]),
+    setProjectionHeaders: setWorkspaceProcessProjectionHeaders,
   });
 
   app.get("/api/threads/:threadId/workspace-trash", async (context) => {
@@ -4508,160 +4505,6 @@ export function createApp(services: NapierServices): Hono {
             ? 409
             : 404,
         );
-      }
-    },
-  );
-
-  app.get(
-    "/api/threads/:threadId/processes/:processId/output",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const processId = context.req.param("processId");
-      const after = Number.parseInt(context.req.query("after") ?? "0", 10);
-      const wait = Number.parseInt(context.req.query("wait") ?? "0", 10);
-      if (
-        !validWorkspaceProcessId(processId) ||
-        !Number.isSafeInteger(after) ||
-        after < 0 ||
-        !Number.isSafeInteger(wait) ||
-        wait < 0 ||
-        wait > 5_000
-      ) {
-        return jsonError(
-          context,
-          "Workspace Process output request is invalid",
-          400,
-        );
-      }
-      try {
-        const output = await services.workspaceProcesses.output(
-          threadId,
-          processId,
-          {
-            afterCursor: after,
-            waitMs: wait,
-            signal: context.req.raw.signal,
-          },
-        );
-        setWorkspaceProcessProjectionHeaders(context, output);
-        return context.json(output);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 404);
-      }
-    },
-  );
-
-  app.get(
-    "/api/threads/:threadId/processes/:processId/delta",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const processId = context.req.param("processId");
-      if (!validWorkspaceProcessId(processId)) {
-        return jsonError(
-          context,
-          "Workspace Process Session ID is invalid",
-          400,
-        );
-      }
-      try {
-        const delta = await services.workspaceProcesses.delta(
-          threadId,
-          processId,
-        );
-        setWorkspaceProcessProjectionHeaders(context, delta);
-        return context.json(delta);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 404);
-      }
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/processes/:processId/input",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const processId = context.req.param("processId");
-      if (!validWorkspaceProcessId(processId)) {
-        return jsonError(
-          context,
-          "Workspace Process Session ID is invalid",
-          400,
-        );
-      }
-      let input: unknown;
-      try {
-        input = await readLimitedJson(
-          context.req.raw,
-          MAX_WORKSPACE_PROCESS_INPUT_REQUEST_BYTES,
-          "Workspace Process input request",
-        );
-      } catch (error) {
-        return jsonError(
-          context,
-          errorMessage(error),
-          error instanceof RequestBodyTooLargeError ? 413 : 400,
-        );
-      }
-      const request = parseWorkspaceProcessInputRequest(input);
-      if (!request) {
-        return jsonError(
-          context,
-          "Workspace Process input request is invalid",
-          400,
-        );
-      }
-      try {
-        const receipt = await services.workspaceProcesses.writeInput({
-          threadId,
-          processId,
-          ...request,
-          initiatedBy: "operator",
-          signal: context.req.raw.signal,
-        });
-        setWorkspaceProcessProjectionHeaders(context, receipt);
-        return context.json(receipt);
-      } catch (error) {
-        const message = errorMessage(error);
-        return jsonError(
-          context,
-          message,
-          message.includes("limit")
-            ? 413
-            : message.includes("valid UTF-8") ||
-                message.includes("input is empty")
-              ? 400
-              : message.includes("not open") ||
-                  message.includes("pipe close semantics") ||
-                  message.includes("unavailable") ||
-                  message.includes("unknown")
-                ? 409
-                : 404,
-        );
-      }
-    },
-  );
-
-  app.post(
-    "/api/threads/:threadId/processes/:processId/cancel",
-    async (context) => {
-      const threadId = context.req.param("threadId");
-      const processId = context.req.param("processId");
-      if (!validWorkspaceProcessId(processId)) {
-        return jsonError(
-          context,
-          "Workspace Process Session ID is invalid",
-          400,
-        );
-      }
-      try {
-        const session = await services.workspaceProcesses.cancel(
-          threadId,
-          processId,
-        );
-        setWorkspaceProcessProjectionHeaders(context, session);
-        return context.json(session);
-      } catch (error) {
-        return jsonError(context, errorMessage(error), 404);
       }
     },
   );
@@ -18040,37 +17883,6 @@ function validAgentId(value: unknown): value is string {
 
 function validRunId(value: unknown): value is string {
   return typeof value === "string" && /^run_[a-z0-9]{8,80}$/.test(value);
-}
-
-function validWorkspaceProcessId(value: unknown): value is string {
-  return typeof value === "string" && /^process_[a-z0-9]{8,80}$/.test(value);
-}
-
-function parseWorkspaceProcessInputRequest(input: unknown):
-  | {
-      text: string;
-      appendNewline?: boolean;
-      close?: boolean;
-    }
-  | undefined {
-  const record = requestRecord(input, ["text", "appendNewline", "close"]);
-  if (
-    !record ||
-    typeof record["text"] !== "string" ||
-    (record["appendNewline"] !== undefined &&
-      typeof record["appendNewline"] !== "boolean") ||
-    (record["close"] !== undefined && typeof record["close"] !== "boolean") ||
-    (record["text"].length === 0 &&
-      record["appendNewline"] !== true &&
-      record["close"] !== true)
-  ) {
-    return undefined;
-  }
-  return {
-    text: record["text"],
-    ...(record["appendNewline"] === true ? { appendNewline: true } : {}),
-    ...(record["close"] === true ? { close: true } : {}),
-  };
 }
 
 function validWorkspaceTrashId(value: unknown): value is string {

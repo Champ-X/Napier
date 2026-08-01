@@ -1960,6 +1960,30 @@ keeps workspace root read-only and remounts only those scopes writable;
 network remains denied. Cross-Manager data-root locks serialize scoped writers
 for the same workspace.
 
+Before a scoped write launches, Napier copies only the approved scopes into a
+mode-checked private recovery directory under the local data root. A changed,
+fully settled schema-v6 session exposes operator-only rollback through
+`POST .../rollback/preview` followed by one-use `POST .../rollback`. Preview
+requires the complete current workspace digest to still equal that Process
+settlement. Apply rechecks the digest under the workspace write lock, stages
+every original scope beside its target, swaps all scopes, verifies content and
+POSIX mode hashes, and reverses already committed swaps if a later scope
+fails. It never overwrites changes made after settlement.
+
+Rollback writes a hash-only `workspace.process.rollback_started` intent before
+the first file swap and a matching `workspace.process.rolled_back` outcome
+after verification. If intent persistence fails, no file changes. If outcome
+persistence fails, the durable pending intent blocks retries after both the
+current process and a Runtime restart. A verified `reverted` outcome permits a
+fresh preview; `indeterminate` requires manual inspection. `restored` and
+`reverted` require successful parent-directory synchronization; staging,
+cleanup, reversal, or durability failure remains `indeterminate` with private
+recovery material retained. Recovery manifests and rollback evidence reject
+unknown fields even when their hashes are recomputed, and Process recovery
+directories are read with `lstat` so a replacement symlink is never followed.
+Paths, backup bytes, command source, symlink targets, and raw errors remain
+local.
+
 An alternative explicit `terminal` start allocates a real pseudo-terminal with
 bounded initial columns and rows. `node-pty` launches only the existing
 `sandbox-exec` or Bubblewrap wrapper; the selected Node target remains inside
@@ -2010,11 +2034,13 @@ attribution rather than being falsely assigned to the child.
 
 Input and output text plus argv never enter the Ledger, Trace, Replay, or
 exported fixtures. Durable `workspace.process.started`, `.input`, `.resized`,
-`.settled`, and `.interrupted` events bind the Napier Process ID, owning Thread
-and Run, status, executable, command/environment/limit hashes, input
+`.settled`, `.interrupted`, `.rollback_started`, and `.rolled_back` events bind
+the Napier Process ID, owning Thread and Run, status, executable,
+command/environment/limit hashes, input
 sequence/counts and cumulative digest, output hashes/counts, cursor, truncation
-state, I/O mode, terminal dimensions, and resize sequence. Schema-v5 scoped
-write events additionally bind the preview hash, scope count/set hash, and
+state, I/O mode, terminal dimensions, and resize sequence. Schema-v5 and
+schema-v6 scoped-write events additionally bind the preview hash, scope
+count/set hash, and
 `within_scope`, `outside_scope`, or `indeterminate` settlement. They also bind
 pre/post workspace digests, comparison status, changed-entry count, and a
 changed-path-set digest without storing paths.
@@ -2023,8 +2049,9 @@ available only from the current local Runtime through the owning Thread's
 Processes panel. After restart, an unclosed session becomes `interrupted` with
 unknown outcome and no output or path details; Napier does not silently rerun
 it or claim the old host process was reattached. Existing schema v1-v4 Process
-receipts remain readable, ordinary pipe and PTY sessions use schema v4, and
-scoped writes use schema v5.
+receipts and schema-v5 scoped writes remain readable, ordinary pipe and PTY
+sessions use schema v4, and new scoped writes use schema v6 with private
+recovery bindings.
 
 Run the complete Agent-to-Sandbox smoke from a non-sandboxed Terminal:
 
@@ -2039,8 +2066,10 @@ also require a stronger guardian boundary for proved cleanup. Proved orphan
 cleanup, cross-restart reattachment, hard CPU/memory/process quotas, and
 remote write backends require a managed guardian or OCI boundary and are not
 claimed by this implementation. Scoped settlement proves observed path
-containment, not which external process wrote each byte, and it does not
-provide rollback. Pipe interaction remains distinct from PTY; the PTY provides
+containment, not which external process wrote each byte. Operator rollback
+restores approved scopes only; it cannot undo outside-scope drift, recover an
+unknown crash window, or run automatically from the Agent tool. Pipe
+interaction remains distinct from PTY; the PTY provides
 terminal sizing and control bytes but not shell access, cross-restart attach, a
 durable screen buffer, or Napier job-control commands. The separate JavaScript
 kernel below builds on the read-only Process Session boundary. The restricted

@@ -22,8 +22,15 @@ import {
   workspaceProcessRequestIsCurrent,
   workspaceProcessSelectionRequestIsCurrent,
 } from "./workspace-process-view-model";
+import { WorkspaceProcessRollback } from "./WorkspaceProcessRollback";
 
-export default function ProcessPanel({ threadId }: { threadId: string }) {
+export default function ProcessPanel({
+  threadId,
+  onThreadChanged,
+}: {
+  threadId: string;
+  onThreadChanged(): void | Promise<void>;
+}) {
   const [sessions, setSessions] = useState<WorkspaceProcessSession[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [chunks, setChunks] = useState<WorkspaceProcessOutputChunk[]>([]);
@@ -175,6 +182,9 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
     () => sessions.map((session) => workspaceProcessCardView(session)),
     [sessions],
   );
+  const refreshAfterRollback = useCallback(async () => {
+    await Promise.all([loadSessions(), onThreadChanged()]);
+  }, [loadSessions, onThreadChanged]);
   const toggleOutput = async (session: WorkspaceProcessSession) => {
     if (selectedId === session.id) {
       outputSequenceRef.current += 1;
@@ -519,6 +529,13 @@ export default function ProcessPanel({ threadId }: { threadId: string }) {
                     </button>
                   ) : null}
                 </div>
+                {!card.running ? (
+                  <WorkspaceProcessRollback
+                    threadId={threadId}
+                    session={session}
+                    onApplied={refreshAfterRollback}
+                  />
+                ) : null}
                 {card.running && card.stdinState === "open" ? (
                   <form
                     className="process-input"

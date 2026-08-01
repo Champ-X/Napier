@@ -10417,6 +10417,122 @@
         "x-napier-source-route": "GET /api/threads/:threadId/processes/:processId/output"
       }
     },
+    "/api/threads/{threadId}/processes/{processId}/rollback": {
+      "post": {
+        "operationId": "post-threads-by-threadId-processes-by-processId-rollback",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/processes/{processId}/rollback",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/processes/:processId/rollback"
+      }
+    },
+    "/api/threads/{threadId}/processes/{processId}/rollback/preview": {
+      "post": {
+        "operationId": "post-threads-by-threadId-processes-by-processId-rollback-preview",
+        "tags": [
+          "threads"
+        ],
+        "summary": "POST /api/threads/{threadId}/processes/{processId}/rollback/preview",
+        "parameters": [
+          {
+            "name": "threadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "processId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": true
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful no-store JSON response",
+            "content": {
+              "application/json": {
+                "schema": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "413": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        },
+        "x-napier-source-route": "POST /api/threads/:threadId/processes/:processId/rollback/preview"
+      }
+    },
     "/api/threads/{threadId}/recovery": {
       "get": {
         "operationId": "get-threads-by-threadId-recovery",
@@ -14424,7 +14540,11 @@
   },
   "x-napier-artifact-kind": "management-openapi",
   "x-napier-source-path": "apps/server/src/app.ts",
-  "x-napier-source-sha256": "e81a4b8eb25818d4da58231a0da7c41a9d2b4d95f7f1aa16edec01434f636310",
-  "x-napier-route-count": 253,
-  "x-napier-route-set-sha256": "748569dd95e9ea00047070803d3870dfd570dda51d4778acc57dd0a1945a1d00"
+  "x-napier-source-paths": [
+    "apps/server/src/app.ts",
+    "apps/server/src/workspace-process-http.ts"
+  ],
+  "x-napier-source-sha256": "5a65b32f13f71d44b2e85d5753c958064ec89b43b097aa338224d9ccf735e36f",
+  "x-napier-route-count": 255,
+  "x-napier-route-set-sha256": "a28c1dda79ad754e2f373b0d1cb1bb9ec49c7244f3295d866b322537039e9ad9"
 }

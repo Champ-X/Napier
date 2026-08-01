@@ -1,4 +1,11 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -88,11 +95,32 @@ describeLive("live Workspace Process smoke", () => {
         workspaceAccess: "scoped_write",
         workspaceWriteScopeStatus: "within_scope",
         workspaceChangedFileCount: 1,
+        workspaceRollbackAvailable: true,
       }),
     );
     expect(
       await readFile(path.join(workspaceRoot, "generated", "live.txt"), "utf8"),
     ).toBe("LIVE_SCOPED_WRITE");
+    const rollbackPreview = await processes.previewRollback(
+      thread.id,
+      started.id,
+    );
+    const rollback = await processes.rollback(
+      thread.id,
+      started.id,
+      rollbackPreview.id,
+    );
+    expect(rollback).toEqual(
+      expect.objectContaining({
+        status: "restored",
+        rollbackVerified: true,
+        scopeCount: 1,
+        restoredScopeCount: 1,
+      }),
+    );
+    await expect(
+      lstat(path.join(workspaceRoot, "generated", "live.txt")),
+    ).rejects.toThrow();
     const durable = JSON.stringify(await store.listEvents(thread.id));
     expect(durable).not.toContain("generated/live.txt");
     expect(durable).not.toContain("LIVE_SCOPED_WRITE");

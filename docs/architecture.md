@@ -3362,6 +3362,7 @@ Agent selects preview_write + node + literal argv + 1-8 existing scopes
 Agent selects start_write + preview ID
   -> acquire the data-root workspace write lock across Runtime Managers
   -> rebuild every scope and complete baseline; reject any freshness drift
+  -> copy only approved scopes into a private mode-checked recovery directory
   -> consume the preview, keep workspace root read-only, and remount only the
      approved scopes writable in sandbox-exec, Bubblewrap, or OCI
   -> launch and observe through the ordinary Process lifecycle
@@ -3369,8 +3370,30 @@ Agent selects start_write + preview ID
      hash-only symlink identity without following its target
   -> classify every changed path as within_scope, outside_scope, or
      indeterminate without assigning external drift to the child
-  -> append schema-v5 hash-only Process settlement and release the lock
+  -> append schema-v6 hash-only Process settlement and release the lock
+
+Operator selects rollback preview for one changed schema-v6 Process
+  -> require private Process/Thread/Run/scope/before-hash bindings
+  -> verify every backup content hash and recursive POSIX mode-set hash
+  -> require the complete workspace to equal the settled-after hash
+  -> return one local five-minute preview with counts and hashes, never paths
+Operator applies the exact rollback preview
+  -> consume it once and acquire the same cross-Manager workspace write lock
+  -> repeat full workspace and private-backup freshness checks
+  -> append workspace.process.rollback_started before the first file swap
+  -> stage every backup beside its target and atomically replace each scope
+  -> reverse committed scopes in reverse order if a later scope fails
+  -> verify content/modes, remove swap files, and fsync parent directories
+  -> append workspace.process.rolled_back as restored, reverted, or indeterminate
+  -> remove private recovery only after a verified restored outcome
 ```
+
+`restored` and retryable `reverted` require successful parent-directory fsync.
+Any staging cleanup, reverse swap, or durability failure is `indeterminate`
+and retains private recovery for manual inspection. Private Process recovery
+directories are checked with `lstat` before every read, and strict manifest,
+attempt, and result parsers reject unknown fields even when an attacker
+recomputes their unkeyed content hashes.
 
 `WorkspaceProcessManager` is a Capability Plane service outside `LocalStore`
 and the Server router. The Work Ledger remains authoritative across restarts:
@@ -3414,13 +3437,19 @@ For running interactive sessions it also exposes bounded input and explicit
 stdin close for pipes. PTY cards instead show the fixed terminal type, current
 size, resize count, and merged output, and hide the invalid close action.
 Request-sequence and Process-selection guards discard stale responses.
+`POST .../processes/{processId}/rollback/preview` and one-use
+`POST .../processes/{processId}/rollback` expose operator-only recovery. The
+first binds the complete current workspace; the second records intent before
+mutation and outcome after verification. A pending intent, `indeterminate`
+result, stale workspace, backup drift, or concurrent writer disables retry.
 Read-only changes remain unattributed. Scoped cards distinguish changes wholly
 inside approved scopes from outside-scope or incomplete observations, but
 external writers still make authorship unknowable. Path details disappear
 after Runtime restart while the summary evidence remains. Schema v1 sessions
 continue to project as delta-unavailable, schema v2 sessions retain snapshot
 evidence without input metadata, schema v3 retains pipe input evidence,
-ordinary pipe/PTY sessions use schema v4, and scoped writes use schema v5.
+ordinary pipe/PTY sessions use schema v4, and schema-v5 scoped writes remain
+readable. New recoverable scoped writes use schema v6.
 
 Admission reservation, write preview state and lock acquisition, output/Delta
 projection, settlement classification, tool result rendering, and tool input
@@ -3446,8 +3475,8 @@ because `sandbox-exec` has no parent-death contract; startup therefore records
 unknown interruption rather than completion or reattachment. A guardian or OCI
 identity is required for proved cleanup of abrupt or deliberately detached
 descendants and cross-restart reattachment. Hard total RSS quotas,
-package-backed Python, remote sandboxes, rollback, and writer attribution
-remain outside this slice. PTY mode supplies real terminal stdin/stdout,
+package-backed Python, remote sandboxes, automatic compensation, and writer
+attribution remain outside this slice. PTY mode supplies real terminal stdin/stdout,
 sizing, control bytes, and process-group cancellation, but does not grant shell
 access, cross-restart attach, a durable screen buffer, or Napier job-control
 commands. The JavaScript/Python kernels and Node debugger below remain
@@ -6002,6 +6031,11 @@ The current boundary has fifty-six parts:
     non-overlapping writable mounts, cross-Manager serialization,
     directory-aware Delta containment, schema-v5 Ledger recovery, local path
     inspection, and path/body-free public evidence.
+60. Preview-bound operator rollback for changed scoped Process writes with
+    private content/mode-verified scope snapshots, settled-after freshness,
+    cross-Manager serialization, multi-scope reverse recovery, two-phase
+    Ledger intent/outcome evidence, restart blocking for pending outcomes,
+    HTTP/Web delivery, and path/body-free Trace.
 
 `observe` permits only in-process read operations, including AST query and
 edit preview. `workspace` additionally
@@ -6034,8 +6068,8 @@ deferred until the local P0-P9 product loop is stable.
 ### Layer 1: Local execution and architecture
 
 - extend bounded Workspace Process Sessions with a managed guardian, proved
-  orphan cleanup, cross-restart reattachment, rollback, and remote scoped-write
-  backends;
+  orphan cleanup, cross-restart reattachment, automatic compensation, and
+  remote scoped-write backends;
 - extend restricted Python into package-backed data/Notebook sessions and add
   managed tool callbacks without weakening Run ownership or Sandbox boundaries;
 - hard CPU/memory/process quotas through managed OCI or equivalent isolation;

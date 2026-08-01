@@ -49,6 +49,26 @@ export const workspaceProcessCopy = {
   deltaFile: "file",
   deltaDirectory: "directory",
   deltaSymlink: "symlink",
+  reviewRollback: "Review rollback",
+  reviewingRollback: "Checking recovery...",
+  rollbackTitle: "Restore approved write scopes",
+  rollbackBody:
+    "This replaces every approved scope with its private pre-execution snapshot. Any workspace change after settlement blocks the operation.",
+  rollbackOutsideScope:
+    "The Process window includes changes outside the approved scopes. This action restores approved scopes only.",
+  rollbackScopeCount: "Scopes",
+  rollbackEntryCount: "Snapshot entries",
+  rollbackBytes: "Snapshot bytes",
+  confirmRollback: "Restore scopes",
+  applyingRollback: "Restoring...",
+  cancelRollback: "Keep current workspace",
+  rollbackRestored: "Approved scopes restored",
+  rollbackReverted: "Rollback failed and the current workspace was restored",
+  rollbackIndeterminate:
+    "Rollback outcome is indeterminate. Inspect the workspace before continuing.",
+  rollbackEvidence: "Rollback evidence",
+  rollbackError:
+    "Rollback was rejected or its outcome is unknown. Refresh the session and inspect the workspace before retrying.",
   commandHash: "Command",
   outputHashes: "stdout / stderr",
   started: "Started",

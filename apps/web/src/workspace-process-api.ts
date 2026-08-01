@@ -2,6 +2,8 @@ import type {
   WorkspaceProcessDelta,
   WorkspaceProcessInputReceipt,
   WorkspaceProcessOutput,
+  WorkspaceProcessRollbackPreview,
+  WorkspaceProcessRollbackResult,
   WorkspaceProcessSession,
 } from "@napier/contracts";
 
@@ -69,5 +71,32 @@ export function getWorkspaceProcessDelta(
   return requestJson(
     `/api/threads/${encodeURIComponent(threadId)}/processes/${encodeURIComponent(processId)}/delta`,
     signal ? { signal } : undefined,
+  );
+}
+
+export function previewWorkspaceProcessRollback(
+  threadId: string,
+  processId: string,
+  signal?: AbortSignal,
+): Promise<WorkspaceProcessRollbackPreview> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/processes/${encodeURIComponent(processId)}/rollback/preview`,
+    { method: "POST", ...(signal ? { signal } : {}) },
+  );
+}
+
+export function applyWorkspaceProcessRollback(
+  threadId: string,
+  processId: string,
+  previewId: string,
+  signal?: AbortSignal,
+): Promise<WorkspaceProcessRollbackResult> {
+  return requestJson(
+    `/api/threads/${encodeURIComponent(threadId)}/processes/${encodeURIComponent(processId)}/rollback`,
+    {
+      method: "POST",
+      body: JSON.stringify({ previewId }),
+      ...(signal ? { signal } : {}),
+    },
   );
 }

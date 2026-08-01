@@ -1,12 +1,13 @@
 import type { RunEvent } from "@napier/contracts";
 
 const EVENT =
-  /^workspace\.process\.(started|input|resized|settled|interrupted)$/u;
+  /^workspace\.process\.(started|input|resized|settled|interrupted|rollback_started|rolled_back)$/u;
 const PROCESS_ID = /^process_[a-z0-9]{8,80}$/u;
 const STATUS =
   /^(running|succeeded|failed|timed_out|output_capped|cancelled|interrupted)$/u;
 const DELTA_STATUS = /^(unchanged|changed|indeterminate)$/u;
 const WRITE_SCOPE_STATUS = /^(within_scope|outside_scope|indeterminate)$/u;
+const ROLLBACK_STATUS = /^(restored|reverted|indeterminate)$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 
 export function workspaceProcessEventTraceSummary(
@@ -66,6 +67,82 @@ export function workspaceProcessEventTraceSummary(
       ...(columns !== undefined && rows !== undefined
         ? [`size ${columns}x${rows}`]
         : []),
+    ].join(" / ");
+  }
+  if (event.type === "workspace.process.rollback_started") {
+    const processId = stringMatch(event.payload["processId"], PROCESS_ID);
+    const scopeCount = integer(event.payload["scopeCount"]);
+    const fileCount = integer(event.payload["fileCount"]);
+    const directoryCount = integer(event.payload["directoryCount"]);
+    const bytes = integer(event.payload["bytes"]);
+    const preview = stringMatch(event.payload["previewSha256"], SHA256);
+    const recovery = stringMatch(
+      event.payload["recoverySnapshotSha256"],
+      SHA256,
+    );
+    const expected = stringMatch(
+      event.payload["expectedWorkspaceSha256"],
+      SHA256,
+    );
+    return [
+      "process / rollback-started",
+      ...(processId ? [`id ${processId.slice(-10)}`] : []),
+      ...(scopeCount !== undefined ? [`scopes ${scopeCount}`] : []),
+      ...(fileCount !== undefined ? [`files ${fileCount}`] : []),
+      ...(directoryCount !== undefined
+        ? [`directories ${directoryCount}`]
+        : []),
+      ...(bytes !== undefined ? [`bytes ${bytes}`] : []),
+      ...(preview ? [`preview ${preview.slice(0, 12)}`] : []),
+      ...(recovery ? [`recovery ${recovery.slice(0, 12)}`] : []),
+      ...(expected ? [`expected ${expected.slice(0, 12)}`] : []),
+    ].join(" / ");
+  }
+  if (event.type === "workspace.process.rolled_back") {
+    const processId = stringMatch(event.payload["processId"], PROCESS_ID);
+    const status = stringMatch(event.payload["status"], ROLLBACK_STATUS);
+    const scopeCount = integer(event.payload["scopeCount"]);
+    const restoredScopeCount = integer(event.payload["restoredScopeCount"]);
+    const fileCount = integer(event.payload["fileCount"]);
+    const directoryCount = integer(event.payload["directoryCount"]);
+    const bytes = integer(event.payload["bytes"]);
+    const recovery = stringMatch(
+      event.payload["recoverySnapshotSha256"],
+      SHA256,
+    );
+    const expected = stringMatch(
+      event.payload["expectedWorkspaceSha256"],
+      SHA256,
+    );
+    const observed = stringMatch(
+      event.payload["observedWorkspaceSha256"],
+      SHA256,
+    );
+    const error = stringMatch(event.payload["errorSha256"], SHA256);
+    return [
+      "process / rolled-back",
+      ...(processId ? [`id ${processId.slice(-10)}`] : []),
+      ...(status ? [`status ${status}`] : []),
+      ...(scopeCount !== undefined ? [`scopes ${scopeCount}`] : []),
+      ...(restoredScopeCount !== undefined
+        ? [`restored-scopes ${restoredScopeCount}`]
+        : []),
+      ...(fileCount !== undefined ? [`files ${fileCount}`] : []),
+      ...(directoryCount !== undefined
+        ? [`directories ${directoryCount}`]
+        : []),
+      ...(bytes !== undefined ? [`bytes ${bytes}`] : []),
+      ...(event.payload["durable"] === true ? ["durable"] : []),
+      ...(event.payload["rollbackVerified"] === true
+        ? ["rollback-verified"]
+        : []),
+      ...(event.payload["cancellationObserved"] === true
+        ? ["cancellation-observed"]
+        : []),
+      ...(recovery ? [`recovery ${recovery.slice(0, 12)}`] : []),
+      ...(expected ? [`expected ${expected.slice(0, 12)}`] : []),
+      ...(observed ? [`observed ${observed.slice(0, 12)}`] : []),
+      ...(error ? [`error ${error.slice(0, 12)}`] : []),
     ].join(" / ");
   }
   const processId = stringMatch(event.payload["id"], PROCESS_ID);

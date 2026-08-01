@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -8,6 +8,8 @@ import type {
   WorkspaceProcessDelta,
   WorkspaceProcessInputReceipt,
   WorkspaceProcessOutput,
+  WorkspaceProcessRollbackPreview,
+  WorkspaceProcessRollbackResult,
   WorkspaceProcessSession,
 } from "@napier/contracts";
 import type { OsSandboxAdapter, SandboxedProcess } from "@napier/runtime";
@@ -265,9 +267,10 @@ describe("Workspace Process HTTP API", () => {
     );
     expect(settled).toEqual(
       expect.objectContaining({
-        schemaVersion: 5,
+        schemaVersion: 6,
         workspaceAccess: "scoped_write",
         workspaceWriteScopeStatus: "within_scope",
+        workspaceRollbackAvailable: true,
       }),
     );
 
@@ -282,6 +285,7 @@ describe("Workspace Process HTTP API", () => {
         writeScopeCount: 1,
         writeScopeSetSha256: preview.writeScopeSetSha256,
         workspaceWriteScopeStatus: "within_scope",
+        workspaceRollbackAvailable: true,
       }),
     ]);
     const deltaResponse = await app.request(
@@ -300,9 +304,77 @@ describe("Workspace Process HTTP API", () => {
         ],
       }),
     );
+    const rollbackPreviewResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${started.id}/rollback/preview`,
+      { method: "POST" },
+    );
+    expect(rollbackPreviewResponse.status).toBe(200);
+    const rollbackPreview =
+      (await rollbackPreviewResponse.json()) as WorkspaceProcessRollbackPreview;
+    expect(rollbackPreview).toEqual(
+      expect.objectContaining({
+        processId: started.id,
+        expectedWorkspaceSha256: settled.workspaceAfterSha256,
+        scopeCount: 1,
+      }),
+    );
+    const invalidRollbackResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${started.id}/rollback`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ previewId: "invalid", extra: true }),
+      },
+    );
+    expect(invalidRollbackResponse.status).toBe(400);
+    const rollbackResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${started.id}/rollback`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ previewId: rollbackPreview.id }),
+      },
+    );
+    expect(rollbackResponse.status).toBe(200);
+    expect(
+      (await rollbackResponse.json()) as WorkspaceProcessRollbackResult,
+    ).toEqual(
+      expect.objectContaining({
+        processId: started.id,
+        status: "restored",
+        rollbackVerified: true,
+      }),
+    );
+    await expect(
+      lstat(path.join(generated, "api-result.txt")),
+    ).rejects.toThrow();
+    const reusedRollbackResponse = await app.request(
+      `/api/threads/${thread.id}/processes/${started.id}/rollback`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ previewId: rollbackPreview.id }),
+      },
+    );
+    expect(reusedRollbackResponse.status).toBe(409);
+    expect(
+      (await (
+        await app.request(`/api/threads/${thread.id}/processes`)
+      ).json()) as WorkspaceProcessSession[],
+    ).toEqual([
+      expect.objectContaining({
+        id: started.id,
+        workspaceRollbackAvailable: false,
+      }),
+    ]);
     const detail = (await (
       await app.request(`/api/threads/${thread.id}`)
     ).json()) as ThreadDetail;
+    expect(
+      detail.events.some(
+        (event) => event.type === "workspace.process.rolled_back",
+      ),
+    ).toBe(true);
     expect(JSON.stringify(detail.events)).not.toContain("api-result.txt");
     expect(JSON.stringify(detail.events)).not.toContain("SCOPED_HTTP_RESULT");
   });

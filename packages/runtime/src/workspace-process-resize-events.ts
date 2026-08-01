@@ -112,7 +112,11 @@ export function applyWorkspaceProcessResizeReceipt(
 export function validWorkspaceProcessTerminalFields(
   value: Record<string, unknown>,
 ): boolean {
-  if (value["schemaVersion"] !== 4 && value["schemaVersion"] !== 5)
+  if (
+    value["schemaVersion"] !== 4 &&
+    value["schemaVersion"] !== 5 &&
+    value["schemaVersion"] !== 6
+  )
     return false;
   if (value["ioMode"] === "pipe") {
     return WORKSPACE_PROCESS_TERMINAL_FIELDS.filter(
