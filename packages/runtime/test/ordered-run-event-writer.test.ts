@@ -21,6 +21,81 @@ describe("OrderedRunEventWriter", () => {
     expect(written).toEqual([2, 3, 4]);
   });
 
+  it("reconciles missing indirect Ledger events against callback evidence", async () => {
+    const written: number[] = [];
+    const writer = new OrderedRunEventWriter(
+      "thread_ordered",
+      2,
+      async (value) => {
+        written.push(value.seq);
+      },
+    );
+    const callbackEvent = {
+      ...event(2),
+      payload: { seq: 2, source: "callback" },
+    };
+    const authoritativeEvent = {
+      ...callbackEvent,
+      payload: { source: "callback", seq: 2 },
+    };
+
+    await writer.write(callbackEvent);
+    await writer.write(event(4));
+    await writer.reconcile([event(1), authoritativeEvent, event(3), event(4)]);
+    await writer.finish(4);
+
+    expect(written).toEqual([2, 3, 4]);
+  });
+
+  it("fails closed on conflicting or incomplete reconciliation", async () => {
+    const writtenConflict = new OrderedRunEventWriter(
+      "thread_ordered",
+      1,
+      async () => undefined,
+    );
+    await writtenConflict.write(event(1));
+    await expect(
+      writtenConflict.reconcile([
+        { ...event(1), payload: { seq: 1, tampered: true } },
+      ]),
+    ).rejects.toThrow("conflicts with written evidence");
+    await expect(writtenConflict.finish(1)).rejects.toThrow(
+      "conflicts with written evidence",
+    );
+
+    const pendingConflict = new OrderedRunEventWriter(
+      "thread_ordered",
+      1,
+      async () => undefined,
+    );
+    await pendingConflict.write(event(2));
+    await expect(
+      pendingConflict.reconcile([
+        event(1),
+        { ...event(2), payload: { seq: 2, tampered: true } },
+      ]),
+    ).rejects.toThrow("conflicts with pending evidence");
+
+    const incomplete = new OrderedRunEventWriter(
+      "thread_ordered",
+      1,
+      async () => undefined,
+    );
+    await incomplete.write(event(1));
+    await expect(incomplete.reconcile([])).rejects.toThrow(
+      "reconciliation is incomplete",
+    );
+
+    const gapped = new OrderedRunEventWriter(
+      "thread_ordered",
+      1,
+      async () => undefined,
+    );
+    await expect(gapped.reconcile([event(2)])).rejects.toThrow(
+      "reconciliation is incomplete",
+    );
+  });
+
   it("fails closed on duplicates, foreign Threads, and incomplete streams", async () => {
     const duplicate = new OrderedRunEventWriter(
       "thread_ordered",

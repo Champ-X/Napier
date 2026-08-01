@@ -6,9 +6,8 @@ import type {
   Usage,
 } from "@napier/contracts";
 
-export interface CodingBenchmarkCase {
+interface CodingBenchmarkCaseBase {
   kind: "napier.coding-benchmark-case";
-  schemaVersion: 2;
   id: string;
   title: string;
   promptPath: string;
@@ -28,12 +27,24 @@ export interface CodingBenchmarkCase {
   contentSha256: string;
 }
 
+export interface CodingBenchmarkCaseV2 extends CodingBenchmarkCaseBase {
+  schemaVersion: 2;
+}
+
+export interface CodingBenchmarkCaseV3 extends CodingBenchmarkCaseBase {
+  schemaVersion: 3;
+  requiredCompletedTools: AgentToolName[];
+}
+
+export type CodingBenchmarkCase = CodingBenchmarkCaseV2 | CodingBenchmarkCaseV3;
+
 export type CodingBenchmarkDiagnostic =
   | "run_not_completed"
   | "workspace_snapshot_truncated"
   | "target_mismatch"
   | "outcome_test_failed"
   | "outcome_test_unavailable"
+  | "required_tool_missing"
   | "expected_change_missing"
   | "unexpected_workspace_changes";
 
@@ -57,7 +68,7 @@ export interface CodingBenchmarkOutcomeTestEvidence {
 
 export interface CodingBenchmarkEvaluation {
   kind: "napier.coding-benchmark-evaluation";
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   caseId: string;
   caseSha256: string;
   status: "passed" | "failed" | "inconclusive";
@@ -75,6 +86,10 @@ export interface CodingBenchmarkEvaluation {
   targetSemanticMatch: boolean;
   allowedChangeSetMatch: boolean;
   outcomeTest?: CodingBenchmarkOutcomeTestEvidence;
+  requiredToolCount?: number;
+  completedRequiredToolCount?: number;
+  requiredToolSetSha256?: string;
+  completedRequiredToolSetSha256?: string;
   diagnostics: CodingBenchmarkDiagnostic[];
   contentSha256: string;
 }

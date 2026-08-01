@@ -110,7 +110,7 @@ export async function executeAgentMessageExperimentCli(
       hashEventStream(detail.events),
     );
     if (eventWriter) {
-      await eventWriter.finish(detail.thread.eventCount);
+      await eventWriter.finish(detail.thread.eventCount, detail.events);
       await writeLine(io.stdout, JSON.stringify(snapshot));
       await writeLine(io.stdout, JSON.stringify(resultFrame));
     } else {

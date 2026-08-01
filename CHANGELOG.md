@@ -6,6 +6,29 @@ All notable changes to Napier are recorded here.
 
 ### Added
 
+- Added a debugger-qualified Coding Outcome benchmark. Exact case schema v3
+  declares a unique enabled `requiredCompletedTools` set, and evaluation schema
+  v3 derives completion only from `tool.completed` events in the scored Run's
+  terminal CLI Snapshot. Required/completed counts and canonical set hashes
+  make a correct patch insufficient when the required capability did not
+  complete, while result, Ledger bundle, series, and archived evaluation v1/v2
+  schemas remain compatible. The fixed loyalty-discount case uses the real Node
+  DAP adapter to pause, inspect live locals, continue, patch one file, and run
+  hash-bound hidden assertions in the read-only offline outcome Sandbox. Its
+  deterministic Dogfood passes with six completed tool calls; the identical
+  correct repair without DAP fails only with `required_tool_missing`. Result
+  and Ledger artifacts omit source paths, prompt text, debugger values/output,
+  tool bodies, and hidden-test source. This exposed and fixed a general CLI
+  JSONL gap: managed Process events can append directly to the Ledger without
+  traversing the Agent callback. The shared ordered writer now reconciles its
+  terminal suffix against canonical authoritative Ledger events before
+  Snapshot/Done, filling indirect events while rejecting gaps, duplicates,
+  foreign Threads, and callback conflicts across Agent, Workflow, and
+  experiment entry points. The full gate passed 1,729 regular tests with 30
+  opt-in live tests skipped. Product performance remained within baseline at
+  668.1 ms to first CLI event, 815.6 ms to first token, 1,111.4 ms to
+  completion, 0.7 ms read p95, 7.7 ms for a 1,000-event projection, and 749.568
+  closed SQLite bytes/event. The Web main entry remained 130.32 KiB.
 - Added private coder Node DAP. A coder now inherits `node_debugger` only when
   its parent profile enables the capability and the Runtime supplies the
   managed Process/Sandbox runtime. The existing debugger tool, authenticated

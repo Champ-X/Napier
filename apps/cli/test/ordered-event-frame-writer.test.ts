@@ -8,11 +8,7 @@ import { OrderedEventFrameWriter } from "../src/ordered-event-frame-writer.js";
 describe("ordered JSONL event writer", () => {
   it("streams concurrent arrivals in Ledger sequence order", async () => {
     const output = new CaptureWritable();
-    const writer = new OrderedEventFrameWriter(
-      output,
-      "thread_jsonl_order",
-      1,
-    );
+    const writer = new OrderedEventFrameWriter(output, "thread_jsonl_order", 1);
 
     await Promise.all([
       writer.write(event(2)),
@@ -30,6 +26,50 @@ describe("ordered JSONL event writer", () => {
     expect(
       frames.map((frame) => (frame.type === "event" ? frame.event.seq : 0)),
     ).toEqual([1, 2, 3, 4]);
+  });
+
+  it("fills callback gaps from the authoritative terminal Ledger", async () => {
+    const output = new CaptureWritable();
+    const writer = new OrderedEventFrameWriter(output, "thread_jsonl_order", 1);
+
+    await writer.write(event(1));
+    await writer.write(event(3));
+    await writer.finish(3, [event(1), event(2), event(3)]);
+
+    const frames = output
+      .text()
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line) as StreamFrame);
+    expect(
+      frames.map((frame) => (frame.type === "event" ? frame.event.seq : 0)),
+    ).toEqual([1, 2, 3]);
+  });
+
+  it("fails closed when terminal Ledger evidence conflicts or is incomplete", async () => {
+    const conflict = new OrderedEventFrameWriter(
+      new CaptureWritable(),
+      "thread_jsonl_order",
+      1,
+    );
+    await conflict.write(event(1));
+    await expect(
+      conflict.finish(1, [
+        { ...event(1), payload: { text: "conflicting evidence" } },
+      ]),
+    ).rejects.toThrow(
+      "JSONL event stream reconciliation conflicts with written evidence",
+    );
+
+    const incomplete = new OrderedEventFrameWriter(
+      new CaptureWritable(),
+      "thread_jsonl_order",
+      1,
+    );
+    await incomplete.write(event(1));
+    await expect(incomplete.finish(1, [])).rejects.toThrow(
+      "JSONL event stream reconciliation is incomplete",
+    );
   });
 
   it("fails closed on a gap or duplicate sequence", async () => {

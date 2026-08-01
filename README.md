@@ -1015,14 +1015,17 @@ growth can be audited independently of wall-clock noise.
 
 ## Coding Outcome Benchmark
 
-Two fixed Outcome cases cover a single-file boundary repair and a multi-file
-API migration with real TypeScript LSP References. Each runs in an isolated
-temporary workspace. The scorer does not trust the assistant summary or
-execute generated code without isolation. Case schema v2 requires the exact
+Three fixed Outcome cases cover a single-file boundary repair, a multi-file API
+migration with real TypeScript LSP References, and a JavaScript defect that
+must be inspected with the real Node debugger before repair. Each runs in an
+isolated temporary workspace. The scorer does not trust the assistant summary
+or execute generated code without isolation. Case schema v2 requires the exact
 declared changed-path set and runs hash-bound hidden assertions in the existing
-read-only, network-denied Node Sandbox. The complete target-file AST remains
-evidence, but behaviorally correct alternative structures are not rejected
-merely for differing from one expected AST.
+read-only, network-denied Node Sandbox. Schema v3 additionally requires
+selected capabilities to have a `tool.completed` event in the scored Run.
+The complete target-file AST remains evidence, but behaviorally correct
+alternative structures are not rejected merely for differing from one expected
+AST.
 
 Run a deterministic failed demo baseline:
 
@@ -1035,6 +1038,13 @@ Select the multi-file API migration:
 ```bash
 npm run bench:coding -- \
   --case benchmarks/coding/pricing-options-migration-v1
+```
+
+Select the debugger-qualified loyalty calculation:
+
+```bash
+npm run bench:coding -- \
+  --case benchmarks/coding/loyalty-discount-debug-v1
 ```
 
 Run the real provider case with an explicit credential locator:
@@ -1062,12 +1072,15 @@ min/p50/p95/max/mean/total distributions for latency, cost, tokens, and tool
 behavior. The bundle retains the full
 source event-stream hash, event-type counts, Run configuration/usage, tool
 metrics, the `benchmark.evaluated` event, and chained receipts for important
-events. Prompt, assistant text, reasoning, tool bodies, paths, and credential
-values are omitted. Verification enforces exact nested schemas before checking
-hashes, so an injected raw field remains invalid even if an attacker recomputes
-the artifact's self-describing hashes. It refuses result files above 256 KiB
-and Ledger files above 4 MiB before parsing. Verify an archived pair without a
-model call:
+events. For schema v3, the evaluation also commits to the required and
+same-Run-completed capability sets. Started, failed, blocked, other-Run, and
+assistant-reported tool use cannot qualify a result. Prompt, assistant text,
+reasoning, debugger expressions/variables/output, tool bodies, paths, hidden
+test source, and credential values are omitted. Verification enforces exact
+nested schemas before checking hashes, so an injected raw field remains invalid
+even if an attacker recomputes the artifact's self-describing hashes. It
+refuses result files above 256 KiB and Ledger files above 4 MiB before parsing.
+Verify an archived pair without a model call:
 
 ```bash
 npm run bench:coding -- \
@@ -1083,9 +1096,10 @@ npm run bench:coding -- \
   --verify-series <napier-benchmark-series-...json>
 ```
 
-If the OS Sandbox is unavailable, Napier records the trial as `inconclusive`,
-keeps `passRate` null when no trial was scoreable, exits non-zero, and never
-falls back to host execution. The checked-in v1
+If OS Sandbox unavailability is the only unmet gate, Napier records the trial
+as `inconclusive`, keeps `passRate` null when no trial was scoreable, exits
+non-zero, and never falls back to host execution. Independent failures such as
+a missing required capability still produce `failed`. The checked-in v1
 [DeepSeek result](docs/artifacts/benchmarks/napier-benchmark-result-coding_shipping_boundary_v1-ad31aff64f35d15a.json)
 and
 [Ledger bundle](docs/artifacts/benchmarks/napier-benchmark-ledger-coding_shipping_boundary_v1-c52d3c3d04232076.json)

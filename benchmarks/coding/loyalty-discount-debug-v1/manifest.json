@@ -1,0 +1,22 @@
+{
+  "kind": "napier.coding-benchmark-case",
+  "schemaVersion": 3,
+  "id": "coding_loyalty_discount_debug_v1",
+  "title": "Debug the loyalty discount calculation",
+  "promptPath": "prompt.md",
+  "fixturePath": "fixture",
+  "targetPath": "src/loyalty.js",
+  "expectedTargetPath": "expected/src/loyalty.js",
+  "allowedChangedPaths": ["src/loyalty.js"],
+  "requiredTools": ["read_file", "node_debugger", "apply_patch"],
+  "requiredCompletedTools": ["node_debugger"],
+  "timeoutMs": 120000,
+  "promptSha256": "5e00646ed6adc03e87be63b4f3bc514766a1288a8edc785d5442e3bd5a2724a6",
+  "fixtureSha256": "0f2a0de53759b05988e44d0b380367917bc1d89bba1932e6c9b1d2ce587cb5bb",
+  "targetBeforeSha256": "268ccb870cb1372359bee5cd4b1da63016b3f040a4df0703847a90d614fcdafa",
+  "expectedTargetSha256": "888995f071913d3d76dd10a3743cbeed71d092f1eeb1313a2939ec2f46a2ab46",
+  "expectedTargetAstSha256": "c7a54c9d906f9d84e99c8dd73edacde6d09c03ab694e036d2cffe61dafc3dfdc",
+  "outcomeTestPath": "tests/outcome.mjs",
+  "outcomeTestSha256": "edcdec80c199a387cd76a8f42644be005185bb994babe803e27d14ad82aebb83",
+  "contentSha256": "0f588c882eb61e69340344ada39e5878857cdf6040b74b84272d2984f465f459"
+}

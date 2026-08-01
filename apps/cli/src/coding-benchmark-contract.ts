@@ -1,6 +1,10 @@
 import path from "node:path";
 
-import { AGENT_TOOL_NAMES, type RunEvent } from "@napier/contracts";
+import {
+  AGENT_TOOL_NAMES,
+  type AgentToolName,
+  type RunEvent,
+} from "@napier/contracts";
 import {
   canonicalJson,
   sha256,
@@ -23,7 +27,7 @@ export type * from "./coding-benchmark-types.js";
 const SHA256 = /^[a-f0-9]{64}$/u;
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
 const AGENT_TOOLS = new Set<string>(AGENT_TOOL_NAMES);
-const CASE_KEYS = [
+const CASE_V2_KEYS = [
   "kind",
   "schemaVersion",
   "id",
@@ -44,16 +48,23 @@ const CASE_KEYS = [
   "outcomeTestSha256",
   "contentSha256",
 ] as const;
+const CASE_V3_KEYS = [...CASE_V2_KEYS, "requiredCompletedTools"] as const;
 
 export function validateCodingBenchmarkCase(
   input: unknown,
 ): CodingBenchmarkCase {
-  if (!record(input) || !exactKeys(input, CASE_KEYS)) {
+  if (!record(input)) {
+    throw new Error("Coding benchmark case must be an exact object");
+  }
+  const schemaVersion = input["schemaVersion"];
+  if (
+    (schemaVersion !== 2 && schemaVersion !== 3) ||
+    !exactKeys(input, schemaVersion === 3 ? CASE_V3_KEYS : CASE_V2_KEYS)
+  ) {
     throw new Error("Coding benchmark case must be an exact object");
   }
   if (
     input["kind"] !== "napier.coding-benchmark-case" ||
-    input["schemaVersion"] !== 2 ||
     typeof input["id"] !== "string" ||
     !RESOURCE_ID.test(input["id"]) ||
     !boundedText(input["title"], 1, 160) ||
@@ -79,7 +90,15 @@ export function validateCodingBenchmarkCase(
     !isSha256(input["expectedTargetSha256"]) ||
     !isSha256(input["expectedTargetAstSha256"]) ||
     !isSha256(input["outcomeTestSha256"]) ||
-    !isSha256(input["contentSha256"])
+    !isSha256(input["contentSha256"]) ||
+    (schemaVersion === 3 &&
+      !stringArray(
+        input["requiredCompletedTools"],
+        1,
+        16,
+        (entry): entry is string =>
+          typeof entry === "string" && AGENT_TOOLS.has(entry),
+      ))
   ) {
     throw new Error("Coding benchmark case is invalid");
   }
@@ -91,7 +110,13 @@ export function validateCodingBenchmarkCase(
       benchmarkCase.allowedChangedPaths.length ||
     new Set(benchmarkCase.requiredTools).size !==
       benchmarkCase.requiredTools.length ||
-    !benchmarkCase.allowedChangedPaths.includes(benchmarkCase.targetPath)
+    !benchmarkCase.allowedChangedPaths.includes(benchmarkCase.targetPath) ||
+    (benchmarkCase.schemaVersion === 3 &&
+      (new Set(benchmarkCase.requiredCompletedTools).size !==
+        benchmarkCase.requiredCompletedTools.length ||
+        benchmarkCase.requiredCompletedTools.some(
+          (toolName) => !benchmarkCase.requiredTools.includes(toolName),
+        )))
   ) {
     throw new Error("Coding benchmark case sets are invalid");
   }
@@ -111,10 +136,9 @@ export function createCodingBenchmarkEvaluation(input: {
   targetAfterSha256: string;
   targetAfterAstSha256: string;
   outcomeTest: CodingBenchmarkOutcomeTestEvidence;
+  completedToolNames?: readonly string[];
 }): CodingBenchmarkEvaluation {
-  if (
-    input.outcomeTest.testSha256 !== input.benchmarkCase.outcomeTestSha256
-  ) {
+  if (input.outcomeTest.testSha256 !== input.benchmarkCase.outcomeTestSha256) {
     throw new Error("Coding benchmark outcome test evidence hash mismatch");
   }
   const allowed = [...input.benchmarkCase.allowedChangedPaths].sort();
@@ -125,6 +149,18 @@ export function createCodingBenchmarkEvaluation(input: {
     input.delta.status === "changed" &&
     !input.delta.entriesTruncated &&
     JSON.stringify(observed) === JSON.stringify(allowed);
+  const requiredTools =
+    input.benchmarkCase.schemaVersion === 3
+      ? [...input.benchmarkCase.requiredCompletedTools].sort()
+      : [];
+  const completedToolNames = new Set(input.completedToolNames ?? []);
+  const completedRequiredTools = requiredTools.filter((toolName) =>
+    completedToolNames.has(toolName),
+  );
+  const requiredToolSetSha256 = sha256(canonicalJson(requiredTools));
+  const completedRequiredToolSetSha256 = sha256(
+    canonicalJson(completedRequiredTools),
+  );
   const diagnostics: CodingBenchmarkDiagnostic[] = [];
   if (input.runStatus !== "completed") diagnostics.push("run_not_completed");
   if (input.before.truncated || input.after.truncated) {
@@ -146,16 +182,24 @@ export function createCodingBenchmarkEvaluation(input: {
   if (!allowedChangeSetMatch && input.delta.status !== "unchanged") {
     diagnostics.push("unexpected_workspace_changes");
   }
+  if (completedRequiredTools.length !== requiredTools.length) {
+    diagnostics.push("required_tool_missing");
+  }
   const criteriaSha256 = sha256(
     canonicalJson({
       expectedTargetAstSha256: input.benchmarkCase.expectedTargetAstSha256,
       outcomeTestSha256: input.benchmarkCase.outcomeTestSha256,
       allowedPathSetSha256: sha256(canonicalJson(allowed)),
+      ...(input.benchmarkCase.schemaVersion === 3
+        ? { requiredToolSetSha256 }
+        : {}),
     }),
   );
+  const schemaVersion =
+    input.benchmarkCase.schemaVersion === 3 ? (3 as const) : (2 as const);
   const content = {
     kind: "napier.coding-benchmark-evaluation" as const,
-    schemaVersion: 2 as const,
+    schemaVersion,
     caseId: input.benchmarkCase.id,
     caseSha256: input.benchmarkCase.contentSha256,
     status:
@@ -182,6 +226,14 @@ export function createCodingBenchmarkEvaluation(input: {
     targetSemanticMatch,
     allowedChangeSetMatch,
     outcomeTest: structuredClone(input.outcomeTest),
+    ...(schemaVersion === 3
+      ? {
+          requiredToolCount: requiredTools.length,
+          completedRequiredToolCount: completedRequiredTools.length,
+          requiredToolSetSha256,
+          completedRequiredToolSetSha256,
+        }
+      : {}),
     diagnostics,
   };
   return {
@@ -223,6 +275,22 @@ export function collectCodingBenchmarkToolMetrics(
         event.payload["toolName"] === "apply_patch",
     ),
   };
+}
+
+export function completedCodingBenchmarkTools(
+  events: readonly RunEvent[],
+  runId: string,
+): AgentToolName[] {
+  const completed = new Set<AgentToolName>();
+  for (const event of events) {
+    if (event.runId !== runId || event.type !== "tool.completed") continue;
+    const payload = record(event.payload) ? event.payload : {};
+    const toolName = payload["toolName"];
+    if (typeof toolName === "string" && AGENT_TOOLS.has(toolName)) {
+      completed.add(toolName as AgentToolName);
+    }
+  }
+  return [...completed].sort();
 }
 
 export function createCodingBenchmarkResult(

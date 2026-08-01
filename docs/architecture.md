@@ -1124,12 +1124,18 @@ an explicit environment-variable credential locator.
 
 The `coding_shipping_boundary_v1` case covers a single-file repair.
 `coding_pricing_options_migration_v1` requires one API definition and two call
-sites to migrate together after a real `lsp_references` impact query. Each case
-hashes the complete before/after workspace and requires the changed path set to
-equal its allowlist. Case schema v2 also binds a hidden assertion module. After
-the Agent Run and workspace snapshot, the runner adds that module under a
-reserved one-use name, executes it with the existing `CommandRunner` in a
-read-only, network-denied Node Sandbox, records only
+sites to migrate together after a real `lsp_references` impact query.
+`coding_loyalty_discount_debug_v1` requires the Agent to pause in the existing
+Node DAP adapter, inspect live calculation state, settle the target, and repair
+one JavaScript file. Each case hashes the complete before/after workspace and
+requires the changed path set to equal its allowlist. Case schema v2 also binds
+a hidden assertion module. Schema v3 adds a unique
+`requiredCompletedTools` subset of the enabled tool profile. The scorer derives
+that set only from `tool.completed` events in the terminal CLI Snapshot for the
+scored Run; starts, failures, blocks, another Run, or model claims do not count.
+After the Agent Run and workspace snapshot, the runner adds the assertion
+module under a reserved one-use name, executes it with the existing
+`CommandRunner` in a read-only, network-denied Node Sandbox, records only
 status/latency/exit/output hashes, and removes it. Generated modules are loaded
 only inside that Sandbox, never into the benchmark host process.
 A trusted marker is written before importing generated code; wrapper
@@ -1139,9 +1145,14 @@ so generated stderr cannot spoof an inconclusive outcome.
 A TypeScript-parser AST projection remains supplementary evidence. It ignores
 comments, whitespace, and numeric separators while preserving syntax nodes and
 token kinds. Unlike case v1, AST equality with one expected implementation is
-not the v2 success oracle. A Run passes only when the hidden assertions pass
-and the exact changed-path policy holds. If the Sandbox backend cannot start,
-the result is `inconclusive`; Napier never falls back to host execution.
+not the v2/v3 success oracle. A Run passes only when the hidden assertions pass,
+the exact changed-path policy holds, and every schema-v3 required capability
+completed. Required/completed counts and canonical set hashes are bound into
+evaluation v3 without changing the result, Ledger bundle, or series outer
+schemas. Historical evaluation v1/v2 artifacts remain verifiable. If the
+Sandbox backend cannot start and no independent gate fails, the result is
+`inconclusive`; a missing required capability remains `failed`, and Napier
+never falls back to host execution.
 
 After scoring, the runner appends one hash-only `benchmark.evaluated` event to
 the source Run. It emits:
@@ -1165,16 +1176,25 @@ prefix and does not start another trial.
 
 High-volume text/thinking delta receipts are summarized by count and source
 event-stream hash. Prompt, assistant text, reasoning, tool bodies, workspace
-paths, and credentials do not enter benchmark artifacts. Offline verification
-first enforces exact nested schemas, so adding an unknown raw field and
-recomputing every self-describing hash still fails closed. It then recomputes
-result/bundle hashes, receipt chains, event aggregates, Run/tool bindings, and
-the evaluation-event receipt. The command rejects result files above 256 KiB
-and Ledger bundles above 4 MiB before JSON parsing. `--verify-series` first
-enforces hash-derived local filenames, then verifies every referenced pair and
-recomputes all aggregate statistics; `.`/`..`, missing artifacts, duplicated
-Runs, symlinked inputs, and self-consistently rehashed aggregate drift fail
-closed.
+paths, debugger expressions/variables/output, hidden-test source, and
+credentials do not enter benchmark artifacts. Offline verification first
+enforces exact nested schemas, including v3 count/set-hash consistency, so
+adding an unknown raw field and recomputing every self-describing hash still
+fails closed. It then recomputes result/bundle hashes, receipt chains, event
+aggregates, Run/tool bindings, and the evaluation-event receipt. The command
+rejects result files above 256 KiB and Ledger bundles above 4 MiB before JSON
+parsing. `--verify-series` first enforces hash-derived local filenames, then
+verifies every referenced pair and recomputes all aggregate statistics;
+`.`/`..`, missing artifacts, duplicated Runs, symlinked inputs, and
+self-consistently rehashed aggregate drift fail closed.
+
+CLI JSONL writers accept live Agent callbacks for low latency but reconcile the
+terminal suffix against the authoritative Thread Detail before emitting
+Snapshot/Done. This fills Ledger events appended indirectly by managed Process
+services, including debugger `workspace.process.*` evidence, while canonical
+event identity checks reject callback/Ledger conflicts, duplicates, foreign
+Threads, or incomplete suffixes. Workflow and experiment JSONL entry points use
+the same ordered writer.
 
 The live case also established two Runtime compatibility boundaries:
 

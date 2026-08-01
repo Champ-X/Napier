@@ -21,8 +21,16 @@ export class OrderedEventFrameWriter {
     return this.writer.write(event).catch(rethrowJsonlStreamError);
   }
 
-  finish(lastSeq: number): Promise<void> {
-    return this.writer.finish(lastSeq).catch(rethrowJsonlStreamError);
+  async finish(
+    lastSeq: number,
+    authoritativeEvents?: readonly RunEvent[],
+  ): Promise<void> {
+    if (authoritativeEvents) {
+      await this.writer
+        .reconcile(authoritativeEvents)
+        .catch(rethrowJsonlStreamError);
+    }
+    await this.writer.finish(lastSeq).catch(rethrowJsonlStreamError);
   }
 }
 

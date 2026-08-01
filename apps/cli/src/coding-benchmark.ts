@@ -26,6 +26,7 @@ import {
 } from "./coding-benchmark-case.js";
 import {
   collectCodingBenchmarkToolMetrics,
+  completedCodingBenchmarkTools,
   createCodingBenchmarkEvaluation,
   createCodingBenchmarkLedgerBundle,
   createCodingBenchmarkResult,
@@ -187,6 +188,10 @@ export async function runCodingBenchmark(
       targetAfterSha256: targetEvidence.sha256,
       targetAfterAstSha256: targetEvidence.astSha256,
       outcomeTest,
+      completedToolNames: completedCodingBenchmarkTools(
+        stream.snapshot.detail.events,
+        stream.done.runId,
+      ),
     });
     const evidence = await appendCodingBenchmarkEvidence({
       dependencies,

@@ -231,7 +231,10 @@ async function executeBranch(
       for (const event of result.detail.events) {
         await eventWriter.write(event);
       }
-      await eventWriter.finish(result.detail.thread.eventCount);
+      await eventWriter.finish(
+        result.detail.thread.eventCount,
+        result.detail.events,
+      );
       const snapshot = streamSnapshotFrame(result.detail);
       await writeJsonLine(io.stdout, snapshot);
       await writeJsonLine(
@@ -416,7 +419,7 @@ async function executeWorkflow(
         hashEventStream(detail.events),
       );
       if (eventWriter) {
-        await eventWriter.finish(detail.thread.eventCount);
+        await eventWriter.finish(detail.thread.eventCount, detail.events);
         await writeJsonLine(io.stdout, snapshot);
         await writeJsonLine(io.stdout, resultFrame);
       } else {
@@ -485,7 +488,7 @@ async function executeWorkflow(
       hashEventStream(detail.events),
     );
     if (eventWriter) {
-      await eventWriter.finish(detail.thread.eventCount);
+      await eventWriter.finish(detail.thread.eventCount, detail.events);
       await writeJsonLine(io.stdout, snapshot);
       await writeJsonLine(io.stdout, resultFrame);
     } else {
@@ -622,7 +625,7 @@ async function executeInvocation(
     const run = await invocation.invoke(controller.signal, onEvent);
     const detail = await services.store.getDetail(threadId);
     if (eventWriter) {
-      await eventWriter.finish(detail.thread.eventCount);
+      await eventWriter.finish(detail.thread.eventCount, detail.events);
       const snapshot = streamSnapshotFrame(detail);
       const done = streamRunDoneFrame(
         threadId,

@@ -1,4 +1,5 @@
 import type { RunStatus } from "@napier/contracts";
+import { canonicalJson, sha256 } from "@napier/runtime";
 
 import type {
   CodingBenchmarkEvaluation,
@@ -6,6 +7,7 @@ import type {
 } from "./coding-benchmark-types.js";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
+const EMPTY_SET_SHA256 = sha256(canonicalJson([]));
 const RESOURCE_ID = /^[a-z][a-z0-9_]{2,80}$/u;
 const TERMINAL_RUN_STATUSES = new Set<RunStatus>([
   "completed",
@@ -28,11 +30,15 @@ const V2_DIAGNOSTICS = new Set([
   "expected_change_missing",
   "unexpected_workspace_changes",
 ]);
+const V3_DIAGNOSTICS = new Set([...V2_DIAGNOSTICS, "required_tool_missing"]);
 const V1_KEYS = keySet(
   "kind schemaVersion caseId caseSha256 status runStatus criteriaSha256 workspaceBeforeSha256 workspaceAfterSha256 targetBeforeSha256 targetAfterSha256 expectedTargetSha256 targetAfterAstSha256 expectedTargetAstSha256 changedFileCount changedPathSetSha256 targetSemanticMatch allowedChangeSetMatch diagnostics contentSha256",
 );
 const V2_KEYS = keySet(
   "kind schemaVersion caseId caseSha256 status runStatus criteriaSha256 workspaceBeforeSha256 workspaceAfterSha256 targetBeforeSha256 targetAfterSha256 expectedTargetSha256 targetAfterAstSha256 expectedTargetAstSha256 changedFileCount changedPathSetSha256 targetSemanticMatch allowedChangeSetMatch outcomeTest diagnostics contentSha256",
+);
+const V3_KEYS = keySet(
+  "kind schemaVersion caseId caseSha256 status runStatus criteriaSha256 workspaceBeforeSha256 workspaceAfterSha256 targetBeforeSha256 targetAfterSha256 expectedTargetSha256 targetAfterAstSha256 expectedTargetAstSha256 changedFileCount changedPathSetSha256 targetSemanticMatch allowedChangeSetMatch outcomeTest requiredToolCount completedRequiredToolCount requiredToolSetSha256 completedRequiredToolSetSha256 diagnostics contentSha256",
 );
 const OUTCOME_KEYS = keySet(
   "testSha256 status sandboxId resultSha256 durationMs exitCode stdoutSha256 stderrSha256 passed",
@@ -47,22 +53,60 @@ export function validCodingBenchmarkEvaluationShape(
   if (!record(value)) return false;
   const schemaVersion = value["schemaVersion"];
   if (
-    (schemaVersion !== 1 && schemaVersion !== 2) ||
-    !exactRecord(value, schemaVersion === 2 ? V2_KEYS : V1_KEYS)
+    (schemaVersion !== 1 && schemaVersion !== 2 && schemaVersion !== 3) ||
+    !exactRecord(
+      value,
+      schemaVersion === 3 ? V3_KEYS : schemaVersion === 2 ? V2_KEYS : V1_KEYS,
+    )
   ) {
     return false;
   }
-  const diagnosticSet = schemaVersion === 1 ? V1_DIAGNOSTICS : V2_DIAGNOSTICS;
+  const diagnosticSet =
+    schemaVersion === 1
+      ? V1_DIAGNOSTICS
+      : schemaVersion === 2
+        ? V2_DIAGNOSTICS
+        : V3_DIAGNOSTICS;
   const diagnostics = value["diagnostics"];
   const diagnosticsArray = Array.isArray(diagnostics) ? diagnostics : undefined;
   const outcome =
-    schemaVersion === 2 && validOutcome(value["outcomeTest"])
+    schemaVersion >= 2 && validOutcome(value["outcomeTest"])
       ? value["outcomeTest"]
       : undefined;
+  const requiredToolCount =
+    schemaVersion === 3 && nonNegativeInteger(value["requiredToolCount"])
+      ? Number(value["requiredToolCount"])
+      : undefined;
+  const completedRequiredToolCount =
+    schemaVersion === 3 &&
+    nonNegativeInteger(value["completedRequiredToolCount"])
+      ? Number(value["completedRequiredToolCount"])
+      : undefined;
+  const requiredToolMissing =
+    schemaVersion === 3 &&
+    requiredToolCount !== undefined &&
+    completedRequiredToolCount !== undefined &&
+    completedRequiredToolCount < requiredToolCount;
+  const requiredToolSetSha256 = value["requiredToolSetSha256"];
+  const completedRequiredToolSetSha256 =
+    value["completedRequiredToolSetSha256"];
+  const toolSetCountsMatch =
+    schemaVersion === 3 &&
+    requiredToolCount !== undefined &&
+    completedRequiredToolCount !== undefined &&
+    isSha256(requiredToolSetSha256) &&
+    isSha256(completedRequiredToolSetSha256) &&
+    requiredToolSetSha256 !== EMPTY_SET_SHA256 &&
+    (completedRequiredToolCount === 0
+      ? completedRequiredToolSetSha256 === EMPTY_SET_SHA256
+      : completedRequiredToolCount === requiredToolCount
+        ? completedRequiredToolSetSha256 === requiredToolSetSha256
+        : completedRequiredToolSetSha256 !== EMPTY_SET_SHA256 &&
+          completedRequiredToolSetSha256 !== requiredToolSetSha256);
   const outcomeUnavailable =
     outcome?.status === "unavailable" || outcome?.status === "cancelled";
   const inconclusive =
-    schemaVersion === 2 &&
+    schemaVersion >= 2 &&
     ((outcome?.status === "cancelled" && value["runStatus"] === "cancelled") ||
       (outcomeUnavailable &&
         diagnosticsArray?.length === 1 &&
@@ -73,7 +117,7 @@ export function validCodingBenchmarkEvaluationShape(
     isSha256(value["caseSha256"]) &&
     (value["status"] === "passed" ||
       value["status"] === "failed" ||
-      (schemaVersion === 2 && value["status"] === "inconclusive")) &&
+      (schemaVersion >= 2 && value["status"] === "inconclusive")) &&
     terminalRunStatus(value["runStatus"]) &&
     SHA256_KEYS.every((key) => isSha256(value[key])) &&
     nonNegativeInteger(value["changedFileCount"]) &&
@@ -87,11 +131,19 @@ export function validCodingBenchmarkEvaluationShape(
         typeof diagnostic === "string" && diagnosticSet.has(diagnostic),
     ) &&
     (schemaVersion === 1 || outcome !== undefined) &&
-    (schemaVersion !== 2 ||
+    (schemaVersion < 2 ||
       outcome?.passed === true ||
       (outcomeUnavailable
         ? diagnostics.includes("outcome_test_unavailable")
         : diagnostics.includes("outcome_test_failed"))) &&
+    (schemaVersion !== 3 ||
+      (requiredToolCount !== undefined &&
+        requiredToolCount >= 1 &&
+        completedRequiredToolCount !== undefined &&
+        completedRequiredToolCount <= requiredToolCount &&
+        toolSetCountsMatch &&
+        diagnostics.includes("required_tool_missing") ===
+          requiredToolMissing)) &&
     (value["status"] === "passed") === (diagnostics.length === 0) &&
     (value["status"] === "inconclusive") === inconclusive &&
     (value["status"] !== "failed" ||
@@ -102,6 +154,7 @@ export function validCodingBenchmarkEvaluationShape(
           ? value["targetSemanticMatch"] === true
           : outcome?.passed === true) &&
         value["allowedChangeSetMatch"] === true &&
+        (schemaVersion !== 3 || requiredToolMissing === false) &&
         Number(value["changedFileCount"]) >= 1))
   );
 }
